@@ -123,6 +123,14 @@ func (u *UpdateTaskUseCase) Execute(ctx context.Context, request task.UpdateTask
 		}
 	}
 
+	if request.AcceptanceCriteria != nil {
+		taskEntity.AcceptanceCriteria = append([]string{}, request.AcceptanceCriteria...)
+	}
+
+	if request.Scope != nil {
+		taskEntity.Scope = append([]string{}, request.Scope...)
+	}
+
 	if request.DueDate != nil {
 		if err := taskEntity.UpdateDueDate(request.DueDate); err != nil {
 			return nil, err

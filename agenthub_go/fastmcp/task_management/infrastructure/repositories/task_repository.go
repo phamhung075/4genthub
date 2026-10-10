@@ -165,6 +165,35 @@ func taskRepoEnsureEstimatedEffort(value any) string {
 }
 
 // taskRepoDecodeHistory decodes a JSON progress_history column to map[string]any.
+// repoDecodeStringList decodes a JSONB string-array column (acceptance_criteria, scope) into
+// []string. The fresh default is '[]'; NULL/empty and a non-array value decode to an empty list,
+// the same tolerance subtaskRepoDecodeAssignees applies to a row written under an older shape.
+func repoDecodeStringList(raw []byte) ([]string, error) {
+	if len(raw) == 0 {
+		return []string{}, nil
+	}
+	decoded, err := entities.DecodeJSON(raw)
+	if err != nil {
+		return nil, err
+	}
+	if decoded == nil {
+		return []string{}, nil
+	}
+	list, ok := decoded.([]any)
+	if !ok {
+		return []string{}, nil
+	}
+	out := []string{}
+	for _, item := range list {
+		if s, ok := item.(string); ok {
+			out = append(out, s)
+		} else {
+			out = append(out, value_objects.PyStr(item))
+		}
+	}
+	return out, nil
+}
+
 func taskRepoDecodeHistory(raw []byte) map[string]any {
 	if len(raw) == 0 {
 		return map[string]any{}
@@ -317,6 +346,14 @@ func (r *ORMTaskRepository) taskRepoModelToEntity(ctx context.Context, s databas
 	}
 	createdAt, updatedAt := row.CreatedAt, row.UpdatedAt
 	userID := row.UserID
+	acceptanceCriteria, err := repoDecodeStringList(row.AcceptanceCriteria)
+	if err != nil {
+		return nil, err
+	}
+	scope, err := repoDecodeStringList(row.Scope)
+	if err != nil {
+		return nil, err
+	}
 	entity, err := entities.NewTask(entities.Task{
 		BaseTimestampEntity: base.BaseTimestampEntity{CreatedAt: &createdAt, UpdatedAt: &updatedAt},
 		Title:               row.Title,
@@ -330,6 +367,8 @@ func (r *ORMTaskRepository) taskRepoModelToEntity(ctx context.Context, s databas
 		EstimatedEffort:     row.EstimatedEffort,
 		DueDate:             row.DueDate,
 		Assignees:           assigneeIDs,
+		AcceptanceCriteria:  acceptanceCriteria,
+		Scope:               scope,
 		Labels:              labelNames,
 		Subtasks:            subtaskIDs,
 		CompletedSubtasks:   int(completed),
@@ -375,6 +414,8 @@ func (r *ORMTaskRepository) taskRepoEntityToModelDict(task *entities.Task) Kwarg
 	}
 	m.Set("progress_history", task.ProgressHistory)
 	m.Set("progress_count", task.ProgressCount)
+	m.Set("acceptance_criteria", append([]string{}, task.AcceptanceCriteria...))
+	m.Set("scope", append([]string{}, task.Scope...))
 	m.Set("estimated_effort", taskRepoEnsureEstimatedEffort(task.EstimatedEffort))
 	m.Set("due_date", task.DueDate)
 	m.Set("context_id", task.ContextID)
@@ -1297,6 +1338,8 @@ func (r *ORMTaskRepository) taskRepoSave(ctx context.Context, task *entities.Tas
 				"priority", taskPriority,
 				"progress_history", task.ProgressHistory,
 				"progress_count", task.ProgressCount,
+				"acceptance_criteria", append([]string{}, task.AcceptanceCriteria...),
+				"scope", append([]string{}, task.Scope...),
 				"estimated_effort", taskRepoEnsureEstimatedEffort(task.EstimatedEffort),
 				"due_date", task.DueDate,
 				"context_id", task.ContextID,

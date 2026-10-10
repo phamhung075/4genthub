@@ -20,7 +20,7 @@ func TestManageSubtaskDescriptionConstants(t *testing.T) {
 	props := GetManageSubtaskParameters()
 	wantKeys := []string{
 		"action", "task_id", "subtask_id", "title", "description", "status",
-		"priority", "assignees", "progress_percentage", "progress_notes",
+		"priority", "assignees", "acceptance_criteria", "scope", "progress_percentage", "progress_notes",
 		"completion_summary", "testing_notes", "insights_found",
 		"challenges_overcome", "skills_learned", "next_recommendations",
 		"deliverables", "completion_quality", "blockers", "impact_on_parent", "user_id",

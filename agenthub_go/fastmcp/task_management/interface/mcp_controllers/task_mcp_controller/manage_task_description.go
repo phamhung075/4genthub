@@ -25,8 +25,8 @@ AI RULES: Create before work (>1 file edit) | Use 'next' for recommendations | U
 
 | Action              | Required                          | Optional                           | Description                        |
 |---------------------|-----------------------------------|------------------------------------|------------------------------------|
-| create              | git_branch_id, title, assignees   | description, status, priority, details, estimated_effort, labels, due_date, dependencies | Create task (min 1 agent)         |
-| update              | task_id                           | title, description, status, priority, details, estimated_effort, assignees, labels, due_date, context_id | Update task                        |
+| create              | git_branch_id, title, assignees   | description, status, priority, details, estimated_effort, labels, due_date, dependencies, acceptance_criteria, scope | Create task (min 1 agent)         |
+| update              | task_id                           | title, description, status, priority, details, estimated_effort, assignees, labels, due_date, context_id, acceptance_criteria, scope | Update task                        |
 | get                 | task_id                           | include_context                    | Retrieve task                      |
 | delete              | task_id                           |                                    | Remove task                        |
 | complete            | task_id                           | completion_summary, testing_notes  | Complete task                      |
@@ -35,6 +35,7 @@ AI RULES: Create before work (>1 file edit) | Use 'next' for recommendations | U
 | next                | git_branch_id                     | include_context                    | Get recommended task               |
 | add_dependency      | task_id, dependency_id            |                                    | Add dependency                     |
 | remove_dependency   | task_id, dependency_id            |                                    | Remove dependency                  |
+| resume              | task_id                           |                                    | Resume brief from the ledger       |
 | ai_plan             | requirements, title, git_branch_id| description, context, auto_create_tasks | AI task plan                       |
 | ai_create           | title, git_branch_id              | enable_ai_breakdown, enable_smart_assignment, ai_requirements | AI-enhanced task                   |
 | ai_enhance          | task_id                           | analyze_complexity, suggest_optimizations, identify_risks | AI insights                        |
@@ -43,7 +44,7 @@ AI RULES: Create before work (>1 file edit) | Use 'next' for recommendations | U
 
 VALIDATION: Two-stage (schema: 'action' only → business logic: action-specific) | CRUD needs task_id | Create needs git_branch_id+title+assignees (min 1) | Search needs query | Dependencies need task_id+dependency_id
 
-KEY PARAMS: assignees (@agent-name, comma-separated, REQUIRED for create) | priority (low|medium|high|urgent|critical, affects 'next') | status (todo|in_progress|blocked|review|testing|done|cancelled) | dependencies (task IDs, comma-separated) | include_context (true for vision)
+KEY PARAMS: assignees (@agent-name, comma-separated, REQUIRED for create) | priority (low|medium|high|urgent|critical, affects 'next') | status (todo|in_progress|blocked|review|testing|done|cancelled) | dependencies (task IDs, comma-separated) | acceptance_criteria (JSON array of strings to verify) | scope (JSON array of glob patterns the work may touch) | include_context (true for vision)
 
 VISION (Auto): Task enrichment | Priority estimation | Workflow hints | Progress tracking | Blocker detection | Impact analysis | Context updates
 
@@ -81,9 +82,9 @@ ERRORS: Missing fields→specific error | Unknown actions→valid list | Interna
 // ManageTaskParametersDescription is MANAGE_TASK_PARAMETERS_DESCRIPTION. Key order
 // is not observable (only indexed), so a plain map is used.
 var ManageTaskParametersDescription = map[string]string{
-	"action":                  "Task management action. Valid: 'create', 'update', 'get', 'delete', 'complete', 'list', 'search', 'next', 'add_dependency', 'remove_dependency', 'ai_plan', 'ai_create', 'ai_enhance', 'ai_analyze', 'ai_suggest_agents'. Use 'create' to start new work, 'next' to find work, 'complete' when done. AI actions provide intelligent task planning and enhancement.",
+	"action":                  "Task management action. Valid: 'create', 'update', 'get', 'delete', 'complete', 'list', 'search', 'next', 'add_dependency', 'remove_dependency', 'resume', 'ai_plan', 'ai_create', 'ai_enhance', 'ai_analyze', 'ai_suggest_agents'. Use 'create' to start new work, 'next' to find work, 'resume' to pick up where a task left off, 'complete' when done. AI actions provide intelligent task planning and enhancement.",
 	"git_branch_id":           "Git branch UUID identifier - contains all context (project_id, git_branch_name, user_id). Required for 'create' and 'next' actions. Get from git branch creation or list.",
-	"task_id":                 "Task identifier (UUID). Required for: update, get, delete, complete, add/remove_dependency. Get from create response or list/search results.",
+	"task_id":                 "Task identifier (UUID). Required for: update, get, delete, complete, add/remove_dependency, resume. Get from create response or list/search results.",
 	"title":                   "Task title - be specific and action-oriented. Required for: create. Example: 'Implement JWT authentication with refresh tokens' not just 'Auth'",
 	"description":             "Detailed task description with acceptance criteria. Optional but recommended for: create. Include technical approach, dependencies, and success criteria.",
 	"status":                  "Task status: 'todo', 'in_progress', 'blocked', 'review', 'testing', 'done', 'cancelled'. Optional. Changes automatically: create→todo, update→in_progress, complete→done",
@@ -93,6 +94,8 @@ var ManageTaskParametersDescription = map[string]string{
 	"progress_percentage":     "Task completion percentage (0-100). Optional for 'update'. Automatically maps to status transitions and progress tracking when supplied.",
 	"assignees":               "User identifiers - accepts string (single user) or comma-separated string (multiple users). Optional. Examples: 'user1' or 'user1,user2'. Default: current user",
 	"labels":                  "Categories/tags - accepts string (single label) or comma-separated string (multiple labels). Optional. Examples: 'frontend' or 'frontend,auth,bug'. Useful for filtering.",
+	"acceptance_criteria":     "Acceptance criteria - the verifiable conditions that must hold for the work to be done, as a JSON array of strings (a comma-separated string is also accepted). Optional for: create, update.",
+	"scope":                   "Scope - glob patterns for the files or areas the work may touch, as a JSON array of strings (a comma-separated string is also accepted), e.g. ['internal/**', 'cmd/*.go']. Optional for: create, update.",
 	"dependencies":            "Task IDs this task depends on (for create action) - accepts string (single dependency) or comma-separated string (multiple dependencies). Optional. Examples: 'task-uuid' or 'task-uuid-1,task-uuid-2'. Tasks must be completed before this task can start.",
 	"due_date":                "Target completion date in ISO 8601 format (YYYY-MM-DD or full datetime). Optional. Example: '2024-12-31' or '2024-12-31T23:59:59Z'",
 	"context_id":              "Context identifier for task. Optional for 'update' action. Usually same as task_id. Used for context synchronization and validation. Auto-created during task creation.",
@@ -153,6 +156,8 @@ func GetManageTaskParameters() *entities.OrderedMap[any] {
 	properties.Set("assignees", paramProp("string",
 		"**REQUIRED for create action** - Assignee identifiers (minimum 1 required). Use the '@<seat_key>' form (e.g., '@lead', '@go-dev'); it is the only accepted assignee identity. A bare name, including a retired agent role, is rejected. For multiple assignees use comma-separated: '@lead,@go-dev'."))
 	properties.Set("labels", stringProp("labels"))
+	properties.Set("acceptance_criteria", stringListProp("acceptance_criteria"))
+	properties.Set("scope", stringListProp("scope"))
 	properties.Set("due_date", stringProp("due_date"))
 	properties.Set("dependencies", stringProp("dependencies"))
 	properties.Set("dependency_id", stringProp("dependency_id"))
@@ -194,5 +199,18 @@ func paramProp(typeName, description string) *entities.OrderedMap[any] {
 	p := entities.NewOrderedMap[any]()
 	p.Set("type", typeName)
 	p.Set("description", description)
+	return p
+}
+
+// stringListProp is the property for a JSON array of strings (acceptance_criteria, scope). The
+// published MCP schema is built by toolInputSchema from toolParamSpecs, so this raw property exists
+// for the description text and a correct standalone shape.
+func stringListProp(name string) *entities.OrderedMap[any] {
+	p := entities.NewOrderedMap[any]()
+	p.Set("type", "array")
+	items := entities.NewOrderedMap[any]()
+	items.Set("type", "string")
+	p.Set("items", items)
+	p.Set("description", ManageTaskParametersDescription[name])
 	return p
 }

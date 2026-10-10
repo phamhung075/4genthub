@@ -12,6 +12,8 @@ type AddSubtaskRequest struct {
 	Title              string
 	Description        string
 	Assignees          []string
+	AcceptanceCriteria []string
+	Scope              []string
 	Priority           *string
 	Status             *string
 	ProgressPercentage *int

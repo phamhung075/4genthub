@@ -215,11 +215,13 @@ func (f *SubtaskApplicationFacade) handleCreateSubtask(ctx context.Context, task
 	}
 
 	request, err := subtask.NewAddSubtaskRequest(subtask.AddSubtaskRequest{
-		TaskID:      taskID,
-		Title:       title,
-		Description: omStringDefault(subtaskData, "description", ""),
-		Assignees:   omStrings(subtaskData, "assignees"),
-		Priority:    omStringPtr(subtaskData, "priority"),
+		TaskID:             taskID,
+		Title:              title,
+		Description:        omStringDefault(subtaskData, "description", ""),
+		Assignees:          omStrings(subtaskData, "assignees"),
+		AcceptanceCriteria: omStrings(subtaskData, "acceptance_criteria"),
+		Scope:              omStrings(subtaskData, "scope"),
+		Priority:           omStringPtr(subtaskData, "priority"),
 	})
 	if err != nil {
 		return nil, err
@@ -299,6 +301,8 @@ func (f *SubtaskApplicationFacade) handleUpdateSubtask(ctx context.Context, task
 		Status:             omStringPtr(subtaskData, "status"),
 		Priority:           omStringPtr(subtaskData, "priority"),
 		Assignees:          omAnySlice(subtaskData, "assignees"),
+		AcceptanceCriteria: omStrings(subtaskData, "acceptance_criteria"),
+		Scope:              omStrings(subtaskData, "scope"),
 		ProgressPercentage: omIntPtr(subtaskData, "progress_percentage"),
 		ProgressNotes:      omStringPtr(subtaskData, "progress_notes"),
 	}

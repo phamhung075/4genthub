@@ -257,7 +257,9 @@ CREATE TABLE subtasks (
     ai_last_execution TIMESTAMP,
     ai_model_preferences JSONB NOT NULL DEFAULT '{}'::json,
     progress_history JSONB NOT NULL DEFAULT '{}'::json,
-    progress_count INTEGER NOT NULL DEFAULT 0
+    progress_count INTEGER NOT NULL DEFAULT 0,
+    acceptance_criteria JSONB NOT NULL DEFAULT '[]'::json,
+    scope JSONB NOT NULL DEFAULT '[]'::json
 );
 
 -- Table: task_assignees
@@ -345,7 +347,9 @@ CREATE TABLE tasks (
     ai_last_execution TIMESTAMP,
     ai_model_preferences JSONB NOT NULL DEFAULT '{}'::json,
     completed_subtasks INTEGER DEFAULT 0,
-    subtask_count INTEGER DEFAULT 0
+    subtask_count INTEGER DEFAULT 0,
+    acceptance_criteria JSONB NOT NULL DEFAULT '[]'::json,
+    scope JSONB NOT NULL DEFAULT '[]'::json
 );
 
 -- Table: templates

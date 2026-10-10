@@ -9,6 +9,8 @@ type UpdateSubtaskRequest struct {
 	Status             *string
 	Priority           *string
 	Assignees          []any
+	AcceptanceCriteria []string
+	Scope              []string
 	ProgressPercentage *int
 	ProgressNotes      *string
 }

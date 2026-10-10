@@ -20,20 +20,22 @@ type GitBranchGetter interface {
 
 // TaskResponse is the response DTO for task operations.
 type TaskResponse struct {
-	ID              string
-	Title           string
-	Description     string
-	Status          string
-	Priority        string
-	Details         string
-	EstimatedEffort string
-	Assignees       []string
-	Labels          []string
-	Dependencies    []string
-	Subtasks        []any
-	DueDate         *string
-	CreatedAt       *time.Time
-	UpdatedAt       *time.Time
+	ID                 string
+	Title              string
+	Description        string
+	Status             string
+	Priority           string
+	Details            string
+	EstimatedEffort    string
+	Assignees          []string
+	Labels             []string
+	AcceptanceCriteria []string
+	Scope              []string
+	Dependencies       []string
+	Subtasks           []any
+	DueDate            *string
+	CreatedAt          *time.Time
+	UpdatedAt          *time.Time
 
 	GitBranchID *string
 	ProjectID   *string
@@ -140,6 +142,8 @@ func TaskResponseFromDomain(ctx context.Context, task *entities.Task, gitBranchR
 		Details:                 details,
 		EstimatedEffort:         stringFromAny(taskDict["estimatedEffort"]),
 		Assignees:               assignees,
+		AcceptanceCriteria:      stringSliceFromAny(taskDict["acceptance_criteria"]),
+		Scope:                   stringSliceFromAny(taskDict["scope"]),
 		Labels:                  stringSliceFromAny(taskDict["labels"]),
 		Dependencies:            stringSliceFromAny(taskDict["dependencies"]),
 		Subtasks:                subtasks,
@@ -178,6 +182,14 @@ func (r *TaskResponse) ToDict() (*entities.OrderedMap[any], error) {
 	if len(labels) == 0 {
 		labels = []string{}
 	}
+	acceptanceCriteria := r.AcceptanceCriteria
+	if len(acceptanceCriteria) == 0 {
+		acceptanceCriteria = []string{}
+	}
+	scope := r.Scope
+	if len(scope) == 0 {
+		scope = []string{}
+	}
 	dependencies := r.Dependencies
 	if len(dependencies) == 0 {
 		dependencies = []string{}
@@ -196,6 +208,8 @@ func (r *TaskResponse) ToDict() (*entities.OrderedMap[any], error) {
 	m.Set("details", r.Details)
 	m.Set("estimatedEffort", r.EstimatedEffort)
 	m.Set("assignees", assigneesList)
+	m.Set("acceptance_criteria", acceptanceCriteria)
+	m.Set("scope", scope)
 	m.Set("labels", labels)
 	m.Set("dependencies", dependencies)
 	m.Set("subtasks", subtasks)

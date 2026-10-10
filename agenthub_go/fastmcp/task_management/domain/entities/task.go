@@ -27,23 +27,25 @@ func NormalizeDatetime(s string) (time.Time, error) {
 // Python None; zero values of ProgressState/Status/Priority take the Python defaults.
 type Task struct {
 	base.BaseTimestampEntity
-	Title             string
-	Description       string
-	ID                *value_objects.TaskId
-	Status            *value_objects.TaskStatus
-	Priority          *value_objects.Priority
-	GitBranchID       *string
-	ProgressHistory   map[string]any
-	ProgressCount     int
-	EstimatedEffort   string
-	Assignees         []string
-	Labels            []string
-	Dependencies      []value_objects.TaskId
-	Subtasks          []string
-	CompletedSubtasks int
-	DueDate           *string
-	ContextID         *string
-	UserID            *string
+	Title              string
+	Description        string
+	ID                 *value_objects.TaskId
+	Status             *value_objects.TaskStatus
+	Priority           *value_objects.Priority
+	GitBranchID        *string
+	ProgressHistory    map[string]any
+	ProgressCount      int
+	EstimatedEffort    string
+	Assignees          []string
+	Labels             []string
+	AcceptanceCriteria []string
+	Scope              []string
+	Dependencies       []value_objects.TaskId
+	Subtasks           []string
+	CompletedSubtasks  int
+	DueDate            *string
+	ContextID          *string
+	UserID             *string
 
 	// OverallProgress is an int in Python until _recalculate_overall_progress
 	// turns it into a float; OverallProgressIsFloat keeps that distinction for to_dict.
@@ -82,6 +84,12 @@ func NewTask(t Task) (*Task, error) {
 	}
 	if s.Labels == nil {
 		s.Labels = []string{}
+	}
+	if s.AcceptanceCriteria == nil {
+		s.AcceptanceCriteria = []string{}
+	}
+	if s.Scope == nil {
+		s.Scope = []string{}
 	}
 	if s.Dependencies == nil {
 		s.Dependencies = []value_objects.TaskId{}
@@ -1024,7 +1032,9 @@ func (t *Task) ToDict() (map[string]any, error) {
 		"id": t.idStr(), "title": t.Title, "description": t.Description, "git_branch_id": strOrNil(t.GitBranchID),
 		"status": t.Status.Value, "priority": t.Priority.Value,
 		"estimatedEffort": t.EstimatedEffort, "assignees": append([]string{}, t.Assignees...),
-		"labels": append([]string{}, t.Labels...), "dependencies": deps, "dependency_count": len(t.Dependencies),
+		"acceptance_criteria": append([]string{}, t.AcceptanceCriteria...),
+		"scope":               append([]string{}, t.Scope...),
+		"labels":              append([]string{}, t.Labels...), "dependencies": deps, "dependency_count": len(t.Dependencies),
 		"subtasks": append([]string{}, t.Subtasks...), "subtask_count": len(t.Subtasks),
 		"completed_subtasks": t.CompletedSubtasks, "dueDate": nil,
 		"created_at": nil, "updated_at": t.updatedAtISO(), "context_id": strOrNil(t.ContextID),

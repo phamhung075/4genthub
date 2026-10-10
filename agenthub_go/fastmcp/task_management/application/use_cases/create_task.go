@@ -106,17 +106,19 @@ func (u *CreateTaskUseCase) Execute(ctx context.Context, request task.CreateTask
 
 	gitBranchID := request.GitBranchID
 	taskEntity, err := entities.CreateTask(entities.Task{
-		ID:              &taskID,
-		Title:           title,
-		Description:     description,
-		Status:          &status,
-		Priority:        &priority,
-		GitBranchID:     &gitBranchID,
-		EstimatedEffort: request.EstimatedEffort,
-		Assignees:       request.Assignees,
-		Labels:          request.Labels,
-		DueDate:         request.DueDate,
-		UserID:          userID,
+		ID:                 &taskID,
+		Title:              title,
+		Description:        description,
+		Status:             &status,
+		Priority:           &priority,
+		GitBranchID:        &gitBranchID,
+		EstimatedEffort:    request.EstimatedEffort,
+		Assignees:          request.Assignees,
+		Labels:             request.Labels,
+		AcceptanceCriteria: request.AcceptanceCriteria,
+		Scope:              request.Scope,
+		DueDate:            request.DueDate,
+		UserID:             userID,
 	})
 	if err != nil {
 		return fail(err)

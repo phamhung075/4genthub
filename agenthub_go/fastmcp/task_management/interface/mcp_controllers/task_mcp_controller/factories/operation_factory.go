@@ -87,7 +87,7 @@ func (f *OperationFactory) HandleOperation(ctx context.Context, operation string
 	}()
 
 	switch operation {
-	case "create", "update", "delete", "get", "complete":
+	case "create", "update", "delete", "get", "complete", "resume":
 		return f.handleCRUDOperation(ctx, operation, facade, kwargs)
 	case "list", "search", "next", "count":
 		return f.handleSearchOperation(ctx, operation, facade, kwargs)
@@ -109,7 +109,8 @@ func (f *OperationFactory) handleCRUDOperation(ctx context.Context, operation st
 	switch operation {
 	case "create":
 		allowed := stringSet("git_branch_id", "title", "description", "status", "priority", "details",
-			"estimated_effort", "assignees", "labels", "due_date", "dependencies", "user_id")
+			"estimated_effort", "assignees", "labels", "due_date", "dependencies", "user_id",
+			"acceptance_criteria", "scope")
 		result := f.crudHandler.CreateTask(ctx, facade, filterKeys(kwargs, allowed))
 
 		if result != nil {
@@ -137,7 +138,7 @@ func (f *OperationFactory) handleCRUDOperation(ctx context.Context, operation st
 	case "update":
 		allowed := stringSet("task_id", "title", "description", "status", "priority", "details",
 			"estimated_effort", "progress_percentage", "assignees", "labels", "due_date",
-			"context_id", "completion_summary", "testing_notes")
+			"context_id", "completion_summary", "testing_notes", "acceptance_criteria", "scope")
 		return f.crudHandler.UpdateTask(ctx, facade, filterKeys(kwargs, allowed))
 
 	case "delete":
@@ -167,6 +168,13 @@ func (f *OperationFactory) handleCRUDOperation(ctx context.Context, operation st
 		filtered := filterKeys(kwargs, allowed)
 		return f.crudHandler.CompleteTask(ctx, facade, kwStringValue(filtered, "task_id"),
 			kwString(filtered, "completion_summary"), kwString(filtered, "testing_notes"))
+
+	case "resume":
+		// resume takes one input - the task the brief is about - and returns the brief the facade
+		// builds from that task's own facts and its ledger. It is a read, so it filters like get does
+		// rather than accepting any of the write actions' fields.
+		allowed := stringSet("task_id")
+		return f.crudHandler.ResumeTask(ctx, facade, kwStringValue(filterKeys(kwargs, allowed), "task_id"))
 	}
 
 	panic(&value_objects.ValueError{Msg: "Unknown CRUD operation: " + operation})

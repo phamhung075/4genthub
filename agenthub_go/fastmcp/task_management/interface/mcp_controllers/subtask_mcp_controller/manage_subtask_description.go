@@ -20,8 +20,8 @@ AI RULES: Use for tasks with multiple steps | Update with progress_notes (MANDAT
 
 | Action   | Required                 | Optional                           | Description                  |
 |----------|--------------------------|------------------------------------|-----------------------------|
-| create   | task_id, title           | description, status, priority, assignees, progress_notes | Create subtask                  |
-| update   | task_id, subtask_id, progress_notes | title, description, status, priority, assignees, progress_percentage, blockers, insights_found | Update with progress history    |
+| create   | task_id, title           | description, status, priority, assignees, progress_notes, acceptance_criteria, scope | Create subtask                  |
+| update   | task_id, subtask_id, progress_notes | title, description, status, priority, assignees, progress_percentage, blockers, insights_found, acceptance_criteria, scope | Update with progress history    |
 | delete   | task_id, subtask_id      |                                    | Remove subtask              |
 | get      | task_id, subtask_id      |                                    | Retrieve subtask            |
 | list     | task_id                  |                                    | List all subtasks           |
@@ -29,7 +29,7 @@ AI RULES: Use for tasks with multiple steps | Update with progress_notes (MANDAT
 
 VALIDATION: task_id always required | subtask_id for update/delete/get/complete | title for create | progress_notes MANDATORY for update/complete | completion_summary MANDATORY for complete
 
-KEY PARAMS: progress_notes (MANDATORY update/complete, builds timestamped history) | completion_summary (MANDATORY complete, be specific) | progress_percentage (0-100, auto-maps: 0=todo, 1-99=in_progress, 100=done) | assignees (inherits from parent if not specified)
+KEY PARAMS: progress_notes (MANDATORY update/complete, builds timestamped history) | completion_summary (MANDATORY complete, be specific) | progress_percentage (0-100, auto-maps: 0=todo, 1-99=in_progress, 100=done) | assignees (inherits from parent if not specified) | acceptance_criteria (JSON array of strings to verify) | scope (JSON array of glob patterns the work may touch)
 
 AUTO FEATURES: Progress history tracking | Agent inheritance | Parent progress recalc | Status mapping | Blocker escalation | Insight propagation | Workflow hints
 
@@ -78,6 +78,8 @@ var MANAGE_SUBTASK_PARAMETERS_DESCRIPTION = func() *entities.OrderedMap[any] {
 	m.Set("status", "Subtask status: 'todo', 'in_progress', 'done'. Note: use progress_percentage instead for automatic status mapping")
 	m.Set("priority", "Subtask priority: 'low', 'medium', 'high', 'urgent', 'critical'. Default: inherits from parent")
 	m.Set("assignees", "Agent identifiers - **Inherits from parent task if not specified**. Use @agent-name format. Comma-separated for multiple: 'coding-agent,@test-orchestrator-agent'. Leave empty to inherit parent's agents automatically.")
+	m.Set("acceptance_criteria", "Acceptance criteria - the verifiable conditions that must hold for the subtask to be done, as a JSON array of strings (a comma-separated string is also accepted). Optional for create and update")
+	m.Set("scope", "Scope - glob patterns for the files or areas the subtask may touch, as a JSON array of strings (a comma-separated string is also accepted), e.g. ['internal/**', 'cmd/*.go']. Optional for create and update")
 	m.Set("progress_percentage", "Integer 0-100 representing completion. Automatically maps to status (0=todo, 1-99=in_progress, 100=done). Use this instead of status field")
 	m.Set("progress_notes", "[REQUIRED for 'update' and 'complete' actions] Brief description of current work status that builds progress history. MANDATORY for update and complete operations. Creates timestamped progress entries automatically. Minimum 10 characters. Example: 'Completed UI mockup, starting on API integration'")
 	m.Set("completion_summary", "[REQUIRED for 'complete' action] Detailed summary of what was accomplished. BE SPECIFIC! MANDATORY for complete operations. Example: 'Implemented JWT authentication with refresh tokens, 2-hour expiry, and secure httpOnly cookies'")
@@ -105,6 +107,8 @@ var MANAGE_SUBTASK_PARAMS = func() *entities.OrderedMap[any] {
 	properties.Set("status", schemaProp("string", "status"))
 	properties.Set("priority", schemaProp("string", "priority"))
 	properties.Set("assignees", schemaProp("string", "assignees"))
+	properties.Set("acceptance_criteria", schemaProp("array", "acceptance_criteria"))
+	properties.Set("scope", schemaProp("array", "scope"))
 	properties.Set("progress_percentage", schemaProp("integer", "progress_percentage"))
 	properties.Set("progress_notes", schemaProp("string", "progress_notes"))
 	properties.Set("completion_summary", schemaProp("string", "completion_summary"))

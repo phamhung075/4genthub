@@ -7,18 +7,20 @@ import (
 
 // CreateTaskRequest is the request DTO for creating a task.
 type CreateTaskRequest struct {
-	Title           string
-	GitBranchID     string
-	Description     *string
-	Status          *string
-	Priority        *string
-	Details         string
-	EstimatedEffort string
-	Assignees       []string
-	Labels          []string
-	DueDate         *string
-	Dependencies    []string
-	UserID          *string
+	Title              string
+	GitBranchID        string
+	Description        *string
+	Status             *string
+	Priority           *string
+	Details            string
+	EstimatedEffort    string
+	Assignees          []string
+	Labels             []string
+	AcceptanceCriteria []string
+	Scope              []string
+	DueDate            *string
+	Dependencies       []string
+	UserID             *string
 }
 
 // NewCreateTaskRequest mirrors CreateTaskRequest.__post_init__: label and
@@ -26,6 +28,12 @@ type CreateTaskRequest struct {
 func NewCreateTaskRequest(r CreateTaskRequest) (*CreateTaskRequest, error) {
 	if r.Labels == nil {
 		r.Labels = []string{}
+	}
+	if r.AcceptanceCriteria == nil {
+		r.AcceptanceCriteria = []string{}
+	}
+	if r.Scope == nil {
+		r.Scope = []string{}
 	}
 	if r.Assignees == nil {
 		r.Assignees = []string{}

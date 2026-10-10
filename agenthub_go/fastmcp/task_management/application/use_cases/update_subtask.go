@@ -103,6 +103,13 @@ func (uc *UpdateSubtaskUseCase) Execute(ctx context.Context, request *subtaskdto
 			}
 		}
 
+		if request.AcceptanceCriteria != nil {
+			subtask.AcceptanceCriteria = append([]string{}, request.AcceptanceCriteria...)
+		}
+		if request.Scope != nil {
+			subtask.Scope = append([]string{}, request.Scope...)
+		}
+
 		if _, err := uc.subtaskRepository.Save(ctx, subtask); err != nil {
 			return nil, err
 		}

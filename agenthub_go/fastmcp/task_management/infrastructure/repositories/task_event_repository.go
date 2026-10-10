@@ -217,3 +217,28 @@ func (r *TaskEventRepository) ListAfter(ctx context.Context, taskID string, afte
 	}
 	return out, nil
 }
+
+// taskEventWholeLedgerPage is the page size Events reads in. It IS ListAfter's own default window,
+// so the whole-ledger read adds no second notion of "how much of the ledger is a page".
+const taskEventWholeLedgerPage = 100
+
+// Events returns the task's WHOLE ledger, oldest first - the read the resume brief makes, and the
+// reason it is not ListAfter(taskID, 0, 0): that call means "the first hundred entries", while a
+// brief names the LAST entry of each kind and would answer from the ledger's oldest entries instead,
+// with no way to tell. Paging over ListAfter keeps ONE query and one window decision in this file,
+// and terminates because every page advances past the seq it returned.
+func (r *TaskEventRepository) Events(ctx context.Context, taskID string) ([]*entities.TaskEvent, error) {
+	out := []*entities.TaskEvent{}
+	afterSeq := 0
+	for {
+		page, err := r.ListAfter(ctx, taskID, afterSeq, taskEventWholeLedgerPage)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, page...)
+		if len(page) < taskEventWholeLedgerPage {
+			return out, nil
+		}
+		afterSeq = page[len(page)-1].Seq
+	}
+}

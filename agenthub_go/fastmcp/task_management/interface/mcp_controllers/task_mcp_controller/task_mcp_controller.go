@@ -180,6 +180,12 @@ func (c *TaskMCPController) ManageTask(ctx context.Context, action string, userI
 	if v, ok := filteredKwargs.Get("dependencies"); ok && v != nil {
 		filteredKwargs.Set("dependencies", transform.TransformStringToList(v, "dependencies"))
 	}
+	if v, ok := filteredKwargs.Get("acceptance_criteria"); ok && v != nil {
+		filteredKwargs.Set("acceptance_criteria", transform.TransformStringToList(v, "acceptance_criteria"))
+	}
+	if v, ok := filteredKwargs.Get("scope"); ok && v != nil {
+		filteredKwargs.Set("scope", transform.TransformStringToList(v, "scope"))
+	}
 	if v, ok := filteredKwargs.Get("progress_percentage"); ok && v != nil {
 		validated, errorMsg := transform.ValidateProgressPercentage(v)
 		if errorMsg != nil {
@@ -274,6 +280,14 @@ func (c *TaskMCPController) validateRequest(action string, taskID *string, kwarg
 	case "get":
 		if taskID == nil {
 			return false, c.responseFormatter.CreateErrorResponse("get", "task_id is required",
+				factories.ErrorCodeValidation, nil)
+		}
+		return true, nil
+	case "resume":
+		// The brief is about ONE task, so resume has get's requirement and nothing else: the other
+		// fields it might carry are dropped by the factory's allowed set.
+		if taskID == nil {
+			return false, c.responseFormatter.CreateErrorResponse("resume", "task_id is required",
 				factories.ErrorCodeValidation, nil)
 		}
 		return true, nil

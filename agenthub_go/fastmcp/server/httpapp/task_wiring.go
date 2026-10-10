@@ -149,8 +149,13 @@ func (p taskFacadeProvider) TaskFacade(ctx context.Context, userID, projectID, g
 		SearchTasks:         use_cases.NewSearchTasksUseCase(taskRepo),
 		NextTask:            use_cases.NewNextTaskUseCase(taskRepo, nil),
 		DependencyResolver:  services.NewDependencyResolverService(taskRepo, userID),
-		ApplyContextFormat:  factories.ContextResponseApplyToTaskResponse,
-		CurrentUserID:       middleware.GetCurrentUserID,
+		// The resume brief's two missing seams: the ledger it is built from (the SAME repository the
+		// events route reads, scoped to the same resolved user the status ledger writes under) and the
+		// one task-level context document it carries.
+		ResumeLedger:       infrarepos.NewTaskEventRepository(p.sessions, ledgerUserID, ledgerBranchID),
+		ResumeTaskContext:  taskContextRepo,
+		ApplyContextFormat: factories.ContextResponseApplyToTaskResponse,
+		CurrentUserID:      middleware.GetCurrentUserID,
 		ProjectBranchLookup: func(ctx context.Context, id string) (*entities.OrderedMap[any], error) {
 			return nil, &AttributeError{"'ProjectManagementService' object has no attribute 'get_git_branch_by_id'"}
 		},

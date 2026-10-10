@@ -65,10 +65,19 @@ func (r *ORMSubtaskRepository) subtaskRepoModelToEntity(model *database.Subtask)
 	if err != nil {
 		return nil, err
 	}
+	acceptanceCriteria, err := repoDecodeStringList(model.AcceptanceCriteria)
+	if err != nil {
+		return nil, err
+	}
+	scope, err := repoDecodeStringList(model.Scope)
+	if err != nil {
+		return nil, err
+	}
 	createdAt, updatedAt := model.CreatedAt, model.UpdatedAt
 	st := entities.Subtask{
 		ID: &id, Title: model.Title, Description: model.Description, ParentTaskID: &parent,
 		Status: &status, Priority: &priority, Assignees: assignees,
+		AcceptanceCriteria: acceptanceCriteria, Scope: scope,
 		ProgressPercentage: int(model.ProgressPercentage), ProgressHistory: history,
 		ProgressCount: int(model.ProgressCount),
 	}
@@ -102,6 +111,8 @@ func (r *ORMSubtaskRepository) subtaskRepoEntityToModelDict(subtask *entities.Su
 		"status", status,
 		"priority", priority,
 		"assignees", assignees,
+		"acceptance_criteria", append([]string{}, subtask.AcceptanceCriteria...),
+		"scope", append([]string{}, subtask.Scope...),
 		"progress_percentage", subtask.ProgressPercentage,
 		"progress_history", subtask.ProgressHistory,
 		"progress_count", subtask.ProgressCount,

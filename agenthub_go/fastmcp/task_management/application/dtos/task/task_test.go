@@ -157,7 +157,7 @@ func TestTaskResponseToDict(t *testing.T) {
 		t.Fatalf("err = %v", err)
 	}
 	want := []string{"id", "title", "description", "status", "priority", "details", "estimatedEffort",
-		"assignees", "labels", "dependencies", "subtasks", "dueDate", "created_at", "updated_at",
+		"assignees", "acceptance_criteria", "scope", "labels", "dependencies", "subtasks", "dueDate", "created_at", "updated_at",
 		"git_branch_id", "project_id", "context_id", "context_data", "dependency_relationships",
 		"progress_percentage", "subtask_count", "completed_subtasks"}
 	if !reflect.DeepEqual(m.Keys(), want) {

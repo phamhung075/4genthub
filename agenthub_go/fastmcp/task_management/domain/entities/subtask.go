@@ -21,6 +21,8 @@ type Subtask struct {
 	Status             *value_objects.TaskStatus
 	Priority           *value_objects.Priority
 	Assignees          []string
+	AcceptanceCriteria []string
+	Scope              []string
 	ProgressPercentage int // 0-100
 	ProgressHistory    map[string]any
 	ProgressCount      int
@@ -68,6 +70,12 @@ func RestoreSubtask(st Subtask) (*Subtask, error) {
 	}
 	if s.Assignees == nil {
 		s.Assignees = []string{}
+	}
+	if s.AcceptanceCriteria == nil {
+		s.AcceptanceCriteria = []string{}
+	}
+	if s.Scope == nil {
+		s.Scope = []string{}
 	}
 	if s.ProgressHistory == nil {
 		s.ProgressHistory = map[string]any{}
@@ -354,6 +362,8 @@ func (s *Subtask) ToDict(includeParentID bool) (map[string]any, error) {
 		"id": id, "title": s.Title, "description": s.Description,
 		"status": s.Status.String(), "priority": s.Priority.String(),
 		"assignees":           append([]string{}, s.Assignees...),
+		"acceptance_criteria": append([]string{}, s.AcceptanceCriteria...),
+		"scope":               append([]string{}, s.Scope...),
 		"progress_percentage": s.ProgressPercentage, "created_at": nil, "updated_at": nil,
 	}
 	if s.CreatedAt != nil {
@@ -371,6 +381,8 @@ func (s *Subtask) ToDict(includeParentID bool) (map[string]any, error) {
 // SubtaskOptions are the kwargs Subtask.create passes through.
 type SubtaskOptions struct {
 	Assignees          []string
+	AcceptanceCriteria []string
+	Scope              []string
 	ProgressPercentage int
 	CreatedAt          *time.Time
 	UpdatedAt          *time.Time
@@ -381,7 +393,8 @@ func CreateSubtask(id value_objects.TaskId, title, description string, parent va
 	status *value_objects.TaskStatus, priority *value_objects.Priority, opts SubtaskOptions) (*Subtask, error) {
 	st := Subtask{
 		ID: &id, Title: title, Description: description, ParentTaskID: &parent, Status: status, Priority: priority,
-		Assignees: opts.Assignees, ProgressPercentage: opts.ProgressPercentage,
+		Assignees: opts.Assignees, AcceptanceCriteria: opts.AcceptanceCriteria, Scope: opts.Scope,
+		ProgressPercentage: opts.ProgressPercentage,
 	}
 	st.CreatedAt, st.UpdatedAt = opts.CreatedAt, opts.UpdatedAt
 	return NewSubtask(st)

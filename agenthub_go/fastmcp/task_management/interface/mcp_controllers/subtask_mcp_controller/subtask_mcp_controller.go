@@ -178,6 +178,7 @@ func (c *SubtaskMCPController) ManageSubtask(ctx context.Context, action, taskID
 		subtaskData := entities.NewOrderedMap[any]()
 		dataFields := []string{
 			"title", "description", "status", "priority", "assignees",
+			"acceptance_criteria", "scope",
 			"progress_percentage", "progress_notes", "completion_summary",
 			"testing_notes", "insights_found", "challenges_overcome",
 			"skills_learned", "next_recommendations", "deliverables",

@@ -114,6 +114,12 @@ func (a taskMCPFacade) GetTask(ctx context.Context, taskID string, includeContex
 	return a.f.GetTask(ctx, taskID, includeContext, true), nil
 }
 
+// ResumeBrief is handlers.TaskFacade.ResumeBrief: the brief is built in the application layer and
+// this adapter only delegates - the interface layer adds no shape of its own to it.
+func (a taskMCPFacade) ResumeBrief(ctx context.Context, taskID string) (*entities.OrderedMap[any], error) {
+	return a.f.ResumeBrief(ctx, taskID)
+}
+
 func (a taskMCPFacade) DeleteTask(ctx context.Context, taskID string, userID *string) *entities.OrderedMap[any] {
 	return a.f.DeleteTask(ctx, taskID, userID)
 }
