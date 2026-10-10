@@ -18,6 +18,13 @@ Track test suite changes, fixes, and improvements for agenthub.
 - EXTENDED `TestAssembleBundleFramesAndSkipsMissing`: a summary-less header, `bytes == len(text)`, the missing entry's role, and the trim asserted at the JOIN (untrimmed content would leave four newlines there) rather than by a trailing-suffix check.
 - VERIFIED: `gofmt -l` on the package prints nothing; `go vet ./fastmcp/seat_management/domain/contextpacks/` rc=0; `go test -count=1 ./fastmcp/seat_management/domain/contextpacks/` -> `ok 0.004s`, 46 passing cases. No importer exists, so nothing downstream moves.
 
+## 2026-10-10 - a test that can SEE the served payload: the `4a0a8c7a` progress regression, and the fixture that hid it
+
+- NEW: `agenthub-frontend/src/tests/components/TaskDetailsDialog.servedProgressPayload.test.tsx` - one case that renders the REAL `ProgressHistoryTimeline` (it deliberately does NOT mock it) through the real dialog against a payload shaped the way the DTO serializes a task since `4a0a8c7a`: `details` carries two `=== Progress N ===` blocks, and `progress_history` / `progress_count` are ABSENT rather than empty.
+- RED FIRST, MEASURED: with `TaskDetailsDialog`'s read flipped back to `displayTask.progress_history`, the case fails **`Unable to find an element with the text: Progress History`** - the block is guarded by the dropped field, so it renders nothing at all; restored, it passes. That is the property the acceptance asked for: a test that fails if the reads stop consuming what the API sends.
+- WHY THE OLD SUITE COULD NOT SEE IT: `src/tests/integration/dto-integration.test.ts` and `src/tests/types/api.types.test.ts` built their OWN payloads - `progress_history: {}`, `progress_count: 0`, a `progress_1` entry and `progress_count: 1` - and asserted the transform passed them through, so they stayed green whether or not the server sent the fields while users lost the timeline entirely. Both fixtures now describe the payload the API actually produces; their `details` assertions stay.
+- tsc tests config: **192 -> 191**, the single `TS18046` that left going with the self-built fixture that carried it, every other code identical. `npx tsc --noEmit -p .` rc=0, 0 errors (non-test scope).
+
 ## 2026-10-10 - the tests-config ratchet: 18 more off it, from `e2e/websocket-protocol-v2.test.tsx` - a signature fix, NOT the fixture family
 
 - BEFORE **210**, AFTER **192** (`npx tsc --noEmit -p tsconfig.tests.json`), this file **18 -> 0**. Error CODES compared rather than totals: project-wide TS2554 27 -> 11, TS2739 6 -> 5, TS2741 9 -> 8 and EVERY other code identical - no new code appears - and the per-file count diff is this file's line only.

@@ -106,6 +106,8 @@ export interface Subtask {
   completion_summary?: string;
   progress_history?: Record<string, import('./utilityTypes').ProgressHistoryEntry>; // Detailed progress tracking
   progress_count?: number; // Number of progress entries
+  /** The joined progress history text, served once the additive SubtaskDTO re-expose lands (4a0a8c7a removed the two fields above from the payloads). */
+  details?: string;
 }
 
 export interface Project {

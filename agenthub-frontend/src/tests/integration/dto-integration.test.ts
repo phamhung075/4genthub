@@ -148,9 +148,7 @@ describe('DTO Integration Tests - Backend to Frontend', () => {
             }
           },
           dependency_relationships: null,
-          progress_percentage: 0,
-          progress_history: {},
-          progress_count: 0
+          progress_percentage: 0
         };
 
         (global.fetch as any).mockResolvedValue({
@@ -175,7 +173,6 @@ describe('DTO Integration Tests - Backend to Frontend', () => {
         expect(result).toHaveProperty('git_branch_id');
         expect(result).toHaveProperty('context_id');
         expect(result).toHaveProperty('progress_percentage');
-        expect(result).toHaveProperty('progress_history');
       });
     });
 
@@ -241,14 +238,7 @@ describe('DTO Integration Tests - Backend to Frontend', () => {
           dependencies: [],
           subtasks: [],
           created_at: '2025-09-30T10:00:00Z',
-          updated_at: '2025-09-30T10:30:00Z',
-          progress_history: {
-            progress_1: {
-              content: 'Updated to 50%',
-              timestamp: '2025-09-30T10:30:00Z'
-            }
-          },
-          progress_count: 1
+          updated_at: '2025-09-30T10:30:00Z'
         };
 
         (global.fetch as any).mockResolvedValue({
@@ -262,7 +252,6 @@ describe('DTO Integration Tests - Backend to Frontend', () => {
         expect(result.title).toBe(updates.title);
         expect(result.status).toBe(updates.status);
         expect(result.progress_percentage).toBe(updates.progress_percentage);
-        expect(result.progress_count).toBe(1);
       });
     });
 

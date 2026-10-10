@@ -299,12 +299,16 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
                   <div>
                     <h4 className="font-semibold text-sm mb-3 text-text dark:text-text">Assignment & Organization</h4>
                     <div className="space-y-3 theme-context-insights">
-                      {/* Progress History Timeline */}
-                      {displayTask.progress_history && (
+                      {/* Progress History Timeline. 4a0a8c7a dropped progress_history and
+                          progress_count from this payload and serves the joined history text as
+                          `details` instead, so the guard and the prop follow the field that is
+                          actually served - reading the dropped ones made this block silently
+                          never render, and no test could see it because the test built its own
+                          payload. */}
+                      {displayTask.details && (
                         <div>
                           <ProgressHistoryTimeline
-                            progressHistory={displayTask.progress_history}
-                            progressCount={displayTask.progress_count}
+                            progressHistory={displayTask.details}
                             variant="full"
                             className="mt-1"
                           />
