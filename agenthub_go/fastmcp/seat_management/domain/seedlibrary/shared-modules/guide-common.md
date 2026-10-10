@@ -23,6 +23,9 @@ Other seats edit the same tree. Commit by pathspec and do not stage first: `git 
 
 Run the script tests with the canonical command, always with `--noconftest`, from the repository root: `python3 -m pytest --noconftest -p no:cacheprovider scripts/tests -q`. The flag is not decoration: the repository conftest reaches for PostgreSQL before every test, so without it the run HANGS rather than fails. **Read the exit code WITHOUT a pipe:** a pipeline reports the LAST command's status, so `... | tail` reports 0 whatever pytest said; the run is green only when pytest itself exits 0 and prints the count.
 
+### Writing documentation
+**A doc names no commit hash, no count, no line number and no measured-on-date note; it points to the code or the command that gives the answer.** One page per topic, updated in place, with no per-change entries. `CHANGELOG.md` carries only what a user or operator would notice, and an entry there must record a change. A claim that needs a number states the command that prints it. Stop commits whose only purpose is to re-measure a number in a doc: delete the number instead. This page is one of the texts `guides.lock.json` pins, so a change here is re-recorded in that lock, in the same commit, or the lock's own tests go red.
+
 ### Startup and the approval gate
 On a seat whose policy is not `builtin:yolo` — `locked`, `standard`, `open`, or no policy at all — the launch posture is `floor` and the runtime gates **every** tool call, the startup `rig whoami --json` included. The prompt has no timeout (`ask.timeout: 0` disables the auto-select), so an unanswered call waits rather than failing: if your first call never returns, that is the approval gate, a human must answer it, and a floor seat is not autonomous. Mechanism with file:line, and the two-line fix this repo already has a home for: `ai_docs/operations/seat-approval-and-the-startup-call.md`.
 
