@@ -460,33 +460,33 @@ code as authoritative and flags the discrepancy in §5.
 ## 3. Tables
 
 The runtime table registry is `database.Tables` (base package,
-`fastmcp/task_management/infrastructure/database/models.go:589`). Two packages append to
+`fastmcp/task_management/infrastructure/database/models.go:600`). Two packages append to
 it in `init()`; `ProductionTables` is deliberately separate.
 
 ### 3.1 Core task-side — `Tables` in `models.go` (20)
 
 | Table | Model | Declaration |
 |---|---|---|
-| `agent_sessions` | `AgentSession` | `models.go:590` |
-| `agents` | `Agent` | `models.go:605` |
-| `api_tokens` | `APIToken` | `models.go:623` |
-| `context_delegations` | `ContextDelegation` | `models.go:640` |
-| `context_inheritance_cache` | `ContextInheritanceCache` | `models.go:669` |
-| `global_contexts` | `GlobalContext` | `models.go:693` |
-| `labels` | `Label` | `models.go:712` |
-| `missed_notifications` | `MissedNotification` | `models.go:723` |
-| `projects` | `Project` | `models.go:738` |
-| `templates` | `Template` | `models.go:750` |
-| `agent_session_events` | `AgentSessionEvent` | `models.go:771` |
-| `project_contexts` | `ProjectContext` | `models.go:783` |
-| `project_git_branchs` | `ProjectGitBranch` | `models.go:805` |
-| `branch_contexts` | `BranchContext` | `models.go:823` |
-| `tasks` | `Task` | `models.go:844` |
-| `subtasks` | `Subtask` | `models.go:880` |
-| `task_assignees` | `TaskAssignee` | `models.go:914` |
-| `task_contexts` | `TaskContext` | `models.go:927` |
-| `task_dependencies` | `TaskDependency` | `models.go:952` |
-| `task_labels` | `TaskLabel` | `models.go:962` |
+| `agent_sessions` | `AgentSession` | `models.go:601` |
+| `agents` | `Agent` | `models.go:618` |
+| `api_tokens` | `APIToken` | `models.go:636` |
+| `context_delegations` | `ContextDelegation` | `models.go:653` |
+| `context_inheritance_cache` | `ContextInheritanceCache` | `models.go:682` |
+| `global_contexts` | `GlobalContext` | `models.go:706` |
+| `labels` | `Label` | `models.go:725` |
+| `missed_notifications` | `MissedNotification` | `models.go:736` |
+| `projects` | `Project` | `models.go:751` |
+| `templates` | `Template` | `models.go:763` |
+| `agent_session_events` | `AgentSessionEvent` | `models.go:784` |
+| `project_contexts` | `ProjectContext` | `models.go:796` |
+| `project_git_branchs` | `ProjectGitBranch` | `models.go:818` |
+| `branch_contexts` | `BranchContext` | `models.go:836` |
+| `tasks` | `Task` | `models.go:857` |
+| `subtasks` | `Subtask` | `models.go:893` |
+| `task_assignees` | `TaskAssignee` | `models.go:927` |
+| `task_contexts` | `TaskContext` | `models.go:940` |
+| `task_dependencies` | `TaskDependency` | `models.go:965` |
+| `task_labels` | `TaskLabel` | `models.go:975` |
 
 ### 3.2 Auth tables — appended to `Tables` via `init()`
 
