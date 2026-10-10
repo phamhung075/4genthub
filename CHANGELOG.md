@@ -1,3 +1,11 @@
+## NEXT_GEN's D3 box claimed no human-notification path existed, and the dashboard-push consumer had already shipped
+
+### Changed
+- `agenthub_go/NEXT_GEN.md` D3: the box claimed that no human-notification path exists in `agenthub_go`, `scripts/` or `agenthub-frontend/src`, and that `NotificationBell.tsx` is task notifications rather than this. Both are false at the tip — the realtime hook consumes the realtime `notification` frame and adds it to the notification store, the bell that renders it is mounted in the header, and the server assigns the missed-notification store that the websocket replay and the offline store path read, so a frame missed while no browser was connected is delivered on the next connect. The box now records the decision (dashboard push: the only option with a built consumer, and the one that reaches a human who was offline) and says plainly that the PRODUCER is what is not built. It points at the code rather than at line numbers, per the owner's docs rule.
+
+### Verified
+- Read, not run: no test asserts `NEXT_GEN.md`'s text. The claims are the code's, checked in `agenthub-frontend/src/hooks/useRealtimeSync.ts`, `agenthub-frontend/src/store/notifications.ts`, `agenthub-frontend/src/components/NotificationBell.tsx`, `agenthub-frontend/src/components/Header.tsx` and `agenthub_go/fastmcp/server/httpapp/missed_notification_wiring.go`.
+
 ## Anyone could forge a notification for any user through POST /api/v2/broadcast/notify
 
 ### Changed
