@@ -7,6 +7,7 @@ package types
 
 import (
 	dom "agenthub/fastmcp/task_management/domain"
+	"agenthub/fastmcp/task_management/domain/entities"
 	"agenthub/fastmcp/task_management/domain/value_objects"
 )
 
@@ -166,6 +167,22 @@ func getValueString(obj any, key, def string) string {
 	return pyStrOf(pyGetattr(obj, key, def))
 }
 
+// subtaskDetails is a subtask DTO's details field: the subtask's OWN joined progress history, or nil
+// when it has none. The task's equivalent is entities.Task.GetProgressHistoryText, reached through
+// task_response.go; the subtask read serves the repository's dict rather than the entity, so the join
+// (entities.ProgressHistoryText, the one implementation of the ordering rule) is applied here.
+func subtaskDetails(history any) *string {
+	m, ok := history.(map[string]any)
+	if !ok {
+		return nil
+	}
+	text := entities.ProgressHistoryText(m)
+	if text == "" {
+		return nil
+	}
+	return &text
+}
+
 // SubtaskToDTO converts a domain Subtask entity or dict to SubtaskDTO.
 func SubtaskToDTO(subtask any) (*SubtaskDTO, error) {
 	if isPyDict(subtask) {
@@ -196,6 +213,7 @@ func SubtaskToDTO(subtask any) (*SubtaskDTO, error) {
 			Priority:           pyStrOf(priority),
 			Assignees:          assignees,
 			AssigneesCount:     len(assignees),
+			Details:            subtaskDetails(pyDictGetDefault(subtask, "progress_history", nil)),
 			ProgressPercentage: optIntAny(pyDictGetDefault(subtask, "progress_percentage", nil)),
 			CreatedAt:          strPtrOrNil(formatDatetime(pyDictGetDefault(subtask, "created_at", nil))),
 			UpdatedAt:          strPtrOrNil(formatDatetime(pyDictGetDefault(subtask, "updated_at", nil))),
@@ -219,6 +237,7 @@ func SubtaskToDTO(subtask any) (*SubtaskDTO, error) {
 		Priority:           pyStrOf(pyGetattr(subtask, "priority", "medium")),
 		Assignees:          assignees,
 		AssigneesCount:     len(assignees),
+		Details:            subtaskDetails(pyGetattr(subtask, "progress_history", nil)),
 		ProgressPercentage: optIntAny(pyGetattr(subtask, "progress_percentage", nil)),
 		CreatedAt:          strPtrOrNil(formatDatetime(pyGetattr(subtask, "created_at", nil))),
 		UpdatedAt:          strPtrOrNil(formatDatetime(pyGetattr(subtask, "updated_at", nil))),

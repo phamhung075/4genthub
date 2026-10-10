@@ -181,6 +181,57 @@ func TestSubtaskToDTODictParentFallback(t *testing.T) {
 	}
 }
 
+// A subtask's OWN progress history is served as `details`, the way a task's is served from
+// entities.Task.GetProgressHistoryText (task_response.go:101, :140, :196), and the field is null when
+// the subtask has no progress. The entries are inserted out of order on purpose: the served text is
+// ordered by progress NUMBER, not by the map's key order.
+func TestSubtaskDTOservesDetailsFromItsOwnProgressHistory(t *testing.T) {
+	withProgress := dict(
+		"id", "s1", "title", "S", "status", "todo", "priority", "medium", "task_id", "p1",
+		"progress_history", map[string]any{
+			"progress_2": map[string]any{"content": "=== Progress 2 ===\nsecond", "progress_number": 2},
+			"progress_1": map[string]any{"content": "=== Progress 1 ===\nfirst", "progress_number": 1},
+		},
+	)
+	dto, err := SubtaskToDTO(withProgress)
+	if err != nil {
+		t.Fatalf("SubtaskToDTO: %v", err)
+	}
+	want := "=== Progress 1 ===\nfirst\n\n=== Progress 2 ===\nsecond"
+	if dto.Details == nil || *dto.Details != want {
+		t.Fatalf("details = %v, want the joined history in progress-number order", dto.Details)
+	}
+	if served, ok := dto.ModelDump().Get("details"); !ok || served != want {
+		t.Fatalf("served details = %v, want the joined history", served)
+	}
+
+	withoutProgress, err := SubtaskToDTO(dict(
+		"id", "s2", "title", "S", "status", "todo", "priority", "medium", "task_id", "p1",
+	))
+	if err != nil {
+		t.Fatalf("SubtaskToDTO: %v", err)
+	}
+	if withoutProgress.Details != nil {
+		t.Fatalf("details = %q, want nil for a subtask with no progress", *withoutProgress.Details)
+	}
+	if served, ok := withoutProgress.ModelDump().Get("details"); !ok || served != nil {
+		t.Fatalf("a subtask with no progress serves details as null, got %v", served)
+	}
+
+	// The entity branch reads the same field through pyGetattr (progress_history -> ProgressHistory).
+	fromEntity, err := SubtaskToDTO(&entities.Subtask{
+		ProgressHistory: map[string]any{
+			"progress_1": map[string]any{"content": "solo entry", "progress_number": 1},
+		},
+	})
+	if err != nil {
+		t.Fatalf("SubtaskToDTO(entity): %v", err)
+	}
+	if fromEntity.Details == nil || *fromEntity.Details != "solo entry" {
+		t.Fatalf("entity details = %v, want %q", fromEntity.Details, "solo entry")
+	}
+}
+
 func TestSummaryConverters(t *testing.T) {
 	task := dict(
 		"id", "t1", "title", "T", "status", "done", "priority", "high",

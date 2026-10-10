@@ -481,14 +481,16 @@ func numberOf(v any) float64 {
 	return 0
 }
 
-// GetProgressHistoryText joins the history entries ordered by progress number.
+// ProgressHistoryText joins the history entries ordered by progress number. A task and a subtask write
+// the same entry shape (content + progress_number: Task.AppendProgress and Subtask.AppendProgress), so
+// the join lives once and both the task's response and the subtask's DTO call it.
 //
 // An entry that is not an object with a string `content` contributes NOTHING: it is skipped, not rendered.
 // Reading through a value that is not a map yields a nil map, a nil map yields "", and the entry then renders
 // as an EMPTY line that is indistinguishable from a real note whose text is blank - which is how two notes
 // were reported as lost before this function's caller was corrected at the decode boundary.
-func (t *Task) GetProgressHistoryText() string {
-	if len(t.ProgressHistory) == 0 {
+func ProgressHistoryText(history map[string]any) string {
+	if len(history) == 0 {
 		return ""
 	}
 	type entry struct {
@@ -497,7 +499,7 @@ func (t *Task) GetProgressHistoryText() string {
 		content string
 	}
 	entries := []entry{}
-	for k, v := range t.ProgressHistory {
+	for k, v := range history {
 		// BOTH assertions are checked, and the entry is skipped when either fails.
 		m, ok := v.(map[string]any)
 		if !ok {
@@ -521,6 +523,9 @@ func (t *Task) GetProgressHistoryText() string {
 	}
 	return strings.Join(parts, "\n\n")
 }
+
+// GetProgressHistoryText joins this task's history entries ordered by progress number.
+func (t *Task) GetProgressHistoryText() string { return ProgressHistoryText(t.ProgressHistory) }
 
 func (t *Task) AddDependency(dep value_objects.TaskId) error {
 	if t.ID != nil && dep == *t.ID {
