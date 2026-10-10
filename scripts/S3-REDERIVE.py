@@ -20,16 +20,26 @@ between base and rev, `STALE->EARLIER` was already stale before the base. EVERY 
 fails the run; the classification says who moved it, not whether it is acceptable.
 
 WHAT IT DOES NOT COVER, said here rather than left to be assumed clean:
-  * THE CITATION-LOOKING TOKENS ON NON-TABLE LINES, which is the real uncovered surface. Measured at
-    the commit that added this file, by `re.finditer(r"(?:[\w./-]+\.(go|py|sql|ts|tsx|md|json)|)\:(\d+)")`
-    over `ai_docs/api-integration/surface-inventory.md`: the two instruments resolve TABLE ROWS and
-    nothing else - §1's route rows (144) by `scripts/CITATION-AUDIT.py`, §3.1-§3.4's rows (46 rows,
-    66 anchors) here - while 149 such tokens sit on NON-table lines: §2.1 29, §2.3 17, Appendix A 16,
-    §1's own prose 15 + 11 + 4, §3.3 14, §4 10, §3.6 7, §5 7, §2.5 5, §2.4 4, §2.2 3, §3.4 2, and
-    the rest spread thinner. No instrument resolves them, and SOME ARE QUOTATIONS, which the
-    inventory's own rule forbids "repairing": a citation asserts what the code says now, a quotation
-    asserts what a document said then. They stay DECLARED-UNCOVERED rather than half-covered by a
-    weaker check under a stronger name.
+  * THE ANCHORS OUTSIDE BOTH, SPLIT BY WHERE THEY SIT, because the numbers are only checkable with
+    the pattern: `re.finditer(r"(?:[\w./-]+\.(go|py|sql|ts|tsx|md|json)|)\:(\d+)")` over
+    `ai_docs/api-integration/surface-inventory.md`, counted as TOKENS at this commit.
+      - WHAT THE TWO INSTRUMENTS RESOLVE are table rows, and only their own: §1's route rows (144
+        anchors, `scripts/CITATION-AUDIT.py`) and §3.1-§3.4's rows (46 rows, 66 anchors, this file's
+        instrument). That is NOT every table row: 11 further table ROWS carry 17 anchors neither
+        reads, because CITATION-AUDIT's row shape needs a METHOD in the first cell and §2.3's
+        published-tools table puts a tool NAME there (10 rows, lines 402-411, 15 anchors - some of
+        those rows carry two or three `:NN` refs, which is why rows and tokens differ), plus §4's
+        Gone list (1 row, line 568, 2 anchors).
+      - ON NON-TABLE LINES: 132 anchors over 51 lines - §2.1 29, Appendix A 16, §1's own prose
+        15 + 11 + 4, §3.3 14, §4 8, §3.6 7, §5 7, §2.5 5, §2.4 4, §2.2 3, §2.3 2, §3.4 2, and 5
+        spread thinner (§1.16, §1.17, §1.21, §3., §3.5 - one each).
+      - TOTAL OUTSIDE BOTH: 149 = 132 + 17. An earlier version of this bullet mixed the two surfaces
+        into ONE list, which is how a correct total arrived with a breakdown that summed to 144;
+        re-run the pattern rather than adding the prose.
+    NO INSTRUMENT RESOLVES THOSE 149, AND SOME ARE QUOTATIONS, which the inventory's own rule forbids
+    "repairing": a citation asserts what the code says now, a quotation asserts what a document said
+    then. They stay DECLARED-UNCOVERED rather than half-covered by a weaker check under a stronger
+    name.
   * NUMBERS are a different instrument's business, and §3.5's are already anchored:
     `scripts/COUNTS-AUDIT.py` reads the document's headline figures by anchored pattern (11 keys,
     10 of them stating a figure in the document - §3.5's seat-table, registered-total and
