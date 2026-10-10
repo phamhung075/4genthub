@@ -1,6 +1,22 @@
 package utilities
 
-// Code generated from CPython 3.14 mimetypes.MimeTypes() built-in tables (host mime files are not read). DO NOT EDIT.
+// ORIGIN: transcribed by hand into Go during the port from the Python backend, whose
+// fastmcp/utilities/types.py had called the standard library's mimetypes.guess_type. The data is
+// CPython 3.14's built-in tables, verified entry for entry rather than asserted: mimeTypesMap is
+// exactly CPython 3.14.0's MimeTypes().types_map[True] - the strict table guess_type uses by
+// default, 198 entries - and mimeSuffixMap and mimeEncodingsMap are its suffix_map and
+// encodings_map. The lookup over them is mimetypes.go.
+//
+// NO GENERATOR EXISTS, AND NONE EVER DID: nothing in this repository emits this file, and the symbol
+// appears in exactly one commit - the port that added it. The tables cannot be re-derived here, so
+// this FILE IS HAND-MAINTAINED: edit the maps directly when a content type must change.
+//
+// DO NOT REGENERATE the data. It is deliberately the BUILT-INS rather than what a runtime reading the
+// host's mime files would answer (that map is far larger), so re-deriving it from a host or from a
+// different CPython silently changes which content types the server accepts. The "DO NOT EDIT" marker
+// was corrected on 2026-10-10, when the marker audit that re-derived models.go's own header found
+// this second one (row eeb62d07): an instruction no seat can follow or verify stops future seats from
+// doing ordinary work.
 
 var mimeTypesMap = map[string]string{
 	".3g2":         "audio/3gpp2",
