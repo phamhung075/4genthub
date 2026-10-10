@@ -2,6 +2,12 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-10 - the ensurer that repairs task_events, and the cases that made it honest
+
+- ADDED `agenthub_go/fastmcp/task_management/infrastructure/database/task_event_ensurer_test.go` (needs `AGENTHUB_TEST_PG_URL`; skips loudly without it): the FRESH database is left alone (createAll already put the columns and checks there, so a plain ADD COLUMN would fail every boot); the pre-P1 shape WITH ROWS is backfilled per user in `(created_at, id)` order above that user's current maximum, with `is_nullable = NO`, `uq_task_event_user_seq` live, and every `(user_id, user_seq)` pair distinct; a SECOND RUN applies nothing, and the numbers prove it rather than the absence of an error; the WRITE PATH WORKS for both shapes afterwards — a status change and a progress entry, each read back with an advancing `user_seq` — which is the case that caught the second missing column and the actor check; the widening on an EMPTY old-vocabulary table then accepts a `seat` actor and a `progress` kind; and a POPULATED old-vocabulary table is refused BY NAME (`ck_task_event_actor_kind`) while the columns still land, because rewriting those actor values would be a data move and is the owner's call.
+- ADDED `task_event_ensurer_definition_test.go` (no database): the ensurer's two vocabularies, and the columns it adds, are compared against the `task_events` TableDef's own DDL, so a later vocabulary change fails here rather than shipping an ensurer that widens an existing database to a list nobody uses any more.
+- VERIFIED: `gofmt -l cmd fastmcp internal` printed nothing; `go vet ./...` clean; `go test ./...` with the database present — zero failures.
+
 ## 2026-10-10 - the migration runner's tests: order, idempotence, atomicity, and the baseline mark
 
 - ADDED `agenthub_go/fastmcp/task_management/infrastructure/database/migration_runner_test.go` (no database): the loader's filename ordering with the suffix stripped and non-SQL files ignored; `validateSet` refusing a duplicate, an out-of-order, a nameless and a SQL-less step, each by name; and that the embedded set a boot actually applies is well-formed.
