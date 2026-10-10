@@ -2,6 +2,13 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-10 - the env-family guard stops failing on a clean checkout: check-ignore's exit 1 is an answer, not an exception
+
+- FIXED, one file, staged by explicit path: `scripts/tests/test_gitignore_env_family.py`, `_hidden_with_rule`. It ran `git check-ignore` through `_git(..., check=True)`, so the answer "nothing here is ignored" (exit 1) arrived as `subprocess.CalledProcessError`. The call now passes `check=False`, reads exit 0 and 1 as git's answers and raises on anything else, carrying git's stderr. `_git` keeps `check=True`: its other callers are `git ls-files`, whose only success is exit 0. Row `0caa7fe4`, the reviewer's "changes requested" on `609b3c26`.
+- THE DEFECT IN ITS TWO STATES, MEASURED RATHER THAN ARGUED. CLEAN (detached worktree at `609b3c26`; its env-family set is the three TRACKED samples `.env.sample`, `.env.claude`, `agenthub-frontend/.env.sample`, all exposed by the negations, and its untracked-plus-ignored listing is EMPTY): BEFORE -> `2 failed, 2 passed`, both failures `CalledProcessError: ... 'git check-ignore -v -z --stdin' ... exit status 1`; AFTER, the fixed file copied in -> `4 passed`. THIS POD (`.env.dev` present and ignored) -> `4 passed in 3.32s`, before and after - which is why the defect could not be seen from here.
+- NOT WEAKENED, and this is the assertion the fix sits beside: an undeclared `.env.probe` written into the CLEAN worktree -> `1 failed, 3 passed`, the failure naming the file AND the rule (`.env.probe  <- hidden by '*env.*' (.gitignore:15)`); the probe deleted -> `4 passed` again. The declaration check, the "declared and present must stay hidden" direction, the `.gitignore` pattern assertions and the sample/negation assertions were not touched.
+- The worktree was removed afterwards (`git worktree remove --force`), and `.gitignore` is unmodified in both states: the change is one call site, not a rule change.
+
 ## 2026-10-10 - the sessions list carries the seat pair on the wire: the missing half was the proof, not the field
 
 - NEW, in the existing file and staged by explicit path: `fastmcp/server/httpapp/ws_connector_test.go` gains `TestSessionListCarriesTheSeatPairTheConnectorReported` and `TestSessionListCarriesAnUnreportedSeatPairAsNull`, both asserting over the DECODED body of `GET /api/v2/sessions` - the response DTO the dashboard reads - rather than over a struct or a repository row. Row `54e5c4ce`.

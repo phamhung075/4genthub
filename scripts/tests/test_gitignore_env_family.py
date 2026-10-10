@@ -110,14 +110,29 @@ def _hidden_with_rule(paths: set[str]) -> dict[str, str]:
 
     Asked through `git check-ignore`, so the last matching rule wins exactly as it does for git, and a
     path that is NOT hidden is simply absent from the answer.
+
+    EXIT 1 IS AN ANSWER HERE, and this is the only call in this file that must read it: `check-ignore`
+    exits 1 when NOTHING it was asked about is ignored, which is exactly what a CLEAN CHECKOUT looks
+    like - the tracked samples are the only family members present, and the negations expose them, so
+    the answer is legitimately empty. `_git`'s default `check=True` turned that ordinary state into a
+    `CalledProcessError`, which made this guard fail on a fresh clone (`2 failed, 2 passed`) while it
+    passed on the pod that has `.env.dev`. Hence `check=False` below and the two exit codes: 0 and 1
+    are git's answers, and any other exit - 128 for an unusable repository, say - still raises.
     """
     if not paths:
         return {}
-    answer = _git(
-        "check-ignore", "-v", "-z", "--stdin",
-        stdin=b"".join(path.encode("utf-8", "surrogateescape") + b"\0" for path in sorted(paths)),
+    answer = subprocess.run(
+        ["git", "check-ignore", "-v", "-z", "--stdin"],
+        cwd=REPO_ROOT,
+        input=b"".join(path.encode("utf-8", "surrogateescape") + b"\0" for path in sorted(paths)),
+        capture_output=True,
+        check=False,
     )
-    fields = answer.decode("utf-8", "surrogateescape").split("\0")
+    if answer.returncode not in (0, 1):
+        raise subprocess.CalledProcessError(
+            answer.returncode, answer.args, answer.stdout, answer.stderr
+        )
+    fields = answer.stdout.decode("utf-8", "surrogateescape").split("\0")
     rules = {}
     for index in range(0, len(fields) - 3, 4):
         source, line, pattern, path = fields[index : index + 4]
