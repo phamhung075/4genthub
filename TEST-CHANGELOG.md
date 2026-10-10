@@ -2,6 +2,13 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-10 - the broken-schema case: a status write whose ledger entry cannot be written leaves the row alone
+
+- ADDED `agenthub_go/fastmcp/task_management/infrastructure/database/status_write_failure_integration_test.go` (needs `AGENTHUB_TEST_PG_URL`; skips loudly without it): the incident's shape — `task_events` with the current columns MINUS `user_seq` — driven through the PRODUCTION seam (`StatusLedger.SaveStatus` over the wired recorder, the row written through the session manager exactly as the repository's `Save` does). It asserts BOTH halves: the status write fails naming `user_seq`, and the row still reads `todo` afterwards. The measured answer is that the shared transaction holds.
+- WHY IT EXISTS: the code reading and the field observation disagreed, and this is what settled it. The fixture relaxes `tasks`' NOT NULL columns and drops `user_seq`; both are fixture conveniences named in the file, not part of what it measures.
+- THE INSTRUMENT LESSON, also in the file: the first version wrote the row on the POOL rather than through the session manager, which auto-commits, and the case correctly reported a committed row — a harness manufacturing the finding it was looking for. The closure now goes through `WithSession`, which is what reuses the ledger's transaction.
+- VERIFIED: `go test -count=1 ./fastmcp/task_management/infrastructure/database/` with the database present, zero failures.
+
 ## 2026-10-10 - the ensurer that repairs task_events, and the cases that made it honest
 
 - ADDED `agenthub_go/fastmcp/task_management/infrastructure/database/task_event_ensurer_test.go` (needs `AGENTHUB_TEST_PG_URL`; skips loudly without it): the FRESH database is left alone (createAll already put the columns and checks there, so a plain ADD COLUMN would fail every boot); the pre-P1 shape WITH ROWS is backfilled per user in `(created_at, id)` order above that user's current maximum, with `is_nullable = NO`, `uq_task_event_user_seq` live, and every `(user_id, user_seq)` pair distinct; a SECOND RUN applies nothing, and the numbers prove it rather than the absence of an error; the WRITE PATH WORKS for both shapes afterwards — a status change and a progress entry, each read back with an advancing `user_seq` — which is the case that caught the second missing column and the actor check; the widening on an EMPTY old-vocabulary table then accepts a `seat` actor and a `progress` kind; and a POPULATED old-vocabulary table is refused BY NAME (`ck_task_event_actor_kind`) while the columns still land, because rewriting those actor values would be a data move and is the owner's call.
