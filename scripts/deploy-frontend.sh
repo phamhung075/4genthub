@@ -66,16 +66,16 @@ fi
 # Build Docker image if not skipped
 if [ "$SKIP_BUILD" != "true" ]; then
     print_status "Building frontend Docker image..."
-    
+
     cd agenthub-frontend
-    
+
     # Determine backend URL based on environment
     if [ "$ENVIRONMENT" == "staging" ]; then
         BACKEND_URL="https://${CAPROVER_BACKEND_APP_NAME:-agenthub-backend}-staging.${CAPROVER_DOMAIN:-your-domain.com}"
     else
         BACKEND_URL="https://${CAPROVER_BACKEND_APP_NAME:-agenthub-backend}.${CAPROVER_DOMAIN:-your-domain.com}"
     fi
-    
+
     # Create production environment file
     cat > .env.production << EOF
 VITE_API_URL=$BACKEND_URL
@@ -87,9 +87,9 @@ VITE_BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 VITE_BUILD_SHA=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 VITE_ENV=$ENVIRONMENT
 EOF
-    
+
     print_status "Created frontend environment configuration"
-    
+
     if [ -f "Dockerfile.production" ]; then
         # Build with optimizations
         DOCKER_BUILDKIT=1 docker build \
@@ -101,7 +101,7 @@ EOF
             --build-arg VCS_REF=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown") \
             .
         print_status "Frontend image built successfully"
-        
+
         # Push to registry
         docker push $DOCKER_NAMESPACE/agenthub-frontend:latest
         docker push $DOCKER_NAMESPACE/agenthub-frontend:$ENVIRONMENT
@@ -109,7 +109,7 @@ EOF
     else
         print_error "Dockerfile.production not found in agenthub-frontend directory"
     fi
-    
+
     cd ..
 fi
 
@@ -179,6 +179,41 @@ for path in "${STATIC_PATHS[@]}"; do
     fi
 done
 
+# Verify the LIVE build, not merely that a path answers.
+#
+# WHY THIS EXISTS: every check above asks whether a URL ANSWERS, and none asks WHICH BUILD is
+# answering. On 2026-10-10 that is how this script printed "Frontend deployment completed
+# successfully!" against a frontend built two days and 165 commits earlier - the composer work
+# missing and the deleted scripts/openrig_*.py names still on screen - while the deploy looked
+# green. A reachable page proves a server, not a deploy.
+print_status "Verifying the live frontend IS the build just made..."
+
+if ! command -v python3 > /dev/null 2>&1; then
+    print_error "python3 is required to verify which build is live"
+fi
+
+CENSUS="scripts/check_served_frontend.py"
+if [ ! -f "$CENSUS" ]; then
+    print_error "the census script is missing ($CENSUS) - cannot tell which build is live"
+fi
+
+if [ -f "agenthub-frontend/build/index.html" ]; then
+    # Identity, not reachability: the served entry chunk must be THIS build's entry chunk, and every
+    # script the served app is composed of must exist in it. This is the assertion a stale live
+    # bundle cannot pass.
+    if python3 "$CENSUS" --base-url "$FRONTEND_URL" --expect-dist agenthub-frontend/build; then
+        print_status "The live frontend IS the build just made"
+    else
+        print_error "the LIVE frontend is NOT the build just made - a stale or mismatched bundle is being served (census above; row b70278f2)"
+    fi
+else
+    # SKIP_BUILD leaves nothing to compare against, so identity cannot be checked. The census alone
+    # still refuses a pre-fix bundle - that is the failure that mattered - but it is the weaker test,
+    # so it is named as such rather than passed off as the same thing.
+    print_warning "agenthub-frontend/build/index.html is absent, so identity cannot be checked; falling back to the census"
+    python3 "$CENSUS" --base-url "$FRONTEND_URL" || print_error "the live frontend is not a build of HEAD - a stale bundle is being served (row b70278f2)"
+fi
+
 # Verify backend connectivity from frontend
 print_status "Testing frontend-backend connectivity..."
 # This is a basic connectivity test - in reality you'd test actual API calls
@@ -197,11 +232,11 @@ fi
 # Performance check for production
 if [ "$ENVIRONMENT" == "production" ]; then
     print_status "Running production performance check..."
-    
+
     # Measure response time
     RESPONSE_TIME=$(curl -o /dev/null -s -w '%{time_total}' "$FRONTEND_URL")
     echo "Frontend response time: ${RESPONSE_TIME}s"
-    
+
     # Check if response time is acceptable (< 3 seconds)
     if (( $(echo "$RESPONSE_TIME > 3.0" | bc -l) )); then
         print_warning "Frontend response time exceeds 3s threshold"
