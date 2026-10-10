@@ -20,7 +20,8 @@ import (
 func TestEnsureSeatColumnsExistOnOldSchema(t *testing.T) {
 	admin := os.Getenv("SEAT_TEST_DATABASE_URL")
 	if admin == "" {
-		t.Skip("SEAT_TEST_DATABASE_URL not set")
+		t.Skip("SKIPPED, NOT PASSED: SEAT_TEST_DATABASE_URL is unset, so this case did NOT run - " +
+			"it applies the seat schema to a PostgreSQL it is given; bash tools/testpg/start.sh prints a URL")
 	}
 	adm, err := sql.Open("pgx", admin)
 	if err != nil {

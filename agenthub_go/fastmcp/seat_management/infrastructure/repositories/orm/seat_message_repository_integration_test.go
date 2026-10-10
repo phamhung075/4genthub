@@ -22,7 +22,8 @@ import (
 func TestSeatMessageRepositoryIntegration(t *testing.T) {
 	url := os.Getenv("SEAT_TEST_DATABASE_URL")
 	if url == "" {
-		t.Skip("SEAT_TEST_DATABASE_URL not set")
+		t.Skip("SKIPPED, NOT PASSED: SEAT_TEST_DATABASE_URL is unset, so this case did NOT run - " +
+			"it applies the seat schema to a PostgreSQL it is given; bash tools/testpg/start.sh prints a URL")
 	}
 	db, err := sql.Open("pgx", url)
 	if err != nil {

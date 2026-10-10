@@ -17,7 +17,8 @@ func newFastmcpTestDatabase(t *testing.T) string {
 	t.Helper()
 	admin := os.Getenv("AGENTHUB_TEST_PG_URL")
 	if admin == "" {
-		t.Skip("AGENTHUB_TEST_PG_URL not set")
+		t.Skip("SKIPPED, NOT PASSED: AGENTHUB_TEST_PG_URL is unset, so this case did NOT run - " +
+			"bash tools/testpg/start.sh prints a URL to pass to it")
 	}
 	db, err := sql.Open("pgx", admin)
 	if err != nil {
