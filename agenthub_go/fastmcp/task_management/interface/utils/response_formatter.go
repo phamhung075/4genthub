@@ -101,7 +101,7 @@ func (f *MCPResponseFormatter) CreateResponse(
 
 	confirmation := entities.NewOrderedMap[any]()
 	confirmation.Set("operation_completed", status != ResponseStatusFailure)
-	confirmation.Set("data_persisted", status != ResponseStatusFailure && data != nil)
+	confirmation.Set("data_present", status != ResponseStatusFailure && data != nil)
 	var partial []any
 	for _, pf := range partialFailures {
 		partial = append(partial, pf)
@@ -241,7 +241,7 @@ func VerifyResponseSuccess(response *entities.OrderedMap[any]) bool {
 		return false
 	}
 	oc, _ := confirmation.Get("operation_completed")
-	dp, _ := confirmation.Get("data_persisted")
+	dp, _ := confirmation.Get("data_present")
 	if !pyIsTrue(oc) || !pyIsTrue(dp) {
 		return false
 	}

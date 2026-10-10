@@ -2,6 +2,13 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-10 - the persisted flag renamed: the two test files that pinned the old key move with it
+
+- CHANGED `agenthub_go/fastmcp/task_management/interface/utils/response_formatter_test.go` and `agenthub_go/fastmcp/task_management/application/services/response_optimizer_test.go`: the assertion strings `data_persisted` became `data_present`, and the optimizer test's `meta.Get("persisted")` became `meta.Get("data_present")`. These were the only two files pinning the old name, and they are updated with the change rather than kept as a compatibility surface.
+- WHY THEY ARE NOT KEPT: the flag meant "the response was well formed" (exactly `data != nil`) and was read as "your write landed"; `response_optimizer.go` published it under the name `persisted`, which is what a reader saw. The reader census found **no consumer outside Go** (frontend, client, scripts all zero), so the rename is a rename and not a shim.
+- VERIFIED: `go test ./fastmcp/task_management/interface/utils/ ./fastmcp/task_management/application/services/ -count=1` → both ok; module-wide `go test ./... -count=1` → exit 0, 140 ok, 38 no-test, 0 FAIL; `gofmt` clean; `grep -rn '"persisted"' --include=*.go` → nothing.
+- GATED to `context-dev`, with the instruction to try to falsify the zero-outside-Go census rather than repeat it.
+
 ## 2026-10-10 - the facade fixture wires the ledger, and the batch's red suite goes green
 
 - CHANGED `agenthub_go/fastmcp/task_management/application/facades/task_update_broadcast_test.go`: `newUpdateFacadeUnderTest` now builds `use_cases.NewUpdateTaskUseCase(repo, nil).WithLedger(noopStatusLedger())`. It was the last unwired construction after `f059e78c` migrated `update_task_test.go` and `complete_task_test.go`, and both of its tests were failing with the refusal text (`task_update_broadcast_test.go:111` and `:139`) — the test was relying on the silent success the refusal removed. The seam (`unmovedLedgerRecorder`, `passThroughTx`, `noopStatusLedger`) is declared in this file because the use-case package's `noopLedger()` is test-only and not importable across packages. **The refusal is not weakened and no bypass was added.**
