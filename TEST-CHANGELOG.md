@@ -2,6 +2,13 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-10 - a served page's stale instance is deleted; the docs prose has no case behind it, and that is why it shipped wrong
+
+- NO TEST CHANGED. `agenthub-frontend/src/docs/api-reference-prose.en.md` loses the trap bullet's "Live instance, measured 2026-10-10" sentence - three clauses false at this tip, deployed since `3c5de7f7` - and `agenthub-frontend/src/pages/SessionsPage.tsx:34-38` re-points its citation to the two pages that state a seat's address as `<rig>-<seat>@<rig>`. A sentence has no behaviour to pin, and a case asserting this text would pin wording rather than behaviour, which is the kind of carrier this room deletes rather than adds.
+- WHAT WAS OBSERVED INSTEAD: `npx vitest run src/tests/pages/ApiDocsPage.test.tsx src/tests/components/ApiReferenceView.test.tsx src/tests/components/ApiReferenceView.real.test.tsx` -> **3 files, 22 tests passed** - the three files that render the prose and the generated table still render the edited text together, which is the only thing a test can say about a sentence.
+- THE FINDING WORTH RECORDING: the false claim shipped to production with every frontend test green, and the reviewer found it by MEASUREMENT, not by a suite. A prose sentence that asserts a live fact about code currently has no instrument behind it, so "the suite was green" was true the whole time the served page was wrong.
+- Commands, from `agenthub-frontend`: `npx tsc --noEmit -p .` -> exit 0, **0** `error TS` lines; `npx vitest run` -> exit 0, **114 files passed (114), 1785 tests passed (1785), 0 failed** in 62.01s (the SAME 114/1785 as the previous commit - prose adds no case); `npx vite build` -> exit 0 in 15.81s into `build/`, **2.91 MB** of js+css.
+
 ## 2026-10-10 - the seat chat window's call site moves to the room-scoped route, and the gate's red is retired by regenerating the artefact
 
 - `agenthub-frontend/src/tests/components/SeatInputBox.test.tsx` — the pinned call shape follows the contract: `expect(mockApi.sendSeatMessage).toHaveBeenCalledWith('dev', 'web-dev', {text: 'hello from the window'})`, so a call that drops the room cannot pass. The four `SeatInputBox` mounts and the `SessionLiveView` fixture carry `room`, because the component now requires it (a seat is unique per (room_id, seat_key)).

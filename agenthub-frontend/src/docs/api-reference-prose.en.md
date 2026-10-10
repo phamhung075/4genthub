@@ -249,11 +249,7 @@ METHOD as well as the path, because a path match is not coverage on its own:*
   a path-only reading predicts.** *(This bullet used to read "A client calling the latter is not calling
   a route that is missing." That holds only for a client calling it with `GET`; for the call that was
   actually live it is false, which made the sentence worse than no sentence — it told a diff to ACCEPT
-  the mismatch the diff exists to find.)* **Live instance, measured 2026-10-10:** `src/services/seatApi.ts:159-160`
-  posts to `/api/v2/openrig/seats/{seat}/messages`, from `useSendSeatMessage` (`src/hooks/useSeats.ts:406-410`),
-  and **the generated table carries no `messages` route at all** while the only seats pattern served is
-  that one `GET` — so the route the call site wants is genuinely absent. That server route is its own
-  row and is not fixed here.
+  the mismatch the diff exists to find.)*
 
 **What these tables cover, so that an absence in them means something.** One row per registered
 method-and-path, taken from the mount files' own string literals

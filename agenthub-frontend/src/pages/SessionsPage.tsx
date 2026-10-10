@@ -32,9 +32,10 @@ export const SessionsPage: React.FC = () => {
   const selected = sessions.find((session) => session.id === sessionId) ?? null;
 
   // DERIVATION, NOT DATA: the room is read from the session name's `@rig` suffix. The suffix IS the
-  // OpenRig rig name (ai_docs/core-architecture/agenthub-system-architecture.md:515) and this
-  // deployment creates the agenthub room with the rig's own slug, so room-slug == rig-name and the
-  // suffix names the room. Read it AS a derivation, not as a fact.
+  // OpenRig rig name - a seat's address is `<rig>-<seat>@<rig>`
+  // (ai_docs/operations/openrig-seat-limits.md:6, ai_docs/operations/watching-openrig-seats.md:123) -
+  // and this deployment creates the agenthub room with the rig's own slug, so room-slug == rig-name and
+  // the suffix names the room. Read it AS a derivation, not as a fact.
   // REVISIT CONDITION: the moment the session carries its room as real data, THIS LINE IS DELETED -
   // never kept as a fallback, so one concept never has two sources of truth.
   const room = selected?.name.split('@')[1] ?? null;
