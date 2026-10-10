@@ -30,6 +30,14 @@ func optString(m map[string]any, key string) *string {
 	return nil
 }
 
+// jsonString is a JSON body field's string value, empty when the field is absent or not a string.
+// The evidence route decides what a blank means (its own 422), so this reports the absence as a
+// blank rather than refusing the body here.
+func jsonString(m map[string]any, key string) string {
+	s, _ := m[key].(string)
+	return s
+}
+
 func stringList(m map[string]any, key string) []string {
 	raw, ok := m[key].([]any)
 	if !ok {
@@ -109,6 +117,35 @@ func (a *App) registerTaskRoutes(mux *http.ServeMux) {
 		}
 		body, err := routes.GetTaskEvents(r.Context(), r.PathValue("id"), afterSeq, u, c, taskEventReaderAdapter{sessions: a.Sessions})
 		writeResult(w, body, err)
+	}))
+	mux.HandleFunc("POST "+base+"/{id}/evidence", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+		m, ok := jsonBody(w, r)
+		if !ok {
+			return
+		}
+		evidence := routes.TaskEvidence{
+			BaseSHA: jsonString(m, "base_sha"),
+			HeadSHA: jsonString(m, "head_sha"),
+			Numstat: jsonString(m, "numstat"),
+		}
+		// The test block is optional as a whole; its own fields are what the wire contract lets the
+		// client leave empty, so an absent block reads as a submission with no test run.
+		if test, isObject := m["test"].(map[string]any); isObject {
+			evidence.TestCommand = jsonString(test, "command")
+			evidence.TestFailed = stringList(test, "failed")
+			if code, isNumber := test["exit_code"].(float64); isNumber {
+				evidence.TestExitCode = int(code)
+			}
+		}
+		body, err := routes.SubmitTaskEvidence(r.Context(), r.PathValue("id"), evidence, u, c,
+			taskEvidenceWriterAdapter{sessions: a.Sessions, userID: userID(u)})
+		if err != nil {
+			writeResult(w, nil, err)
+			return
+		}
+		// 201 with the created event; writeResult writes 200, and a created resource is the one
+		// thing this route says 201 about.
+		writeJSON(w, http.StatusCreated, body)
 	}))
 	mux.HandleFunc("PUT "+base+"/{id}", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		m, ok := jsonBody(w, r)

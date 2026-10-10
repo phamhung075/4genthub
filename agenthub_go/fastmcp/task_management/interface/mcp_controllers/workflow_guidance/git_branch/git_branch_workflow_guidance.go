@@ -259,7 +259,7 @@ func (g *GitBranchWorkflowGuidance) getExamples(action string, context *entities
     action="assign_agent",
     project_id="`+projectID+`",
     git_branch_id="`+gitBranchID+`",
-    agent_id="coding-agent"
+    agent_id="@go-dev"
 )`),
 			gbCodeExample("Create first task on the branch",
 				`manage_task(
@@ -267,7 +267,7 @@ func (g *GitBranchWorkflowGuidance) getExamples(action string, context *entities
     git_branch_id="`+gitBranchID+`",
     title="Implement core functionality",
     description="Build the main feature components",
-    assignees="coding-agent"
+    assignees="@go-dev"
 )`),
 		)
 	case "list":
@@ -289,7 +289,7 @@ func (g *GitBranchWorkflowGuidance) getExamples(action string, context *entities
     action="assign_agent",
     project_id="my_project_id",
     git_branch_id="branch_uuid",
-    agent_id="agent_uuid"
+    agent_id="@lead"
 )`))
 	case "get_statistics":
 		examples = append(examples, gbCodeExample("Check branch progress",
@@ -319,8 +319,8 @@ func (g *GitBranchWorkflowGuidance) getParameterGuidance(action string) *entitie
 			),
 			"agent_id", gbParamInfo(
 				"REQUIRED for agent assignment",
-				"Agent identifier string",
-				"Assign coding-agent, test-orchestrator-agent, or other specialists",
+				"Seat key string",
+				"Assign a seat by key, e.g. '@lead' or '@go-dev'",
 			),
 			"title", gbParamInfo(
 				"REQUIRED for task creation",

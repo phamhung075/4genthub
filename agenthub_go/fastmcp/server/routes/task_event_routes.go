@@ -7,6 +7,7 @@ package routes
 
 import (
 	"context"
+	"time"
 
 	authdomain "agenthub/fastmcp/auth/domain/entities"
 	taskdomain "agenthub/fastmcp/task_management/domain/entities"
@@ -51,7 +52,13 @@ func GetTaskEvents(ctx context.Context, taskID string, afterSeq int, currentUser
 		item.Set("actor_kind", string(e.ActorKind))
 		item.Set("actor_id", e.ActorID)
 		item.Set("payload", e.Payload)
-		item.Set("created_at", e.CreatedAt)
+		// created_at is emitted as the RFC3339 string the rest of this server emits
+		// (seat_mount.go, team_mount.go, seat_feedback_mount.go). It was a time.Time, and the
+		// compact JSON writer refuses one ("Object of type Time is not JSON serializable"), so this
+		// route answered 500 the moment the task had ONE event: the read could never work, and no
+		// test reached it with rows. POST /{id}/evidence emits the same format for the event it
+		// returns, so a client parses one shape.
+		item.Set("created_at", e.CreatedAt.UTC().Format(time.RFC3339))
 		list = append(list, item)
 	}
 

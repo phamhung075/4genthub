@@ -935,6 +935,15 @@ export const apiReference: ApiReference = {
     },
     {
       "method": "POST",
+      "path": "/api/v2/tasks/{id}/evidence",
+      "pathParams": [
+        "id"
+      ],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "POST",
       "path": "/api/v2/tasks/{task_id}/subtasks/summaries",
       "pathParams": [
         "task_id"
@@ -1235,7 +1244,7 @@ export const apiReference: ApiReference = {
               }
             ],
             "default": null,
-            "description": "[OPTIONAL] **REQUIRED for create action** - Assignee identifiers (minimum 1 required). Use @seat-key format (e.g., '@lead', '@go-dev'); a known agent role such as 'coding-agent' is accepted and becomes '@coding-agent'. A bare name that is not a known role is rejected. For multiple assignees use comma-separated: '@lead,@go-dev'.",
+            "description": "[OPTIONAL] **REQUIRED for create action** - Assignee identifiers (minimum 1 required). Use the '@\u003cseat_key\u003e' form (e.g., '@lead', '@go-dev'); it is the only accepted assignee identity. A bare name, including a retired agent role, is rejected. For multiple assignees use comma-separated: '@lead,@go-dev'.",
             "title": "Assignees"
           },
           "auto_create_tasks": {

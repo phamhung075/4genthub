@@ -6,8 +6,8 @@ import (
 )
 
 func TestTokenCostsContentAndOrder(t *testing.T) {
-	if got := TokenCosts.Len(); got != 67 {
-		t.Fatalf("TOKEN_COSTS length = %d, want 67", got)
+	if got := TokenCosts.Len(); got != 57 {
+		t.Fatalf("TOKEN_COSTS length = %d, want 57", got)
 	}
 	wantFirst := []string{"create_project", "update_project", "delete_project", "list_projects", "get_project"}
 	if got := TokenCosts.Keys()[:5]; !reflect.DeepEqual(got, wantFirst) {
@@ -40,8 +40,8 @@ func TestGetOperationCost(t *testing.T) {
 
 func TestGetAllCostsIsCopy(t *testing.T) {
 	all := GetAllCosts()
-	if all.Len() != 67 {
-		t.Fatalf("copy length = %d, want 67", all.Len())
+	if all.Len() != 57 {
+		t.Fatalf("copy length = %d, want 57", all.Len())
 	}
 	all.Set("new_op", 99)
 	if _, ok := TokenCosts.Get("new_op"); ok {
