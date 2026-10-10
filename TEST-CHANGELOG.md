@@ -2,6 +2,13 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-10 - the dependent scan's failure stopped reading as success
+
+- ADDED `agenthub_go/fastmcp/task_management/application/use_cases/complete_task_test.go`: `TestCompleteTaskReportsAFailedDependentLookup` drives `Execute` with a failing `FindAll` and asserts the caller sees an error instead of an unblock pass that never ran.
+- Uses the fake's existing `findAllErr` seam — no new test double was needed for this one.
+- RED BEFORE: with the source stashed and the test left in place, the run reports "a dependent scan whose lookup failed was reported as success".
+- VERIFIED: `gofmt` clean; `go vet ./fastmcp/task_management/application/use_cases/` clean; the package ok; module-wide `go test ./... -count=1` green.
+
 ## 2026-10-10 - a failed dependent unblock stopped reading as success
 
 - ADDED `agenthub_go/fastmcp/task_management/application/use_cases/complete_task_test.go`: `TestCompleteTaskReportsAFailedDependentUnblock` drives `Execute` with a blocked dependent task whose unblock write fails and asserts the caller sees an error.

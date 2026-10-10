@@ -590,14 +590,14 @@ func (uc *CompleteTaskUseCase) newFacade(gitBranchID, projectID *string) complet
 	return uc.contextFacadeFactory.CreateFacade(gitBranchID, projectID)
 }
 
-// updateDependentTasks mirrors _update_dependent_tasks, with one deliberate difference: a dependent task's failed
-// status write is returned instead of swallowed, because discarding it made a write that did not happen read as
-// success to this use case's caller. The lookup failure is still skipped - Python logs it and continues, and it
-// records nothing the caller could act on.
+// updateDependentTasks mirrors _update_dependent_tasks, with one deliberate difference: no discarded error on
+// this path may read as success. A failed scan of the dependent tasks is returned, and so is a dependent task's
+// failed status write - Python logged both and continued, which is how a pass that never ran and a write that
+// never happened both reached the caller as a completed task.
 func (uc *CompleteTaskUseCase) updateDependentTasks(ctx context.Context, completedTask *entities.Task) error {
 	allTasks, err := uc.taskRepository.FindAll(ctx)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	completedID := ""

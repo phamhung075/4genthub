@@ -404,6 +404,21 @@ func TestCompleteTaskReportsAFailedDependentUnblock(t *testing.T) {
 	}
 }
 
+// The dependent scan's own lookup failure was skipped the same way a failed save was: the caller saw a completed
+// task while the unblock pass never ran. Same class, same rule - no discarded error on this path reads as success.
+func TestCompleteTaskReportsAFailedDependentLookup(t *testing.T) {
+	taskA, idA := completeTaskNewTestTask(t)
+
+	repo := &completeTaskFakeTaskRepository{task: taskA, findAllErr: errors.New("dependent lookup failed")}
+	subRepo := &completeTaskFakeSubtaskRepository{}
+	uc := NewCompleteTaskUseCase(repo, subRepo, nil, nil).WithLedger(noopLedger())
+	summary := "done"
+
+	if _, err := uc.Execute(context.Background(), idA.Value, &summary, nil, nil); err == nil {
+		t.Fatal("a dependent scan whose lookup failed was reported as success")
+	}
+}
+
 func TestCompleteTaskUnblocksDependentTask(t *testing.T) {
 	taskA, idA := completeTaskNewTestTask(t)
 
