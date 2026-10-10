@@ -66,6 +66,20 @@ Reconnect: exponential backoff from 1 s, doubling, capped at 60 s, with ±20 % j
 4. **Capabilities named so far:** `ingest` (phase 1), `commands` (phase 2), `ledger` (P4's `ledger_tip` nudge, NEXT_GEN P4). A new server frame kind always comes with a new capability name.
 5. **Unknown FIELDS are ignored on both sides.** A field can be added without bumping `protocol`. Changing a field's meaning or removing one bumps `protocol`.
 
+### 2.3a The browser surface (ruled 2026-10-11, answering fe-dev's question on section 5 step 3)
+
+The frames above run between rigd and the server. The browser never sees them. Here is what the browser gets:
+
+- **Read:** the `GET /api/v2/sessions` row gains **`seat_state`** (`"running"` | `"stopped"` | `null`), stored in a NEW column, `agent_sessions.seat_state TEXT NULL`. The server writes it from `session.state` on every `session` frame. `null` means no rigd has reported a state, for example an old one-shot `sync connector` upload.
+  - It is NOT `status`. `status` (`active` | `offline`) stays the connection fact: `MarkOffline` sets it when the socket closes.
+  - The two are independent. A seat can be `running` while its connector is `offline`; that is the last reported state, and it may be stale.
+  - Rendering precedence: `status: offline` shows as offline, with the last `seat_state` as secondary text. Otherwise `seat_state` decides: `stopped` shows as stopped, and `running` or `null` shows as live.
+- **Push:** the server emits the existing realtime data-change frame (`routes.BroadcastDataChange`, the same path seats use through `seatBroadcastFn`), with **entity `agent_session`**. The name is not `session`, which reads as an auth session. Each frame has `data: {id, seat_state, status}`, where `id` is the `agent_sessions.id` of the row. Actions:
+  - `created`: the first `session` frame for a new `(user, connector_id, session_key)`;
+  - `updated`: a `seat_state` change, or a `status` change, including `MarkOffline`, which emits one frame per session it marks.
+- **No push per `events` batch:** live events stay on `/ws/sessions/{id}`.
+- **The browser** handles `agent_session` by invalidating `['sessions']` (`sessionKeys.list`) in each branch, the same placing as `handleSeatUpdate`. It does not parse the row out of the frame: the GET stays the single read path.
+
 ### 2.4 Phase-2 frames (designed now, NOT implemented)
 
 These are enabled only by the `commands` capability (see 3.2 for who may enable it).
@@ -175,7 +189,8 @@ In order, each step with its own check:
    - `ping` / `pong`;
    - `session.state` / `source`;
    - `events.cursor` stored atomically with the events, in the new `agent_sessions.client_cursor` column (ORM and SQL together), and returned in `session_ack` and `events_ack`;
-   - `error.code` / `fatal`.
+   - `error.code` / `fatal`;
+   - `agent_sessions.seat_state` on the `GET /api/v2/sessions` row, plus the `agent_session` realtime frame (2.3a).
 
    Check: a PG test that sends a batch, drops the socket before reading the ack, reconnects, and receives `session_ack.cursor` equal to that batch's cursor, with the event count stored exactly once.
 2. **Client, go-dev:**
@@ -186,7 +201,7 @@ In order, each step with its own check:
    Check: on a throwaway rig with 2 seats, kill the network for 60 s mid-stream; after recovery the cloud holds each event exactly once. A seeded `.env` read and a seeded 40-character high-entropy string each arrive as `redaction_withheld`, and the raw file exists locally.
 3. **Frontend, fe-dev:**
    - render `redaction_withheld` as a visible gap ("withheld locally: <reason>");
-   - render `state: stopped` sessions as stopped.
+   - render sessions with `seat_state: "stopped"` as stopped, and invalidate `['sessions']` on the `agent_session` realtime frame (2.3a).
 
    NO chat input: that is phase 2.
 
