@@ -1,9 +1,14 @@
 // Production tables that the generated models.go does not cover. The columns and types are
 // transcribed from the authoritative production DDL, the embedded
 // fastmcp/task_management/infrastructure/database/init_schema_postgresql.sql
-// (plus applied_migrations, created by the Python migration runner), and follow the row-struct
+// (plus applied_migrations, which that file does not carry), and follow the row-struct
 // / ColumnDef conventions of models.go: json.RawMessage for JSONB, string for UUID, time.Time
 // for timestamps and pointers for nullable columns.
+//
+// CORRECTION 2026-10-10: an earlier version of this comment said applied_migrations was "created by
+// the Python migration runner". That was false, and is measured false - no code in this tree ever
+// created the table, and the Python runner's own ledger was schema_migrations (that tree was removed
+// in a50929c6). The rows are written by migration_runner.go's Runner today.
 //
 // These tables are intentionally not appended to Tables here. The three
 // user_id foreign keys (token_transactions, user_api_tokens, user_sessions) reference the users
@@ -26,7 +31,10 @@ type AgentImportHistory struct {
 	ShareToken         *string   `db:"share_token"`
 }
 
-// AppliedMigration is a row of applied_migrations (the Python migration runner's tracking table).
+// AppliedMigration is a row of applied_migrations, the migration ledger: migration_runner.go's
+// Runner records one row when it applies a migration, so a row exists exactly when that migration
+// applied. success and error_message are never written - a step that fails rolls back and records
+// nothing at all.
 type AppliedMigration struct {
 	ID            int64      `db:"id"`
 	MigrationName string     `db:"migration_name"`
