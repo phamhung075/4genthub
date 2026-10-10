@@ -6,18 +6,21 @@ import (
 )
 
 func TestTokenCostsContentAndOrder(t *testing.T) {
-	if got := TokenCosts.Len(); got != 57 {
-		t.Fatalf("TOKEN_COSTS length = %d, want 57", got)
+	if got := TokenCosts.Len(); got != 60 {
+		t.Fatalf("TOKEN_COSTS length = %d, want 60", got)
 	}
 	wantFirst := []string{"create_project", "update_project", "delete_project", "list_projects", "get_project"}
 	if got := TokenCosts.Keys()[:5]; !reflect.DeepEqual(got, wantFirst) {
 		t.Fatalf("first keys = %v, want %v", got, wantFirst)
 	}
 	cases := map[string]int{
-		"create_project": 10,
-		"ai_plan":        15,
-		"login":          0,
-		"update_quota":   0,
+		"create_project":   10,
+		"ai_plan":          15,
+		"login":            0,
+		"update_quota":     0,
+		"assign_agent":     3,
+		"unassign_agent":   2,
+		"rebalance_agents": 5,
 	}
 	for op, want := range cases {
 		if got, _ := TokenCosts.Get(op); got != want {
@@ -40,8 +43,8 @@ func TestGetOperationCost(t *testing.T) {
 
 func TestGetAllCostsIsCopy(t *testing.T) {
 	all := GetAllCosts()
-	if all.Len() != 57 {
-		t.Fatalf("copy length = %d, want 57", all.Len())
+	if all.Len() != 60 {
+		t.Fatalf("copy length = %d, want 60", all.Len())
 	}
 	all.Set("new_op", 99)
 	if _, ok := TokenCosts.Get("new_op"); ok {

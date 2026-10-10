@@ -18,6 +18,7 @@ var tokenCostPairs = []struct {
 	{"project_health_check", 3},
 	{"cleanup_obsolete", 5},
 	{"validate_integrity", 3},
+	{"rebalance_agents", 5},
 	// Git Branch operations
 	{"create_branch", 5},
 	{"update_branch", 3},
@@ -50,6 +51,9 @@ var tokenCostPairs = []struct {
 	{"delete_subtask", 2},
 	{"list_subtasks", 1},
 	{"get_subtask", 1},
+	// Agent operations
+	{"assign_agent", 3},
+	{"unassign_agent", 2},
 	// Context operations
 	{"create_context", 5},
 	{"update_context", 3},

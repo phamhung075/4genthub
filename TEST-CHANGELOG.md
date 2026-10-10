@@ -2,6 +2,13 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-11 - the token-cost count moves, and three values the caller actually reads
+
+- CHANGED, in one existing file (no new file), `agenthub_go/fastmcp/auth/config/token_costs_test.go`: both length pins move 57 -> 60 (`TestTokenCostsContentAndOrder` and `TestGetAllCostsIsCopy`), and the `cases` map gains `assign_agent: 3`, `unassign_agent: 2` and `rebalance_agents: 5` - the VALUES the caller reads, not only the row count, because a count passes for a wrong restored value while these three fail.
+- FALSIFICATION INDUCED AND DELETED, not asserted: the updated test copied into a CLEAN PRE-FIX worktree at `9ebb454f` fails with `TOKEN_COSTS length = 57, want 60` and `copy length = 57, want 60`; the worktree was removed afterwards, so the delivered tree is unperturbed.
+- VERIFIED: `gofmt -l` empty on the touched files, `go vet ./fastmcp/auth/config/` clean, `go build ./...` rc 0, `go test -count=1 ./fastmcp/auth/config/` -> **ok, 5/5 cases pass**.
+- NOT RUN, named: nothing skipped - the package needs no database and every case in it ran.
+
 ## 2026-10-11 - the progress-note loss gets a wire case, red on a pre-fix worktree
 
 - ADDED `agenthub_go/fastmcp/server/mcptoolpath/progressdetails/progress_details_tool_path_pg_test.go`, ONE new package with one test and three subtests, all over the PRODUCTION WIRE (`POST /mcp`, `tools/call`) against a database built by the production schema, and all asserting CONTENT rather than that a call reported success: `manage_task_update_details_read_by_get` (the loss path - update's `details` must come back from `get`), `manage_task_has_no_dedicated_progress_action` (asserts the ABSENCE: `manage_task action=add_progress` answers `UNKNOWN_OPERATION`, so the absence is measured rather than assumed), and `manage_context_add_progress_read_by_get` (the SEPARATE context carrier, already green before and after). PASS 3/3 in 1.66s with `AGENTHUB_TEST_PG_URL`.
