@@ -1,0 +1,128 @@
+{
+  "room": {
+    "slug": "4genthub-client",
+    "name": "4genthub client Go rewrite"
+  },
+  "modules": [
+    {
+      "slug": "client-guide-lead",
+      "version": "1.0.0",
+      "kind": "instruction",
+      "file": "../../../agenthub_go/fastmcp/seat_management/domain/seedlibrary/blocks/guide-lead.md"
+    },
+    {
+      "slug": "client-guide-go-dev",
+      "version": "1.0.0",
+      "kind": "instruction",
+      "file": "../../../agenthub_go/fastmcp/seat_management/domain/seedlibrary/blocks/guide-go-dev.md"
+    },
+    {
+      "slug": "client-guide-reviewer",
+      "version": "1.0.0",
+      "kind": "instruction",
+      "file": "../../../agenthub_go/fastmcp/seat_management/domain/seedlibrary/blocks/guide-reviewer.md"
+    },
+    {
+      "slug": "client-guide-writer",
+      "version": "1.0.0",
+      "kind": "instruction",
+      "file": "../../../agenthub_go/fastmcp/seat_management/domain/seedlibrary/blocks/guide-writer.md"
+    },
+    {
+      "slug": "client-policy-lead",
+      "version": "1.1.0",
+      "kind": "policy",
+      "file": "../4genthub-min/policy-lead.json"
+    },
+    {
+      "slug": "client-policy-go-dev",
+      "version": "1.1.0",
+      "kind": "policy",
+      "file": "../4genthub-min/policy-go-dev.json"
+    },
+    {
+      "slug": "client-policy-reviewer",
+      "version": "1.1.0",
+      "kind": "policy",
+      "file": "../4genthub-min/policy-reviewer.json"
+    },
+    {
+      "slug": "client-policy-writer",
+      "version": "1.1.0",
+      "kind": "policy",
+      "file": "../4genthub-min/policy-writer.json"
+    },
+    {
+      "slug": "client-go-mission",
+      "version": "1.0.0",
+      "kind": "instruction",
+      "file": "mission.md"
+    }
+  ],
+  "seats": [
+    {
+      "seat_key": "lead",
+      "seat_type": "lead",
+      "runtime": "omp",
+      "model": "deepseek/deepseek-flash",
+      "pinned_version": "1.3.0"
+    },
+    {
+      "seat_key": "go-dev-a",
+      "seat_type": "developer",
+      "runtime": "omp",
+      "model": "deepseek/deepseek-flash",
+      "pinned_version": "1.3.0"
+    },
+    {
+      "seat_key": "go-dev-b",
+      "seat_type": "developer",
+      "runtime": "omp",
+      "model": "deepseek/deepseek-flash",
+      "pinned_version": "1.3.0"
+    },
+    {
+      "seat_key": "reviewer",
+      "seat_type": "reviewer",
+      "runtime": "omp",
+      "model": "deepseek/deepseek-flash",
+      "pinned_version": "1.3.0"
+    },
+    {
+      "seat_key": "writer",
+      "seat_type": "writer",
+      "runtime": "omp",
+      "model": "deepseek/deepseek-flash",
+      "pinned_version": "1.3.0"
+    }
+  ],
+  "links": [],
+  "company_overlay": [],
+  "seat_overlays": {
+    "lead": [
+      "client-guide-lead",
+      "client-policy-lead",
+      "client-go-mission"
+    ],
+    "go-dev-a": [
+      "client-guide-go-dev",
+      "client-policy-go-dev",
+      "client-go-mission"
+    ],
+    "go-dev-b": [
+      "client-guide-go-dev",
+      "client-policy-go-dev",
+      "client-go-mission"
+    ],
+    "reviewer": [
+      "client-guide-reviewer",
+      "client-policy-reviewer",
+      "client-go-mission"
+    ],
+    "writer": [
+      "client-guide-writer",
+      "client-policy-writer",
+      "client-go-mission"
+    ]
+  }
+}
