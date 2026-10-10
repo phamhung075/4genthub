@@ -372,6 +372,24 @@ export const taskApiV2 = {
     });
   },
 
+  // Get a task's EXECUTION LEDGER. `after_seq` is EXCLUSIVE - the server returns seq > after_seq -
+  // so 0 (the default, and the only thing this client sends today) reads the whole ledger. The
+  // server caps a single response at 100 rows, which is why the cursor exists at all; the body
+  // echoes the cursor it read past and the row count, so a caller can walk the ledger with it.
+  getTaskEvents: async (taskId: string, afterSeq: number = 0) => {
+    const url = new URL(`${API_BASE_URL}/api/v2/tasks/${taskId}/events`);
+
+    if (afterSeq > 0) {
+      url.searchParams.set('after_seq', afterSeq.toString());
+    }
+
+    return fetchWithRetry(url.toString(), {
+      method: 'GET',
+      headers: getAuthHeaders(),
+      credentials: 'include',
+    });
+  },
+
   // Create a new task (automatically assigned to user)
   createTask: async (taskData: {
     title: string;

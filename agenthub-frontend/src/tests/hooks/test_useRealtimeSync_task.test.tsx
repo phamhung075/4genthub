@@ -563,6 +563,75 @@ describe('useRealtimeSync - Task Handler with Type Guards', () => {
       invalidateSpy.mockRestore();
     });
 
+    it('re-reads the EXECUTION LEDGER, so an open timeline follows the same status change', async () => {
+      const wrapper = createWrapper();
+
+      // The ledger the open task details view is showing, and the server's copy of it. The
+      // subscriber carries the hook's OWN staleTime (30s), so a refetch inside this case cannot be
+      // ordinary staleness - it has to be the frame's invalidation.
+      const ledgerAt = (status: string) => ({
+        success: true,
+        events: [
+          {
+            id: `ev-${status}`,
+            task_id: TASK_ID,
+            seq: 4,
+            kind: 'status_changed',
+            actor_kind: 'agent',
+            actor_id: 'fe-dev',
+            payload: { old: 'review', new: status },
+            created_at: '2026-10-09T20:00:00Z',
+          },
+        ],
+        count: 1,
+        after_seq: 0,
+      });
+
+      let servedLatest = 'review';
+      const fetches: string[] = [];
+      const ledgerObserver = renderHook(
+        () =>
+          useQuery({
+            queryKey: ['task-events', TASK_ID],
+            queryFn: async () => {
+              fetches.push(servedLatest);
+              return ledgerAt(servedLatest);
+            },
+            staleTime: 30 * 1000,
+          }),
+        { wrapper }
+      );
+
+      await waitFor(() =>
+        expect(ledgerObserver.result.current.data?.events[0].payload?.['new']).toBe('review'),
+      );
+      expect(fetches).toEqual(['review']);
+
+      servedLatest = 'done';
+      const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+      const mockWebSocketClient = {
+        on: vi.fn((event: string, handler: (msg: WSMessage) => void) => {
+          if (event === 'update') {
+            setTimeout(() => handler(updateFrame('done')), 10);
+          }
+        }),
+        off: vi.fn(),
+      };
+      renderHook(() => useRealtimeSync(mockWebSocketClient, true), { wrapper });
+
+      // The ledger is not patched out of the payload - the frame carries the task, not the row the
+      // write produced - so the query is invalidated on its own key and the timeline re-reads it.
+      await waitFor(() =>
+        expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['task-events', TASK_ID] }),
+      );
+      await waitFor(() => expect(fetches).toEqual(['review', 'done']), { timeout: 2000 });
+      await waitFor(() =>
+        expect(ledgerObserver.result.current.data?.events[0].payload?.['new']).toBe('done'),
+      );
+
+      invalidateSpy.mockRestore();
+    });
+
     it('caches the frame whatever the userId stamp is, so the client is not a second gate', async () => {
       // Delivery is the only place allowed to refuse a frame by its userId stamp (the Go gate
       // does, deliberately, for 'system'). If the client also keyed on it, go-dev's choice of

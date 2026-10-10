@@ -12,6 +12,7 @@ import RawJSONDisplay from "./ui/RawJSONDisplay";
 import { EnhancedJSONViewer } from "./ui/EnhancedJSONViewer";
 import { CopyableId } from "./ui/CopyableId";
 import { ProgressHistoryTimeline } from "./ProgressHistoryTimeline";
+import { TaskEventTimeline } from './TaskEventTimeline';
 import { useTask } from '../hooks/useTasks';
 
 
@@ -309,6 +310,12 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
                           />
                         </div>
                       )}
+
+                      {/* Execution Ledger: the events the task actually wrote (task_events). The
+                          phase it shows is derived from these events, never from the task row -
+                          ProgressHistoryTimeline above reads the older progress fields, which O1c
+                          replaces with events. */}
+                      <TaskEventTimeline taskId={displayTask.id} />
 
                       {/* Assignees */}
                       {displayTask.assignees && displayTask.assignees.length > 0 && (

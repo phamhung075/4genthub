@@ -106,6 +106,13 @@ export const useRealtimeSync = (
 
       const taskTitle = getDisplayName(message);
 
+      // THE TASK'S EXECUTION LEDGER IS RE-READ ON EVERY TASK UPDATE MESSAGE - once, here, rather
+      // than inside each case below, because the ledger records what the ROW did and not which
+      // action a message names: an update, a status change and a completion all append to the same
+      // stream. The hook does not patch the ledger out of the payload, for the neighbours' reason -
+      // the payload carries the task, not the row the write produced - so it asks again instead.
+      queryClient.invalidateQueries({ queryKey: ['task-events', taskId] });
+
       switch (action) {
         case 'created':
           // NO create animation here: WebSocketAnimationService is the single websocket

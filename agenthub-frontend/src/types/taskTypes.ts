@@ -11,6 +11,49 @@ import type { ProgressHistoryEntry } from './utilityTypes';
 export type TaskStatus = 'todo' | 'in_progress' | 'blocked' | 'review' | 'testing' | 'done' | 'cancelled';
 export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent' | 'critical';
 
+// ============================================
+// Execution ledger - the task_events stream
+// ============================================
+
+/**
+ * The kinds the ledger's CHECK constraint enforces
+ * (`ck_task_event_kind`, agenthub_go/fastmcp/task_management/infrastructure/database/task_event_tables.go).
+ *
+ * READ THIS BEFORE TREATING A KIND AS LIVE: `status_changed` is the ONLY kind a writer
+ * emits today (`RecordStatusChange`, task_event_recorder.go:61), and it is the only kind
+ * whose payload shape is defined - `{ old, new }`. The other four kinds are in the
+ * vocabulary and the reader returns them, but nothing writes them yet, so a payload for
+ * them must be treated as unknown rather than assumed. The richer steps the architecture
+ * describes (`evidence_submitted`, `gate_verdict`) are NOT in this vocabulary and are
+ * NOT BUILT - see the timeline's rendering, which says so rather than inventing them.
+ */
+export type TaskEventKind = 'created' | 'updated' | 'status_changed' | 'completed' | 'deleted';
+
+/** Who acted. The ledger's CHECK constraint `ck_task_event_actor_kind`. */
+export type TaskEventActorKind = 'user' | 'system' | 'agent';
+
+/** One row of the execution ledger, as `GET /api/v2/tasks/{id}/events` serializes it. */
+export interface TaskEvent {
+  id: string;
+  task_id: string;
+  /** Gapless per task, ascending; the reader's `after_seq` is EXCLUSIVE against it. */
+  seq: number;
+  kind: TaskEventKind;
+  actor_kind: TaskEventActorKind;
+  actor_id: string;
+  payload: Record<string, unknown> | null;
+  created_at: string;
+}
+
+/** The body of `GET /api/v2/tasks/{id}/events` - a bare 200, no `data` wrapper. */
+export interface TaskEventsResponse {
+  success: boolean;
+  events: TaskEvent[];
+  count: number;
+  /** Echoes the `after_seq` the request carried, so a caller knows the cursor it read past. */
+  after_seq: number;
+}
+
 /**
  * TaskSummary - Lightweight task data for list views
  *

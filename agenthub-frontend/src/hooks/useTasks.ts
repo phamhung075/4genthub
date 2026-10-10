@@ -1,6 +1,6 @@
 // Custom hook for task management with React Query
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { completeTask, createTask, deleteTask, getTask, getTasks, updateTask } from '../api';
+import { completeTask, createTask, deleteTask, getTask, getTaskEvents, getTasks, updateTask } from '../api';
 import type { Task } from '../types/api.types';
 import logger from '../utils/logger';
 
@@ -47,6 +47,33 @@ export const useTask = (taskId: string | undefined, includeContext: boolean = fa
     },
     enabled: !!taskId,
     staleTime: 5 * 60 * 1000, // 5 minutes for individual tasks
+    gcTime: 10 * 60 * 1000,
+    retry: 1
+  });
+};
+
+/**
+ * Hook to fetch a task's EXECUTION LEDGER - the `task_events` rows the timeline renders.
+ *
+ * It reads from the start (`after_seq` 0) because the server caps one response at 100 rows and a
+ * task's ledger is short; the cursor is carried by the route for the day it is not. The query is
+ * keyed separately from `useTask` on purpose: the ledger only ever APPENDS, so a task update must
+ * not be able to make the timeline re-render from a status field it does not read.
+ *
+ * @param taskId Task ID whose ledger to fetch
+ * @returns Query result with the ledger body (`events`, `count`, `after_seq`) or null
+ */
+export const useTaskEvents = (taskId: string | undefined) => {
+  return useQuery({
+    queryKey: ['task-events', taskId],
+    queryFn: async () => {
+      if (!taskId) return null;
+
+      logger.debug('[useTaskEvents] Fetching execution ledger for task:', taskId);
+      return await getTaskEvents(taskId, 0);
+    },
+    enabled: !!taskId,
+    staleTime: 30 * 1000,
     gcTime: 10 * 60 * 1000,
     retry: 1
   });

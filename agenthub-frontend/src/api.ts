@@ -34,6 +34,7 @@ import type {
     TaskResponse,
     TasksResponse
 } from './types/api.types';
+import type { TaskEvent, TaskEventsResponse } from './types/taskTypes';
 import logger from './utils/logger';
 
 export type {
@@ -59,6 +60,21 @@ export const getTasks = async (git_branch_id: string, options?: TaskRequestOptio
 export const getTask = async (task_id: string, options?: TaskRequestOptions): Promise<Task> => {
     const response = await taskApiV2.getTask(task_id, options?.includeContext) as TaskResponse;
     return response.task || response;
+};
+
+/**
+ * The task's EXECUTION LEDGER, straight from `GET /api/v2/tasks/{id}/events`.
+ *
+ * Returns the route's body rather than unwrapping it, unlike its neighbours: there is nothing to
+ * unwrap here (`events` IS the payload) and the body also carries the exclusive `after_seq` cursor
+ * and the row count, which is what a caller walking a ledger the server caps at 100 rows needs.
+ */
+export const getTaskEvents = async (task_id: string, after_seq: number = 0): Promise<TaskEventsResponse> => {
+    const response = await taskApiV2.getTaskEvents(task_id, after_seq) as TaskEventsResponse;
+    // The route serializes an OrderedMap, so `events` is present on a 200; an absent one is a broken
+    // response rather than an empty ledger, and normalizing it here keeps every caller's map simple.
+    const events: TaskEvent[] = response.events ?? [];
+    return { ...response, events };
 };
 
 export const createTask = async (task: Partial<Task>): Promise<Task> => {
