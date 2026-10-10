@@ -504,9 +504,9 @@ func (f *SubtaskApplicationFacade) handleCompleteSubtask(ctx context.Context, ta
 }
 
 // completeEnriched ports the enrichment block. The Python code queries the ORM
-// model directly for persistence-only fields (blockers, progress_history,
-// completion_summary, insights_found, impact_on_parent); those have no Go port,
-// so they are taken from the request or defaulted.
+// model directly for persistence-only fields (blockers, completion_summary,
+// insights_found, impact_on_parent); those have no Go port, so they are taken
+// from the request or defaulted.
 func (f *SubtaskApplicationFacade) completeEnriched(ctx context.Context, subtaskID string,
 	subtaskRepository repositories.SubtaskRepository, completionSummary, testingNotes *string,
 	insightsFound []any) *entities.OrderedMap[any] {
@@ -544,8 +544,6 @@ func (f *SubtaskApplicationFacade) completeEnriched(ctx context.Context, subtask
 	out.Set("assignees", assignees)
 	out.Set("insights_found", insights)
 	out.Set("blockers", []any{})
-	out.Set("progress_history", entities.NewOrderedMap[any]())
-	out.Set("progress_count", 0)
 	out.Set("impact_on_parent", "")
 	return out
 }

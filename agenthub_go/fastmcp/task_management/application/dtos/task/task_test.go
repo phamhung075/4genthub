@@ -154,7 +154,7 @@ func TestTaskResponseToDict(t *testing.T) {
 	want := []string{"id", "title", "description", "status", "priority", "details", "estimatedEffort",
 		"assignees", "labels", "dependencies", "subtasks", "dueDate", "created_at", "updated_at",
 		"git_branch_id", "project_id", "context_id", "context_data", "dependency_relationships",
-		"progress_percentage", "progress_history", "progress_count", "subtask_count", "completed_subtasks"}
+		"progress_percentage", "subtask_count", "completed_subtasks"}
 	if !reflect.DeepEqual(m.Keys(), want) {
 		t.Fatalf("keys = %v", m.Keys())
 	}
@@ -212,8 +212,7 @@ func sampleTaskResponse() TaskResponse {
 		Assignees: []string{"coding-agent", "bob-agent"}, Labels: []string{"bug"},
 		Dependencies: []string{"d1"}, Subtasks: []any{"s1", "s2"}, DueDate: &due,
 		CreatedAt: &created, UpdatedAt: &updated, GitBranchID: &git, ContextID: &ctxID,
-		ProgressPercentage: 42, ProgressHistory: map[string]any{"progress_1": map[string]any{"x": 1}},
-		ProgressCount: 1, CompletedSubtasks: 1,
+		ProgressPercentage: 42, CompletedSubtasks: 1,
 	}
 }
 

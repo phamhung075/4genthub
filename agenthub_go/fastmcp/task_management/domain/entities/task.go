@@ -1083,7 +1083,6 @@ func (t *Task) ToDict() (map[string]any, error) {
 	result := map[string]any{
 		"id": t.idStr(), "title": t.Title, "description": t.Description, "git_branch_id": strOrNil(t.GitBranchID),
 		"status": t.Status.Value, "priority": t.Priority.Value,
-		"progress_history": t.ProgressHistory, "progress_count": t.ProgressCount,
 		"estimatedEffort": t.EstimatedEffort, "assignees": append([]string{}, t.Assignees...),
 		"labels": append([]string{}, t.Labels...), "dependencies": deps, "dependency_count": len(t.Dependencies),
 		"subtasks": append([]string{}, t.Subtasks...), "subtask_count": len(t.Subtasks),

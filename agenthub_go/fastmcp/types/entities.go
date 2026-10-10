@@ -30,8 +30,6 @@ type TaskDTO struct {
 	Labels             []string
 	Details            *string
 	ProgressPercentage *int
-	ProgressHistory    any
-	ProgressCount      *int
 	Subtasks           []*SubtaskDTO
 }
 
@@ -60,8 +58,6 @@ func (d *TaskDTO) ModelDump() *entities.OrderedMap[any] {
 		"labels", dtoStrList(d.Labels),
 		"details", dtoOpt(d.Details),
 		"progress_percentage", dtoInt(d.ProgressPercentage),
-		"progress_history", d.ProgressHistory,
-		"progress_count", dtoInt(d.ProgressCount),
 		"subtasks", dtoModelList(d.Subtasks),
 	)
 }
@@ -77,8 +73,6 @@ type SubtaskDTO struct {
 	Assignees          []string
 	AssigneesCount     int
 	ProgressPercentage *int
-	ProgressHistory    any
-	ProgressCount      *int
 	CreatedAt          *string
 	UpdatedAt          *string
 	ProgressNotes      *string
@@ -96,8 +90,6 @@ func (d *SubtaskDTO) ModelDump() *entities.OrderedMap[any] {
 		"assignees", dtoStrList(d.Assignees),
 		"assignees_count", d.AssigneesCount,
 		"progress_percentage", dtoInt(d.ProgressPercentage),
-		"progress_history", d.ProgressHistory,
-		"progress_count", dtoInt(d.ProgressCount),
 		"created_at", dtoOpt(d.CreatedAt),
 		"updated_at", dtoOpt(d.UpdatedAt),
 		"progress_notes", dtoOpt(d.ProgressNotes),

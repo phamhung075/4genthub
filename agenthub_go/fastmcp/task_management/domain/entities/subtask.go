@@ -361,8 +361,7 @@ func (s *Subtask) ToDict(includeParentID bool) (map[string]any, error) {
 		"id": id, "title": s.Title, "description": s.Description,
 		"status": s.Status.String(), "priority": s.Priority.String(),
 		"assignees":           append([]string{}, s.Assignees...),
-		"progress_percentage": s.ProgressPercentage, "progress_history": s.ProgressHistory,
-		"progress_count": s.ProgressCount, "created_at": nil, "updated_at": nil,
+		"progress_percentage": s.ProgressPercentage, "created_at": nil, "updated_at": nil,
 	}
 	if s.CreatedAt != nil {
 		result["created_at"] = value_objects.IsoFormat(*s.CreatedAt)

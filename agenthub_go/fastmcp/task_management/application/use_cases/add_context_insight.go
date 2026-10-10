@@ -74,7 +74,7 @@ func convertToTaskID(v any) (value_objects.TaskId, error) { return smallUCConver
 // order (the shared domain Subtask.ToDict returns a plain Go map).
 func orderedSubtaskFromDict(m map[string]any, includeParent bool) *entities.OrderedMap[any] {
 	order := []string{"id", "title", "description", "status", "priority", "assignees",
-		"progress_percentage", "progress_history", "progress_count", "created_at", "updated_at"}
+		"progress_percentage", "created_at", "updated_at"}
 	if includeParent {
 		order = append(order, "parent_task_id")
 	}

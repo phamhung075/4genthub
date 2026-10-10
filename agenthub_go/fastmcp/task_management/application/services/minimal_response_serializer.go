@@ -52,7 +52,7 @@ func (MinimalResponseSerializer) SerializeTaskMinimal(task any, operation string
 	minimal.Set("created_at", createdAt)
 	minimal.Set("updated_at", updatedAt)
 
-	for _, key := range []string{"context_id", "overall_progress", "progress_percentage", "progress_count", "subtask_count", "completed_subtasks", "dependency_count"} {
+	for _, key := range []string{"context_id", "overall_progress", "progress_percentage", "subtask_count", "completed_subtasks", "dependency_count"} {
 		if v, ok := minimalGet(full, key); ok {
 			minimal.Set(key, v)
 		}
@@ -100,9 +100,6 @@ func (MinimalResponseSerializer) SerializeSubtaskMinimal(subtask any, operation 
 
 	if v, ok := minimalGet(full, "progress_percentage"); ok {
 		minimal.Set("progress_percentage", v)
-	}
-	if v, ok := minimalGet(full, "progress_count"); ok {
-		minimal.Set("progress_count", v)
 	}
 	if operation == "create" {
 		if v, ok := minimalGet(full, "priority"); ok {

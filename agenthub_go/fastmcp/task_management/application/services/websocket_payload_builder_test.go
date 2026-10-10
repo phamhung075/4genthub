@@ -46,7 +46,7 @@ func TestBuildTaskPayload_EntityOrderAndValues(t *testing.T) {
 	wantKeys := []string{
 		"id", "title", "status", "priority",
 		"project_id", "git_branch_id", "subtask_count", "completed_subtasks",
-		"progress_percentage", "progress_count", "progress_history", "details",
+		"progress_percentage", "details",
 		"assignees", "has_dependencies", "has_context", "labels",
 		"created_at", "updated_at", "description",
 	}
@@ -70,7 +70,6 @@ func TestBuildTaskPayload_EntityOrderAndValues(t *testing.T) {
 		"subtask_count":       2,
 		"completed_subtasks":  0,
 		"progress_percentage": 0,
-		"progress_count":      1,
 		"has_dependencies":    true,
 		"has_context":         true,
 		"created_at":          "2024-01-02T03:04:05+00:00",
@@ -111,10 +110,6 @@ func TestBuildTaskPayload_LongDescriptionTruncated(t *testing.T) {
 func TestBuildTaskPayload_LightweightOmitsHistory(t *testing.T) {
 	task := wsTaskWithCreated(wsTestTask())
 	payload := WebSocketPayloadBuilder{}.BuildLightweightPayload(task, nil)
-	ph, _ := payload.Get("progress_history")
-	if m, ok := ph.(map[string]any); !ok || len(m) != 0 {
-		t.Fatalf("progress_history = %#v, want empty map", ph)
-	}
 	details, _ := payload.Get("details")
 	if details != "" {
 		t.Fatalf("details = %#v, want empty string", details)
@@ -128,7 +123,6 @@ func TestBuildTaskPayload_FromResponse(t *testing.T) {
 		GitBranchID:       wsStrPtr("branch-2"),
 		Subtasks:          []any{"a", "b", "c"},
 		CompletedSubtasks: 2,
-		ProgressCount:     3,
 		Details:           "history text",
 	})
 	payload := WebSocketPayloadBuilder{}.BuildTaskPayload(task, resp, true)
@@ -137,7 +131,6 @@ func TestBuildTaskPayload_FromResponse(t *testing.T) {
 		"git_branch_id":      "branch-2",
 		"subtask_count":      3,
 		"completed_subtasks": 2,
-		"progress_count":     3,
 		"details":            "history text",
 	}
 	for k, want := range checks {

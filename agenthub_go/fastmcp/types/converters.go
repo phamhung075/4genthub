@@ -89,8 +89,6 @@ func TaskToDTO(task any, includeSubtasks bool) (*TaskDTO, error) {
 			Labels:             labels,
 			Details:            optStrAny(pyDictGetDefault(task, "details", nil)),
 			ProgressPercentage: optIntAny(pyDictGetDefault(task, "progress_percentage", nil)),
-			ProgressHistory:    pyDictGetDefault(task, "progress_history", nil),
-			ProgressCount:      optIntAny(pyDictGetDefault(task, "progress_count", nil)),
 		}
 		if includeSubtasks && len(subtasks) > 0 {
 			converted := make([]*SubtaskDTO, 0, len(subtasks))
@@ -148,8 +146,6 @@ func TaskToDTO(task any, includeSubtasks bool) (*TaskDTO, error) {
 		Labels:             labels,
 		Details:            optStrAny(pyGetattr(task, "details", nil)),
 		ProgressPercentage: optIntAny(pyGetattr(task, "progress_percentage", nil)),
-		ProgressHistory:    pyGetattr(task, "progress_history", nil),
-		ProgressCount:      optIntAny(pyGetattr(task, "progress_count", nil)),
 	}
 	if includeSubtasks && len(subtasks) > 0 {
 		converted := make([]*SubtaskDTO, 0, len(subtasks))
@@ -201,8 +197,6 @@ func SubtaskToDTO(subtask any) (*SubtaskDTO, error) {
 			Assignees:          assignees,
 			AssigneesCount:     len(assignees),
 			ProgressPercentage: optIntAny(pyDictGetDefault(subtask, "progress_percentage", nil)),
-			ProgressHistory:    pyDictGetDefault(subtask, "progress_history", nil),
-			ProgressCount:      optIntAny(pyDictGetDefault(subtask, "progress_count", nil)),
 			CreatedAt:          strPtrOrNil(formatDatetime(pyDictGetDefault(subtask, "created_at", nil))),
 			UpdatedAt:          strPtrOrNil(formatDatetime(pyDictGetDefault(subtask, "updated_at", nil))),
 			ProgressNotes:      optStrAny(pyDictGetDefault(subtask, "progress_notes", nil)),
@@ -226,8 +220,6 @@ func SubtaskToDTO(subtask any) (*SubtaskDTO, error) {
 		Assignees:          assignees,
 		AssigneesCount:     len(assignees),
 		ProgressPercentage: optIntAny(pyGetattr(subtask, "progress_percentage", nil)),
-		ProgressHistory:    pyGetattr(subtask, "progress_history", nil),
-		ProgressCount:      optIntAny(pyGetattr(subtask, "progress_count", nil)),
 		CreatedAt:          strPtrOrNil(formatDatetime(pyGetattr(subtask, "created_at", nil))),
 		UpdatedAt:          strPtrOrNil(formatDatetime(pyGetattr(subtask, "updated_at", nil))),
 		ProgressNotes:      optStrAny(pyGetattr(subtask, "progress_notes", nil)),

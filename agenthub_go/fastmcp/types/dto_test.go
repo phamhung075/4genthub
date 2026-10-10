@@ -74,7 +74,7 @@ func TestTaskToDTODict(t *testing.T) {
 	wantKeys := "id,title,description,status,priority,assignees,assignees_count,subtask_count," +
 		"has_dependencies,dependency_count,dependencies,has_context,context_id,context_data," +
 		"git_branch_id,project_id,created_at,updated_at,due_date,estimated_effort,labels,details," +
-		"progress_percentage,progress_history,progress_count,subtasks"
+		"progress_percentage,subtasks"
 	if got := strings.Join(dump.Keys(), ","); got != wantKeys {
 		t.Fatalf("key order:\n got %s\nwant %s", got, wantKeys)
 	}

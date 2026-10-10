@@ -30,7 +30,6 @@ func validTask() *entities.OrderedMap[any] {
 		"subtask_count", int64(2),
 		"completed_subtasks", int64(1),
 		"progress_percentage", int64(50),
-		"progress_count", int64(2),
 		"created_at", "2024-01-01T00:00:00+00:00",
 		"updated_at", "2024-01-02T00:00:00+00:00",
 	)
@@ -299,9 +298,9 @@ func TestGetStatsFormatting(t *testing.T) {
 	}
 }
 
-const validTaskJSON = `{"task":{"id":"t1","title":"Task","status":"pending","priority":"medium","assignees":[],"labels":[],"subtask_count":2,"completed_subtasks":1,"progress_percentage":50,"progress_count":2,"created_at":"2024-01-01T00:00:00+00:00","updated_at":"2024-01-02T00:00:00+00:00"}}`
+const validTaskJSON = `{"task":{"id":"t1","title":"Task","status":"pending","priority":"medium","assignees":[],"labels":[],"subtask_count":2,"completed_subtasks":1,"progress_percentage":50,"created_at":"2024-01-01T00:00:00+00:00","updated_at":"2024-01-02T00:00:00+00:00"}}`
 
-const invalidTaskJSON = `{"task":{"id":"t1","status":"pending","priority":"medium","assignees":[],"labels":[],"subtask_count":2,"completed_subtasks":1,"progress_percentage":50,"progress_count":2,"created_at":"2024-01-01T00:00:00+00:00","updated_at":"2024-01-02T00:00:00+00:00"}}`
+const invalidTaskJSON = `{"task":{"id":"t1","status":"pending","priority":"medium","assignees":[],"labels":[],"subtask_count":2,"completed_subtasks":1,"progress_percentage":50,"created_at":"2024-01-01T00:00:00+00:00","updated_at":"2024-01-02T00:00:00+00:00"}}`
 
 func serve(m *ResponseValidatorMiddleware, method, path, contentType, body string) *httptest.ResponseRecorder {
 	next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

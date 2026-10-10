@@ -43,19 +43,13 @@ type TaskResponse struct {
 	DependencyRelationships *DependencyRelationships
 
 	ProgressPercentage any
-	ProgressHistory    map[string]any
-	ProgressCount      int
 	CompletedSubtasks  int
 }
 
-// NewTaskResponse applies the Python __init__ defaults: progress_percentage 0 and
-// progress_history {} when falsy.
+// NewTaskResponse applies the Python __init__ default: progress_percentage 0 when falsy.
 func NewTaskResponse(r TaskResponse) *TaskResponse {
 	if r.ProgressPercentage == nil {
 		r.ProgressPercentage = 0
-	}
-	if r.ProgressHistory == nil {
-		r.ProgressHistory = map[string]any{}
 	}
 	return &r
 }
@@ -101,12 +95,6 @@ func TaskResponseFromDomain(ctx context.Context, task *entities.Task, gitBranchR
 	if err != nil {
 		return nil, err
 	}
-
-	progressHistory, _ := taskDict["progress_history"].(map[string]any)
-	if progressHistory == nil {
-		progressHistory = map[string]any{}
-	}
-	progressCount := intFromAny(taskDict["progress_count"])
 
 	details := ""
 	if task != nil {
@@ -164,8 +152,6 @@ func TaskResponseFromDomain(ctx context.Context, task *entities.Task, gitBranchR
 		ContextData:             contextData,
 		DependencyRelationships: dependencyRelationships,
 		ProgressPercentage:      taskDict["progress_percentage"],
-		ProgressHistory:         progressHistory,
-		ProgressCount:           progressCount,
 		CompletedSubtasks:       actualCompleted,
 	}), nil
 }
@@ -222,8 +208,6 @@ func (r *TaskResponse) ToDict() (*entities.OrderedMap[any], error) {
 	m.Set("context_data", contextDataSerialized)
 	m.Set("dependency_relationships", nil)
 	m.Set("progress_percentage", r.ProgressPercentage)
-	m.Set("progress_history", r.ProgressHistory)
-	m.Set("progress_count", r.ProgressCount)
 	m.Set("subtask_count", r.SubtaskCount())
 	m.Set("completed_subtasks", r.CompletedSubtasks)
 	return m, nil

@@ -239,7 +239,6 @@ var TaskSchema = newSchema(
 	schemaEntry{"subtask_count", FieldSchema{Type: pyKindInt, Required: true, Default: 0}},
 	schemaEntry{"completed_subtasks", FieldSchema{Type: pyKindInt, Required: true, Default: 0}},
 	schemaEntry{"progress_percentage", FieldSchema{Type: pyKindInt, Required: true, Default: 0}},
-	schemaEntry{"progress_count", FieldSchema{Type: pyKindInt, Required: true, Default: 0}},
 	schemaEntry{"created_at", FieldSchema{Type: pyKindStr, Required: true}},
 	schemaEntry{"updated_at", FieldSchema{Type: pyKindStr, Required: true}},
 	schemaEntry{"git_branch_id", FieldSchema{Type: pyKindStr, Required: false}},

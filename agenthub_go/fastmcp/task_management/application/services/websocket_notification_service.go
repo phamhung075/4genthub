@@ -299,8 +299,6 @@ func wsAddCompletionMetadata(metadata *entities.OrderedMap[any], data any, title
 	metadata.Set("completion_summary", wsDataGet(data, "completion_summary", ""))
 	metadata.Set("testing_notes", wsDataGet(data, "testing_notes", ""))
 	metadata.Set("progress_percentage", wsDataGet(data, "progress_percentage", 100))
-	metadata.Set("progress_history", wsDataGet(data, "progress_history", entities.NewOrderedMap[any]()))
-	metadata.Set("progress_count", wsDataGet(data, "progress_count", 0))
 	metadata.Set("assignees", wsDataGet(data, "assignees", []any{}))
 	metadata.Set("description", wsDataGet(data, "description", ""))
 	metadata.Set("insights_found", wsDataGet(data, "insights_found", []any{}))

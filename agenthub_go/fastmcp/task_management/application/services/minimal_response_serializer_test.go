@@ -21,7 +21,6 @@ func TestMinimalResponseSerializerTaskCreateKeyOrder(t *testing.T) {
 	full.Set("context_id", "c1")
 	full.Set("overall_progress", 42)
 	full.Set("progress_percentage", 42)
-	full.Set("progress_count", 3)
 	full.Set("subtask_count", 2)
 	full.Set("completed_subtasks", 1)
 	full.Set("dependency_count", 4)
@@ -35,7 +34,7 @@ func TestMinimalResponseSerializerTaskCreateKeyOrder(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	// Python insertion order.
-	want := "id,created_at,updated_at,context_id,overall_progress,progress_percentage,progress_count,subtask_count,completed_subtasks,dependency_count,git_branch_id,status,priority"
+	want := "id,created_at,updated_at,context_id,overall_progress,progress_percentage,subtask_count,completed_subtasks,dependency_count,git_branch_id,status,priority"
 	if got := minRespOrderedKeys(t, out); got != want {
 		t.Fatalf("key order = %q, want %q", got, want)
 	}
@@ -79,14 +78,13 @@ func TestMinimalResponseSerializerSubtaskCreateKeyOrder(t *testing.T) {
 	full.Set("created_at", "a")
 	full.Set("updated_at", "b")
 	full.Set("progress_percentage", 10)
-	full.Set("progress_count", 1)
 	full.Set("priority", "medium")
 
 	out, err := MinimalResponseSerializer{}.SerializeSubtaskMinimal(full, "create")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	want := "id,title,description,status,task_id,parent_task_id,created_at,updated_at,progress_percentage,progress_count,priority"
+	want := "id,title,description,status,task_id,parent_task_id,created_at,updated_at,progress_percentage,priority"
 	if got := minRespOrderedKeys(t, out); got != want {
 		t.Fatalf("key order = %q, want %q", got, want)
 	}

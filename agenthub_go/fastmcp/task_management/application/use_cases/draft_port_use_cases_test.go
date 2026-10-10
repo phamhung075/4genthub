@@ -102,7 +102,7 @@ func TestDraftAddSubtaskInheritance(t *testing.T) {
 		t.Fatalf("inheritance = %v %v", resp.AgentInheritanceApplied, resp.InheritedAssignees)
 	}
 	wantKeys := []string{"id", "title", "description", "status", "priority", "assignees",
-		"progress_percentage", "progress_history", "progress_count", "created_at", "updated_at", "parent_task_id"}
+		"progress_percentage", "created_at", "updated_at", "parent_task_id"}
 	if got := resp.Subtask.Keys(); !reflect.DeepEqual(got, wantKeys) {
 		t.Fatalf("subtask keys = %v", got)
 	}
