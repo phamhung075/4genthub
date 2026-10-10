@@ -59,6 +59,12 @@ var TaskEventActorKindValues = []TaskEventActorKind{
 	TaskEventActorAgent,
 }
 
+// TaskEventActorSystemID is the actor id stamped on an entry that has no acting user - the same
+// "system" stamp the facade uses for a notification with no actor. It lives here, with the actor
+// vocabulary, because both the application service that writes entries and the use cases that open
+// their transactions need it, and they must not import each other to get it.
+const TaskEventActorSystemID = "system"
+
 // AppendTaskEvent is what a caller supplies to write one entry. It lives here rather than beside
 // the repository on purpose: the recorder is an application service, and it must be able to
 // describe its input without importing an infrastructure package.

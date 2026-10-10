@@ -21,11 +21,21 @@ type UpdateTaskUseCase struct {
 	taskRepository      repositories.TaskRepository
 	gitBranchRepository task.GitBranchGetter
 	hooks               TaskEventHooks
+
+	// ledger writes the status move and its status_changed entry in one transaction. Unset leaves
+	// the save exactly as it was.
+	ledger StatusLedger
 }
 
 // WithHooks sets the side-effect hooks (nil disables them).
 func (u *UpdateTaskUseCase) WithHooks(h TaskEventHooks) *UpdateTaskUseCase {
 	u.hooks = h
+	return u
+}
+
+// WithLedger wires the status ledger (unset leaves the status write as it was).
+func (u *UpdateTaskUseCase) WithLedger(l StatusLedger) *UpdateTaskUseCase {
+	u.ledger = l
 	return u
 }
 
@@ -132,16 +142,21 @@ func (u *UpdateTaskUseCase) Execute(ctx context.Context, request task.UpdateTask
 		}
 	}
 
-	// Save the updated task; Python ignores the return value but not exceptions.
-	if _, err := u.taskRepository.Save(ctx, taskEntity); err != nil {
-		return nil, err
-	}
-
-	// Auto-sync task context after update (best effort; the update never fails on it).
+	// Save the updated task; Python ignores the return value but not exceptions. The ledger entry
+	// for a status move is written in this same transaction, so the status and the entry that
+	// describes it commit together or not at all.
 	taskIDStr := ""
 	if taskEntity.ID != nil {
 		taskIDStr = taskEntity.ID.Value
 	}
+	if err := u.ledger.SaveStatus(ctx, func(ctx context.Context) error {
+		_, err := u.taskRepository.Save(ctx, taskEntity)
+		return err
+	}, taskIDStr, statusActorSystem); err != nil {
+		return nil, err
+	}
+
+	// Auto-sync task context after update (best effort; the update never fails on it).
 	if u.hooks != nil {
 		_ = u.hooks.SyncTaskMetadata(ctx, taskIDStr, taskEntity, "")
 	}

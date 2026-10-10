@@ -55,11 +55,21 @@ type CompleteTaskUseCase struct {
 	completionService     *services.TaskCompletionService
 	contextFacadeFactory  completeTaskContextFacadeFactory
 	hooks                 CompleteTaskHooks
+
+	// ledger writes each status move and its status_changed entry in one transaction. Unset leaves
+	// the save exactly as it was.
+	ledger StatusLedger
 }
 
 // WithHooks sets the status/metadata sync hooks (nil disables them).
 func (uc *CompleteTaskUseCase) WithHooks(h CompleteTaskHooks) *CompleteTaskUseCase {
 	uc.hooks = h
+	return uc
+}
+
+// WithLedger wires the status ledger (unset leaves the status writes as they were).
+func (uc *CompleteTaskUseCase) WithLedger(l StatusLedger) *CompleteTaskUseCase {
+	uc.ledger = l
 	return uc
 }
 
@@ -122,8 +132,13 @@ func (uc *CompleteTaskUseCase) Execute(
 		return response, nil
 	}
 
-	// Save the task
-	if _, err := uc.taskRepository.Save(ctx, task); err != nil {
+	// Save the task, with its status_changed entry, in one transaction. The entry reports the
+	// transition the row makes: executeCore may already have moved todo -> in_progress, and that
+	// move was recorded by its own call.
+	if err := uc.ledger.SaveStatus(ctx, func(ctx context.Context) error {
+		_, err := uc.taskRepository.Save(ctx, task)
+		return err
+	}, taskIDStr, statusActorSystem); err != nil {
 		return nil, err
 	}
 
@@ -366,11 +381,15 @@ func (uc *CompleteTaskUseCase) executeCore(
 		}
 	}
 
-	// Handle state transition from todo -> in_progress -> done.
+	// Handle state transition from todo -> in_progress -> done. The move to in_progress is a status
+	// write of its own, so it carries its own entry, in its own transaction.
 	if strings.ToLower(task.Status.String()) == "todo" {
 		inProgress, _ := value_objects.NewTaskStatus("in_progress")
 		task.Status = &inProgress
-		if _, err := uc.taskRepository.Save(ctx, task); err != nil {
+		if err := uc.ledger.SaveStatus(ctx, func(ctx context.Context) error {
+			_, err := uc.taskRepository.Save(ctx, task)
+			return err
+		}, taskIDStr, statusActorSystem); err != nil {
 			return nil, false, err
 		}
 	}
@@ -617,7 +636,13 @@ func (uc *CompleteTaskUseCase) updateSingleDependentTask(ctx context.Context, de
 		case "blocked":
 			todo, _ := value_objects.NewTaskStatus("todo")
 			dependentTask.Status = &todo
-			_, _ = uc.taskRepository.Save(ctx, dependentTask)
+			// The unblock is this OTHER task's status write, so it carries its own entry, in its own
+			// transaction. The error is swallowed exactly as the bare save's was (Python logs it and
+			// continues), so a failure to record cannot fail the completion.
+			_ = uc.ledger.SaveStatus(ctx, func(ctx context.Context) error {
+				_, err := uc.taskRepository.Save(ctx, dependentTask)
+				return err
+			}, ledgerTaskID(dependentTask), statusActorSystem)
 		case "todo":
 			// Ready to start: all dependencies completed.
 		default:
