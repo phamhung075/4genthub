@@ -2,6 +2,12 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-10 - the verb-scoped case names the property it protects, in the shape the tree has
+
+- `agenthub_go/fastmcp/server/httpapp/seat_mount_test.go` — **comment only, no behaviour.** The case's own words described the message path and the resolution as sharing a shape ("it no longer shares a path with the resolution GET"), which is an identity between two paths the tree does not have. On the lead's refinement to `a56e58a7`, the comment now states what is protected directly - the message path is decided by the **VERB** (a POST reaches the handler, a GET on that same path is **405** and falls through to nothing) - and states that the resolution answers on its own room-scoped path, where it already lived and where nothing here touches it. A test describing a shape the tree does not have is a stale carrier in test clothing.
+- **NO ASSERTION CHANGED, AND THE RUN SAYS SO:** `gofmt -l fastmcp/server/httpapp/seat_mount_test.go` → printed nothing; `go test -count=1 ./fastmcp/server/httpapp/...` → **ok**. All four chat-window cases are untouched, so this is recorded as a wording repair rather than a behavioural one.
+- **`a56e58a7` WAS NOT AMENDED, DELIBERATELY:** it is routed to the reviewer BY HASH, and an amend would move that hash and void the verdict that names it. The refinement therefore lands as its own commit on top of it.
+
 ## 2026-10-10 - the seat message route gains the room, and the case that proves which room was resolved
 
 - `agenthub_go/fastmcp/server/httpapp/seat_mount_test.go` — `TestSeatMessageRouteResolvesTheSeatInTheRoomTheURLNames` (new, three subtests) drives the moved route through the file's existing `seatTestMux`/`doTestRequest` seam: a seat that is not in the room the URL names → **404**, the resolver failing for another reason → **500**, and a seat that does resolve → the untouched **501** delivery refusal. Every answer is asserted to carry a `detail`, because the window renders that field.

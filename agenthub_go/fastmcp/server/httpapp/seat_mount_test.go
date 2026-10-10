@@ -221,10 +221,12 @@ func TestSeedSeatTypesErrorMapping(t *testing.T) {
 	}
 }
 
-// The chat window's route is room-scoped, like every other seat sub-resource, so it no longer
-// shares a path with the resolution GET. This is a ROUTING test rather than a validation one:
-// each pattern must be reached by the path and method it names, the verb must still decide, and
-// the mount must not have taken the resolution away.
+// THE PROPERTY THIS PROTECTS IS THE VERB ON THE MESSAGE PATH, stated in the shape the tree
+// actually has: a POST on the message path reaches the message handler, a GET on that same path is
+// answered 405 by that route's own pattern and falls through to nothing, and the resolution
+// answers on its OWN room-scoped path, where it already lived and where nothing here touches it.
+// This is a ROUTING test rather than a validation one: each pattern must be reached by the path
+// and the method it names.
 func TestSeatMessageRouteIsVerbScoped(t *testing.T) {
 	t.Setenv(publicURLEnv, "https://api.example.test")
 	mux := seatTestMux(t, &fakeSeatSource{resolved: &repositories.ResolvedSeat{
@@ -242,15 +244,16 @@ func TestSeatMessageRouteIsVerbScoped(t *testing.T) {
 		t.Fatalf("refusal is not a human-readable detail: %s", rec.Body.String())
 	}
 
-	// The SAME path with GET is no route: the verb still decides, and it must not fall through
-	// to the resolution.
+	// A GET on that same path is 405: the message pattern is POST-only, and nothing falls
+	// through to another route on this path.
 	if getRec := doTestRequest(t, mux, http.MethodGet, "/api/v2/openrig/rooms/dev/seats/coder/messages", ""); getRec.Code != http.StatusMethodNotAllowed {
 		t.Fatalf("GET /rooms/dev/seats/coder/messages = %d, want 405: %s", getRec.Code, getRec.Body.String())
 	}
 
-	// The resolution keeps its GET and the path it kept it on: the key-only two-segment path the
-	// message route used to share now answers the resolution alone, with "messages" resolving as
-	// the seat key. That is the shape a client resolving a seat still calls.
+	// The resolution is not on this path and never was: it answers on its own room-scoped path,
+	// /seats/{room}/{seat}. The key-only two-segment path that once collided with the message
+	// route now resolves alone, with "messages" as the seat key - the shape a client resolving a
+	// seat still calls.
 	getRec := doTestRequest(t, mux, http.MethodGet, "/api/v2/openrig/seats/coder/messages", "")
 	if getRec.Code != http.StatusOK {
 		t.Fatalf("GET /seats/coder/messages = %d, want the resolution 200: %s", getRec.Code, getRec.Body.String())
