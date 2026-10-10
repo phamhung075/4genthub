@@ -2,6 +2,15 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-10 - the sessions list carries the seat pair on the wire: the missing half was the proof, not the field
+
+- NEW, in the existing file and staged by explicit path: `fastmcp/server/httpapp/ws_connector_test.go` gains `TestSessionListCarriesTheSeatPairTheConnectorReported` and `TestSessionListCarriesAnUnreportedSeatPairAsNull`, both asserting over the DECODED body of `GET /api/v2/sessions` - the response DTO the dashboard reads - rather than over a struct or a repository row. Row `54e5c4ce`.
+- The two facts the pair has to satisfy, and why each is asserted: the values the CONNECTOR reported arrive unchanged (`dev` / `alice`, sent on a real socket as the frame's `room` and `seat` after `hello`), and a connector that names none leaves both keys PRESENT as `null`. An empty string would read as a named-but-blank seat; an ABSENT key would break a client that reads the field by name. The presence check is what makes the null case a different assertion from a `nil` comparison on a missing key.
+- RED FIRST, MEASURED: with the two `m.Set` pairs in `session_stream.sessionRow` temporarily removed, both cases failed - `room_slug is absent from the response map[connector_id:c1 created_at:... name:coder project:<nil> status:active]`, and the same for `seat_key`, in the named case and the unnamed one. The file was then restored and `git diff` on `fastmcp/session_stream/repository.go` is EMPTY, so the red run left nothing behind.
+- THE ROW'S PREMISE WAS MEASURED FALSE, and the report carries file:line rather than an opinion: `sessionRow` already sets both keys, `sessionCols` selects them, `scanAgentSession` scans them, and the route serializes that map verbatim - the row's `-S room_slug` searched `fastmcp/server`, while the DTO lives in the sibling package `fastmcp/session_stream`. Nothing was added to the response, because the response already carried it; what was missing was a case that drives the wire.
+- WITH A REAL POSTGRES (`tools/testpg/start.sh`, port 55432, `AGENTHUB_TEST_PG_URL`): the two cases pass - `ok agenthub/fastmcp/server/httpapp 1.113s` for that selection alone; `go test ./fastmcp/session_stream/... ./fastmcp/server/httpapp/...` -> `ok 1.169s` and `ok 12.838s` (whole packages, no skips). `gofmt -l` on the touched file printed nothing; `go vet ./fastmcp/server/httpapp/... ./fastmcp/session_stream/...` clean.
+
+
 ## 2026-10-10 - the server-side seatcheck copy is removed with its 3 test files; the client module's copy is the guard's canonical source
 
 - DELETED, tracked and staged by explicit path: `agenthub_go/cmd/seatcheck/main.go`, `main_test.go` (695 lines) and `exec_test.go` (246) - 1371 lines. Row `37dd5c78`. The copy that stays is `agenthub_client/cmd/seatcheck`, whose suite (`main_test.go` 714 + `exec_test.go` 246) is now the tree's ONLY seatcheck suite and is strictly larger than the one that left.
