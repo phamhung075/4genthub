@@ -2,6 +2,11 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-10 - the key link keeps an operator's own `.env`: a refusal case, a no-DeepSeek-seat case, and an isolated OMP state root
+
+- `agenthub_client/tests/test_seat_sync.py` - `test_rig_refuses_to_replace_a_pre_existing_env_file_and_names_it` (a regular `.env` is refused, named, left intact, and no `rig/` is built) and `test_rig_links_no_env_into_a_room_without_a_deepseek_seat`; the three key cases now set `OMP_STATE_ROOT` under `tmp_path`, so they never create agent directories in the live state root.
+- Commands, from the repository root: `PYTHONPATH=agenthub_client/src python3 -m pytest agenthub_client/tests -q` -> 325 passed.
+
 ## 2026-10-10 - `4genteam sync rig` launches a new room by itself: the verbatim-spec and refusal cases give way to the launch-spec cases
 
 - `agenthub_client/tests/test_seat_sync.py` - `rig.yaml` is no longer the server's text byte for byte, so the three assertions that compared it to the fixture now parse it: members keep their ids and `agent_ref`, `cwd` is the room directory, `permission_policy` is `builtin:yolo`. The refusal for an absent seat agent directory is replaced by a case that the directory is created and the render installed on the first run. Two new cases: the `.env` link to the one DeepSeek key for a room with a `deepseek/` seat, and the refusal naming the path when that key file is missing (nothing built).
