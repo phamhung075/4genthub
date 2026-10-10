@@ -5,9 +5,6 @@
 [submodule "claude-automation"]
 	path = claude-automation
 	url = git@github.com:phamhung075/claude-automation.git
-[submodule "scripts/caveman"]
-	path = scripts/caveman
-	url = https://github.com/JuliusBrussee/caveman.git
 [submodule "agenthub_client"]
 	path = agenthub_client
 	url = git@github.com:phamhung075/4genthub-client.git
