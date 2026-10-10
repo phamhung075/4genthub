@@ -62,6 +62,15 @@ export const SessionList: React.FC<SessionListProps> = ({ sessions, selectedId, 
               </div>
               <div className="mt-1 flex items-center justify-between gap-2 text-xs text-base-secondary">
                 <span className="truncate">{session.project ?? session.connector_id}</span>
+                {/* The seat this session IS, from the row's own fields - the pair the message route
+                    needs, so a rig's sessions are identifiable at a glance. Both come from the
+                    connector at ingest; neither is derived from the name here, and a session whose
+                    connector named no seat shows none rather than a guess. */}
+                {session.seat_key && (
+                  <Badge variant="outline" className="shrink-0 font-mono text-[10px]">
+                    {session.room_slug ? `${session.room_slug}/${session.seat_key}` : session.seat_key}
+                  </Badge>
+                )}
                 <span className="shrink-0">{relativeTime(session.last_seen)}</span>
               </div>
             </button>

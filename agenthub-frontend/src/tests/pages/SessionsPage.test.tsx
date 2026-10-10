@@ -169,4 +169,57 @@ describe('SessionsPage', () => {
 
     expect(screen.queryByRole('button', { name: 'Show message input' })).not.toBeInTheDocument();
   });
+
+  it("shows each session's own seat, and invents none for a row the connector named none on", () => {
+    // The rig's sessions are only identifiable as seats if the list shows the pair the session row
+    // carries. Two rows, one of each shape, in the SAME render - the empty half is the control: a
+    // list that derived a seat from the name would print one for `s2` too, whose name carries the
+    // same `@rig` suffix and whose row is null.
+    useSessionsMock.mockReturnValue({
+      sessions: [
+        session('s1', 'lead@4genthub-min', { room_slug: '4genthub-min', seat_key: 'lead' }),
+        session('s2', 'web-dev@4genthub-min'),
+      ],
+      isLoading: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+
+    renderPage('/sessions');
+
+    expect(screen.getByText('4genthub-min/lead')).toBeInTheDocument();
+    // `s2`'s name says `@4genthub-min` and its row says nothing, so no seat badge exists for it.
+    expect(screen.getAllByText(/^4genthub-min\//)).toHaveLength(1);
+    expect(screen.queryByText('4genthub-min/web-dev')).not.toBeInTheDocument();
+  });
+
+  it('shows a user with no sessions the empty state, and never a row the response did not carry', () => {
+    // THE RIGHT-USER-ONLY HALF, at the only layer the browser owns it. The isolation itself is the
+    // server's: `ListSessions` scopes by `WHERE user_id = $1` (session_stream/repository.go:361) with
+    // the id taken from the BEARER TOKEN (server/routes/session_stream_routes.go:30), the session id
+    // is derived per user (repository.go:53-54), and `/ws/sessions/{id}` answers 4004 for a session
+    // that is not yours (pinned in useSessionStream.test.tsx). So this case asserts the browser's own
+    // contribution: it lists EXACTLY what the user-scoped response carried and decides nothing itself.
+    // Falsification: it fails the moment a row the response did not carry reaches this list - a
+    // merged cache, a second source, or a client-side filter that keeps a foreign row alive.
+    useSessionsMock.mockReturnValue({
+      sessions: [],
+      isLoading: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    useSessionStreamMock.mockReturnValue({
+      events: [],
+      status: 'not-found',
+      error: 'Session not found',
+    });
+
+    renderPage('/sessions/aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee');
+
+    expect(screen.getByText(/No sessions yet/)).toBeInTheDocument();
+    expect(screen.queryAllByRole('listitem')).toHaveLength(0);
+    // The followed id is one this user does not own, and the stream's refusal is what the page shows
+    // for it - not a session row.
+    expect(screen.getByText('Session not found')).toBeInTheDocument();
+  });
 });
