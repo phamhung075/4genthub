@@ -552,11 +552,32 @@ export const apiReference: ApiReference = {
       "description": ""
     },
     {
+      "method": "GET",
+      "path": "/api/v2/openrig/rooms/{room}/seats/{seat}/messages",
+      "pathParams": [
+        "room",
+        "seat"
+      ],
+      "handler": "",
+      "description": ""
+    },
+    {
       "method": "POST",
       "path": "/api/v2/openrig/rooms/{room}/seats/{seat}/messages",
       "pathParams": [
         "room",
         "seat"
+      ],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "POST",
+      "path": "/api/v2/openrig/rooms/{room}/seats/{seat}/messages/{id}/ack",
+      "pathParams": [
+        "room",
+        "seat",
+        "id"
       ],
       "handler": "",
       "description": ""
