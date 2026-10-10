@@ -18,7 +18,9 @@ the script refuses to guess which of the two is authoritative.
 
 A GATE MAY RUN THIS AS-IS. It has no write mode at all, by design: a check that repairs what
 it measures reports clean by construction and can never fail (the lead's rule, 2026-10-06).
-`CITATION-AUDIT.py` beside it carries the rewriting mode and MUST NOT be run inside a gate.
+The seat-local `CITATION-AUDIT.py` - it lives in the seat area
+(`~/.openrig/agenthub-seats/<seat>/CITATION-AUDIT.py`), NOT beside this file and NOT in `scripts/` -
+carries the rewriting mode and MUST NOT be run inside a gate.
 
 USAGE:  python3 scripts/COUNTS-AUDIT.py              # exits non-zero if any number differs
         python3 scripts/COUNTS-AUDIT.py --self-test  # perturb an expectation; require it to notice
@@ -33,7 +35,7 @@ GO = f"{ROOT}/agenthub_go"
 # The numbers as the surface inventory states them. Each entry names the instrument that
 # re-derives it, because a number without its instrument is the failure this file exists for.
 EXPECTED = {
-    "httpapp route registrations": 126,     # grep -rn 'mux.HandleFunc(' fastmcp/server/httpapp, minus _test.go
+    "httpapp route registrations": 124,     # grep -rn 'mux.HandleFunc(' fastmcp/server/httpapp, minus _test.go
                                             #   124 -> 125: O1a's GET /{id}/events route landed and THIS expectation
                                             #     never moved, so the audit was already red before the change below.
                                             #   125 -> 123: e6829b32 removed the two always-500 task routes, and the
@@ -46,23 +48,41 @@ EXPECTED = {
                                             #     audit was RED from a56e58a7 until this retune, exactly as it was red
                                             #     from the O1a addition above. Re-derived, not adjusted: the same
                                             #     pattern returns 126 at 6cfd56ab and 123 at e6829b32.
+                                            #   126 -> 124: e5ecff63 ("feat(auth)!: one credential, AGENTHUB_TOKEN
+                                            #     replaces the per-machine token") DELETED machine_token_mount.go, which
+                                            #     carried the two machine-token registrations - POST /api/v2/openrig/
+                                            #     machines and DELETE /api/v2/openrig/machines/{machine}/token. Its other
+                                            #     httpapp edits swap the auth wrapper (machineAuthed -> authed) on
+                                            #     registrations that STAY, so those move a wrapper and not a count.
+                                            #     Re-derived, not adjusted: the same pattern returns 126 at 6cfd56ab and
+                                            #     124 at a7990665. This is the first time this row moves DOWN.
     "auth route registrations": 20,         # same pattern, fastmcp/auth/{interface,api}
     "published MCP tools": 10,              # six from ToolDefinitions() + four appended in mcp_routes.go
     "dispatch-only MCP names": 2,           # get_mcp_status, check_session_health
     "core tables": 20,                      # depth-1 entries of database.Tables in models.go
     "auth tables": 3,                       # two in models_auth.go, one in email_token_repository.go
-    "seat tables": 16,                      # depth-1 entries of seatDatabaseTables
+    "seat tables": 15,                      # depth-1 entries of seatDatabaseTables
                                             #   14 -> 16: 7c81981b registered seat_messages and 02bfd416 registered
                                             #     machine_edges; the audit was red from 02bfd416 until this retune.
                                             #     Re-derived, not adjusted: the depth-1 {Name: ...} count is 14 at
                                             #     e6829b32 and 16 at 6cfd56ab.
+                                            #   16 -> 15: e5ecff63 removed the machine_tokens depth-1 entry from
+                                            #     seat_tables.go - the table, its ORM, its repository and its service
+                                            #     went with the credential change. Re-derived, not adjusted: 16 at
+                                            #     6cfd56ab, 15 at a7990665.
     "team tables": 2,                       # depth-1 entries of teamManagementDatabaseTables
-    "registered tables total": 41,          # 20 + 3 + 16 + 2 - follows "seat tables" above, not a count of its own
+    "registered tables total": 40,          # 20 + 3 + 15 + 2 - follows "seat tables" above, not a count of its own
+                                            #   41 -> 40: the same e5ecff63 removal, counted once and not twice.
     "ProductionTables": 6,                  # declared, never appended
-    "SQL CREATE TABLE statements": 18,      # ^CREATE TABLE IF NOT EXISTS in seat_management_postgresql.sql
+    "SQL CREATE TABLE statements": 17,      # ^CREATE TABLE IF NOT EXISTS in seat_management_postgresql.sql
                                             #   16 -> 18: the same two commits added one statement each - seat_messages
                                             #     in 7c81981b and machine_edges in 02bfd416 - which is why this row and
                                             #     "seat tables" move together and neither can be retuned alone.
+                                            #   18 -> 17: e5ecff63 deleted the machine_tokens statement with its table
+                                            #     (16 lines out of that file), so the pair moves together on a REMOVAL
+                                            #     as it did on the additions above. Re-derived, not adjusted: the
+                                            #     unanchored `grep -c` reads 18 - 17 statements plus the header comment
+                                            #     at line 6 - and the anchored form 17.
 }
 
 
@@ -314,7 +334,7 @@ def main_report(quiet=False):
     print("            This column used to print EXPECTED, i.e. this file's memory, which is how")
     print("            'all matching' came to be read as 'every count in the document is right'.")
     print("  DOES NOT  read any file other than surface-inventory.md.")
-    print("  DOES NOT  check file:line citations - CITATION-AUDIT.py owns those.")
+    print("  DOES NOT  check file:line citations - the seat-local CITATION-AUDIT.py owns those")
     if fenced:
         print(f"  READS     {len(fenced)} count line(s) INSIDE fenced blocks and cross-checks them against")
         print("            the anchored figures above. It does not re-run their commands, so a fenced")
