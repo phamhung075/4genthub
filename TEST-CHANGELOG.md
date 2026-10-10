@@ -2,6 +2,12 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-10 - the seat header bound's unit is pinned by the test that would have caught it
+
+- ADDED to `TestValidateSeatValueRefusesWhatCannotBeAnActorID` (`agenthub_go/fastmcp/seat_management/domain/mcpblock/mcpblock_test.go`): a multi-byte pair in the column's own unit. 255 characters carried in 505 bytes must be ACCEPTED, and 256 characters must be refused with the length named in characters. Each fixture asserts its own shape before use — that it is the right number of CHARACTERS and, for the accepted one, wider than 255 BYTES — so the case cannot pass against a byte bound by accident.
+- The package imports `unicode/utf8` for that assertion; no other test file changed.
+- VERIFIED: `gofmt -l` on the package printed nothing, `go vet` clean, `go test -count=1 ./fastmcp/seat_management/domain/mcpblock/` ok. The boundary case in `fastmcp/server/httpapp/task_status_ledger_test.go` re-ran unchanged and PASSES, observing the refusal's message now reading `seat header is 256 characters, past the 255 an actor id is recorded in`.
+
 ## 2026-10-10 - the legacy details migration's tests leave with it, and the URL property is re-pointed at the live path
 
 - DELETED `agenthub_go/fastmcp/database_migrations_test.go` (whole file, one case: `TestIsPostgresURL`). Its subject, the DSN scheme check, existed only to guard `RunMigrations`; nothing on the live path branches on the scheme, so there was no property left to keep.

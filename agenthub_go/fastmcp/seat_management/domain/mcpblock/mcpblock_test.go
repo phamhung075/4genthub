@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"unicode/utf8"
 )
 
 const platformBlock = `{
@@ -184,6 +185,32 @@ func TestValidateSeatValueRefusesWhatCannotBeAnActorID(t *testing.T) {
 	}
 	if len(err.Error()) > 200 {
 		t.Errorf("the refusal is %d bytes: a hostile header must not inflate the message", len(err.Error()))
+	}
+
+	// The column counts CHARACTERS, not bytes: VARCHAR(255) in PostgreSQL admits 255 characters however
+	// many bytes they take. A bound in bytes would refuse a legal identity made of two-byte characters -
+	// the safe direction is still wrong, because a seat key with an accented letter is a real key.
+	wide := SeatValue(room, strings.Repeat("é", SeatValueMaxLen-len(room)-1))
+	if got := utf8.RuneCountInString(wide); got != SeatValueMaxLen {
+		t.Fatalf("the wide fixture is %d characters, want %d", got, SeatValueMaxLen)
+	}
+	if len(wide) <= SeatValueMaxLen {
+		t.Fatalf("the wide fixture is only %d bytes, so it cannot tell a character bound from a byte bound", len(wide))
+	}
+	if err := ValidateSeatValue(wide); err != nil {
+		t.Errorf("%d CHARACTERS (%d bytes) was refused: actor_id counts characters, so this refuses a legal identity: %v",
+			SeatValueMaxLen, len(wide), err)
+	}
+
+	wideOver := SeatValue(room, strings.Repeat("é", SeatValueMaxLen-len(room)))
+	if got := utf8.RuneCountInString(wideOver); got != SeatValueMaxLen+1 {
+		t.Fatalf("the wide overflow fixture is %d characters, want %d", got, SeatValueMaxLen+1)
+	}
+	err = ValidateSeatValue(wideOver)
+	if err == nil {
+		t.Errorf("%d characters was accepted: it is past the column's width", SeatValueMaxLen+1)
+	} else if !strings.Contains(err.Error(), "256") {
+		t.Errorf("the refusal does not name the length in the column's own unit: %v", err)
 	}
 
 	// The values that name no seat. `alpha//beta` is deliberately NOT here: it splits at the FIRST

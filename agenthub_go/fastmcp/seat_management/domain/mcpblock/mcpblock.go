@@ -13,6 +13,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"unicode/utf8"
 
 	"agenthub/fastmcp/seat_management/domain/secretscan"
 )
@@ -40,11 +41,14 @@ func SeatValue(roomSlug, seatKey string) string {
 	return roomSlug + "/" + seatKey
 }
 
-// SeatValueMaxLen bounds a header value by the column the ledger records it in:
-// task_events.actor_id is VARCHAR(255), and a value past that width used to fail the INSERT and roll
-// the CALLER'S OWN status write back with it - a header losing a legitimate write. The bound lives
-// here, with the shape, so the renderer and the route cannot disagree about how long an identity may
-// be.
+// SeatValueMaxLen bounds a header value by the column the ledger records it in: task_events.actor_id
+// is VARCHAR(255), and a value past that width used to fail the INSERT and roll the CALLER'S OWN
+// status write back with it - a header losing a legitimate write. The bound lives here, with the
+// shape, so the renderer and the route cannot disagree about how long an identity may be.
+//
+// It counts CHARACTERS, because the column does: PostgreSQL's VARCHAR(255) admits 255 characters
+// however many bytes they take, so a byte bound would refuse a legal identity whose seat key carries
+// an accented letter.
 const SeatValueMaxLen = 255
 
 // ValidateSeatValue refuses a header value that cannot be recorded as an actor id: it checks what
@@ -57,9 +61,9 @@ const SeatValueMaxLen = 255
 // the renderer produces. The value is quoted if it is printed, so a hostile header cannot inflate the
 // message.
 func ValidateSeatValue(v string) error {
-	if len(v) > SeatValueMaxLen {
-		return fmt.Errorf("seat header is %d bytes, past the %d an actor id is recorded in: %.60q",
-			len(v), SeatValueMaxLen, v)
+	if chars := utf8.RuneCountInString(v); chars > SeatValueMaxLen {
+		return fmt.Errorf("seat header is %d characters, past the %d an actor id is recorded in: %.60q",
+			chars, SeatValueMaxLen, v)
 	}
 	room, seat, ok := strings.Cut(v, "/")
 	if !ok || room == "" || seat == "" {
