@@ -735,9 +735,9 @@ O2 makes a seat behave differently depending on connectivity, so every seat's in
 | Routes, MCP tools, tables, counts | `ai_docs/api-integration/surface-inventory.md` (re-derived by `COUNTS-AUDIT.py`) |
 | The work queue, groups O, F, T, directives and owner rulings | `agenthub_go/NEXT_GEN.md` (working tracker) |
 | Python-to-Go parity record, deviations T1, T2, P1, N1, N2 | `agenthub_go/MIGRATION.md`, `agenthub_go/PROD_READINESS_REPORT.md` (history) |
-| Seat guides and the commit form for seats | `ai_docs/operations/seat-guides/`, `ai_docs/agent-system/repo-agent-rules.md` |
+| Seat guides, and the commit form for seats | `agenthub_go/fastmcp/seat_management/domain/seedlibrary/blocks/guide-<seat>.md` with `shared-modules/guide-common.md` and `guides.lock.json` (the repo-side `ai_docs/operations/seat-guides/` copies were removed by `cb998795`, 2026-10-10); `ai_docs/agent-system/repo-agent-rules.md` |
 | Seat sync with the cloud | `ai_docs/operations/syncing-seats-with-the-cloud.md` |
-| Rules for agents working in the repository | `CLAUDE.md`, `CLAUDE.local.md` (the owner's file) |
+| Rules for agents working in the repository | `AGENTS.md` (renamed from `CLAUDE.md` in `f7a809dc`), `CLAUDE.local.md` (the owner's file) |
 
 ## 8. Document history
 

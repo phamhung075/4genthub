@@ -120,10 +120,13 @@ The only layer that can exempt one command from every mode is the seat's own app
 already writes.
 
 **Landed here vs specified here.** Landed: this document and the expectation line in the seat guide
-(`agenthub_go/fastmcp/seat_management/domain/seedlibrary/shared-modules/guide-common.md`, mirrored at
-`ai_docs/operations/seat-guides/_common.md`; the `scripts/team/4genthub-min/guide-common.md` copy this sentence
-named was removed by `1c7b6631` on **2026-10-09** — it was byte-identical to the library block and no check
-compared it).
+(`agenthub_go/fastmcp/seat_management/domain/seedlibrary/shared-modules/guide-common.md`; the two repo-side copies
+of that block this sentence used to name are both gone — `scripts/team/4genthub-min/guide-common.md` removed by
+`1c7b6631` on **2026-10-09**, and its byte-identical mirror `ai_docs/operations/seat-guides/_common.md` removed by
+`cb998795` on **2026-10-10**, so neither path resolves any more — and no check compared either. An earlier
+revision dated the first of those removals **2026-10-08**, which is when `11e57beb` did remove the copy — on a line
+of history that did not survive (`11e57beb` is not an ancestor of `HEAD`, and the path is present again at
+`1c7b6631^`), so it is `1c7b6631` that carries the removal on the live line).
 Specified, not landed: the two-line addition to `render_config` — it belongs in the live writer,
 `agenthub_client/src/agenthub_client/seat_policy.py` (the port of the deleted `scripts/openrig_seat_policy.py`),
 and code is not this seat's lane. Applying the rendered configs is runtime state; not done here.
