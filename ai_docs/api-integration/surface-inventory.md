@@ -25,6 +25,8 @@ The commands used and the full registration dump are in the acceptance appendix.
 
 **Reproduce:** `cd agenthub_go && grep -rn "mux\.HandleFunc(" --include='*.go' --exclude='*_test.go' fastmcp/server/httpapp fastmcp/auth | wc -l` -> **144** (httpapp 124, auth 20), re-run at `a7990665`; the same command returned **146** (httpapp 126) at `6cfd56ab` before `e5ecff63` removed the two machine-token routes, and **145** (httpapp 125) before `e6829b32` removed the two always-500 task routes. *`rg` is NOT installed in this environment, so the earlier `rg -n` form could not run here, and it also counted `*_test.go` registrations — 125 at `db9d2bc3` rather than that pass's no-tests **123**; the tests-inclusive count for `httpapp` is now the number the no-tests figure used to be, which is how this line rots silently if it is quoted without its date.* The command above is the one that produced the number.*
 
+**RE-RUN 2026-10-10 (writer seat) at HEAD `ab8ff69f`: the command above returns the same **144** (httpapp 124, auth 20), `go run ./cmd/apirefgen` independently wrote `144 routes, 10 tools`, and every one of the 124 `httpapp` registrations carries a citation in §1 within three lines — a COVERAGE check only, not a row-by-row re-resolution, so the §1 rows keep the dates their own passes recorded.**
+
 ---
 
 ## 1. Mounted routes
