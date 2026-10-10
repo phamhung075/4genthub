@@ -8,7 +8,7 @@
  * - Self-documenting API contract
  *
  * USAGE:
- * - Backend: Generate Python Pydantic models from these types
+ * - Backend: the Go payload structs in agenthub_go/fastmcp/task_management/domain/websocket_protocol.go are kept in step with these
  * - Frontend: Import and use for type-safe message handling
  * - Validation: Use Zod schemas (generated from these types) for runtime validation
  */
@@ -124,7 +124,7 @@ export interface SubtaskCreatePayload {
   task_id: string;
   progress_percentage?: number;
   created_at?: string;
-  updated_at?: string;  // ✅ ADDED: Backend includes this field (websocket_protocol.py:224)
+  updated_at?: string;  // ✅ ADDED: Backend includes this field (agenthub_go/fastmcp/task_management/domain/websocket_protocol.go:322-333)
 }
 
 export interface SubtaskUpdatePayload {
@@ -134,7 +134,7 @@ export interface SubtaskUpdatePayload {
   status: string;
   task_id: string;
   progress_percentage?: number;
-  created_at?: string;  // ✅ ADDED: Backend includes this field (websocket_protocol.py:235)
+  created_at?: string;  // ✅ ADDED: Backend includes this field (agenthub_go/fastmcp/task_management/domain/websocket_protocol.go:335-346)
   updated_at?: string;
 }
 
@@ -151,8 +151,8 @@ export interface SubtaskCompletePayload {
   task_id: string;
   completion_summary?: string;
   progress_percentage: 100;
-  created_at?: string;   // ✅ ADDED: Backend includes this field (websocket_protocol.py:268)
-  updated_at?: string;   // ✅ ADDED: Backend includes this field (websocket_protocol.py:269)
+  created_at?: string;   // ✅ ADDED: Backend includes this field (agenthub_go/fastmcp/task_management/domain/websocket_protocol.go:372-382)
+  updated_at?: string;   // ✅ ADDED: Backend includes this field (agenthub_go/fastmcp/task_management/domain/websocket_protocol.go:372-382)
   completed_at?: string;
 }
 

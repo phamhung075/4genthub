@@ -238,7 +238,7 @@ describe('TDD: Branch DELETE WebSocket Protocol', () => {
   describe('Backend Payload Generation', () => {
     it('backend should generate BranchDeletePayload with all required fields', () => {
       // This test documents what the backend MUST send
-      // Source: agenthub_main/src/fastmcp/task_management/application/services/git_branch_service.py:211-215
+      // Source: agenthub_go/fastmcp/task_management/domain/websocket_protocol.go:231-253 (BranchDeletePayload + ModelDump)
 
       const backendPayload = {
         id: 'branch-uuid-from-db',

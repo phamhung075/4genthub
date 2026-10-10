@@ -2,7 +2,7 @@
  * E2E Integration Tests: WebSocket Protocol v2.0
  *
  * Tests the complete backend→frontend flow for type-safe WebSocket communication:
- * 1. Backend generates Pydantic-validated payloads
+ * 1. Backend generates validated payloads (Go: fastmcp/task_management/domain/websocket_protocol.go)
  * 2. Frontend receives and validates with type guards
  * 3. React Query cache updates correctly
  * 4. Fallback mechanisms handle edge cases
@@ -152,7 +152,7 @@ describe('E2E: WebSocket Protocol v2.0 Integration', () => {
   // =============================================================================
 
   describe('Project Entity - Complete CRUD Flow', () => {
-    it('should handle project create with Pydantic payload', async () => {
+    it('should handle project create with a backend payload', async () => {
       const { result } = renderHook(() => useRealtimeSync(mockWebSocketClient, true), {
         wrapper: createWrapper(queryClient),
       });
