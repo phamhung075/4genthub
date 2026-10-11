@@ -330,11 +330,14 @@ export const SubtaskDetailsDialog: React.FC<SubtaskDetailsDialogProps> = ({
                         </p>
                       </div>
                     )}
-                    {/* 4a0a8c7a dropped progress_history/progress_count, and SubtaskDTO serves
-                        neither `details` nor the history YET. The additive one-line DTO re-expose
-                        is requested from go-dev, and this read already points at the field it will
-                        serve, so the block renders the moment that line lands - and stays hidden
-                        until then rather than reading a field that will never arrive again. */}
+                    {/* 4a0a8c7a dropped the RAW progress_history and progress_count from the
+                        payloads, and neither is coming back - the ledger carry replaces them
+                        (ruling O1c-carry). What this block renders is the JOINED string, `details`,
+                        and that re-expose has landed behind gate APPROVE (`8e4786dd`, on go-dev's
+                        branch; the merge is the lead's at the freeze), so this read stays
+                        presence-guarded: the block renders once the field reaches the deployed API,
+                        and stays hidden until then rather than reading a field that will never
+                        arrive again. */}
                     {fullSubtask.details && (
                       <div>
                         <span className="text-sm font-medium block mb-2">Progress History:</span>
