@@ -39,7 +39,7 @@ const account = readTestAccount()
 
 const OUT = process.env.E2E_SHELL_OUT ?? path.resolve(__dirname, '..', 'audit-runs', 'shell')
 
-const WIDTHS = [1280, 1440] as const
+const WIDTHS = [768, 1023, 1280, 1440] as const
 const TITLE = 'Seats'
 const TITLE_ROUTE = '/seats'
 
@@ -93,6 +93,18 @@ type ShellReading = {
   h1s: string[]
   navHues: string[]
   hueSource: Record<string, string>
+  /**
+   * The profile trigger's text, read twice: as the DOM holds it, and as the browser
+   * RENDERS it. In 768-1023 the name/email block is still in the DOM and paints
+   * nothing, so the two differ; from 1024 nothing yields and they are equal. Reading
+   * only the DOM text cannot see the yield at all, and reading a neighbour is worse:
+   * the first version of this field took the first button in the right group, which
+   * is the WebSocket status, so it reported "Connected" at every width.
+   */
+  profileText: string
+  profileTextRendered: string
+  /** Controls inside the visible navigation: the tablet band's eight links plus its theme toggle. */
+  navControls: number
 }
 
 /**
@@ -200,6 +212,18 @@ async function readShell(page: Page, width: number): Promise<ShellReading> {
       return { width: Math.round(rect.width), height: Math.round(rect.height) }
     }
 
+    const right = header?.querySelectorAll(':scope > div > *')[1]
+    // The profile trigger is the LAST button in the right group, not the first: the
+    // first is the WebSocket status, and reading that one is exactly how the yield
+    // rule passed at 768 for the wrong reason ("Connected", 9 characters, at every
+    // width). The dropdown's own menu can render in this subtree too, so the trigger
+    // is named by its position in the row's DOM order - status, bell, glow nav, tablet
+    // nav, mobile button, profile - and read from its button, not from the wrapper.
+    const rightButtons = Array.from(right?.querySelectorAll('button') ?? [])
+    const profileTrigger = rightButtons[rightButtons.length - 1] ?? null
+    const rendered = (el: Element | null): string =>
+      ((el as HTMLElement | null)?.innerText ?? '').replace(/\s+/g, ' ').trim()
+
     return {
       width,
       theme: root.classList.contains('dark') ? 'dark' : 'light',
@@ -212,15 +236,12 @@ async function readShell(page: Page, width: number): Promise<ShellReading> {
         name: pieceName(el),
         ...box(el),
       })),
-      rightPieces: (() => {
-        const right = header?.querySelectorAll(':scope > div > *')[1]
-        return right
-          ? Array.from(right.children).map((el) => ({
-              name: pieceName(el),
-              width: box(el).width,
-            }))
-          : []
-      })(),
+      rightPieces: right
+        ? Array.from(right.children).map((el) => ({
+            name: pieceName(el),
+            width: box(el).width,
+          }))
+        : [],
       nav: nav
         ? {
             found: true,
@@ -255,6 +276,9 @@ async function readShell(page: Page, width: number): Promise<ShellReading> {
       h1s: Array.from(document.querySelectorAll('h1')).map((h) => h.textContent?.trim() ?? ''),
       navHues: Array.from(hues).sort(),
       hueSource,
+      profileText: (profileTrigger?.textContent ?? '').replace(/\s+/g, ' ').trim(),
+      profileTextRendered: rendered(profileTrigger),
+      navControls: nav ? nav.querySelectorAll('a, button').length : 0,
     }
   }, width)
 }
@@ -272,9 +296,19 @@ async function ensureTheme(page: Page, want: 'light' | 'dark'): Promise<void> {
 
   if ((await isDark()) === (want === 'dark')) return
 
+  // WHICH BUTTON IS THE THEME CONTROL DEPENDS ON THE WIDTH, and the one that comes
+  // first in the DOM is not it in the band. The glow menu's toggle (text, its
+  // rotated back face makes the accessible name "Dark Dark") is inside
+  // `div.hidden.lg:block`; the tablet strip's is icon-only and carries its mode in
+  // `title` (`Header.tsx:190-196`). Taking `.first()` of a text filter therefore
+  // bound to the glow toggle at 768 - present, never visible - and the click waited
+  // for an element that cannot become actionable, which is a test timeout and not a
+  // finding. Match the VISIBLE control of either band, by text or by title.
+  const mode = want === 'dark' ? 'Dark' : 'Light'
   await page
-    .locator('header nav button')
-    .filter({ hasText: want === 'dark' ? 'Dark' : 'Light' })
+    .locator(
+      `header nav button:has-text("${mode}"):visible, header nav button[title="${mode} Mode"]:visible`,
+    )
     .first()
     .click()
 
@@ -284,6 +318,12 @@ async function ensureTheme(page: Page, want: 'light' | 'dark'): Promise<void> {
 }
 
 test('the shell: one-line nav, one h1, one accent, both themes', async ({ page }) => {
+  // Four viewports, two themes each, two screenshots per reading, so the total needs
+  // more than the default 60s - but a single hung action must not eat the ceiling and
+  // report only "timed out", which is how the band first surfaced a click that could
+  // never succeed. One action gets 15s; the run gets 180s.
+  page.setDefaultTimeout(15_000)
+  test.setTimeout(180_000)
   await signIn(page)
   fs.mkdirSync(OUT, { recursive: true })
 
@@ -310,6 +350,47 @@ test('the shell: one-line nav, one h1, one accent, both themes', async ({ page }
 
       const reading = await readShell(page, width)
       readings.push(reading)
+
+      // PROTECTED STRUCTURE, asserted as structure and not only as fit: the band
+      // yields redundancy (the profile's name and email), never identity or reach.
+      // These pin the wordmark and the tablet navigation's controls so a later change
+      // cannot "fix" the band by deleting the brand or a destination.
+      await expect(
+        page.locator('header').getByText('4genthub'),
+        `${width}px: the brand survives in the band`,
+      ).toBeVisible()
+      if (width < 1024) {
+        expect(
+          reading.navControls,
+          `${width}px: the tablet navigation keeps eight destinations plus the theme toggle`,
+        ).toBe(9)
+      }
+
+      // THE YIELD RULE, asserted as a rule rather than as "the text is gone". The
+      // instrument is the profile trigger's own button read twice: as the DOM holds it
+      // and as the browser RENDERS it. The comparison strips whitespace from both,
+      // because innerText inserts a separator between block children (avatar, name,
+      // email) where textContent has none - the raw strings measured 23 against 21 at
+      // 1280 with nothing yielding. The account's own strings are deliberately not
+      // used: they stay inside the test process, and a pass that depended on them would
+      // pass for the wrong reason the moment the login and the displayed name differ.
+      // Only LENGTHS are printed, never the text the trigger renders.
+      const dom = reading.profileText.replace(/\s+/g, '')
+      const shown = reading.profileTextRendered.replace(/\s+/g, '')
+      if (width < 1024) {
+        // The avatar's initials must still render - a deleted trigger is not a yield -
+        // and the name and email must not. The measured shape is 1 character of 21.
+        expect(
+          shown.length > 0 && shown.length < dom.length,
+          `${width}px: the profile trigger renders the avatar alone (${shown.length} rendered of ${dom.length} DOM chars)`,
+        ).toBe(true)
+      } else {
+        expect(
+          shown === dom,
+          `${width}px: the profile trigger renders its name and email (${shown.length} rendered of ${dom.length} DOM chars)`,
+        ).toBe(true)
+      }
+
       // Printed as it is taken, not after the loop: a run that dies half way
       // through still reports every shell it did measure.
       const tops = reading.items.map((i) => i.top)
@@ -325,7 +406,13 @@ test('the shell: one-line nav, one h1, one accent, both themes', async ({ page }
           `spread=${Math.max(...tops) - Math.min(...tops)}px ` +
           `items=${JSON.stringify(reading.items.map((i) => `${i.label}:${i.labelRects}x${i.height}`))} ` +
           `h1=${JSON.stringify(reading.h1s)} accent=${reading.accent} ` +
-          `hues=${JSON.stringify(reading.navHues)} sources=${JSON.stringify(reading.hueSource)}`,
+          `hues=${JSON.stringify(reading.navHues)} sources=${JSON.stringify(reading.hueSource)} ` +
+          // The yield rule's instrument, printed as two LENGTHS - rendered against
+          // DOM. A failing run then says whether the block was in the DOM but
+          // unpainted (the yield) or absent altogether (a deletion, which this rule
+          // must not accept as a pass).
+          `profile=${reading.profileTextRendered.length}rendered/${reading.profileText.length}domChars ` +
+          `navControls=${reading.navControls}`,
       )
 
       await page.locator('header').screenshot({ path: path.join(OUT, `header-${width}-${theme}.png`) })
@@ -336,50 +423,70 @@ test('the shell: one-line nav, one h1, one accent, both themes', async ({ page }
   for (const reading of readings) {
     const where = `${reading.width}px ${reading.theme}`
 
-    // 1. The navigation is one line and fits.
-    expect(reading.nav.found, `${where}: the navigation is on screen`).toBe(true)
-    expect(reading.items.length, `${where}: items measured`).toBeGreaterThan(5)
-    for (const item of reading.items) {
+    // 1. The glow navigation is one line and fits. It renders from 1024 up, and the
+    // band at 768-1023 shows the tablet icon strip instead: those items carry no
+    // text labels, so there is no line box or pill geometry to measure there. The
+    // tablet strip's own structure (eight destinations plus the theme toggle) and its
+    // fit are asserted from its reading in the loop above, not by weakening these.
+    if (reading.width >= 1024) {
+      expect(reading.nav.found, `${where}: the navigation is on screen`).toBe(true)
+      expect(reading.items.length, `${where}: items measured`).toBeGreaterThan(5)
+      for (const item of reading.items) {
+        expect(
+          item.labelRects,
+          `${where}: "${item.label}" is ${item.labelRects} line(s), not one`,
+        ).toBe(1)
+      }
+      const tops = reading.items.map((i) => i.top)
+      const spread = Math.max(...tops) - Math.min(...tops)
+      expect(spread, `${where}: every item on one row (${spread}px spread)`).toBeLessThanOrEqual(4)
+      // The items must sit inside the navigation's own box: past its padding edge the
+      // header clips them, and that clipping is what a user sees. A scrollWidth-over-
+      // clientWidth read cannot carry this assertion - it reports the same 3px for
+      // ANY content in this list (751/748 with the long labels, 735/732 after they
+      // were narrowed), which is subpixel rounding, not a pill sticking out.
+      const itemRights = reading.items.map((i) => i.right)
       expect(
-        item.labelRects,
-        `${where}: "${item.label}" is ${item.labelRects} line(s), not one`,
-      ).toBe(1)
-    }
-    const tops = reading.items.map((i) => i.top)
-    const spread = Math.max(...tops) - Math.min(...tops)
-    expect(spread, `${where}: every item on one row (${spread}px spread)`).toBeLessThanOrEqual(4)
-    // The items must sit inside the navigation's own box: past its padding edge the
-    // header clips them, and that clipping is what a user sees. A scrollWidth-over-
-    // clientWidth read cannot carry this assertion - it reports the same 3px for
-    // ANY content in this list (751/748 with the long labels, 735/732 after they
-    // were narrowed), which is subpixel rounding, not a pill sticking out.
-    const itemRights = reading.items.map((i) => i.right)
-    expect(
-      Math.max(...itemRights),
-      `${where}: every item's right edge is inside the navigation (item rights ${JSON.stringify(
-        itemRights,
-      )} vs nav right ${reading.nav.right})`,
-    ).toBeLessThanOrEqual(reading.nav.right + 1)
-    for (let i = 1; i < reading.items.length; i += 1) {
-      expect(
-        reading.items[i].left,
-        `${where}: "${reading.items[i].label}" starts after "${reading.items[i - 1].label}" ends (${reading.items[i].left} vs ${reading.items[i - 1].right})`,
-      ).toBeGreaterThanOrEqual(reading.items[i - 1].right - 1)
+        Math.max(...itemRights),
+        `${where}: every item's right edge is inside the navigation (item rights ${JSON.stringify(
+          itemRights,
+        )} vs nav right ${reading.nav.right})`,
+      ).toBeLessThanOrEqual(reading.nav.right + 1)
+      for (let i = 1; i < reading.items.length; i += 1) {
+        expect(
+          reading.items[i].left,
+          `${where}: "${reading.items[i].label}" starts after "${reading.items[i - 1].label}" ends (${reading.items[i].left} vs ${reading.items[i - 1].right})`,
+        ).toBeGreaterThanOrEqual(reading.items[i - 1].right - 1)
+      }
     }
     expect(
       reading.doc.scrollWidth,
       `${where}: the chrome does not make the document scroll sideways`,
     ).toBeLessThanOrEqual(reading.doc.innerWidth + 1)
     expect(reading.headerHeight, `${where}: chrome height`).toBeLessThanOrEqual(80)
+    // The band's own instrument: the header must fit its CONTENT BOX, which is the
+    // pair that names the header as the overflowing element rather than the page (at
+    // 768 the box is 720px, because px-6 leaves 48, and the ruling measured a 92px
+    // deficit against it). This is a real fit, not the parity bound A3 first carried:
+    // the profile's name/email yield is what makes it attainable.
+    expect(
+      reading.headerBox.scrollWidth,
+      `${where}: the header's own content fits its box (${reading.headerBox.scrollWidth}/${reading.headerBox.clientWidth})`,
+    ).toBeLessThanOrEqual(reading.headerBox.clientWidth)
 
     // 2. The page's own title is the only h1.
     expect(reading.h1s, `${where}: the page's h1 elements`).toEqual([TITLE])
 
-    // 3. One accent colour in the navigation, and it is this theme's token.
-    expect(reading.navHues, `${where}: accent colours painted by the navigation`).toHaveLength(1)
-    expect(reading.navHues[0], `${where}: the navigation's accent is --accent`).toBe(
-      cssRgb(reading.accent),
-    )
+    // 3. One accent colour in the navigation, and it is this theme's token. This is
+    // the GLOW navigation's promise (the eight per-item hues F-5 retired), so it is
+    // asserted where that navigation renders - from 1024 up. In the band the walk
+    // collects an empty set, which is a fact about the tablet strip, not a rule.
+    if (reading.width >= 1024) {
+      expect(reading.navHues, `${where}: accent colours painted by the navigation`).toHaveLength(1)
+      expect(reading.navHues[0], `${where}: the navigation's accent is --accent`).toBe(
+        cssRgb(reading.accent),
+      )
+    }
   }
 
   // 4. Both themes were looked at, and the accent token really moves between them.
@@ -456,17 +563,16 @@ test('R2: the mobile drawer starts where the header ends', async ({ page }) => {
   expect(resized.drawer, 'still flush after a resize').toBe(resized.header)
 })
 
-// A3 (shell): the sub-label yields from md up, so the tablet band measures no worse
-// than the pre-fix baseline. That bound is PARITY, not a true fit: the tablet band's
-// own contents (the wordmark, the six-icon nav) are a separate design item, and this
-// is the test that item will tighten. The strict `<= innerWidth + 1` assertion above
-// is deliberately NOT extended to these widths - the baseline itself fails it at 768
-// (860/768), so extending it would smuggle a new requirement into a regression fix.
+// A3 (shell): the sub-label yields from md up. The band then fits for real - the
+// strict `<= innerWidth + 1` assertion above now runs at 768 and 1023 as well, and
+// the architect's band ruling of 2026-10-11 is what made that attainable by yielding
+// the profile's name/email block. The earlier caution ("do not extend the strict
+// assertion to 768, the baseline fails it" - the pre-fix reading was 860/768) is
+// therefore superseded by the fix, not ignored: parity was the state before the yield,
+// a fit is the state after it.
 const MD_WIDTHS = [768, 900, 1023] as const
-/** The pre-fix reading at 768 was 860/768: 92px of document overflow. Parity means not exceeding it. */
-const MD_BASELINE_OVERFLOW = 92
 
-test('A3: the sub-label yields from md, and the tablet band does not regress', async ({ page }) => {
+test('A3: the sub-label yields from md, and the tablet band fits', async ({ page }) => {
   await signIn(page)
 
   for (const width of MD_WIDTHS) {
@@ -486,8 +592,8 @@ test('A3: the sub-label yields from md, and the tablet band does not regress', a
         `pieces=${JSON.stringify(reading.headerPieces)}`,
     )
     expect(
-      reading.doc.scrollWidth - reading.doc.innerWidth,
-      `${width}px: overflow no worse than the 768px baseline (${MD_BASELINE_OVERFLOW}px)`,
-    ).toBeLessThanOrEqual(MD_BASELINE_OVERFLOW)
+      reading.doc.scrollWidth,
+      `${width}px: the band fits (${reading.doc.scrollWidth}/${reading.doc.innerWidth})`,
+    ).toBeLessThanOrEqual(reading.doc.innerWidth + 1)
   }
 })

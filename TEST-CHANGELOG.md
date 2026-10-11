@@ -2,6 +2,33 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-11 - the shell spec's band: WIDTHS gains 768 and 1023, and the theme click learns where it is
+
+- `agenthub-frontend/e2e/shell.spec.ts`, on the architect's band ruling
+  (`ARCH-RULING-768-1023-band-fit-2026-10-11.md`): `WIDTHS` is `[768, 1023, 1280, 1440]`, and the four
+  assertions the ruling names run per reading - the header's own box (`headerBox.scrollWidth <=
+  clientWidth`), the document fit it already asserted (now carried to the band), the protected structure
+  (the wordmark visible, and the tablet strip's nine controls at 768 and 1023, counted rather than
+  inferred from the fit), and the yield rule.
+- The yield rule is asserted on the profile trigger's OWN button, read twice: `textContent` as the DOM
+  holds it and `innerText` as the browser RENDERS it, whitespace stripped from both. In the band the
+  name/email block is still in the DOM and paints nothing (1 rendered character of 21); from 1024 the two
+  are equal. Two instruments were rejected first and both are recorded, because either would have passed
+  for the wrong reason: the trigger was being read as the FIRST button in the right group, which is the
+  WebSocket status ("Connected", 9 characters, at every width - the reason a 768 assertion once passed),
+  and comparing against the account's username couples the rule to a credential the test process must
+  never print. Only lengths reach a message.
+- `ensureTheme` addresses the theme control by the VISIBLE button of either band - by text (the glow
+  menu's, whose rotated back face makes its accessible name "Dark Dark") or by `title` (the tablet
+  strip's, which is icon-only: `Header.tsx:190-196`). `.first()` of a text filter bound to the glow toggle
+  at 768, which is first in the DOM and inside `div.hidden.lg:block`, so the click waited for an element
+  that could never become actionable; that is how the band first failed as a timeout instead of as a
+  measurement. The main test now caps a single action at 15s (`page.setDefaultTimeout`) while its own
+  ceiling pays for eight readings and sixteen screenshots.
+- A3 keeps its 768/900/1023 widths and its sub-label assertion, and its bound is now the strict
+  `<= innerWidth + 1` rather than parity: at 768 the document measures 768/768, where it measured 860/768
+  before the band's fix.
+
 ## 2026-10-11 - the shell spec gains R1/R2/A3, and the palette gets a parity test
 
 - `agenthub-frontend/e2e/shell.spec.ts` gains three cases, each named for the gate item it reads:
@@ -18,9 +45,10 @@ Track test suite changes, fixes, and improvements for agenthub.
     code wrong, and the settle is the fix.
   - A3 (`the sub-label yields from md, and the tablet band does not regress`): 768/900/1023, asserting
     the sub-label is hidden and that the document's OVERFLOW is no worse than the pre-fix baseline.
-    The lg test's strict `<= innerWidth + 1` assertion is deliberately NOT extended to these widths -
-    the baseline itself fails it at 768 (860/768) - so the bound is parity: 92px of overflow was the
-    pre-fix reading, and it is the number the tablet-fit design item will tighten.
+    The lg test's strict `<= innerWidth + 1` assertion was deliberately NOT extended to these widths in
+    this change, because the baseline itself failed it at 768 (860/768) and parity was the honest bound
+    for that moment: 92px of overflow, the number the tablet-fit item then tightened. SUPERSEDED the same
+    day - the band now fits, and A3 asserts the strict bound (see the section above).
 - `src/tests/theme/themeConfig.test.ts` gains a token-parity case that reads `src/styles/theme.css`
   through `readFileSync(resolve(process.cwd(), ...))` - the convention `LandingPage.head.test.ts`
   already uses; `new URL(..., import.meta.url)` is not file-scheme under vitest and fails with
