@@ -50,8 +50,13 @@ func TestTaskLifecycle(t *testing.T) {
 	if err := task.UpdateEstimatedEffort("bogus"); err != nil || task.EstimatedEffort != "medium" {
 		t.Fatal("effort")
 	}
-	if err := task.AppendProgress("hello"); err != nil || task.GetProgressHistoryText() != "=== Progress 1 ===\nhello" {
+	// The dual write: AppendProgress still writes the column AND hands the note back for the ledger.
+	note, err := task.AppendProgress("hello")
+	if err != nil || task.GetProgressHistoryText() != "=== Progress 1 ===\nhello" {
 		t.Fatalf("progress %q", task.GetProgressHistoryText())
+	}
+	if note.Content != "=== Progress 1 ===\nhello" || note.Number != 1 {
+		t.Fatalf("the note handed to the ledger must be the one the column holds: %+v", note)
 	}
 	if err := task.CompleteTask(" ", nil); err == nil {
 		t.Fatal("summary required")
@@ -64,6 +69,59 @@ func TestTaskLifecycle(t *testing.T) {
 	}
 	if n := len(task.GetEvents()); n == 0 || len(task.Events) != 0 {
 		t.Fatal("events drained")
+	}
+}
+
+func TestProgressTextWithRendersANoteOnceWhenBothSourcesHoldIt(t *testing.T) {
+	// O1c's dual write puts a note in the column AND in the ledger, so a reader has to render it ONCE,
+	// in progress order, keyed by the identity the payload itself declares - content and
+	// progress_number together. This test is that sentence: the ledger's copies arrive OUT of order,
+	// one of them is the carry's copy of a column note (carried_from), and one note exists only in the
+	// ledger.
+	task := newTestTask(t)
+	written, err := task.AppendProgress("first")
+	if err != nil {
+		t.Fatalf("AppendProgress: %v", err)
+	}
+
+	liveEvent := &TaskEvent{
+		Kind: TaskEventKindProgress,
+		Payload: map[string]any{
+			"content":         written.Content,
+			"progress_number": written.Number,
+			"timestamp":       written.Timestamp,
+		},
+	}
+	carriedCopy := &TaskEvent{
+		Kind: TaskEventKindProgress,
+		Payload: map[string]any{
+			"content":         written.Content,
+			"progress_number": written.Number,
+			"carried_from":    written.Key,
+		},
+	}
+	laterNoteOnlyInTheLedger := &TaskEvent{
+		Kind:    TaskEventKindProgress,
+		Payload: map[string]any{"content": "=== Progress 2 ===\nlater", "progress_number": float64(2)},
+	}
+
+	want := "=== Progress 1 ===\nfirst\n\n=== Progress 2 ===\nlater"
+	if got := task.ProgressTextWith([]*TaskEvent{laterNoteOnlyInTheLedger, carriedCopy, liveEvent}); got != want {
+		t.Fatalf("a note held by both sources must render once, in order\n got: %q\nwant: %q", got, want)
+	}
+
+	// A kind that is not `progress` is not a note, whatever its payload happens to carry.
+	notANote := &TaskEvent{Kind: TaskEventKindClaimed, Payload: map[string]any{
+		"content": "nope", "progress_number": float64(3),
+	}}
+	if got := task.ProgressTextWith([]*TaskEvent{laterNoteOnlyInTheLedger, notANote}); got != want {
+		t.Fatalf("a non-progress event reached the notes: %q", got)
+	}
+
+	// With nothing from the ledger the text is exactly the column's, which is what a caller with no
+	// ledger reader in reach - and every reader before this change - sees.
+	if got := task.ProgressTextWith(nil); got != task.GetProgressHistoryText() {
+		t.Fatalf("nil events must leave the column's own text: %q", got)
 	}
 }
 

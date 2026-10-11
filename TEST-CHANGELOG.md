@@ -2,6 +2,16 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-11 - the progress union gets the case its decision was written as, and six doubles learn one method
+
+- ADDED, one case in `agenthub_go/fastmcp/task_management/domain/entities/task_test.go`: `TestProgressTextWithRendersANoteOnceWhenBothSourcesHoldIt`. It is the lead's own sentence for this change - the same note written before the switch and one written after both appear ONCE, in order, from one read - made checkable without a database.
+- WHAT IT PINS, and why each part is there: the ledger's copies are handed over OUT of order, so the order must come from the number rather than the slice; one of them is the carry's copy of a column note (`carried_from`), which is the duplicate the identity has to collapse; one note exists only in the ledger, which is what the switch makes possible; a `claimed` event carrying progress-shaped fields proves the kind filter; and a nil slice must leave exactly the column's own text, which is what every reader saw before this change.
+- CHANGED, the existing `AppendProgress` assertion in the same file now also pins the note OBJECT: the dual write means the entity writes the column AND hands the same note to the ledger, so the case asserts the handed-over note carries the column's exact text and number.
+- CHANGED, six test doubles gained `RecordProgress` because the seam grew that write: `ledgerFakeRecorder` (which records the note, so a case can assert it reached the ledger) and `noopRecorder` in `application/use_cases`, plus `unmovedLedgerRecorder` in `application/facades` and `ledgerPathRecorder` in `interface/mcp_controllers/task_mcp_controller/handlers`. They are the same shape the existing `RecordStatusChange` cases already use.
+- CHANGED, the call sites the signatures moved: `TaskResponseFromDomain` gains the events argument in `application/dtos/task/task_test.go`, eleven `NewCreateTaskUseCase` constructions in `create_task_test.go` now wire `noopLedger()` (a create refuses a note it cannot record rather than dropping it), and `infrastructure/database/status_write_failure_integration_test.go` calls `Save` - the renamed seam - with no notes.
+- MEASURED, in `wt/fe-dev`: `gofmt -l` empty on the touched files; `go build ./...` rc 0; `go vet ./...` clean; `go test -count=1 ./fastmcp/task_management/...` every package `ok`; `go test ./... -count=1` every package `ok` with no `FAIL` line in the run.
+- NOT RUN, named: the `AGENTHUB_TEST_PG_URL`-gated cases - including the ledger's real-Postgres negative case - need a live cluster and are not part of what this run proved. Nothing here weakens them; they were left untouched.
+
 ## 2026-10-11 - the seat detail standing gets its third state, and three cases pin it
 
 - ADDED, three cases in a new describe in the existing file `agenthub-frontend/src/tests/pages/SeatDetailPage.test.tsx`, one per way the rooms list can fail to answer: the list in flight (`listRooms` returns a promise that never settles), the list failing (`listRooms` rejects), and the list settling WITHOUT naming this room (`rooms: []`).

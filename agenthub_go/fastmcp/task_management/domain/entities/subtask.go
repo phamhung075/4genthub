@@ -239,6 +239,12 @@ func (s *Subtask) UpdateProgressPercentage(p int) error {
 }
 
 // AppendProgress appends numbered progress to the history.
+//
+// Unlike Task.AppendProgress this does NOT also hand the note to the ledger, and that is a
+// composition fact rather than a principle: UpdateSubtaskUseCase is built by SubtaskApplicationFacade,
+// which has no ledger in reach. The subtask history therefore has ONE source and a note cannot render
+// twice - the same guarantee the task-level union provides by dedup rather than by absence. It joins
+// the ledger when the subtask composition reaches one.
 func (s *Subtask) AppendProgress(content string) error {
 	s.ProgressCount++
 	header := fmt.Sprintf("=== Progress %d ===", s.ProgressCount)

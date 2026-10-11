@@ -66,6 +66,7 @@ func (r *TaskResponse) SubtaskCount() int {
 
 // TaskResponseFromDomain mirrors TaskResponse.from_domain.
 func TaskResponseFromDomain(ctx context.Context, task *entities.Task, gitBranchRepository GitBranchGetter,
+	progressEvents []*entities.TaskEvent,
 	contextData *entities.OrderedMap[any], dependencyRelationships *DependencyRelationships,
 	projectID *string, completedSubtasks *int) (*TaskResponse, error) {
 
@@ -100,7 +101,10 @@ func TaskResponseFromDomain(ctx context.Context, task *entities.Task, gitBranchR
 
 	details := ""
 	if task != nil {
-		details = task.GetProgressHistoryText()
+		// O1c's union: the notes still in the progress_history column plus the notes the ledger now
+		// carries. ProgressTextWith is the one place that merge is written down, and its doc says why
+		// the identity is the progress number.
+		details = task.ProgressTextWith(progressEvents)
 	}
 
 	// THE ENTITY IS THE SOURCE OF TRUTH for what an assignee is: normalizeAssignee stores '@<seat_key>'

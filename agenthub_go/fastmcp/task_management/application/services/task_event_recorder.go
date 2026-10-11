@@ -80,6 +80,36 @@ func (r *TaskEventRecorder) RecordStatusChange(ctx context.Context, taskID, oldS
 		map[string]any{"old": oldStatus, "new": newStatus})
 }
 
+// RecordProgress writes the entry for one progress note: the note's text exactly as the column would
+// have stored it, the number it was written under, and the timestamp the cell would have carried.
+// That is what lets a reader merge the ledger with the column without reformatting either source, and
+// it is the payload a carried note repeats when the carry copies the column into the ledger.
+//
+// A subtask note names its subtask: the entry belongs to the TASK's ledger (task_events.task_id has an
+// FK to tasks.id), so subtask_id is the only thing that says which subtask wrote the note.
+//
+// This is additive on purpose - Record and RecordStatusChange are untouched - so every existing
+// caller keeps the shape it was written against. Like them it takes the CALLER's transaction.
+func (r *TaskEventRecorder) RecordProgress(ctx context.Context, taskID, subtaskID string,
+	note entities.ProgressEntry) (*entities.TaskEvent, error) {
+	actor, err := r.actorFor(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return r.ledger.AppendInTx(ctx, entities.AppendTaskEvent{
+		TaskID:    taskID,
+		SubtaskID: subtaskID,
+		Kind:      entities.TaskEventKindProgress,
+		ActorKind: actor.Kind,
+		ActorID:   actor.ID,
+		Payload: map[string]any{
+			"content":         note.Content,
+			"progress_number": note.Number,
+			"timestamp":       note.Timestamp,
+		},
+	})
+}
+
 // ErrNoActor is returned when a status write reaches the recorder with no actor anywhere: no seat
 // on the request and no user the recorder was built for.
 var ErrNoActor = errors.New("task_events: no actor to attribute this write to")

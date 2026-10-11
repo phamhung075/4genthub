@@ -18,21 +18,32 @@ type GetTaskContextService interface {
 	GetContext(ctx context.Context, level, contextID string, includeInherited bool) (*entities.OrderedMap[any], error)
 }
 
+// TaskProgressEventLister is the ledger as a response needs it for O1c's progress union: the events
+// a task already has, oldest first. *repositories.TaskEventRepository satisfies it through Events,
+// and the wiring passes the same repository the events route reads and the recorder writes.
+type TaskProgressEventLister interface {
+	Events(ctx context.Context, taskID string) ([]*entities.TaskEvent, error)
+}
+
 // GetTaskUseCase ports get_task.GetTaskUseCase.
 type GetTaskUseCase struct {
 	taskRepository      repositories.TaskRepository
 	contextService      GetTaskContextService    // may be nil
 	gitBranchRepository dtostask.GitBranchGetter // may be nil
+	progressEvents      TaskProgressEventLister  // may be nil
 }
 
-// NewGetTaskUseCase builds the use case.
+// NewGetTaskUseCase builds the use case. progressEvents may be nil, and then the response's details
+// is the column alone - the same contract the two dependencies above keep.
 func NewGetTaskUseCase(taskRepository repositories.TaskRepository,
 	contextService GetTaskContextService,
-	gitBranchRepository dtostask.GitBranchGetter) *GetTaskUseCase {
+	gitBranchRepository dtostask.GitBranchGetter,
+	progressEvents TaskProgressEventLister) *GetTaskUseCase {
 	return &GetTaskUseCase{
 		taskRepository:      taskRepository,
 		contextService:      contextService,
 		gitBranchRepository: gitBranchRepository,
+		progressEvents:      progressEvents,
 	}
 }
 
@@ -57,7 +68,19 @@ func (uc *GetTaskUseCase) Execute(ctx context.Context, taskID string,
 		contextData = uc.fetchContextData(ctx, taskID)
 	}
 
-	return dtostask.TaskResponseFromDomain(ctx, task, uc.gitBranchRepository, contextData, nil, nil, nil)
+	// O1c's union reads the ledger side of a task's progress here, once, and hands it to the response
+	// builder: the notes written since the write switch, which details merges with the notes still in
+	// the column. A nil lister leaves details exactly as the column renders it.
+	var progressEvents []*entities.TaskEvent
+	if uc.progressEvents != nil {
+		events, err := uc.progressEvents.Events(ctx, taskID)
+		if err != nil {
+			return nil, err
+		}
+		progressEvents = events
+	}
+
+	return dtostask.TaskResponseFromDomain(ctx, task, uc.gitBranchRepository, progressEvents, contextData, nil, nil, nil)
 }
 
 // fetchContextData mirrors the dict-returning UnifiedContextFacade branch; every

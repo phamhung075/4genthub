@@ -187,7 +187,7 @@ func TestTaskResponseToDictDependencyError(t *testing.T) {
 
 func TestTaskResponseFromDomain(t *testing.T) {
 	task := sampleDomainTask()
-	resp, err := TaskResponseFromDomain(context.Background(), task, nil, nil, nil, nil, nil)
+	resp, err := TaskResponseFromDomain(context.Background(), task, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatalf("err = %v", err)
 	}

@@ -80,7 +80,7 @@ func TaskListResponseFromDomainList(ctx context.Context, tasks []*entities.Task,
 			}
 		}
 		completed := completedCounts[taskIDString(task)]
-		resp, err := TaskResponseFromDomain(ctx, task, nil, nil, nil, projectID, &completed)
+		resp, err := TaskResponseFromDomain(ctx, task, nil, nil, nil, nil, projectID, &completed)
 		if err != nil {
 			return nil, err
 		}

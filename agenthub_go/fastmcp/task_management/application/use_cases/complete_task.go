@@ -135,10 +135,10 @@ func (uc *CompleteTaskUseCase) Execute(
 	// Save the task, with its status_changed entry, in one transaction. The entry reports the
 	// transition the row makes: executeCore may already have moved todo -> in_progress, and that
 	// move was recorded by its own call.
-	if err := uc.ledger.SaveStatus(ctx, func(ctx context.Context) error {
+	if err := uc.ledger.Save(ctx, func(ctx context.Context) error {
 		_, err := uc.taskRepository.Save(ctx, task)
 		return err
-	}, taskIDStr); err != nil {
+	}, taskIDStr, nil); err != nil {
 		return nil, err
 	}
 
@@ -388,10 +388,10 @@ func (uc *CompleteTaskUseCase) executeCore(
 	if strings.ToLower(task.Status.String()) == "todo" {
 		inProgress, _ := value_objects.NewTaskStatus("in_progress")
 		task.Status = &inProgress
-		if err := uc.ledger.SaveStatus(ctx, func(ctx context.Context) error {
+		if err := uc.ledger.Save(ctx, func(ctx context.Context) error {
 			_, err := uc.taskRepository.Save(ctx, task)
 			return err
-		}, taskIDStr); err != nil {
+		}, taskIDStr, nil); err != nil {
 			return nil, false, err
 		}
 	}
@@ -647,10 +647,10 @@ func (uc *CompleteTaskUseCase) updateSingleDependentTask(ctx context.Context, de
 			// The unblock is this OTHER task's status write, so it carries its own entry, in its own
 			// transaction. Python logs a failure here and continues; that discard is exactly what made a
 			// failed write read as success to this use case's caller, so the error is returned instead.
-			if err := uc.ledger.SaveStatus(ctx, func(ctx context.Context) error {
+			if err := uc.ledger.Save(ctx, func(ctx context.Context) error {
 				_, err := uc.taskRepository.Save(ctx, dependentTask)
 				return err
-			}, ledgerTaskID(dependentTask)); err != nil {
+			}, ledgerTaskID(dependentTask), nil); err != nil {
 				return err
 			}
 		case "todo":
