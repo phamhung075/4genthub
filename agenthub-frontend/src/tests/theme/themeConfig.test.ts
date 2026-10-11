@@ -1,4 +1,4 @@
-import { themeConfig, getThemeColors, cssVariables, applyThemeToRoot } from '../../theme/themeConfig';
+import { themeConfig } from '../../theme/themeConfig';
 
 describe('themeConfig', () => {
   describe('theme structure', () => {
@@ -36,7 +36,7 @@ describe('themeConfig', () => {
     it('dark theme has all required color properties', () => {
       const lightKeys = Object.keys(themeConfig.light);
       const darkKeys = Object.keys(themeConfig.dark);
-      
+
       expect(darkKeys).toEqual(lightKeys);
     });
 
@@ -74,119 +74,6 @@ describe('themeConfig', () => {
       // Dark theme: light text on dark background
       expect(themeConfig.dark.background).toBe('#0f172a');
       expect(themeConfig.dark.text).toBe('#f1f5f9');
-    });
-  });
-
-  describe('getThemeColors', () => {
-    it('returns light theme colors when isDark is false', () => {
-      const colors = getThemeColors(false);
-      expect(colors).toBe(themeConfig.light);
-    });
-
-    it('returns dark theme colors when isDark is true', () => {
-      const colors = getThemeColors(true);
-      expect(colors).toBe(themeConfig.dark);
-    });
-  });
-
-  describe('cssVariables', () => {
-    it('maps CSS variables to theme properties', () => {
-      expect(cssVariables['--color-primary']).toBe('primary');
-      expect(cssVariables['--color-background']).toBe('background');
-      expect(cssVariables['--color-text']).toBe('text');
-    });
-
-    it('has CSS variables for all major color categories', () => {
-      const variableKeys = Object.keys(cssVariables);
-      
-      // Check primary colors
-      expect(variableKeys).toContain('--color-primary');
-      expect(variableKeys).toContain('--color-primary-hover');
-      expect(variableKeys).toContain('--color-primary-light');
-      expect(variableKeys).toContain('--color-primary-dark');
-
-      // Check background colors
-      expect(variableKeys).toContain('--color-background');
-      expect(variableKeys).toContain('--color-background-secondary');
-      expect(variableKeys).toContain('--color-background-tertiary');
-
-      // Check text colors
-      expect(variableKeys).toContain('--color-text');
-      expect(variableKeys).toContain('--color-text-secondary');
-      expect(variableKeys).toContain('--color-text-tertiary');
-
-      // Check status colors
-      expect(variableKeys).toContain('--color-success');
-      expect(variableKeys).toContain('--color-warning');
-      expect(variableKeys).toContain('--color-error');
-      expect(variableKeys).toContain('--color-info');
-    });
-
-    it('all CSS variable values correspond to valid theme properties', () => {
-      const lightThemeKeys = Object.keys(themeConfig.light);
-      
-      Object.values(cssVariables).forEach(themeKey => {
-        expect(lightThemeKeys).toContain(themeKey);
-      });
-    });
-  });
-
-  describe('applyThemeToRoot', () => {
-    let mockSetProperty: any;
-    let originalDocumentElement: HTMLElement;
-
-    beforeEach(() => {
-      mockSetProperty = vi.fn();
-      originalDocumentElement = document.documentElement;
-      
-      // Mock document.documentElement.style.setProperty
-      Object.defineProperty(document, 'documentElement', {
-        value: {
-          style: {
-            setProperty: mockSetProperty
-          }
-        },
-        writable: true,
-        configurable: true
-      });
-    });
-
-    afterEach(() => {
-      document.documentElement = originalDocumentElement;
-    });
-
-    it('applies light theme CSS variables to root', () => {
-      applyThemeToRoot(false);
-
-      expect(mockSetProperty).toHaveBeenCalledWith('--color-primary', themeConfig.light.primary);
-      expect(mockSetProperty).toHaveBeenCalledWith('--color-background', themeConfig.light.background);
-      expect(mockSetProperty).toHaveBeenCalledWith('--color-text', themeConfig.light.text);
-    });
-
-    it('applies dark theme CSS variables to root', () => {
-      applyThemeToRoot(true);
-
-      expect(mockSetProperty).toHaveBeenCalledWith('--color-primary', themeConfig.dark.primary);
-      expect(mockSetProperty).toHaveBeenCalledWith('--color-background', themeConfig.dark.background);
-      expect(mockSetProperty).toHaveBeenCalledWith('--color-text', themeConfig.dark.text);
-    });
-
-    it('sets all CSS variables defined in cssVariables', () => {
-      applyThemeToRoot(false);
-
-      const expectedCallCount = Object.keys(cssVariables).length;
-      expect(mockSetProperty).toHaveBeenCalledTimes(expectedCallCount);
-    });
-
-    it('correctly maps CSS variable names to theme values', () => {
-      applyThemeToRoot(true);
-
-      Object.entries(cssVariables).forEach(([cssVar, themeKey]) => {
-        expect(mockSetProperty).toHaveBeenCalledWith(
-          cssVar,
-          themeConfig.dark[themeKey as keyof typeof themeConfig.dark]
-        );
-      });
     });
   });
 

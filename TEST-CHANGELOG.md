@@ -2,6 +2,26 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-11 - the shell spec, and the three theme cases that existed only for the deleted writer
+
+- ADDED `agenthub-frontend/e2e/shell.spec.ts` (Playwright; one worker; run as
+  `E2E_BASE_URL=... npx playwright test e2e/shell.spec.ts --workers=1`). It signs in, then reads the
+  shell at 1280 and 1440 in BOTH themes: every navigation item one line and 36px tall, the items' tops
+  identical, exactly one `h1` and it is the page's own title, the header's own box inside the viewport,
+  and the navigation's painted hues - each hue named by the element that painted it, so an unexpected
+  colour in a failure names its own source instead of only its value. It settles 500ms after a theme
+  change before reading: the nav faces carry a 300ms colour transition, and a reading taken mid-flight
+  reported a blend of the old and new colour that no source line could explain. It did that twice
+  before the wait went in, which is why the wait is commented rather than silent.
+- REMOVED from `src/tests/theme/themeConfig.test.ts` the `getThemeColors`, `cssVariables` and
+  `applyThemeToRoot` cases, and from `src/tests/contexts/ThemeContext.test.tsx` the module mock, the
+  handle and the two assertions on `applyThemeToRoot`. Every one of them tested the writer deleted in
+  the same commit; the palettes' own cases stay, because `muiTheme.ts` still consumes them.
+- NOT RE-PINNED: no case was edited or relaxed to keep passing, and none was deleted beyond the code it
+  tested. The touched suites green at the change: `npx vitest run
+  src/tests/theme/themeConfig.test.ts src/tests/contexts/ThemeContext.test.tsx` -> 2 files / 26 tests
+  passed.
+
 ## 2026-10-11 - the init SQL's two new gates: a name created twice, and the asset run on an empty database
 
 - THE DEFECT BOTH GATES PIN: `init_schema_postgresql.sql` created 13 names twice - a

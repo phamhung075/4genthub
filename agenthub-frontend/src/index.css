@@ -56,9 +56,9 @@
     border-color: var(--color-surface-border-hover);
   }
 
-  .transition-theme {
-    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
-  }
+  /* .transition-theme is deliberately not declared here: theme.css owns it, with
+     the motion tokens, so the product has one definition of a theme transition
+     rather than two that can drift apart. */
 }
 
 body {
@@ -69,7 +69,9 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   font-feature-settings: 'rlig' 1, 'calt' 1;
-  line-height: 1.6;
+  /* The rhythm token rather than the literal this file used to hardcode: 1.5,
+     down from 1.6, is the one global rhythm change the token slice makes. */
+  line-height: var(--leading-body);
   letter-spacing: -0.01em;
 }
 

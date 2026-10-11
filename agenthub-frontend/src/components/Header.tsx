@@ -22,74 +22,23 @@ export const Header: React.FC = () => {
 
   const { user } = authContext;
 
-  // Define all menu items for the glow menu with original vibrant colors
-  const allMenuItems = [
-    {
-      icon: Home,
-      label: "Dashboard",
-      href: "/dashboard",
-      gradient: "radial-gradient(circle, rgba(59,130,246,0.15) 0%, rgba(37,99,235,0.06) 50%, rgba(29,78,216,0) 100%)",
-      iconColor: "text-blue-500",
-    },
-    //{
-    //  icon: Activity,
-    //  label: "Performance",
-    //  href: "/performance",
-    //  gradient: "radial-gradient(circle, rgba(236,72,153,0.15) 0%, rgba(219,39,119,0.06) 50%, rgba(190,24,93,0) 100%)",
-    //  iconColor: "text-pink-500",
-    //},
-    {
-      icon: Key,
-      label: "Tokens",
-      href: "/tokens",
-      gradient: "radial-gradient(circle, rgba(249,115,22,0.15) 0%, rgba(234,88,12,0.06) 50%, rgba(194,65,12,0) 100%)",
-      iconColor: "text-orange-500",
-    },
-    {
-      icon: Armchair,
-      label: "Seats",
-      href: "/seats",
-      gradient: "radial-gradient(circle, rgba(20,184,166,0.15) 0%, rgba(13,148,136,0.06) 50%, rgba(15,118,110,0) 100%)",
-      iconColor: "text-teal-500",
-    },
-    {
-      icon: Terminal,
-      label: "Sessions",
-      href: "/sessions",
-      gradient: "radial-gradient(circle, rgba(56,189,248,0.15) 0%, rgba(14,165,233,0.06) 50%, rgba(2,132,199,0) 100%)",
-      iconColor: "text-sky-500",
-    },
-    {
-      icon: Network,
-      label: "Topology",
-      href: "/topology",
-      gradient: "radial-gradient(circle, rgba(244,63,94,0.15) 0%, rgba(225,29,72,0.06) 50%, rgba(190,18,60,0) 100%)",
-      iconColor: "text-rose-500",
-    },
-    {
-      icon: HelpCircle,
-      label: "Help & Setup",
-      href: "/help-setup",
-      gradient: "radial-gradient(circle, rgba(168,85,247,0.15) 0%, rgba(147,51,234,0.06) 50%, rgba(124,58,237,0) 100%)",
-      iconColor: "text-purple-500",
-    },
-    {
-      icon: Settings,
-      label: "Settings",
-      href: "/profile",
-      gradient: "radial-gradient(circle, rgba(34,197,94,0.15) 0%, rgba(22,163,74,0.06) 50%, rgba(21,128,61,0) 100%)",
-      iconColor: "text-green-500",
-    },
+  // Labels and destinations only. The eight per-item gradient/icon pairs that used
+  // to live here are retired (F-5): the shell paints one accent from the token
+  // layer, so the glow menu no longer takes a colour per item.
+  const menuItems = [
+    { icon: Home, label: "Dashboard", href: "/dashboard" },
+    { icon: Key, label: "Tokens", href: "/tokens" },
+    { icon: Armchair, label: "Seats", href: "/seats" },
+    { icon: Terminal, label: "Sessions", href: "/sessions" },
+    { icon: Network, label: "Topology", href: "/topology" },
+    { icon: HelpCircle, label: "Help & Setup", href: "/help-setup" },
+    { icon: Settings, label: "Settings", href: "/profile" },
     {
       icon: theme === 'dark' ? Sun : Moon,
       label: theme === 'dark' ? "Light" : "Dark",
       href: "#theme-toggle",
-      gradient: "radial-gradient(circle, rgba(139,69,19,0.15) 0%, rgba(120,53,15,0.06) 50%, rgba(101,38,10,0) 100%)",
-      iconColor: theme === 'dark' ? "text-yellow-500" : "text-indigo-500",
     },
   ];
-
-  const menuItems = allMenuItems;
 
   // Get the current active item based on the current route
   const getActiveItem = () => {
@@ -114,22 +63,28 @@ export const Header: React.FC = () => {
 
   return (
     <>
-      <header className="theme-nav px-4 sm:px-6 py-3 sm:py-4 shadow-lg backdrop-blur-xl bg-surface/95 border-b border-surface-border transition-theme relative z-[1000]">
+      <header className="theme-nav px-4 sm:px-6 py-3 shadow-lg backdrop-blur-xl bg-surface/95 border-b border-surface-border transition-theme relative z-[1000]">
         <div className="flex items-center justify-between">
-          {/* Brand Section - Responsive */}
+          {/* Brand Section - one line, so the navigation beside it has the room (F-1) */}
           <div className="flex items-center">
-            <Link to="/dashboard" className="flex items-center space-x-2 sm:space-x-3 group">
-              <div className="flex flex-col">
-                <Brand variant="header" />
-                <span className="text-xs text-black-600 dark:text-black-200 -mt-1 hidden sm:block">
-                  AI Orchestration Platform
-                </span>
-              </div>
+            <Link
+              to="/dashboard"
+              className="flex items-baseline gap-2 sm:gap-3 group whitespace-nowrap"
+            >
+              <Brand variant="header" />
+              {/* Keeps the responsive visibility it had, plus one step: the
+                  sub-label is a tablet affordance, and at lg the navigation
+                  beside it is what needs the room (F-1: fit, one line). The
+                  muted text role replaces the inert text-black-* classes it
+                  carried. */}
+              <span className="text-xs text-text-secondary hidden sm:block lg:hidden">
+                AI Orchestration Platform
+              </span>
             </Link>
           </div>
 
           {user ? (
-            <div className="flex items-center space-x-2 sm:space-x-4">
+            <div className="flex items-center space-x-2">
               {/* WebSocket Status Indicator */}
               <WebSocketStatus />
 
@@ -235,8 +190,6 @@ export const Header: React.FC = () => {
                     icon: theme === 'dark' ? Sun : Moon,
                     label: theme === 'dark' ? "Light" : "Dark",
                     href: "#theme-toggle",
-                    gradient: "radial-gradient(circle, rgba(139,69,19,0.15) 0%, rgba(120,53,15,0.06) 50%, rgba(101,38,10,0) 100%)",
-                    iconColor: theme === 'dark' ? "text-yellow-500" : "text-indigo-500",
                   }]}
                   activeItem=""
                   onItemClick={handleMenuClick}
@@ -265,7 +218,7 @@ export const Header: React.FC = () => {
           />
 
           {/* Mobile Menu */}
-          <div className="fixed top-[73px] left-0 right-0 bg-surface/95 backdrop-blur-xl border-b border-surface-border shadow-lg z-[999] md:hidden animate-slide-in">
+          <div className="fixed top-[var(--shell-header-h)] left-0 right-0 bg-surface/95 backdrop-blur-xl border-b border-surface-border shadow-lg z-[999] md:hidden animate-slide-in">
             <nav className="px-4 py-6 space-y-2">
               {menuItems.map((item) => {
                 const Icon = item.icon;
@@ -283,7 +236,7 @@ export const Header: React.FC = () => {
                         isActive ? 'bg-primary/10 text-primary' : 'theme-nav-item'
                       }`}
                     >
-                      <Icon className={`h-5 w-5 ${item.iconColor}`} />
+                      <Icon className="h-5 w-5" />
                       <span className="font-medium">{item.label}</span>
                     </button>
                   );
@@ -298,7 +251,7 @@ export const Header: React.FC = () => {
                       isActive ? 'bg-primary/10 text-primary' : 'theme-nav-item'
                     }`}
                   >
-                    <Icon className={`h-5 w-5 ${item.iconColor}`} />
+                    <Icon className="h-5 w-5" />
                     <span className="font-medium">{item.label}</span>
                   </Link>
                 );
