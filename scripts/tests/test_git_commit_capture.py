@@ -20,11 +20,25 @@ import sys
 import time
 from pathlib import Path
 
+import pytest
+
+import gitfixture
+
 # <repo>/scripts/tests/<this file>: two levels up is where scripts/git-hooks/ lives.
 REPO_ROOT = Path(__file__).resolve().parents[2]
 WRAPPER = REPO_ROOT / "scripts" / "git-hooks" / "git_commit_capture.py"
 
 THE_PARKED_WORK = "one\ntwo\n"
+
+
+@pytest.fixture(autouse=True)
+def _no_ambient_git_location(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The wrapper's OWN child processes inherit this process's environment, so `env=` on the test's git
+    calls cannot reach them: the relocating variables have to be gone from the process itself too. Two
+    cases here hand the wrapper `COMMIT_COMMAND = ["git", "commit"]` and one runs a generated script that
+    shells out to git. See gitfixture.py for the incident this prevents."""
+    for name in gitfixture.RELOCATING:
+        monkeypatch.delenv(name, raising=False)
 
 
 def _module():
@@ -37,9 +51,7 @@ def _module():
 
 
 def _git(repo: Path, *args: str) -> str:
-    return subprocess.run(
-        ["git", *args], cwd=repo, check=True, capture_output=True, text=True
-    ).stdout
+    return gitfixture.git(repo, *args).stdout
 
 
 def _repo(tmp_path: Path) -> Path:
@@ -84,9 +96,16 @@ def test_a_kill_inside_the_window_is_reported_and_the_patch_recovers_the_work(
     repo = _repo(tmp_path)
     killer = tmp_path / "killer.py"
     killer.write_text(
-        "import subprocess, sys\n"
+        "import os, subprocess, sys\n"
         "# the framework's window: the tree is rewound to the index and the process then dies\n"
-        "subprocess.run(['git', '--no-optional-locks', 'checkout', '--', 'f.txt'], cwd=sys.argv[1], check=True)\n"
+        "# This child is a fixture's git call too, so it must not inherit a caller's GIT_DIR - without\n"
+        "# the scrub it would rewind the CALLER's tree instead of the fixture's (see gitfixture.py).\n"
+        "LOCATION = ('GIT_DIR', 'GIT_WORK_TREE', 'GIT_INDEX_FILE', 'GIT_COMMON_DIR',\n"
+        "            'GIT_OBJECT_DIRECTORY', 'GIT_ALTERNATE_OBJECT_DIRECTORIES')\n"
+        "env = {k: v for k, v in os.environ.items()\n"
+        "       if k not in LOCATION and not k.startswith('GIT_CONFIG')}\n"
+        "subprocess.run(['git', '--no-optional-locks', 'checkout', '--', 'f.txt'],\n"
+        "               cwd=sys.argv[1], check=True, env=env)\n"
         "sys.exit(137)\n",
         encoding="utf-8",
     )
@@ -101,7 +120,7 @@ def test_a_kill_inside_the_window_is_reported_and_the_patch_recovers_the_work(
     assert f"git apply {patch}" in err, "the wrapper must name the exact command, not the hazard"
     assert "at-risk" in next(_parked(repo).glob("*/MANIFEST.txt")).read_text(encoding="utf-8")
 
-    subprocess.run(["git", "apply", str(patch)], cwd=repo, check=True)
+    gitfixture.git(repo, "apply", str(patch))
 
     assert (repo / "f.txt").read_text(encoding="utf-8") == THE_PARKED_WORK, "one git apply recovers it"
 

@@ -27,6 +27,8 @@ import subprocess
 
 from pathlib import Path
 
+import gitfixture
+
 
 import pytest
 
@@ -55,10 +57,7 @@ def _tracked_rooms():
     untracked in this tree and a live rig besides, is an owner row (`f465d5df`) instead of a red
     guard here.
     """
-    listed = subprocess.run(
-        ["git", "ls-files", "--", "scripts/team/*/team.json"],
-        cwd=REPO_ROOT, capture_output=True, text=True, check=True,
-    ).stdout.split()
+    listed = gitfixture.git(REPO_ROOT, "ls-files", "--", "scripts/team/*/team.json").stdout.split()
     return sorted(Path(p).parts[2] for p in listed)
 
 

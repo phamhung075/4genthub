@@ -16,10 +16,11 @@ from __future__ import annotations
 
 import importlib.util
 import json
-import os
 import subprocess
 import sys
 from pathlib import Path
+
+import gitfixture
 
 # <repo>/scripts/tests/<this file>: two levels up is where scripts/git-hooks/ lives.
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -41,9 +42,7 @@ def _module():
 
 
 def _git(repo: Path, *args: str) -> str:
-    return subprocess.run(
-        ["git", *args], cwd=repo, check=True, capture_output=True, text=True
-    ).stdout
+    return gitfixture.git(repo, *args).stdout
 
 
 def _repo(tmp_path: Path) -> Path:
@@ -62,7 +61,7 @@ def _repo(tmp_path: Path) -> Path:
 
 def _run(repo: Path, *args: str) -> tuple[int, str, str]:
     """The tool as a committer runs it: a subprocess, with the seat in the environment."""
-    env = {**os.environ, "OPENRIG_SESSION": SEAT}
+    env = gitfixture.environment(OPENRIG_SESSION=SEAT)
     proc = subprocess.run(
         [sys.executable, str(CHECK), *args], cwd=repo, capture_output=True, text=True, env=env
     )
