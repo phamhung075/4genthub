@@ -2,6 +2,14 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-11 - vitest stops collecting the Playwright spec, and the certified suite goes green
+
+- CHANGED, one config file and no test file: `agenthub-frontend/vite.config.ts`'s `test.exclude` gains `e2e/**`. Vitest's default include matches `**/*.spec.ts` and `e2e/smoke.spec.ts` is a PLAYWRIGHT spec, so vitest collected it and the file failed at IMPORT rather than as a test.
+- WHY IT FAILED, precisely, because a collection failure reads like a test failure: `e2e/account.ts:17` reads the gitignored `e2e-test-account` at module scope, and no git worktree carries that file, so the run printed `FAIL e2e/smoke.spec.ts [ e2e/smoke.spec.ts ] Error: ENOENT ... e2e-test-account` beside `Test Files 1 failed | 122 passed (123)` with **Tests 1881 passed (1881)** - zero test failures under a red run.
+- THE CLASS WAS ALREADY ON THIS FILE: `src/tests/e2e/live-websocket.test.ts` carries the same exclusion, and the comment beside it claimed the repo has no Playwright config, which stopped being true when `playwright.config.ts` landed. The comment now states the real rule - Playwright owns both directories and `npx playwright test` is how they run.
+- VERIFIED, in `wt/fe-dev`, from `agenthub-frontend`: `npx vitest run` -> **rc=0, Test Files 122 passed (122), Tests 1881 passed (1881)**; the same command before the change -> **rc=1, 1 failed | 122 passed**, failing only on that unloadable file. The test total is IDENTICAL on both sides, which is the point: this change removes a load error, not a test.
+- NOT RUN, named: no Playwright invocation - the excluded spec is unchanged and is run by `npx playwright test`, whose own result (1 passed, 4.4s, against the deployed app) is recorded in the entry below.
+
 ## 2026-10-11 - the frontend gets a browser-level check, and the deployed app passes it
 
 - ADDED, all NEW: `agenthub-frontend/e2e/account.ts` (the shared test account read INSIDE the process, so no value can reach a log, a title, a trace or a commit), `agenthub-frontend/e2e/smoke.spec.ts` (one case: sign in, dashboard, Topology, Sessions, sign out) and `agenthub-frontend/playwright.config.ts` (`testDir ./e2e`, `E2E_BASE_URL` with the deployed app as default, one worker, no retries, trace and screenshot on failure only).

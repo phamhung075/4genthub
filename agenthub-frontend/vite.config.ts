@@ -275,8 +275,13 @@ export default defineConfig(({ mode }) => {
     // heap cap therefore lives here now; leaving it nested would be a silently ignored
     // option, the same shape as the override that used to be ignored in package.json.
     execArgv: ['--max-old-space-size=2048'],
-    // Playwright spec; the repo has no Playwright config, so vitest must not collect it
-    exclude: [...configDefaults.exclude, 'src/tests/e2e/live-websocket.test.ts']
+    // Playwright specs, and Playwright owns both of them: playwright.config.ts sets testDir ./e2e and
+    // `npx playwright test` is how they run, so vitest must not collect either. `src/tests/e2e/` is
+    // one; `e2e/` is the other, and collecting that one fails at IMPORT time rather than as a test -
+    // e2e/account.ts reads the gitignored account file, which no git worktree carries, so vitest
+    // reports a whole "- FAIL e2e/smoke.spec.ts" collection failure with an ENOENT on
+    // e2e-test-account and hides the fact that every test in the run passed.
+    exclude: [...configDefaults.exclude, 'src/tests/e2e/live-websocket.test.ts', 'e2e/**']
   },
   envDir: '..' // Load .env from parent directory
   }
