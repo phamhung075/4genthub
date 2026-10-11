@@ -562,3 +562,6 @@ rig.yaml
 # OpenRig's launch render writes this name into its launch cwd; the project's one rules file is the
 # tracked AGENTS.md (f7a809dc). Anchored to the root, so a nested CLAUDE.md stays visible.
 /CLAUDE.md
+
+# Frontend e2e test account credentials (USERNAME/PASSWORD); never commit
+/e2e-test-account
