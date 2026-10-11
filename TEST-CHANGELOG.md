@@ -2,6 +2,43 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-11 - the shell spec gains R1/R2/A3, and the palette gets a parity test
+
+- `agenthub-frontend/e2e/shell.spec.ts` gains three cases, each named for the gate item it reads:
+  - R1 (`the login button paints --color-accent, signed out`): `page.goto('/login')` and NO credential
+    is used at all - the read is `getComputedStyle(button).backgroundColor` beside the root
+    `--color-accent`, so a colour cannot cost a login. It asserts the page is in the default light
+    theme first, because MUI's contained override names the light palette's button colour; a surprise
+    in the mode fails there rather than as a hue mismatch that would read as a palette bug.
+  - R2 (`the mobile drawer starts where the header ends`): at 390 the drawer's `top` must equal the
+    header's own rect, before and after a resize to 500. The drawer slides in (`animate-slide-in`), so
+    the read settles 500ms first, as the shell test's own colour reading already does. A first version
+    read 64px under a 73px header and the diagnostic (offsetHeight/clientHeight/rect/zoom/transform)
+    showed the header's own `offsetHeight` was 73 already: the instrument was mid-animation, not the
+    code wrong, and the settle is the fix.
+  - A3 (`the sub-label yields from md, and the tablet band does not regress`): 768/900/1023, asserting
+    the sub-label is hidden and that the document's OVERFLOW is no worse than the pre-fix baseline.
+    The lg test's strict `<= innerWidth + 1` assertion is deliberately NOT extended to these widths -
+    the baseline itself fails it at 768 (860/768) - so the bound is parity: 92px of overflow was the
+    pre-fix reading, and it is the number the tablet-fit design item will tighten.
+- `src/tests/theme/themeConfig.test.ts` gains a token-parity case that reads `src/styles/theme.css`
+  through `readFileSync(resolve(process.cwd(), ...))` - the convention `LandingPage.head.test.ts`
+  already uses; `new URL(..., import.meta.url)` is not file-scheme under vitest and fails with
+  "The URL must be of scheme file". It asserts, for both modes, that `primary`/`primaryHover` are the
+  block's own `--color-accent`/`--color-accent-hover` and that the button and info entries follow
+  them. A literal pin cannot catch a second source; this one fails the moment the palette and the CSS
+  drift apart.
+- Two literal pins moved with the palette and are NAMED rather than re-pinned quietly:
+  `light.primary` `#2563eb` -> `#4f46e5`, `dark.primary` `#60a5fa` -> `#818cf8`, and the dark
+  `buttonPrimaryBg` pin `#3b82f6` -> `#818cf8` (the light button case was already an equality against
+  `primary`). The violet `secondary*` keys left the required-property list with the keys themselves.
+  The consistency cases (`buttonPrimaryBg === primary`, `info === primary`, `infoDark === primaryHover`)
+  were not touched: they still hold and are why those entries moved with the accent.
+- Green at the change, from `agenthub-frontend`: `npx vitest run src/tests/theme/themeConfig.test.ts`
+  -> 1 file / 12 tests passed; `npx vitest run src/tests/components/Header.test.tsx` -> 1 file / 19
+  passed; `E2E_BASE_URL=http://localhost:3800 npx playwright test e2e/shell.spec.ts --workers=1` ->
+  **4 passed (27.0s)**, which is the pre-existing lg shell test plus the three new cases.
+
 ## 2026-10-11 - the shell spec's fit assertion becomes geometric, and the one palette pin the AA fix moves
 
 - THE SHELL SPEC'S FIT ASSERTION, REPLACED RATHER THAN RELAXED:

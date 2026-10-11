@@ -1,5 +1,5 @@
 import { Armchair, BookOpen, HelpCircle, Home, Key, Menu, Moon, Network, Settings, Sun, Terminal, X } from 'lucide-react';
-import React, { useContext, useState } from 'react';
+import React, { useContext, useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../contexts/AuthContext';
 import { useTheme } from '../hooks/useTheme';
@@ -15,6 +15,31 @@ export const Header: React.FC = () => {
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // The mobile drawer is `fixed`, so it cannot inherit the header's height from
+  // flow: it measures the header itself. A declared token could not do this - the
+  // header's height is its padding plus its line box, which is 77px at >=768 and
+  // 73px at 390, so any literal is wrong somewhere (R2).
+  const headerRef = useRef<HTMLElement | null>(null);
+  const [drawerTop, setDrawerTop] = useState(0);
+
+  useEffect(() => {
+    const header = headerRef.current;
+    if (!header) return;
+    const measure = (): void => setDrawerTop(header.offsetHeight);
+    measure();
+    // The observer is what keeps the value honest. The brand font landing after
+    // mount moves the header from 64px to 73px at 390, and a resize or a zoom moves
+    // it again, so a one-shot read on open would freeze a half-laid-out height -
+    // which is exactly what a first run measured (drawer 64px under a 73px header).
+    const observer = new ResizeObserver(measure);
+    observer.observe(header);
+    window.addEventListener('resize', measure);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', measure);
+    };
+  }, []);
 
   if (!authContext) {
     return null;
@@ -63,7 +88,10 @@ export const Header: React.FC = () => {
 
   return (
     <>
-      <header className="theme-nav px-4 sm:px-6 py-3 shadow-lg backdrop-blur-xl bg-surface/95 border-b border-surface-border transition-theme relative z-[1000]">
+      <header
+        ref={headerRef}
+        className="theme-nav px-4 sm:px-6 py-3 shadow-lg backdrop-blur-xl bg-surface/95 border-b border-surface-border transition-theme relative z-[1000]"
+      >
         <div className="flex items-center justify-between">
           {/* Brand Section - one line, so the navigation beside it has the room (F-1) */}
           <div className="flex items-center">
@@ -72,12 +100,12 @@ export const Header: React.FC = () => {
               className="flex items-baseline gap-2 sm:gap-3 group whitespace-nowrap"
             >
               <Brand variant="header" />
-              {/* Keeps the responsive visibility it had, plus one step: the
-                  sub-label is a tablet affordance, and at lg the navigation
-                  beside it is what needs the room (F-1: fit, one line). The
-                  muted text role replaces the inert text-black-* classes it
-                  carried. */}
-              <span className="text-xs text-text-secondary hidden sm:block lg:hidden">
+              {/* The sub-label yields to the navigation that shares its band.
+                  Beside the brand it costs ~128px, and from md to 1023 the
+                  tablet icon nav is already in the row, which is where the
+                  header row ran wider than the baseline (A3). The muted text
+                  role replaces the inert text-black-* classes it carried. */}
+              <span className="text-xs text-text-secondary hidden sm:block md:hidden">
                 AI Orchestration Platform
               </span>
             </Link>
@@ -217,8 +245,12 @@ export const Header: React.FC = () => {
             onClick={() => setIsMobileMenuOpen(false)}
           />
 
-          {/* Mobile Menu */}
-          <div className="fixed top-[var(--shell-header-h)] left-0 right-0 bg-surface/95 backdrop-blur-xl border-b border-surface-border shadow-lg z-[999] md:hidden animate-slide-in">
+          {/* Mobile Menu: `top` is the header's own measured height, observed on the
+              header itself so a late font, a resize or a zoom cannot leave it stale. */}
+          <div
+            style={{ top: drawerTop }}
+            className="fixed left-0 right-0 bg-surface/95 backdrop-blur-xl border-b border-surface-border shadow-lg z-[999] md:hidden animate-slide-in"
+          >
             <nav className="px-4 py-6 space-y-2">
               {menuItems.map((item) => {
                 const Icon = item.icon;

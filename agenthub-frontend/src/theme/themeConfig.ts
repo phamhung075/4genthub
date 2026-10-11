@@ -1,17 +1,18 @@
 // Global Theme Configuration
 export const themeConfig = {
   light: {
-    // Primary Colors
-    primary: '#2563eb', // blue-600 - AA on white (5.17:1); blue-500 measured 3.68:1
-    primaryHover: '#1d4ed8', // blue-700 - AA under the pointer (6.70:1)
-    primaryLight: '#dbeafe', // blue-100
-    primaryDark: '#1e40af', // blue-800
+    // Primary Colors. The hue IS the token layer's --color-accent (#4f46e5) and
+    // --color-accent-hover (#4338ca): MUI's palette derives from that one accent
+    // rather than carrying a second brand hue (R1). The light/dark sub-keys below
+    // still name blues and feed only MUI's primary.light /.dark.
+    primary: '#4f46e5', // the accent token
+    primaryHover: '#4338ca', // the accent hover token
+    primaryLight: '#dbeafe', // blue-100 - MUI primary.light, not yet derived
+    primaryDark: '#1e40af', // blue-800 - MUI primary.dark, not yet derived
 
-    // Secondary Colors
-    secondary: '#8b5cf6', // violet-500
-    secondaryHover: '#7c3aed', // violet-600
-    secondaryLight: '#ede9fe', // violet-100
-    secondaryDark: '#5b21b6', // violet-800
+    // Secondary Colors: the secondary colour is the accent. The violet set that used
+    // to live here is gone (R1); the CSS token layer already says
+    // --color-secondary: var(--color-accent), and nothing renders color="secondary".
 
     // Background Colors
     background: '#ffffff',
@@ -43,8 +44,8 @@ export const themeConfig = {
 
     // Button Colors. These must stay equal to primary/primaryHover: the palette
     // test pins the match, and MUI renders the login button from them.
-    buttonPrimaryBg: '#2563eb', // blue-600 - white on blue-500 measured 3.68:1
-    buttonPrimaryHover: '#1d4ed8', // blue-700
+    buttonPrimaryBg: '#4f46e5', // the accent, pinned equal to primary
+    buttonPrimaryHover: '#4338ca', // the accent hover, pinned equal to primaryHover
     buttonPrimaryText: '#ffffff',
     buttonSecondaryBg: '#e5e7eb', // gray-200
     buttonSecondaryHover: '#d1d5db', // gray-300
@@ -64,9 +65,9 @@ export const themeConfig = {
     error: '#ef4444', // red-500
     errorLight: '#fee2e2', // red-100
     errorDark: '#dc2626', // red-600
-    info: '#2563eb', // blue-600 - pinned equal to primary
+    info: '#4f46e5', // the accent, pinned equal to primary
     infoLight: '#dbeafe', // blue-100
-    infoDark: '#1d4ed8', // blue-700 - pinned equal to primaryHover
+    infoDark: '#4338ca', // the accent hover, pinned equal to primaryHover
 
     // Shadow & Overlay
     shadow: 'rgba(0, 0, 0, 0.1)',
@@ -93,17 +94,13 @@ export const themeConfig = {
   },
 
   dark: {
-    // Primary Colors
-    primary: '#60a5fa', // blue-400
-    primaryHover: '#3b82f6', // blue-500
-    primaryLight: '#1e3a8a', // blue-900
-    primaryDark: '#93c5fd', // blue-300
+    // Primary Colors: the dark --color-accent (#818cf8) and its hover (#a5b4fc).
+    primary: '#818cf8', // the dark accent token
+    primaryHover: '#a5b4fc', // the dark accent hover token
+    primaryLight: '#1e3a8a', // blue-900 - MUI primary.light, not yet derived
+    primaryDark: '#93c5fd', // blue-300 - MUI primary.dark, not yet derived
 
-    // Secondary Colors
-    secondary: '#a78bfa', // violet-400
-    secondaryHover: '#8b5cf6', // violet-500
-    secondaryLight: '#4c1d95', // violet-900
-    secondaryDark: '#c4b5fd', // violet-300
+    // Secondary Colors: the secondary colour is the accent, in dark too (R1).
 
     // Background Colors
     background: '#0f172a', // slate-900
@@ -134,8 +131,8 @@ export const themeConfig = {
     inputPlaceholder: '#64748b', // slate-500
 
     // Button Colors
-    buttonPrimaryBg: '#3b82f6', // blue-500
-    buttonPrimaryHover: '#60a5fa', // blue-400
+    buttonPrimaryBg: '#818cf8', // the dark accent, pinned equal to primary
+    buttonPrimaryHover: '#a5b4fc', // the dark accent hover, pinned equal to primaryHover
     buttonPrimaryText: '#ffffff',
     buttonSecondaryBg: '#334155', // slate-700
     buttonSecondaryHover: '#475569', // slate-600
@@ -155,9 +152,9 @@ export const themeConfig = {
     error: '#ef4444', // red-500
     errorLight: '#7f1d1d', // red-900
     errorDark: '#f87171', // red-400
-    info: '#3b82f6', // blue-500
+    info: '#818cf8', // the dark accent, pinned equal to primary
     infoLight: '#1e3a8a', // blue-900
-    infoDark: '#60a5fa', // blue-400
+    infoDark: '#a5b4fc', // the dark accent hover, pinned equal to primaryHover
 
     // Shadow & Overlay
     shadow: 'rgba(0, 0, 0, 0.3)',

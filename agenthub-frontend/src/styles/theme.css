@@ -1,6 +1,6 @@
 /* Global Theme CSS Variables and Styles */
 
-/* Root CSS Variables - Will be dynamically updated by JavaScript */
+/* Root CSS Variables - the single token source. Nothing writes these from JavaScript; the theme is the .light / .dark class on <html>. */
 :root {
   /* ---------------------------------------------------------------------------
      The product's roles, light. These are the source; the historical names
@@ -32,9 +32,6 @@
   --radius-card: 12px;
   --radius-pill: 999px;
 
-  /* The session chrome's height, the rhythm the shells sit on, and the line
-     height the documents inherit. */
-  --shell-header-h: 56px;
   --gutter: 24px;
   --card-pad: 16px;
   --section-gap: 32px;
@@ -126,7 +123,7 @@
   --color-nav-border: var(--color-surface-border);
 }
 
-/* Dark Theme Variables - Applied via JavaScript when dark mode is active */
+/* Dark Theme Variables - applied by the .dark class on <html> when dark mode is active */
 .dark {
   /* Modern Dark Theme Variables - the same roles, darker, with one hue family:
      light primary was indigo #6366f1 while dark was blue #60a5fa, and light
@@ -376,10 +373,6 @@ body {
   .theme-nav {
     background-color: var(--color-nav-background);
     border-bottom: 1px solid var(--color-nav-border);
-    /* The session chrome's height. The navigation is one line inside it, and the
-       mobile menu overlay offsets itself by this token rather than by a measured
-       73px, so the two cannot drift apart. */
-    min-height: var(--shell-header-h);
   }
 
   .theme-nav-item {

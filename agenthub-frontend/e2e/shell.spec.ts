@@ -392,3 +392,102 @@ test('the shell: one-line nav, one h1, one accent, both themes', async ({ page }
     'the dark accent is the dark token, so the toggle was exercised rather than assumed',
   ).not.toBe(light?.accent)
 })
+
+// R1 (theme): the login button is painted from the one accent token. Read SIGNED
+// OUT, so no credential is involved and no login is attempted for a colour.
+test('R1: the login button paints --color-accent, signed out', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 })
+  await page.goto('/login')
+
+  const button = page.getByRole('button', { name: 'Sign In' }).first()
+  await expect(button).toBeVisible()
+
+  const painted = await button.evaluate((el) => getComputedStyle(el).backgroundColor)
+  const reading = await page.evaluate(() => ({
+    accent: getComputedStyle(document.documentElement).getPropertyValue('--color-accent').trim(),
+    dark: document.documentElement.classList.contains('dark'),
+  }))
+  console.log(`R1 reading: button=${painted} accent=${reading.accent} dark=${reading.dark}`)
+
+  // MUI's contained override names the light palette's button colour, so this is a
+  // light-mode reading; a surprise in the mode fails here rather than as a hue
+  // mismatch that looks like a palette bug.
+  expect(reading.dark, 'the login page is read in the default light theme').toBe(false)
+  expect(reading.accent, 'the token layer declares --color-accent').toBeTruthy()
+  expect(painted, 'the Sign In button is painted from --color-accent').toBe(cssRgb(reading.accent))
+})
+
+// R2 (shell): the mobile drawer's `top` is the header's own measured height, not a
+// declared token. Before this the drawer offset itself by --shell-header-h (56px)
+// while the header is 73px at this width, so the menu started 17px too high.
+test('R2: the mobile drawer starts where the header ends', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await signIn(page)
+  await page.goto(TITLE_ROUTE)
+
+  const readTop = () =>
+    page.evaluate(() => {
+      const header = document.querySelector('header')
+      const drawer = Array.from(document.querySelectorAll('div')).find(
+        (d) =>
+          d.className.includes('fixed left-0 right-0') && d.className.includes('md:hidden'),
+      )
+      return {
+        header: header ? Math.round(header.getBoundingClientRect().height) : -1,
+        drawer: drawer ? Math.round(drawer.getBoundingClientRect().top) : -1,
+      }
+    })
+
+  await page.getByRole('button', { name: 'Toggle mobile menu' }).click()
+  // The drawer slides in (`animate-slide-in`), so a rect read straight after the
+  // click reports the animation's own offset, not the resting top: a first run read
+  // 64px under a 73px header for exactly that reason. Settle, as the shell test does.
+  await page.waitForTimeout(500)
+  const opened = await readTop()
+  console.log(`R2 reading: header=${opened.header}px drawerTop=${opened.drawer}px`)
+  expect(opened.drawer, 'the drawer is on screen').toBeGreaterThan(0)
+  expect(opened.drawer, 'the drawer starts at the header height').toBe(opened.header)
+
+  // The measured value is re-read on resize, which is the other half of the fix.
+  await page.setViewportSize({ width: 500, height: 844 })
+  await page.waitForTimeout(200)
+  const resized = await readTop()
+  console.log(`R2 reading after resize: header=${resized.header}px drawerTop=${resized.drawer}px`)
+  expect(resized.drawer, 'still flush after a resize').toBe(resized.header)
+})
+
+// A3 (shell): the sub-label yields from md up, so the tablet band measures no worse
+// than the pre-fix baseline. That bound is PARITY, not a true fit: the tablet band's
+// own contents (the wordmark, the six-icon nav) are a separate design item, and this
+// is the test that item will tighten. The strict `<= innerWidth + 1` assertion above
+// is deliberately NOT extended to these widths - the baseline itself fails it at 768
+// (860/768), so extending it would smuggle a new requirement into a regression fix.
+const MD_WIDTHS = [768, 900, 1023] as const
+/** The pre-fix reading at 768 was 860/768: 92px of document overflow. Parity means not exceeding it. */
+const MD_BASELINE_OVERFLOW = 92
+
+test('A3: the sub-label yields from md, and the tablet band does not regress', async ({ page }) => {
+  await signIn(page)
+
+  for (const width of MD_WIDTHS) {
+    await page.setViewportSize({ width, height: 900 })
+    await page.goto(TITLE_ROUTE)
+    await expect(page.getByRole('heading', { name: TITLE, level: 1 })).toBeVisible()
+
+    await expect(
+      page.getByText('AI Orchestration Platform'),
+      `${width}px: the sub-label is hidden from md up`,
+    ).toBeHidden()
+
+    const reading = await readShell(page, width)
+    console.log(
+      `A3 reading ${width}px: doc=${reading.doc.scrollWidth}/${reading.doc.innerWidth} ` +
+        `headerRow=${JSON.stringify(reading.headerRow)} ` +
+        `pieces=${JSON.stringify(reading.headerPieces)}`,
+    )
+    expect(
+      reading.doc.scrollWidth - reading.doc.innerWidth,
+      `${width}px: overflow no worse than the 768px baseline (${MD_BASELINE_OVERFLOW}px)`,
+    ).toBeLessThanOrEqual(MD_BASELINE_OVERFLOW)
+  }
+})

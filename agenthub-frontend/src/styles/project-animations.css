@@ -100,11 +100,19 @@
 }
 
 /* ========================================
+   COMPLETE ANIMATION (WS 'completed' resolves to this class)
+   ======================================== */
+.projectRowCompleteAnimation {
+  animation: projectRowFlash 1.7s ease-in-out;
+}
+
+/* ========================================
    ACCESSIBILITY
    ======================================== */
 @media (prefers-reduced-motion: reduce) {
   .projectRowCreateAnimation,
   .projectRowUpdateAnimation,
+  .projectRowCompleteAnimation,
   .projectRowDeleteAnimation {
     animation: none;
   }
