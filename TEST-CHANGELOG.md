@@ -2,6 +2,35 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-11 - the four fixture bring-ups perform the operator's baseline mark
+
+- FIXED the 126 `SQLSTATE P0001` failures at `92d3e825`: the gated carry step
+  `0003_progress_history_carry_and_drop` refuses on any database whose `applied_migrations` ledger holds
+  no `0001_baseline` row, and `createAll` populates the catalogue before the runner runs, so a fresh
+  fixture database skips the frozen baseline without recording it and the step then refuses. Four shared
+  bring-up helpers booted with `cfg.CreateTables` and never marked.
+- CHANGED those four helpers to the flow the harness already documents and the passing fixtures already
+  use, `testdb.CreateSchema(t, cfg)` - expect the refusal, record the mark with `Runner.MarkBaseline`,
+  boot again: `newTestRepoEnv` (`repositories/testpg_test.go:49`), `newMissedNotificationTestEnv`
+  (`repositories/orm/missed_notification_repository_test.go:50`), `wsTestSessions`
+  (`application/services/websocket_notification_service_test.go:47`) and `newMissedNotificationAppEnv`
+  (`server/httpapp/missed_notification_replay_test.go:67`), which is also the bring-up the pin case uses.
+  Each helper creates its own throwaway database per test, which is why marking the cluster instead could
+  never have helped. No product code, no assertion, no package boundary and no gated blob changed: the
+  fold's seventeen paths stay byte-identical to `3bcc632a`.
+- MEASURED, on a cluster carrying NO baseline mark - the fixtures mark for themselves, so a fresh cluster
+  gives the same result: `go vet ./...` rc 0; `gofmt -l` empty on the four files; the four packages that
+  held the 126 pass with **test-level RUN 883 / PASS 883 / SKIP 0 / FAIL 0** and 4/4 packages `ok`; and
+  `TestSeatAdminPinReachesTheRowOnARealDatabase` **PASS by name** (it had been failing on this refusal,
+  not on an assertion), alongside `TestSeatAdminPinSeatVersion` PASS.
+- NOT FIXED, per the row: the seven `TestProductionModelsCRUDRealPostgres` `42P01` failures in `database`
+  are measured and are NOT counted as new.
+- The diagnostic that tested the other option is recorded as INCONCLUSIVE rather than as evidence against
+  it: marking the shared `postgres` database cannot reach these fixtures because each creates its own
+  database, so that experiment was aimed at the wrong database and was undone.
+
+
+
 ## 2026-10-11 - the two schema guards build together again, by naming only
 
 - FIXED a build break at the assembled tip: `migration_baseline_parity_test.go` (the release line's) and the

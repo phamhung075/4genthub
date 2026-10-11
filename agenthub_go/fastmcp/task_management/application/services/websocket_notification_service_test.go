@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"agenthub/fastmcp/session_stream/testdb"
 	"agenthub/fastmcp/task_management/domain/entities"
 	"agenthub/fastmcp/task_management/infrastructure/database"
 )
@@ -43,9 +44,7 @@ func wsTestSessions(t *testing.T) (*database.SessionManager, *sql.DB) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := cfg.CreateTables(context.Background()); err != nil {
-		t.Fatal(err)
-	}
+	testdb.CreateSchema(t, cfg)
 	t.Cleanup(func() {
 		database.ResetInstance()
 		_, _ = adm.Exec("DROP DATABASE IF EXISTS " + name + " WITH (FORCE)")
