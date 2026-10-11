@@ -25,12 +25,16 @@ const (
 	// connectorHeartbeatSeconds is ready.heartbeat_s: how often the client pings. Three of them are
 	// both the server's idle close below and the rigd dead-man (2.2, 7.3).
 	connectorHeartbeatSeconds = 25
-	// connectorCapabilityIngest and connectorCapabilitySafeguards are the capabilities this server
-	// enables in phase 1 (2.3.4, 7.6). `commands` is phase 2 and `ledger` is P4, and the server never
-	// echoes a capability it cannot serve: that is what stops a phase-1 client from sending their
-	// frames at all (2.3.1).
+	// connectorCapabilityIngest, connectorCapabilitySafeguards and connectorCapabilityLedger are the
+	// capabilities this server enables (2.3.4, 7.6, P4). `commands` is phase 2 and is NOT served, and
+	// the server never echoes a capability it cannot serve: that is what stops a phase-1 client from
+	// sending their frames at all (2.3.1).
 	connectorCapabilityIngest     = "ingest"
 	connectorCapabilitySafeguards = "safeguards"
+	// connectorCapabilityLedger gates P4's one server frame, `ledger_tip` (NEXT_GEN P4, 2.2, 2.3.1):
+	// a socket receives that frame only when its hello advertised this name AND the ready the server
+	// answered carried it back.
+	connectorCapabilityLedger = "ledger"
 	// safeguardAlertEventType and rigSafeguardEntity are 7.3's two ruled names: the notification the
 	// server raises is `safeguard_alert`, and it travels as the new entity `rig_safeguard` on the
 	// existing data-change push.
@@ -72,7 +76,7 @@ func wsCapabilities(v any) map[string]bool {
 // never the ingest a phase-1 client already relies on.
 func wsEnabledCapabilities(advertised map[string]bool) []any {
 	enabled := []any{}
-	for _, name := range []string{connectorCapabilityIngest, connectorCapabilitySafeguards} {
+	for _, name := range []string{connectorCapabilityIngest, connectorCapabilitySafeguards, connectorCapabilityLedger} {
 		if advertised[name] {
 			enabled = append(enabled, name)
 		}

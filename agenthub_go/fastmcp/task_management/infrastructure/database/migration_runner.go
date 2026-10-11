@@ -19,9 +19,11 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"log"
 	"path"
 	"sort"
 	"strings"
+	"sync"
 )
 
 //go:embed migrations
@@ -88,6 +90,12 @@ func validateSet(set []Migration) error {
 	return nil
 }
 
+// baselineStep is the name of the frozen baseline (migrations/0001_baseline.sql). It is the one step
+// that describes a schema the database may ALREADY have, so it is the one step Apply skips when the
+// catalogue is not empty (see Apply). The name is a constant rather than a caller's choice for the
+// same reason the file's name is: it is the step's identity in applied_migrations, not a setting.
+const baselineStep = "0001_baseline"
+
 // Runner applies a set of migrations and records each one it applies.
 type Runner struct {
 	// Sessions is the transaction seam: a step's SQL and its ledger row are written through one
@@ -95,6 +103,11 @@ type Runner struct {
 	Sessions *SessionManager
 	// Set is the ordered set, as LoadMigrations returns it.
 	Set []Migration
+
+	// baselineSkipLogged makes the baseline's one skip message a single line per runner: the condition
+	// the message explains is stable for a boot, and repeating it per caller would bury the line that
+	// says why the baseline did nothing. It is bookkeeping, not a rule knob - the rule itself is fixed.
+	baselineSkipLogged sync.Once
 }
 
 // migrationLockKey names the advisory lock that keeps two boots from applying the same step at the
@@ -113,6 +126,15 @@ const migrationLockKey = "agenthub_schema_migrations"
 //
 // The ledger is read INSIDE the migration advisory lock, which is what makes "is it applied?" and
 // "record that it is" one decision rather than two a second boot can interleave with.
+//
+// THE BASELINE IS INERT ON A DATABASE THAT ALREADY HAS A SCHEMA. 0001's CREATE TABLE statements carry
+// no IF NOT EXISTS and would fail on a catalogue that is not empty - and every boot path today leaves
+// a populated catalogue behind (the init SQL, then createAll, reach the runner LAST), so applying it
+// unconditionally would fail every boot. Apply therefore reads the catalogue FIRST for that one step:
+// a non-empty catalogue means the baseline's schema is already there, so the step is SKIPPED - no SQL,
+// no ledger row - and reported once; an EMPTY catalogue is the one case the baseline is for, and it
+// applies normally. This is the rule db_initializer.go already obeys for the init SQL: a populated
+// catalogue never reaches DDL that creates the schema. It is fixed, not configurable.
 func (r *Runner) Apply(ctx context.Context) ([]string, error) {
 	if r.Sessions == nil {
 		return nil, fmt.Errorf("migration runner has no session manager")
@@ -128,18 +150,44 @@ func (r *Runner) Apply(ctx context.Context) ([]string, error) {
 				if err := lockMigrations(ctx, s); err != nil {
 					return err
 				}
-				if err := ensureLedgerInTx(ctx, s); err != nil {
-					return err
+
+				// Whether the ledger may be ensured ahead of the step, and whether the step may be
+				// skipped as already recorded. Both are true for every step except the baseline:
+				// an empty catalogue holds no applied_migrations, and the baseline CREATES it (it is
+				// a registered table), so ensuring the ledger BEFORE the baseline would collide with
+				// the step's own CREATE TABLE applied_migrations.
+				ledgerAheadOfStep := true
+				if m.Name == baselineStep {
+					empty, err := catalogueIsEmpty(ctx, s)
+					if err != nil {
+						return fmt.Errorf("reading the catalogue to decide whether the baseline applies: %w", err)
+					}
+					if !empty {
+						r.logBaselineSkipped()
+						return nil
+					}
+					ledgerAheadOfStep = false
 				}
-				recorded, err := isRecorded(ctx, s, m.Name)
-				if err != nil {
-					return err
-				}
-				if recorded {
-					return nil
+
+				if ledgerAheadOfStep {
+					if err := ensureLedgerInTx(ctx, s); err != nil {
+						return err
+					}
+					recorded, err := isRecorded(ctx, s, m.Name)
+					if err != nil {
+						return err
+					}
+					if recorded {
+						return nil
+					}
 				}
 				if _, err := s.ExecContext(ctx, m.SQL); err != nil {
 					return fmt.Errorf("the migration's SQL failed: %w", err)
+				}
+				// For the baseline this is the first possible moment: its own SQL is what created the
+				// ledger. For every other step it is a no-op, the ledger having been ensured above.
+				if err := ensureLedgerInTx(ctx, s); err != nil {
+					return err
 				}
 				if _, err := s.ExecContext(ctx,
 					`INSERT INTO applied_migrations (migration_name) VALUES ($1)`, m.Name); err != nil {
@@ -157,6 +205,29 @@ func (r *Runner) Apply(ctx context.Context) ([]string, error) {
 		}
 	}
 	return applied, nil
+}
+
+// logBaselineSkipped reports the baseline's skip once per runner. See Apply for why the baseline is
+// skipped and not configurable; this only keeps the explanation to one line per boot.
+func (r *Runner) logBaselineSkipped() {
+	r.baselineSkipLogged.Do(func() {
+		log.Printf("database: the catalogue already holds tables, so the %s baseline is skipped without running it (its schema is already there); use Runner.MarkBaseline to record it on a database that already has the schema", baselineStep)
+	})
+}
+
+// catalogueIsEmpty reports whether the CURRENT schema holds no tables at all.
+//
+// It is the same read the init-SQL path makes (db_initializer.go's ExistingTables, over engine.go's
+// tableNames) for the same reason: the init SQL's DROP TABLE IF EXISTS statements and the baseline's
+// CREATE TABLE statements share the precondition that the catalogue is EMPTY. A read that FAILS is
+// not an empty database - the error is returned so the caller refuses to apply the baseline rather
+// than reading "cannot tell" as "empty".
+func catalogueIsEmpty(ctx context.Context, s DBTX) (bool, error) {
+	tables, err := tableNames(ctx, s)
+	if err != nil {
+		return false, err
+	}
+	return len(tables) == 0, nil
 }
 
 // MarkBaseline records the named migrations as applied WITHOUT running their SQL. That is what an

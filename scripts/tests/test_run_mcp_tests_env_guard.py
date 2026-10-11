@@ -23,6 +23,8 @@ import shutil
 import subprocess
 from pathlib import Path
 
+import gitfixture
+
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = REPO_ROOT / "scripts" / "run-mcp-tests.sh"
 
@@ -55,7 +57,7 @@ def _scratch(tmp_path: Path, with_testing_env: bool) -> tuple[Path, Path]:
 
 
 def _run(root: Path, bins: Path) -> subprocess.CompletedProcess:
-    env = dict(os.environ)
+    env = gitfixture.environment()
     env["PATH"] = os.pathsep.join([str(bins), env.get("PATH", "")])
     env["HOME"] = str(root)
     return subprocess.run(

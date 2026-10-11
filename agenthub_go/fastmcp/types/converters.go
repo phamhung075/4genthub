@@ -7,6 +7,7 @@ package types
 
 import (
 	dom "agenthub/fastmcp/task_management/domain"
+	"agenthub/fastmcp/task_management/domain/entities"
 	"agenthub/fastmcp/task_management/domain/value_objects"
 )
 
@@ -166,6 +167,24 @@ func getValueString(obj any, key, def string) string {
 	return pyStrOf(pyGetattr(obj, key, def))
 }
 
+// subtaskDetails is a subtask DTO's details field: the subtask's OWN joined progress history, or nil
+// when it has none. The task's equivalent is entities.Task.ProgressTextWith over the ledger's events,
+// reached through task_response.go; the subtask read serves the repository's dict rather than the
+// entity, so the join (entities.ProgressHistoryText, the one implementation of the ordering rule) is
+// applied here.
+// subtaskDetails renders the join into `details` for the subtask route. An empty history is served as
+// the EMPTY STRING rather than nil, which is the shape the task route serves for the same meaning: the
+// task reaches it through the dict its facade renders details from, and the Python-era rule that the
+// two routes be one API is why one meaning gets one shape. A caller that presence-checks reads null as
+// "not loaded" and "" as "none", so the difference was a bug waiting to happen rather than a nuance.
+func subtaskDetails(history any) *string {
+	text := ""
+	if m, ok := history.(map[string]any); ok {
+		text = entities.ProgressHistoryText(m)
+	}
+	return &text
+}
+
 // SubtaskToDTO converts a domain Subtask entity or dict to SubtaskDTO.
 func SubtaskToDTO(subtask any) (*SubtaskDTO, error) {
 	if isPyDict(subtask) {
@@ -196,6 +215,7 @@ func SubtaskToDTO(subtask any) (*SubtaskDTO, error) {
 			Priority:           pyStrOf(priority),
 			Assignees:          assignees,
 			AssigneesCount:     len(assignees),
+			Details:            subtaskDetails(pyDictGetDefault(subtask, "progress_history", nil)),
 			ProgressPercentage: optIntAny(pyDictGetDefault(subtask, "progress_percentage", nil)),
 			CreatedAt:          strPtrOrNil(formatDatetime(pyDictGetDefault(subtask, "created_at", nil))),
 			UpdatedAt:          strPtrOrNil(formatDatetime(pyDictGetDefault(subtask, "updated_at", nil))),
@@ -219,6 +239,7 @@ func SubtaskToDTO(subtask any) (*SubtaskDTO, error) {
 		Priority:           pyStrOf(pyGetattr(subtask, "priority", "medium")),
 		Assignees:          assignees,
 		AssigneesCount:     len(assignees),
+		Details:            subtaskDetails(pyGetattr(subtask, "progress_history", nil)),
 		ProgressPercentage: optIntAny(pyGetattr(subtask, "progress_percentage", nil)),
 		CreatedAt:          strPtrOrNil(formatDatetime(pyGetattr(subtask, "created_at", nil))),
 		UpdatedAt:          strPtrOrNil(formatDatetime(pyGetattr(subtask, "updated_at", nil))),

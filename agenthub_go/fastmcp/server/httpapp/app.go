@@ -2,6 +2,7 @@ package httpapp
 
 import (
 	"context"
+	"log"
 	"net/http"
 
 	"agenthub/fastmcp/auth"
@@ -40,6 +41,19 @@ func NewApp(ctx context.Context, sessions *database.SessionManager) (*App, error
 	services.SetRepositoryProviderBackend(func() services.RepositoryProviderBackend { return repoBackend{sessions} })
 	facades.TokenFacadeRepositoryBackend = func(any) (repositories.ITokenRepository, error) {
 		return infrarepos.NewTokenRepository(sessions)
+	}
+	// The accepted-API-token usage recorder: the live auth path (auth.ValidateTokenUniversal)
+	// advances the counters of the token it has just accepted, through the same repository the
+	// token facade writes the row with. Without this wiring the token UI reads a usage_count and a
+	// last_used_at that nothing writes.
+	if tokenRepo, err := infrarepos.NewTokenRepository(sessions); err != nil {
+		log.Printf("api token usage recorder is NOT wired: %v", err)
+	} else {
+		auth.APITokenUsageRecorder = func(ctx context.Context, tokenID string) {
+			// A usage counter must never refuse a request that has already been authenticated, so a
+			// failure here is swallowed exactly as the ported Python did.
+			_, _ = tokenRepo.UpdateTokenUsage(ctx, tokenID)
+		}
 	}
 	ctxFactory := factories.NewUnifiedContextFacadeFactory(ctx, sessions)
 	a.projects = projectControllerAdapter{c: api_controllers.NewProjectAPIController(projectFacadeProvider{sessions: sessions, ctxFactory: ctxFactory})}
@@ -137,6 +151,8 @@ func (a *App) Handler() http.Handler {
 	mountSeatStatusRoutes(mux, a.Sessions)
 	mountSeatFeedbackRoutes(mux, a.Sessions)
 	mountTeamRoutes(mux, a.Sessions)
+	// The ledger's own layer: the cross-task cursor and the intents route (P2, P3).
+	mountLedgerRoutes(mux, a.Sessions)
 	mountMiscRoutes(mux)
 	return withCORS(mux)
 }

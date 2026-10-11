@@ -17,6 +17,7 @@ import (
 	"strings"
 	"testing"
 
+	"agenthub/fastmcp/session_stream/testdb"
 	"agenthub/fastmcp/task_management/application/services"
 	"agenthub/fastmcp/task_management/domain/entities"
 	"agenthub/fastmcp/task_management/infrastructure/database"
@@ -200,9 +201,7 @@ func TestTaskEventEnsurerLeavesAFreshDatabaseAlone(t *testing.T) {
 	db := newEnsurerTestDB(t)
 	ctx := context.Background()
 	cfg := &database.DatabaseConfig{Engine: &database.Engine{DB: db}}
-	if err := cfg.CreateTables(ctx); err != nil {
-		t.Fatal(err)
-	}
+	testdb.CreateSchema(t, cfg)
 	before := userSeqPairs(t, db)
 	if err := database.EnsureTaskEventColumns(ctx, db); err != nil {
 		t.Fatalf("the ensurer failed on a database createAll had already migrated: %v", err)

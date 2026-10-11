@@ -232,3 +232,28 @@ func TestNormalizeAssigneesRefusesABareRoleName(t *testing.T) {
 		t.Fatalf("validated = %v, want the seat keys kept", got)
 	}
 }
+
+// The progress reader is honest about entries it cannot read (the post-gate minor on 2c4582de, board
+// b668b4f6's item 1). WHY IT MATTERS: this function once rendered a history value that was not an object as an
+// EMPTY line, because reading a non-map through a nil map yields "" - and an empty line joined into the details
+// is indistinguishable from a real note whose text is blank. That is the shape that reported two notes as lost,
+// so the entry now contributes NOTHING rather than a blank.
+func TestTheProgressReaderSkipsEntriesItCannotRead(t *testing.T) {
+	// Called as the package function, which is how the subtask route reaches it (converters.go:182):
+	// the ledger line removed the entity's progress column, so no Task is built with one any more.
+	got := ProgressHistoryText(map[string]any{
+		"1": map[string]any{"content": "=== Progress 1 ===\nfirst", "progress_number": 1},
+		"2": "not an object at all",                              // the value that used to be read through a nil map
+		"3": map[string]any{"content": 42, "progress_number": 3}, // a content that is not a string
+		"4": map[string]any{"progress_number": 4},                // no content at all
+		"5": map[string]any{"content": "=== Progress 5 ===\nlast", "progress_number": 5},
+	})
+
+	want := "=== Progress 1 ===\nfirst\n\n=== Progress 5 ===\nlast"
+	if got != want {
+		t.Fatalf("ProgressHistoryText() = %q, want %q: an unreadable entry must contribute nothing rather than a blank line", got, want)
+	}
+	if strings.Contains(got, "\n\n\n") {
+		t.Fatalf("ProgressHistoryText() = %q has an empty entry between the separators", got)
+	}
+}

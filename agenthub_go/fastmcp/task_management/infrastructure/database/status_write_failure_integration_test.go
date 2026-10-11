@@ -20,6 +20,7 @@ import (
 	"strings"
 	"testing"
 
+	"agenthub/fastmcp/session_stream/testdb"
 	"agenthub/fastmcp/task_management/application/services"
 	"agenthub/fastmcp/task_management/application/use_cases"
 	"agenthub/fastmcp/task_management/infrastructure/database"
@@ -43,9 +44,7 @@ func TestAStatusWriteWithoutUserSeqFailsAndLeavesTheRowAlone(t *testing.T) {
 	db := newEnsurerTestDB(t)
 	ctx := context.Background()
 	cfg := &database.DatabaseConfig{Engine: &database.Engine{DB: db}}
-	if err := cfg.CreateTables(ctx); err != nil {
-		t.Fatal(err)
-	}
+	testdb.CreateSchema(t, cfg)
 	relaxTaskNotNullColumns(t, db)
 	// THE INCIDENT'S SHAPE: the column the recorder writes is absent, and everything else is current.
 	if _, err := db.ExecContext(ctx, `ALTER TABLE task_events DROP COLUMN user_seq`); err != nil {

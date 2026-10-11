@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"agenthub/fastmcp/session_stream/testdb"
 	"agenthub/fastmcp/task_management/infrastructure/database"
 )
 
@@ -16,9 +17,7 @@ func TestDBInitializerRealPostgres(t *testing.T) {
 	defer db.Close()
 	ctx := context.Background()
 	cfg := &database.DatabaseConfig{Engine: &database.Engine{DB: db, URL: dsn}}
-	if err := cfg.CreateTables(ctx); err != nil {
-		t.Fatal(err)
-	}
+	testdb.CreateSchema(t, cfg)
 	inst, err := database.NewDatabaseInitializer(ctx, database.OSDeps(), cfg)
 	if err != nil {
 		t.Fatal(err)

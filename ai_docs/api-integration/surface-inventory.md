@@ -23,7 +23,7 @@ so a naive `grep HandleFunc` prints `"POST "+base+"/"` instead of `/api/v2/proje
 **Resolve them with the generator rather than by hand:** `cd agenthub_go && go run ./cmd/apirefgen` follows each `RegisterRoutes` call into the package that owns it and prints `<n> routes, <n> tools`; pass `-out /tmp/apiref.ts` to read the resolved list without writing the frontend artefact. At `db9d2bc3` it emitted **143 routes, 10 tools**, independently matching this section's count and resolving the function-scoped bases above (e.g. `/api/v2/tasks/{id}/events`). Writing a regex for this is how a reader reinvents the bug this paragraph describes — three such attempts on 2026-10-08 produced junk path keys while reporting plausible counts.
 The commands used and the full registration dump are in the acceptance appendix.
 
-**Reproduce:** `cd agenthub_go && grep -rn "mux\.HandleFunc(" --include='*.go' --exclude='*_test.go' fastmcp/server/httpapp fastmcp/auth | wc -l` -> **145** (httpapp 125, auth 20), re-run at `42de79c2`; the same command returned **146** (httpapp 126) at `6cfd56ab` before `e5ecff63` removed the two machine-token routes, and **145** (httpapp 125) before `e6829b32` removed the two always-500 task routes. *`rg` is NOT installed in this environment, so the earlier `rg -n` form could not run here, and it also counted `*_test.go` registrations — 125 at `db9d2bc3` rather than that pass's no-tests **123**; the tests-inclusive count for `httpapp` is now the number the no-tests figure used to be, which is how this line rots silently if it is quoted without its date.* The command above is the one that produced the number.*
+**Reproduce:** `cd agenthub_go && grep -rn "mux\.HandleFunc(" --include='*.go' --exclude='*_test.go' fastmcp/server/httpapp fastmcp/auth | wc -l` -> **148** (httpapp 128, auth 20), re-run at `3e81e1e9`; it read **145** (httpapp 125, auth 20) at `42de79c2`, and the same command returned **146** (httpapp 126) at `6cfd56ab` before `e5ecff63` removed the two machine-token routes, and **145** (httpapp 125) before `e6829b32` removed the two always-500 task routes. *`rg` is NOT installed in this environment, so the earlier `rg -n` form could not run here, and it also counted `*_test.go` registrations — 125 at `db9d2bc3` rather than that pass's no-tests **123**; the tests-inclusive count for `httpapp` is now the number the no-tests figure used to be, which is how this line rots silently if it is quoted without its date.* The command above is the one that produced the number.*
 
 **RE-RUN 2026-10-10 (writer seat) at HEAD `ab8ff69f`: the command above returns the same **144** (httpapp 124, auth 20), `go run ./cmd/apirefgen` independently wrote `144 routes, 10 tools`, and every one of the 124 `httpapp` registrations carries a citation in §1 within three lines — a COVERAGE check only, not a row-by-row re-resolution, so the §1 rows keep the dates their own passes recorded.**
 
@@ -73,13 +73,13 @@ Both forms point at the same kind of thing — the line that registers the route
 
 | Method | Path | Handler | Registration |
 |---|---|---|---|
-| GET | `/health` | `handleHealth` | `fastmcp/server/httpapp/app.go:123` |
-| POST | `/api/v2/projects/` | `routes.CreateProject` | `fastmcp/server/httpapp/app.go:146` |
-| GET | `/api/v2/projects/` | `routes.ListProjects` | `fastmcp/server/httpapp/app.go:159` |
-| GET | `/api/v2/projects/{id}` | `routes.GetProject` | `fastmcp/server/httpapp/app.go:167` |
-| PUT | `/api/v2/projects/{id}` | `routes.UpdateProject` | `fastmcp/server/httpapp/app.go:175` |
-| DELETE | `/api/v2/projects/{id}` | `routes.DeleteProject` | `fastmcp/server/httpapp/app.go:196` |
-| POST | `/api/v2/projects/{id}/health-check` | `routes.ProjectHealthCheck` | `fastmcp/server/httpapp/app.go:204` |
+| GET | `/health` | `handleHealth` | `fastmcp/server/httpapp/app.go:137` |
+| POST | `/api/v2/projects/` | `routes.CreateProject` | `fastmcp/server/httpapp/app.go:162` |
+| GET | `/api/v2/projects/` | `routes.ListProjects` | `fastmcp/server/httpapp/app.go:175` |
+| GET | `/api/v2/projects/{id}` | `routes.GetProject` | `fastmcp/server/httpapp/app.go:183` |
+| PUT | `/api/v2/projects/{id}` | `routes.UpdateProject` | `fastmcp/server/httpapp/app.go:191` |
+| DELETE | `/api/v2/projects/{id}` | `routes.DeleteProject` | `fastmcp/server/httpapp/app.go:212` |
+| POST | `/api/v2/projects/{id}/health-check` | `routes.ProjectHealthCheck` | `fastmcp/server/httpapp/app.go:220` |
 
 **The project-creation contract, STATED rather than implied — `POST /api/v2/projects/` (the trailing slash is part of the route) accepts `application/x-www-form-urlencoded` ONLY.** `app.go:146` registers it and `:151` parses the body with `_ = r.ParseForm()`, then refuses a body with no `name` through the shared `missingForm(r, "name")` helper (`:152`; it validates presence via `r.PostForm.Has`, `http.go:132`, and the `422` is `writeMissing`, `http.go:124`), and only then reads the VALUE with `r.PostForm.Get("name")` / `Get("description")` at `:156`: **CITATIONS RE-RESOLVED 2026-10-09 — this clause read `:135`/`:137-144`, the same region eleven lines above; and the mechanism it named (the value read) is one half of the handler while the check that produces the `422` is the other, so the clause now states both.** **`name` is required and `description` is optional**, and neither a JSON body nor a multipart body is read at all. **A JSON or multipart request is therefore refused with the SAME `422` that reports `body.name` missing**, because `ParseForm` reads neither encoding — so the refusal names a **MISSING FIELD** rather than the **ENCODING**, which is why two independent callers concluded they had a payload problem when they had a content-type problem. The application itself sends exactly this shape (`agenthub-frontend/src/services/apiV2.ts:475` posts `name`/`description` with `Content-Type: application/x-www-form-urlencoded`, and its flow measures **200** end to end), so **the route is not wrong — it was merely unstated.** **THE REUSABLE HALF: A REFUSAL THAT NAMES THE WRONG CAUSE COSTS A CALLER THE SAME TIME AS A SILENT FAILURE** — the same family as the reason text that never reached the chip, the preview read that looked truncated, and the grep that looked absent from the wrong field; and this is that family's **cheapest instance to fix, because the fix is a documented contract rather than a change to the refusal.**
 
@@ -101,13 +101,14 @@ and the two auth `RegisterRoutes` methods.
 
 | Method | Path | Handler | Registration |
 |---|---|---|---|
-| POST | `/api/v2/tasks/` | `routes.CreateUserTask` | `task_routes.go:50` |
-| GET | `/api/v2/tasks/` | `routes.ListUserTasks` | `task_routes.go:85` |
-| GET | `/api/v2/tasks/{id}` | `routes.GetUserTask` | `task_routes.go:99` |
-| GET | `/api/v2/tasks/{id}/events` | `routes.GetTaskEvents` | `task_routes.go:103` |
-| PUT | `/api/v2/tasks/{id}` | `routes.UpdateUserTask` | `task_routes.go:113` |
-| DELETE | `/api/v2/tasks/{id}` | `routes.DeleteUserTask` | `task_routes.go:136` |
-| POST | `/api/v2/tasks/{id}/complete` | `routes.CompleteUserTask` | `task_routes.go:140` |
+| POST | `/api/v2/tasks/` | `routes.CreateUserTask` | `task_routes.go:58` |
+| GET | `/api/v2/tasks/` | `routes.ListUserTasks` | `task_routes.go:93` |
+| GET | `/api/v2/tasks/{id}` | `routes.GetUserTask` | `task_routes.go:107` |
+| GET | `/api/v2/tasks/{id}/events` | `routes.GetTaskEvents` | `task_routes.go:111` |
+| POST | `/api/v2/tasks/{id}/evidence` | `routes.SubmitTaskEvidence` | `task_routes.go:121` |
+| PUT | `/api/v2/tasks/{id}` | `routes.UpdateUserTask` | `task_routes.go:150` |
+| DELETE | `/api/v2/tasks/{id}` | `routes.DeleteUserTask` | `task_routes.go:173` |
+| POST | `/api/v2/tasks/{id}/complete` | `routes.CompleteUserTask` | `task_routes.go:177` |
 
 **DRIFT FOUND AND REPAIRED 2026-10-08 at HEAD `88d27758` (docs duty pass 4).** *Three rows in the table above cited a line that is no longer a registration (`PUT {id}` 107->117, `DELETE {id}` 130->140, `complete` 134->144) and one route had no row at all.* **The control that names the cause rather than assuming it: every moved row moved by EXACTLY +10, and the insertion that did it is the `GET /{id}/events` route — one registration plus its closure, added above them.** *So this is the rotted-pointer class the §1 citation pass predicted, reproduced on schedule, and the fix is a line number, not a re-reading of the table.* **Re-resolve a row by reading the file's own `base` const and matching the row's method+path to the registration that carries it — never by trusting the number.**
 
@@ -140,9 +141,9 @@ and the two auth `RegisterRoutes` methods.
 
 | Method | Path | Handler | Registration |
 |---|---|---|---|
-| GET | `/ws/realtime` | `handleRealtime` | `ws_mount.go:68` |
-| GET | `/ws/connector` | `handleConnector` | `ws_mount.go:69` |
-| GET | `/ws/sessions/{id}` | `handleSessionViewer` | `ws_mount.go:70` |
+| GET | `/ws/realtime` | `handleRealtime` | `ws_mount.go:70` |
+| GET | `/ws/connector` | `handleConnector` | `ws_mount.go:71` |
+| GET | `/ws/sessions/{id}` | `handleSessionViewer` | `ws_mount.go:72` |
 
 **DECLARED OUT OF SCOPE — THE THREE UNMOUNTED OLD-PROTOCOL WEBSOCKET ENDPOINTS (owner decision, 2026-10-06).** **The old-protocol surface served by `fastmcp/websocket/server.go` is NOT mounted on the live handler:** it registers **`/ws/{user_id}`** (`server.go:92`), **`/ws/health`** and **`/ws/stats`** (`server.go:93-94`) on **its own app**, and **nothing outside that package constructs it** (`NewWebSocketServer` has no non-test caller — the only imports of the package elsewhere are `wslib` for the `WebSocket` type, in `ws_mount.go:37` and `server/routes/websocket_routes.go:31` (**re-resolved 2026-10-10 at `c08a742e`; this read `:25`, which is the import block's `"time"`**)). **THE OWNER DECLARED THESE THREE OUT OF SCOPE RATHER THAN MOUNTING THEM, which is the honest closure of the parity claim: THE PORT IS COMPLETE FOR THE SURFACE IN USE, with `/ws/{user_id}`, `/ws/health` and `/ws/stats` DELIBERATELY EXCLUDED** — so nothing reads as though the old protocol is fully served. **AND IT IS A DECISION RATHER THAN AN OMISSION:** mounting them would have added endpoints **nothing consumes**, and **the owner chose the honest label over the tidier-looking port.**
 
@@ -349,6 +350,17 @@ within the caller's memberships.
 
 **Request shape — defined at `seat_feedback_mount.go:51-57`** (`seatFeedbackSubmission`: `room`, `seat`, `layer`, `text` required; `session` optional). **Re-resolved 2026-10-10 at `c08a742e`: this read `:64-70`, which is the mount function and its list handler, not the struct.** The `layer` vocabulary is the DDL's closed set (`runtime`, `openrig`, `cloud`, `seat-context`, `workspace`, `other`) rather than a list in this document; the credential scan and the page that groups by layer are described once in `README.md`'s *Rig and OpenRig workflow* section. **The third door onto the same writer is the MCP tool `submit_feedback` (§2.3) and the fourth is the shell client, invoked as `4genteam feedback ...` — the script it runs is `agenthub_client/src/agenthub_client/seat_feedback.sh`, carried in the client package by `[tool.setuptools.package-data]` (2026-10-09); it was `scripts/seat_feedback.sh` until the client relocation, and a path is not a door if the file is not there.**
 
+### 1.22 Ledger — base `/api/v2/ledger` (`ledger_mount.go:34`)
+
+**Added to this inventory on 2026-10-11 by go-dev, because the set join the §1 preamble describes found them missing: two live registrations with no row, while every count still agreed with itself.** Both landed with the O1a/O3 commits — `GET` and `POST .../intents` in `f285bdf6`, the task evidence row above in `5ab853d1` — and each row below cites the registration that carries its own method+path.
+
+| Method | Path | Handler | Registration |
+|---|---|---|---|
+| GET | `/api/v2/ledger` | `routes.GetLedger` | `ledger_mount.go:39` |
+| POST | `/api/v2/ledger/intents` | `routes.SubmitLedgerIntents` | `ledger_mount.go:52` |
+
+Both routes take the same `authed` wrapper as the task routes: the ledger is read and written on behalf of the user the bearer token resolves, and there is no machine token behind either one (`ledger_mount.go:29-33`).
+
 ---
 
 ## 2. MCP tool surface
@@ -488,27 +500,27 @@ it in `init()`; `ProductionTables` is deliberately separate.
 
 | Table | Model | Declaration |
 |---|---|---|
-| `agent_sessions` | `AgentSession` | `models.go:582` |
-| `api_tokens` | `APIToken` | `models.go:599` |
-| `context_delegations` | `ContextDelegation` | `models.go:616` |
-| `context_inheritance_cache` | `ContextInheritanceCache` | `models.go:645` |
-| `global_contexts` | `GlobalContext` | `models.go:669` |
-| `labels` | `Label` | `models.go:688` |
-| `missed_notifications` | `MissedNotification` | `models.go:699` |
-| `projects` | `Project` | `models.go:714` |
-| `templates` | `Template` | `models.go:726` |
-| `agent_session_events` | `AgentSessionEvent` | `models.go:747` |
-| `project_contexts` | `ProjectContext` | `models.go:759` |
-| `project_git_branchs` | `ProjectGitBranch` | `models.go:781` |
-| `branch_contexts` | `BranchContext` | `models.go:799` |
-| `tasks` | `Task` | `models.go:820` |
-| `subtasks` | `Subtask` | `models.go:856` |
-| `task_assignees` | `TaskAssignee` | `models.go:890` |
-| `task_contexts` | `TaskContext` | `models.go:903` |
-| `task_dependencies` | `TaskDependency` | `models.go:928` |
-| `task_labels` | `TaskLabel` | `models.go:938` |
+| `agent_sessions` | `AgentSession` | `models.go:596` |
+| `api_tokens` | `APIToken` | `models.go:615` |
+| `context_delegations` | `ContextDelegation` | `models.go:632` |
+| `context_inheritance_cache` | `ContextInheritanceCache` | `models.go:661` |
+| `global_contexts` | `GlobalContext` | `models.go:685` |
+| `labels` | `Label` | `models.go:704` |
+| `missed_notifications` | `MissedNotification` | `models.go:715` |
+| `projects` | `Project` | `models.go:730` |
+| `templates` | `Template` | `models.go:742` |
+| `agent_session_events` | `AgentSessionEvent` | `models.go:763` |
+| `project_contexts` | `ProjectContext` | `models.go:775` |
+| `project_git_branchs` | `ProjectGitBranch` | `models.go:797` |
+| `branch_contexts` | `BranchContext` | `models.go:815` |
+| `tasks` | `Task` | `models.go:836` |
+| `subtasks` | `Subtask` | `models.go:874` |
+| `task_assignees` | `TaskAssignee` | `models.go:910` |
+| `task_contexts` | `TaskContext` | `models.go:923` |
+| `task_dependencies` | `TaskDependency` | `models.go:948` |
+| `task_labels` | `TaskLabel` | `models.go:958` |
 
-**RE-SWEPT 2026-10-10 (writer seat, docs duty pass 9) at `cd5d1187` — and this table is where `76b800b9` moved everything.** The retirement of the `manage_agent` tool, the `agents` table and the 32-role registry deleted blocks in `models.go` above these declarations, so **all nineteen remaining anchors were stale by 19 or 37 lines** and each is re-derived here (`S3-REDERIVE.py` reports `FRESH 46` with zero not-fresh rows at this revision). **The `agents` row was struck rather than re-pointed: `database.Tables` no longer carries the table at all, so there is no line to cite** — the entry lives in §4 with the commit that removed it. `agent_sessions` and `agent_session_events` survive and are unchanged in substance: they are session bookkeeping, not the registry.
+**RE-DERIVED AGAIN 2026-10-11 (go-dev, row `qitem-20261011035828`, extended for row `qitem-20261011040203`): the same nineteen anchors had drifted a second time, and each shift is attributed to the commit that inserted above it rather than counted.** Five hunks account for all of it, read from `git diff -U0` between the revisions: `0e03b3f7` added ten lines in `AgentSession` at `models.go:86` plus two in the TableDef list above `api_tokens`, and `d5a59667` added two inside `Task` (`models.go:418`) and two inside `Subtask` (`models.go:483`) — the four that sit above `agent_sessions` — plus two above `subtasks` (`models.go:853`) and two above `task_assignees` (`models.go:891`). That is the whole ladder: `agent_sessions` **+14** (ten from `0e03b3f7`, four from `d5a59667`), the thirteen rows from `api_tokens` to `tasks` **+16**, `subtasks` **+18**, and the four rows from `task_assignees` to `task_labels` **+20**. Each row now cites its own TableDef line again, re-measured at this tip by searching for that entry rather than by adding an offset: `agent_sessions` 582→596, `api_tokens` 599→615, `context_delegations` 616→632, `context_inheritance_cache` 645→661, `global_contexts` 669→685, `labels` 688→704, `missed_notifications` 699→715, `projects` 714→730, `templates` 726→742, `agent_session_events` 747→763, `project_contexts` 759→775, `project_git_branchs` 781→797, `branch_contexts` 799→815, `tasks` 820→836, `subtasks` 856→874, `task_assignees` 890→910, `task_contexts` 903→923, `task_dependencies` 928→948, `task_labels` 938→958. **The shifts are not one insertion: they differ per row, which is why each was re-resolved by searching for the TableDef entry rather than by adding an offset.** The retirement of the `manage_agent` tool, the `agents` table and the 32-role registry deleted blocks in `models.go` above these declarations, so **all nineteen remaining anchors were stale by 19 or 37 lines** and each is re-derived here (`S3-REDERIVE.py` reports `FRESH 46` with zero not-fresh rows at this revision). **The `agents` row was struck rather than re-pointed: `database.Tables` no longer carries the table at all, so there is no line to cite** — the entry lives in §4 with the commit that removed it. `agent_sessions` and `agent_session_events` survive and are unchanged in substance: they are session bookkeeping, not the registry.
 
 ### 3.2 Auth tables — appended to `Tables` via `init()`
 

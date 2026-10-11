@@ -288,6 +288,135 @@ func TestTheRuledCarryStepDoesNotDuplicateANoteTheLedgerAlreadyHolds(t *testing.
 	}
 }
 
+// TestTheRuledCarryStepRefusesWithoutTheBaselineMark pins the gate the architect's ruling puts on this
+// step (ARCH-RULING-0001-baseline-canonicity). The step destroys its source and NOTHING tied it to the
+// owner's baseline mark: validateSet checks a set's names, order and duplicates, never the provenance
+// of a step, so a database where 0001 was SKIPPED - which is what main's runner does whenever the
+// catalogue is not empty, i.e. every boot - reached the DROP with no 0001_baseline row and no owner
+// action. The instrument is applyRuledCarry's ONE-STEP set on purpose: it reaches the runner with the
+// rest of the set out of the way, which is exactly the state the gate is written for.
+//
+// The ledger under test holds no 0001_baseline row. The fixture boots as an OPERATOR does - it records
+// the owner's mark with Runner.MarkBaseline - so the row is REMOVED here to reach the unmarked state
+// rather than argued to be absent. That state is not hypothetical: it is the one the shipping runner
+// leaves on a database that already has the schema, and
+// TestTheBootRefusesTheCarryStepOnAPopulatedDatabaseWithoutTheMark measures exactly that, through
+// CreateTables, with both columns surviving.
+func TestTheRuledCarryStepRefusesWithoutTheBaselineMark(t *testing.T) {
+	sessions, _ := newMigrationRunnerEnv(t)
+	// The boot has already applied the step and dropped the columns; the case needs the schema the
+	// step exists to meet, which is a database that still has them.
+	restorePreDropColumns(t, sessions)
+	if err := sessions.WithSession(context.Background(), func(ctx context.Context, s database.DBTX) error {
+		_, err := s.ExecContext(ctx, `DELETE FROM applied_migrations WHERE migration_name = '0001_baseline'`)
+		return err
+	}); err != nil {
+		t.Fatalf("clearing the baseline's row failed: %v", err)
+	}
+
+	name := idempotentCaseName("unmarked")
+	err := applyRuledCarry(t, sessions, name)
+	if err == nil {
+		t.Fatalf("the step ran with no 0001_baseline row: nothing ties the destructive step to the owner's mark")
+	}
+	if !strings.Contains(err.Error(), "0001 baseline mark") {
+		t.Errorf("the step refused, but not for the reason under test: %v", err)
+	}
+
+	// The refusal rolls the step's own transaction back, so the columns STAY - on both tables, because
+	// the gate is the step's first statement and neither table has been touched when it raises.
+	for _, c := range []struct{ table, column string }{
+		{"tasks", "progress_history"}, {"tasks", "progress_count"},
+		{"subtasks", "progress_history"}, {"subtasks", "progress_count"},
+	} {
+		if !columnExists(t, sessions, c.table, c.column) {
+			t.Errorf("%s.%s is gone although the step refused; a refusal must leave the schema untouched",
+				c.table, c.column)
+		}
+	}
+	if recorded := recordedMigrations(t, sessions); containsString(recorded, name) {
+		t.Errorf("the refused step is recorded as applied: %v", recorded)
+	}
+}
+
+// TestTheRuledCarryStepProceedsUnderTheBaselineMark is the gate's other side, and it is the control
+// that stops the refusal above from passing vacuously: the same step, the same pre-drop schema, the
+// owner's mark in the ledger - and the step carries and drops. MarkBaseline is the owner's action; the
+// runner only provides the mechanism, and it refuses to mark a name its set does not contain, which is
+// why the set is the embedded one.
+func TestTheRuledCarryStepProceedsUnderTheBaselineMark(t *testing.T) {
+	sessions, _ := newMigrationRunnerEnv(t)
+	restorePreDropColumns(t, sessions)
+
+	set, err := database.LoadMigrations()
+	if err != nil {
+		t.Fatalf("the embedded set does not load: %v", err)
+	}
+	runner := &database.Runner{Sessions: sessions, Set: set}
+	if _, err := runner.MarkBaseline(context.Background(), "0001_baseline"); err != nil {
+		t.Fatalf("the owner's mark could not be recorded: %v", err)
+	}
+
+	name := idempotentCaseName("marked")
+	if err := applyRuledCarry(t, sessions, name); err != nil {
+		t.Fatalf("the step refused although the owner's 0001_baseline mark is in the ledger: %v", err)
+	}
+	for _, c := range []struct{ table, column string }{
+		{"tasks", "progress_history"}, {"tasks", "progress_count"},
+		{"subtasks", "progress_history"}, {"subtasks", "progress_count"},
+	} {
+		if columnExists(t, sessions, c.table, c.column) {
+			t.Errorf("%s.%s still exists under the mark; the step must carry and then drop",
+				c.table, c.column)
+		}
+	}
+	if recorded := recordedMigrations(t, sessions); !containsString(recorded, name) {
+		t.Errorf("the step ran under the mark but is not recorded: %v", recorded)
+	}
+}
+
+// TestTheBootRefusesTheCarryStepOnAPopulatedDatabaseWithoutTheMark IS THE PAIR'S PROOF, and it is
+// deliberately NOT a test that the gate exists: on the shipping runner (main's, whose 0001 baseline is
+// inert) a boot meets a database that already has the schema - createAll has just built it - skips
+// 0001 WITHOUT recording it, and so reaches the step that destroys two columns with no mark. The step
+// REFUSES, its own transaction rolls back, BOTH COLUMNS SURVIVE and no ledger row is written. A gate
+// that PASSES here is the failure mode this case exists for: the boot would carry and drop the columns
+// unattended. The other half - the same boot under the owner's mark, which carries and then drops - is
+// TestTheRuledCarryStepProceedsUnderTheBaselineMark.
+func TestTheBootRefusesTheCarryStepOnAPopulatedDatabaseWithoutTheMark(t *testing.T) {
+	dsn := newTestDatabase(t)
+	db, err := database.PgxOpener(dsn, database.EngineOptions{PoolSize: 2, MaxOverflow: 2, PoolRecycle: 60})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { db.Close() })
+	cfg := &database.DatabaseConfig{Engine: &database.Engine{DB: db, URL: dsn}}
+	ctx := context.Background()
+
+	err = cfg.CreateTables(ctx)
+	if err == nil {
+		t.Fatal("the boot applied the destructive carry step on a populated database with no 0001_baseline row")
+	}
+	if !strings.Contains(err.Error(), "0001_baseline") {
+		t.Fatalf("the boot refused, but not for the missing baseline mark: %v", err)
+	}
+	sessions := database.NewSessionManager(cfg)
+	for _, c := range []struct{ table, column string }{
+		{"tasks", "progress_history"},
+		{"tasks", "progress_count"},
+		{"subtasks", "progress_history"},
+		{"subtasks", "progress_count"},
+	} {
+		if !columnExists(t, sessions, c.table, c.column) {
+			t.Errorf("%s.%s is gone although the boot refused: the refusal must leave the schema untouched",
+				c.table, c.column)
+		}
+	}
+	if recorded := recordedMigrations(t, sessions); containsString(recorded, "0003_progress_history_carry_and_drop") {
+		t.Errorf("the refused step is recorded as applied: %v", recorded)
+	}
+}
+
 func containsString(haystack []string, needle string) bool {
 	for _, h := range haystack {
 		if h == needle {

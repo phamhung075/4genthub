@@ -1,31 +1,21 @@
--- 0001_baseline: the schema a live database already holds.
+-- 0001: the frozen baseline of the schema the tree already has.
 --
--- THIS FILE IS THE BASELINE, NOT A DELTA. On a database that already has the schema, the runner must
--- NOT execute it: the mark that records it is an owner action (Runner.MarkBaseline), because deciding
--- that a live database equals this file is a claim about production data. On a fresh database it
--- executes, which is how a new environment gets the whole schema in one recorded step.
+-- GENERATED from the runtime TableDef registry, in the exact order createAll walks it: the aggregate
+-- taskdb.Tables (which every package appends its own set to in init()) first, then
+-- taskdb.ProductionTables (models_prod.go, deliberately outside that aggregate). Enum types are
+-- emitted exactly where createAll emits them - before the table whose columns carry them.
 --
--- Every statement carries IF NOT EXISTS because createAll (the Go registry's own DDL) runs before the
--- runner on this path, so the tables are usually already there when this step is reached.
+-- THIS FILE IS THE FROZEN BASELINE. Never rename or reorder it once it has been applied anywhere:
+-- applied_migrations records the name, and that name is the step's identity.
 --
--- Written from the runtime registry by a throwaway command in .gotmp (since deleted).
--- applied_migrations records this file's NAME and the name is the step's identity, so the file must
--- never be RENAMED or REORDERED. Whether it may be EDITED depends on who has applied it, and the two
--- rules do not collide once that is said plainly:
---   * While NO database has recorded this step in applied_migrations, the file tracks the registry:
---     TestSchemaMatchesGoDefinitions requires the two to be equal, so a definition change EDITS this
---     file. That is safe, because nothing has executed it.
---   * Once a database HAS recorded it, the file is frozen - editing it would leave that database on a
---     schema no file describes - and the definition change goes into a NEW step instead.
--- The guard therefore wins while the file is unapplied, and the freeze wins afterwards.
--- TestSchemaMatchesGoDefinitions holds the registry to this file from here on.
---
--- The six ProductionTables are deliberately NOT here. They are registered as definitions but nothing
--- appends them to the runtime set, so no code path creates them today; whether a live database holds
--- them is the question the dump comparison answers, and they belong in a later step if it does.
+-- ONLY A DATABASE WITH AN EMPTY CATALOGUE RECEIVES IT AUTOMATICALLY. migration_runner.Apply skips
+-- this step when the catalogue already holds tables (the same rule db_initializer.go applies to the
+-- init SQL), and records it without executing it on a database that already has the schema
+-- (Runner.MarkBaseline, an owner action). Changing the DDL below changes a database that has not
+-- applied the baseline; an already-applied database only ever sees later steps.
 
--- agent_sessions
-CREATE TABLE IF NOT EXISTS agent_sessions (
+-- Table: agent_sessions
+CREATE TABLE agent_sessions (
 	id VARCHAR(36) NOT NULL,
 	user_id VARCHAR(64) NOT NULL,
 	connector_id VARCHAR(64) NOT NULL,
@@ -44,10 +34,10 @@ CREATE TABLE IF NOT EXISTS agent_sessions (
 	CONSTRAINT uq_agent_sessions_key UNIQUE (user_id, connector_id, session_key),
 	CONSTRAINT ck_agent_sessions_seat_pair CHECK ((room_slug IS NULL) = (seat_key IS NULL))
 );
-CREATE INDEX IF NOT EXISTS ix_agent_sessions_user_id ON agent_sessions (user_id);
+CREATE INDEX ix_agent_sessions_user_id ON agent_sessions (user_id);
 
--- api_tokens
-CREATE TABLE IF NOT EXISTS api_tokens (
+-- Table: api_tokens
+CREATE TABLE api_tokens (
 	id VARCHAR NOT NULL,
 	user_id VARCHAR NOT NULL,
 	name VARCHAR NOT NULL,
@@ -64,8 +54,8 @@ CREATE TABLE IF NOT EXISTS api_tokens (
 	PRIMARY KEY (id)
 );
 
--- context_delegations
-CREATE TABLE IF NOT EXISTS context_delegations (
+-- Table: context_delegations
+CREATE TABLE context_delegations (
 	id UUID NOT NULL,
 	source_level VARCHAR NOT NULL,
 	source_id UUID NOT NULL,
@@ -93,12 +83,12 @@ CREATE TABLE IF NOT EXISTS context_delegations (
 	CONSTRAINT chk_target_level CHECK (target_level IN ('task', 'branch', 'project', 'global')),
 	CONSTRAINT chk_trigger_type CHECK (trigger_type IN ('manual', 'auto_pattern', 'auto_threshold'))
 );
-CREATE INDEX IF NOT EXISTS idx_delegation_processed ON context_delegations (processed);
-CREATE INDEX IF NOT EXISTS idx_delegation_source ON context_delegations (source_level, source_id);
-CREATE INDEX IF NOT EXISTS idx_delegation_target ON context_delegations (target_level, target_id);
+CREATE INDEX idx_delegation_processed ON context_delegations (processed);
+CREATE INDEX idx_delegation_source ON context_delegations (source_level, source_id);
+CREATE INDEX idx_delegation_target ON context_delegations (target_level, target_id);
 
--- context_inheritance_cache
-CREATE TABLE IF NOT EXISTS context_inheritance_cache (
+-- Table: context_inheritance_cache
+CREATE TABLE context_inheritance_cache (
 	id UUID NOT NULL,
 	context_id UUID NOT NULL,
 	context_level VARCHAR NOT NULL,
@@ -120,12 +110,12 @@ CREATE TABLE IF NOT EXISTS context_inheritance_cache (
 	CONSTRAINT chk_cache_context_level CHECK (context_level IN ('task', 'branch', 'project', 'global')),
 	CONSTRAINT uq_cache_context UNIQUE (context_id, context_level)
 );
-CREATE INDEX IF NOT EXISTS idx_cache_expires ON context_inheritance_cache (expires_at);
-CREATE INDEX IF NOT EXISTS idx_cache_invalidated ON context_inheritance_cache (invalidated);
-CREATE INDEX IF NOT EXISTS idx_cache_level ON context_inheritance_cache (context_level);
+CREATE INDEX idx_cache_expires ON context_inheritance_cache (expires_at);
+CREATE INDEX idx_cache_invalidated ON context_inheritance_cache (invalidated);
+CREATE INDEX idx_cache_level ON context_inheritance_cache (context_level);
 
--- global_contexts
-CREATE TABLE IF NOT EXISTS global_contexts (
+-- Table: global_contexts
+CREATE TABLE global_contexts (
 	id UUID NOT NULL,
 	organization_id UUID,
 	organization_standards JSON NOT NULL,
@@ -144,8 +134,8 @@ CREATE TABLE IF NOT EXISTS global_contexts (
 	PRIMARY KEY (id)
 );
 
--- labels
-CREATE TABLE IF NOT EXISTS labels (
+-- Table: labels
+CREATE TABLE labels (
 	id VARCHAR NOT NULL,
 	name VARCHAR NOT NULL,
 	color VARCHAR NOT NULL,
@@ -157,8 +147,8 @@ CREATE TABLE IF NOT EXISTS labels (
 	UNIQUE (name)
 );
 
--- missed_notifications
-CREATE TABLE IF NOT EXISTS missed_notifications (
+-- Table: missed_notifications
+CREATE TABLE missed_notifications (
 	id VARCHAR NOT NULL,
 	user_id VARCHAR NOT NULL,
 	message JSON NOT NULL,
@@ -168,13 +158,13 @@ CREATE TABLE IF NOT EXISTS missed_notifications (
 	last_attempt_at TIMESTAMP WITHOUT TIME ZONE,
 	PRIMARY KEY (id)
 );
-CREATE INDEX IF NOT EXISTS idx_missed_notifications_created_at ON missed_notifications (created_at);
-CREATE INDEX IF NOT EXISTS idx_missed_notifications_user_delivered ON missed_notifications (user_id, delivered);
-CREATE INDEX IF NOT EXISTS ix_missed_notifications_delivered ON missed_notifications (delivered);
-CREATE INDEX IF NOT EXISTS ix_missed_notifications_user_id ON missed_notifications (user_id);
+CREATE INDEX idx_missed_notifications_created_at ON missed_notifications (created_at);
+CREATE INDEX idx_missed_notifications_user_delivered ON missed_notifications (user_id, delivered);
+CREATE INDEX ix_missed_notifications_delivered ON missed_notifications (delivered);
+CREATE INDEX ix_missed_notifications_user_id ON missed_notifications (user_id);
 
--- projects
-CREATE TABLE IF NOT EXISTS projects (
+-- Table: projects
+CREATE TABLE projects (
 	id UUID NOT NULL,
 	name VARCHAR NOT NULL,
 	description TEXT NOT NULL,
@@ -187,8 +177,8 @@ CREATE TABLE IF NOT EXISTS projects (
 	CONSTRAINT uq_project_user UNIQUE (id, user_id)
 );
 
--- templates
-CREATE TABLE IF NOT EXISTS templates (
+-- Table: templates
+CREATE TABLE templates (
 	id UUID NOT NULL,
 	name VARCHAR NOT NULL,
 	template_name VARCHAR NOT NULL,
@@ -206,11 +196,11 @@ CREATE TABLE IF NOT EXISTS templates (
 	metadata JSON NOT NULL,
 	PRIMARY KEY (id)
 );
-CREATE INDEX IF NOT EXISTS idx_template_category ON templates (category);
-CREATE INDEX IF NOT EXISTS idx_template_type ON templates (type);
+CREATE INDEX idx_template_category ON templates (category);
+CREATE INDEX idx_template_type ON templates (type);
 
--- agent_session_events
-CREATE TABLE IF NOT EXISTS agent_session_events (
+-- Table: agent_session_events
+CREATE TABLE agent_session_events (
 	id SERIAL NOT NULL,
 	session_id VARCHAR(36) NOT NULL,
 	user_id VARCHAR(64) NOT NULL,
@@ -222,10 +212,10 @@ CREATE TABLE IF NOT EXISTS agent_session_events (
 	CONSTRAINT uq_agent_session_events_seq UNIQUE (session_id, seq),
 	FOREIGN KEY(session_id) REFERENCES agent_sessions (id) ON DELETE CASCADE
 );
-CREATE INDEX IF NOT EXISTS idx_agent_session_events_user_session ON agent_session_events (user_id, session_id, seq);
+CREATE INDEX idx_agent_session_events_user_session ON agent_session_events (user_id, session_id, seq);
 
--- project_contexts
-CREATE TABLE IF NOT EXISTS project_contexts (
+-- Table: project_contexts
+CREATE TABLE project_contexts (
 	id UUID NOT NULL,
 	project_id UUID,
 	parent_global_id UUID,
@@ -248,8 +238,8 @@ CREATE TABLE IF NOT EXISTS project_contexts (
 	FOREIGN KEY(parent_global_id) REFERENCES global_contexts (id)
 );
 
--- project_git_branchs
-CREATE TABLE IF NOT EXISTS project_git_branchs (
+-- Table: project_git_branchs
+CREATE TABLE project_git_branchs (
 	id UUID NOT NULL,
 	project_id UUID NOT NULL,
 	name VARCHAR NOT NULL,
@@ -269,8 +259,8 @@ CREATE TABLE IF NOT EXISTS project_git_branchs (
 	FOREIGN KEY(project_id) REFERENCES projects (id) ON DELETE CASCADE
 );
 
--- branch_contexts
-CREATE TABLE IF NOT EXISTS branch_contexts (
+-- Table: branch_contexts
+CREATE TABLE branch_contexts (
 	id UUID NOT NULL,
 	branch_id UUID,
 	parent_project_id UUID,
@@ -293,8 +283,11 @@ CREATE TABLE IF NOT EXISTS branch_contexts (
 	FOREIGN KEY(parent_project_id) REFERENCES project_contexts (id)
 );
 
--- tasks
-CREATE TABLE IF NOT EXISTS tasks (
+-- enum: progressstate
+CREATE TYPE progressstate AS ENUM ('INITIAL', 'IN_PROGRESS', 'COMPLETE');
+
+-- Table: tasks
+CREATE TABLE tasks (
 	id UUID NOT NULL,
 	title VARCHAR NOT NULL,
 	description TEXT NOT NULL,
@@ -328,13 +321,13 @@ CREATE TABLE IF NOT EXISTS tasks (
 	PRIMARY KEY (id),
 	FOREIGN KEY(git_branch_id) REFERENCES project_git_branchs (id) ON DELETE CASCADE
 );
-CREATE INDEX IF NOT EXISTS idx_task_branch ON tasks (git_branch_id);
-CREATE INDEX IF NOT EXISTS idx_task_created ON tasks (created_at);
-CREATE INDEX IF NOT EXISTS idx_task_priority ON tasks (priority);
-CREATE INDEX IF NOT EXISTS idx_task_status ON tasks (status);
+CREATE INDEX idx_task_branch ON tasks (git_branch_id);
+CREATE INDEX idx_task_created ON tasks (created_at);
+CREATE INDEX idx_task_priority ON tasks (priority);
+CREATE INDEX idx_task_status ON tasks (status);
 
--- subtasks
-CREATE TABLE IF NOT EXISTS subtasks (
+-- Table: subtasks
+CREATE TABLE subtasks (
 	id UUID NOT NULL,
 	task_id UUID NOT NULL,
 	title VARCHAR NOT NULL,
@@ -368,11 +361,11 @@ CREATE TABLE IF NOT EXISTS subtasks (
 	PRIMARY KEY (id),
 	FOREIGN KEY(task_id) REFERENCES tasks (id) ON DELETE CASCADE
 );
-CREATE INDEX IF NOT EXISTS idx_subtask_status ON subtasks (status);
-CREATE INDEX IF NOT EXISTS idx_subtask_task ON subtasks (task_id);
+CREATE INDEX idx_subtask_status ON subtasks (status);
+CREATE INDEX idx_subtask_task ON subtasks (task_id);
 
--- task_assignees
-CREATE TABLE IF NOT EXISTS task_assignees (
+-- Table: task_assignees
+CREATE TABLE task_assignees (
 	id UUID NOT NULL,
 	task_id UUID NOT NULL,
 	assignee_id VARCHAR NOT NULL,
@@ -384,11 +377,11 @@ CREATE TABLE IF NOT EXISTS task_assignees (
 	CONSTRAINT uq_task_assignee UNIQUE (task_id, assignee_id),
 	FOREIGN KEY(task_id) REFERENCES tasks (id) ON DELETE CASCADE
 );
-CREATE INDEX IF NOT EXISTS idx_assignee_id ON task_assignees (assignee_id);
-CREATE INDEX IF NOT EXISTS idx_assignee_task ON task_assignees (task_id);
+CREATE INDEX idx_assignee_id ON task_assignees (assignee_id);
+CREATE INDEX idx_assignee_task ON task_assignees (task_id);
 
--- task_contexts
-CREATE TABLE IF NOT EXISTS task_contexts (
+-- Table: task_contexts
+CREATE TABLE task_contexts (
 	id UUID NOT NULL,
 	task_id UUID,
 	parent_branch_id UUID,
@@ -416,8 +409,8 @@ CREATE TABLE IF NOT EXISTS task_contexts (
 	FOREIGN KEY(parent_branch_context_id) REFERENCES branch_contexts (id)
 );
 
--- task_dependencies
-CREATE TABLE IF NOT EXISTS task_dependencies (
+-- Table: task_dependencies
+CREATE TABLE task_dependencies (
 	id SERIAL NOT NULL,
 	task_id UUID NOT NULL,
 	depends_on_task_id UUID NOT NULL,
@@ -431,8 +424,8 @@ CREATE TABLE IF NOT EXISTS task_dependencies (
 	FOREIGN KEY(depends_on_task_id) REFERENCES tasks (id) ON DELETE CASCADE
 );
 
--- task_labels
-CREATE TABLE IF NOT EXISTS task_labels (
+-- Table: task_labels
+CREATE TABLE task_labels (
 	task_id UUID NOT NULL,
 	label_id VARCHAR NOT NULL,
 	user_id VARCHAR NOT NULL,
@@ -441,11 +434,11 @@ CREATE TABLE IF NOT EXISTS task_labels (
 	FOREIGN KEY(task_id) REFERENCES tasks (id) ON DELETE CASCADE,
 	FOREIGN KEY(label_id) REFERENCES labels (id) ON DELETE CASCADE
 );
-CREATE INDEX IF NOT EXISTS idx_task_label_label ON task_labels (label_id);
-CREATE INDEX IF NOT EXISTS idx_task_label_task ON task_labels (task_id);
+CREATE INDEX idx_task_label_label ON task_labels (label_id);
+CREATE INDEX idx_task_label_task ON task_labels (task_id);
 
--- task_events
-CREATE TABLE IF NOT EXISTS task_events (
+-- Table: task_events
+CREATE TABLE task_events (
 	id UUID NOT NULL,
 	task_id UUID NOT NULL,
 	subtask_id UUID,
@@ -466,10 +459,10 @@ CREATE TABLE IF NOT EXISTS task_events (
 	CONSTRAINT ck_task_event_actor_kind CHECK (actor_kind IN ('seat', 'client', 'gate', 'human')),
 	FOREIGN KEY(task_id) REFERENCES tasks (id)
 );
-CREATE INDEX IF NOT EXISTS idx_task_event_task_seq ON task_events (task_id, seq);
+CREATE INDEX idx_task_event_task_seq ON task_events (task_id, seq);
 
--- users
-CREATE TABLE IF NOT EXISTS users (
+-- Table: users
+CREATE TABLE users (
 	id UUID NOT NULL,
 	email VARCHAR(254) NOT NULL,
 	username VARCHAR(150) NOT NULL,
@@ -500,14 +493,14 @@ CREATE TABLE IF NOT EXISTS users (
 	CONSTRAINT check_email_not_empty CHECK (length(email) > 0),
 	CONSTRAINT check_username_not_empty CHECK (length(username) > 0)
 );
-CREATE INDEX IF NOT EXISTS ix_users_email ON users (email);
-CREATE INDEX IF NOT EXISTS ix_users_username ON users (username);
-CREATE INDEX IF NOT EXISTS ix_users_status ON users (status);
-CREATE INDEX IF NOT EXISTS ix_users_password_reset_token ON users (password_reset_token);
-CREATE INDEX IF NOT EXISTS ix_users_refresh_token_family ON users (refresh_token_family);
+CREATE INDEX ix_users_email ON users (email);
+CREATE INDEX ix_users_username ON users (username);
+CREATE INDEX ix_users_status ON users (status);
+CREATE INDEX ix_users_password_reset_token ON users (password_reset_token);
+CREATE INDEX ix_users_refresh_token_family ON users (refresh_token_family);
 
--- user_token_balances
-CREATE TABLE IF NOT EXISTS user_token_balances (
+-- Table: user_token_balances
+CREATE TABLE user_token_balances (
 	id UUID NOT NULL,
 	user_id UUID NOT NULL,
 	available_tokens INTEGER NOT NULL,
@@ -525,10 +518,10 @@ CREATE TABLE IF NOT EXISTS user_token_balances (
 	CONSTRAINT check_monthly_quota_non_negative CHECK (monthly_quota >= 0),
 	FOREIGN KEY(user_id) REFERENCES users (id) ON DELETE CASCADE
 );
-CREATE INDEX IF NOT EXISTS ix_user_token_balances_user_id ON user_token_balances (user_id);
+CREATE INDEX ix_user_token_balances_user_id ON user_token_balances (user_id);
 
--- rig_safeguards
-CREATE TABLE IF NOT EXISTS rig_safeguards (
+-- Table: rig_safeguards
+CREATE TABLE rig_safeguards (
 	user_id VARCHAR(64) NOT NULL,
 	connector_id VARCHAR(64) NOT NULL,
 	rig VARCHAR(255) NOT NULL,
@@ -542,10 +535,10 @@ CREATE TABLE IF NOT EXISTS rig_safeguards (
 	CONSTRAINT ck_rig_safeguards_state CHECK (state IN ('running', 'stopped', 'silent', 'failing')),
 	CONSTRAINT ck_rig_safeguards_safeguard CHECK (safeguard IN ('compact', 'watchdog', 'bridge', 'rigd'))
 );
-CREATE INDEX IF NOT EXISTS ix_rig_safeguards_user_connector ON rig_safeguards (user_id, connector_id);
+CREATE INDEX ix_rig_safeguards_user_connector ON rig_safeguards (user_id, connector_id);
 
--- teams
-CREATE TABLE IF NOT EXISTS teams (
+-- Table: teams
+CREATE TABLE teams (
 	id UUID NOT NULL,
 	user_id TEXT NOT NULL,
 	slug TEXT NOT NULL,
@@ -555,10 +548,10 @@ CREATE TABLE IF NOT EXISTS teams (
 	PRIMARY KEY (id),
 	CONSTRAINT uq_teams_user_slug UNIQUE (user_id, slug)
 );
-CREATE INDEX IF NOT EXISTS ix_teams_user_id ON teams (user_id);
+CREATE INDEX ix_teams_user_id ON teams (user_id);
 
--- team_members
-CREATE TABLE IF NOT EXISTS team_members (
+-- Table: team_members
+CREATE TABLE team_members (
 	id UUID NOT NULL,
 	team_id UUID NOT NULL REFERENCES teams (id),
 	user_id TEXT NOT NULL,
@@ -568,12 +561,12 @@ CREATE TABLE IF NOT EXISTS team_members (
 	CONSTRAINT uq_team_members_team_user UNIQUE (team_id, user_id),
 	CONSTRAINT ck_team_members_role CHECK (role IN ('owner', 'viewer'))
 );
-CREATE INDEX IF NOT EXISTS ix_team_members_team_id ON team_members (team_id);
-CREATE INDEX IF NOT EXISTS ix_team_members_user_id ON team_members (user_id);
-CREATE UNIQUE INDEX IF NOT EXISTS uq_team_members_one_owner ON team_members (team_id) WHERE role = 'owner';
+CREATE INDEX ix_team_members_team_id ON team_members (team_id);
+CREATE INDEX ix_team_members_user_id ON team_members (user_id);
+CREATE UNIQUE INDEX uq_team_members_one_owner ON team_members (team_id) WHERE role = 'owner';
 
--- modules
-CREATE TABLE IF NOT EXISTS modules (
+-- Table: modules
+CREATE TABLE modules (
 	id UUID NOT NULL,
 	user_id TEXT NOT NULL,
 	slug TEXT NOT NULL,
@@ -583,10 +576,10 @@ CREATE TABLE IF NOT EXISTS modules (
 	CONSTRAINT uq_modules_user_slug UNIQUE (user_id, slug),
 	CONSTRAINT ck_modules_kind CHECK (kind IN ('instruction', 'document', 'skill', 'tool', 'mcp', 'memory', 'policy'))
 );
-CREATE INDEX IF NOT EXISTS ix_modules_user_id ON modules (user_id);
+CREATE INDEX ix_modules_user_id ON modules (user_id);
 
--- module_versions
-CREATE TABLE IF NOT EXISTS module_versions (
+-- Table: module_versions
+CREATE TABLE module_versions (
 	id UUID NOT NULL,
 	user_id TEXT NOT NULL,
 	module_id UUID NOT NULL REFERENCES modules (id),
@@ -597,11 +590,11 @@ CREATE TABLE IF NOT EXISTS module_versions (
 	PRIMARY KEY (id),
 	CONSTRAINT uq_module_versions_module_version UNIQUE (module_id, version)
 );
-CREATE INDEX IF NOT EXISTS ix_module_versions_user_id ON module_versions (user_id);
-CREATE INDEX IF NOT EXISTS ix_module_versions_module_id ON module_versions (module_id);
+CREATE INDEX ix_module_versions_user_id ON module_versions (user_id);
+CREATE INDEX ix_module_versions_module_id ON module_versions (module_id);
 
--- seat_types
-CREATE TABLE IF NOT EXISTS seat_types (
+-- Table: seat_types
+CREATE TABLE seat_types (
 	id UUID NOT NULL,
 	user_id TEXT NOT NULL,
 	slug TEXT NOT NULL,
@@ -611,10 +604,10 @@ CREATE TABLE IF NOT EXISTS seat_types (
 	PRIMARY KEY (id),
 	CONSTRAINT uq_seat_types_user_slug UNIQUE (user_id, slug)
 );
-CREATE INDEX IF NOT EXISTS ix_seat_types_user_id ON seat_types (user_id);
+CREATE INDEX ix_seat_types_user_id ON seat_types (user_id);
 
--- seat_type_versions
-CREATE TABLE IF NOT EXISTS seat_type_versions (
+-- Table: seat_type_versions
+CREATE TABLE seat_type_versions (
 	id UUID NOT NULL,
 	user_id TEXT NOT NULL,
 	seat_type_id UUID NOT NULL REFERENCES seat_types (id),
@@ -625,11 +618,11 @@ CREATE TABLE IF NOT EXISTS seat_type_versions (
 	PRIMARY KEY (id),
 	CONSTRAINT uq_seat_type_versions_seat_type_version UNIQUE (seat_type_id, version)
 );
-CREATE INDEX IF NOT EXISTS ix_seat_type_versions_user_id ON seat_type_versions (user_id);
-CREATE INDEX IF NOT EXISTS ix_seat_type_versions_seat_type_id ON seat_type_versions (seat_type_id);
+CREATE INDEX ix_seat_type_versions_user_id ON seat_type_versions (user_id);
+CREATE INDEX ix_seat_type_versions_seat_type_id ON seat_type_versions (seat_type_id);
 
--- rooms
-CREATE TABLE IF NOT EXISTS rooms (
+-- Table: rooms
+CREATE TABLE rooms (
 	id UUID NOT NULL,
 	user_id TEXT NOT NULL,
 	slug TEXT NOT NULL,
@@ -640,11 +633,11 @@ CREATE TABLE IF NOT EXISTS rooms (
 	PRIMARY KEY (id),
 	CONSTRAINT uq_rooms_user_slug UNIQUE (user_id, slug)
 );
-CREATE INDEX IF NOT EXISTS ix_rooms_user_id ON rooms (user_id);
-CREATE INDEX IF NOT EXISTS ix_rooms_team_id ON rooms (team_id);
+CREATE INDEX ix_rooms_user_id ON rooms (user_id);
+CREATE INDEX ix_rooms_team_id ON rooms (team_id);
 
--- seats
-CREATE TABLE IF NOT EXISTS seats (
+-- Table: seats
+CREATE TABLE seats (
 	id UUID NOT NULL,
 	user_id TEXT NOT NULL,
 	room_id UUID NOT NULL REFERENCES rooms (id),
@@ -660,12 +653,12 @@ CREATE TABLE IF NOT EXISTS seats (
 	CONSTRAINT uq_seats_room_seat_key UNIQUE (room_id, seat_key),
 	CONSTRAINT ck_seats_permission_policy CHECK (permission_policy IN ('locked', 'standard', 'open', 'yolo', 'none'))
 );
-CREATE INDEX IF NOT EXISTS ix_seats_user_id ON seats (user_id);
-CREATE INDEX IF NOT EXISTS ix_seats_room_id ON seats (room_id);
-CREATE INDEX IF NOT EXISTS ix_seats_seat_type_id ON seats (seat_type_id);
+CREATE INDEX ix_seats_user_id ON seats (user_id);
+CREATE INDEX ix_seats_room_id ON seats (room_id);
+CREATE INDEX ix_seats_seat_type_id ON seats (seat_type_id);
 
--- overlays
-CREATE TABLE IF NOT EXISTS overlays (
+-- Table: overlays
+CREATE TABLE overlays (
 	id UUID NOT NULL,
 	user_id TEXT NOT NULL,
 	scope TEXT NOT NULL,
@@ -682,13 +675,13 @@ CREATE TABLE IF NOT EXISTS overlays (
 		OR (scope = 'seat' AND seat_id IS NOT NULL AND room_id IS NULL)
 	)
 );
-CREATE INDEX IF NOT EXISTS ix_overlays_user_id ON overlays (user_id);
-CREATE INDEX IF NOT EXISTS ix_overlays_room_id ON overlays (room_id);
-CREATE INDEX IF NOT EXISTS ix_overlays_seat_id ON overlays (seat_id);
-CREATE UNIQUE INDEX IF NOT EXISTS uq_overlays_target ON overlays (user_id, scope, COALESCE(room_id, '00000000-0000-0000-0000-000000000000'::uuid), COALESCE(seat_id, '00000000-0000-0000-0000-000000000000'::uuid));
+CREATE INDEX ix_overlays_user_id ON overlays (user_id);
+CREATE INDEX ix_overlays_room_id ON overlays (room_id);
+CREATE INDEX ix_overlays_seat_id ON overlays (seat_id);
+CREATE UNIQUE INDEX uq_overlays_target ON overlays (user_id, scope, COALESCE(room_id, '00000000-0000-0000-0000-000000000000'::uuid), COALESCE(seat_id, '00000000-0000-0000-0000-000000000000'::uuid));
 
--- seat_links
-CREATE TABLE IF NOT EXISTS seat_links (
+-- Table: seat_links
+CREATE TABLE seat_links (
 	id UUID NOT NULL,
 	user_id TEXT NOT NULL,
 	from_seat_id UUID NOT NULL REFERENCES seats (id),
@@ -701,12 +694,12 @@ CREATE TABLE IF NOT EXISTS seat_links (
 	CONSTRAINT ck_seat_links_kind CHECK (kind IN ('delegates_to', 'spawned_by', 'can_observe', 'collaborates_with', 'escalates_to')),
 	CONSTRAINT ck_seat_links_distinct CHECK (from_seat_id <> to_seat_id)
 );
-CREATE INDEX IF NOT EXISTS ix_seat_links_user_id ON seat_links (user_id);
-CREATE INDEX IF NOT EXISTS ix_seat_links_from_seat_id ON seat_links (from_seat_id);
-CREATE INDEX IF NOT EXISTS ix_seat_links_to_seat_id ON seat_links (to_seat_id);
+CREATE INDEX ix_seat_links_user_id ON seat_links (user_id);
+CREATE INDEX ix_seat_links_from_seat_id ON seat_links (from_seat_id);
+CREATE INDEX ix_seat_links_to_seat_id ON seat_links (to_seat_id);
 
--- resolved_seats
-CREATE TABLE IF NOT EXISTS resolved_seats (
+-- Table: resolved_seats
+CREATE TABLE resolved_seats (
 	id UUID NOT NULL,
 	user_id TEXT NOT NULL,
 	seat_id UUID NOT NULL REFERENCES seats (id),
@@ -718,19 +711,19 @@ CREATE TABLE IF NOT EXISTS resolved_seats (
 	PRIMARY KEY (id),
 	CONSTRAINT uq_resolved_seats_seat_hash UNIQUE (seat_id, hash)
 );
-CREATE INDEX IF NOT EXISTS ix_resolved_seats_user_id ON resolved_seats (user_id);
-CREATE INDEX IF NOT EXISTS ix_resolved_seats_seat_id ON resolved_seats (seat_id);
+CREATE INDEX ix_resolved_seats_user_id ON resolved_seats (user_id);
+CREATE INDEX ix_resolved_seats_seat_id ON resolved_seats (seat_id);
 
--- seat_settings
-CREATE TABLE IF NOT EXISTS seat_settings (
+-- Table: seat_settings
+CREATE TABLE seat_settings (
 	user_id TEXT NOT NULL,
 	follow_latest BOOLEAN NOT NULL DEFAULT false,
 	updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
 	PRIMARY KEY (user_id)
 );
 
--- machines
-CREATE TABLE IF NOT EXISTS machines (
+-- Table: machines
+CREATE TABLE machines (
 	user_id TEXT NOT NULL,
 	machine_id TEXT NOT NULL,
 	last_seen TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
@@ -738,8 +731,8 @@ CREATE TABLE IF NOT EXISTS machines (
 	PRIMARY KEY (user_id, machine_id)
 );
 
--- seat_status
-CREATE TABLE IF NOT EXISTS seat_status (
+-- Table: seat_status
+CREATE TABLE seat_status (
 	user_id TEXT NOT NULL,
 	machine_id TEXT NOT NULL,
 	room TEXT NOT NULL,
@@ -753,8 +746,8 @@ CREATE TABLE IF NOT EXISTS seat_status (
 	PRIMARY KEY (user_id, machine_id, room, seat)
 );
 
--- machine_edges
-CREATE TABLE IF NOT EXISTS machine_edges (
+-- Table: machine_edges
+CREATE TABLE machine_edges (
 	user_id TEXT NOT NULL,
 	machine_id TEXT NOT NULL,
 	room TEXT NOT NULL,
@@ -765,10 +758,10 @@ CREATE TABLE IF NOT EXISTS machine_edges (
 	CONSTRAINT ck_machine_edges_distinct CHECK (from_seat <> to_seat),
 	PRIMARY KEY (user_id, machine_id, room, from_seat, to_seat, kind)
 );
-CREATE INDEX IF NOT EXISTS ix_machine_edges_user_room ON machine_edges (user_id, room);
+CREATE INDEX ix_machine_edges_user_room ON machine_edges (user_id, room);
 
--- seat_feedback
-CREATE TABLE IF NOT EXISTS seat_feedback (
+-- Table: seat_feedback
+CREATE TABLE seat_feedback (
 	id UUID NOT NULL,
 	user_id TEXT NOT NULL,
 	room TEXT NOT NULL,
@@ -781,10 +774,10 @@ CREATE TABLE IF NOT EXISTS seat_feedback (
 	CONSTRAINT ck_seat_feedback_layer CHECK (layer IN ('runtime', 'openrig', 'cloud', 'seat-context', 'workspace', 'other')),
 	PRIMARY KEY (id)
 );
-CREATE INDEX IF NOT EXISTS ix_seat_feedback_user_id ON seat_feedback (user_id);
+CREATE INDEX ix_seat_feedback_user_id ON seat_feedback (user_id);
 
--- seat_messages
-CREATE TABLE IF NOT EXISTS seat_messages (
+-- Table: seat_messages
+CREATE TABLE seat_messages (
 	id UUID NOT NULL,
 	user_id TEXT NOT NULL,
 	room TEXT NOT NULL,
@@ -795,10 +788,10 @@ CREATE TABLE IF NOT EXISTS seat_messages (
 	machine_id TEXT NOT NULL DEFAULT '',
 	PRIMARY KEY (id)
 );
-CREATE INDEX IF NOT EXISTS ix_seat_messages_seat ON seat_messages (user_id, room, seat, created_at, id);
+CREATE INDEX ix_seat_messages_seat ON seat_messages (user_id, room, seat, created_at, id);
 
--- email_tokens
-CREATE TABLE IF NOT EXISTS email_tokens (
+-- Table: email_tokens
+CREATE TABLE email_tokens (
 	token VARCHAR(255) NOT NULL,
 	email VARCHAR(255) NOT NULL,
 	token_type VARCHAR(50) NOT NULL,
@@ -813,5 +806,106 @@ CREATE TABLE IF NOT EXISTS email_tokens (
 	user_agent VARCHAR(500),
 	PRIMARY KEY (token)
 );
-CREATE INDEX IF NOT EXISTS ix_email_tokens_email ON email_tokens (email);
+CREATE INDEX ix_email_tokens_email ON email_tokens (email);
 
+-- Table: agent_import_history
+CREATE TABLE agent_import_history (
+	id UUID NOT NULL,
+	importer_user_id UUID NOT NULL,
+	source_instance_id UUID NOT NULL,
+	imported_instance_id UUID NOT NULL,
+	imported_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+	share_token VARCHAR(64),
+	PRIMARY KEY (id)
+);
+CREATE INDEX idx_import_history_date ON agent_import_history (imported_at);
+CREATE INDEX idx_import_history_importer ON agent_import_history (importer_user_id);
+CREATE INDEX idx_import_history_source ON agent_import_history (source_instance_id);
+
+-- Table: applied_migrations
+CREATE TABLE applied_migrations (
+	id SERIAL NOT NULL,
+	migration_name VARCHAR(255) NOT NULL,
+	applied_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+	success BOOLEAN DEFAULT true,
+	error_message TEXT,
+	PRIMARY KEY (id),
+	CONSTRAINT applied_migrations_migration_name_key UNIQUE (migration_name)
+);
+
+-- Table: token_transactions
+CREATE TABLE token_transactions (
+	id UUID NOT NULL,
+	user_id UUID NOT NULL,
+	operation_type VARCHAR(100) NOT NULL,
+	tokens_deducted INTEGER NOT NULL,
+	balance_before INTEGER NOT NULL,
+	balance_after INTEGER NOT NULL,
+	operation_metadata JSONB NOT NULL,
+	created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+	PRIMARY KEY (id),
+	FOREIGN KEY(user_id) REFERENCES users (id)
+);
+CREATE INDEX ix_token_transactions_created_at ON token_transactions (created_at);
+CREATE INDEX ix_token_transactions_operation_type ON token_transactions (operation_type);
+CREATE INDEX ix_token_transactions_user_created ON token_transactions (user_id, created_at);
+CREATE INDEX ix_token_transactions_user_id ON token_transactions (user_id);
+
+-- Table: user_agent_configurations_md
+CREATE TABLE user_agent_configurations_md (
+	id UUID NOT NULL,
+	instance_id UUID NOT NULL,
+	configuration_type VARCHAR(50) NOT NULL,
+	content_markdown TEXT NOT NULL,
+	created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+	updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+	PRIMARY KEY (id),
+	CONSTRAINT user_agent_configurations_md_instance_type_key UNIQUE (instance_id, configuration_type)
+);
+CREATE INDEX idx_configurations_md_instance ON user_agent_configurations_md (instance_id, configuration_type);
+
+-- Table: user_api_tokens
+CREATE TABLE user_api_tokens (
+	id UUID NOT NULL,
+	user_id UUID NOT NULL,
+	token_hash VARCHAR(255) NOT NULL,
+	token_cost INTEGER NOT NULL,
+	name VARCHAR(100) NOT NULL,
+	scopes JSONB NOT NULL,
+	is_active BOOLEAN NOT NULL,
+	expires_at TIMESTAMP WITHOUT TIME ZONE,
+	last_used_at TIMESTAMP WITHOUT TIME ZONE,
+	created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+	updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+	revoked_at TIMESTAMP WITHOUT TIME ZONE,
+	PRIMARY KEY (id),
+	CONSTRAINT user_api_tokens_token_hash_key UNIQUE (token_hash),
+	FOREIGN KEY(user_id) REFERENCES users (id)
+);
+CREATE INDEX ix_user_api_tokens_expires_at ON user_api_tokens (expires_at);
+CREATE INDEX ix_user_api_tokens_is_active ON user_api_tokens (is_active);
+CREATE INDEX ix_user_api_tokens_user_id ON user_api_tokens (user_id);
+
+-- Table: user_sessions
+CREATE TABLE user_sessions (
+	id UUID NOT NULL,
+	user_id UUID NOT NULL,
+	session_token VARCHAR(255) NOT NULL,
+	refresh_token VARCHAR(255),
+	ip_address VARCHAR(45),
+	user_agent TEXT,
+	device_info JSONB NOT NULL,
+	created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+	last_activity TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+	expires_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+	revoked_at TIMESTAMP WITHOUT TIME ZONE,
+	is_active BOOLEAN NOT NULL,
+	PRIMARY KEY (id),
+	CONSTRAINT user_sessions_refresh_token_key UNIQUE (refresh_token),
+	CONSTRAINT user_sessions_session_token_key UNIQUE (session_token),
+	FOREIGN KEY(user_id) REFERENCES users (id)
+);
+CREATE INDEX ix_user_sessions_is_active ON user_sessions (is_active);
+CREATE INDEX ix_user_sessions_refresh_token ON user_sessions (refresh_token);
+CREATE INDEX ix_user_sessions_session_token ON user_sessions (session_token);
+CREATE INDEX ix_user_sessions_user_id ON user_sessions (user_id);

@@ -52,7 +52,9 @@ materializes (`--help` lists its seven subcommands).
 pin says. Use it when a seat has to load something that is not part of its snapshot: a new skill, a new cwd, a
 changed guide in the repo. `seat sync --relaunch quiet` cannot do that, because a seat whose pin is already
 current is reported "in sync" and is never restarted. The DeepSeek peak gate applies (`--allow-peak` skips it).
-A `rig launch` whose reply times out counts as done when the seat's tmux session comes up within 60 s.
+`--force` skips the quiet wait. Before each restart the client also replaces the omp seat's own skill directory
+(`~/.openrig/state/omp/<session>/agent/skills`) with the skills `sync rig` built for it, because nothing else copies
+them there. A `rig launch` whose reply times out counts as done when the seat's tmux session comes up within 3 minutes.
 
 `send` puts `From NAME:` in front of the text (default `owner session`) because `rig send` does not carry the
 sender outside a seat shell, and it passes the text to `rig` as one argument, so a shell expands nothing in it.

@@ -27,18 +27,23 @@ package database_test
 // again (0003 drops the two progress columns the carry empties); that narrowing is each step's own
 // subject, covered by its own test, not by this guard.
 //
-// A DELIBERATE BOUNDARY, so the next reader does not think it is an omission: taskdb.ProductionTables
-// is NOT in taskdb.Tables - nothing appends it to the runtime set - so the six production tables this
-// guard does not see are exactly the six the runtime does not create. Whether the 0001 baseline
-// carries them is the dump comparison's question (what a live database actually holds), not this
-// test's.
+// THE REGISTRY THIS GUARD READS IS THE UNION, and the merge is what made that necessary rather than
+// optional: `taskdb.ProductionTables` is NOT in `taskdb.Tables` (nothing appends it to the runtime
+// set), and the 0001 baseline that arrived from main was folded from BOTH - 41 aggregate tables plus
+// the six production ones - so a guard that read only the aggregate reported all six as drift ("a
+// migration creates it but no Go definition registers it") on the merged tree. Both directions read
+// the same union now, which also means the six get their columns, CHECKs, DEFAULTs and indexes
+// compared like any other table.
 //
 // The demonstration the acceptance requires is the other direction: perturb a Go definition - add a
 // column to a TableDef's DDL, or register a table without its baseline statement - and this test must
 // go red. A schema guard never seen to fail is what the rig spent a night finding.
 
 import (
+	"os"
+	"path/filepath"
 	"regexp"
+	"runtime"
 	"sort"
 	"strings"
 	"testing"
@@ -362,9 +367,18 @@ func (e *goDefParseError) Error() string {
 	return "step " + e.step + ": cannot parse CREATE TABLE header " + e.text
 }
 
+// goDefRegistry is the runtime registry this guard holds the set to: the aggregate `Tables` plus
+// `ProductionTables`, which is the same union main's baseline was folded from.
+func goDefRegistry() []taskdb.TableDef {
+	out := make([]taskdb.TableDef, 0, len(taskdb.Tables)+len(taskdb.ProductionTables))
+	out = append(out, taskdb.Tables...)
+	out = append(out, taskdb.ProductionTables...)
+	return out
+}
+
 // goDefTableByName reports whether a name is registered in the runtime set.
 func goDefTableByName(name string) (taskdb.TableDef, bool) {
-	for _, def := range taskdb.Tables {
+	for _, def := range goDefRegistry() {
 		if def.Name == name {
 			return def, true
 		}
@@ -501,6 +515,85 @@ func goDefEqualMaps(a, b map[string]string) bool {
 		}
 	}
 	return true
+}
+
+// baselineMigrationFile is the step whose own text the baseline-scoped checks below read.
+const baselineMigrationFile = "0001_baseline.sql"
+
+// TestTheBaselineStepOnlyCreatesAndItsTypesPrecedeTheirTables holds `0001_baseline.sql` ITSELF to the
+// three properties the set-wide guard above cannot see, because a LATER step is allowed to do what the
+// baseline never may. The baseline is the schema as it already exists, so it must never drop or alter
+// anything; every enum type it uses must be created BEFORE the table that uses it, because the baseline
+// is the step a database receives alone; and no table may be registered twice across the two runtime
+// sets. A later step MAY narrow the baseline - `0003` drops the two progress columns the carry empties
+// - so this test is scoped to the file and cannot be read as forbidding that.
+func TestTheBaselineStepOnlyCreatesAndItsTypesPrecedeTheirTables(t *testing.T) {
+	raw := readBaselineSQL(t)
+	assertBaselineHasNoDropOrAlter(t, raw)
+
+	registered := map[string]bool{}
+	var order []taskdb.TableDef
+	for _, set := range [][]taskdb.TableDef{taskdb.Tables, taskdb.ProductionTables} {
+		for _, def := range set {
+			if registered[def.Name] {
+				t.Errorf("table %s is registered twice across Tables and ProductionTables", def.Name)
+				continue
+			}
+			registered[def.Name] = true
+			order = append(order, def)
+		}
+	}
+	if len(order) == 0 {
+		t.Fatal("no TableDef is registered, so this guard measured nothing")
+	}
+	for _, def := range order {
+		for _, c := range def.Columns {
+			if c.EnumName == "" {
+				continue
+			}
+			typeAt := strings.Index(raw, "CREATE TYPE "+c.EnumName+" ")
+			tableAt := strings.Index(raw, "CREATE TABLE "+def.Name+" (")
+			if typeAt < 0 {
+				t.Errorf("table %s column %s: enum %s has no CREATE TYPE in the baseline",
+					def.Name, c.Name, c.EnumName)
+				continue
+			}
+			if tableAt >= 0 && typeAt > tableAt {
+				t.Errorf("table %s: enum %s is created AFTER the table that uses it", def.Name, c.EnumName)
+			}
+		}
+	}
+}
+
+// readBaselineSQL returns the baseline's text from the SOURCE TREE rather than through the embedded
+// set, so a failure names the file a human edits.
+func readBaselineSQL(t *testing.T) string {
+	t.Helper()
+	_, thisFile, _, ok := runtime.Caller(0)
+	if !ok {
+		t.Fatal("runtime.Caller(0) failed")
+	}
+	raw, err := os.ReadFile(filepath.Join(filepath.Dir(thisFile), "migrations", baselineMigrationFile))
+	if err != nil {
+		t.Fatalf("read %s: %v", baselineMigrationFile, err)
+	}
+	return string(raw)
+}
+
+// assertBaselineHasNoDropOrAlter checks the file's SQL, ignoring comment lines so the header's prose
+// cannot hide one.
+func assertBaselineHasNoDropOrAlter(t *testing.T, raw string) {
+	t.Helper()
+	for i, line := range strings.Split(raw, "\n") {
+		if strings.HasPrefix(strings.TrimSpace(line), "--") {
+			continue
+		}
+		up := strings.ToUpper(line)
+		if strings.Contains(up, "DROP ") || strings.Contains(up, "ALTER ") {
+			t.Errorf("%s line %d is a DROP or ALTER, which a baseline may never carry: %s",
+				baselineMigrationFile, i+1, strings.TrimSpace(line))
+		}
+	}
 }
 
 // goDefTopLevelItems splits a CREATE TABLE body on the commas that are not inside parentheses.

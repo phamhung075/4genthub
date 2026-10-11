@@ -14,6 +14,7 @@ import (
 	"testing"
 	"time"
 
+	"agenthub/fastmcp/session_stream/testdb"
 	"agenthub/fastmcp/task_management/infrastructure/database"
 )
 
@@ -57,9 +58,7 @@ func TestRealPostgresCreateTablesAndSessions(t *testing.T) {
 	ctx := context.Background()
 
 	cfg := &database.DatabaseConfig{Engine: &database.Engine{DB: db, URL: dsn}}
-	if err := cfg.CreateTables(ctx); err != nil {
-		t.Fatal(err)
-	}
+	testdb.CreateSchema(t, cfg)
 	// idempotent (checkfirst)
 	if err := cfg.CreateTables(ctx); err != nil {
 		t.Fatal(err)

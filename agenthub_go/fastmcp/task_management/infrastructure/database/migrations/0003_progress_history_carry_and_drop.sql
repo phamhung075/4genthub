@@ -31,9 +31,25 @@
 --
 -- LOCKED AGAINST LIVE APPENDS. The runner holds its own advisory lock, but an append takes the
 -- per-user lock in TaskEventRepository.AppendInTx, which is a different key: without this the MAX+1
--- numbering below could race a live append and either side could collide on the uniques. The first
--- statement takes each affected user's lock for the rest of this transaction, in the same key the
--- append path uses.
+-- numbering below could race a live append and either side could collide on the uniques. The lock
+-- statement below takes each affected user's lock for the rest of this transaction, in the same key
+-- the append path uses.
+
+-- THE BASELINE MARK IS CHECKED HERE, NOT ASSUMED. This step destroys its source, and until this block
+-- existed nothing tied it to the owner's mark: validateSet checks a set's names, order and duplicates,
+-- never a step's provenance, so a database where 0001 was SKIPPED - which is what the runner with the
+-- inert baseline does whenever the catalogue is not empty, i.e. every boot - reached the DROP below
+-- with no 0001_baseline row and no owner action. The ordering rule is
+-- ARCH-RULING-0001-baseline-canonicity: the mark is Runner.MarkBaseline("0001_baseline"), an owner
+-- action, and this refuses until it is there. The raise rolls this step's OWN transaction back
+-- (migration_runner.go applies each step in one), so both columns stay and no applied_migrations row
+-- is written.
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM applied_migrations WHERE migration_name = '0001_baseline') THEN
+        RAISE EXCEPTION 'the O1c carry step runs only under the owner''s 0001 baseline mark; run Runner.MarkBaseline(''0001_baseline'') first';
+    END IF;
+END $$;
 
 SELECT pg_advisory_xact_lock(hashtext(u.user_id::text))
 FROM (

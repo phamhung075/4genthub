@@ -42,9 +42,16 @@ func GetSubtask(ctx context.Context, subtaskID string, currentUser *authdomain.U
 	return result.Body, nil
 }
 
-// UpdateSubtask is update_subtask PUT /{subtask_id}. update_data is built in
-// Python insertion order: title, description, status, progress_percentage.
-func UpdateSubtask(ctx context.Context, subtaskID string, title, description, status *string, progressPercentage *int, currentUser *authdomain.User, c SubtaskController) (*entities.OrderedMap[any], error) {
+// UpdateSubtask is update_subtask PUT /{subtask_id}. update_data is built in Python insertion order:
+// title, description, status, progress_percentage, progress_notes.
+//
+// progress_notes is part of the body because manage_subtask requires it for update and complete, its
+// handler validates it at 10+ characters and the use case reaches Subtask.AppendProgress with it
+// (update_subtask.go). Without it here the route accepted the request, answered 200 and stored
+// nothing: a client on the HTTP API could not write a progress note at all, silently, while a client
+// on the tool could. ProgressNotes stays nil unless the caller sends the parameter, so a request that
+// does not mention it appends nothing - the same as before for every other field.
+func UpdateSubtask(ctx context.Context, subtaskID string, title, description, status, progressNotes *string, progressPercentage *int, currentUser *authdomain.User, c SubtaskController) (*entities.OrderedMap[any], error) {
 	updateData := entities.NewOrderedMap[any]()
 	if title != nil {
 		updateData.Set("title", *title)
@@ -57,6 +64,9 @@ func UpdateSubtask(ctx context.Context, subtaskID string, title, description, st
 	}
 	if progressPercentage != nil {
 		updateData.Set("progress_percentage", *progressPercentage)
+	}
+	if progressNotes != nil {
+		updateData.Set("progress_notes", *progressNotes)
 	}
 	result, err := c.UpdateSubtask(ctx, subtaskID, updateData, currentUserID(currentUser))
 	if err != nil {

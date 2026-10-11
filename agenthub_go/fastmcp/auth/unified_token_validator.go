@@ -56,7 +56,7 @@ func ValidateTokenUniversal(ctx context.Context, token string, clientInfo *taske
 				tokenID, _ := unverifiedPayload["token_id"]
 				typ, _ := unverifiedPayload["type"].(string)
 				if value_objects.PyTruthy(tokenID) || typ == "api_token" {
-					result := validateUnifiedAPIToken(token)
+					result := validateUnifiedAPIToken(ctx, token)
 					if result.Valid {
 						return result
 					}
@@ -102,7 +102,23 @@ func validateUnifiedKeycloakToken(ctx context.Context, token string) UnifiedAuth
 	}
 }
 
-func validateUnifiedAPIToken(token string) UnifiedAuthResult {
+// APITokenUsageRecorder records one accepted API-token authentication on the token's own row.
+// The composition root wires it (httpapp.NewApp), because the row lives behind a repository that
+// this package must not reach for itself; nil means nothing records, which is what the unit tests
+// in this package see. It is a package-level seam for the same reason the others here are: the
+// validation entry points are package functions, with no injection point.
+var APITokenUsageRecorder func(ctx context.Context, tokenID string)
+
+// recordAPITokenUsage advances the counters of the token that was just accepted. A hand-minted
+// JWT may carry no token id, in which case there is no row to record against.
+func recordAPITokenUsage(ctx context.Context, tokenID *string) {
+	if APITokenUsageRecorder == nil || tokenID == nil || *tokenID == "" {
+		return
+	}
+	APITokenUsageRecorder(ctx, *tokenID)
+}
+
+func validateUnifiedAPIToken(ctx context.Context, token string) UnifiedAuthResult {
 	jwtSecret := os.Getenv("JWT_SECRET_KEY")
 	if jwtSecret == "" {
 		return UnifiedAuthResult{Valid: false, Error: strPtr("JWT_SECRET_KEY not configured")}
@@ -128,6 +144,7 @@ func validateUnifiedAPIToken(token string) UnifiedAuthResult {
 			Scopes:     toAnySlice(payload["scopes"]),
 			Roles:      toAnySlice(payload["roles"]),
 		}
+		recordAPITokenUsage(ctx, result.TokenID)
 		return result
 	}
 

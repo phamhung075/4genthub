@@ -5,5 +5,7 @@
   why `seat sync --relaunch quiet` cannot restart a seat whose pin is already current, and the launch-timeout rule.
 - Client change behind it: `agenthub_client` commits `seat reseat`, `send` and the relaunch check (see its CHANGELOG).
 
+- The relaunch now delivers the store skills into an omp seat's own agent directory, and `seat reseat --force` skips the quiet wait.
+
 ### Testing
 - `go test ./internal/clientseat/` passes; `fe-dev` was restarted with `seat reseat` and runs in the live rig directory.

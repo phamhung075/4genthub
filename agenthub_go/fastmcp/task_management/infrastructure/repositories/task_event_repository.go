@@ -2,8 +2,11 @@ package repositories
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
+	"strconv"
+	"strings"
 	"time"
 
 	"agenthub/fastmcp/task_management/domain/entities"
@@ -97,7 +100,7 @@ func (r *TaskEventRepository) AppendInTx(ctx context.Context, in entities.Append
 	err := r.sessions.WithSession(ctx, func(ctx context.Context, s database.DBTX) error {
 		args := []any{r.userID, in.TaskID}
 		conds := `"user_id" = $1 AND "task_id" = $2`
-		if _, err := s.ExecContext(ctx, `SELECT pg_advisory_xact_lock(hashtext($1))`, r.userID); err != nil {
+		if err := lockUserAppend(ctx, s, r.userID); err != nil {
 			return err
 		}
 		// user_seq is read in its own statement, still under the lock: the LOCK is what makes MAX+1
@@ -330,4 +333,241 @@ func (r *TaskEventRepository) ProgressEventsByTask(ctx context.Context, taskIDs 
 		return nil, err
 	}
 	return out, nil
+}
+
+// --- the ledger's own layer (P2, P3): the cross-task cursor and the decision reads ---
+
+// Transaction runs fn in one transaction. The ledger's intents route must DECIDE and APPEND in one
+// transaction - a decision read beside the append it gates could see a different ledger than the
+// append lands in - and this repository is what owns the append lock, so the transaction is taken
+// through it rather than by reaching around it for the session manager.
+func (r *TaskEventRepository) Transaction(ctx context.Context, fn func(ctx context.Context) error) error {
+	return r.sessions.Transaction(ctx, fn)
+}
+
+// LockUser takes the ledger's per-user append lock inside the caller's transaction. It is the SAME
+// lock AppendInTx takes, exposed so a caller that must READ before it appends - the intents route,
+// whose decision turns on the task's current seq - can take it ahead of its reads and make the pair
+// atomic. Re-taking one's own advisory lock is a no-op, so calling this before an AppendInTx on the
+// same transaction costs nothing.
+func (r *TaskEventRepository) LockUser(ctx context.Context) error {
+	if !r.sessions.InTransaction(ctx) {
+		return ErrNotInTransaction
+	}
+	return r.sessions.WithSession(ctx, func(ctx context.Context, s database.DBTX) error {
+		return lockUserAppend(ctx, s, r.userID)
+	})
+}
+
+// lockUserAppend is the ONE spelling of the ledger's append lock. AppendInTx and LockUser both take
+// it through here: it is the one thing that serializes appends for a user, so a second spelling of
+// the expression would serialize against nothing.
+func lockUserAppend(ctx context.Context, s database.DBTX, userID string) error {
+	_, err := s.ExecContext(ctx, `SELECT pg_advisory_xact_lock(hashtext($1))`, userID)
+	return err
+}
+
+// TaskEventColumns is the column list every entry read selects, in the order scanTaskEvent reads
+// them. One constant rather than a literal per query, because a read that selected a different set
+// from a sibling would scan into the wrong fields or fail on a count that no compiler checks.
+const TaskEventColumns = `"id", "task_id", "subtask_id", "user_id", "seq", "user_seq", "client_event_id", "kind", "actor_kind", "actor_id", "payload", "created_at"`
+
+// scanTaskEvent reads one row of TaskEventColumns.
+func scanTaskEvent(rows interface{ Scan(...any) error }) (*entities.TaskEvent, error) {
+	ev := &entities.TaskEvent{}
+	var kind, actorKind string
+	var subtaskID, storedClientEventID sql.NullString
+	var payload *string
+	if err := rows.Scan(&ev.ID, &ev.TaskID, &subtaskID, &ev.UserID, &ev.Seq, &ev.UserSeq, &storedClientEventID,
+		&kind, &actorKind, &ev.ActorID, &payload, &ev.CreatedAt); err != nil {
+		return nil, err
+	}
+	ev.SubtaskID = subtaskID.String
+	ev.ClientEventID = storedClientEventID.String
+	ev.Kind = entities.TaskEventKind(kind)
+	ev.ActorKind = entities.TaskEventActorKind(actorKind)
+	if payload != nil {
+		_ = json.Unmarshal([]byte(*payload), &ev.Payload)
+	}
+	ev.CreatedAt = ev.CreatedAt.UTC()
+	return ev, nil
+}
+
+// ListUserAfter returns the user's entries strictly after afterUserSeq ACROSS ALL OF THE USER'S
+// TASKS, oldest first. This is the cursor the per-task read (ListAfter) does not carry, and the
+// difference is the whole point of the route over it: one cursor covers a user's work everywhere.
+//
+// ORDERING IS BY user_seq AND NOT created_at, because user_seq is the number the per-user lock hands
+// out gaplessly in commit order (see AppendInTx): ordering by a timestamp would let two entries
+// written in the same millisecond come back in an order no client could resume from. after=0 is the
+// whole ledger, and a client that has seen N asks for N and gets only what is new.
+//
+// limit<=0 takes the same default window ListAfter takes, so this file holds ONE notion of how much
+// of the ledger is a page.
+func (r *TaskEventRepository) ListUserAfter(ctx context.Context, afterUserSeq int64, limit int) ([]*entities.TaskEvent, error) {
+	out := []*entities.TaskEvent{}
+	if limit <= 0 {
+		limit = 100
+	}
+	err := r.sessions.WithSession(ctx, func(ctx context.Context, s database.DBTX) error {
+		rows, err := s.QueryContext(ctx, `
+			SELECT `+TaskEventColumns+` FROM task_events
+			WHERE "user_id" = $1 AND "user_seq" > $2
+			ORDER BY "user_seq" ASC
+			LIMIT $3`, r.userID, afterUserSeq, limit)
+		if err != nil {
+			return err
+		}
+		defer rows.Close()
+		for rows.Next() {
+			ev, err := scanTaskEvent(rows)
+			if err != nil {
+				return err
+			}
+			out = append(out, ev)
+		}
+		return rows.Err()
+	})
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// UserTip returns the user's current tip: the highest user_seq the user's ledger holds, and 0 when
+// it holds none. It is the number the read hands back beside a page so a client knows how far behind
+// its cursor is, and the number P4's `ledger_tip` frame will carry.
+func (r *TaskEventRepository) UserTip(ctx context.Context) (int64, error) {
+	tip := int64(0)
+	err := r.sessions.WithSession(ctx, func(ctx context.Context, s database.DBTX) error {
+		return s.QueryRowContext(ctx,
+			`SELECT COALESCE(MAX("user_seq"), 0) FROM task_events WHERE "user_id" = $1`, r.userID).Scan(&tip)
+	})
+	if err != nil {
+		return 0, err
+	}
+	return tip, nil
+}
+
+// FindByClientEventID returns the entry one outbox key wrote, if this user has one. It is the whole
+// idempotency of a resent intent: uq_task_event_client_event keeps one key to one row, so the row IS
+// the first answer and a resend is answered from it rather than by appending a second one.
+//
+// The key is cast to uuid because the column is one: without the cast PostgreSQL would resolve the
+// comparison against a text category and a key that is not a UUID would come back as a driver error
+// rather than as "no entry". Callers canonicalise the key first, so a malformed one never gets here.
+func (r *TaskEventRepository) FindByClientEventID(ctx context.Context, clientEventID string) (*entities.TaskEvent, bool, error) {
+	found := false
+	ev := &entities.TaskEvent{}
+	err := r.sessions.WithSession(ctx, func(ctx context.Context, s database.DBTX) error {
+		row, err := scanTaskEvent(s.QueryRowContext(ctx,
+			`SELECT `+TaskEventColumns+` FROM task_events WHERE "user_id" = $1 AND "client_event_id" = $2::uuid`,
+			r.userID, clientEventID))
+		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return nil
+			}
+			return err
+		}
+		found = true
+		ev = row
+		return nil
+	})
+	if err != nil {
+		return nil, false, err
+	}
+	return ev, found, nil
+}
+
+// CurrentTaskSeq is the task's seq as it stands: MAX(seq) over the task's entries, 0 when it has
+// none. It is the number a decision's base_seq is compared against and the number a refusal reports
+// so the client knows what to re-read from.
+func (r *TaskEventRepository) CurrentTaskSeq(ctx context.Context, taskID string) (int, error) {
+	seq := 0
+	err := r.sessions.WithSession(ctx, func(ctx context.Context, s database.DBTX) error {
+		return s.QueryRowContext(ctx,
+			`SELECT COALESCE(MAX("seq"), 0) FROM task_events WHERE "user_id" = $1 AND "task_id" = $2::uuid`,
+			r.userID, taskID).Scan(&seq)
+	})
+	if err != nil {
+		return 0, err
+	}
+	return seq, nil
+}
+
+// HasNonFactAfter reports whether anything on the task after afterSeq is NOT one of factKinds.
+//
+// THE QUESTION IS ASKED OF THE COMPLEMENT OF THE FACT LIST, not of the decision list, because that is
+// the rule D9 states (`:599`): a decision is refused when its base_seq is behind the task's current
+// seq UNLESS EVERY EVENT SINCE THEN IS A FACT. An entry of some third kind - an escalation the
+// server wrote, a delivery - is not a fact either, and the rule says so; asking "was there a
+// decision" instead would let a decision through on the strength of history the client never saw.
+//
+// THE VOCABULARY IS AN ARGUMENT. Which kinds are facts is the ledger's rule and belongs to the
+// package that states it; this repository has no opinion about it and therefore cannot go stale on
+// one. An empty list asks the question without the exception, which is the honest reading of "no
+// kinds count as facts".
+func (r *TaskEventRepository) HasNonFactAfter(ctx context.Context, taskID string, afterSeq int, factKinds []string) (bool, error) {
+	found := false
+	err := r.sessions.WithSession(ctx, func(ctx context.Context, s database.DBTX) error {
+		args := []any{r.userID, taskID, afterSeq}
+		exception := ""
+		if len(factKinds) > 0 {
+			placeholders := make([]string, 0, len(factKinds))
+			for _, kind := range factKinds {
+				args = append(args, kind)
+				placeholders = append(placeholders, "$"+strconv.Itoa(len(args)))
+			}
+			exception = ` AND "kind" NOT IN (` + strings.Join(placeholders, ", ") + `)`
+		}
+		return s.QueryRowContext(ctx, `
+			SELECT EXISTS(SELECT 1 FROM task_events
+				WHERE "user_id" = $1 AND "task_id" = $2::uuid AND "seq" > $3`+exception+`)`, args...).Scan(&found)
+	})
+	if err != nil {
+		return false, err
+	}
+	return found, nil
+}
+
+// TaskVisible reports whether the task exists AND belongs to this repository's user.
+//
+// IT IS NOT REDUNDANT WITH THE FOREIGN KEY, which is why it is here rather than assumed: task_events
+// references tasks(id) and nothing else, so an entry naming ANOTHER USER'S task would satisfy the
+// constraint and land in this user's ledger beside a task the user cannot see. The ledger is
+// user-isolated, so the ownership check is what makes that impossible rather than merely unlikely.
+func (r *TaskEventRepository) TaskVisible(ctx context.Context, taskID string) (bool, error) {
+	visible := false
+	err := r.sessions.WithSession(ctx, func(ctx context.Context, s database.DBTX) error {
+		return s.QueryRowContext(ctx,
+			`SELECT EXISTS(SELECT 1 FROM tasks WHERE "user_id" = $1 AND "id" = $2::uuid)`,
+			r.userID, taskID).Scan(&visible)
+	})
+	if err != nil {
+		return false, err
+	}
+	return visible, nil
+}
+
+// SubtaskInTask reports whether the subtask exists, belongs to this repository's user, AND belongs to
+// taskID.
+//
+// IT IS THE SAME ARGUMENT ASKED ONE LEVEL DOWN. task_events references tasks(id) and nothing else, so
+// a subtask_id naming ANOTHER USER'S subtask - or a subtask of a different task - satisfies every
+// constraint the table has and lands in this user's ledger beside work the user cannot see. ONE query
+// answers all three questions, because the single refusal token the service answers with must not
+// tell them apart: a token that distinguished "no such subtask" from "not yours" would answer whether
+// a subtask exists to a user who cannot see it.
+func (r *TaskEventRepository) SubtaskInTask(ctx context.Context, taskID, subtaskID string) (bool, error) {
+	found := false
+	err := r.sessions.WithSession(ctx, func(ctx context.Context, s database.DBTX) error {
+		return s.QueryRowContext(ctx,
+			`SELECT EXISTS(SELECT 1 FROM subtasks
+				WHERE "user_id" = $1 AND "task_id" = $2::uuid AND "id" = $3::uuid)`,
+			r.userID, taskID, subtaskID).Scan(&found)
+	})
+	if err != nil {
+		return false, err
+	}
+	return found, nil
 }

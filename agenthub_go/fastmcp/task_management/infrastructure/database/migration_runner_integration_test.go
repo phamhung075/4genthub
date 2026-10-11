@@ -14,11 +14,22 @@ import (
 	"strings"
 	"testing"
 
+	"agenthub/fastmcp/session_stream/testdb"
 	"agenthub/fastmcp/task_management/infrastructure/database"
 )
 
 // newMigrationRunnerEnv builds a throwaway database carrying the production schema - so
 // applied_migrations exists, exactly as it does on a boot - and returns a session manager over it.
+//
+// IT BOOTS TWICE, AND THE FIRST BOOT IS EXPECTED TO REFUSE - that is the merged runner's behaviour,
+// not a broken fixture. createAll populates the catalogue BEFORE the runner runs, so the runner skips
+// the frozen 0001 baseline WITHOUT recording it, and the gated carry step
+// (0003_progress_history_carry_and_drop) then refuses on a database whose ledger holds no
+// 0001_baseline row. Recording that mark is the OWNER's action, so this fixture performs it the way an
+// operator does - Runner.MarkBaseline - and boots again. The refusal is MEASURED, with both columns
+// survivors, by TestTheBootRefusesTheCarryStepOnAPopulatedDatabaseWithoutTheMark; here it is only not
+// swallowed, so a runner that let the destructive step through would fail the fixture rather than
+// quietly give every case a carried database.
 func newMigrationRunnerEnv(t *testing.T) (*database.SessionManager, *sql.DB) {
 	t.Helper()
 	dsn := newTestDatabase(t)
@@ -28,9 +39,7 @@ func newMigrationRunnerEnv(t *testing.T) (*database.SessionManager, *sql.DB) {
 	}
 	t.Cleanup(func() { db.Close() })
 	cfg := &database.DatabaseConfig{Engine: &database.Engine{DB: db, URL: dsn}}
-	if err := cfg.CreateTables(context.Background()); err != nil {
-		t.Fatal(err)
-	}
+	testdb.CreateSchema(t, cfg)
 	return database.NewSessionManager(cfg), db
 }
 

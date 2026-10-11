@@ -10,10 +10,11 @@ only the final trailer block.
 
 from __future__ import annotations
 
-import os
 import stat
 import subprocess
 from pathlib import Path
+
+import gitfixture
 
 # <repo>/scripts/tests/<this file>: the repository root is two levels up, and that
 # is where scripts/git-hooks/ lives - the same relative path the pre-commit config's `entry` names.
@@ -24,15 +25,7 @@ ADDRESS = "4genthub-min-skills-dev@4genthub-min"
 
 
 def _git(repo: Path, *args: str, env: dict[str, str] | None = None) -> str:
-    full = dict(os.environ)
-    full.update(env or {})
-    return subprocess.run(
-        ["git", "-C", str(repo), *args],
-        check=True,
-        capture_output=True,
-        text=True,
-        env=full,
-    ).stdout
+    return gitfixture.git(repo, *args, env=env).stdout
 
 
 def _repo(tmp_path: Path) -> Path:
@@ -123,7 +116,7 @@ def test_no_message_file_is_not_a_failure(tmp_path: Path) -> None:
         [str(hook)],
         capture_output=True,
         text=True,
-        env={**os.environ, "OPENRIG_SESSION_NAME": ADDRESS},
+        env=gitfixture.environment(OPENRIG_SESSION_NAME=ADDRESS),
     )
     assert result.returncode == 0
     assert _seats(repo) == []

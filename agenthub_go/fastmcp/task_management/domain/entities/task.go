@@ -539,6 +539,49 @@ func (t *Task) ProgressTextWith(progressEvents []*TaskEvent) string {
 	return strings.Join(parts, "\n\n")
 }
 
+// ProgressHistoryText joins the history entries ordered by progress number. A task and a subtask write
+// the same entry shape (content + progress_number: Task.AppendProgress and Subtask.AppendProgress), so
+// the join lives once and both the task's response and the subtask's DTO call it.
+//
+// An entry that is not an object with a string `content` contributes NOTHING: it is skipped, not rendered.
+// Reading through a value that is not a map yields a nil map, a nil map yields "", and the entry then renders
+// as an EMPTY line that is indistinguishable from a real note whose text is blank - which is how two notes
+// were reported as lost before this function's caller was corrected at the decode boundary.
+func ProgressHistoryText(history map[string]any) string {
+	if len(history) == 0 {
+		return ""
+	}
+	type entry struct {
+		key     string
+		number  float64
+		content string
+	}
+	entries := []entry{}
+	for k, v := range history {
+		// BOTH assertions are checked, and the entry is skipped when either fails.
+		m, ok := v.(map[string]any)
+		if !ok {
+			continue
+		}
+		c, ok := m["content"].(string)
+		if !ok {
+			continue
+		}
+		entries = append(entries, entry{k, numberOf(m["progress_number"]), c})
+	}
+	sort.Slice(entries, func(i, j int) bool {
+		if entries[i].number != entries[j].number {
+			return entries[i].number < entries[j].number
+		}
+		return entries[i].key < entries[j].key
+	})
+	parts := make([]string, len(entries))
+	for i, e := range entries {
+		parts[i] = e.content
+	}
+	return strings.Join(parts, "\n\n")
+}
+
 func (t *Task) AddDependency(dep value_objects.TaskId) error {
 	if t.ID != nil && dep == *t.ID {
 		return value_objects.ValueErrorf("Task cannot depend on itself")
