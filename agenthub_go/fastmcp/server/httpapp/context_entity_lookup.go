@@ -3,6 +3,7 @@ package httpapp
 import (
 	"context"
 
+	"agenthub/fastmcp/task_management/application/services"
 	"agenthub/fastmcp/task_management/infrastructure/database"
 	infrarepos "agenthub/fastmcp/task_management/infrastructure/repositories"
 )
@@ -34,4 +35,19 @@ func (l contextEntityLookup) TaskGitBranchID(ctx context.Context, userID *string
 		return "", err
 	}
 	return *task.GitBranchID, nil
+}
+
+// TaskOwnedFields returns the live task's own fields, so a task context read serves them from
+// the task rather than from the copy the record was created with. A task that does not exist
+// yields nil, nil, and the read keeps the stored copy.
+func (l contextEntityLookup) TaskOwnedFields(ctx context.Context, userID *string, taskID string) (map[string]any, error) {
+	repo, err := infrarepos.NewORMTaskRepository(l.sessions, nil, nil, nil, userID, false)
+	if err != nil {
+		return nil, err
+	}
+	task, err := repo.GetTask(ctx, taskID)
+	if err != nil || task == nil {
+		return nil, err
+	}
+	return services.TaskOwnedFieldsFromTask(task), nil
 }

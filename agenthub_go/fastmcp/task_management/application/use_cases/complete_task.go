@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -431,10 +432,16 @@ func (uc *CompleteTaskUseCase) executeCore(
 			fac.UpdateContext("task", taskIDStr,
 				completeTaskCompletionContextUpdate(*completionSummary, nextRecommendations, testingNotes, nil),
 				true)
-			// Synchronize task status and metadata after completion (failures only logged).
+			// Synchronize task status and metadata after completion. The completion itself does not
+			// fail on them, but they are logged: this is the pair whose silence left a done task
+			// resolving as todo.
 			if uc.hooks != nil {
-				_ = uc.hooks.SyncTaskStatus(ctx, taskIDStr, "done")
-				_ = uc.hooks.SyncTaskMetadata(ctx, taskIDStr, task, "")
+				if err := uc.hooks.SyncTaskStatus(ctx, taskIDStr, "done"); err != nil {
+					log.Printf("[complete_task] the status did not land in the context of %s: %v", taskIDStr, err)
+				}
+				if err := uc.hooks.SyncTaskMetadata(ctx, taskIDStr, task, ""); err != nil {
+					log.Printf("[complete_task] the metadata did not land in the context of %s: %v", taskIDStr, err)
+				}
 			}
 		}
 		// THE BROADCAST IS NOT GATED ON THE CONTEXT FACADE, and my first attempt had it inside that

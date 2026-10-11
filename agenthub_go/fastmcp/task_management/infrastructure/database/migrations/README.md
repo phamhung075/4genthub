@@ -9,7 +9,10 @@ transaction, together with its ledger row.
   the recorded name is how the runner knows the step ran.
 - **Non-SQL files here are ignored** by the loader. This file exists to state the naming rule the
   loader enforces.
-- **`0001` is the baseline of the database that already exists.** The runner does not mark it on its
-  own: on an existing database the mark is an owner action (`Runner.MarkBaseline`), because it touches
-  production, and on a fresh database the baseline would execute. No `0001` file exists yet - folding
-  today's DDL sources into it is stage 1 of T12, not the slice that landed the runner.
+- **`0001` is the baseline of the database that already exists.** `0001_baseline.sql` is GENERATED
+  from the runtime TableDef registry (the aggregate `taskdb.Tables`, then `ProductionTables`) and is
+  FROZEN: never rename or reorder it once it has been applied anywhere. Only a database with an EMPTY
+  catalogue receives it, because `migration_runner.Apply` skips it when the catalogue already holds
+  tables - the same rule `db_initializer.go` applies to the init SQL - and on a database that already
+  has the schema the runner records it without executing it (`Runner.MarkBaseline`, an owner action,
+  because it touches production). `migration_baseline_parity_test.go` holds the registry to the file.

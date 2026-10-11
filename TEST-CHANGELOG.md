@@ -146,6 +146,126 @@ Track test suite changes, fixes, and improvements for agenthub.
 - THE CLASS WAS ALREADY ON THIS FILE: `src/tests/e2e/live-websocket.test.ts` carries the same exclusion, and the comment beside it claimed the repo has no Playwright config, which stopped being true when `playwright.config.ts` landed. The comment now states the real rule - Playwright owns both directories and `npx playwright test` is how they run.
 - VERIFIED, in `wt/fe-dev`, from `agenthub-frontend`: `npx vitest run` -> **rc=0, Test Files 122 passed (122), Tests 1881 passed (1881)**; the same command before the change -> **rc=1, 1 failed | 122 passed**, failing only on that unloadable file. The test total is IDENTICAL on both sides, which is the point: this change removes a load error, not a test.
 - NOT RUN, named: no Playwright invocation - the excluded spec is unchanged and is run by `npx playwright test`, whose own result (1 passed, 4.4s, against the deployed app) is recorded in the entry below.
+## 2026-10-11 - the init SQL's two new gates: a name created twice, and the asset run on an empty database
+
+- THE DEFECT BOTH GATES PIN: `init_schema_postgresql.sql` created 13 names twice - a
+  `CREATE UNIQUE INDEX <name>` and later an `ALTER TABLE ... ADD CONSTRAINT <name> UNIQUE (...)`.
+  PostgreSQL refuses the second (`42P07`, the constraint's backing index name is taken), and
+  `ExecuteInitSQLFile` runs the asset in ONE transaction, so the WHOLE schema rolled back and a fresh
+  database got `createAll`'s tables and none of the asset's. RED FIRST: both cases were run against the
+  unfixed asset before the fix was written.
+- ADDED `agenthub_go/fastmcp/task_management/infrastructure/database/init_sql_object_names_test.go`
+  (`TestTheInitSQLCreatesNoObjectNameTwice`, internal package, no server): collects every name the asset
+  creates in one namespace - `CREATE TABLE`, `CREATE [UNIQUE] INDEX`, `ADD CONSTRAINT` - drops comment
+  lines first (a section header reading `-- CREATE TABLES` is prose, and this asset's own history has a
+  phantom count from exactly that), and fails naming each duplicate pair. RED before the fix, listing all
+  13; GREEN after with `97 distinct object names created by the embedded init SQL, 0 collision(s)`.
+- ADDED `agenthub_go/fastmcp/task_management/infrastructure/database/init_sql_fresh_database_integration_test.go`
+  (`TestTheEmbeddedInitSQLBuildsAFreshDatabase`, external package, DB-gated and skipping LOUDLY without
+  `AGENTHUB_TEST_PG_URL`): builds an initializer over an empty scratch database, runs the embedded asset
+  through `ExecuteInitSQLFile`, and asks the CATALOGUE - `VerifyTableStructure`, `uq_cache_context` as
+  exactly one `UNIQUE` constraint on `context_inheritance_cache`, `token_transactions` (which only the
+  asset creates), and the base-table count. RED before the fix with the real line
+  `init SQL statement failed, rolled back: ERROR: relation "uq_cache_context" already exists (SQLSTATE 42P07)`;
+  GREEN after: `the embedded init SQL built 22 base tables on an empty database`.
+- WHY A NEW GATE WAS NEEDED RATHER THAN A CASE ON THE EXISTING FILE: the existing asset cases drive a
+  scripted fake, which records statements and enforces no names - an asset that collides with itself
+  passes there. The collision is a catalogue fact, so it needs either a name-level check on the asset's
+  own text (the server-free half) or a real database (the gated half). Both are here, the same two-halves
+  shape the fold's parity guard uses.
+- NO EXISTING CASE WAS RE-PINNED: the asset cases assert which statements reach the driver and that they
+  run in one committed transaction, and both properties hold before and after the 13-line deletion; they
+  were left untouched and pass at the fix.
+- VERIFIED, this seat, from `agenthub_go` with `GOCACHE`/`TMPDIR` in-tree: `gofmt -l` over the tracked
+  `.go` files printed nothing; `go build ./...` rc 0; `go vet ./...` clean; `go test -count=1 ./...` →
+  **141 packages ok, 0 FAIL**; the DB-gated case verbosely with
+  `AGENTHUB_TEST_PG_URL=postgresql://agenthub_user@127.0.0.1:55451/postgres` → `--- PASS` 0.74s.
+- SCHEMA-NEUTRALITY MEASURED SEPARATELY, on a scratch database: of the 13 names whose explicit index
+  statement was removed, **13 of 13** are still present as index relations, **13** are backed by a
+  `UNIQUE` constraint and **none** is missing - the constraint creates the same-named backing index on
+  the same columns. The scratch database was dropped.
+- NOT RUN, named: nothing in this package skips under the DSN above. The frontend suite was not run (no
+  frontend file changed), and no production database was contacted.
+
+
+## 2026-10-11 - the fold's parity guard, four gate cases, and the red the guard actually shows
+
+- ADDED `agenthub_go/fastmcp/task_management/infrastructure/database/migration_baseline_parity_test.go`
+  (`TestSchemaMatchesGoDefinitions`): holds `migrations/0001_baseline.sql` to the runtime
+  registry, table by table — every registered table appears EXACTLY once; per table the column-NAME set,
+  the `REFERENCES` multiset and the normalised `CHECK` expressions agree with the `TableDef` DDL; a
+  `CREATE TABLE` in the file that no `TableDef` registers fails in the other direction; a table
+  registered twice across `Tables`/`ProductionTables` fails; each column's `EnumName` must have a
+  `CREATE TYPE` BEFORE its table; and no `DROP`/`ALTER` may appear, comment lines excluded so the
+  header's prose cannot hide one.
+- WHY IT IS AN EXTERNAL TEST PACKAGE, and this is the whole reason the guard can work at all:
+  `taskdb.Tables` is ONE slice every package appends its own set to in `init()`, and those packages
+  import `taskdb` — so an internal (`package database`) test file that wanted the full registry would
+  be an import cycle. The file therefore carries the same blank imports the generator used. Measured:
+  without them the guard's own log line reads **20** registered tables; with them, **47 registered (41
+  aggregate, 6 production), 47 in `0001_baseline.sql`**.
+- ADDED `agenthub_go/fastmcp/task_management/infrastructure/database/migration_baseline_gate_test.go`,
+  four cases through the existing fake driver, each PASS: `TestApplySkipsTheBaselineOnAPopulatedCatalogue`
+  (no SQL, no ledger row), `TestApplyRunsTheBaselineOnAnEmptyCatalogue` (applies, records, and creates
+  the ledger with the step), `TestApplyLeavesStepsOtherThanTheBaselineUnaffected` (a second run applies
+  nothing), and `TestApplyRefusesTheBaselineWhenTheCatalogueCannotBeRead` (fail closed — the baseline's
+  SQL is not run when the catalogue read fails).
+- UPDATED `fakedriver_test.go` (existing file, +39 lines): the scripted fake now models the migration
+  ledger — `to_regclass('applied_migrations')`, the ledger `SELECT`, the runner's `CREATE TABLE
+  applied_migrations` and its `INSERT` — so the gate and the ledger paths are exercisable through the
+  existing `Sessions`/`DBTX` seam. No interface was added for a test.
+- RED FIRST, BY MUTATION RATHER THAN ASSERTION: with one table renamed in the baseline
+  (`CREATE TABLE seats (` → `CREATE TABLE seats_renamed (`) the guard FAILS, naming both directions —
+  `table seats: registered at runtime but absent from 0001_baseline.sql - regenerate the baseline` and
+  `table seats_renamed: present in 0001_baseline.sql but no TableDef registers it`. The file was restored
+  byte-identical (sha256 `a3e3109230355aa93098002caf4992e4746ff63bcb1a18facebad38b6422ab29` before and
+  after) and the guard passes again; no trace of the experiment is in the delivered tree. THE OTHER
+  DIRECTION, WHICH IS THE ONE THE ROW'S ACCEPTANCE NAMES, was induced the way this repository induces
+  it — a `go test -overlay` copy of `models.go` with one column added INSIDE the `tasks` TableDef's DDL
+  literal, so no repo file carried the experiment: the guard FAILS with `table tasks: columns differ
+  between the baseline and the runtime DDL` and both column lists printed (`zz_perturbed` in the
+  runtime set only), while the same bytes at the delivered tree pass. `models.go` is clean afterwards.
+  The test is therefore red in BOTH directions: a perturbed Go definition, and a hand-edited baseline.
+- VERIFIED, this seat, from `agenthub_go` with `GOCACHE`/`TMPDIR` in-tree: `gofmt -l` over the tracked
+  `.go` files printed nothing; `go build ./...` rc 0; `go vet ./...` clean; `go test -count=1 ./...` →
+  **141 packages ok, 0 FAIL**. The two new cases and the four gate cases read by name in a `-v` run
+  (all PASS above); the parity guard's log line quoted here is from that run.
+- VERIFIED WITH A REAL DATABASE, `AGENTHUB_TEST_PG_URL=postgresql://agenthub_user@127.0.0.1:55451/postgres`:
+  `TestRealPostgresCreateTablesAndSessions`, `TestApplyRecordsEachStepAndASecondRunAppliesNothing` — which
+  asserts the ledger does NOT exist after the boot path built its database, which is the baseline's skip
+  measured on a real database, not on the fake — `TestAFailedStepRecordsNothingAndLeavesNoneOfItsOwnEffect`,
+  `TestMarkBaselineRecordsAStepWithoutRunningIt`, `TestEveryTableDefColumnHasAPath`, all PASS.
+- TWO THROWAWAY DRIVERS RAN AND WERE DELETED (no repo test file, nothing left behind): the fold file
+  alone on an empty scratch database → 47 tables / 505 columns / 132 constraints / 152 indexes; the real
+  boot path twice on a fresh scratch database → 41 tables / 456 columns / 118 constraints / 126 indexes
+  with the baseline skipped and no `applied_migrations`; and the two catalogs compared table by table →
+  the file's extra tables are exactly the 6 `ProductionTables`, with 0 differing columns, 0 differing
+  constraints and 0 differing indexes on the 41 shared. All scratch databases were dropped.
+- NOT RUN, named: `TestProductionModelsCRUDRealPostgres` skips on its own pre-existing gate
+  (`TEST_DATABASE_URL` unset) — unrelated to this change and unchanged by it. Nothing else in the
+  package skipped under the DSN above. The frontend suite was not run: no frontend file changed.
+- CORRECTED IN THE GATE'S FIX COMMIT (prose only, one commit, no behaviour change): two texts in
+  `column_paths_test.go` still said the migration set was empty and no baseline existed, and the
+  sibling changelog said the baseline was 912 lines. It is **911** lines by `wc -l` and the file ends
+  with a newline; the guard now says what is true - the baseline EXISTS, and what the comparison it
+  describes still lacks is a database that has the baseline RECORDED. The fold entry's OWN heading,
+  dropped by a bad edit in `b09c1026` (which merged this entry into the one above it), is restored in
+  the same commit.
+
+## 2026-10-11 - the builder's empty-label shape is pinned
+
+- UPDATED `agenthub_go/fastmcp/task_management/application/services/unified_context_service_task_owned_test.go`: `TestTaskOwnedFieldsFromTask` gains the empty-labels case - a task carrying no labels serves a NON-NIL empty list - because this builder is the one place the context read overlay and the sync both take the task's own fields from, so its shape is the contract they share.
+- RED FIRST, by overlay rather than by assertion: with only `taskContextLabels(task.Labels)` reverted to `task.Labels` in a `/tmp` copy applied through `go test -overlay`, the case fails with `labels for a task with none = []string(nil), want a non-nil empty list`; the same bytes pass at the tip. No repo file carried the experiment.
+- VERIFIED, this seat, from `agenthub_go`: `gofmt -l` empty on the three touched files; `go build ./...` rc 0; `go vet ./fastmcp/task_management/...` clean; `go test -count=1 ./fastmcp/task_management/application/services -run 'TestTaskOwnedFieldsFromTask|TestZucs|TestTaskContextSyncService'` ok.
+
+## 2026-10-11 - a task context read is pinned to the live task fields, and the sync's silence is pinned open
+
+- ADDED `agenthub_go/fastmcp/task_management/application/services/unified_context_service_task_owned_test.go`: the defect row's acceptance as ONE table over both rows it names (`done` and `in_progress`) through the real `UnifiedContextService.ResolveContext`; what the context owns surviving the overlay (`title`, `description`, `estimated_effort`); the stored copy kept when the lookup is absent, erroring or empty; a non-task level untouched; and the shared `TaskOwnedFieldsFromTask` builder's key set, including the `@` normalization, the omitted nil timestamp and the deliberate absence of `estimated_effort`.
+- RED FIRST, BY FALSIFICATION RATHER THAN ASSERTION: with the overlay call commented out, `TestZucsGetContextServesTheLiveTaskOwnedFields` fails on BOTH cases - `served task_data.status = todo, want the live "done"` and `= todo, want the live "in_progress"` - which is exactly the symptom the row reports. The call was restored, and the delivered tree carries no trace of the experiment.
+- UPDATED `application/services/task_context_sync_service_test.go`, as part of the fix rather than as a re-pin: the fake answered `context_data`, a key the Go `GetContext` never produces, so those tests could not see the key bug they were written around. The fake answers `context` now and can fail its read and its write on purpose; the new cases pin the ruled behaviour - an unsuccessful body, a read error and a refused update all reach the caller - and one case pins that a record the sync read (`implementation_notes` plus an existing `metadata.version`) survives the update.
+- `TestTaskContextSyncService_SyncTaskStatus_NoContext` changes meaning WITH the ruling: a read that returns no context used to expect `nil` and now expects an error, which is what the row asked for.
+- VERIFIED, this seat, from `agenthub_go`: `gofmt -l` empty on the touched trees; `go build ./...` rc 0; `go vet ./...` clean; `go test -count=1 ./fastmcp/task_management/... ./fastmcp/server/...` pass; the new and updated cases were read test by test in a `-run 'Zucs|TaskContextSyncService' -v` run (11 top-level cases, all PASS).
+- NOT RUN, named: the PG-backed packages skip without `AGENTHUB_TEST_PG_URL`, which is not set in this seat's environment - the adapter's real `repo.GetTask` read is the part they would cover.
 
 ## 2026-10-11 - the frontend gets a browser-level check, and the deployed app passes it
 
