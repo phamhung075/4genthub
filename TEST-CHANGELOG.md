@@ -2,7 +2,47 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
-## 2026-10-11 - the fold's parity guard, four gate cases, and the red the guard actually shows
+## 2026-10-11 - the init SQL's two new gates: a name created twice, and the asset run on an empty database
+
+- THE DEFECT BOTH GATES PIN: `init_schema_postgresql.sql` created 13 names twice - a
+  `CREATE UNIQUE INDEX <name>` and later an `ALTER TABLE ... ADD CONSTRAINT <name> UNIQUE (...)`.
+  PostgreSQL refuses the second (`42P07`, the constraint's backing index name is taken), and
+  `ExecuteInitSQLFile` runs the asset in ONE transaction, so the WHOLE schema rolled back and a fresh
+  database got `createAll`'s tables and none of the asset's. RED FIRST: both cases were run against the
+  unfixed asset before the fix was written.
+- ADDED `agenthub_go/fastmcp/task_management/infrastructure/database/init_sql_object_names_test.go`
+  (`TestTheInitSQLCreatesNoObjectNameTwice`, internal package, no server): collects every name the asset
+  creates in one namespace - `CREATE TABLE`, `CREATE [UNIQUE] INDEX`, `ADD CONSTRAINT` - drops comment
+  lines first (a section header reading `-- CREATE TABLES` is prose, and this asset's own history has a
+  phantom count from exactly that), and fails naming each duplicate pair. RED before the fix, listing all
+  13; GREEN after with `97 distinct object names created by the embedded init SQL, 0 collision(s)`.
+- ADDED `agenthub_go/fastmcp/task_management/infrastructure/database/init_sql_fresh_database_integration_test.go`
+  (`TestTheEmbeddedInitSQLBuildsAFreshDatabase`, external package, DB-gated and skipping LOUDLY without
+  `AGENTHUB_TEST_PG_URL`): builds an initializer over an empty scratch database, runs the embedded asset
+  through `ExecuteInitSQLFile`, and asks the CATALOGUE - `VerifyTableStructure`, `uq_cache_context` as
+  exactly one `UNIQUE` constraint on `context_inheritance_cache`, `token_transactions` (which only the
+  asset creates), and the base-table count. RED before the fix with the real line
+  `init SQL statement failed, rolled back: ERROR: relation "uq_cache_context" already exists (SQLSTATE 42P07)`;
+  GREEN after: `the embedded init SQL built 22 base tables on an empty database`.
+- WHY A NEW GATE WAS NEEDED RATHER THAN A CASE ON THE EXISTING FILE: the existing asset cases drive a
+  scripted fake, which records statements and enforces no names - an asset that collides with itself
+  passes there. The collision is a catalogue fact, so it needs either a name-level check on the asset's
+  own text (the server-free half) or a real database (the gated half). Both are here, the same two-halves
+  shape the fold's parity guard uses.
+- NO EXISTING CASE WAS RE-PINNED: the asset cases assert which statements reach the driver and that they
+  run in one committed transaction, and both properties hold before and after the 13-line deletion; they
+  were left untouched and pass at the fix.
+- VERIFIED, this seat, from `agenthub_go` with `GOCACHE`/`TMPDIR` in-tree: `gofmt -l` over the tracked
+  `.go` files printed nothing; `go build ./...` rc 0; `go vet ./...` clean; `go test -count=1 ./...` →
+  **141 packages ok, 0 FAIL**; the DB-gated case verbosely with
+  `AGENTHUB_TEST_PG_URL=postgresql://agenthub_user@127.0.0.1:55451/postgres` → `--- PASS` 0.74s.
+- SCHEMA-NEUTRALITY MEASURED SEPARATELY, on a scratch database: of the 13 names whose explicit index
+  statement was removed, **13 of 13** are still present as index relations, **13** are backed by a
+  `UNIQUE` constraint and **none** is missing - the constraint creates the same-named backing index on
+  the same columns. The scratch database was dropped.
+- NOT RUN, named: nothing in this package skips under the DSN above. The frontend suite was not run (no
+  frontend file changed), and no production database was contacted.
+
 
 - ADDED `agenthub_go/fastmcp/task_management/infrastructure/database/migration_baseline_parity_test.go`
   (`TestSchemaMatchesGoDefinitions`): holds `migrations/0001_baseline.sql` to the runtime

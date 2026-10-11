@@ -518,10 +518,8 @@ CREATE INDEX idx_delegation_target ON context_delegations (target_level, target_
 CREATE INDEX idx_cache_expires ON context_inheritance_cache (expires_at);
 CREATE INDEX idx_cache_invalidated ON context_inheritance_cache (invalidated);
 CREATE INDEX idx_cache_level ON context_inheritance_cache (context_level);
-CREATE UNIQUE INDEX uq_cache_context ON context_inheritance_cache (context_id, context_level);
 
 -- Indexes for labels
-CREATE UNIQUE INDEX labels_name_key ON labels (name);
 
 -- Indexes for missed_notifications
 CREATE INDEX idx_missed_notifications_created_at ON missed_notifications (created_at);
@@ -531,11 +529,9 @@ CREATE INDEX ix_missed_notifications_user_id ON missed_notifications (user_id);
 
 -- Indexes for project_git_branchs
 CREATE INDEX idx_branches_updated_at ON project_git_branchs (updated_at);
-CREATE UNIQUE INDEX uq_branch_project ON project_git_branchs (id, project_id);
 
 -- Indexes for projects
 CREATE INDEX idx_projects_updated_at ON projects (updated_at);
-CREATE UNIQUE INDEX uq_project_user ON projects (id, user_id);
 
 -- Indexes for subtasks
 CREATE INDEX idx_subtask_status ON subtasks (status);
@@ -545,10 +541,8 @@ CREATE INDEX idx_subtasks_updated_at ON subtasks (updated_at);
 -- Indexes for task_assignees
 CREATE INDEX idx_assignee_id ON task_assignees (assignee_id);
 CREATE INDEX idx_assignee_task ON task_assignees (task_id);
-CREATE UNIQUE INDEX uq_task_assignee ON task_assignees (task_id, assignee_id);
 
 -- Indexes for task_dependencies
-CREATE UNIQUE INDEX uq_task_dependency ON task_dependencies (task_id, depends_on_task_id);
 
 -- Indexes for task_labels
 CREATE INDEX idx_task_label_label ON task_labels (label_id);
@@ -576,19 +570,15 @@ CREATE INDEX ix_token_transactions_user_id ON token_transactions (user_id);
 CREATE INDEX ix_user_api_tokens_expires_at ON user_api_tokens (expires_at);
 CREATE INDEX ix_user_api_tokens_is_active ON user_api_tokens (is_active);
 CREATE INDEX ix_user_api_tokens_user_id ON user_api_tokens (user_id);
-CREATE UNIQUE INDEX user_api_tokens_token_hash_key ON user_api_tokens (token_hash);
 
 -- Indexes for user_sessions
 CREATE INDEX ix_user_sessions_is_active ON user_sessions (is_active);
 CREATE INDEX ix_user_sessions_refresh_token ON user_sessions (refresh_token);
 CREATE INDEX ix_user_sessions_session_token ON user_sessions (session_token);
 CREATE INDEX ix_user_sessions_user_id ON user_sessions (user_id);
-CREATE UNIQUE INDEX user_sessions_refresh_token_key ON user_sessions (refresh_token);
-CREATE UNIQUE INDEX user_sessions_session_token_key ON user_sessions (session_token);
 
 -- Indexes for user_token_balances
 CREATE INDEX ix_user_token_balances_user_id ON user_token_balances (user_id);
-CREATE UNIQUE INDEX user_token_balances_user_id_key ON user_token_balances (user_id);
 
 -- Indexes for users
 CREATE INDEX ix_users_email ON users (email);
@@ -596,9 +586,6 @@ CREATE INDEX ix_users_password_reset_token ON users (password_reset_token);
 CREATE INDEX ix_users_refresh_token_family ON users (refresh_token_family);
 CREATE INDEX ix_users_status ON users (status);
 CREATE INDEX ix_users_username ON users (username);
-CREATE UNIQUE INDEX users_email_key ON users (email);
-CREATE UNIQUE INDEX users_password_reset_token_key ON users (password_reset_token);
-CREATE UNIQUE INDEX users_username_key ON users (username);
 
 -- ================================================================================
 -- UNIQUE CONSTRAINTS
