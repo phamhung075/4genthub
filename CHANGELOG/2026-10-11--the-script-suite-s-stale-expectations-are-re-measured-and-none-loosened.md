@@ -33,11 +33,15 @@ that was wrong is a measurement, not a preference:
   bytes it was.
 - **`test_census_audits.py[script2]` (three cases) — the nineteen §3.1 ANCHORS were stale.**
   `ai_docs/api-integration/surface-inventory.md` cited `models.go:582 … :938` while the TableDef
-  entries sit at `596 … 958`, shifted by +14 to +20 lines, and the movement is attributed to the two
-  commits that added ORM declarations above them: `0e03b3f7` (the rigd connector cursor, the session
-  row's state, a safeguard table) and `d5a59667` (acceptance criteria, scope, the resume brief). Each
-  row was re-resolved by searching for its own TableDef entry rather than by adding an offset — the
-  shifts differ per row, which is why a constant would have been wrong.
+  entries sit at `596 … 958`, shifted by +14 to +20 lines, and **every shift is attributed to the
+  hunk that caused it, read from `git diff -U0` rather than assumed**: `0e03b3f7` added ten lines in
+  `AgentSession` at `models.go:86` and two in the TableDef list above `api_tokens`; `d5a59667` added
+  two inside `Task` (`models.go:418`) and two inside `Subtask` (`models.go:483`) — the four that sit
+  above `agent_sessions` — plus two above `subtasks` (`models.go:853`) and two above `task_assignees`
+  (`models.go:891`). That is the whole ladder: `agent_sessions` +14, the thirteen rows from
+  `api_tokens` to `tasks` +16, `subtasks` +18, the four rows from `task_assignees` to `task_labels`
+  +20. Each row was re-resolved by searching for its own TableDef entry rather than by adding an
+  offset, because the steps differ per band and a constant would have been wrong.
 
 ### Verified
 - `python3 -m pytest --noconftest -p no:cacheprovider scripts/tests -q` -> **12 failed, 76 passed**
