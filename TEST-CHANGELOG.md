@@ -2,6 +2,12 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-11 - the pair key gets its discriminating case
+
+- ADDED, one case in `agenthub-frontend/src/tests/components/TaskDetailsDialog.servedProgressPayload.test.tsx`: a ledger event numbered 7 with content `retry`, and a served `details` holding `retry` at 3 and at 7. Two `retry` rows must render, and the column's surviving note - the row labelled "From the task's progress history" - must come first.
+- WHY IT IS THE ONE THAT MATTERS: the case above it cannot distinguish the pair key from the old text-only key, because its note carries the same text AND the same number in both sources; the gate showed a text-only revert leaving 10 tests green. This case fails under that revert: against `8d27cadf`'s component the observed message is `expected [ <div class="font-medium"></div> ] to have a length of 2 but got 1`, i.e. the column's note was silently swallowed. The count is the dedupe's own outcome, so the failure isolates the key rather than the placement.
+- MEASURED, in `wt/fe-dev`, from `agenthub-frontend`: the file alone with the new case filtered -> **1 failed | 4 skipped** against `8d27cadf`'s component and **1 passed | 4 skipped** at the change; the four suites this touches -> **4 files / 42 tests passed**; `npx vitest run` -> **122 files / 1886 tests passed, 0 failed**; `npx tsc --noEmit -p tsconfig.tests.json` -> **194**, unchanged, with no error in any touched file.
+
 ## 2026-10-11 - the timeline's order gets its own case, and a surviving note is placed by progress number
 
 - ADDED, one case in `agenthub-frontend/src/tests/components/TaskDetailsDialog.servedProgressPayload.test.tsx`: a ledger holding a single `progress` event numbered 5, and a served `details` holding notes 1 and 5. It asserts the note numbered 1 renders ABOVE the ledger's note (index order over `getAllByRole('listitem')`) and that each note renders exactly once.

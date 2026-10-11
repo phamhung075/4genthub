@@ -129,9 +129,13 @@ export const TaskEventTimeline: React.FC<TaskEventTimelineProps> = ({ taskId, pr
 
   // ORDER. `parseProgressHistory` sorts by number and a ledger `progress` row carries the same number,
   // so a surviving note is placed on that shared scale: it goes before the first ledger note numbered
-  // past it, and after the last one when nothing is. Rows of other kinds - status changes and the like
-  // - keep their `seq` positions and are never displaced by a note, which has no seq to be measured
-  // against.
+  // past it, and after the last one when nothing is. The comparison is STRICT, so a surviving note
+  // sharing a ledger row's number lands after it: the ledger's row is that number's own record, and a
+  // note the ledger never wrote is a second reading of the same number rather than an earlier one.
+  // Rows of other kinds - status changes and the like - keep their `seq` positions and are never
+  // displaced by a note, which has no seq to be measured against. A history row's key carries its
+  // INDEX as well as its number, because the served text can hold two sections numbered alike and two
+  // rows sharing a key is an identity collision, not a placement.
   const ordered: Array<{ kind: 'event'; event: TaskEvent } | { kind: 'history'; entry: ProgressEntry }> = [];
   const pending = [...historyOnly];
   for (const event of events) {
@@ -169,7 +173,7 @@ export const TaskEventTimeline: React.FC<TaskEventTimelineProps> = ({ taskId, pr
       ) : (
         <>
           <ol className="space-y-2">
-            {ordered.map(row => row.kind === 'event' ? (
+            {ordered.map((row, index) => row.kind === 'event' ? (
               <li key={row.event.id} className="flex items-start gap-2 text-sm">
                 <Badge variant="outline" className="text-xs shrink-0 font-mono">
                   {row.event.seq}
@@ -183,7 +187,7 @@ export const TaskEventTimeline: React.FC<TaskEventTimelineProps> = ({ taskId, pr
                 </div>
               </li>
             ) : (
-              <li key={`history-${row.entry.number}`} className="flex items-start gap-2 text-sm">
+              <li key={`history-${row.entry.number}-${index}`} className="flex items-start gap-2 text-sm">
                 <Badge variant="outline" className="text-xs shrink-0 font-mono">
                   {row.entry.number}
                 </Badge>

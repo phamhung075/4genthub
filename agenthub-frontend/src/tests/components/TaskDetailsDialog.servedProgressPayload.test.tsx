@@ -253,4 +253,61 @@ describe('TaskDetailsDialog: the ledger is the progress surface', () => {
     expect(preSwitch).toBeGreaterThan(-1);
     expect(preSwitch).toBeLessThan(later);
   });
+
+  // THE MINOR THE GATE RAISED, as a case: the key is the PRODUCER's pair, not the text. A note that
+  // repeats another's wording at a different number is a DIFFERENT note - the ledger's own identity for
+  // it is `(progress_number, content)` - so it must survive. Under a text-only key this case renders
+  // ONE `retry` row and the column's note is silently lost. The 'present in BOTH' case above cannot see
+  // the difference: its note carries the same text AND the same number in both sources.
+  it('keeps a history-only note whose text repeats a ledger note at another number', async () => {
+    const retryLedger: TaskEventsResponse = {
+      success: true,
+      count: 1,
+      after_seq: 0,
+      events: [
+        {
+          id: 'event-7',
+          task_id: 'task-progress-1',
+          seq: 7,
+          kind: 'progress',
+          actor_kind: 'seat',
+          actor_id: 'dev/fe-dev',
+          payload: { content: 'retry', progress_number: 7 },
+          created_at: '2025-08-27T11:00:00Z'
+        }
+      ]
+    };
+    const retryPayload = {
+      ...servedPayload,
+      details: '=== Progress 3 ===\nretry\n\n=== Progress 7 ===\nretry',
+    } as unknown as Task;
+
+    vi.mocked(api.getTask).mockResolvedValue(retryPayload);
+    vi.mocked(api.getTaskEvents).mockResolvedValue(retryLedger);
+    vi.mocked(api.getTaskContext).mockResolvedValue({ data: {} });
+
+    render(
+      <TaskDetailsDialog
+        open={true}
+        onOpenChange={() => {}}
+        task={retryPayload}
+        onClose={() => {}}
+        onAgentClick={() => {}}
+      />
+    );
+
+    await waitFor(() => expect(screen.getByText('Task with progress')).toBeInTheDocument());
+
+    // TWO rows: the column's note at 3, which the ledger has nothing for, and the ledger's own note at 7.
+    await waitFor(() => expect(screen.getAllByText('retry')).toHaveLength(2));
+
+    const rows = screen.getAllByRole('listitem').map(row => row.textContent ?? '');
+    // The column's surviving note is the row that carries the "From the task's progress history" label.
+    const columnNote = rows.findIndex(text => text.includes('retry') && text.includes('From the task'));
+    const ledgerNote = rows.findIndex(text => text.includes('retry') && !text.includes('From the task'));
+    expect(columnNote).toBeGreaterThan(-1);
+    expect(ledgerNote).toBeGreaterThan(-1);
+    // The column's note carries the lower number and the ledger's row follows it.
+    expect(columnNote).toBeLessThan(ledgerNote);
+  });
 });
