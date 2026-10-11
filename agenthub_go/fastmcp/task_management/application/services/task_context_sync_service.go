@@ -200,8 +200,11 @@ func zpTaskCtxSyncStringValue(v any) string {
 	}
 }
 
-// SyncSubtaskCounts mirrors sync_subtask_counts. Python swallows all exceptions
-// (logging is dropped), so failures return nil.
+// SyncSubtaskCounts mirrors sync_subtask_counts. Its own preconditions still swallow: an unusable task
+// id, an absent or unusable subtask repository (the nil-repo case pins it) and a failed subtask read
+// all return nil, because none of them leaves anything to record. The context work does NOT swallow -
+// a read error, an unsuccessful read body and a refused update all reach the caller, which is what
+// stopped this defect living behind an hourly staleness.
 func (s *TaskContextSyncService) SyncSubtaskCounts(ctx context.Context, taskID string, subtaskRepository repositories.SubtaskRepository) error {
 	taskIDObj, err := value_objects.NewTaskId(taskID)
 	if err != nil {

@@ -18,7 +18,7 @@ func TaskOwnedFieldsFromTask(task *entities.Task) map[string]any {
 	out := map[string]any{
 		"status":    zpTaskCtxSyncStringValue(task.Status),
 		"priority":  zpTaskCtxSyncStringValue(task.Priority),
-		"labels":    task.Labels,
+		"labels":    taskContextLabels(task.Labels),
 		"assignees": taskAssigneeHandles(task.Assignees),
 	}
 	if task.CreatedAt != nil {
@@ -28,6 +28,17 @@ func TaskOwnedFieldsFromTask(task *entities.Task) map[string]any {
 		out["updated_at"] = value_objects.IsoFormat(*task.UpdatedAt)
 	}
 	return out
+}
+
+// taskContextLabels serves the labels in the shape the task entity itself uses: an empty list when the
+// task carries none, never nil. The entity's own reader normalizes the same way (task.go:85-86), and a
+// nil slice here marshals to JSON null where the stored copy and the entity both say [] - two shapes
+// out of one field.
+func taskContextLabels(labels []string) []string {
+	if labels == nil {
+		return []string{}
+	}
+	return labels
 }
 
 // taskAssigneeHandles mirrors the "@" normalization sync_task_metadata applies, so a handle

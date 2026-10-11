@@ -194,6 +194,13 @@ func TestTaskOwnedFieldsFromTask(t *testing.T) {
 	if v, _ := got["created_at"].(string); v == "" {
 		t.Fatal("created_at must be formatted when the task carries one")
 	}
+	// A task with NO labels serves an empty list, never nil: the entity's own reader normalizes the
+	// same way (task.go:85-86), and a nil slice would marshal to JSON null where the stored copy and
+	// the entity both say [].
+	bare := TaskOwnedFieldsFromTask(&entities.Task{})
+	if labels, ok := bare["labels"].([]string); !ok || labels == nil || len(labels) != 0 {
+		t.Fatalf("labels for a task with none = %#v, want a non-nil empty list", bare["labels"])
+	}
 	if _, ok := got["updated_at"]; ok {
 		t.Fatal("a nil UpdatedAt must omit the key, as the sync did")
 	}

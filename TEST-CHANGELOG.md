@@ -2,6 +2,12 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-11 - the builder's empty-label shape is pinned
+
+- UPDATED `agenthub_go/fastmcp/task_management/application/services/unified_context_service_task_owned_test.go`: `TestTaskOwnedFieldsFromTask` gains the empty-labels case - a task carrying no labels serves a NON-NIL empty list - because this builder is the one place the context read overlay and the sync both take the task's own fields from, so its shape is the contract they share.
+- RED FIRST, by overlay rather than by assertion: with only `taskContextLabels(task.Labels)` reverted to `task.Labels` in a `/tmp` copy applied through `go test -overlay`, the case fails with `labels for a task with none = []string(nil), want a non-nil empty list`; the same bytes pass at the tip. No repo file carried the experiment.
+- VERIFIED, this seat, from `agenthub_go`: `gofmt -l` empty on the three touched files; `go build ./...` rc 0; `go vet ./fastmcp/task_management/...` clean; `go test -count=1 ./fastmcp/task_management/application/services -run 'TestTaskOwnedFieldsFromTask|TestZucs|TestTaskContextSyncService'` ok.
+
 ## 2026-10-11 - a task context read is pinned to the live task fields, and the sync's silence is pinned open
 
 - ADDED `agenthub_go/fastmcp/task_management/application/services/unified_context_service_task_owned_test.go`: the defect row's acceptance as ONE table over both rows it names (`done` and `in_progress`) through the real `UnifiedContextService.ResolveContext`; what the context owns surviving the overlay (`title`, `description`, `estimated_effort`); the stored copy kept when the lookup is absent, erroring or empty; a non-task level untouched; and the shared `TaskOwnedFieldsFromTask` builder's key set, including the `@` normalization, the omitted nil timestamp and the deliberate absence of `estimated_effort`.
