@@ -2,6 +2,13 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-11 - the merged read gets its red-first case, and a note both sources hold renders once
+
+- ADDED, two cases in `agenthub-frontend/src/tests/components/TaskDetailsDialog.servedProgressPayload.test.tsx`, the file whose subject is the dialog's progress surface: (1) a task whose served `details` holds a note and whose events route is mocked EMPTY - the ledger has no row for a note written before the dual-write switch, so a dialog that renders the ledger alone cannot show it; (2) a note present in BOTH sources renders exactly once, asserted with `getAllByText(...)` of length 1, while the history-only sibling is still asserted present, so the case cannot pass by rendering nothing.
+- WHY THE FIRST ONE IS THE ONE THAT MATTERS: it is the RED-FIRST case for gate `f05714c4`'s blocker B1. Written before the component changed, it failed against the pre-change tip with `Unable to find an element with the text: Note written before the ledger switch`; it also asserts the column's `=== Progress N ===` header does NOT appear, so it pins the note's own text rather than the wire's formatting. The gate's complaint was exactly that the suite was GREEN while the blocker existed.
+- UNCHANGED, the same file's existing case still drives the dialog from the SERVED event stream and asserts the ledger's own text reaches the row - the half that had to keep passing.
+- MEASURED, in `wt/fe-dev`, from `agenthub-frontend`: the four suites this change touches (`TaskDetailsDialog.servedProgressPayload`, `TaskEventTimeline`, `TaskDetailsDialog`, `TaskDetailsDialog.realtime`) -> **4 files / 40 tests passed**; the new file alone -> **3 passed (3)** after the change, **2 failed | 1 passed (3)** before it; `npx vitest run` -> **122 files / 1884 tests passed, 0 failed** (two above the 1882 recorded at `f05714c4`, this change's own net case delta); `npx tsc --noEmit -p tsconfig.tests.json` -> **194**, unchanged, with no error in any touched file.
+
 ## 2026-10-11 - the test-scope ratchet returns to 194, and the type it spent
 
 - CHANGED, one line in `agenthub-frontend/src/tests/pages/SeatDetailPage.test.tsx`: the standing case's never-settling promise is now `new Promise<never>(() => {})` instead of `Promise.withResolvers<never>()`. The destructuring discarded the resolver, so the hand-rolled deferred is exactly equivalent for a promise that never settles.

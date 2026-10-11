@@ -302,9 +302,11 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
                           phase it shows is derived from these events, never from the task row, and
                           it is the ONLY progress surface here: O1c replaced the older
                           progress-history timeline with this one, so the two never render
-                          together. A note written before the switch still reaches this reader,
-                          because the response's `details` merges the column with the ledger. */}
-                      <TaskEventTimeline taskId={displayTask.id} />
+                          together. `details` below is the served union of both sources -
+                          ProgressTextWith (task_response.go:107) joins the progress_history
+                          column's notes with the ledger's - and the timeline takes it because the
+                          ledger ALONE has no row for a note written before the dual-write switch. */}
+                      <TaskEventTimeline taskId={displayTask.id} progressHistory={displayTask.details} />
 
                       {/* Assignees */}
                       {displayTask.assignees && displayTask.assignees.length > 0 && (

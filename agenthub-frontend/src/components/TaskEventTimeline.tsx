@@ -10,6 +10,7 @@ import {
   describeEvent,
 } from '../lib/taskTimeline';
 import { getStatusEmoji } from '../utils/statusEmojis';
+import { cleanProgressText, parseProgressHistory } from '../utils/progressHistoryUtils';
 import type { TaskEvent } from '../types/taskTypes';
 
 export interface TaskEventTimelineProps {
@@ -20,6 +21,13 @@ export interface TaskEventTimelineProps {
    * the task, and taking only an id is what makes that true by construction rather than by promise.
    */
   taskId: string | undefined;
+  /**
+   * The served merged progress text (the task's `details`): the `progress_history` column's notes
+   * joined with the ledger's, one section per note in progress order. It supplies ROWS ONLY - the
+   * phase above the list is still a function of the events alone - and it is here because the ledger
+   * ALONE has no row for a note written before the dual-write switch.
+   */
+  progressHistory?: string;
   className?: string;
 }
 
@@ -39,14 +47,32 @@ const formatWhen = (iso: string): string => {
 };
 
 /**
- * The task's EXECUTION LEDGER (`task_events`) as a timeline.
+ * A `progress` event's note, cleaned the way its row renders it, so the merge below compares the two
+ * sources on the same text. Every other kind - and a progress event with no usable `content` - yields
+ * the empty string, which the caller drops.
+ */
+const ledgerNote = (event: TaskEvent): string => {
+  if (event.kind !== 'progress') return '';
+  const content = event.payload?.['content'];
+  return typeof content === 'string' ? cleanProgressText(content) : '';
+};
+
+/**
+ * The task's EXECUTION LEDGER (`task_events`) as a timeline, plus the notes only the served merged
+ * text (`progressHistory`) has.
  *
  * The badge above the list is `deriveLedgerPhase(events)` - a fold over the sequence, not a field -
  * so a task whose stored status and ledger disagree shows the LEDGER's phase. What the vocabulary
  * cannot express is stated under the list rather than dressed up: a status change to `testing` or
  * `review` is not evidence that a test passed (see `LEDGER_NOT_RECORDED`).
+ *
+ * A progress note IS the thing its event exists to carry, so the note's own text is the row. But a
+ * note written before the dual-write switch has no event at all, and the served `progressHistory`
+ * joins the column's notes with the ledger's for exactly that reason: the survivors - the column
+ * entries no fetched `progress` event already shows - are appended as rows of the SAME list, so the
+ * timeline stays the one progress surface while a pre-switch note reaches the reader again.
  */
-export const TaskEventTimeline: React.FC<TaskEventTimelineProps> = ({ taskId, className = '' }) => {
+export const TaskEventTimeline: React.FC<TaskEventTimelineProps> = ({ taskId, progressHistory, className = '' }) => {
   const { data, isLoading, error } = useTaskEvents(taskId);
   const events: TaskEvent[] = data?.events ?? [];
 
@@ -70,6 +96,16 @@ export const TaskEventTimeline: React.FC<TaskEventTimelineProps> = ({ taskId, cl
 
   const phase = deriveLedgerPhase(events);
 
+  // The notes the ledger cannot show, in the merged text's own progress order (parseProgressHistory
+  // sorts by number). A column entry the ledger also has is DROPPED: the served text renders each note
+  // once, and a note must not appear twice on screen because both sources carry it.
+  const ledgerNotes = new Set(events.map(ledgerNote).filter(note => note !== ''));
+  const historyOnly = parseProgressHistory(progressHistory).filter(
+    entry => !ledgerNotes.has(cleanProgressText(entry.content)),
+  );
+
+  const hasRows = events.length > 0 || historyOnly.length > 0;
+
   return (
     <div className={className}>
       <div className="flex items-center gap-2 mb-3">
@@ -82,7 +118,7 @@ export const TaskEventTimeline: React.FC<TaskEventTimelineProps> = ({ taskId, cl
         </Badge>
       </div>
 
-      {events.length === 0 ? (
+      {!hasRows ? (
         <p className="text-xs text-muted-foreground">
           No ledger events for this task yet.
         </p>
@@ -103,8 +139,21 @@ export const TaskEventTimeline: React.FC<TaskEventTimelineProps> = ({ taskId, cl
                 </div>
               </li>
             ))}
+            {historyOnly.map(entry => (
+              <li key={`history-${entry.number}`} className="flex items-start gap-2 text-sm">
+                <Badge variant="outline" className="text-xs shrink-0 font-mono">
+                  {entry.number}
+                </Badge>
+                <div className="min-w-0">
+                  <div className="font-medium">{cleanProgressText(entry.content)}</div>
+                  <div className="text-xs text-muted-foreground">
+                    From the task's progress history
+                  </div>
+                </div>
+              </li>
+            ))}
           </ol>
-          <p className="text-xs text-muted-foreground mt-3">{LEDGER_NOT_RECORDED}</p>
+          {events.length > 0 && <p className="text-xs text-muted-foreground mt-3">{LEDGER_NOT_RECORDED}</p>}
         </>
       )}
     </div>

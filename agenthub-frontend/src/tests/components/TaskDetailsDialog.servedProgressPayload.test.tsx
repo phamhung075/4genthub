@@ -138,4 +138,64 @@ describe('TaskDetailsDialog: the ledger is the progress surface', () => {
     // ONE progress surface, and it is the ledger's own: the phase badge can only come from the events.
     expect(screen.getByLabelText(/Ledger phase:/)).toBeInTheDocument();
   });
+
+  // THE PRE-SWITCH NOTE (blocker B1), as a case. `details` is the served UNION - ProgressTextWith
+  // (task_response.go:107) joins the progress_history column's notes with the ledger's - so a note
+  // written BEFORE the dual-write switch has no `task_events` row at all and the ledger ALONE cannot
+  // show it. The dialog's only progress surface reads the events, so if it renders those alone the
+  // note is invisible again; this case mocks the events route EMPTY to prove the note still lands.
+  it('renders a note that exists only in the served details, with an empty ledger', async () => {
+    const historyOnlyPayload = {
+      ...servedPayload,
+      details: '=== Progress 1 ===\nNote written before the ledger switch',
+    } as unknown as Task;
+    const emptyLedger: TaskEventsResponse = { success: true, events: [], count: 0, after_seq: 0 };
+
+    vi.mocked(api.getTask).mockResolvedValue(historyOnlyPayload);
+    vi.mocked(api.getTaskEvents).mockResolvedValue(emptyLedger);
+    vi.mocked(api.getTaskContext).mockResolvedValue({ data: {} });
+
+    render(
+      <TaskDetailsDialog
+        open={true}
+        onOpenChange={() => {}}
+        task={historyOnlyPayload}
+        onClose={() => {}}
+        onAgentClick={() => {}}
+      />
+    );
+
+    await waitFor(() => expect(screen.getByText('Task with progress')).toBeInTheDocument());
+
+    // The note reaches the reader even though the ledger has no events for this task.
+    expect(await screen.findByText('Note written before the ledger switch')).toBeInTheDocument();
+    // Still the note's own text, not the column's `=== Progress N ===` formatting.
+    expect(screen.queryByText(/=== Progress 1 ===/)).not.toBeInTheDocument();
+  });
+
+  // A note CAN be in both sources: ProgressTextWith renders each note once, so the column's copy of a
+  // note the ledger also has must NOT be added a second time. One note, one row.
+  it('renders a note present in BOTH the served details and the ledger exactly once', async () => {
+    vi.mocked(api.getTask).mockResolvedValue(servedPayload);
+    vi.mocked(api.getTaskEvents).mockResolvedValue(servedEvents);
+    vi.mocked(api.getTaskContext).mockResolvedValue({ data: {} });
+
+    render(
+      <TaskDetailsDialog
+        open={true}
+        onOpenChange={() => {}}
+        task={servedPayload}
+        onClose={() => {}}
+        onAgentClick={() => {}}
+      />
+    );
+
+    await waitFor(() => expect(screen.getByText('Task with progress')).toBeInTheDocument());
+
+    // Progress 1 is in the ledger (event-1) AND in `details`: exactly one row, not two.
+    expect(await screen.findByText('First progress note')).toBeInTheDocument();
+    expect(screen.getAllByText('First progress note')).toHaveLength(1);
+    // Progress 2 is history-only and still reaches the reader.
+    expect(screen.getByText('Second progress note')).toBeInTheDocument();
+  });
 });
