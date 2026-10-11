@@ -11,5 +11,8 @@ transaction, together with its ledger row.
   loader enforces.
 - **`0001` is the baseline of the database that already exists.** The runner does not mark it on its
   own: on an existing database the mark is an owner action (`Runner.MarkBaseline`), because it touches
-  production, and on a fresh database the baseline would execute. No `0001` file exists yet - folding
-  today's DDL sources into it is stage 1 of T12, not the slice that landed the runner.
+  production, and on a fresh database the baseline would execute. `0001_baseline.sql` is the fold of
+  today's DDL sources into that step: written from the runtime registry by a throwaway generator, then
+  frozen, and `TestSchemaMatchesGoDefinitions` holds the registry to it from here on. The six
+  `ProductionTables` are deliberately not in it - nothing appends them to the runtime set, so no code
+  path creates them today, and whether a live database holds them is the dump comparison's question.

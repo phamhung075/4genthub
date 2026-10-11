@@ -205,23 +205,27 @@ func TestAFailedStepRecordsNothingAndLeavesNoneOfItsOwnEffect(t *testing.T) {
 func TestMarkBaselineRecordsAStepWithoutRunningIt(t *testing.T) {
 	sessions, db := newMigrationRunnerEnv(t)
 	ctx := context.Background()
+	// The name must be one the embedded set cannot contain. It used to be "0001_baseline", which was
+	// free until stage 1 added the real 0001_baseline.sql: CreateTables applies the embedded set, so
+	// this fixture's step was already recorded before MarkBaseline ran and the mark returned nothing.
 	runner := &database.Runner{Sessions: sessions, Set: []database.Migration{
-		{Name: "0001_baseline", SQL: `CREATE TABLE migration_runner_baseline_probe (id INTEGER)`},
+		{Name: "0900_baseline_probe", SQL: `CREATE TABLE migration_runner_baseline_probe (id INTEGER)`},
 	}}
 
-	marked, err := runner.MarkBaseline(ctx, "0001_baseline")
+	marked, err := runner.MarkBaseline(ctx, "0900_baseline_probe")
 	if err != nil {
 		t.Fatalf("marking the baseline failed: %v", err)
 	}
-	if want := []string{"0001_baseline"}; !reflect.DeepEqual(marked, want) {
+	if want := []string{"0900_baseline_probe"}; !reflect.DeepEqual(marked, want) {
 		t.Fatalf("marked %v, want %v", marked, want)
 	}
 	if relationExists(t, db, "migration_runner_baseline_probe") {
 		t.Error("marking a step EXECUTED its SQL: a baseline marks a database that already has the schema")
 	}
 	// The embedded set's names are in the ledger too, applied by CreateTables; this case is about the
-	// baseline it marked.
-	if !recordedHas(t, sessions, []string{"0001_baseline"}, nil) {
+	// baseline it marked, so the assertion is that the marked name is there - the name is the fixture's
+	// own (0900_baseline_probe), which is why no unused name needs naming.
+	if !recordedHas(t, sessions, []string{"0900_baseline_probe"}, nil) {
 		t.Fatalf("applied_migrations holds %v, want the marked baseline", recordedMigrations(t, sessions))
 	}
 
