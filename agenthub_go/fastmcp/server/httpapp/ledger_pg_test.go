@@ -943,3 +943,76 @@ func TestAClientWithNoSocketStillConvergesByPulling(t *testing.T) {
 	t.Logf("OBSERVED pull-only: cursor %d -> committed user_seq %d -> pull count=%d tip=%s",
 		*cursor, *answer.UserSeq, page.Count, ledgerPgNum(page.Tip))
 }
+
+// TestALedgerBatchThatAcceptedNothingNudgesNobody is the guard on the nudge ITSELF, and it is the one
+// branch a mutation can otherwise delete without a red: `ledgerAcceptedTip` answering `return tip,
+// true` - the reviewer's M2 - leaves every other case in this file GREEN, because all of them commit
+// at least one accepted item. The property is asserted as an OUTCOME, not as an expression: an
+// entitled socket receives NOTHING when the batch accepted nothing, and the very next batch that DOES
+// commit is nudged on that same socket, so the silence is the guard's doing rather than a socket that
+// cannot hear.
+//
+// The all-refused batch is a decision on a STALE base_seq: the request still answers 200, the item is
+// refused, no row and no user_seq are written, and the tip does not move. A nudge here would send a
+// client to pull a ledger that has nothing new in it.
+func TestALedgerBatchThatAcceptedNothingNudgesNobody(t *testing.T) {
+	app, sm := evidenceApp(t)
+	token, user := evidenceUser(t, ledgerPgSubjectA)
+	task := ledgerPgTask(t, app, sm, token, user, "ledger P4 all-refused batch task")
+
+	// A first decision so the task has a seq the second one can be stale against. It COMMITS, so it
+	// nudges, and it is posted BEFORE the socket opens: a frame left in the buffer would otherwise be
+	// read below as the refused batch's own.
+	if code, body := ledgerPgPostOne(t, app, token, value_objects.NewUUIDv4(), task, "claimed", new(0)); code != http.StatusOK {
+		t.Fatalf("staging a decision = %d: %s", code, body)
+	}
+	seq := ledgerPgTaskSeq(t, sm, user, task)
+	rows := ledgerPgRowCount(t, sm, user)
+	tip := ledgerPgTip(t, sm, user)
+
+	env := newStreamEnv(t, sm)
+	c := env.connector(t, user)
+	c.rigdHello(t, "rigd-p4-noop", connectorCapabilityIngest, connectorCapabilityLedger)
+
+	// The batch that accepts nothing: refused on its base_seq, and the request still answers 200.
+	code, body := ledgerPgPostOne(t, app, token, value_objects.NewUUIDv4(), task, "status_changed", new(seq-1))
+	if code != http.StatusOK {
+		t.Fatalf("the stale decision = %d: %s", code, body)
+	}
+	refused := ledgerPgDecodeAnswers(t, body)[0]
+	if refused.Rejected == nil || !*refused.Rejected {
+		t.Fatalf("this case needs a batch that accepted nothing, got %s", body)
+	}
+	if got := ledgerPgTip(t, sm, user); got != tip {
+		t.Fatalf("a refused batch must not move the tip: %d -> %d", tip, got)
+	}
+	if got := ledgerPgRowCount(t, sm, user); got != rows {
+		t.Fatalf("a refused batch must not write a row: %d -> %d", rows, got)
+	}
+
+	// The OUTCOME: no frame at all on a socket that is entitled to them.
+	_ = c.conn.SetReadDeadline(time.Now().Add(700 * time.Millisecond))
+	if opcode, payload, err := wsTryReadFrame(c.br); err == nil {
+		t.Fatalf("an entitled socket received opcode=%d payload=%q when the batch accepted nothing, want nothing", opcode, payload)
+	}
+	_ = c.conn.SetReadDeadline(time.Now().Add(5 * time.Second))
+
+	// And it is not merely deaf: the next batch that commits is nudged here, with its own user_seq.
+	code, body = ledgerPgPostOne(t, app, token, value_objects.NewUUIDv4(), task, "status_changed", new(seq))
+	if code != http.StatusOK {
+		t.Fatalf("the accepted decision = %d: %s", code, body)
+	}
+	accepted := ledgerPgDecodeAnswers(t, body)[0]
+	if accepted.Accepted == nil || !*accepted.Accepted || accepted.UserSeq == nil {
+		t.Fatalf("a decision on the base the task is at must be accepted, got %s", body)
+	}
+	nudge := c.recv()
+	if nudge["type"] != connectorLedgerTipFrame {
+		t.Fatalf("after a committing batch the entitled socket received %v, want %s", nudge, connectorLedgerTipFrame)
+	}
+	if nudge["user_seq"] != float64(*accepted.UserSeq) {
+		t.Errorf("ledger_tip.user_seq = %v, want the user_seq that commit took (%d)", nudge["user_seq"], *accepted.UserSeq)
+	}
+	t.Logf("OBSERVED refused batch: rows %d tip %d unchanged and no frame -> then the commit's user_seq=%d arrived as %v",
+		rows, tip, *accepted.UserSeq, nudge["user_seq"])
+}

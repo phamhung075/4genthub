@@ -4901,3 +4901,29 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
 - Result: the clean run `92 passed`, the hostile `GIT_CONFIG_GLOBAL` run `92 passed` (was `1 failed, 89 passed`
   before the fix) and the hostile `GIT_DIR` run `92 passed`. Two cases added over `e0e75084`'s 90; none of the 90
   was changed or weakened.
+
+## 2026-10-11 — P4's M2: the all-refused batch is pinned, red first
+
+- ADDED, `agenthub_go/fastmcp/server/httpapp/ledger_pg_test.go::TestALedgerBatchThatAcceptedNothingNudgesNobody`
+  (PostgreSQL; skips loudly without `AGENTHUB_TEST_PG_URL`, and that skip is not a pass). It is the case for the guard
+  `ledgerAcceptedTip` answers with - `return tip, tip > 0` - which the comment beside the nudge states and which NO
+  case held. The property is asserted as an OUTCOME, not as an expression: an ENTITLED socket receives NOTHING when
+  the batch accepted nothing, and the next batch that commits IS nudged on that same socket, so the silence is the
+  guard's doing rather than a socket that cannot hear. The all-refused batch is a decision on a STALE `base_seq`:
+  the request answers 200, the item is refused, and the case asserts the tip did not move and no row was written, so
+  "accepted nothing" is measured rather than assumed.
+- ORDERING IS LOAD-BEARING IN THE CASE, and it is commented there: the first decision (which makes the later one
+  stale) COMMITS and therefore nudges, so it is posted BEFORE the socket opens. The first draft opened the socket
+  first and read the staging commit's own frame as the refused batch's - `payload="{\"type\":\"ledger_tip\",\"user_seq\":1}"`.
+  A later reader who reorders those lines reintroduces exactly that false red.
+- RED FIRST, the reviewer's own mutation, quoted both ways:
+  `ledgerAcceptedTip: return tip, tip > 0  ->  return tip, true` makes the new case fail
+  `ledger_pg_test.go:996: an entitled socket received opcode=1 payload="{\"type\":\"ledger_tip\",\"user_seq\":0}" when the batch accepted nothing, want nothing`
+  (`--- FAIL ... (1.42s)`) - the frame the mutation invents, and it carries the tip of a batch that accepted
+  NOTHING. Restored, the case passes: `--- PASS: TestALedgerBatchThatAcceptedNothingNudgesNobody (2.14s)`, logging
+  `OBSERVED refused batch: rows 1 tip 1 unchanged and no frame -> then the commit's user_seq=2 arrived as 2`.
+  No production code changed in this commit: `ledger_mount.go` is byte-identical to `fcc8a2fc`, guard at line 212.
+- The Ledger set, with its count:
+  `AGENTHUB_TEST_PG_URL=postgresql://agenthub_user@127.0.0.1:55995/postgres go test -count=1 -run 'Ledger' -v ./fastmcp/server/httpapp/`
+  -> **16 top-level cases PASS, 0 SKIP** (plus 7 subtests), `ok agenthub/fastmcp/server/httpapp 22.468s`. Not narrowed:
+  the change adds a case to an existing file and edits no existing case.
