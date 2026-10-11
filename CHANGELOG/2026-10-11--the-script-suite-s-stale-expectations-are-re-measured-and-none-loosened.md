@@ -1,8 +1,7 @@
 ## The script suite's stale expectations, re-measured case by case and none loosened
 
 ### What changed
-Row `qitem-20261011035828` (urgent). The suite ran **12 failed / 76 passed** at the tip, identical at the
-certified batch tip and at pre-batch main, so nothing in it was the batch's. The counts row
+Row `qitem-20261011035828` (urgent). The suite ran **12 failed / 76 passed at the certified batch tip `708e3131`**, identical at pre-batch main, so nothing in it was the batch's. **That is the sealed revision's own clean-tree result, re-verified 2026-10-11 in a detached worktree with `GIT_DIR` unset**; the tip this entry ships to is `92 passed, 0 failed`, and the commits below are what closed the gap. Read the numbers here as the progression's start, not as the tip's state. The counts row
 (`7c358c4b`) then took it to **9 failed / 79 passed**. This entry closes the remaining six
 non-instrument cases and re-derives the nineteen anchors the seventh reads, and for each one the side
 that was wrong is a measurement, not a preference:
@@ -45,7 +44,7 @@ that was wrong is a measurement, not a preference:
 
 ### Verified
 - `python3 -m pytest --noconftest -p no:cacheprovider scripts/tests -q` -> **12 failed, 76 passed**
-  before any of this work, **9 failed, 79 passed** after the counts row, and **3 failed, 85 passed** in
+  before any of this work (**at `708e3131`**), **9 failed, 79 passed** after the counts row, and **3 failed, 85 passed** in
   the worktree after these edits. The three are S3's own cases, and that instrument resolves the
   document **at `rev` through `git show`, never the worktree** (its header says so), so they read the
   pre-commit file: this commit is what they read, and they go green with it.

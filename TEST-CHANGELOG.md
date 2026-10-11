@@ -300,7 +300,7 @@ Track test suite changes, fixes, and improvements for agenthub.
   cited `models.go:582…938` while the TableDef entries sit at `596…958` (+14 to +20, from `0e03b3f7`
   and `d5a59667`), each re-resolved by searching for its own TableDef entry rather than by offset.
 - RUN: `python3 -m pytest --noconftest -p no:cacheprovider scripts/tests -q` -> **12 failed, 76 passed**
-  before; **9 failed, 79 passed** after the counts row `7c358c4b`; **3 failed, 85 passed** in the
+  before (**at `708e3131`**); **9 failed, 79 passed** after the counts row `7c358c4b`; **3 failed, 85 passed** in the
   worktree after this change, the three being S3's cases, which read the document at `rev` through
   `git show` rather than the worktree and therefore turn green with this commit.
 

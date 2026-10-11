@@ -19,5 +19,7 @@ transaction, together with its ledger row.
   state too, so any step that depends on the mark - currently
   `0003_progress_history_carry_and_drop` - refuses (`SQLSTATE P0001`, naming the mark to run) until the
   owner has marked, including on a database that has never held the columns that step drops.
-  `schema_matches_definitions_test.go` holds the registry to the embedded
-  set of steps, and to THIS file, which must never drop or alter a column.
+  Two guards hold it. `schema_matches_definitions_test.go` holds the registry to the embedded set of
+  steps, so every registered table is created by one of them; `migration_baseline_parity_test.go` holds
+  `0001_baseline.sql` back to the registry it was generated from, comparing column names, referenced
+  tables and CHECK expressions. The baseline itself must never drop or alter a column.

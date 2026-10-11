@@ -42,16 +42,19 @@ and index sha256 `13fc2fdce7d271f13a287d3336a162da8be2d5b40be19edcd0986203a65eac
 
 ### Correction (2026-10-11)
 
-An earlier version of this entry, and of `e0e75084`'s commit message, said the unfixed code took the run
-from `12 failed, 76 passed`. **That figure is withdrawn.** The review that flagged it measured a clean tree
-at 88 collected with 88 passed, and re-running the unfixed tree here gives `88 passed`:
+An earlier version of this entry, and of `e0e75084`'s commit message, gave this run's starting number as
+`12 failed, 76 passed`. **The correct starting number is `88 passed`, because this entry's run is the tree
+at `e0e75084^`, and by then this batch had already fixed those twelve** (`7c358c4b`, then `5150f16d`).
+Re-running it gives `88 passed`:
 
     git worktree add --detach /tmp/wt-e0eprev e0e75084^
     cd /tmp/wt-e0eprev && python3 -m pytest --noconftest -p no:cacheprovider scripts/tests -q
     → 88 passed, 3 warnings in 9.59s
 
-So the red half of the claim needed a state the record never named - the damaged environment, not a clean
-tree - and the clean-tree figure stands in its place. **Nothing else in this entry changes:** the hostile
+So the red half of the claim was **another revision's number, not a damaged environment's**: `12 failed,
+76 passed` is the SEALED revision `708e3131`'s own clean-tree result, re-verified 2026-10-11 in a detached
+worktree with `GIT_DIR` unset, and `7c358c4b` and `5150f16d` - both ancestors of `e0e75084^` - are what
+turned it green before this entry's run. Both numbers are clean-tree results; only the revision differs. **Nothing else in this entry changes:** the hostile
 run's `30 failed, 42 passed, 4 skipped`, the six staged paths, the injected identity and the two
 shared-repository digests were confirmed byte for byte when they were written. The suite has grown since:
 the same command at this branch's tip, on the fixed tree, gives `92 passed`.
