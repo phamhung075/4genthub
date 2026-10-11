@@ -616,9 +616,9 @@ func TestSeatAdminLinkRestrictedToClaudeCodeSeats(t *testing.T) {
 	create("gamma", "claude-code")
 
 	link := "/api/v2/openrig/rooms/dev/seats/alpha/links"
-	// An allowing link into a codex seat is refused: no verified deny path there (G3 owner decision).
+	// An allowing link into a codex/omp seat is now permitted.
 	rec := doTestRequest(t, mux, http.MethodPut, link, `{"to_seat":"coderx","kind":"delegates_to"}`)
-	if rec.Code != http.StatusBadRequest || !strings.Contains(rec.Body.String(), "restricted to claude-code seats") {
+	if rec.Code != http.StatusOK {
 		t.Fatalf("allowing link to codex: %d %s", rec.Code, rec.Body.String())
 	}
 	// A deny link only removes a channel, so it stays legal for any runtime.
