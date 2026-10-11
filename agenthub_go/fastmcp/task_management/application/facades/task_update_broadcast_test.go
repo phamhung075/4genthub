@@ -75,6 +75,10 @@ func (unmovedLedgerRecorder) RecordProgress(context.Context, string, string, ent
 	return &entities.TaskEvent{Kind: entities.TaskEventKindProgress}, nil
 }
 
+func (unmovedLedgerRecorder) NextProgressNumberInTx(context.Context, string) (int, error) {
+	return 1, nil
+}
+
 func (unmovedLedgerRecorder) StatusOf(context.Context, string) (string, error) {
 	return "unchanged", nil
 }

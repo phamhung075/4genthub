@@ -21,14 +21,23 @@ type LedgerRecorder interface {
 	StatusOf(ctx context.Context, taskID string) (string, error)
 	RecordStatusChange(ctx context.Context, taskID, oldStatus, newStatus string) (*entities.TaskEvent, error)
 	RecordProgress(ctx context.Context, taskID, subtaskID string, note entities.ProgressEntry) (*entities.TaskEvent, error)
+	// NextProgressNumberInTx reads the number a new note for the task takes, INSIDE the caller's
+	// transaction and under the advisory lock the append takes. It is the writer's read rather than the
+	// caller's because a number read before the transaction could race another note's write.
+	NextProgressNumberInTx(ctx context.Context, taskID string) (int, error)
 }
 
-// LedgerProgress is one progress note a save carries into the ledger: the note as the column would
-// have stored it, and the subtask that wrote it (empty for a task-level note, because the entry
-// belongs to the task's ledger either way).
+// LedgerProgress is one progress note a save carries into the ledger: the note's TEXT as the caller
+// wrote it, the timestamp it is stamped with, and the subtask that wrote it (empty for a task-level
+// note, because the entry belongs to the task's ledger either way).
+//
+// It carries no number and no header, deliberately: both are the ledger's to assign when it writes,
+// inside the caller's transaction and under the append's own lock. The header names the number, so a
+// number decided earlier could not be corrected later without rewriting the note.
 type LedgerProgress struct {
 	SubtaskID string
-	Note      entities.ProgressEntry
+	Content   string
+	Timestamp string
 }
 
 // StatusLedger is what a status-writing use case needs to make the status and its ledger entry one
@@ -93,12 +102,7 @@ func (l StatusLedger) Save(ctx context.Context, save func(context.Context) error
 				return err
 			}
 		}
-		for _, progress := range progressNotes {
-			if _, err := l.Ledger.RecordProgress(ctx, taskID, progress.SubtaskID, progress.Note); err != nil {
-				return err
-			}
-		}
-		return nil
+		return l.recordNotes(ctx, taskID, progressNotes)
 	})
 }
 
@@ -115,13 +119,28 @@ func (l StatusLedger) SaveProgress(ctx context.Context, save func(context.Contex
 		if err := save(ctx); err != nil {
 			return err
 		}
-		for _, progress := range progressNotes {
-			if _, err := l.Ledger.RecordProgress(ctx, taskID, progress.SubtaskID, progress.Note); err != nil {
-				return err
-			}
-		}
-		return nil
+		return l.recordNotes(ctx, taskID, progressNotes)
 	})
+}
+
+// recordNotes writes the notes a save carries, assigning each its NUMBER here - inside the caller's
+// transaction, under the same advisory lock the append takes (StatusLedger's Ledger does both), so two
+// writers cannot hand two notes one number. The number is the task's sequence continued, because the
+// carry copied the dropped column's numbers in intact: a task whose notes were numbered 1..N continues
+// at N+1, and a restart at 1 would collide on the identity a reader merges by (content plus
+// progress_number together), which the reader treats as the same note.
+func (l StatusLedger) recordNotes(ctx context.Context, taskID string, progressNotes []LedgerProgress) error {
+	for _, progress := range progressNotes {
+		number, err := l.Ledger.NextProgressNumberInTx(ctx, taskID)
+		if err != nil {
+			return err
+		}
+		note := entities.NewProgressEntry(number, progress.Content, progress.Timestamp)
+		if _, err := l.Ledger.RecordProgress(ctx, taskID, progress.SubtaskID, note); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // ledgerTaskID reads an entity's id, empty when it has none.

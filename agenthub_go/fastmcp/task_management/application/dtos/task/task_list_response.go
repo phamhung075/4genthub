@@ -22,6 +22,19 @@ type CompletedSubtaskCounter interface {
 	GetCompletedSubtaskCounts(ctx context.Context, taskIDs []string) (map[string]int, error)
 }
 
+// TaskProgressEventsByTask is the ledger as a LIST needs it: every listed task's progress entries in
+// one read, keyed by task id. It is a batch for the same reason CompletedSubtaskCounter is - a row's
+// details render from the ledger now, and one read per row would turn a single list request into one
+// query per task. *repositories.TaskEventRepository satisfies it through ProgressEventsByTask, and
+// the wiring passes the same repository the events route reads.
+//
+// A nil implementation is allowed and leaves every row's details empty, which is the contract the
+// other optional dependencies here keep; a wired one that returns no entry for a task leaves that
+// row's details empty too, and both are the same answer for a task with no notes.
+type TaskProgressEventsByTask interface {
+	ProgressEventsByTask(ctx context.Context, taskIDs []string) (map[string][]*entities.TaskEvent, error)
+}
+
 // TaskListResponse is the response DTO for task list operations.
 type TaskListResponse struct {
 	Tasks          []*TaskResponse
@@ -34,6 +47,7 @@ type TaskListResponse struct {
 // the branch IDs (order unspecified); Go keeps first-seen order.
 func TaskListResponseFromDomainList(ctx context.Context, tasks []*entities.Task,
 	gitBranchRepository GitBranchBatchRepository, taskRepository CompletedSubtaskCounter,
+	progressEvents TaskProgressEventsByTask,
 	filtersApplied *entities.OrderedMap[any], query *string) (*TaskListResponse, error) {
 
 	seen := map[string]bool{}
@@ -60,7 +74,15 @@ func TaskListResponseFromDomainList(ctx context.Context, tasks []*entities.Task,
 
 	taskIDs := make([]string, 0, len(tasks))
 	for _, task := range tasks {
-		taskIDs = append(taskIDs, taskIDString(task))
+		// A row with no id has no uuid to read by, and BOTH reads below cast their slice ::uuid. Only the
+		// ids that are ids are queried: taskIDString renders such a row as the literal "None", and the
+		// counts read swallows a query error while the notes read does not, so before this the notes read
+		// turned a page holding such a row into a failed list where the same page used to render. The row
+		// still finds no count and no notes, which is what it has.
+		if task.ID == nil || !value_objects.PyTruthy(task.ID.Value) {
+			continue
+		}
+		taskIDs = append(taskIDs, task.ID.Value)
 	}
 	completedCounts := map[string]int{}
 	if taskRepository != nil && len(taskIDs) > 0 {
@@ -68,6 +90,19 @@ func TaskListResponseFromDomainList(ctx context.Context, tasks []*entities.Task,
 		if err == nil {
 			completedCounts = counts
 		}
+	}
+
+	// Every row's details render from the ledger, so the notes are read ONCE for the whole page -
+	// the same shape as the counts above and for the same reason. Without this the list is the one
+	// surface where O1c's move off the column was not carried through, and every row's details is
+	// empty while the task dialog shows the notes.
+	notesByTask := map[string][]*entities.TaskEvent{}
+	if progressEvents != nil && len(taskIDs) > 0 {
+		notes, err := progressEvents.ProgressEventsByTask(ctx, taskIDs)
+		if err != nil {
+			return nil, err
+		}
+		notesByTask = notes
 	}
 
 	taskResponses := make([]*TaskResponse, 0, len(tasks))
@@ -80,7 +115,7 @@ func TaskListResponseFromDomainList(ctx context.Context, tasks []*entities.Task,
 			}
 		}
 		completed := completedCounts[taskIDString(task)]
-		resp, err := TaskResponseFromDomain(ctx, task, nil, nil, nil, nil, projectID, &completed)
+		resp, err := TaskResponseFromDomain(ctx, task, nil, notesByTask[taskIDString(task)], nil, nil, projectID, &completed)
 		if err != nil {
 			return nil, err
 		}

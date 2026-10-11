@@ -101,9 +101,8 @@ func TaskResponseFromDomain(ctx context.Context, task *entities.Task, gitBranchR
 
 	details := ""
 	if task != nil {
-		// O1c's union: the notes still in the progress_history column plus the notes the ledger now
-		// carries. ProgressTextWith is the one place that merge is written down, and its doc says why
-		// the identity is the progress number.
+		// The ledger is the only progress surface: details render the task's `progress` events, and
+		// ProgressTextWith is the one place that rendering is written down.
 		details = task.ProgressTextWith(progressEvents)
 	}
 

@@ -35,6 +35,8 @@ func (noopRecorder) RecordProgress(context.Context, string, string, entities.Pro
 	return &entities.TaskEvent{Kind: entities.TaskEventKindProgress}, nil
 }
 
+func (noopRecorder) NextProgressNumberInTx(context.Context, string) (int, error) { return 1, nil }
+
 // TestAStatusWriteWithoutALedgerIsRefused is the acceptance for the optional-ledger defect: the
 // silent path must be impossible. A use case built without WithLedger does not save and does not
 // succeed - it fails, naming the seam.

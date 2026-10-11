@@ -61,7 +61,7 @@ func TestUpdateTaskUseCaseUpdatesFields(t *testing.T) {
 	const idValue = "22222222-2222-2222-2222-222222222222"
 	entity := updateTaskNewEntity(t, idValue)
 	repo := &updateTaskFakeRepo{found: entity}
-	uc := NewUpdateTaskUseCase(repo, nil).WithLedger(noopLedger())
+	uc := NewUpdateTaskUseCase(repo, nil).WithLedger(ledgerWithProgress())
 
 	title := "New Title"
 	description := "New description"

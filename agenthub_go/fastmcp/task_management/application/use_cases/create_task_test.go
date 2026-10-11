@@ -60,7 +60,7 @@ func createTaskResponseKeys() []string {
 func TestCreateTaskUseCaseSuccess(t *testing.T) {
 	id := createTaskMustID(t, "11111111-1111-1111-1111-111111111111")
 	repo := &createTaskFakeRepo{nextID: id}
-	uc := NewCreateTaskUseCase(repo, nil).WithLedger(noopLedger())
+	uc := NewCreateTaskUseCase(repo, nil).WithLedger(ledgerWithProgress())
 
 	desc := "The description"
 	request, err := dtotask.NewCreateTaskRequest(dtotask.CreateTaskRequest{

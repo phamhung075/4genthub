@@ -78,6 +78,12 @@ func (f *ledgerFakeRecorder) RecordProgress(_ context.Context, taskID, subtaskID
 	return &entities.TaskEvent{TaskID: taskID, SubtaskID: subtaskID, Kind: entities.TaskEventKindProgress}, nil
 }
 
+// NextProgressNumberInTx answers the number the task's first note takes: these cases assert the note
+// and the transaction, not the numbering.
+func (f *ledgerFakeRecorder) NextProgressNumberInTx(context.Context, string) (int, error) {
+	return 1, nil
+}
+
 // ledgerFakeTx counts the transactions the use case opens, the one unit of work SaveStatus needs.
 type ledgerFakeTx struct {
 	begun  int

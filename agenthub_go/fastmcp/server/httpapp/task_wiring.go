@@ -151,13 +151,15 @@ func (p taskFacadeProvider) TaskFacade(ctx context.Context, userID, projectID, g
 		GetTask:             use_cases.NewGetTaskUseCase(taskRepo, contextReader{unified, userID}, getter, taskEvents),
 		DeleteTask:          use_cases.NewDeleteTaskUseCase(taskRepo, subtaskRepo, cascadeBranchRepo{branchRepo}, projectRepo, nil),
 		CompleteTask:        use_cases.NewCompleteTaskUseCase(taskRepo, subtaskRepo, legacyTaskContextRepo{taskContextRepo}, completeContextFactory{p.ctxFactory, userID}).WithHooks(taskHooks).WithLedger(ledger),
-		SearchTasks:         use_cases.NewSearchTasksUseCase(taskRepo),
+		SearchTasks:         use_cases.NewSearchTasksUseCase(taskRepo, taskEvents),
 		NextTask:            use_cases.NewNextTaskUseCase(taskRepo, nil),
 		DependencyResolver:  services.NewDependencyResolverService(taskRepo, userID),
 		// The resume brief's two missing seams: the ledger it is built from (the SAME repository the
 		// events route reads, scoped to the same resolved user the status ledger writes under) and the
 		// one task-level context document it carries.
-		ResumeLedger:       taskEvents,
+		ResumeLedger: taskEvents,
+		// and the list/search responses' render source, the same repository again.
+		ProgressEvents:     taskEvents,
 		ResumeTaskContext:  taskContextRepo,
 		ApplyContextFormat: factories.ContextResponseApplyToTaskResponse,
 		CurrentUserID:      middleware.GetCurrentUserID,

@@ -57,6 +57,50 @@ func recordedMigrations(t *testing.T, sessions *database.SessionManager) []strin
 	return names
 }
 
+// newBareRunnerEnv is newMigrationRunnerEnv without the production schema: the database carries no
+// tables at all, so the runner meets it exactly as it meets a database whose schema predates the
+// ledger. The embedded set is NOT applied here, which is the point of the case that uses it: a boot
+// applies that set through CreateTables, and a case about the runner creating its own bookkeeping
+// needs a database where that has not happened yet.
+func newBareRunnerEnv(t *testing.T) (*database.SessionManager, *sql.DB) {
+	t.Helper()
+	dsn := newTestDatabase(t)
+	db, err := database.PgxOpener(dsn, database.EngineOptions{PoolSize: 2, MaxOverflow: 2, PoolRecycle: 60})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { db.Close() })
+	cfg := &database.DatabaseConfig{Engine: &database.Engine{DB: db, URL: dsn}}
+	return database.NewSessionManager(cfg), db
+}
+
+// recordedHas reports whether every name in want is recorded, and no name in unwanted is.
+func recordedHas(t *testing.T, sessions *database.SessionManager, want, unwanted []string) bool {
+	t.Helper()
+	got := recordedMigrations(t, sessions)
+	has := func(names []string, n string) bool {
+		for _, x := range names {
+			if x == n {
+				return true
+			}
+		}
+		return false
+	}
+	for _, n := range want {
+		if !has(got, n) {
+			t.Errorf("%s is not in applied_migrations %v", n, got)
+			return false
+		}
+	}
+	for _, n := range unwanted {
+		if has(got, n) {
+			t.Errorf("%s is in applied_migrations %v, want it absent", n, got)
+			return false
+		}
+	}
+	return true
+}
+
 func probeRows(t *testing.T, sessions *database.SessionManager) int {
 	t.Helper()
 	count := 0
@@ -79,10 +123,10 @@ func relationExists(t *testing.T, db *sql.DB, name string) bool {
 }
 
 func TestApplyRecordsEachStepAndASecondRunAppliesNothing(t *testing.T) {
-	sessions, db := newMigrationRunnerEnv(t)
+	sessions, db := newBareRunnerEnv(t)
 	ctx := context.Background()
-	// The throwaway database is built by the registry alone, which does NOT create the production
-	// tables - so this case also covers the runner meeting a database that has no ledger yet.
+	// The embedded set - the one a boot applies - is NOT applied to this database, so this case also
+	// covers the runner meeting a database that has no ledger yet.
 	if relationExists(t, db, "applied_migrations") {
 		t.Fatal("this database already has the ledger, so the case cannot show the runner creating it")
 	}
@@ -144,8 +188,11 @@ func TestAFailedStepRecordsNothingAndLeavesNoneOfItsOwnEffect(t *testing.T) {
 	if want := []string{"0001_probe_table"}; !reflect.DeepEqual(applied, want) {
 		t.Fatalf("the run reported %v, want %v: the step before the failure stays applied and recorded", applied, want)
 	}
-	if got := recordedMigrations(t, sessions); !reflect.DeepEqual(got, []string{"0001_probe_table"}) {
-		t.Fatalf("applied_migrations holds %v, want only the step that succeeded", got)
+	// The ledger also holds the embedded set's names, which a boot applies through CreateTables: what
+	// this case is about is its own step succeeding and its own step being absent.
+	if !recordedHas(t, sessions, []string{"0001_probe_table"}, []string{"0002_doomed"}) {
+		t.Fatalf("applied_migrations holds %v, want the step that succeeded and not the one that failed",
+			recordedMigrations(t, sessions))
 	}
 	if relationExists(t, db, "migration_runner_doomed") {
 		t.Error("the failed step's table exists: its statements did not roll back together with it")
@@ -158,22 +205,28 @@ func TestAFailedStepRecordsNothingAndLeavesNoneOfItsOwnEffect(t *testing.T) {
 func TestMarkBaselineRecordsAStepWithoutRunningIt(t *testing.T) {
 	sessions, db := newMigrationRunnerEnv(t)
 	ctx := context.Background()
+	// The name must be one the embedded set cannot contain. It used to be "0001_baseline", which was
+	// free until stage 1 added the real 0001_baseline.sql: CreateTables applies the embedded set, so
+	// this fixture's step was already recorded before MarkBaseline ran and the mark returned nothing.
 	runner := &database.Runner{Sessions: sessions, Set: []database.Migration{
-		{Name: "0001_baseline", SQL: `CREATE TABLE migration_runner_baseline_probe (id INTEGER)`},
+		{Name: "0900_baseline_probe", SQL: `CREATE TABLE migration_runner_baseline_probe (id INTEGER)`},
 	}}
 
-	marked, err := runner.MarkBaseline(ctx, "0001_baseline")
+	marked, err := runner.MarkBaseline(ctx, "0900_baseline_probe")
 	if err != nil {
 		t.Fatalf("marking the baseline failed: %v", err)
 	}
-	if want := []string{"0001_baseline"}; !reflect.DeepEqual(marked, want) {
+	if want := []string{"0900_baseline_probe"}; !reflect.DeepEqual(marked, want) {
 		t.Fatalf("marked %v, want %v", marked, want)
 	}
 	if relationExists(t, db, "migration_runner_baseline_probe") {
 		t.Error("marking a step EXECUTED its SQL: a baseline marks a database that already has the schema")
 	}
-	if got := recordedMigrations(t, sessions); !reflect.DeepEqual(got, []string{"0001_baseline"}) {
-		t.Fatalf("applied_migrations holds %v, want the marked baseline", got)
+	// The embedded set's names are in the ledger too, applied by CreateTables; this case is about the
+	// baseline it marked, so the assertion is that the marked name is there - the name is the fixture's
+	// own (0900_baseline_probe), which is why no unused name needs naming.
+	if !recordedHas(t, sessions, []string{"0900_baseline_probe"}, nil) {
+		t.Fatalf("applied_migrations holds %v, want the marked baseline", recordedMigrations(t, sessions))
 	}
 
 	applied, err := runner.Apply(ctx)
@@ -187,7 +240,8 @@ func TestMarkBaselineRecordsAStepWithoutRunningIt(t *testing.T) {
 	if _, err := runner.MarkBaseline(ctx, "0009_not_in_the_set"); err == nil {
 		t.Error("marking a name this binary's set does not contain was accepted: a typo would look like a successful stamp")
 	}
-	if got := recordedMigrations(t, sessions); !reflect.DeepEqual(got, []string{"0001_baseline"}) {
-		t.Fatalf("applied_migrations holds %v after the refused mark, want only the baseline", got)
+	if !recordedHas(t, sessions, []string{"0001_baseline"}, []string{"0009_not_in_the_set"}) {
+		t.Fatalf("applied_migrations holds %v after the refused mark, want only the baseline",
+			recordedMigrations(t, sessions))
 	}
 }

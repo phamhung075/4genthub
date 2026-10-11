@@ -75,14 +75,14 @@ func TestAcceptanceScopeEnsurerRestoresAnOldShapeWithRows(t *testing.T) {
 		VALUES ('11111111-1111-4111-8111-111111111111', 'p', '', 'u', 'active', '{}', now(), now())`)
 	mustExec(t, db, `INSERT INTO project_git_branchs (id, project_id, name, description, user_id, priority, status, metadata, task_count, completed_task_count, created_at, updated_at)
 		VALUES ('22222222-2222-4222-8222-222222222222', '11111111-1111-4111-8111-111111111111', 'main', '', 'u', 'medium', 'todo', '{}', 0, 0, now(), now())`)
-	mustExec(t, db, `INSERT INTO tasks (id, title, description, git_branch_id, status, priority, progress_history, progress_count,
+	mustExec(t, db, `INSERT INTO tasks (id, title, description, git_branch_id, status, priority,
 			estimated_effort, created_at, updated_at, completion_summary, testing_notes, progress_percentage, progress_state, user_id)
-		VALUES ('33333333-3333-4333-8333-333333333333', 't', 'd', '22222222-2222-4222-8222-222222222222', 'todo', 'medium', '{}', 0,
+		VALUES ('33333333-3333-4333-8333-333333333333', 't', 'd', '22222222-2222-4222-8222-222222222222', 'todo', 'medium',
 			'2 hours', now(), now(), '', '', 0, 'INITIAL', 'u')`)
-	mustExec(t, db, `INSERT INTO subtasks (id, task_id, title, description, status, priority, assignees, progress_percentage, progress_history,
-			progress_count, progress_state, progress_notes, blockers, completion_summary, impact_on_parent, insights_found, user_id, created_at, updated_at)
-		VALUES ('44444444-4444-4444-8444-444444444444', '33333333-3333-4333-8333-333333333333', 's', '', 'todo', 'medium', '[]', 0, '{}',
-			0, 'INITIAL', '', '', '', '', '[]', 'u', now(), now())`)
+	mustExec(t, db, `INSERT INTO subtasks (id, task_id, title, description, status, priority, assignees, progress_percentage,
+			progress_state, progress_notes, blockers, completion_summary, impact_on_parent, insights_found, user_id, created_at, updated_at)
+		VALUES ('44444444-4444-4444-8444-444444444444', '33333333-3333-4333-8333-333333333333', 's', '', 'todo', 'medium', '[]', 0,
+			'INITIAL', '', '', '', '', '[]', 'u', now(), now())`)
 
 	for _, table := range []string{"tasks", "subtasks"} {
 		mustExec(t, db, "ALTER TABLE "+table+" DROP COLUMN acceptance_criteria, DROP COLUMN scope")

@@ -62,6 +62,10 @@ func (r *ledgerPathRecorder) RecordProgress(context.Context, string, string, ent
 	return &entities.TaskEvent{Kind: entities.TaskEventKindProgress}, nil
 }
 
+func (r *ledgerPathRecorder) NextProgressNumberInTx(context.Context, string) (int, error) {
+	return 1, nil
+}
+
 type ledgerPathEntry struct {
 	taskID string
 	old    string

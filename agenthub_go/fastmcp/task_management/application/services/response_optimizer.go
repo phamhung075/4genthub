@@ -28,7 +28,7 @@ func (p ResponseProfile) String() string { return string(p) }
 
 // zpRespHighFrequencyOps mirrors ResponseOptimizer.HIGH_FREQUENCY_OPS.
 var zpRespHighFrequencyOps = []string{
-	"list", "get_status", "health_check", "ping", "get_metrics", "get_statistics", "list_agents",
+	"list", "get_status", "health_check", "ping", "get_metrics", "get_statistics",
 }
 
 // zpRespAIAgentIndicators mirrors ResponseOptimizer.AI_AGENT_INDICATORS.

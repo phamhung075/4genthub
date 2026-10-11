@@ -100,15 +100,20 @@ func (u *UpdateTaskUseCase) Execute(ctx context.Context, request task.UpdateTask
 		}
 	}
 
-	// The note is numbered here and RECORDED below, inside the transaction that saves the task:
-	// O1c's switch stops the column write, so dropping this entry would lose the note.
+	// The note is RECORDED below, inside the transaction that saves the task: dropping this entry would
+	// lose the note. Its NUMBER is not read here - the ledger assigns it while it writes, inside that
+	// same transaction and under the lock the append takes, because the carry step copied a dropped
+	// column's numbers in intact and two writers sharing one number would share the identity a reader
+	// merges copies by.
 	var progressNotes []LedgerProgress
 	if request.Details != nil {
-		note, err := taskEntity.AppendProgress(*request.Details)
-		if err != nil {
+		if err := taskEntity.TouchForProgress(); err != nil {
 			return nil, err
 		}
-		progressNotes = append(progressNotes, LedgerProgress{Note: note})
+		progressNotes = append(progressNotes, LedgerProgress{
+			Content:   *request.Details,
+			Timestamp: value_objects.IsoFormat(*taskEntity.UpdatedAt),
+		})
 	}
 
 	if request.EstimatedEffort != nil {

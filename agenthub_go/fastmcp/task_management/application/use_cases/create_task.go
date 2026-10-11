@@ -134,16 +134,20 @@ func (u *CreateTaskUseCase) Execute(ctx context.Context, request task.CreateTask
 		return fail(err)
 	}
 
-	// Add initial progress if details provided. The note is numbered here and RECORDED after the save
-	// below, inside the same transaction: O1c's switch stops the column write, and the ledger entry
-	// cannot precede the task row it points at (task_events.task_id has an FK to tasks.id).
+	// Add initial progress if details provided. The note is RECORDED after the save below, inside the
+	// same transaction: the ledger entry cannot precede the task row it points at (task_events.task_id
+	// has an FK to tasks.id). Its NUMBER is assigned there too, by the ledger, under its own lock while
+	// it writes - a number read here would be read outside that transaction and could race another
+	// writer into sharing it.
 	var progressNotes []LedgerProgress
 	if request.Details != "" {
-		note, err := taskEntity.AppendProgress(request.Details)
-		if err != nil {
+		if err := taskEntity.TouchForProgress(); err != nil {
 			return fail(err)
 		}
-		progressNotes = append(progressNotes, LedgerProgress{Note: note})
+		progressNotes = append(progressNotes, LedgerProgress{
+			Content:   request.Details,
+			Timestamp: value_objects.IsoFormat(*taskEntity.UpdatedAt),
+		})
 	}
 
 	// Add dependencies if provided; invalid dependencies are skipped (Python logs
@@ -183,7 +187,19 @@ func (u *CreateTaskUseCase) Execute(ctx context.Context, request task.CreateTask
 		u.autoCreateTaskContext(ctx, taskEntity, *userID, gitBranchID)
 	}
 
-	taskResponse, err := task.TaskResponseFromDomain(ctx, taskEntity, u.gitBranchRepository, nil, nil, nil, nil, nil)
+	// The response must carry the note this request just wrote. With O1c's switch that note lives in
+	// the ledger, not the column, so it is read back here - after the save, inside the request - and
+	// merged by the response builder. This is the same read update_task makes for the same reason; the
+	// create path was left passing nil and its response came back one note short, its own.
+	var progressEvents []*entities.TaskEvent
+	if u.ledger.Events != nil && ledgerTaskID(taskEntity) != "" {
+		progressEvents, err = u.ledger.Events.Events(ctx, ledgerTaskID(taskEntity))
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	taskResponse, err := task.TaskResponseFromDomain(ctx, taskEntity, u.gitBranchRepository, progressEvents, nil, nil, nil, nil)
 	if err != nil {
 		return fail(err)
 	}

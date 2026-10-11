@@ -32,8 +32,8 @@ func draftRepoSetup(t *testing.T, sessions *database.SessionManager, userID stri
 			return err
 		}
 		if _, err := s.ExecContext(ctx,
-			`INSERT INTO tasks (id,title,description,git_branch_id,status,priority,progress_history,progress_count,estimated_effort,created_at,updated_at,completion_summary,testing_notes,progress_percentage,progress_state,user_id) VALUES ($1::uuid,$2,$3,$4::uuid,$5,$6,$7::json,$8,$9,$10,$11,$12,$13,$14,$15,$16)`,
-			taskID, "T", "desc", branchID, "todo", "medium", "{}", 0, "2 hours", now, now, "", "", 0, "INITIAL", userID); err != nil {
+			`INSERT INTO tasks (id,title,description,git_branch_id,status,priority,estimated_effort,created_at,updated_at,completion_summary,testing_notes,progress_percentage,progress_state,user_id) VALUES ($1::uuid,$2,$3,$4::uuid,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
+			taskID, "T", "desc", branchID, "todo", "medium", "2 hours", now, now, "", "", 0, "INITIAL", userID); err != nil {
 			return err
 		}
 		return nil
@@ -50,8 +50,8 @@ func draftRepoAddTask(t *testing.T, sessions *database.SessionManager, userID, b
 	now := time.Now().UTC()
 	err := sessions.WithSession(context.Background(), func(ctx context.Context, s database.DBTX) error {
 		_, err := s.ExecContext(ctx,
-			`INSERT INTO tasks (id,title,description,git_branch_id,status,priority,progress_history,progress_count,estimated_effort,created_at,updated_at,completion_summary,testing_notes,progress_percentage,progress_state,user_id) VALUES ($1::uuid,$2,$3,$4::uuid,$5,$6,$7::json,$8,$9,$10,$11,$12,$13,$14,$15,$16)`,
-			taskID, title, "desc", branchID, "todo", "medium", "{}", 0, "2 hours", now, now, "", "", 0, "INITIAL", userID)
+			`INSERT INTO tasks (id,title,description,git_branch_id,status,priority,estimated_effort,created_at,updated_at,completion_summary,testing_notes,progress_percentage,progress_state,user_id) VALUES ($1::uuid,$2,$3,$4::uuid,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
+			taskID, title, "desc", branchID, "todo", "medium", "2 hours", now, now, "", "", 0, "INITIAL", userID)
 		return err
 	})
 	if err != nil {
@@ -66,8 +66,8 @@ func draftRepoAddSubtask(t *testing.T, sessions *database.SessionManager, userID
 	now := time.Now().UTC()
 	err := sessions.WithSession(context.Background(), func(ctx context.Context, s database.DBTX) error {
 		_, err := s.ExecContext(ctx,
-			`INSERT INTO subtasks (id,task_id,title,description,status,priority,assignees,progress_percentage,progress_history,progress_count,progress_state,progress_notes,blockers,completion_summary,impact_on_parent,insights_found,user_id,created_at,updated_at) VALUES ($1::uuid,$2::uuid,$3,$4,$5,$6,$7::json,$8,$9::json,$10,$11,$12,$13,$14,$15,$16::json,$17,$18,$19)`,
-			subtaskID, taskID, title, "", "todo", "medium", "[]", 0, "{}", 0, "INITIAL", "", "", "", "", "[]", userID, now, now)
+			`INSERT INTO subtasks (id,task_id,title,description,status,priority,assignees,progress_percentage,progress_state,progress_notes,blockers,completion_summary,impact_on_parent,insights_found,user_id,created_at,updated_at) VALUES ($1::uuid,$2::uuid,$3,$4,$5,$6,$7::json,$8,$9,$10,$11,$12,$13,$14::json,$15,$16,$17)`,
+			subtaskID, taskID, title, "", "todo", "medium", "[]", 0, "INITIAL", "", "", "", "", "[]", userID, now, now)
 		return err
 	})
 	if err != nil {
