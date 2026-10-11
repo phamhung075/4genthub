@@ -134,12 +134,17 @@ func (u *CreateTaskUseCase) Execute(ctx context.Context, request task.CreateTask
 		return fail(err)
 	}
 
-	// Add initial progress if details provided. The note is numbered here and RECORDED after the save
-	// below, inside the same transaction: O1c's switch stops the column write, and the ledger entry
-	// cannot precede the task row it points at (task_events.task_id has an FK to tasks.id).
+	// Add initial progress if details provided. The note is RECORDED after the save below, inside the
+	// same transaction: the ledger entry cannot precede the task row it points at (task_events.task_id
+	// has an FK to tasks.id). Its number comes from the ledger, which for a row that does not exist
+	// yet answers 1 - the first note a task takes.
 	var progressNotes []LedgerProgress
 	if request.Details != "" {
-		note, err := taskEntity.AppendProgress(request.Details)
+		number, err := u.ledger.NextProgressNumber(ctx, ledgerTaskID(taskEntity))
+		if err != nil {
+			return fail(err)
+		}
+		note, err := taskEntity.AppendProgress(number, request.Details)
 		if err != nil {
 			return fail(err)
 		}

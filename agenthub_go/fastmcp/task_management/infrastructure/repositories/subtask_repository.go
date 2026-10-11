@@ -61,10 +61,6 @@ func (r *ORMSubtaskRepository) subtaskRepoModelToEntity(model *database.Subtask)
 	if err != nil {
 		return nil, err
 	}
-	history, err := subtaskRepoDecodeHistory(model.ProgressHistory)
-	if err != nil {
-		return nil, err
-	}
 	acceptanceCriteria, err := repoDecodeStringList(model.AcceptanceCriteria)
 	if err != nil {
 		return nil, err
@@ -78,8 +74,7 @@ func (r *ORMSubtaskRepository) subtaskRepoModelToEntity(model *database.Subtask)
 		ID: &id, Title: model.Title, Description: model.Description, ParentTaskID: &parent,
 		Status: &status, Priority: &priority, Assignees: assignees,
 		AcceptanceCriteria: acceptanceCriteria, Scope: scope,
-		ProgressPercentage: int(model.ProgressPercentage), ProgressHistory: history,
-		ProgressCount: int(model.ProgressCount),
+		ProgressPercentage: int(model.ProgressPercentage),
 	}
 	st.CreatedAt = &createdAt
 	st.UpdatedAt = &updatedAt
@@ -114,8 +109,6 @@ func (r *ORMSubtaskRepository) subtaskRepoEntityToModelDict(subtask *entities.Su
 		"acceptance_criteria", append([]string{}, subtask.AcceptanceCriteria...),
 		"scope", append([]string{}, subtask.Scope...),
 		"progress_percentage", subtask.ProgressPercentage,
-		"progress_history", subtask.ProgressHistory,
-		"progress_count", subtask.ProgressCount,
 		"created_at", subtask.CreatedAt,
 		"updated_at", subtask.UpdatedAt,
 	)
@@ -688,26 +681,6 @@ func subtaskRepoDecodeAssignees(raw json.RawMessage) ([]string, error) {
 		} else {
 			out = append(out, value_objects.PyStr(item))
 		}
-	}
-	return out, nil
-}
-
-func subtaskRepoDecodeHistory(raw json.RawMessage) (map[string]any, error) {
-	if len(raw) == 0 {
-		return map[string]any{}, nil
-	}
-	decoded, err := entities.DecodeJSON(raw)
-	if err != nil {
-		return nil, err
-	}
-	ordered, ok := decoded.(*entities.OrderedMap[any])
-	if !ok || ordered.Len() == 0 {
-		return map[string]any{}, nil
-	}
-	out := map[string]any{}
-	for _, key := range ordered.Keys() {
-		value, _ := ordered.Get(key)
-		out[key] = repoPlainValue(value)
 	}
 	return out, nil
 }

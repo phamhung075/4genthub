@@ -14,17 +14,18 @@
 // note, and what this test measures for each:
 //
 //	(a) manage_task action=update with a `details` string -> entity.AppendProgress ->
-//	    tasks.progress_history, read back by manage_task action=get as the joined `details`.
+//	    a `progress` event in the task_events ledger, read back by manage_task action=get as the
+//	    joined `details`.
 //	(b) a dedicated progress action on manage_task - DOES NOT EXIST. The action list is
 //	    create|update|get|delete|complete|list|search|next|add_dependency|remove_dependency|resume|
 //	    ai_*, and the factory answers "Unknown operation: add_progress". Asserted so the absence is
 //	    measured rather than assumed.
 //	(c) manage_context action=add_progress -> the task-level context's implementation_notes
 //	    .progress_updates, read back by manage_context action=get. A SEPARATE carrier (the context
-//	    store, not tasks.progress_history).
+//	    store, not the task ledger).
 //
 // Every case asserts the CONTENT the read returns, never that the call reported success, and logs the
-// stored column / ledger it is about so a pass is evidence rather than a green light over an empty row.
+// ledger it is about so a pass is evidence rather than a green light over an empty row.
 //
 // To run it:
 //
@@ -182,21 +183,6 @@ func createTask(t *testing.T, ctx context.Context, app *httpapp.App, branchID, t
 	return taskID
 }
 
-// rawProgressHistory reads the stored column straight from the database, so a case can say whether
-// the write landed even when the read does not return it.
-func rawProgressHistory(t *testing.T, sessions *database.SessionManager, taskID string) string {
-	t.Helper()
-	var raw string
-	err := sessions.WithSession(context.Background(), func(ctx context.Context, s database.DBTX) error {
-		return s.QueryRowContext(ctx,
-			`SELECT progress_history::text FROM tasks WHERE id = $1::uuid`, taskID).Scan(&raw)
-	})
-	if err != nil {
-		return "query error: " + err.Error()
-	}
-	return raw
-}
-
 // ledgerKinds reads the kinds the append-only record holds for the task.
 func ledgerKinds(t *testing.T, sessions *database.SessionManager, taskID string) string {
 	t.Helper()
@@ -276,7 +262,6 @@ func TestProgressDetailsRoundTripThroughTheTools(t *testing.T) {
 		}
 		t.Logf("OBSERVED update #2 answer details=%q", fmt.Sprint(taskPayload(t, upd2)["details"]))
 
-		t.Logf("OBSERVED stored tasks.progress_history=%s", rawProgressHistory(t, sessions, taskID))
 		t.Logf("OBSERVED ledger task_events kinds=%s", ledgerKinds(t, sessions, taskID))
 
 		// The property that survives to this tree, asserted rather than logged: the round trip writes

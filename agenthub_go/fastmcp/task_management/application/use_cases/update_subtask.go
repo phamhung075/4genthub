@@ -97,12 +97,6 @@ func (uc *UpdateSubtaskUseCase) Execute(ctx context.Context, request *subtaskdto
 				return nil, err
 			}
 		}
-		if request.ProgressNotes != nil {
-			if err := subtask.AppendProgress(*request.ProgressNotes); err != nil {
-				return nil, err
-			}
-		}
-
 		if request.AcceptanceCriteria != nil {
 			subtask.AcceptanceCriteria = append([]string{}, request.AcceptanceCriteria...)
 		}

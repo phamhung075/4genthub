@@ -403,8 +403,6 @@ type Task struct {
 	GitBranchID          string          `db:"git_branch_id"`
 	Status               string          `db:"status"`
 	Priority             string          `db:"priority"`
-	ProgressHistory      json.RawMessage `db:"progress_history"`
-	ProgressCount        int64           `db:"progress_count"`
 	EstimatedEffort      string          `db:"estimated_effort"`
 	DueDate              *string         `db:"due_date"`
 	CreatedAt            time.Time       `db:"created_at"`
@@ -471,8 +469,6 @@ type Subtask struct {
 	Assignees            json.RawMessage `db:"assignees"`
 	EstimatedEffort      *string         `db:"estimated_effort"`
 	ProgressPercentage   int64           `db:"progress_percentage"`
-	ProgressHistory      json.RawMessage `db:"progress_history"`
-	ProgressCount        int64           `db:"progress_count"`
 	ProgressState        string          `db:"progress_state"`
 	ProgressNotes        string          `db:"progress_notes"`
 	Blockers             string          `db:"blockers"`
@@ -840,8 +836,6 @@ var Tables = []TableDef{
 		{Name: "git_branch_id", Attr: "git_branch_id", GoField: "GitBranchID", SQLType: "UUID", Nullable: false, PrimaryKey: false, Default: DefaultNone, DefaultValue: "", ServerDefault: "", ForeignKey: "project_git_branchs.id", OnDelete: "CASCADE", EnumName: ""},
 		{Name: "status", Attr: "status", GoField: "Status", SQLType: "VARCHAR", Nullable: false, PrimaryKey: false, Default: DefaultString, DefaultValue: "\"todo\"", ServerDefault: "", ForeignKey: "", OnDelete: "", EnumName: ""},
 		{Name: "priority", Attr: "priority", GoField: "Priority", SQLType: "VARCHAR", Nullable: false, PrimaryKey: false, Default: DefaultString, DefaultValue: "\"medium\"", ServerDefault: "", ForeignKey: "", OnDelete: "", EnumName: ""},
-		{Name: "progress_history", Attr: "progress_history", GoField: "ProgressHistory", SQLType: "JSON", Nullable: false, PrimaryKey: false, Default: DefaultEmptyDict, DefaultValue: "", ServerDefault: "", ForeignKey: "", OnDelete: "", EnumName: ""},
-		{Name: "progress_count", Attr: "progress_count", GoField: "ProgressCount", SQLType: "INTEGER", Nullable: false, PrimaryKey: false, Default: DefaultInt, DefaultValue: "0", ServerDefault: "", ForeignKey: "", OnDelete: "", EnumName: ""},
 		{Name: "estimated_effort", Attr: "estimated_effort", GoField: "EstimatedEffort", SQLType: "VARCHAR", Nullable: false, PrimaryKey: false, Default: DefaultString, DefaultValue: "\"2 hours\"", ServerDefault: "", ForeignKey: "", OnDelete: "", EnumName: ""},
 		{Name: "due_date", Attr: "due_date", GoField: "DueDate", SQLType: "VARCHAR", Nullable: true, PrimaryKey: false, Default: DefaultNone, DefaultValue: "", ServerDefault: "", ForeignKey: "", OnDelete: "", EnumName: ""},
 		{Name: "created_at", Attr: "created_at", GoField: "CreatedAt", SQLType: "TIMESTAMP WITHOUT TIME ZONE", Nullable: false, PrimaryKey: false, Default: DefaultNone, DefaultValue: "", ServerDefault: "", ForeignKey: "", OnDelete: "", EnumName: ""},
@@ -881,8 +875,6 @@ var Tables = []TableDef{
 		{Name: "assignees", Attr: "assignees", GoField: "Assignees", SQLType: "JSON", Nullable: false, PrimaryKey: false, Default: DefaultEmptyList, DefaultValue: "", ServerDefault: "", ForeignKey: "", OnDelete: "", EnumName: ""},
 		{Name: "estimated_effort", Attr: "estimated_effort", GoField: "EstimatedEffort", SQLType: "VARCHAR", Nullable: true, PrimaryKey: false, Default: DefaultNone, DefaultValue: "", ServerDefault: "", ForeignKey: "", OnDelete: "", EnumName: ""},
 		{Name: "progress_percentage", Attr: "progress_percentage", GoField: "ProgressPercentage", SQLType: "INTEGER", Nullable: false, PrimaryKey: false, Default: DefaultInt, DefaultValue: "0", ServerDefault: "", ForeignKey: "", OnDelete: "", EnumName: ""},
-		{Name: "progress_history", Attr: "progress_history", GoField: "ProgressHistory", SQLType: "JSON", Nullable: false, PrimaryKey: false, Default: DefaultEmptyDict, DefaultValue: "", ServerDefault: "", ForeignKey: "", OnDelete: "", EnumName: ""},
-		{Name: "progress_count", Attr: "progress_count", GoField: "ProgressCount", SQLType: "INTEGER", Nullable: false, PrimaryKey: false, Default: DefaultInt, DefaultValue: "0", ServerDefault: "", ForeignKey: "", OnDelete: "", EnumName: ""},
 		{Name: "progress_state", Attr: "progress_state", GoField: "ProgressState", SQLType: "progressstate", Nullable: false, PrimaryKey: false, Default: DefaultEnum, DefaultValue: "\"INITIAL\"", ServerDefault: "", ForeignKey: "", OnDelete: "", EnumName: "progressstate"},
 		{Name: "progress_notes", Attr: "progress_notes", GoField: "ProgressNotes", SQLType: "TEXT", Nullable: false, PrimaryKey: false, Default: DefaultString, DefaultValue: "\"\"", ServerDefault: "", ForeignKey: "", OnDelete: "", EnumName: ""},
 		{Name: "blockers", Attr: "blockers", GoField: "Blockers", SQLType: "TEXT", Nullable: false, PrimaryKey: false, Default: DefaultString, DefaultValue: "\"\"", ServerDefault: "", ForeignKey: "", OnDelete: "", EnumName: ""},

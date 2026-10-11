@@ -187,12 +187,18 @@ func TestTaskResponseToDictDependencyError(t *testing.T) {
 
 func TestTaskResponseFromDomain(t *testing.T) {
 	task := sampleDomainTask()
-	resp, err := TaskResponseFromDomain(context.Background(), task, nil, nil, nil, nil, nil, nil)
+	// details render the LEDGER's progress events: the task row carries no progress column any more,
+	// so a response built with the events is the only one that can carry a note.
+	events := []*entities.TaskEvent{{
+		Kind:    entities.TaskEventKindProgress,
+		Payload: map[string]any{"content": "=== Progress 1 ===\nhello", "progress_number": float64(1)},
+	}}
+	resp, err := TaskResponseFromDomain(context.Background(), task, nil, events, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatalf("err = %v", err)
 	}
-	if want := task.GetProgressHistoryText(); resp.Details != want {
-		t.Fatalf("details = %q, want %q", resp.Details, want)
+	if want := task.ProgressTextWith(events); resp.Details != want || resp.Details == "" {
+		t.Fatalf("details = %q, want the ledger note %q", resp.Details, want)
 	}
 	if !reflect.DeepEqual(resp.Assignees, []string{"@coding-agent", "bob"}) {
 		t.Fatalf("assignees = %v, want the stored values unchanged", resp.Assignees)
@@ -232,8 +238,7 @@ func sampleDomainTask() *entities.Task {
 	updated := time.Date(2025, 1, 2, 3, 4, 6, 0, time.UTC)
 	t := &entities.Task{
 		ID: &tid, Title: "T", Description: "D", Status: &status, Priority: &priority,
-		ProgressHistory: map[string]any{"progress_1": map[string]any{"x": 1}},
-		ProgressCount:   1, EstimatedEffort: "2h", Assignees: []string{"@coding-agent", "bob"},
+		EstimatedEffort: "2h", Assignees: []string{"@coding-agent", "bob"},
 		Labels: []string{"bug"}, Dependencies: []value_objects.TaskId{dep},
 		Subtasks: []string{"s1", "s2"}, CompletedSubtasks: 1, DueDate: &due,
 		ContextID: &ctxID, OverallProgress: 42,

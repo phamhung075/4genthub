@@ -48,6 +48,49 @@ type StatusLedger struct {
 // Enabled reports whether both halves are wired.
 func (l StatusLedger) Enabled() bool { return l.Tx != nil && l.Ledger != nil }
 
+// NextProgressNumber returns the number a new progress note for the task takes: one past the highest
+// progress_number the task's `progress` events carry. The number must come from the ledger rather
+// than a fresh counter because the carry step copies a dropped column's numbers into the ledger
+// intact: a task whose notes were numbered 1..N must continue at N+1, since a restart at 1 would
+// collide on the identity a reader merges by (content plus progress_number together) and the carry's
+// own guard would then treat the new note as one the ledger already holds, losing it. With no ledger
+// reader in reach - a unit test's seam, or the id of a task that does not exist yet - it answers 1,
+// which is what a fresh task's first note takes.
+func (l StatusLedger) NextProgressNumber(ctx context.Context, taskID string) (int, error) {
+	if l.Events == nil || taskID == "" {
+		return 1, nil
+	}
+	events, err := l.Events.Events(ctx, taskID)
+	if err != nil {
+		return 0, err
+	}
+	highest := 0.0
+	for _, event := range events {
+		if event == nil || event.Kind != entities.TaskEventKindProgress {
+			continue
+		}
+		if n := progressNumberOf(event.Payload["progress_number"]); n > highest {
+			highest = n
+		}
+	}
+	return int(highest) + 1, nil
+}
+
+// progressNumberOf reads a progress_number from a ledger payload: a float64 after the JSON round trip
+// the repository reads, and an int in a hand-built payload - the same tolerance entities' numberOf
+// has.
+func progressNumberOf(v any) float64 {
+	switch n := v.(type) {
+	case int:
+		return float64(n)
+	case int64:
+		return float64(n)
+	case float64:
+		return n
+	}
+	return 0
+}
+
 // ErrLedgerNotWired is returned when a status write reaches an unwired ledger. It is an error rather
 // than a quiet bare save because the quiet version was a lie: the status committed, NO entry was
 // written, the call returned success and the updated frame still went out - a clean success over an

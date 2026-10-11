@@ -100,11 +100,18 @@ func (u *UpdateTaskUseCase) Execute(ctx context.Context, request task.UpdateTask
 		}
 	}
 
-	// The note is numbered here and RECORDED below, inside the transaction that saves the task:
-	// O1c's switch stops the column write, so dropping this entry would lose the note.
+	// The note's number comes from the LEDGER, not from the entity: the carry step copies a dropped
+	// column's numbers into the ledger intact, so a task whose notes were numbered 1..N continues at
+	// N+1 rather than restarting (a restart would collide on the identity a reader merges by). The
+	// note is RECORDED below, inside the transaction that saves the task: dropping this entry would
+	// lose the note.
 	var progressNotes []LedgerProgress
 	if request.Details != nil {
-		note, err := taskEntity.AppendProgress(*request.Details)
+		number, err := u.ledger.NextProgressNumber(ctx, ledgerTaskID(taskEntity))
+		if err != nil {
+			return nil, err
+		}
+		note, err := taskEntity.AppendProgress(number, *request.Details)
 		if err != nil {
 			return nil, err
 		}

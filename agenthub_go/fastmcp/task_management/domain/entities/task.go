@@ -33,8 +33,6 @@ type Task struct {
 	Status             *value_objects.TaskStatus
 	Priority           *value_objects.Priority
 	GitBranchID        *string
-	ProgressHistory    map[string]any
-	ProgressCount      int
 	EstimatedEffort    string
 	Assignees          []string
 	Labels             []string
@@ -75,9 +73,6 @@ func NewTask(t Task) (*Task, error) {
 	}
 	if s.ProgressState == "" {
 		s.ProgressState = value_objects.ProgressStateInitial
-	}
-	if s.ProgressHistory == nil {
-		s.ProgressHistory = map[string]any{}
 	}
 	if s.Assignees == nil {
 		s.Assignees = []string{}
@@ -286,41 +281,27 @@ func (t *Task) UpdateDescription(description string) error {
 	return nil
 }
 
-// AppendProgress appends numbered progress to the history AND returns the note it wrote, so the
-// caller can record that same note as a `progress` entry in the task-event ledger.
+// AppendProgress builds the numbered progress note the caller records as a `progress` entry in the
+// task-event ledger, and returns it. The column is gone: the ledger is the ONE home of a note, so
+// there is no second write here and no counter on the entity.
 //
-// BOTH writes is O1c's decision rather than a transitional accident: the column keeps holding every
-// note, so anything that still reads it - and the carry that will copy it into the ledger - sees the
-// whole history; the ledger starts holding notes from the day of the switch; and ProgressCount stays
-// the ONE number source, so there is no "1 + max across two sources" rule to get wrong. The price is
-// that a note then exists in BOTH sources, which is why readers merge them by the identity the
-// payload declares instead of assuming either source is complete.
+// The number is the CALLER's, because the ledger is where the sequence lives now. The carry step
+// copies a dropped column's numbers into the ledger intact, so a task whose notes were numbered
+// 1..N must continue at N+1 rather than restart at 1: a restart would collide on the identity a
+// reader merges by - content plus progress_number together - and the carry's own guard would then
+// skip a note the ledger "already holds", silently losing it. The caller therefore reads the task's
+// highest ledger number and hands the next one in.
 //
-// The returned entry is what both sources store: the text WITH its numbered header, the number, and
-// the timestamp. Keeping that shape here, beside the counter that produces it, is what makes a note
-// read identically whichever source a reader gets it from.
-func (t *Task) AppendProgress(content string) (ProgressEntry, error) {
-	t.ProgressCount++
-	header := fmt.Sprintf("=== Progress %d ===", t.ProgressCount)
-	if t.ProgressHistory == nil {
-		t.ProgressHistory = map[string]any{}
-	}
+// The returned entry is the payload the recorder stores: the text WITH its numbered header (the
+// shape the column stored and the carry copies), that number, and the timestamp.
+func (t *Task) AppendProgress(number int, content string) (ProgressEntry, error) {
+	header := fmt.Sprintf("=== Progress %d ===", number)
 	if err := t.Touch("progress_update"); err != nil {
 		return ProgressEntry{}, err
 	}
-	t.ProgressHistory[fmt.Sprintf("progress_%d", t.ProgressCount)] = map[string]any{
-		"content":         header + "\n" + content,
-		"timestamp":       value_objects.IsoFormat(*t.UpdatedAt),
-		"progress_number": t.ProgressCount,
-	}
 	t.ContextID = nil
-	t.emit("progress_history", map[string]any{
-		"old_value": fmt.Sprintf("progress_added_%d", t.ProgressCount-1),
-		"new_value": fmt.Sprintf("progress_added_%d", t.ProgressCount),
-	})
 	return ProgressEntry{
-		Number:    float64(t.ProgressCount),
-		Key:       fmt.Sprintf("progress_%d", t.ProgressCount),
+		Number:    float64(number),
 		Content:   header + "\n" + content,
 		Timestamp: value_objects.IsoFormat(*t.UpdatedAt),
 	}, nil
@@ -498,92 +479,32 @@ func numberOf(v any) float64 {
 	return 0
 }
 
-// ProgressEntry is one progress note as both sources store it: the number it was written under, the
-// key it is stored under, the text exactly as the column holds it - the numbered header is part of
-// the stored string, so a note reads the same whichever source it is read from - and the timestamp
-// the cell carries, which the event payload mirrors.
+// ProgressEntry is one progress note as the ledger stores it: the number it was written under, the
+// text exactly as the payload carries it - the numbered header is part of the stored string, so a
+// note reads the same whichever path produced it - and the timestamp the payload mirrors.
 type ProgressEntry struct {
 	Number    float64
-	Key       string
 	Content   string
 	Timestamp string
 }
 
-// ProgressEntries returns the stored notes in the order GetProgressHistoryText joins them. It exists
-// because a reader that has to merge this column with the event ledger must order the two sources the
-// same way this orders one of them: O1c moves progress notes to the ledger, and while the column still
-// holds the notes written before the switch, the merged view is the only correct one.
-func (t *Task) ProgressEntries() []ProgressEntry {
-	entries := make([]ProgressEntry, 0, len(t.ProgressHistory))
-	for k, v := range t.ProgressHistory {
-		// A key whose value is not a note object, or an object whose content is not a string, is not a
-		// note, and neither is turned into one here. The discards this replaces are the pattern that
-		// hid the original defect: an entry invented from them would carry the empty string under
-		// number 0, which renders as a blank line AND claims that identity in the merged reader, where
-		// ProgressTextWith uses it to drop the ledger's own copy of a note.
-		m, ok := v.(map[string]any)
-		if !ok {
-			continue
-		}
-		c, ok := m["content"].(string)
-		if !ok {
-			continue
-		}
-		entries = append(entries, ProgressEntry{Number: numberOf(m["progress_number"]), Key: k, Content: c})
-	}
-	sort.Slice(entries, func(i, j int) bool {
-		if entries[i].Number != entries[j].Number {
-			return entries[i].Number < entries[j].Number
-		}
-		return entries[i].Key < entries[j].Key
-	})
-	return entries
-}
-
-// GetProgressHistoryText joins the history entries ordered by progress number.
-func (t *Task) GetProgressHistoryText() string {
-	entries := t.ProgressEntries()
-	parts := make([]string, len(entries))
-	for i, e := range entries {
-		parts[i] = e.Content
-	}
-	return strings.Join(parts, "\n\n")
-}
-
-// ProgressTextWith joins the notes this task holds in the progress_history column with the notes its
-// `progress` ledger events carry, which is what a reader needs while O1c is half-converted: the
-// column holds every note written before the switch (and is frozen there until the carry), the
-// ledger holds every note written after it, and either source alone is missing notes.
+// ProgressTextWith renders the task's progress notes from the LEDGER's events: the note text of every
+// `progress` event, ordered by the number its payload declares, joined the way the column's own
+// rendering joined them. It is the only progress surface now - the task row's progress_history column
+// is gone - so the argument is the whole source, not one half of a merge.
 //
-// The identity is the note's progress_number - read from an event's payload exactly as it is read
-// from a column entry - because it is the number BOTH sources already order by. That makes the
-// result the same before and after the carry: while the carry has copied the column into events but
-// not yet dropped it, the same note is in both sources, and it merges into one row here rather than
-// rendering twice. On a collision the column's copy wins; the two are byte-identical by
-// construction (the event payload stores the text exactly as the column does, numbered header
-// included), so the choice cannot be observed.
-//
-// A nil or empty slice returns exactly what GetProgressHistoryText returns, which is what a caller
-// with no ledger reader in reach should pass rather than inventing an empty note.
+// The identity is the note's content plus its progress_number together, read from the payload exactly
+// as the writer stores it: that is the identity the carry's guard uses to tell a carried copy from a
+// note the ledger already holds, so deduping on it keeps a carried copy from rendering twice even if
+// one reached the ledger. An event whose payload carries no readable content is not a note, and it is
+// skipped rather than rendered as a blank line.
 func (t *Task) ProgressTextWith(progressEvents []*TaskEvent) string {
-	// The identity is the one the payload itself declares, never a heuristic: a live note is
-	// identified by its content and its number TOGETHER, and a carried note - one the carry copied
-	// out of the column, which carries carried_from - is a copy of a note that is already there, so
-	// it is dropped whenever a note with the same content and number is present from either source.
-	//
-	// That is why the column write is kept beside the event write rather than switched off: a note
-	// then exists in BOTH sources for its whole life, and the rule "no note renders twice while it
-	// exists in both" is the steady state rather than a carry-time special case. It also makes the
-	// merge correct without knowing how far the carry has got.
 	type noteIdentity struct {
 		number  float64
 		content string
 	}
-	entries := t.ProgressEntries()
+	entries := make([]ProgressEntry, 0, len(progressEvents))
 	seen := map[noteIdentity]bool{}
-	for _, e := range entries {
-		seen[noteIdentity{e.Number, e.Content}] = true
-	}
 	for _, event := range progressEvents {
 		if event == nil || event.Kind != TaskEventKindProgress {
 			continue
@@ -591,8 +512,6 @@ func (t *Task) ProgressTextWith(progressEvents []*TaskEvent) string {
 		number := numberOf(event.Payload["progress_number"])
 		content, ok := event.Payload["content"].(string)
 		if !ok {
-			// The same rule as the column side: an event whose payload carries no readable note is not
-			// a note, and it must not be rendered as a blank line or claim an identity either.
 			continue
 		}
 		id := noteIdentity{number, content}
@@ -600,17 +519,13 @@ func (t *Task) ProgressTextWith(progressEvents []*TaskEvent) string {
 			continue
 		}
 		seen[id] = true
-		entries = append(entries, ProgressEntry{
-			Number:  number,
-			Key:     fmt.Sprintf("progress_%v", number),
-			Content: content,
-		})
+		entries = append(entries, ProgressEntry{Number: number, Content: content})
 	}
 	sort.Slice(entries, func(i, j int) bool {
 		if entries[i].Number != entries[j].Number {
 			return entries[i].Number < entries[j].Number
 		}
-		return entries[i].Key < entries[j].Key
+		return entries[i].Content < entries[j].Content
 	})
 	parts := make([]string, len(entries))
 	for i, e := range entries {

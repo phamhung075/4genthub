@@ -46,11 +46,11 @@ func ledgerSeedTask(t *testing.T, sm *database.SessionManager, taskID, userID, s
 	ledgerExec(t, sm, `INSERT INTO project_git_branchs (id, project_id, name, description, created_at, updated_at, priority, status, metadata, task_count, completed_task_count, user_id)
 		VALUES ($1,$2,'ledger branch','',now(),now(),'medium','todo','{}',0,0,$3) ON CONFLICT (id) DO NOTHING`, branchID, projectID, userID)
 	ledgerExec(t, sm, `
-		INSERT INTO tasks (id, title, description, git_branch_id, status, priority, progress_history,
-			progress_count, estimated_effort, created_at, updated_at, completion_summary, testing_notes,
+		INSERT INTO tasks (id, title, description, git_branch_id, status, priority,
+			estimated_effort, created_at, updated_at, completion_summary, testing_notes,
 			progress_percentage, progress_state, user_id)
-		VALUES ($1::uuid, 'ledger subject', 'what the task is for', $2::uuid, $3, 'medium', '{}'::json,
-			0, '', now(), now(), '', '', 0, 'INITIAL', $4)`, taskID, branchID, status, userID)
+		VALUES ($1::uuid, 'ledger subject', 'what the task is for', $2::uuid, $3, 'medium',
+			'', now(), now(), '', '', 0, 'INITIAL', $4)`, taskID, branchID, status, userID)
 }
 
 func ledgerExec(t *testing.T, sm *database.SessionManager, sql string, args ...any) {
