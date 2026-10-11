@@ -38,6 +38,19 @@ Track test suite changes, fixes, and improvements for agenthub.
   -> 1 file / 12 tests passed; `npx vitest run src/tests/components/Header.test.tsx` -> 1 file / 19
   passed; `E2E_BASE_URL=http://localhost:3800 npx playwright test e2e/shell.spec.ts --workers=1` ->
   **4 passed (27.0s)**, which is the pre-existing lg shell test plus the three new cases.
+- ONE CASE DELETED, NOT RE-PINNED, and the FULL SUITE is what found it: `src/tests/theme/muiTheme.test.ts`
+  asserted `lightTheme.palette.secondary` against the violet keys. R1 deletes that palette entry, so the
+  case asserts a thing that no longer exists and it went - with the three dead `secondary*` keys it read
+  from the file's mocked `themeConfig`, in both modes. It was invisible to the themeConfig run because the
+  two files own different halves of the palette: themeConfig.test.ts pins the values, muiTheme.test.ts
+  pins the mapping. The primary case next to it was left alone, because it is already an equality against
+  `themeConfig` and moved with the palette for free.
+- Green after that fix, all measured: `npx vitest run src/tests/theme/muiTheme.test.ts` -> 20 passed;
+  `npx vite build` -> the production artefact (entry `assets/index-CGM811WN.js`, 292348 B, minified,
+  NODE_ENV production); `npx vitest run` for the whole suite -> **122 files / 1878 tests passed,
+  0 failed, 102.8s** - one case fewer than the 1879 the failing run counted, which is exactly the
+  deletion above and not a lost assertion. The suite's stderr still prints the pre-existing
+  setState-in-passive-effect React error; it is the WS item on `qitem-20261011204043`, not a failure.
 
 ## 2026-10-11 - the shell spec's fit assertion becomes geometric, and the one palette pin the AA fix moves
 
