@@ -8,12 +8,12 @@ interface ShimmerBadgeProps extends React.HTMLAttributes<HTMLDivElement> {
   shimmerColor?: string;
 }
 
-export const ShimmerBadge: React.FC<ShimmerBadgeProps> = ({ 
-  children, 
+export const ShimmerBadge: React.FC<ShimmerBadgeProps> = ({
+  children,
   className = '',
   variant = 'default',
   shimmerColor = '#d1d5db',
-  ...props 
+  ...props
 }) => {
   const customCss = `
     @property --angle {
@@ -25,6 +25,19 @@ export const ShimmerBadge: React.FC<ShimmerBadgeProps> = ({
     @keyframes shimmer-spin {
       to {
         --angle: 360deg;
+      }
+    }
+
+    .shimmer-spin-layer {
+      animation: shimmer-spin 2.5s linear infinite;
+    }
+
+    /* The loop is decorative, so a reduce request stops it. The class, not an
+       inline style, carries the animation: an inline declaration would outrank
+       any stylesheet rule and the loop could not be switched off. */
+    @media (prefers-reduced-motion: reduce) {
+      .shimmer-spin-layer {
+        animation: none;
       }
     }
   `;
@@ -56,10 +69,9 @@ export const ShimmerBadge: React.FC<ShimmerBadgeProps> = ({
       >
         {(variant === 'default' || variant === 'destructive') && (
           <div
-            className="absolute inset-0"
+            className="absolute inset-0 shimmer-spin-layer"
             style={{
               background: `conic-gradient(from var(--angle), transparent 25%, ${shimmerColor}, transparent 50%)`,
-              animation: 'shimmer-spin 2.5s linear infinite',
             }}
           />
         )}

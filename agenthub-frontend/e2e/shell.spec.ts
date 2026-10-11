@@ -64,7 +64,14 @@ async function signIn(page: Page): Promise<void> {
   await expect(page).toHaveURL(/\/dashboard/, { timeout: 45_000 })
 }
 
-type NavItem = { label: string; labelRects: number; top: number; height: number }
+type NavItem = {
+  label: string
+  labelRects: number
+  top: number
+  left: number
+  right: number
+  height: number
+}
 
 type ShellReading = {
   width: number
@@ -79,7 +86,7 @@ type ShellReading = {
   headerBox: { scrollWidth: number; clientWidth: number }
   navTextActive: string
   htmlInlineStyle: boolean
-  nav: { found: boolean; scrollWidth: number; clientWidth: number }
+  nav: { found: boolean; scrollWidth: number; clientWidth: number; left: number; right: number }
   ul: { scrollWidth: number; clientWidth: number }
   doc: { scrollWidth: number; innerWidth: number }
   items: NavItem[]
@@ -134,6 +141,8 @@ async function readShell(page: Page, width: number): Promise<ShellReading> {
           label,
           labelRects: Math.max(...labelSpans.map(lineBoxes)),
           top: Math.round(rect.top),
+          left: Math.round(rect.left),
+          right: Math.round(rect.right),
           height: Math.round(rect.height),
         })
       }
@@ -213,8 +222,14 @@ async function readShell(page: Page, width: number): Promise<ShellReading> {
           : []
       })(),
       nav: nav
-        ? { found: true, scrollWidth: nav.scrollWidth, clientWidth: nav.clientWidth }
-        : { found: false, scrollWidth: 0, clientWidth: 0 },
+        ? {
+            found: true,
+            scrollWidth: nav.scrollWidth,
+            clientWidth: nav.clientWidth,
+            left: Math.round(nav.getBoundingClientRect().left),
+            right: Math.round(nav.getBoundingClientRect().right),
+          }
+        : { found: false, scrollWidth: 0, clientWidth: 0, left: 0, right: 0 },
       headerBox: header
         ? { scrollWidth: header.scrollWidth, clientWidth: header.clientWidth }
         : { scrollWidth: 0, clientWidth: 0 },
@@ -223,9 +238,12 @@ async function readShell(page: Page, width: number): Promise<ShellReading> {
       // JavaScript; an inline style on <html> is how that would show itself, and it
       // would silently outrank every declaration in theme.css.
       htmlInlineStyle: Boolean(root.getAttribute('style')),
-      // The navigation's own box also carries a decorative layer at -inset-1, so its
-      // scrollWidth is 4px over its clientWidth by design: the list is what has to
-      // fit, and the document is what must not scroll sideways.
+      // Kept for the record only. Both the navigation and its list report their
+      // scrollWidth a few px over their clientWidth REGARDLESS of content (751/748
+      // before the rows were narrowed, 735/732 after), and the nav's 4px is its
+      // decorative -inset-1 layer by design, so this ratio cannot decide whether the
+      // pills fit; the item edges, asserted against the nav's own box, are the
+      // honest instrument.
       ul: ul
         ? { scrollWidth: ul.scrollWidth, clientWidth: ul.clientWidth }
         : { scrollWidth: 0, clientWidth: 0 },
@@ -301,7 +319,7 @@ test('the shell: one-line nav, one h1, one accent, both themes', async ({ page }
           `row=${JSON.stringify(reading.headerRow)} right=${JSON.stringify(reading.rightPieces)} ` +
           `headerBox=${reading.headerBox.scrollWidth}/${reading.headerBox.clientWidth} ` +
           `navActive=${reading.navTextActive} htmlInlineStyle=${reading.htmlInlineStyle} ` +
-          `nav=${reading.nav.scrollWidth}/${reading.nav.clientWidth} ` +
+          `nav=${reading.nav.scrollWidth}/${reading.nav.clientWidth} navRight=${reading.nav.right} ` +
           `ul=${reading.ul.scrollWidth}/${reading.ul.clientWidth} ` +
           `doc=${reading.doc.scrollWidth}/${reading.doc.innerWidth} ` +
           `spread=${Math.max(...tops) - Math.min(...tops)}px ` +
@@ -330,10 +348,24 @@ test('the shell: one-line nav, one h1, one accent, both themes', async ({ page }
     const tops = reading.items.map((i) => i.top)
     const spread = Math.max(...tops) - Math.min(...tops)
     expect(spread, `${where}: every item on one row (${spread}px spread)`).toBeLessThanOrEqual(4)
+    // The items must sit inside the navigation's own box: past its padding edge the
+    // header clips them, and that clipping is what a user sees. A scrollWidth-over-
+    // clientWidth read cannot carry this assertion - it reports the same 3px for
+    // ANY content in this list (751/748 with the long labels, 735/732 after they
+    // were narrowed), which is subpixel rounding, not a pill sticking out.
+    const itemRights = reading.items.map((i) => i.right)
     expect(
-      reading.ul.scrollWidth,
-      `${where}: the items fit their row`,
-    ).toBeLessThanOrEqual(reading.ul.clientWidth + 1)
+      Math.max(...itemRights),
+      `${where}: every item's right edge is inside the navigation (item rights ${JSON.stringify(
+        itemRights,
+      )} vs nav right ${reading.nav.right})`,
+    ).toBeLessThanOrEqual(reading.nav.right + 1)
+    for (let i = 1; i < reading.items.length; i += 1) {
+      expect(
+        reading.items[i].left,
+        `${where}: "${reading.items[i].label}" starts after "${reading.items[i - 1].label}" ends (${reading.items[i].left} vs ${reading.items[i - 1].right})`,
+      ).toBeGreaterThanOrEqual(reading.items[i - 1].right - 1)
+    }
     expect(
       reading.doc.scrollWidth,
       `${where}: the chrome does not make the document scroll sideways`,

@@ -9,6 +9,7 @@
 @import './styles/subtask-animations.css';
 @import './styles/branch-animations.css';
 @import './styles/seat-animations.css';
+@import './styles/project-animations.css';
 
 @tailwind base;
 @tailwind components;

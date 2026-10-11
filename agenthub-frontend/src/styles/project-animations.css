@@ -1,0 +1,111 @@
+/**
+ * PROJECT ANIMATIONS
+ * Animations for the project rows on the ProjectList page, driven by WebSocket
+ * project events through AnimationFactory (entity type 'project').
+ * Class names follow AnimationFactory's {entity}Row{Animation}Animation rule.
+ */
+
+/* ========================================
+   CREATE ANIMATION (Slide In from RIGHT to LEFT)
+   ======================================== */
+@keyframes projectRowSlideIn {
+  0% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  20% {
+    transform: translateX(60%);
+    opacity: 0.2;
+  }
+  40% {
+    transform: translateX(30%);
+    opacity: 0.4;
+  }
+  60% {
+    transform: translateX(10%);
+    opacity: 0.7;
+  }
+  80% {
+    transform: translateX(-2%);
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.projectRowCreateAnimation {
+  animation: projectRowSlideIn 0.5s ease-out forwards;
+  transform: translateX(100%);
+  opacity: 0;
+}
+
+/* ========================================
+   UPDATE ANIMATION (Flash Background 3x)
+   ======================================== */
+@keyframes projectRowFlash {
+  0%, 100% {
+    background-color: transparent;
+  }
+  16.67% {
+    background-color: rgba(59, 130, 246, 0.3);
+  }
+  33.33% {
+    background-color: transparent;
+  }
+  50% {
+    background-color: rgba(59, 130, 246, 0.3);
+  }
+  66.67% {
+    background-color: transparent;
+  }
+  83.33% {
+    background-color: rgba(59, 130, 246, 0.3);
+  }
+}
+
+.projectRowUpdateAnimation {
+  animation: projectRowFlash 1.7s ease-in-out;
+}
+
+/* ========================================
+   DELETE ANIMATION (Slide Out to Right)
+   ======================================== */
+@keyframes projectRowSlideOut {
+  0% {
+    transform: translateX(0);
+    opacity: 0;
+  }
+  30% {
+    transform: translateX(20%);
+    opacity: 1;
+  }
+  60% {
+    transform: translateX(50%);
+    opacity: 0.7;
+  }
+  80% {
+    transform: translateX(80%);
+    opacity: 0.3;
+  }
+  100% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+.projectRowDeleteAnimation {
+  animation: projectRowSlideOut 0.8s ease-in;
+}
+
+/* ========================================
+   ACCESSIBILITY
+   ======================================== */
+@media (prefers-reduced-motion: reduce) {
+  .projectRowCreateAnimation,
+  .projectRowUpdateAnimation,
+  .projectRowDeleteAnimation {
+    animation: none;
+  }
+}

@@ -698,7 +698,15 @@ body {
   .animate-slide-in,
   .animate-slide-in-right,
   .animate-scale-in,
-  .animate-shimmer {
-    animation: none;
+  .animate-shimmer,
+  /* Tailwind's own infinite utilities. They are emitted AFTER this file, so a
+     plain declaration here loses the cascade and the !important is what makes
+     the reduce request win (measured: a spin 1000ms infinite survived on /login
+     and /dashboard until this was added). */
+  .animate-spin,
+  .animate-pulse,
+  .animate-ping,
+  .animate-bounce {
+    animation: none !important;
   }
 }

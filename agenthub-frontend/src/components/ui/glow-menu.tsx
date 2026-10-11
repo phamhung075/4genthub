@@ -114,7 +114,7 @@ export const MenuBar = React.forwardRef<React.ElementRef<typeof motion.nav>, Men
                     />
                     <motion.div
                       className={cn(
-                        "flex items-center gap-1.5 px-2 py-2 whitespace-nowrap relative z-10 bg-transparent transition-colors rounded-lg",
+                        "flex items-center gap-1 px-2 py-2 whitespace-nowrap relative z-10 bg-transparent transition-colors rounded-lg",
                         isActive
                           ? "text-nav-text-active"
                           : "text-nav-text group-hover:text-nav-text-hover",

@@ -2,8 +2,8 @@
 export const themeConfig = {
   light: {
     // Primary Colors
-    primary: '#3b82f6', // blue-500
-    primaryHover: '#2563eb', // blue-600
+    primary: '#2563eb', // blue-600 - AA on white (5.17:1); blue-500 measured 3.68:1
+    primaryHover: '#1d4ed8', // blue-700 - AA under the pointer (6.70:1)
     primaryLight: '#dbeafe', // blue-100
     primaryDark: '#1e40af', // blue-800
 
@@ -41,9 +41,10 @@ export const themeConfig = {
     inputText: '#111827', // gray-900
     inputPlaceholder: '#9ca3af', // gray-400
 
-    // Button Colors
-    buttonPrimaryBg: '#3b82f6', // blue-500
-    buttonPrimaryHover: '#2563eb', // blue-600
+    // Button Colors. These must stay equal to primary/primaryHover: the palette
+    // test pins the match, and MUI renders the login button from them.
+    buttonPrimaryBg: '#2563eb', // blue-600 - white on blue-500 measured 3.68:1
+    buttonPrimaryHover: '#1d4ed8', // blue-700
     buttonPrimaryText: '#ffffff',
     buttonSecondaryBg: '#e5e7eb', // gray-200
     buttonSecondaryHover: '#d1d5db', // gray-300
@@ -63,9 +64,9 @@ export const themeConfig = {
     error: '#ef4444', // red-500
     errorLight: '#fee2e2', // red-100
     errorDark: '#dc2626', // red-600
-    info: '#3b82f6', // blue-500
+    info: '#2563eb', // blue-600 - pinned equal to primary
     infoLight: '#dbeafe', // blue-100
-    infoDark: '#2563eb', // blue-600
+    infoDark: '#1d4ed8', // blue-700 - pinned equal to primaryHover
 
     // Shadow & Overlay
     shadow: 'rgba(0, 0, 0, 0.1)',

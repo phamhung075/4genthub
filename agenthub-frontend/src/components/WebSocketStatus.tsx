@@ -37,7 +37,7 @@ export function WebSocketStatus() {
   };
 
   const getStatusColor = () => {
-    if (isConnected) return 'text-green-600 dark:text-green-400';
+    if (isConnected) return 'text-green-700 dark:text-green-400';
     if (isReconnecting) return 'text-yellow-600 dark:text-yellow-400';
     if (error) return 'text-red-600 dark:text-red-400';
     return 'text-gray-600 dark:text-gray-400';

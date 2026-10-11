@@ -2,6 +2,24 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-11 - the shell spec's fit assertion becomes geometric, and the one palette pin the AA fix moves
+
+- THE SHELL SPEC'S FIT ASSERTION, REPLACED RATHER THAN RELAXED:
+  `agenthub-frontend/e2e/shell.spec.ts` asserted `ul.scrollWidth <= ul.clientWidth + 1`, and it read
+  735 vs 732 after the rows were narrowed - the same 3px it read as 751/748 before them, for ANY
+  content. Subpixel rounding cannot distinguish a fitting list from a squeezed one, so the assertion is
+  now geometric: every item's own right edge inside the navigation's box, and consecutive items not
+  overlapping. The ratio stays in the reading, marked as a record rather than evidence.
+- ONE PIN MOVED, AND IT IS NAMED: `src/tests/theme/themeConfig.test.ts` pinned `light.primary` to
+  `#3b82f6`; the auditing contrast fix changes that value to `#2563eb`, so the literal pin moved with
+  it. The consistency cases (`buttonPrimaryBg === primary`, `buttonPrimaryHover === primaryHover`,
+  `info === primary`, `infoDark === primaryHover`) were NOT re-pinned - they still hold, and they are
+  why `info` and `infoDark` moved in the palette alongside `primary`.
+- Green at the change, from `agenthub-frontend`: `npx vitest run src/tests/theme
+  src/tests/components/ProjectList/components/BranchItem.test.tsx` -> 3 files / 49 tests passed;
+  `npx vitest run src/tests/App.test.tsx src/tests/components/ProjectList` -> 6 files / 104 tests
+  passed; `npx playwright test e2e/shell.spec.ts --workers=1` -> 1 passed.
+
 ## 2026-10-11 - the shell spec, and the three theme cases that existed only for the deleted writer
 
 - ADDED `agenthub-frontend/e2e/shell.spec.ts` (Playwright; one worker; run as

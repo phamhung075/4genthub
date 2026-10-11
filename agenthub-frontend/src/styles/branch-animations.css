@@ -18,7 +18,7 @@
   }
 }
 
-.branchCreateAnimation {
+.branchRowCreateAnimation {
   animation: branchFadeIn 0.5s ease-out;
 }
 
@@ -34,7 +34,7 @@
   }
 }
 
-.branchUpdateAnimation {
+.branchRowUpdateAnimation {
   animation: branchHighlight 0.8s ease-in-out;
 }
 
@@ -55,7 +55,7 @@
   }
 }
 
-.branchDeleteAnimation {
+.branchRowDeleteAnimation {
   animation: branchFadeOut 0.5s ease-in;
 }
 
@@ -63,9 +63,9 @@
    ACCESSIBILITY
    ======================================== */
 @media (prefers-reduced-motion: reduce) {
-  .branchCreateAnimation,
-  .branchUpdateAnimation,
-  .branchDeleteAnimation {
+  .branchRowCreateAnimation,
+  .branchRowUpdateAnimation,
+  .branchRowDeleteAnimation {
     animation: none;
   }
 }

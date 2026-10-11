@@ -57,7 +57,7 @@ describe('themeConfig', () => {
     it('light theme uses appropriate light colors', () => {
       expect(themeConfig.light.background).toBe('#ffffff');
       expect(themeConfig.light.text).toBe('#111827'); // gray-900
-      expect(themeConfig.light.primary).toBe('#3b82f6'); // blue-500
+      expect(themeConfig.light.primary).toBe('#2563eb'); // blue-600, the AA value (blue-500 measured 3.68:1)
     });
 
     it('dark theme uses appropriate dark colors', () => {
