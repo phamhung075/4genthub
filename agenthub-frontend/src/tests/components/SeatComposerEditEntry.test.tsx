@@ -38,6 +38,7 @@ const composerFixture = (): React.ComponentProps<typeof SeatComposer> => ({
   overlays: {},
   isSaving: false,
   saveError: null,
+  canWrite: true,
   onApply: vi.fn(),
 });
 

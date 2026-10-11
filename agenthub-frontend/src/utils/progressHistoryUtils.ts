@@ -2,36 +2,19 @@
  * Utility functions for parsing and handling progress history
  */
 
-import type { ProgressEntry, ProgressHistoryEntry, ProgressHistoryObject } from '../types/utilityTypes';
+import type { ProgressEntry } from '../types/utilityTypes';
 
 /**
- * Parse progress history from either string (legacy) or object (new format) into individual progress entries
- * @param progressHistory - Progress history in either string or object format from backend
+ * Parse the joined progress history into individual progress entries
+ * @param progressHistory - The joined history text (`details`): "=== Progress N ===\n<content>" blocks
  * @returns Array of progress entries with number and content
  */
-export function parseProgressHistory(progressHistory?: string | ProgressHistoryObject): ProgressEntry[] {
+export function parseProgressHistory(progressHistory?: string): ProgressEntry[] {
   if (!progressHistory) return [];
 
-  // Handle new object format
-  if (typeof progressHistory === 'object' && progressHistory !== null) {
-    const entries: ProgressEntry[] = [];
-
-    // Extract all entries from the object
-    Object.values(progressHistory).forEach((entry: ProgressHistoryEntry) => {
-      if (entry && entry.content && typeof entry.progress_number === 'number') {
-        entries.push({
-          number: entry.progress_number,
-          content: entry.content,
-          timestamp: entry.timestamp,
-        });
-      }
-    });
-
-    // Sort by progress number
-    return entries.sort((a, b) => a.number - b.number);
-  }
-
-  // Handle legacy string format - backward compatibility
+  // The served field is ONE joined string: `details` renders the column's notes merged with the
+  // ledger's. The object shape this used to accept came from a payload the server stopped sending,
+  // and a reader that accepted both could not tell which one a note came from.
   if (typeof progressHistory === 'string') {
     const entries: ProgressEntry[] = [];
     const sections = progressHistory.split(/=== Progress (\d+) ===/).filter(Boolean);
@@ -61,10 +44,10 @@ export function parseProgressHistory(progressHistory?: string | ProgressHistoryO
 
 /**
  * Get the latest progress entry content
- * @param progressHistory - Progress history in either string or object format from backend
+ * @param progressHistory - The joined history text (`details`)
  * @returns Latest progress content or empty string
  */
-export function getLatestProgress(progressHistory?: string | ProgressHistoryObject): string {
+export function getLatestProgress(progressHistory?: string): string {
   const entries = parseProgressHistory(progressHistory);
   return entries.length > 0 ? entries[entries.length - 1].content : '';
 }
@@ -106,11 +89,11 @@ export function cleanProgressText(text: string): string {
 
 /**
  * Get a summary of the latest progress (first line or truncated) with cleaned formatting
- * @param progressHistory - Progress history in either string or object format from backend
+ * @param progressHistory - The joined history text (`details`)
  * @param maxLength - Maximum length for summary
  * @returns Summary of latest progress with clean formatting
  */
-export function getProgressSummary(progressHistory?: string | ProgressHistoryObject, maxLength: number = 100): string {
+export function getProgressSummary(progressHistory?: string, maxLength: number = 100): string {
   const latestProgress = getLatestProgress(progressHistory);
   if (!latestProgress) return '';
 
@@ -134,19 +117,4 @@ export function getProgressSummary(progressHistory?: string | ProgressHistoryObj
   }
 
   return truncated + '...';
-}
-
-/**
- * Format progress entry for display with proper styling classes
- * @param entry - Progress entry to format
- * @param index - Index for alternating styles
- * @returns Formatted entry with CSS classes
- */
-export function formatProgressEntryForDisplay(entry: ProgressEntry, index: number) {
-  const isEven = index % 2 === 0;
-  return {
-    ...entry,
-    cssClasses: isEven ? 'bg-gray-50 dark:bg-gray-800/50' : 'bg-white dark:bg-gray-900/50',
-    borderClasses: 'border-l-4 border-blue-400 dark:border-blue-500',
-  };
 }

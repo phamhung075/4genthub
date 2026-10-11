@@ -50,8 +50,19 @@ func TestTaskLifecycle(t *testing.T) {
 	if err := task.UpdateEstimatedEffort("bogus"); err != nil || task.EstimatedEffort != "medium" {
 		t.Fatal("effort")
 	}
-	if err := task.AppendProgress("hello"); err != nil || task.GetProgressHistoryText() != "=== Progress 1 ===\nhello" {
-		t.Fatalf("progress %q", task.GetProgressHistoryText())
+	// The note is the ledger's to build and number (NewProgressEntry); what is left on the entity is the
+	// touch the write makes, and the entity keeps no copy of the note (the progress_history column is
+	// gone).
+	before := task.UpdatedAt
+	if err := task.TouchForProgress(); err != nil {
+		t.Fatalf("TouchForProgress: %v", err)
+	}
+	if task.UpdatedAt == before {
+		t.Fatal("TouchForProgress did not advance updated_at")
+	}
+	note := NewProgressEntry(1, "hello", value_objects.IsoFormat(*task.UpdatedAt))
+	if note.Content != "=== Progress 1 ===\nhello" || note.Number != 1 {
+		t.Fatalf("progress note = %+v", note)
 	}
 	if err := task.CompleteTask(" ", nil); err == nil {
 		t.Fatal("summary required")
@@ -64,6 +75,58 @@ func TestTaskLifecycle(t *testing.T) {
 	}
 	if n := len(task.GetEvents()); n == 0 || len(task.Events) != 0 {
 		t.Fatal("events drained")
+	}
+}
+
+func TestProgressTextWithRendersALedgerNoteOnce(t *testing.T) {
+	// The ledger is the only progress source. A reader renders its `progress` events ONCE each, in
+	// progress order, deduped by the identity the payload declares - content and progress_number
+	// together - which is the identity a carried copy shares with the note it copies. The ledger's
+	// copies arrive OUT of order here, one of them is the carry's copy of another (carried_from), and
+	// one note exists only in the ledger.
+	task := newTestTask(t)
+	written := NewProgressEntry(1, "first", "2026-01-01T00:00:00Z")
+
+	liveEvent := &TaskEvent{
+		Kind: TaskEventKindProgress,
+		Payload: map[string]any{
+			"content":         written.Content,
+			"progress_number": written.Number,
+			"timestamp":       written.Timestamp,
+		},
+	}
+	carriedCopy := &TaskEvent{
+		Kind: TaskEventKindProgress,
+		Payload: map[string]any{
+			"content":         written.Content,
+			"progress_number": written.Number,
+			"carried_from":    "progress_1",
+		},
+	}
+	laterNoteOnlyInTheLedger := &TaskEvent{
+		Kind:    TaskEventKindProgress,
+		Payload: map[string]any{"content": "=== Progress 2 ===\nlater", "progress_number": float64(2)},
+	}
+
+	want := "=== Progress 1 ===\nfirst\n\n=== Progress 2 ===\nlater"
+	if got := task.ProgressTextWith([]*TaskEvent{laterNoteOnlyInTheLedger, carriedCopy, liveEvent}); got != want {
+		t.Fatalf("a copied note must render once, in order\n got: %q\nwant: %q", got, want)
+	}
+
+	// A kind that is not `progress` is not a note, whatever its payload happens to carry. This input
+	// holds only the later ledger note and the claimed event, so the render is that one note: the
+	// assertion is that the claimed event contributed nothing, not that a note it never received
+	// appears.
+	notANote := &TaskEvent{Kind: TaskEventKindClaimed, Payload: map[string]any{
+		"content": "nope", "progress_number": float64(3),
+	}}
+	if got := task.ProgressTextWith([]*TaskEvent{laterNoteOnlyInTheLedger, notANote}); got != laterNoteOnlyInTheLedger.Payload["content"] {
+		t.Fatalf("a non-progress event reached the notes: %q", got)
+	}
+
+	// The ledger is the whole source now: with no events there is nothing to render.
+	if got := task.ProgressTextWith(nil); got != "" {
+		t.Fatalf("nil events must render nothing, got %q", got)
 	}
 }
 
@@ -176,20 +239,21 @@ func TestNormalizeAssigneesRefusesABareRoleName(t *testing.T) {
 // is indistinguishable from a real note whose text is blank. That is the shape that reported two notes as lost,
 // so the entry now contributes NOTHING rather than a blank.
 func TestTheProgressReaderSkipsEntriesItCannotRead(t *testing.T) {
-	task := &Task{ProgressHistory: map[string]any{
+	// Called as the package function, which is how the subtask route reaches it (converters.go:182):
+	// the ledger line removed the entity's progress column, so no Task is built with one any more.
+	got := ProgressHistoryText(map[string]any{
 		"1": map[string]any{"content": "=== Progress 1 ===\nfirst", "progress_number": 1},
 		"2": "not an object at all",                              // the value that used to be read through a nil map
 		"3": map[string]any{"content": 42, "progress_number": 3}, // a content that is not a string
 		"4": map[string]any{"progress_number": 4},                // no content at all
 		"5": map[string]any{"content": "=== Progress 5 ===\nlast", "progress_number": 5},
-	}}
+	})
 
-	got := task.GetProgressHistoryText()
 	want := "=== Progress 1 ===\nfirst\n\n=== Progress 5 ===\nlast"
 	if got != want {
-		t.Fatalf("GetProgressHistoryText() = %q, want %q: an unreadable entry must contribute nothing rather than a blank line", got, want)
+		t.Fatalf("ProgressHistoryText() = %q, want %q: an unreadable entry must contribute nothing rather than a blank line", got, want)
 	}
 	if strings.Contains(got, "\n\n\n") {
-		t.Fatalf("GetProgressHistoryText() = %q has an empty entry between the separators", got)
+		t.Fatalf("ProgressHistoryText() = %q has an empty entry between the separators", got)
 	}
 }

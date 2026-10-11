@@ -205,3 +205,175 @@ func TestTaskEventAppendGivesOneGaplessUserCursorAndRefusesAResend(t *testing.T)
 		t.Fatal("actor_kind='bogus' was accepted; the database must refuse a value outside the vocabulary")
 	}
 }
+
+// TestProgressEventsByTaskIsOneReadForTheWholePage covers the reader the list and search builders use
+// to render every row's details. It is ONE call for the page, so it must group by task id, name only
+// the progress kind, keep seq order, and answer nothing for a task it was asked about that has no
+// events - and nothing for another user's task.
+func TestProgressEventsByTaskIsOneReadForTheWholePage(t *testing.T) {
+	sessions := newTestRepoEnv(t)
+	ctx := context.Background()
+	branchID := taskRepoTestBranch(t, sessions, taskRepoTestUserA)
+	repo := taskRepoTestNewRepo(t, sessions, taskRepoTestUserA, branchID, false)
+	events := NewTaskEventRepository(sessions, taskRepoTestUserA, branchID)
+
+	withNotes, err := repo.CreateTask(ctx, "Listed with notes", "D", "high", nil, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	withoutNotes, err := repo.CreateTask(ctx, "Listed without notes", "D", "high", nil, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i, content := range []string{"=== Progress 1 ===\nfirst note", "=== Progress 2 ===\nsecond note"} {
+		if _, err := events.Append(ctx, entities.AppendTaskEvent{
+			TaskID:    withNotes.ID.Value,
+			Kind:      entities.TaskEventKindProgress,
+			ActorKind: entities.TaskEventActorHuman,
+			ActorID:   "test",
+			Payload:   map[string]any{"content": content, "progress_number": i + 1},
+		}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	// The same task also carries a non-progress event: the reader names one kind, and a list row
+	// renders notes, so anything else must not come back as one.
+	if _, err := events.Append(ctx, entities.AppendTaskEvent{
+		TaskID:    withNotes.ID.Value,
+		Kind:      entities.TaskEventKindStatusChanged,
+		ActorKind: entities.TaskEventActorHuman,
+		ActorID:   "test",
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	// Another user's ledger, with a note on another user's task. The page is asked for it, and the
+	// answer must not carry it: the repository filters by user_id.
+	foreignBranch := taskRepoTestBranch(t, sessions, taskRepoTestUserB)
+	foreignEvents := NewTaskEventRepository(sessions, taskRepoTestUserB, foreignBranch)
+	foreign, err := taskRepoTestNewRepo(t, sessions, taskRepoTestUserB, foreignBranch, false).
+		CreateTask(ctx, "Another user's task", "D", "high", nil, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := foreignEvents.Append(ctx, entities.AppendTaskEvent{
+		TaskID:    foreign.ID.Value,
+		Kind:      entities.TaskEventKindProgress,
+		ActorKind: entities.TaskEventActorHuman,
+		ActorID:   "test",
+		Payload:   map[string]any{"content": "=== Progress 1 ===\nnot yours", "progress_number": 1},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	byTask, err := events.ProgressEventsByTask(ctx, []string{withNotes.ID.Value, withoutNotes.ID.Value, foreign.ID.Value})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(byTask) != 1 {
+		t.Fatalf("reader answered for %d tasks, want 1 (the page's task that HAS notes): %#v", len(byTask), byTask)
+	}
+	got := byTask[withNotes.ID.Value]
+	if len(got) != 2 {
+		t.Fatalf("notes = %d, want 2: the status event is not a note", len(got))
+	}
+	if got[0].Seq >= got[1].Seq {
+		t.Fatalf("notes are not in seq order: %d then %d", got[0].Seq, got[1].Seq)
+	}
+	if content, _ := got[0].Payload["content"].(string); content != "=== Progress 1 ===\nfirst note" {
+		t.Fatalf("first note = %q, want the seq-1 content", content)
+	}
+	if events, ok := byTask[withoutNotes.ID.Value]; ok {
+		t.Fatalf("a task with no events answered %#v, want no entry: a row with no notes is empty", events)
+	}
+	if _, ok := byTask[foreign.ID.Value]; ok {
+		t.Fatal("another user's task is in the answer: the read is not user-scoped")
+	}
+	if empty, err := events.ProgressEventsByTask(ctx, nil); err != nil || len(empty) != 0 {
+		t.Fatalf("an empty page answered %#v, %v, want an empty map and no error", empty, err)
+	}
+}
+
+// TestNextProgressNumberInTxIsReadInsideTheCallersTransaction is the fix for the gate's MINOR: the note
+// number's MAX+1 is read INSIDE the caller's transaction and under the SAME advisory lock the append
+// takes, never before it. Two writers that each open their own transaction must therefore take
+// DIFFERENT numbers for their notes - the property that keeps a reader's merge identity (content plus
+// number together) from collapsing two live notes into one.
+func TestNextProgressNumberInTxIsReadInsideTheCallersTransaction(t *testing.T) {
+	sessions := newTestRepoEnv(t)
+	ctx := context.Background()
+	branchID := taskRepoTestBranch(t, sessions, taskRepoTestUserA)
+	repo := taskRepoTestNewRepo(t, sessions, taskRepoTestUserA, branchID, false)
+	events := NewTaskEventRepository(sessions, taskRepoTestUserA, branchID)
+
+	task, err := repo.CreateTask(ctx, "Numbering subject", "D", "high", nil, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Outside a transaction it REFUSES: the number is only safe to read while holding the lock the
+	// append takes, and a read that holds nothing is the defect this replaces.
+	if _, err := events.NextProgressNumberInTx(ctx, task.ID.Value); err == nil {
+		t.Fatal("the number was read outside a transaction: nothing holds the lock, so two writers could share it")
+	}
+
+	// A carried note's number is CONTINUED rather than restarted: this is a task whose notes reached 7
+	// while the column still held them.
+	if _, err := events.Append(ctx, entities.AppendTaskEvent{
+		TaskID:    task.ID.Value,
+		Kind:      entities.TaskEventKindProgress,
+		ActorKind: entities.TaskEventActorHuman,
+		ActorID:   "test",
+		Payload:   map[string]any{"content": "=== Progress 7 ===\ncarried", "progress_number": 7},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	var next int
+	if err := sessions.Transaction(ctx, func(ctx context.Context) error {
+		var err error
+		next, err = events.NextProgressNumberInTx(ctx, task.ID.Value)
+		return err
+	}); err != nil || next != 8 {
+		t.Fatalf("next number = %d, %v, want 8: the sequence continues from the carried tip", next, err)
+	}
+
+	// Two writers, each in its own transaction: read the tip, then append its note under it.
+	const writers = 2
+	numbers := make([]int, writers)
+	errs := make([]error, writers)
+	var wg sync.WaitGroup
+	start := make(chan struct{})
+	for i := 0; i < writers; i++ {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			<-start
+			errs[i] = sessions.Transaction(ctx, func(ctx context.Context) error {
+				n, err := events.NextProgressNumberInTx(ctx, task.ID.Value)
+				if err != nil {
+					return err
+				}
+				numbers[i] = n
+				_, err = events.AppendInTx(ctx, entities.AppendTaskEvent{
+					TaskID:    task.ID.Value,
+					Kind:      entities.TaskEventKindProgress,
+					ActorKind: entities.TaskEventActorHuman,
+					ActorID:   "test",
+					Payload:   map[string]any{"content": "=== Progress note ===\nconcurrent", "progress_number": n},
+				})
+				return err
+			})
+		}(i)
+	}
+	close(start)
+	wg.Wait()
+	for i, err := range errs {
+		if err != nil {
+			t.Fatalf("writer %d: %v", i, err)
+		}
+	}
+	seen := map[int]bool{numbers[0]: true, numbers[1]: true}
+	if !seen[8] || !seen[9] {
+		t.Fatalf("numbers = %v, want {8, 9}: each writer continues the task's ONE sequence", numbers)
+	}
+}

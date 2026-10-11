@@ -72,7 +72,7 @@ func zpTaskCtxSyncNew(taskRepository repositories.TaskRepository,
 		hierarchicalContextService: hierarchicalContextService,
 		gitBranchRepository:        gitBranchRepository,
 		getTaskUseCase: usecases.NewGetTaskUseCase(taskRepository, contextService,
-			zpTaskCtxSyncGitBranchGetter{repository: gitBranchRepository}),
+			zpTaskCtxSyncGitBranchGetter{repository: gitBranchRepository}, nil),
 	}
 }
 

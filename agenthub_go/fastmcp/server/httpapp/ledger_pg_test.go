@@ -661,15 +661,19 @@ func TestLedgerIntentsRefusesAnUnusableCredentialLikeTheLedgerRead(t *testing.T)
 // ledgerPgSubtask inserts one subtask of taskID owned by userID and returns its id. Written straight
 // into the table for the reason ledgerPgSeedEvent is: these cases are about the ledger's check, and a
 // fixture written through the subtask routes would make them cases about those routes too.
+//
+// The two progress columns this row used to name (progress_history, progress_count) are gone from the
+// table by the time these cases run - the ledger line's carry step drops them - so naming them here
+// makes the fixture a case about the schema rather than about the check.
 func ledgerPgSubtask(t *testing.T, sm *database.SessionManager, userID, taskID, title string) string {
 	t.Helper()
 	id := value_objects.NewUUIDv4()
 	ledgerExec(t, sm, `INSERT INTO subtasks
 		(id, task_id, title, description, status, priority, assignees, progress_percentage, progress_state,
 		 progress_notes, blockers, completion_summary, impact_on_parent, insights_found, user_id,
-		 created_at, updated_at, progress_history, progress_count)
+		 created_at, updated_at)
 		VALUES ($1::uuid, $2::uuid, $3, '', 'todo', 'medium', '[]'::json, 0, 'INITIAL',
-		        '', '', '', '', '[]'::json, $4::varchar, now(), now(), '{}'::json, 0)`,
+		        '', '', '', '', '[]'::json, $4::varchar, now(), now())`,
 		id, taskID, title, userID)
 	return id
 }

@@ -51,15 +51,6 @@ vi.mock('../../components/ClickableAssignees', () => ({
   )
 }));
 
-// Mock ProgressHistoryTimeline component
-vi.mock('../../components/ProgressHistoryTimeline', () => ({
-  ProgressHistoryTimeline: ({ progressHistory, progressCount, variant, className }: any) => (
-    <div data-testid="progress-history-timeline" className={className}>
-      Progress History Timeline Mock
-    </div>
-  )
-}));
-
 // Mock CopyableId component
 vi.mock('../../components/ui/CopyableId', () => ({
   CopyableId: ({ id, variant, size, abbreviated, showCopyButton, className }: any) => (

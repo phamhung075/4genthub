@@ -15,19 +15,3 @@ export interface ProgressEntry {
   content: string;
   timestamp?: string;
 }
-
-/**
- * Backend progress history entry format
- */
-export interface ProgressHistoryEntry {
-  content: string;
-  timestamp: string;
-  progress_number: number;
-}
-
-/**
- * Progress history object format from backend
- */
-export interface ProgressHistoryObject {
-  [key: string]: ProgressHistoryEntry;
-}

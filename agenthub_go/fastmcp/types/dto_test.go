@@ -182,7 +182,7 @@ func TestSubtaskToDTODictParentFallback(t *testing.T) {
 }
 
 // A subtask's OWN progress history is served as `details`, the way a task's is served from
-// entities.Task.GetProgressHistoryText (task_response.go:101, :140, :196), and it is the EMPTY STRING
+// entities.Task.ProgressTextWith over the ledger's events (task_response.go), and it is the EMPTY STRING
 // when the subtask has no progress - the same shape the task path serves for the same meaning, because
 // the task reaches it through the dict its facade renders details from and one meaning with two shapes
 // ("" against null) is what a presence check turns into a bug. The entries are inserted out of order on
@@ -220,17 +220,15 @@ func TestSubtaskDTOservesDetailsFromItsOwnProgressHistory(t *testing.T) {
 		t.Fatalf("a subtask with no progress serves details as the empty string, got %v", served)
 	}
 
-	// The entity branch reads the same field through pyGetattr (progress_history -> ProgressHistory).
-	fromEntity, err := SubtaskToDTO(&entities.Subtask{
-		ProgressHistory: map[string]any{
-			"progress_1": map[string]any{"content": "solo entry", "progress_number": 1},
-		},
-	})
+	// The entity branch reads the same field through pyGetattr (progress_history -> ProgressHistory),
+	// and an entity carries no such column after the ledger line removed it: the branch serves the same
+	// EMPTY STRING a dict with no history serves, never a nil and never a value nothing can fill.
+	fromEntity, err := SubtaskToDTO(&entities.Subtask{})
 	if err != nil {
 		t.Fatalf("SubtaskToDTO(entity): %v", err)
 	}
-	if fromEntity.Details == nil || *fromEntity.Details != "solo entry" {
-		t.Fatalf("entity details = %v, want %q", fromEntity.Details, "solo entry")
+	if fromEntity.Details == nil || *fromEntity.Details != "" {
+		t.Fatalf("entity details = %v, want the empty string: an entity carries no progress column any more", fromEntity.Details)
 	}
 }
 

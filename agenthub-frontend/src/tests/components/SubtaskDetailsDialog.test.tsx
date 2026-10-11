@@ -58,14 +58,14 @@ describe('SubtaskDetailsDialog', () => {
   });
 });
 
-describe('SubtaskDetailsDialog: the served `details` drives the progress timeline', () => {
+describe('SubtaskDetailsDialog: no progress-history surface (O1c)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  // Shaped the way the subtask read serves it since `06410692`: `details` carries the subtask's own
-  // joined progress history - the "=== Progress N ===\n<content>" blocks joined by a blank line -
-  // and `progress_history` / `progress_count` are ABSENT, because the subtask DTO serves neither.
+  // Shaped the way the subtask read serves it: `details` carries the subtask's own joined progress
+  // history - the "=== Progress N ===\n<content>" blocks joined by a blank line - and
+  // `progress_history` / `progress_count` are ABSENT, because the subtask DTO serves neither.
   const servedWithHistory = {
     id: subtaskId,
     title: 'Subtask with progress',
@@ -73,7 +73,12 @@ describe('SubtaskDetailsDialog: the served `details` drives the progress timelin
     details: '=== Progress 1 ===\nFirst subtask note\n\n=== Progress 2 ===\nSecond subtask note',
   } as unknown as Subtask;
 
-  it('renders the timeline with its count from the SERVED text when details is present', async () => {
+  it('shows no progress-history block even when the served subtask carries `details`', async () => {
+    // The O1c ruling: progress is events, the ledger timeline is the single progress surface, and the
+    // two never coexist. Until the subtask's own `details` are served this dialog shows NO progress
+    // history at all (06410692 owns that), so a served `details` must not put the deleted surface
+    // back on screen. The progress section is open by default here, which is what makes this case
+    // able to fail: a block rendered inside it would be found.
     vi.mocked(getSubtask).mockResolvedValue(servedWithHistory);
 
     render(
@@ -86,43 +91,7 @@ describe('SubtaskDetailsDialog: the served `details` drives the progress timelin
       />
     );
 
-    // The dialog's own label for the block, then the REAL compact timeline under it: the trigger
-    // carries the count derived from the served text itself, because `progress_count` is not served.
-    expect(await screen.findByText('Progress History:')).toBeInTheDocument();
-    const trigger = screen.getByRole('button', { name: /Progress History/ });
-    expect(trigger.textContent).toContain('2');
-
-    // The entries are what the served text parses into, not a substituted value. The compact
-    // timeline starts collapsed, so expanding it is what puts them on screen.
-    fireEvent.click(trigger);
-    expect(await screen.findByText('First subtask note')).toBeInTheDocument();
-    expect(screen.getByText('Second subtask note')).toBeInTheDocument();
-  });
-
-  it('stays hidden rather than crashing or rendering an empty labelled block when details is absent', async () => {
-    // A subtask with no history at all: `SubtaskDTO.Details` is nil, which is the shape the guard
-    // exists for rather than a payload we expect in practice.
-    vi.mocked(getSubtask).mockResolvedValue({
-      id: subtaskId,
-      title: 'Subtask without history',
-      status: 'todo',
-    } as unknown as Subtask);
-
-    render(
-      <SubtaskDetailsDialog
-        open
-        onOpenChange={vi.fn()}
-        subtask={subtask}
-        parentTaskId="task-123"
-        onClose={vi.fn()}
-      />
-    );
-
-    // The dialog rendered its details tab, so the absent field did not take it down ...
     expect(await screen.findByText('Basic Information')).toBeInTheDocument();
-    // ... and the progress block is absent ENTIRELY, not present as an empty label over a null
-    // timeline. An unguarded read renders `Progress History:` with nothing under it, which is the
-    // state this case fails on.
     expect(screen.queryByText('Progress History:')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Progress History/ })).not.toBeInTheDocument();
   });

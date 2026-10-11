@@ -89,9 +89,12 @@ beforeEach(() => {
     success: true,
     module: { slug: 'rules', kind: 'instruction', version: '1.1.0', sha256: 'abc' },
   });
+  // `role` is REQUIRED by the served row (Room) and is what decides every write control this page
+  // offers, so the fixture must carry it: without it every case below silently asserts a viewer's
+  // page, and the write paths pass only because no gate exists yet.
   mockApi.listRooms.mockResolvedValue({
     success: true,
-    rooms: [{ id: 'room-dev', slug: 'dev', name: 'Dev Room' }],
+    rooms: [{ id: 'room-dev', slug: 'dev', name: 'Dev Room', team_id: '', role: 'owner' }],
   });
   mockApi.listSeats.mockResolvedValue({
     success: true,
@@ -770,5 +773,50 @@ describe('SeatAuthoringPage module prefill', () => {
     expect(screen.getByLabelText('Module version')).toHaveValue('1.0.0');
     await waitFor(() => expect(screen.getByLabelText('Module content')).toHaveValue('rules body\n'));
     expect(mockApi.getModuleVersion).toHaveBeenCalledWith('rules', '1.0.0');
+  });
+});
+
+// The room's OWN served role is the standing this page writes from. GET /rooms serves the caller's
+// own rooms AND the rooms shared with their teams, and every room-scoped route resolves the room
+// through an owner-only lookup - so a viewer of a shared room reached this page with working-looking
+// write controls whose writes the server refused with a 404 saying "room not found", about a room
+// they can read. Both sibling pages already gate on this same field (SeatsPage.tsx:98,
+// SeatDetailPage.tsx:650-653); this page carried no occurrence of it.
+describe('SeatAuthoringPage room standing', () => {
+  const roomWith = (role: 'owner' | 'viewer') => {
+    mockApi.listRooms.mockResolvedValue({
+      success: true,
+      rooms: [{ id: 'room-dev', slug: 'dev', name: 'Dev Room', team_id: 'team-1', role }],
+    });
+  };
+  const openComposer = async () => {
+    renderPage();
+    return screen.findByLabelText('Compose level');
+  };
+
+  it('offers a viewer of a shared room no write control, and says whose writing it is', async () => {
+    roomWith('viewer');
+    await openComposer();
+
+    // What a viewer keeps is the READ: the composed blocks and where each is inherited from.
+    const blocks = await screen.findByRole('list', { name: 'Composed blocks' });
+    expect(within(blocks).getByText('rules@1.0.0')).toBeInTheDocument();
+    // What is absent is every control that writes an overlay - absent rather than present-and-failing.
+    expect(screen.queryByRole('button', { name: 'Add at Seat' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Remove here/ })).not.toBeInTheDocument();
+
+    // Absent controls with no reason read as a broken page, so the standing is stated - the shape
+    // the seat detail page uses beside its own absent controls.
+    expect(screen.getByText(/shared with a team you belong to/)).toBeInTheDocument();
+  });
+
+  it('still offers the write controls to the room owner, so the gate is no blanket hide', async () => {
+    roomWith('owner');
+    await openComposer();
+
+    const blocks = await screen.findByRole('list', { name: 'Composed blocks' });
+    expect(within(blocks).getByRole('button', { name: /Remove here/ })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Add at Seat' })).toBeInTheDocument();
+    expect(screen.queryByText(/shared with a team you belong to/)).not.toBeInTheDocument();
   });
 });

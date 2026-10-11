@@ -19,12 +19,19 @@ type ListTasksTaskRepository interface {
 type ListTasksUseCase struct {
 	taskRepository      ListTasksTaskRepository
 	gitBranchRepository dtostask.GitBranchBatchRepository // may be nil
+	progressEvents      dtostask.TaskProgressEventsByTask // may be nil
 }
 
-// NewListTasksUseCase builds the use case; gitBranchRepository may be nil.
+// NewListTasksUseCase builds the use case; gitBranchRepository may be nil, and progressEvents may be
+// nil too - then every row's details is empty, which is what an unwired seam has always meant here.
 func NewListTasksUseCase(taskRepository ListTasksTaskRepository,
-	gitBranchRepository dtostask.GitBranchBatchRepository) *ListTasksUseCase {
-	return &ListTasksUseCase{taskRepository: taskRepository, gitBranchRepository: gitBranchRepository}
+	gitBranchRepository dtostask.GitBranchBatchRepository,
+	progressEvents dtostask.TaskProgressEventsByTask) *ListTasksUseCase {
+	return &ListTasksUseCase{
+		taskRepository:      taskRepository,
+		gitBranchRepository: gitBranchRepository,
+		progressEvents:      progressEvents,
+	}
 }
 
 // Execute lists tasks with optional filtering.
@@ -82,5 +89,5 @@ func (uc *ListTasksUseCase) Execute(ctx context.Context,
 	}
 
 	return dtostask.TaskListResponseFromDomainList(ctx, tasks, uc.gitBranchRepository,
-		uc.taskRepository, filtersApplied, nil)
+		uc.taskRepository, uc.progressEvents, filtersApplied, nil)
 }

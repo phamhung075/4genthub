@@ -14,17 +14,18 @@
 // note, and what this test measures for each:
 //
 //	(a) manage_task action=update with a `details` string -> entity.AppendProgress ->
-//	    tasks.progress_history, read back by manage_task action=get as the joined `details`.
+//	    a `progress` event in the task_events ledger, read back by manage_task action=get as the
+//	    joined `details`.
 //	(b) a dedicated progress action on manage_task - DOES NOT EXIST. The action list is
 //	    create|update|get|delete|complete|list|search|next|add_dependency|remove_dependency|resume|
 //	    ai_*, and the factory answers "Unknown operation: add_progress". Asserted so the absence is
 //	    measured rather than assumed.
 //	(c) manage_context action=add_progress -> the task-level context's implementation_notes
 //	    .progress_updates, read back by manage_context action=get. A SEPARATE carrier (the context
-//	    store, not tasks.progress_history).
+//	    store, not the task ledger).
 //
 // Every case asserts the CONTENT the read returns, never that the call reported success, and logs the
-// stored column / ledger it is about so a pass is evidence rather than a green light over an empty row.
+// ledger it is about so a pass is evidence rather than a green light over an empty row.
 //
 // To run it:
 //
@@ -182,21 +183,6 @@ func createTask(t *testing.T, ctx context.Context, app *httpapp.App, branchID, t
 	return taskID
 }
 
-// rawProgressHistory reads the stored column straight from the database, so a case can say whether
-// the write landed even when the read does not return it.
-func rawProgressHistory(t *testing.T, sessions *database.SessionManager, taskID string) string {
-	t.Helper()
-	var raw string
-	err := sessions.WithSession(context.Background(), func(ctx context.Context, s database.DBTX) error {
-		return s.QueryRowContext(ctx,
-			`SELECT progress_history::text FROM tasks WHERE id = $1::uuid`, taskID).Scan(&raw)
-	})
-	if err != nil {
-		return "query error: " + err.Error()
-	}
-	return raw
-}
-
 // ledgerKinds reads the kinds the append-only record holds for the task.
 func ledgerKinds(t *testing.T, sessions *database.SessionManager, taskID string) string {
 	t.Helper()
@@ -276,8 +262,19 @@ func TestProgressDetailsRoundTripThroughTheTools(t *testing.T) {
 		}
 		t.Logf("OBSERVED update #2 answer details=%q", fmt.Sprint(taskPayload(t, upd2)["details"]))
 
-		t.Logf("OBSERVED stored tasks.progress_history=%s", rawProgressHistory(t, sessions, taskID))
 		t.Logf("OBSERVED ledger task_events kinds=%s", ledgerKinds(t, sessions, taskID))
+
+		// The property that survives to this tree, asserted rather than logged: the round trip writes
+		// exactly ONE `progress` event per note - `ea3efb20`'s dual write - and none from a repair. The
+		// fix this case was written for (`2c4582de`) surfaced the notes by READING the column and
+		// re-recorded nothing, and a repair that re-wrote them would appear here as a second event for
+		// a note already stored, which is the duplicate O1c exists to remove. (At `2c4582de` itself
+		// there were no `progress` events at all; asserting zero today would pin that moment instead of
+		// the property, and would break the moment a note is written through the ledger, as it now is.)
+		if kinds := ledgerKinds(t, sessions, taskID); strings.Count(kinds, "progress") != 2 {
+			t.Errorf("the round trip left %s: want exactly one progress event per note - two for the two "+
+				"notes written - because nothing re-records a stored note", kinds)
+		}
 
 		getRes, isErr := callTool(t, plainCtx, app, "manage_task", map[string]any{"action": "get", "task_id": taskID})
 		if isErr {

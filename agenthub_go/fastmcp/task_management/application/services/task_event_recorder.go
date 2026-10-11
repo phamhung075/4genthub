@@ -18,6 +18,9 @@ import (
 type TaskEventLedger interface {
 	AppendInTx(ctx context.Context, in entities.AppendTaskEvent) (*entities.TaskEvent, error)
 	StatusOf(ctx context.Context, taskID string) (string, error)
+	// NextProgressNumberInTx reads the number a new progress note for the task takes, inside the
+	// caller's transaction, so the writing use case never reads that tip outside one.
+	NextProgressNumberInTx(ctx context.Context, taskID string) (int, error)
 }
 
 // TaskEventRecorder is the ONE writer of the task-event ledger.
@@ -44,6 +47,13 @@ func NewTaskEventRecorder(ledger TaskEventLedger, userID string) *TaskEventRecor
 // entry report the transition the row made.
 func (r *TaskEventRecorder) StatusOf(ctx context.Context, taskID string) (string, error) {
 	return r.ledger.StatusOf(ctx, taskID)
+}
+
+// NextProgressNumberInTx reads the next NOTE number for the task, inside the caller's transaction and
+// under the same lock the append takes. It is separate from the per-event seq the append assigns: seq
+// orders the events, the number orders the notes.
+func (r *TaskEventRecorder) NextProgressNumberInTx(ctx context.Context, taskID string) (int, error) {
+	return r.ledger.NextProgressNumberInTx(ctx, taskID)
 }
 
 // Record writes one entry for a task and returns it with the sequence the database assigned. It
@@ -78,6 +88,36 @@ func (r *TaskEventRecorder) RecordStatusChange(ctx context.Context, taskID, oldS
 	}
 	return r.Record(ctx, taskID, entities.TaskEventKindStatusChanged, actor.Kind, actor.ID,
 		map[string]any{"old": oldStatus, "new": newStatus})
+}
+
+// RecordProgress writes the entry for one progress note: the note's text exactly as the column would
+// have stored it, the number it was written under, and the timestamp the cell would have carried.
+// That is what lets a reader merge the ledger with the column without reformatting either source, and
+// it is the payload a carried note repeats when the carry copies the column into the ledger.
+//
+// A subtask note names its subtask: the entry belongs to the TASK's ledger (task_events.task_id has an
+// FK to tasks.id), so subtask_id is the only thing that says which subtask wrote the note.
+//
+// This is additive on purpose - Record and RecordStatusChange are untouched - so every existing
+// caller keeps the shape it was written against. Like them it takes the CALLER's transaction.
+func (r *TaskEventRecorder) RecordProgress(ctx context.Context, taskID, subtaskID string,
+	note entities.ProgressEntry) (*entities.TaskEvent, error) {
+	actor, err := r.actorFor(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return r.ledger.AppendInTx(ctx, entities.AppendTaskEvent{
+		TaskID:    taskID,
+		SubtaskID: subtaskID,
+		Kind:      entities.TaskEventKindProgress,
+		ActorKind: actor.Kind,
+		ActorID:   actor.ID,
+		Payload: map[string]any{
+			"content":         note.Content,
+			"progress_number": note.Number,
+			"timestamp":       note.Timestamp,
+		},
+	})
 }
 
 // ErrNoActor is returned when a status write reaches the recorder with no actor anywhere: no seat

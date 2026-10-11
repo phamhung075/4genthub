@@ -20,6 +20,7 @@ import (
 	"strings"
 	"testing"
 
+	"agenthub/fastmcp/session_stream/testdb"
 	"agenthub/fastmcp/task_management/application/services"
 	"agenthub/fastmcp/task_management/application/use_cases"
 	"agenthub/fastmcp/task_management/infrastructure/database"
@@ -43,9 +44,7 @@ func TestAStatusWriteWithoutUserSeqFailsAndLeavesTheRowAlone(t *testing.T) {
 	db := newEnsurerTestDB(t)
 	ctx := context.Background()
 	cfg := &database.DatabaseConfig{Engine: &database.Engine{DB: db}}
-	if err := cfg.CreateTables(ctx); err != nil {
-		t.Fatal(err)
-	}
+	testdb.CreateSchema(t, cfg)
 	relaxTaskNotNullColumns(t, db)
 	// THE INCIDENT'S SHAPE: the column the recorder writes is absent, and everything else is current.
 	if _, err := db.ExecContext(ctx, `ALTER TABLE task_events DROP COLUMN user_seq`); err != nil {
@@ -64,7 +63,7 @@ func TestAStatusWriteWithoutUserSeqFailsAndLeavesTheRowAlone(t *testing.T) {
 	recorder := services.NewTaskEventRecorder(repositories.NewTaskEventRepository(sessions, userID, ""), userID)
 	ledger := use_cases.StatusLedger{Tx: sessions, Ledger: recorder}
 
-	err := ledger.SaveStatus(ctx, func(ctx context.Context) error {
+	err := ledger.Save(ctx, func(ctx context.Context) error {
 		// THROUGH THE SESSION MANAGER, exactly as the repository's Save does: it reuses the
 		// transaction the ledger opened, which is what puts the row write and the entry in one
 		// transaction. Writing on the pool instead would auto-commit and settle nothing.
@@ -72,7 +71,7 @@ func TestAStatusWriteWithoutUserSeqFailsAndLeavesTheRowAlone(t *testing.T) {
 			_, err := s.ExecContext(ctx, `UPDATE tasks SET status = 'in_progress' WHERE id = $1`, taskID)
 			return err
 		})
-	}, taskID)
+	}, taskID, nil)
 	if err == nil {
 		t.Fatal("a status write SUCCEEDED although its ledger entry cannot be written: that is the clean-success-over-a-lost-event shape")
 	}

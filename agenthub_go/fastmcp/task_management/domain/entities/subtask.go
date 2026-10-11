@@ -24,8 +24,6 @@ type Subtask struct {
 	AcceptanceCriteria []string
 	Scope              []string
 	ProgressPercentage int // 0-100
-	ProgressHistory    map[string]any
-	ProgressCount      int
 
 	// Events is Python's `_events`.
 	Events []events.Event
@@ -76,9 +74,6 @@ func RestoreSubtask(st Subtask) (*Subtask, error) {
 	}
 	if s.Scope == nil {
 		s.Scope = []string{}
-	}
-	if s.ProgressHistory == nil {
-		s.ProgressHistory = map[string]any{}
 	}
 	if err := s.Init(&s); err != nil {
 		return nil, err
@@ -235,33 +230,6 @@ func (s *Subtask) UpdateProgressPercentage(p int) error {
 		s.Status = &st
 	}
 	s.emit("subtask_progress", fmt.Sprint(old), fmt.Sprint(p))
-	return nil
-}
-
-// AppendProgress appends numbered progress to the history.
-func (s *Subtask) AppendProgress(content string) error {
-	s.ProgressCount++
-	header := fmt.Sprintf("=== Progress %d ===", s.ProgressCount)
-	if s.ProgressHistory == nil {
-		s.ProgressHistory = map[string]any{}
-	}
-	if err := s.Touch("progress_update"); err != nil {
-		return err
-	}
-	s.ProgressHistory[fmt.Sprintf("progress_%d", s.ProgressCount)] = map[string]any{
-		"content":         header + "\n" + content,
-		"timestamp":       value_objects.IsoFormat(*s.UpdatedAt),
-		"progress_number": s.ProgressCount,
-	}
-	ev := events.NewTaskUpdatedEvent()
-	ev.TaskID = s.parentStr()
-	ev.Changes = map[string]any{"subtask_progress_history": map[string]any{
-		"old_value":  fmt.Sprintf("progress_added_%d", s.ProgressCount-1),
-		"new_value":  fmt.Sprintf("progress_added_%d", s.ProgressCount),
-		"subtask_id": s.idRepr(),
-		"updated_at": value_objects.IsoFormat(*s.UpdatedAt),
-	}}
-	s.Events = append(s.Events, ev)
 	return nil
 }
 

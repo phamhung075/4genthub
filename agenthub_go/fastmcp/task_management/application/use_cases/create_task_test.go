@@ -60,7 +60,7 @@ func createTaskResponseKeys() []string {
 func TestCreateTaskUseCaseSuccess(t *testing.T) {
 	id := createTaskMustID(t, "11111111-1111-1111-1111-111111111111")
 	repo := &createTaskFakeRepo{nextID: id}
-	uc := NewCreateTaskUseCase(repo, nil)
+	uc := NewCreateTaskUseCase(repo, nil).WithLedger(ledgerWithProgress())
 
 	desc := "The description"
 	request, err := dtotask.NewCreateTaskRequest(dtotask.CreateTaskRequest{
@@ -139,7 +139,7 @@ func TestCreateTaskUseCaseSuccess(t *testing.T) {
 func TestCreateTaskUseCaseDefaults(t *testing.T) {
 	id := createTaskMustID(t, "22222222-2222-2222-2222-222222222222")
 	repo := &createTaskFakeRepo{nextID: id}
-	uc := NewCreateTaskUseCase(repo, nil)
+	uc := NewCreateTaskUseCase(repo, nil).WithLedger(noopLedger())
 
 	desc := "D"
 	resp, err := uc.Execute(context.Background(), dtotask.CreateTaskRequest{
@@ -162,7 +162,7 @@ func TestCreateTaskUseCaseDefaults(t *testing.T) {
 func TestCreateTaskUseCaseRefusesOverLongContent(t *testing.T) {
 	id := createTaskMustID(t, "22222222-2222-2222-2222-222222222222")
 	repo := &createTaskFakeRepo{nextID: id}
-	uc := NewCreateTaskUseCase(repo, nil)
+	uc := NewCreateTaskUseCase(repo, nil).WithLedger(noopLedger())
 
 	longTitle := strings.Repeat("a", 250)
 	longDesc := strings.Repeat("b", 2100)
@@ -218,7 +218,7 @@ func TestCreateTaskUseCaseRefusesOverLongContent(t *testing.T) {
 func TestCreateTaskUseCaseInvalidStatusReRaisesValueError(t *testing.T) {
 	id := createTaskMustID(t, "33333333-3333-3333-3333-333333333333")
 	repo := &createTaskFakeRepo{nextID: id}
-	uc := NewCreateTaskUseCase(repo, nil)
+	uc := NewCreateTaskUseCase(repo, nil).WithLedger(noopLedger())
 
 	bad := "bogus"
 	desc := "D"
@@ -241,7 +241,7 @@ func TestCreateTaskUseCaseInvalidStatusReRaisesValueError(t *testing.T) {
 func TestCreateTaskUseCaseSaveFailureReturnsErrorResponse(t *testing.T) {
 	id := createTaskMustID(t, "44444444-4444-4444-4444-444444444444")
 	repo := &createTaskFakeRepo{nextID: id, saveNil: true}
-	uc := NewCreateTaskUseCase(repo, nil)
+	uc := NewCreateTaskUseCase(repo, nil).WithLedger(noopLedger())
 
 	desc := "D"
 	resp, err := uc.Execute(context.Background(), dtotask.CreateTaskRequest{
@@ -262,7 +262,7 @@ func TestCreateTaskUseCaseSaveFailureReturnsErrorResponse(t *testing.T) {
 func TestCreateTaskUseCaseSkipsInvalidDependencies(t *testing.T) {
 	id := createTaskMustID(t, "55555555-5555-5555-5555-555555555555")
 	repo := &createTaskFakeRepo{nextID: id}
-	uc := NewCreateTaskUseCase(repo, nil)
+	uc := NewCreateTaskUseCase(repo, nil).WithLedger(noopLedger())
 
 	desc := "D"
 	_, err := uc.Execute(context.Background(), dtotask.CreateTaskRequest{
@@ -282,7 +282,7 @@ func TestCreateTaskUseCaseSkipsInvalidDependencies(t *testing.T) {
 
 func TestCreateTaskUseCaseGenericErrorBecomesErrorResponse(t *testing.T) {
 	repo := &createTaskFakeRepo{nextIDErr: errors.New("boom")}
-	uc := NewCreateTaskUseCase(repo, nil)
+	uc := NewCreateTaskUseCase(repo, nil).WithLedger(noopLedger())
 
 	resp, err := uc.Execute(context.Background(), dtotask.CreateTaskRequest{Title: "T", GitBranchID: "b"})
 	if err != nil {
@@ -296,7 +296,7 @@ func TestCreateTaskUseCaseGenericErrorBecomesErrorResponse(t *testing.T) {
 func TestCreateTaskUseCaseSaveValueErrorIsReRaised(t *testing.T) {
 	id := createTaskMustID(t, "66666666-6666-6666-6666-666666666666")
 	repo := &createTaskFakeRepo{nextID: id, saveErr: value_objects.ValueErrorf("bad save")}
-	uc := NewCreateTaskUseCase(repo, nil)
+	uc := NewCreateTaskUseCase(repo, nil).WithLedger(noopLedger())
 
 	desc := "D"
 	resp, err := uc.Execute(context.Background(), dtotask.CreateTaskRequest{
@@ -334,7 +334,7 @@ func TestCreateTaskUseCaseHooksSetContextIDAndNotify(t *testing.T) {
 	id := createTaskMustID(t, "11111111-1111-1111-1111-111111111111")
 	repo := &createTaskFakeRepo{nextID: id}
 	hooks := &createTaskFakeHooks{contextOK: true}
-	uc := NewCreateTaskUseCase(repo, nil).WithHooks(hooks)
+	uc := NewCreateTaskUseCase(repo, nil).WithLedger(noopLedger()).WithHooks(hooks)
 	user := "user-1"
 	request, err := dtotask.NewCreateTaskRequest(dtotask.CreateTaskRequest{Title: "T", Description: createTaskStrPtr("d"), GitBranchID: "branch-1", UserID: &user})
 	if err != nil {
@@ -357,7 +357,7 @@ func TestCreateTaskUseCaseHooksSetContextIDAndNotify(t *testing.T) {
 	// failed context creation: no context_id, no sync, notification still sent.
 	hooks2 := &createTaskFakeHooks{contextOK: false}
 	repo2 := &createTaskFakeRepo{nextID: id}
-	uc = NewCreateTaskUseCase(repo2, nil).WithHooks(hooks2)
+	uc = NewCreateTaskUseCase(repo2, nil).WithLedger(noopLedger()).WithHooks(hooks2)
 	if _, err := uc.Execute(context.Background(), *request); err != nil {
 		t.Fatal(err)
 	}
@@ -367,7 +367,7 @@ func TestCreateTaskUseCaseHooksSetContextIDAndNotify(t *testing.T) {
 
 	// no user: context creation is skipped (UserAuthenticationRequiredError is swallowed).
 	hooks3 := &createTaskFakeHooks{contextOK: true}
-	uc = NewCreateTaskUseCase(&createTaskFakeRepo{nextID: id}, nil).WithHooks(hooks3)
+	uc = NewCreateTaskUseCase(&createTaskFakeRepo{nextID: id}, nil).WithLedger(noopLedger()).WithHooks(hooks3)
 	noUser, _ := dtotask.NewCreateTaskRequest(dtotask.CreateTaskRequest{Title: "T", Description: createTaskStrPtr("d"), GitBranchID: "branch-1"})
 	if _, err := uc.Execute(context.Background(), *noUser); err != nil {
 		t.Fatal(err)

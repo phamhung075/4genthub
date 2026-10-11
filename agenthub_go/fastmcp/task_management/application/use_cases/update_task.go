@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	task "agenthub/fastmcp/task_management/application/dtos/task"
+	"agenthub/fastmcp/task_management/domain/entities"
 	"agenthub/fastmcp/task_management/domain/exceptions"
 	"agenthub/fastmcp/task_management/domain/repositories"
 	"agenthub/fastmcp/task_management/domain/value_objects"
@@ -100,10 +101,20 @@ func (u *UpdateTaskUseCase) Execute(ctx context.Context, request task.UpdateTask
 		}
 	}
 
+	// The note is RECORDED below, inside the transaction that saves the task: dropping this entry would
+	// lose the note. Its NUMBER is not read here - the ledger assigns it while it writes, inside that
+	// same transaction and under the lock the append takes, because the carry step copied a dropped
+	// column's numbers in intact and two writers sharing one number would share the identity a reader
+	// merges copies by.
+	var progressNotes []LedgerProgress
 	if request.Details != nil {
-		if err := taskEntity.AppendProgress(*request.Details); err != nil {
+		if err := taskEntity.TouchForProgress(); err != nil {
 			return nil, err
 		}
+		progressNotes = append(progressNotes, LedgerProgress{
+			Content:   *request.Details,
+			Timestamp: value_objects.IsoFormat(*taskEntity.UpdatedAt),
+		})
 	}
 
 	if request.EstimatedEffort != nil {
@@ -158,10 +169,10 @@ func (u *UpdateTaskUseCase) Execute(ctx context.Context, request task.UpdateTask
 	if taskEntity.ID != nil {
 		taskIDStr = taskEntity.ID.Value
 	}
-	if err := u.ledger.SaveStatus(ctx, func(ctx context.Context) error {
+	if err := u.ledger.Save(ctx, func(ctx context.Context) error {
 		_, err := u.taskRepository.Save(ctx, taskEntity)
 		return err
-	}, taskIDStr); err != nil {
+	}, taskIDStr, progressNotes); err != nil {
 		return nil, err
 	}
 
@@ -174,7 +185,17 @@ func (u *UpdateTaskUseCase) Execute(ctx context.Context, request task.UpdateTask
 		}
 	}
 
-	taskResponse, err := task.TaskResponseFromDomain(ctx, taskEntity, u.gitBranchRepository, nil, nil, nil, nil)
+	// The response must carry the note this request just wrote. With O1c's switch that note lives in
+	// the ledger, not the column, so it is read back here - after the save, inside the request - and
+	// merged by the response builder.
+	var progressEvents []*entities.TaskEvent
+	if u.ledger.Events != nil && taskIDStr != "" {
+		progressEvents, err = u.ledger.Events.Events(ctx, taskIDStr)
+		if err != nil {
+			return nil, err
+		}
+	}
+	taskResponse, err := task.TaskResponseFromDomain(ctx, taskEntity, u.gitBranchRepository, progressEvents, nil, nil, nil, nil)
 	if err != nil {
 		return nil, err
 	}

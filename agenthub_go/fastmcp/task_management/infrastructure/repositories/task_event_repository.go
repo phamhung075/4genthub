@@ -158,6 +158,41 @@ func (r *TaskEventRepository) AppendInTx(ctx context.Context, in entities.Append
 	return out, nil
 }
 
+// NextProgressNumberInTx reads the number a new progress note for the task takes: one past the highest
+// progress_number the task's `progress` events carry, INSIDE the caller's transaction and under the SAME
+// advisory lock the append path takes (one lock, keyed on the user, as AppendInTx's own comment
+// insists). Without it two writers could read one tip and both write it, and the number is not a label:
+// content plus progress_number is the identity a reader merges copies by, so a shared number is a LOST
+// note rather than a cosmetic clash.
+//
+// It is not the per-event `seq` read again. `seq` orders the EVENTS within a task; the number orders the
+// NOTES, and the carry copied the dropped column's numbers into the ledger intact - so the sequence
+// continues from the column's last number rather than from the ledger's row count.
+func (r *TaskEventRepository) NextProgressNumberInTx(ctx context.Context, taskID string) (int, error) {
+	if !r.sessions.InTransaction(ctx) {
+		return 0, ErrNotInTransaction
+	}
+	next := 1
+	err := r.sessions.WithSession(ctx, func(ctx context.Context, s database.DBTX) error {
+		if _, err := s.ExecContext(ctx, `SELECT pg_advisory_xact_lock(hashtext($1))`, r.userID); err != nil {
+			return err
+		}
+		var highest float64
+		if err := s.QueryRowContext(ctx, `
+			SELECT COALESCE(MAX((payload ->> 'progress_number')::double precision), 0)
+			FROM task_events WHERE "user_id" = $1 AND "task_id" = $2 AND "kind" = 'progress'`,
+			r.userID, taskID).Scan(&highest); err != nil {
+			return err
+		}
+		next = int(highest) + 1
+		return nil
+	})
+	if err != nil {
+		return 0, err
+	}
+	return next, nil
+}
+
 // StatusOf reads the task's status inside the caller's transaction. The ledger asks for it before
 // and after a status write, so an entry reports the transition the ROW made rather than a caller's
 // memory of it - which is what makes the parity check (the last status_changed.new against
@@ -244,6 +279,60 @@ func (r *TaskEventRepository) Events(ctx context.Context, taskID string) ([]*ent
 		}
 		afterSeq = page[len(page)-1].Seq
 	}
+}
+
+// ProgressEventsByTask reads the progress entries of MANY tasks in ONE query, keyed by task id, each
+// task's entries oldest first. It exists because a list renders every row's details, and the list
+// builder already batches its other per-task read (GetCompletedSubtaskCounts) for the same reason: a
+// read per row turns one list request into one query per task, and the task list is the request a
+// client makes most often.
+//
+// It filters to kind='progress' in SQL rather than leaving the filter to the renderer, which is what
+// the name promises: ProgressTextWith would discard every other kind anyway, and the table carries
+// every lifecycle entry, so the filter is the difference between reading a task's notes and reading
+// its whole history.
+//
+// It does NOT page, unlike Events: Events pages to bound one task's read and then concatenates the
+// pages anyway, so the memory it saves is not real, and a batch cannot page on seq - there is no
+// single window over many tasks. Ordered by task_id then seq, which is the order the merge wants.
+func (r *TaskEventRepository) ProgressEventsByTask(ctx context.Context, taskIDs []string) (map[string][]*entities.TaskEvent, error) {
+	out := map[string][]*entities.TaskEvent{}
+	if len(taskIDs) == 0 {
+		return out, nil
+	}
+	err := r.sessions.WithSession(ctx, func(ctx context.Context, s database.DBTX) error {
+		args := []any{r.userID}
+		in := taskRepoInClause("task_id", taskIDs, &args, "::uuid")
+		rows, err := s.QueryContext(ctx, `
+			SELECT "id", "task_id", "user_id", "seq", "kind", "actor_kind", "actor_id", "payload", "created_at"
+			FROM task_events
+			WHERE "user_id" = $1 AND `+in+` AND "kind" = 'progress'
+			ORDER BY "task_id" ASC, "seq" ASC`, args...)
+		if err != nil {
+			return err
+		}
+		defer rows.Close()
+		for rows.Next() {
+			ev := &entities.TaskEvent{}
+			var kind, actorKind string
+			var payload *string
+			if err := rows.Scan(&ev.ID, &ev.TaskID, &ev.UserID, &ev.Seq, &kind, &actorKind, &ev.ActorID, &payload, &ev.CreatedAt); err != nil {
+				return err
+			}
+			ev.Kind = entities.TaskEventKind(kind)
+			ev.ActorKind = entities.TaskEventActorKind(actorKind)
+			if payload != nil {
+				_ = json.Unmarshal([]byte(*payload), &ev.Payload)
+			}
+			ev.CreatedAt = ev.CreatedAt.UTC()
+			out[ev.TaskID] = append(out[ev.TaskID], ev)
+		}
+		return rows.Err()
+	})
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 // --- the ledger's own layer (P2, P3): the cross-task cursor and the decision reads ---

@@ -113,6 +113,23 @@ describe('describeEvent', () => {
     expect(describeEvent(ev(1, 'status_changed', { old: 'todo' }))).toBe('Status changed');
   });
 
+  it("shows a progress note's own text rather than the kind label, header stripped", () => {
+    // The real payload the ledger writes for a progress event (O1c): the note's text and the number it
+    // was given. A row that read only the kind would show every note as "Progress reported", which is
+    // the failure this case exists against.
+    expect(describeEvent(ev(1, 'progress', { content: 'two cases written', progress_number: 1 }))).toBe(
+      'two cases written',
+    );
+    // The column's own text carries the numbered header; the timeline already shows the order that
+    // header was counting, so the row strips it the same way the progress summaries do.
+    expect(
+      describeEvent(ev(2, 'progress', { content: '=== Progress 2 ===\nSecond note', progress_number: 2 })),
+    ).toBe('Second note');
+    // A progress event whose payload carries no readable text still names its kind rather than
+    // rendering an empty row.
+    expect(describeEvent(ev(3, 'progress', { progress_number: 3 }))).toBe('Progress reported');
+  });
+
   it('labels the non-status kinds in words rather than with the kind itself', () => {
     expect(describeEvent(ev(1, 'assigned'))).toBe('Assigned');
     expect(describeEvent(ev(1, 'progress'))).toBe('Progress reported');

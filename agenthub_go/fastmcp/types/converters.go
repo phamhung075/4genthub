@@ -168,9 +168,10 @@ func getValueString(obj any, key, def string) string {
 }
 
 // subtaskDetails is a subtask DTO's details field: the subtask's OWN joined progress history, or nil
-// when it has none. The task's equivalent is entities.Task.GetProgressHistoryText, reached through
-// task_response.go; the subtask read serves the repository's dict rather than the entity, so the join
-// (entities.ProgressHistoryText, the one implementation of the ordering rule) is applied here.
+// when it has none. The task's equivalent is entities.Task.ProgressTextWith over the ledger's events,
+// reached through task_response.go; the subtask read serves the repository's dict rather than the
+// entity, so the join (entities.ProgressHistoryText, the one implementation of the ordering rule) is
+// applied here.
 // subtaskDetails renders the join into `details` for the subtask route. An empty history is served as
 // the EMPTY STRING rather than nil, which is the shape the task route serves for the same meaning: the
 // task reaches it through the dict its facade renders details from, and the Python-era rule that the

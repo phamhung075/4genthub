@@ -23,6 +23,16 @@ type CreateTaskUseCase struct {
 	taskRepository      repositories.TaskRepository
 	gitBranchRepository task.GitBranchGetter
 	hooks               CreateTaskHooks
+	// ledger is the task-event ledger seam: O1c's switch stops the column write, so the initial
+	// progress note becomes a `progress` entry, and the entry shares the transaction with the save
+	// that creates the row it points at.
+	ledger StatusLedger
+}
+
+// WithLedger attaches the task-event ledger seam, wired by the composition root.
+func (u *CreateTaskUseCase) WithLedger(l StatusLedger) *CreateTaskUseCase {
+	u.ledger = l
+	return u
 }
 
 // CreateTaskHooks are the side effects create_task performs inline in Python through
@@ -125,11 +135,20 @@ func (u *CreateTaskUseCase) Execute(ctx context.Context, request task.CreateTask
 		return fail(err)
 	}
 
-	// Add initial progress if details provided.
+	// Add initial progress if details provided. The note is RECORDED after the save below, inside the
+	// same transaction: the ledger entry cannot precede the task row it points at (task_events.task_id
+	// has an FK to tasks.id). Its NUMBER is assigned there too, by the ledger, under its own lock while
+	// it writes - a number read here would be read outside that transaction and could race another
+	// writer into sharing it.
+	var progressNotes []LedgerProgress
 	if request.Details != "" {
-		if err := taskEntity.AppendProgress(request.Details); err != nil {
+		if err := taskEntity.TouchForProgress(); err != nil {
 			return fail(err)
 		}
+		progressNotes = append(progressNotes, LedgerProgress{
+			Content:   request.Details,
+			Timestamp: value_objects.IsoFormat(*taskEntity.UpdatedAt),
+		})
 	}
 
 	// Add dependencies if provided; invalid dependencies are skipped (Python logs
@@ -145,8 +164,12 @@ func (u *CreateTaskUseCase) Execute(ctx context.Context, request task.CreateTask
 		_ = taskEntity.AddDependency(parsed)
 	}
 
-	saved, err := u.taskRepository.Save(ctx, taskEntity)
-	if err != nil {
+	var saved *entities.Task
+	if err := u.ledger.SaveProgress(ctx, func(ctx context.Context) error {
+		var saveErr error
+		saved, saveErr = u.taskRepository.Save(ctx, taskEntity)
+		return saveErr
+	}, ledgerTaskID(taskEntity), progressNotes); err != nil {
 		return fail(err)
 	}
 	if saved == nil {
@@ -165,7 +188,19 @@ func (u *CreateTaskUseCase) Execute(ctx context.Context, request task.CreateTask
 		u.autoCreateTaskContext(ctx, taskEntity, *userID, gitBranchID)
 	}
 
-	taskResponse, err := task.TaskResponseFromDomain(ctx, taskEntity, u.gitBranchRepository, nil, nil, nil, nil)
+	// The response must carry the note this request just wrote. With O1c's switch that note lives in
+	// the ledger, not the column, so it is read back here - after the save, inside the request - and
+	// merged by the response builder. This is the same read update_task makes for the same reason; the
+	// create path was left passing nil and its response came back one note short, its own.
+	var progressEvents []*entities.TaskEvent
+	if u.ledger.Events != nil && ledgerTaskID(taskEntity) != "" {
+		progressEvents, err = u.ledger.Events.Events(ctx, ledgerTaskID(taskEntity))
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	taskResponse, err := task.TaskResponseFromDomain(ctx, taskEntity, u.gitBranchRepository, progressEvents, nil, nil, nil, nil)
 	if err != nil {
 		return fail(err)
 	}

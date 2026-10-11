@@ -129,7 +129,7 @@ describe('TaskEventTimeline', () => {
     // CHECK constraint allows except `seat`, which the case above covers.
     renderTimeline([
       row(1, 'assigned', null, 'gate'),
-      row(2, 'progress', { note: 'two cases written' }),
+      row(2, 'progress', { progress_number: 2 }),
       row(3, 'status_changed', { old: 'todo', new: 'in_progress' }),
       row(4, 'gate_verdict', { verdict: 'ACCEPT' }, 'human'),
       row(5, 'handover', null, 'client'),
@@ -153,6 +153,21 @@ describe('TaskEventTimeline', () => {
     expect(screen.queryByText(/· gate /)).not.toBeInTheDocument();
     expect(screen.queryByText('gate_verdict')).not.toBeInTheDocument();
     expect(screen.queryByText('handover')).not.toBeInTheDocument();
+  });
+
+  it("shows a progress note's own text in its row, not the kind label", async () => {
+    // The real progress payload the ledger writes (O1c): the note's text and its number. The row has
+    // to show the text - a ledger whose every progress row read "Progress reported" would hide the
+    // note, which is the whole reason the event carries one.
+    renderTimeline([
+      row(1, 'status_changed', { old: 'todo', new: 'in_progress' }),
+      row(2, 'progress', { content: '=== Progress 1 ===\ntwo cases written', progress_number: 1 }),
+    ]);
+
+    await waitFor(() => expect(screen.getByText('two cases written')).toBeInTheDocument());
+    // The numbered header is the column's formatting, not the note: the row shows the note.
+    expect(screen.queryByText(/=== Progress 1 ===/)).not.toBeInTheDocument();
+    expect(screen.queryByText('Progress reported')).not.toBeInTheDocument();
   });
 
   it('reports an empty ledger as silence rather than as todo', async () => {

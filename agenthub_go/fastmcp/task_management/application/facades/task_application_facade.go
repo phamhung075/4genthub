@@ -92,6 +92,12 @@ type TaskFacadeDeps struct {
 	// in here instead.
 	ResumeTaskContext services.TaskResumeContextRead
 
+	// ProgressEvents is the ledger read the task LIST and SEARCH responses render each row's details
+	// from: one read for the whole page, keyed by task id. It is a field for the same reason
+	// ResumeLedger is - no other seam here reaches the ledger - and it is the same repository the
+	// events route reads and the recorder writes.
+	ProgressEvents dtostask.TaskProgressEventsByTask // may be nil
+
 	// ApplyContextFormat is ContextResponseFactory.apply_to_task_response (factories imports
 	// this package, so it is injected).
 	ApplyContextFormat func(*entities.OrderedMap[any]) *entities.OrderedMap[any]
@@ -186,7 +192,7 @@ func NewTaskApplicationFacade(taskRepository FacadeTaskRepository,
 	return &TaskApplicationFacade{
 		taskRepository:            taskRepository,
 		subtaskRepository:         subtaskRepository,
-		listTasksUseCase:          use_cases.NewListTasksUseCase(taskRepository, gitBranchBatch),
+		listTasksUseCase:          use_cases.NewListTasksUseCase(taskRepository, gitBranchBatch, deps.ProgressEvents),
 		manageDependenciesUseCase: use_cases.NewManageDependenciesUseCase(taskRepository),
 		deps:                      deps,
 	}

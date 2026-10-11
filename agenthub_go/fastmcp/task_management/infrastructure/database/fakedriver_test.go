@@ -103,6 +103,13 @@ func (s *fakeStmt) Exec(args []driver.Value) (driver.Result, error) {
 func (s *fakeStmt) Query(args []driver.Value) (driver.Rows, error) {
 	s.f.record(s.q)
 	switch {
+	// THE LEDGER IS MODELLED, NOT ASSUMED ABSENT, and the merge is why that matters: an earlier version
+	// of this double answered "the ledger does not exist yet" and "nothing is recorded" unconditionally,
+	// which is true for one run and makes every LATER run re-apply a step it had already recorded -
+	// TestApplyLeavesStepsOtherThanTheBaselineUnaffected measured exactly that, reporting
+	// `the second run applied [0002_probe]`. The runner's two ledger queries are answered below from the
+	// fake's own state: `to_regclass('applied_migrations') IS NOT NULL` (ensureLedgerInTx) and
+	// `SELECT 1 FROM applied_migrations WHERE migration_name = $1` (isRecorded).
 	case strings.Contains(s.q, "information_schema.tables"):
 		if s.f.failTablesRead != nil {
 			if err := s.f.failTablesRead(s.q); err != nil {
@@ -160,8 +167,15 @@ func (s *fakeStmt) Query(args []driver.Value) (driver.Rows, error) {
 	case strings.Contains(s.q, "to_regclass"):
 		return &fakeRows{cols: []string{"?column?"}, rows: [][]driver.Value{{s.f.ledgerPresent()}}}, nil
 	case strings.Contains(s.q, "FROM applied_migrations"):
-		name, _ := args[0].(string)
 		var rows [][]driver.Value
+		if len(args) == 0 {
+			// A list read: every name this fake's ledger holds.
+			for _, m := range s.f.migrations {
+				rows = append(rows, []driver.Value{m})
+			}
+			return &fakeRows{cols: []string{"migration_name"}, rows: rows}, nil
+		}
+		name, _ := args[0].(string)
 		for _, m := range s.f.migrations {
 			if m == name {
 				rows = append(rows, []driver.Value{1})
