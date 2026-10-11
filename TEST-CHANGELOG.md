@@ -2,6 +2,13 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-11 - O1c follow-up: the create response's note, and a seam that remembers
+
+- ADDED `agenthub_go/fastmcp/task_management/application/use_cases/status_ledger_progress_test.go`: `ledgerWithProgress()`, the seam wired AND remembering. `noopLedger` is by its own contract a pass-through that records nothing, which is right for the eleven cases about something else; a case that asserts a response carries the note its request wrote needs a seam that holds it, so `progressCapturingLedger.RecordProgress` keeps the `ProgressEntry` the use case built and its `Events` hands that note back as the task's ledger entry, in the payload shape the repository writes (`content` plus `progress_number`) that `ProgressTextWith` merges by.
+- CHANGED, the two cases the gate's BLOCKER named: `create_task_test.go` (`TestCreateTaskUseCaseSuccess`) and `update_task_test.go` (`TestUpdateTaskUseCaseUpdatesFields`) run against `ledgerWithProgress()` instead of `noopLedger()`. Their assertions were right and stayed: the response must carry `=== Progress 1 ===\n<the note>`, which is the whole point of the field.
+- NOT CHANGED: the other nine cases keep `noopLedger`, because they assert something else and a seam that returns a note would make them assert two things at once.
+- MEASURED: red before and green after, same command - `go test -count=1 ./fastmcp/task_management/application/use_cases/` failed with `create_task_test.go:112 details = ""` and `update_task_test.go:127 details = ""`, and now reports **ok 0.038s**. The gate measured both cases green at the parent `d46b7559`, which is what made this a regression rather than a stale expectation.
+
 ## 2026-10-11 - O1c: the carry step's acceptance, and every test that pinned the progress column
 
 - ADDED `agenthub_go/fastmcp/task_management/infrastructure/database/progress_history_drop_integration_test.go`: three cases over the ruled carry-and-drop step, against a real PostgreSQL. The notes reach the ledger (payload read back byte-for-byte, with their numbers, the entry's own timestamp and `carried_from`) and the four columns leave the catalogue; a malformed entry - one with no timestamp - **fails** the step and leaves the column, the note and the `applied_migrations` row untouched; and a note the ledger already holds under the same identity is not carried twice. Each case recreates the pre-drop columns first, because the boot applies the embedded set and the columns are therefore already gone by the time a test runs.

@@ -188,7 +188,19 @@ func (u *CreateTaskUseCase) Execute(ctx context.Context, request task.CreateTask
 		u.autoCreateTaskContext(ctx, taskEntity, *userID, gitBranchID)
 	}
 
-	taskResponse, err := task.TaskResponseFromDomain(ctx, taskEntity, u.gitBranchRepository, nil, nil, nil, nil, nil)
+	// The response must carry the note this request just wrote. With O1c's switch that note lives in
+	// the ledger, not the column, so it is read back here - after the save, inside the request - and
+	// merged by the response builder. This is the same read update_task makes for the same reason; the
+	// create path was left passing nil and its response came back one note short, its own.
+	var progressEvents []*entities.TaskEvent
+	if u.ledger.Events != nil && ledgerTaskID(taskEntity) != "" {
+		progressEvents, err = u.ledger.Events.Events(ctx, ledgerTaskID(taskEntity))
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	taskResponse, err := task.TaskResponseFromDomain(ctx, taskEntity, u.gitBranchRepository, progressEvents, nil, nil, nil, nil)
 	if err != nil {
 		return fail(err)
 	}
