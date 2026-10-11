@@ -64,6 +64,11 @@ These are pointers; never copy their content into this file.
    `AGENTS.md`, which is tracked; see `agenthub_go/NEXT_GEN.md`.)
 5. **The owner approves every push.** Never push, deploy or touch production or another rig without
    the owner's explicit go-ahead.
+6. **Launch and resume teams with `4genteam`, NEVER bare `rig up`.** Always run `4genteam up <rig> [--allow-peak]`
+   or `4genteam continue <rig>`. Bare `rig up` restores raw tmux sessions without the client supervisor stack —
+   bypassing `rigd`, the auto-compaction supervisor (`compact-run`), the `watchdog`, the status `bridge`, and the
+   styled `watch` grid, causing seats to grow unchecked beyond context limits and fail with RPC frame errors.
+   When asked to show the live team, always run `4genteam watch --rig <rig>`, never manual tmux tiles.
 
 ## 4. Pointers
 
