@@ -42,7 +42,8 @@ on a database that already has the schema, and nothing here marks anything.
   so a generator that walks only `Tables` produces a baseline **missing six tables** — `token_transactions`,
   `user_api_tokens` and `user_sessions` among them, which today only the init SQL creates. The order is
   the dependency: the aggregate (which holds `users`) is emitted first.
-- **`migration_baseline_parity_test.go`** — the parity guard the fold needs, because a GENERATED file
+- **`migration_baseline_parity_test.go`** — the parity guard the fold needs
+  (`TestSchemaMatchesGoDefinitions`, the name the stage-1 acceptance gives it), because a GENERATED file
   drifts silently from the registry it came from. Per table: the column-NAME set, the `REFERENCES`
   multiset and the normalised `CHECK` expressions must agree with the `TableDef` DDL; a table in the
   file that no `TableDef` registers fails in the other direction; a table registered twice fails; an
@@ -69,6 +70,7 @@ on a database that already has the schema, and nothing here marks anything.
 | the two compared catalog by catalog | the tables only the file has are exactly the **6 `ProductionTables`**; on the 41 shared tables: **0 differing columns, 0 differing constraints, 0 differing indexes** (names AND definitions, `information_schema` + `pg_constraint` + `pg_indexes`) |
 | the redundant coverage question: the embedded init SQL against the file | its **22** tables are all in the baseline; **0** init tables have a column the baseline lacks; it carries **0** `ALTER TABLE ... ADD COLUMN` |
 | the parity guard, RED FIRST | with one table renamed in the file (`seats` → `seats_renamed`), the guard FAILS naming both directions — "registered at runtime but absent from 0001_baseline.sql" and "present in 0001_baseline.sql but no TableDef registers it"; the file was restored byte-identical (sha256 before and after equal) and the guard passes again |
+| the OTHER direction, the one the row's acceptance names — a perturbed GO definition | `go test -overlay` over a copy of `models.go` with one column added INSIDE the `tasks` TableDef's DDL literal, so no repo file carried the experiment: FAIL with `table tasks: columns differ between the baseline and the runtime DDL`, both lists printed (`zz_perturbed` in the runtime set only); the same bytes at the delivered tree PASS and `models.go` is clean. A schema test never seen to fail was the object this rig hunts, so it is shown red in both directions |
 
 ## A pre-existing defect this found, NOT fixed here
 

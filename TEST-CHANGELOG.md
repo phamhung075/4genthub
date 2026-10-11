@@ -5,7 +5,7 @@ Track test suite changes, fixes, and improvements for agenthub.
 ## 2026-10-11 - the fold's parity guard, four gate cases, and the red the guard actually shows
 
 - ADDED `agenthub_go/fastmcp/task_management/infrastructure/database/migration_baseline_parity_test.go`
-  (`TestBaselineMatchesEveryRegisteredTableDef`): holds `migrations/0001_baseline.sql` to the runtime
+  (`TestSchemaMatchesGoDefinitions`): holds `migrations/0001_baseline.sql` to the runtime
   registry, table by table — every registered table appears EXACTLY once; per table the column-NAME set,
   the `REFERENCES` multiset and the normalised `CHECK` expressions agree with the `TableDef` DDL; a
   `CREATE TABLE` in the file that no `TableDef` registers fails in the other direction; a table
@@ -33,7 +33,13 @@ Track test suite changes, fixes, and improvements for agenthub.
   `table seats: registered at runtime but absent from 0001_baseline.sql - regenerate the baseline` and
   `table seats_renamed: present in 0001_baseline.sql but no TableDef registers it`. The file was restored
   byte-identical (sha256 `a3e3109230355aa93098002caf4992e4746ff63bcb1a18facebad38b6422ab29` before and
-  after) and the guard passes again; no trace of the experiment is in the delivered tree.
+  after) and the guard passes again; no trace of the experiment is in the delivered tree. THE OTHER
+  DIRECTION, WHICH IS THE ONE THE ROW'S ACCEPTANCE NAMES, was induced the way this repository induces
+  it — a `go test -overlay` copy of `models.go` with one column added INSIDE the `tasks` TableDef's DDL
+  literal, so no repo file carried the experiment: the guard FAILS with `table tasks: columns differ
+  between the baseline and the runtime DDL` and both column lists printed (`zz_perturbed` in the
+  runtime set only), while the same bytes at the delivered tree pass. `models.go` is clean afterwards.
+  The test is therefore red in BOTH directions: a perturbed Go definition, and a hand-edited baseline.
 - VERIFIED, this seat, from `agenthub_go` with `GOCACHE`/`TMPDIR` in-tree: `gofmt -l` over the tracked
   `.go` files printed nothing; `go build ./...` rc 0; `go vet ./...` clean; `go test -count=1 ./...` →
   **141 packages ok, 0 FAIL**. The two new cases and the four gate cases read by name in a `-v` run

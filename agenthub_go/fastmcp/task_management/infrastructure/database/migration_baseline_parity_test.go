@@ -48,9 +48,9 @@ var (
 	baselineCheckClause       = regexp.MustCompile(`(?i)check\s*\(`)
 )
 
-// TestBaselineMatchesEveryRegisteredTableDef holds the registry to the baseline, table by table. A
+// TestSchemaMatchesGoDefinitions holds the registry to the baseline, table by table. A
 // table added to a TableDef set and not regenerated makes this fail; so does a hand-edited baseline.
-func TestBaselineMatchesEveryRegisteredTableDef(t *testing.T) {
+func TestSchemaMatchesGoDefinitions(t *testing.T) {
 	raw := readBaselineSQL(t)
 
 	// The baseline only ever builds a schema, so it may not tear one down or alter one: the init SQL's
