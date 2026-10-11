@@ -1,0 +1,127 @@
+package entities
+
+import (
+	"testing"
+
+	taskentities "agenthub/fastmcp/task_management/domain/entities"
+)
+
+// TestFactAndDecisionKindsPartitionTheIntentKinds is D9's own rule stated as a property: an intent
+// is a fact or a decision and never both, which is what makes "facts sync, decisions sequence" a
+// complete rule rather than one with a case nobody wrote down. A kind that fell out of both lists
+// would be an intent the service would append with no staleness check at all - a decision that
+// skipped the rule - so this is not bookkeeping.
+func TestFactAndDecisionKindsPartitionTheIntentKinds(t *testing.T) {
+	if len(IntentKinds) != len(FactKinds)+len(DecisionKinds) {
+		t.Fatalf("the two lists must partition the vocabulary: %d intents, %d facts + %d decisions",
+			len(IntentKinds), len(FactKinds), len(DecisionKinds))
+	}
+	for _, k := range IntentKinds {
+		if k.IsFact() == k.IsDecision() {
+			t.Fatalf("kind %q must be exactly one of a fact or a decision: IsFact = %v, IsDecision = %v",
+				k, k.IsFact(), k.IsDecision())
+		}
+	}
+	for _, k := range FactKinds {
+		if !IsIntentKind(string(k)) {
+			t.Fatalf("the fact %q is not in the intent vocabulary", k)
+		}
+	}
+	for _, k := range DecisionKinds {
+		if !IsIntentKind(string(k)) {
+			t.Fatalf("the decision %q is not in the intent vocabulary", k)
+		}
+	}
+	// D9's two lists are five and four, and the count is worth pinning: a sixth "decision" added
+	// without a thought would silently put every client that has not read the new contract at risk
+	// of a refusal it cannot act on.
+	if len(DecisionKinds) != 5 || len(FactKinds) != 4 {
+		t.Fatalf("D9 names five decisions and four facts, got %d and %d", len(DecisionKinds), len(FactKinds))
+	}
+}
+
+// TestEveryIntentKindIsATableKind is the drift guard between this package and the table: an intent
+// kind the CHECK constraint refuses would fail where the bytes land - inside a transaction, as a
+// driver error - rather than as an answer the client can read, so the two vocabularies must agree
+// here.
+func TestEveryIntentKindIsATableKind(t *testing.T) {
+	table := map[string]bool{}
+	for _, k := range taskentities.TaskEventKindValues {
+		table[string(k)] = true
+	}
+	for _, k := range IntentKinds {
+		if !table[string(k)] {
+			t.Fatalf("the intent kind %q is not in task_events' CHECK vocabulary %v", k, taskentities.TaskEventKindValues)
+		}
+	}
+	for _, k := range FactKinds {
+		if !table[string(k)] {
+			t.Fatalf("the fact kind %q is not in task_events' CHECK vocabulary", k)
+		}
+	}
+	for _, k := range DecisionKinds {
+		if !table[string(k)] {
+			t.Fatalf("the decision kind %q is not in task_events' CHECK vocabulary", k)
+		}
+	}
+}
+
+// TestTheServersOwnKindsAreNotIntents pins the boundary the other way: delivered, escalated and
+// context_updated are in the table's vocabulary and are NOT things a client may push. A client that
+// could send `escalated` would be recording a decision the gate made, and one that could send
+// `context_updated` would be claiming a context version it never read.
+func TestTheServersOwnKindsAreNotIntents(t *testing.T) {
+	for _, kind := range []string{"delivered", "escalated", "context_updated", "planned", ""} {
+		if IsIntentKind(kind) {
+			t.Fatalf("%q must not be a kind a client can push", kind)
+		}
+	}
+	for _, k := range IntentKinds {
+		if k.IsFact() || k.IsDecision() {
+			continue
+		}
+		t.Fatalf("kind %q is in the intent vocabulary but neither a fact nor a decision", k)
+	}
+}
+
+// TestFactKindStringsIsTheFactListAsTokens is what the staleness query receives: it is an argument
+// to the repository rather than a second list there, so it must be exactly the fact vocabulary and
+// must not be shared with the slice it was built from.
+func TestFactKindStringsIsTheFactListAsTokens(t *testing.T) {
+	got := FactKindStrings()
+	if len(got) != len(FactKinds) {
+		t.Fatalf("FactKindStrings = %v, want %d tokens", got, len(FactKinds))
+	}
+	for i, k := range FactKinds {
+		if got[i] != string(k) {
+			t.Fatalf("FactKindStrings[%d] = %q, want %q", i, got[i], k)
+		}
+	}
+	// A caller must not be able to widen the rule by writing through the slice it was handed.
+	got[0] = "mutated"
+	if FactKinds[0] == IntentKind("mutated") {
+		t.Fatal("FactKindStrings must return a copy, not the vocabulary's own backing array")
+	}
+}
+
+// TestTheTwoAnswerShapesAreDisjoint is the wire contract in the domain's own terms: an acceptance
+// carries the sequences the row took and no reason, a refusal carries the reason and the task seq
+// and no sequence numbers. A single Answer type with a discriminator is what makes the encoded
+// shapes disjoint by construction, and this pins that they stay so.
+func TestTheTwoAnswerShapesAreDisjoint(t *testing.T) {
+	accepted := Acceptance(41, 7)
+	if !accepted.Accepted || accepted.UserSeq != 41 || accepted.Seq != 7 {
+		t.Fatalf("Acceptance lost a field: %+v", accepted)
+	}
+	if accepted.Reason != "" || accepted.TaskSeq != 0 {
+		t.Fatalf("an acceptance must carry no refusal fields: %+v", accepted)
+	}
+
+	refused := Refusal(ReasonStaleBaseSeq, 9)
+	if refused.Accepted || refused.Reason != ReasonStaleBaseSeq || refused.TaskSeq != 9 {
+		t.Fatalf("Refusal lost a field: %+v", refused)
+	}
+	if refused.UserSeq != 0 || refused.Seq != 0 {
+		t.Fatalf("a refusal must carry no sequence numbers: %+v", refused)
+	}
+}

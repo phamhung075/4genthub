@@ -22,3 +22,6 @@ Falsification induced and DELETED rather than asserted: with the updated test co
 
 ### Found by
 The reviewer's O3 verdict follow-up (`qitem-20261010230048`); the values and the row positions come from `5ab853d1`'s own diff rather than from memory.
+
+### Corrected
+- **The sentence above that says the seven names "have no live action name anywhere in the Go tree" was FALSE when it was written, and the reviewer caught it.** One of the seven, `list_agents`, still occurred once - `fastmcp/task_management/application/services/response_optimizer.go:31`, inside `zpRespHighFrequencyOps`, a list of operation names compared against a live action. It could never match, because the tool was retired with the agent identity model, which is why it was inert rather than a live path; but "inert" and "absent" are different claims and the note made the stronger one. It has since been removed (board `b668b4f6`'s item 3, the post-gate minors), with the reason recorded at the site, so the claim is now true rather than nearly true. Recorded here rather than silently fixed: a note that overstates a sweep is how the next reader concludes a name is gone when it is not.

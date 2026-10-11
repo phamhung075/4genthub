@@ -26,9 +26,11 @@ var ResponseProfileValues = []ResponseProfile{
 
 func (p ResponseProfile) String() string { return string(p) }
 
-// zpRespHighFrequencyOps mirrors ResponseOptimizer.HIGH_FREQUENCY_OPS.
+// zpRespHighFrequencyOps mirrors ResponseOptimizer.HIGH_FREQUENCY_OPS, minus `list_agents`: that tool was
+// retired with the agent identity model, and an operation name no live action can carry is inert here - it can
+// never match, so keeping it would only make a reader believe the sweep left nothing behind.
 var zpRespHighFrequencyOps = []string{
-	"list", "get_status", "health_check", "ping", "get_metrics", "get_statistics", "list_agents",
+	"list", "get_status", "health_check", "ping", "get_metrics", "get_statistics",
 }
 
 // zpRespAIAgentIndicators mirrors ResponseOptimizer.AI_AGENT_INDICATORS.
