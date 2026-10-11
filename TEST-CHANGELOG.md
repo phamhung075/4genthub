@@ -2,6 +2,25 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-11 - the pin route's store is now covered against real SQL
+
+- ADDED `agenthub_go/fastmcp/server/httpapp/seat_admin_pin_pg_test.go`:
+  `TestSeatAdminPinReachesTheRowOnARealDatabase` - the follow-on BOTH of R1's gates named
+  (`GATE-42de79c2` and its post-hoc re-gate): `TestSeatAdminPinSeatVersion` drives the real route,
+  handler and service through a SUBSTITUTED `seatAdminSource`, so every store assertion it makes is the
+  fake's answer, and `UpdatePinnedVersion` is a plain UPDATE whose behaviour no fake can fail. The new
+  case mounts the same routes over the production source (`newSeatAdminSource(sessions)`, no seam
+  swapped) on a real PostgreSQL and reads the row back through
+  `ORMSeatRepository.FindByRoomAndKey` rather than through the response; each refusal is followed by a
+  read of the row, so a check that refuses in the body and writes anyway fails here and passes there.
+- MEASURED with the database: PASS in 1.47s (and the fake-store case alongside it still passes). It has
+  been SEEN FAILING, not only seen passing: with the store statement mutated to
+  `COALESCE("pinned_version", $1)` - a bound-but-ignored parameter, so a true no-op write - it reports
+  `the row reads "1.0.0" after the pin, want "1.0.1" - the response is not the store`, and the statement
+  was then restored byte-for-byte (`git diff` over `seat_repository.go` is empty).
+- GATED like its neighbours: without `AGENTHUB_TEST_PG_URL` it skips loudly, so a run that prints
+  SKIPPED has not covered this.
+
 ## 2026-10-11 - correction: the unfixed script suite's clean-tree result
 
 - MEASURED, to settle the one number the gate could not reproduce:
