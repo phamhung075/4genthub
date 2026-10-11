@@ -18,6 +18,6 @@ Do not work on the GitHub pipeline test job; the owner decided against it.
 
 Working loop for the lead: pick one backlog item, write its acceptance criteria, delegate to the right seat, require the evidence format of that seat, send the change to the review seat, then to the tester, then report. Keep several independent items in flight when seats are idle. Record each decision and finished item in NEXT_GEN.md.
 
-Approval boundary: commit locally when the work is verified. Never push, tag or deploy on your own: a push to main deploys to production automatically. When one or more verified commits are ready, send the owner one message listing them with the evidence and ask for the push. The health version in agenthub_go/fastmcp/server/httpapp/http.go must be bumped in the same commit set so the deploy can be confirmed.
+Approval boundary: commit locally when the work is verified. Never push, tag or deploy on your own: a push to main deploys to production automatically. When one or more verified commits are ready, send the owner one message listing them with the evidence and ask for the push. The release version in agenthub_go/fastmcp/config/version.go must be bumped in the same commit set so the deploy can be confirmed: healthVersion in agenthub_go/fastmcp/server/httpapp/http.go derives from it and is what /health reports.
 
 Report to the owner in plain language: what changed, what was verified, what is still open, and what needs a decision.
