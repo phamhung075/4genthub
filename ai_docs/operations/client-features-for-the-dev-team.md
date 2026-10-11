@@ -340,3 +340,56 @@ Sizes: **small** is up to half a day, **medium** is one to two days.
 
 The lead creates one board task per item when the owner approves this analysis. The architect did not create
 them, because assigning work to go-dev and fe-dev is the lead's call.
+
+## 5. Which product each item lands in
+
+Section 4 decided what to build and in what order. This section says which codebase each piece is built in, and names the decisions still owed to the owner. It is a plan; no code is written from it until the owner approves.
+
+Words used: the **board** is the 4genthub task board; the **queue** is OpenRig's coordination queue; **rigd** is the client's supervision loop (`agenthub_client/internal/clientlifecycle`).
+
+### 5.1 The products
+
+- **4genthub** - the server and its UI: Go under `agenthub_go` (the board, rooms and seats, `seat_links`, the ledger) and React under `agenthub-frontend`. Repository `/home/daihu/__projects__/4genthub`.
+- **4genteam** - the client's operational surface: the `4genteam` command (`agenthub_client/cmd/4genteam`), the rigd loops (`agenthub_client/internal/clientlifecycle`), and the git hooks (`4genthub/scripts/git-hooks`). `4genteam` is the one binary the client repository builds.
+- **4gent-client** - the same client repository (`agenthub_client`, `github.com/phamhung075/4genthub-client`) read as its library surface: the policy, session-log and secret-scan packages (`internal/clientpolicy`, `internal/seatlog`, `internal/secretscan`), the seat-side checker (`cmd/seatcheck`) and the seat state (`internal/clientservices`).
+
+**One repository, two names.** Measured: `4genteam` and `4gent-client` are one repository. `agenthub_client` is the only client checkout (`.gitmodules` names `git@github.com:phamhung075/4genthub-client.git`), and it ships the `4genteam` binary, rigd and the library packages together; the retired Python `openrig_*.py` scripts are no longer in the tree. So the last two columns below are that repository's two surfaces - what it runs and what it links - not two products. If two repositories were intended, that is open decision (d).
+
+### 5.2 The split
+
+| Item (section 4) | 4genthub (server / frontend) | 4genteam (CLI / rigd) | 4gent-client (client library) |
+|---|---|---|---|
+| **1 Seat doctor** | n/a - it reads git and files on the seat's machine only | **lands**: new checks in the `4genteam doctor` verb (`internal/clientlifecycle/doctor.go`), run at launch, reseat and on demand | **reads**: the seat's deny rules (`internal/clientpolicy`) and its log (`internal/seatlog`) for the skills and guide-version rows; no new package |
+| **2 Git guard** | **partly**: the hook scripts live in this repo's own tree (`scripts/git-hooks/`), and this repo is the first one guarded | **lands**: the verb that installs the hook into any repo, and the hook entry points | **lands**: the secret scan the hook calls (`internal/secretscan`) and the forbidden-action rules (`internal/clientpolicy`) |
+| **3 Owner node + `4genteam send` method C** (board `44d2fd0b`) | **lands**: the terminal member (`runtime: terminal`, `agent_ref: builtin:terminal`, `profile: none`), the `team apply --prune` exemption, and the `seat_links` that attribute its messages | **lands**: `up` adds the owner node; the new `4genteam send` verb (write a private file, type one command into the node's terminal, read the result file) | n/a - the send is a CLI command, not a library |
+| **4 Overlap detector + stale-branch alert** | n/a beyond the base-branch setting it reads (decision a) | **lands**: a new rigd loop in `internal/clientlifecycle` scanning every worktree | **partly**: the earlier session-log warning uses `internal/seatlog` (omp and claude-code only) - phase 2 |
+| **5 Stuck and idle alerts + escalation** | **partly**: it watches board rows, which are server data; no change unless a read is missing | **lands**: the same rigd loop, plus the escalation row it writes to the queue | **partly**: "no log activity for K minutes" uses `internal/seatlog` (omp and claude-code only) |
+| **6 Done report + doc-drift** | **partly**: it reads the board row it closes | **lands**: assembled by the client at item close (diff, changelog presence) | **partly**: the diff and changelog checks are client-side git reads |
+
+The deferred set, by product:
+
+| Deferred item | Product |
+|---|---|
+| Branch status board | 4genthub frontend; its data comes from the detector (4genteam) |
+| Pre-merge gate | 4genteam (client) plus this repo's hook scripts |
+| Board view per seat | 4genthub frontend - check whether the board page can already filter by seat first |
+| Standup digest | 4gent-client (seat logs) plus 4genthub (board data) |
+| Cost view | 4genthub frontend; the server's cost rows already exist |
+| Load balancing | 4genthub server plus 4genteam |
+| Review-queue limit | 4genthub server |
+| Command audit log | dropped/deferred - only omp and claude-code logs are readable, so it would be incomplete |
+| Handoff note | 4genteam (the compaction supervisor) plus 4gent-client (`internal/seatlog`) |
+
+### 5.3 The open decisions
+
+**(a) Base branch per room.** The detector compares each seat branch against a configured base, not `main` (4.5). Decision: what each room's base branch is, and who owns it - a room setting on the server (4genthub), a client config key in `~/.config/4genthub/.env` (4genteam), or the lead per batch. Recommendation: a room setting the client reads, falling back to `main`.
+
+**(b) "Owner outranks lead on priorities only."** The exact rule: an owner-signed message may set priorities, scope and the next task; it does not order a merge or a push. Where enforced: the git guard keeps push blocked for every seat whatever the sender (so the rule is not the only protection), and the lead follows it; no code reads message priority. Decision: confirm "priorities only, merges stay the lead's" (recommended).
+
+**(c) The rigd loop.** Items 4 and 5 ride one rigd loop in `internal/clientlifecycle`. Decision: the cadence (4.5 proposes every 10 minutes), and what happens when rigd is down - the detector and the alerts go silent, so the seat doctor (item 1) must report rigd's state; rigd phase 1 already carries that safeguard report.
+
+**(d) `4genteam` and `4gent-client`.** Measured as one repository (5.1). Decision: confirm they are two surfaces of `agenthub_client`, or name a second repository if one is intended. Does not block step 2 - both surfaces are go-dev's.
+
+### 5.4 Handoff to step 2
+
+The lead creates one board task per item in section 4.2's order: go-dev for the client items 1-6, fe-dev for the deferred board and cost views, and a reviewer gate on each tip.
