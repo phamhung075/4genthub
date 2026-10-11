@@ -137,6 +137,8 @@ func (a *App) Handler() http.Handler {
 	mountSeatStatusRoutes(mux, a.Sessions)
 	mountSeatFeedbackRoutes(mux, a.Sessions)
 	mountTeamRoutes(mux, a.Sessions)
+	// The ledger's own layer: the cross-task cursor and the intents route (P2, P3).
+	mountLedgerRoutes(mux, a.Sessions)
 	mountMiscRoutes(mux)
 	return withCORS(mux)
 }
