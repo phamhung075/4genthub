@@ -30,35 +30,28 @@ pytestmark = pytest.mark.unit
 REPO_ROOT = Path(__file__).resolve().parents[2]
 TEAM_JSON = REPO_ROOT / "scripts" / "team" / "4genthub-min" / "team.json"
 
-# The team the rig is RUNNING, measured 2026-10-08. `go-dev2` was removed that day; `architect`
-# runs on claude-code and every other seat on omp.
+# The team the rig is RUNNING. RE-MEASURED 2026-10-11: `rig ps --nodes --rig 4genthub-min --json`
+# reports FIVE nodes - one `claude-code` (architect) and four `omp` - and the room's `team.json`
+# declares exactly those five, so the two writes agree at five. This list held ten from 2026-10-08
+# (go-dev2 was removed that day); skills-dev, web-dev and writer were retired from the room since,
+# which is why the roster case below reads five and not the ten it was written with.
 LIVE_SEATS = [
     "architect",
-    "context-dev",
     "fe-dev",
-    "feedback-dev",
     "go-dev",
     "lead",
     "reviewer",
-    "skills-dev",
-    "web-dev",
-    "writer",
 ]
 
-# WHICH of those seats run omp, measured with `rig ps --json` beside `LIVE_SEATS` on the same day
-# and for the same reason it is recorded rather than recomputed: a set derived from `team.json`
-# agrees with `team.json` by construction, and this pair exists because the room and the rig
-# disagreed for two days. `architect` is the one claude-code seat; every other seat runs omp.
+# WHICH of those seats run omp, measured the same way and on the same day as `LIVE_SEATS` above: the
+# node list is one `claude-code` seat and four `omp` seats. Recorded rather than recomputed for the
+# reason the pair exists - a set derived from `team.json` agrees with `team.json` by construction,
+# and this pair exists because the room and the rig disagreed for two days.
 OMP_SEATS = [
-    "context-dev",
     "fe-dev",
-    "feedback-dev",
     "go-dev",
     "lead",
     "reviewer",
-    "skills-dev",
-    "web-dev",
-    "writer",
 ]
 
 
@@ -66,7 +59,7 @@ def team() -> dict:
     return json.loads(TEAM_JSON.read_text())
 
 
-def test_the_declared_seats_are_the_live_ten():
+def test_the_declared_seats_are_the_live_roster():
     declared = sorted(seat["seat_key"] for seat in team()["seats"])
     assert declared == sorted(LIVE_SEATS)
 

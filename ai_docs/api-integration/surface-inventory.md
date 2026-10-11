@@ -500,27 +500,27 @@ it in `init()`; `ProductionTables` is deliberately separate.
 
 | Table | Model | Declaration |
 |---|---|---|
-| `agent_sessions` | `AgentSession` | `models.go:582` |
-| `api_tokens` | `APIToken` | `models.go:599` |
-| `context_delegations` | `ContextDelegation` | `models.go:616` |
-| `context_inheritance_cache` | `ContextInheritanceCache` | `models.go:645` |
-| `global_contexts` | `GlobalContext` | `models.go:669` |
-| `labels` | `Label` | `models.go:688` |
-| `missed_notifications` | `MissedNotification` | `models.go:699` |
-| `projects` | `Project` | `models.go:714` |
-| `templates` | `Template` | `models.go:726` |
-| `agent_session_events` | `AgentSessionEvent` | `models.go:747` |
-| `project_contexts` | `ProjectContext` | `models.go:759` |
-| `project_git_branchs` | `ProjectGitBranch` | `models.go:781` |
-| `branch_contexts` | `BranchContext` | `models.go:799` |
-| `tasks` | `Task` | `models.go:820` |
-| `subtasks` | `Subtask` | `models.go:856` |
-| `task_assignees` | `TaskAssignee` | `models.go:890` |
-| `task_contexts` | `TaskContext` | `models.go:903` |
-| `task_dependencies` | `TaskDependency` | `models.go:928` |
-| `task_labels` | `TaskLabel` | `models.go:938` |
+| `agent_sessions` | `AgentSession` | `models.go:596` |
+| `api_tokens` | `APIToken` | `models.go:615` |
+| `context_delegations` | `ContextDelegation` | `models.go:632` |
+| `context_inheritance_cache` | `ContextInheritanceCache` | `models.go:661` |
+| `global_contexts` | `GlobalContext` | `models.go:685` |
+| `labels` | `Label` | `models.go:704` |
+| `missed_notifications` | `MissedNotification` | `models.go:715` |
+| `projects` | `Project` | `models.go:730` |
+| `templates` | `Template` | `models.go:742` |
+| `agent_session_events` | `AgentSessionEvent` | `models.go:763` |
+| `project_contexts` | `ProjectContext` | `models.go:775` |
+| `project_git_branchs` | `ProjectGitBranch` | `models.go:797` |
+| `branch_contexts` | `BranchContext` | `models.go:815` |
+| `tasks` | `Task` | `models.go:836` |
+| `subtasks` | `Subtask` | `models.go:874` |
+| `task_assignees` | `TaskAssignee` | `models.go:910` |
+| `task_contexts` | `TaskContext` | `models.go:923` |
+| `task_dependencies` | `TaskDependency` | `models.go:948` |
+| `task_labels` | `TaskLabel` | `models.go:958` |
 
-**RE-SWEPT 2026-10-10 (writer seat, docs duty pass 9) at `cd5d1187` — and this table is where `76b800b9` moved everything.** The retirement of the `manage_agent` tool, the `agents` table and the 32-role registry deleted blocks in `models.go` above these declarations, so **all nineteen remaining anchors were stale by 19 or 37 lines** and each is re-derived here (`S3-REDERIVE.py` reports `FRESH 46` with zero not-fresh rows at this revision). **The `agents` row was struck rather than re-pointed: `database.Tables` no longer carries the table at all, so there is no line to cite** — the entry lives in §4 with the commit that removed it. `agent_sessions` and `agent_session_events` survive and are unchanged in substance: they are session bookkeeping, not the registry.
+**RE-DERIVED AGAIN 2026-10-11 (go-dev, row `qitem-20261011035828`): the same nineteen anchors had drifted a second time, by +14 to +20 lines, and the movement is attributed rather than counted — two commits added ORM declarations above them, `0e03b3f7` (the rigd connector cursor, the session row's state and a safeguard table) and `d5a59667` (acceptance criteria, scope and the resume brief).** Each row now cites its own TableDef line again, re-measured at this tip rather than adjusted by a constant: `agent_sessions` 582→596, `api_tokens` 599→615, `context_delegations` 616→632, `context_inheritance_cache` 645→661, `global_contexts` 669→685, `labels` 688→704, `missed_notifications` 699→715, `projects` 714→730, `templates` 726→742, `agent_session_events` 747→763, `project_contexts` 759→775, `project_git_branchs` 781→797, `branch_contexts` 799→815, `tasks` 820→836, `subtasks` 856→874, `task_assignees` 890→910, `task_contexts` 903→923, `task_dependencies` 928→948, `task_labels` 938→958. **The shifts are not one insertion: they differ per row, which is why each was re-resolved by searching for the TableDef entry rather than by adding an offset.** The retirement of the `manage_agent` tool, the `agents` table and the 32-role registry deleted blocks in `models.go` above these declarations, so **all nineteen remaining anchors were stale by 19 or 37 lines** and each is re-derived here (`S3-REDERIVE.py` reports `FRESH 46` with zero not-fresh rows at this revision). **The `agents` row was struck rather than re-pointed: `database.Tables` no longer carries the table at all, so there is no line to cite** — the entry lives in §4 with the commit that removed it. `agent_sessions` and `agent_session_events` survive and are unchanged in substance: they are session bookkeeping, not the registry.
 
 ### 3.2 Auth tables — appended to `Tables` via `init()`
 

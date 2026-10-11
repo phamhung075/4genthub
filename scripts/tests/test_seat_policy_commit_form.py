@@ -1,4 +1,4 @@
-"""The ten seat policy modules must carry the CURRENT commit form, and agree on it.
+"""The seat policy modules the room declares must carry the CURRENT commit form, and agree on it.
 
 The fleet commits with ``git commit -m "..." -- <paths>`` and NO prior ``git add``, because the
 index is shared: a staged line can be taken by another seat's commit. A new file is the one
@@ -50,11 +50,11 @@ def _siblings() -> list[tuple[str, str, str]]:
     return out
 
 
-def test_all_ten_policy_modules_are_loaded() -> None:
+def test_every_policy_module_the_room_declares_is_loaded() -> None:
     names = [p.name for p in POLICY_FILES]
     assert (
-        len(names) == 10
-    ), f"expected the ten policy modules, found {len(names)}: {names}"
+        len(names) == 5
+    ), f"expected the five policy modules the room's five seats declare, found {len(names)}: {names}"
 
 
 def test_no_sibling_prescribes_the_old_commit_form() -> None:
@@ -80,7 +80,7 @@ def _commit_form_siblings() -> list[tuple[str, str, str]]:
 
 
 def test_the_commit_form_siblings_agree_within_each_module() -> None:
-    """(a) Within each of the ten files, the nine commit-form siblings are byte-identical.
+    """(a) Within each policy module, its commit-form siblings are byte-identical.
 
     One file that kept a divergent copy of the changed key would fold against its own siblings -
     FoldPolicies refuses one match declared with two different siblings - so the edit must move all
@@ -98,22 +98,22 @@ def test_the_commit_form_siblings_agree_within_each_module() -> None:
         f"{disagreeing}"
     )
     assert (
-        len(by_file) == 10
-    ), f"expected commit-form siblings in all ten modules, found {sorted(by_file)}"
+        len(by_file) == 5
+    ), f"expected commit-form siblings in all five modules, found {sorted(by_file)}"
     assert all(len(sibs) == 1 for sibs in by_file.values()), by_file
 
 
-def test_one_commit_form_match_declares_one_sibling_across_the_ten_modules() -> None:
-    """(b) For each commit-form match, the sibling is identical across all ten files.
+def test_one_commit_form_match_declares_one_sibling_across_the_policy_modules() -> None:
+    """(b) For each commit-form match, the sibling is identical across all the modules.
 
-    This is the invariant that makes the ten-file change safe: replacing the changed key in one
+    This is the invariant that makes the multi-file change safe: replacing the changed key in one
     place per match keeps every file consistent, and no file is left prescribing the old form.
     """
     by_match: dict[str, set[str]] = defaultdict(set)
     for _name, match, sibling in _commit_form_siblings():
         by_match[match].add(sibling)
 
-    assert by_match, "no commit-form sibling found in the ten policy modules"
+    assert by_match, "no commit-form sibling found in the policy modules"
     disagreeing = {
         match: sorted(sibs) for match, sibs in by_match.items() if len(sibs) > 1
     }

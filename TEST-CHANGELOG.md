@@ -2,6 +2,31 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-11 - the script suite's stale expectations, re-measured case by case
+
+- CHANGED TWO DATA LISTS in `scripts/tests/test_team_roster.py`: `LIVE_SEATS` re-measured to five and
+  `OMP_SEATS` to four (`rig ps --nodes --rig 4genthub-min --json` -> five nodes, one `claude-code` and
+  four `omp`), and the first case renamed `test_the_declared_seats_are_the_live_ten` ->
+  `test_the_declared_seats_are_the_live_roster`. The assertion is untouched: `declared ==
+  sorted(LIVE_SEATS)` still fails on any drift, and it is deliberately not derived from `team.json`.
+- CHANGED THE COUNT in `scripts/tests/test_seat_policy_commit_form.py` from ten to five, and nothing
+  else: the room declares five seats and holds five `policy-*.json`. `test_no_sibling_prescribes_the_old_commit_form`
+  and both agreement assertions are byte-unchanged - no rule was weakened to make a case pass.
+- ADDED ONE BAND in `scripts/tests/test_team_definition.py`: `ROOM_WORD_LIMITS["4genthub-min"] =
+  {"guide-e2e-dev": (300, 420)}` for the room's one room-local instruction file (355 words measured).
+  The table was empty with a comment saying the room kept no such file; both ends of the band bite.
+- FIXED THE ROOM DATA, not the test, in `scripts/team/4genthub-ab/team.json`: `ab-policy-lead` and
+  `ab-policy-go-dev` pointed at `../4genthub-min/*.json`, which the policy rule forbids for the reason
+  `b4ca5c68` fixed for `4genthub-client`. Both policies are copied into the room byte-identically
+  (sha256 `97f1407a…`, `a72b59e7…`) and the entries point at them.
+- RE-DERIVED THE 19 §3.1 ANCHORS the S3 case reads: `ai_docs/api-integration/surface-inventory.md`
+  cited `models.go:582…938` while the TableDef entries sit at `596…958` (+14 to +20, from `0e03b3f7`
+  and `d5a59667`), each re-resolved by searching for its own TableDef entry rather than by offset.
+- RUN: `python3 -m pytest --noconftest -p no:cacheprovider scripts/tests -q` -> **12 failed, 76 passed**
+  before; **9 failed, 79 passed** after the counts row `7c358c4b`; **3 failed, 85 passed** in the
+  worktree after this change, the three being S3's cases, which read the document at `rev` through
+  `git show` rather than the worktree and therefore turn green with this commit.
+
 ## 2026-10-11 - the API token's own usage counters, seen red before the wiring
 
 - ADDED one case in a NEW file, `agenthub_go/fastmcp/server/httpapp/api_token_usage_pg_test.go`:
