@@ -2,6 +2,14 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-11 - the test-scope ratchet returns to 194, and the type it spent
+
+- CHANGED, one line in `agenthub-frontend/src/tests/pages/SeatDetailPage.test.tsx`: the standing case's never-settling promise is now `new Promise<never>(() => {})` instead of `Promise.withResolvers<never>()`. The destructuring discarded the resolver, so the hand-rolled deferred is exactly equivalent for a promise that never settles.
+- WHY: `npx tsc --noEmit -p tsconfig.tests.json` read 195 against the 194 recorded in the entry below, and the cause was MEASURED, not guessed - exporting the tree at `9ebb454f` (the commit whose changelog recorded 194) gave 194, exactly one file differed (`src/tests/pages/SeatDetailPage.test.tsx`, 5 -> 6), and the added error was `TS2339: Property 'withResolvers' does not exist on type 'PromiseConstructor'`, which arrived with `3e8c2084`. `withResolvers` is ES2024, absent from the test tsconfig's lib, and the case ran green either way (Node has it at runtime), so this was a typing gap, never a failing test.
+- THE OTHER OCCURRENCE IS LEFT ALONE ON PURPOSE: the same file carries a second `Promise.withResolvers` at line 366, PRE-EXISTING at `9ebb454f`, inside `it('shows that it is resolving instead of rendering the panels while the read is pending')`. Fixing that one too would take the baseline BELOW the recorded 194, so this change touches line 384 only.
+- MEASURED, in `wt/fe-dev`, from `agenthub-frontend`: `npx tsc --noEmit -p tsconfig.tests.json` -> **194**, with that file back at **5** and the sole surviving `withResolvers` error at line 366; `npx tsc --noEmit -p .` -> **0** `error TS`; `npx vitest run src/tests/pages/SeatDetailPage.test.tsx` -> **1 file passed, 29 passed (29)**.
+- NOT RUN, named: the full suite. This is one line inside one existing case, so the file's own suite is the proportionate run; the reviewer's re-gate at this tip carries the full run.
+
 ## 2026-10-11 - the deleted progress timeline's cases change subject, and the ledger's row gets a note-text case
 
 - DELETED, because the subject is gone: the `ProgressHistoryTimeline` mocks in `agenthub-frontend/src/tests/components/TaskDetailsDialog.test.tsx` and `TaskDetailsDialog.realtime.test.tsx` (the component is deleted, so the mock registered a module nothing imports), and the progress-timeline describe in `SubtaskDetailsDialog.test.tsx`. No test was deleted merely for having been paired with deleted code: the three cases that still describe reachable behaviour were rewritten (two `it` bodies here) or repurposed (one file below).
