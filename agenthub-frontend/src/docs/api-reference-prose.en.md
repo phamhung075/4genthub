@@ -1,7 +1,7 @@
 # API reference — the written part
 
 agenthub is a cloud service that stores the state of AI work — projects, git branches, tasks,
-subtasks, a four-level context hierarchy, a live registry of agents (the `manage_agent` surface),
+subtasks, a four-level context hierarchy,
 and the **seat model** that describes who does the work and how they are configured. A separate
 client (OpenRig) runs the seats on your machine; this API is where their state lives.
 
@@ -71,7 +71,8 @@ mounted under `/auth/supabase/`:
 
 ## Identifiers and conventions
 
-- **Assignees** are written as `@<seat-key>` (or a known role); see the seat model below.
+- **Assignees** are written as `@<seat-key>`, the only accepted form: a bare name is rejected. See
+  the seat model below.
 - **Ownership** is checked, not assumed: a session belongs to one account, and asking for another
   account's session id returns `404` rather than `403`, so ids cannot be probed.
 - **Path parameters** in the generated tables: `{room}` a room slug, `{seat}` a seat key, `{slug}` a
