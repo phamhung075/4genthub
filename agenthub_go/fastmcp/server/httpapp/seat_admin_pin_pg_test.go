@@ -4,8 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strings"
 	"testing"
 
+	authdomain "agenthub/fastmcp/auth/domain/entities"
+	authinterface "agenthub/fastmcp/auth/interface"
 	seatorm "agenthub/fastmcp/seat_management/infrastructure/repositories/orm"
 )
 
@@ -15,7 +18,9 @@ import (
 // non-blocking. `TestSeatAdminPinSeatVersion` in seat_admin_pin_test.go drives the real route, the
 // handler and the service - but through a SUBSTITUTED seatAdminSource, so every assertion it makes
 // about the store is the fake's answer, and `UpdatePinnedVersion` is a plain UPDATE whose behaviour
-// (does it move the row? is it scoped to the caller's tenant?) no fake can fail.
+// (does it move the row? is it scoped to the caller's tenant?) no fake can fail. BOTH of those are
+// measured below: the moved row is read back from the table, and the case ends by making the same
+// calls as ANOTHER user, which must neither see the seat nor move its pin.
 //
 // This case mounts the SAME routes over the PRODUCTION source - `newSeatAdminSource(sessions)`, built
 // by seat_mount/seat_admin_mount's own wiring, no seam swapped - on a real PostgreSQL, and reads the
@@ -138,6 +143,31 @@ func TestSeatAdminPinReachesTheRowOnARealDatabase(t *testing.T) {
 		`{"pinned_version":"`+secondVersion+`"}`); rec.Code != http.StatusNotFound {
 		t.Errorf("pin on an absent seat: status = %d, want 404: %s", rec.Code, rec.Body.String())
 	}
+
+	// THE TENANT SCOPE, measured rather than claimed. Every request above is made as the OWNING
+	// user, so a store that dropped `AND user_id = $n` from either statement would pass all of them.
+	// The resolver is swapped mid-case (as token_mount_wiring_test.go does) to make the SAME calls
+	// as another user, which must not see the room's seat and must not move its pin.
+	const otherUser = "22222222-2222-4222-8222-222222222222"
+	previousResolve := authinterface.GetCurrentUserUniversal
+	authinterface.GetCurrentUserUniversal = func(context.Context, string) (*authdomain.User, error) {
+		id := otherUser
+		return &authdomain.User{ID: &id, Email: "other@example.com", Username: "other"}, nil
+	}
+	rec = doTestRequest(t, mux, http.MethodGet, "/api/v2/openrig/rooms/pgpinroom/seats", "")
+	listCode := rec.Code
+	if body := rec.Body.String(); strings.Contains(body, "alice") || listCode >= http.StatusInternalServerError {
+		t.Errorf("another tenant's seat list: status %d, body %s - want the owner's seat absent and no server error",
+			listCode, body)
+	}
+	rec = doTestRequest(t, mux, http.MethodPut, "/api/v2/openrig/rooms/pgpinroom/seats/alice/pin",
+		`{"pinned_version":"`+firstVersion+`"}`)
+	if rec.Code == http.StatusOK {
+		t.Errorf("another tenant pinned the owner's seat: status %d, body %s", rec.Code, rec.Body.String())
+	}
+	t.Logf("another tenant: seat list %d, pin %d (want the owner's seat absent and the pin refused)", listCode, rec.Code)
+	authinterface.GetCurrentUserUniversal = previousResolve
+
 	if got := storedPin("at the end"); got != secondVersion {
 		t.Fatalf("the row moved to %q on a refused pin, want %q", got, secondVersion)
 	}
