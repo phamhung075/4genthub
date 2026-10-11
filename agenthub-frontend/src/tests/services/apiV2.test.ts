@@ -3,6 +3,7 @@ import {
   taskApiV2,
   projectApiV2,
   branchApiV2,
+  subtaskApiV2,
   isAuthenticated,
   getCurrentUserId
 } from '../../services/apiV2';
@@ -452,6 +453,9 @@ describe('apiV2.ts', () => {
 
         const [url, init] = (global.fetch as any).mock.calls[0];
         const query = new URL(url).searchParams;
+        // The PATH is asserted as well as the query: without it, pointing this call at
+        // .../completed leaves the query assertions satisfied and the action broken.
+        expect(new URL(url).pathname).toBe(`/api/v2/tasks/${taskId}/complete`);
         expect(query.get('completion_summary')).toBe('Task completed successfully');
         expect(query.get('testing_notes')).toBe('All tests passed');
         expect(init.method).toBe('POST');
@@ -475,6 +479,7 @@ describe('apiV2.ts', () => {
 
         const [url, init] = (global.fetch as any).mock.calls[0];
         const query = new URL(url).searchParams;
+        expect(new URL(url).pathname).toBe(`/api/v2/tasks/${taskId}/complete`);
         expect(query.get('completion_summary')).toBe('Done');
         expect(query.has('testing_notes')).toBe(false);
         expect(init.method).toBe('POST');
@@ -499,6 +504,84 @@ describe('apiV2.ts', () => {
           message: 'Operation completed successfully'
         });
       });
+    });
+  });
+
+  // The subtask write routes read their input from the URL's QUERY and never parse a body:
+  // `queryOpt` for title / description / status / completion_notes, and progress_percentage read
+  // straight off `r.URL.Query()`, in agenthub_go/fastmcp/server/httpapp/subtask_routes.go:36-48 and
+  // :53-56. A form body is read by nothing there, so the route still answers 200 while the write is
+  // dropped - an edit changed nothing and a completion lost its note.
+  describe('Subtask API V2', () => {
+    const subtaskId = '11111111-2222-4333-8444-555555555555';
+    const fetchMock = vi.mocked(global.fetch);
+
+    const mockOk = () => {
+      fetchMock.mockResolvedValue(
+        new Response(JSON.stringify({ id: subtaskId }), { status: 200 })
+      );
+    };
+
+    /** The request the call actually made: the URL it hit and the init it passed. */
+    const calledRequest = () => {
+      const [url, init] = fetchMock.mock.calls[0];
+      const called = new URL(String(url));
+      return { called, query: called.searchParams, init };
+    };
+
+    it('updateSubtask sends every supplied field in the query, where the route reads it', async () => {
+      mockOk();
+
+      await subtaskApiV2.updateSubtask(subtaskId, {
+        title: 'Renamed',
+        description: 'Clarified',
+        status: 'in_progress',
+        progress_percentage: 40,
+      });
+
+      const { called, query, init } = calledRequest();
+      expect(called.pathname).toBe(`/api/v2/subtasks/${subtaskId}`);
+      expect(init?.method).toBe('PUT');
+      expect(query.get('title')).toBe('Renamed');
+      expect(query.get('description')).toBe('Clarified');
+      expect(query.get('status')).toBe('in_progress');
+      expect(query.get('progress_percentage')).toBe('40');
+      // The body is the seam itself: anything parked here is read by no one.
+      expect(init?.body).toBeUndefined();
+    });
+
+    it('updateSubtask sends only the fields that were supplied', async () => {
+      mockOk();
+
+      await subtaskApiV2.updateSubtask(subtaskId, { title: 'Renamed' });
+
+      const { query } = calledRequest();
+      expect(query.get('title')).toBe('Renamed');
+      expect(query.has('description')).toBe(false);
+      expect(query.has('status')).toBe(false);
+      expect(query.has('progress_percentage')).toBe(false);
+    });
+
+    it('completeSubtask carries the note in the query, where the route reads it', async () => {
+      mockOk();
+
+      await subtaskApiV2.completeSubtask(subtaskId, 'Finished the parser');
+
+      const { called, query, init } = calledRequest();
+      expect(called.pathname).toBe(`/api/v2/subtasks/${subtaskId}/complete`);
+      expect(query.get('completion_notes')).toBe('Finished the parser');
+      expect(init?.method).toBe('POST');
+      expect(init?.body).toBeUndefined();
+    });
+
+    it('completeSubtask sends no completion_notes key when there is no note', async () => {
+      mockOk();
+
+      await subtaskApiV2.completeSubtask(subtaskId);
+
+      const { query, init } = calledRequest();
+      expect(query.has('completion_notes')).toBe(false);
+      expect(init?.body).toBeUndefined();
     });
   });
 

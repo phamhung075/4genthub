@@ -606,23 +606,28 @@ export const subtaskApiV2 = {
     status?: string;
     progress_percentage?: number;
   }) => {
-    const formData = new URLSearchParams();
-    if (updates.title) formData.append('title', updates.title);
-    if (updates.description) formData.append('description', updates.description);
-    if (updates.status) formData.append('status', updates.status);
+    // Every field rides the QUERY, because the route reads them there and nowhere else: title,
+    // description and status through `queryOpt`, progress_percentage straight off `r.URL.Query()`,
+    // with no body parse at all (agenthub_go/fastmcp/server/httpapp/subtask_routes.go:36-48). The
+    // form body this call used to send was read by nothing, so an edit answered 200 and left the row
+    // unchanged while the UI showed it saved.
+    const params = new URLSearchParams();
+    if (updates.title) params.append('title', updates.title);
+    if (updates.description) params.append('description', updates.description);
+    if (updates.status) params.append('status', updates.status);
     if (updates.progress_percentage !== undefined) {
-      formData.append('progress_percentage', updates.progress_percentage.toString());
+      params.append('progress_percentage', updates.progress_percentage.toString());
     }
+    const query = params.toString();
 
-    const response = await fetch(`${API_BASE_URL}/api/v2/subtasks/${subtaskId}`, {
-      method: 'PUT',
-      headers: {
-        ...getAuthHeaders(),
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: formData,
-      credentials: 'include',
-    });
+    const response = await fetch(
+      `${API_BASE_URL}/api/v2/subtasks/${subtaskId}${query ? `?${query}` : ''}`,
+      {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        credentials: 'include',
+      }
+    );
     return handleResponse(response);
   },
 
@@ -670,19 +675,22 @@ export const subtaskApiV2 = {
 
   // Complete a subtask
   completeSubtask: async (subtaskId: string, completionNotes?: string) => {
-    const formData = new URLSearchParams();
+    // The note rides the QUERY for the same reason as updateSubtask's fields: the route reads it with
+    // `queryOpt` (subtask_routes.go:53-56) and never a body, so the note this call used to send was
+    // silently dropped while the completion itself succeeded.
+    const params = new URLSearchParams();
     if (completionNotes) {
-      formData.append('completion_notes', completionNotes);
+      params.append('completion_notes', completionNotes);
     }
+    const query = params.toString();
 
-    const response = await fetch(`${API_BASE_URL}/api/v2/subtasks/${subtaskId}/complete`, {
-      method: 'POST',
-      headers: {
-        ...getAuthHeaders(),
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: formData,
-    });
+    const response = await fetch(
+      `${API_BASE_URL}/api/v2/subtasks/${subtaskId}/complete${query ? `?${query}` : ''}`,
+      {
+        method: 'POST',
+        headers: getAuthHeaders(),
+      }
+    );
     return handleResponse(response);
   },
 };

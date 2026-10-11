@@ -2,6 +2,14 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-11 - the subtask write transport gets contract cases, and the complete-task case gets its path back
+
+- ADDED, `describe('Subtask API V2')` in `agenthub-frontend/src/tests/services/apiV2.test.ts`, four cases: `updateSubtask` sends title / description / status / progress_percentage in the QUERY at `/api/v2/subtasks/{id}` with method PUT and no body; `updateSubtask` sends only the fields that were supplied; `completeSubtask` carries the note in the query at `/api/v2/subtasks/{id}/complete` with method POST and no body; `completeSubtask` sends no `completion_notes` key when there is no note. The file had NO subtask cases at all before this, which is why nothing pinned the transport while the defect was live.
+- MEASURED RED FIRST: `npx vitest run src/tests/services/apiV2.test.ts -t 'Subtask API V2'` -> **4 failed | 31 skipped** against the pre-fix tip, the failures being the defect itself - `expected null to be 'Finished the parser'` (the query was empty) and `expected URLSearchParams {} to be undefined` (the input was in the body, where the route reads nothing).
+- The new cases drive `vi.mocked(global.fetch)` and answer with a real `Response` rather than the file's older `(global.fetch as any)` plus object-literal style, so the request shape is typed at the seam under test instead of asserted through a cast.
+- RESTORED in the same file, `describe('completeTask')`: both cases assert `expect(new URL(url).pathname).toBe(\`/api/v2/tasks/${taskId}/complete\`)` again. The `88ca41df` rewrite kept the query assertions but dropped the path, and the A1 gate falsified exactly that - mutating `/complete` to `/completed` left 31 passed.
+- MEASURED, in `wt/fe-dev`, from `agenthub-frontend`: the two affected files -> **2 files / 115 tests passed, 0 failed**; `npx tsc --noEmit -p .` -> **0** `error TS`; `npx vitest run` -> **122 files / 1892 tests passed, 0 failed** (134.93s; 1888 plus this change's four cases).
+
 ## 2026-10-11 - the room's standing gets its red-first case, and the room fixture learns to carry a role
 
 - CHANGED `agenthub-frontend/src/tests/pages/SeatAuthoringPage.test.tsx`: the file-scope `listRooms` fixture now serves `team_id` and `role: 'owner'`. `Room.role` is REQUIRED on the served row and is what decides every write control the page offers, so without it each existing case silently asserted a VIEWER's page - and the write paths passed only because no gate existed yet. With the gate in place those cases would fail on the absent controls, which is the signal the field was missing rather than a regression in them.
