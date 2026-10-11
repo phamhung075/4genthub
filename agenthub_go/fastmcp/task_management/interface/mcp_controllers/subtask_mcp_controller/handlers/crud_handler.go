@@ -374,6 +374,18 @@ func (h *SubtaskCRUDHandler) CompleteSubtask(ctx context.Context, facade *facade
 				"example", "Feature implemented with tests passing, documented in README"))
 	}
 
+	// The tool declares progress_notes REQUIRED for complete as well, and the update half of this
+	// handler is where that requirement is enforced - so the same rule is enforced here rather than
+	// accepted and dropped. The note travels in the payload; the ledger writes it.
+	if completionNotes == nil || len(value_objects.PyStrip(*completionNotes)) < 10 {
+		return h.responseFormatter.CreateErrorResponse("complete_subtask",
+			"Missing required field: progress_notes (minimum 10 characters). Completions must include progress description.",
+			ErrorCodeValidation,
+			metaMap("field", "progress_notes",
+				"requirement", "Minimum 10 characters describing what was done",
+				"example", "Final review completed, structure documented"))
+	}
+
 	if extras == nil {
 		extras = &CompletionExtras{}
 	}
@@ -381,6 +393,7 @@ func (h *SubtaskCRUDHandler) CompleteSubtask(ctx context.Context, facade *facade
 	completionData := entities.NewOrderedMap[any]()
 	completionData.Set("subtask_id", subtaskID)
 	completionData.Set("completion_summary", *completionSummary)
+	completionData.Set("progress_notes", *completionNotes)
 	completionData.Set("testing_notes", derefAny(extras.TestingNotes))
 	completionData.Set("insights_found", derefAny(extras.InsightsFound))
 	completionData.Set("challenges_overcome", derefAny(extras.ChallengesOvercome))

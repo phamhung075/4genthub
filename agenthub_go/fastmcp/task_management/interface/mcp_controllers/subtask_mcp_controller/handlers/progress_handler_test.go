@@ -189,6 +189,22 @@ func TestUpdateSubtaskRequiresProgressNotes(t *testing.T) {
 	}
 }
 
+// The tool declares progress_notes required for complete as well; the handler enforces it on the
+// sibling action rather than accepting the note and dropping it.
+func TestCompleteSubtaskRequiresProgressNotes(t *testing.T) {
+	f := &fakeFormatter{}
+	h := NewSubtaskCRUDHandler(f, nil, nil, nil)
+	short := "short"
+	summary := "a completion summary long enough to pass the twenty character rule"
+	h.CompleteSubtask(context.Background(), nil, "t1", "s1", &short, &summary, nil)
+	if f.operation != "complete_subtask" || f.errorCode != ErrorCodeValidation {
+		t.Errorf("op=%q code=%q", f.operation, f.errorCode)
+	}
+	if f.errMsg != "Missing required field: progress_notes (minimum 10 characters). Completions must include progress description." {
+		t.Errorf("msg=%q", f.errMsg)
+	}
+}
+
 // Subtask creation refuses a bare name that is no role, before it reaches the facade.
 func TestCreateSubtaskRefusesABareUnknownAssignee(t *testing.T) {
 	f := &fakeFormatter{}

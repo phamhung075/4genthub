@@ -291,7 +291,7 @@ func (a subtaskCRUDAdapter) CompleteSubtask(ctx context.Context, facade *facades
 		CompletionQuality: kwOptString(kw, "completion_quality"), ImpactOnParent: kwOptString(kw, "impact_on_parent"),
 	}
 	return a.h.CompleteSubtask(ctx, facade, kwString(kw, "task_id"), kwString(kw, "subtask_id"),
-		kwOptString(kw, "completion_notes"), kwOptString(kw, "completion_summary"), extras)
+		kwOptString(kw, "progress_notes"), kwOptString(kw, "completion_summary"), extras)
 }
 
 // subtaskProgressAdapter exposes handlers.ProgressHandler (typed subtask lists)

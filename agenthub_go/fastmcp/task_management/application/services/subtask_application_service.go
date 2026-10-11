@@ -64,9 +64,10 @@ func (s *SubtaskApplicationService) UpdateSubtask(ctx context.Context, request *
 	return s.updateSubtaskUseCase.Execute(ctx, request)
 }
 
-// CompleteSubtask mirrors complete_subtask.
+// CompleteSubtask mirrors complete_subtask. This internal path carries no note, so it writes no ledger
+// entry - only the tool path, where progress_notes is required, does.
 func (s *SubtaskApplicationService) CompleteSubtask(ctx context.Context, taskID string, id string) (*entities.OrderedMap[any], error) {
-	return s.completeSubtaskUseCase.Execute(ctx, taskID, id, nil, nil, nil, nil)
+	return s.completeSubtaskUseCase.Execute(ctx, taskID, id, nil, nil, nil, nil, nil)
 }
 
 // GetSubtasks mirrors get_subtasks.

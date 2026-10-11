@@ -1,13 +1,14 @@
 package use_cases
 
-// The note a manage_subtask update carries is MANDATORY on that path (the controller refuses an update
-// without one), and since O1c dropped the progress columns the ledger is its only home. The use case
-// read the field and wrote it nowhere: a note the caller was REQUIRED to send reached no reader at
-// all. These cases pin the write where it has to happen - one entry, in the PARENT task's ledger,
-// naming the subtask that wrote it.
+// The note a manage_subtask update or complete carries is MANDATORY on that tool path (the schema
+// declares progress_notes required for both, and the handler refuses one without it), and since O1c
+// dropped the progress columns the ledger is its only home. Both use cases read the field and wrote it
+// nowhere: a note the caller was REQUIRED to send reached no reader at all. These cases pin the write
+// where it has to happen - one entry, in the PARENT task's ledger, naming the subtask that wrote it.
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	subtaskdto "agenthub/fastmcp/task_management/application/dtos/subtask"
@@ -139,5 +140,111 @@ func TestUpdateSubtaskRecordsNothingForAWhitespaceOnlyNote(t *testing.T) {
 	}
 	if len(subRepo.saved) == 0 {
 		t.Fatal("the subtask was not saved: a blank note skips the entry, not the update")
+	}
+}
+
+// The note a manage_subtask COMPLETE carries is MANDATORY on the same tool path - the tool's schema
+// declares progress_notes required for complete as well - and it takes the same road into the same
+// ledger: one entry, in the PARENT task's ledger, naming the subtask that wrote it, written inside the
+// completion's own transaction. The sibling action used to accept that note, report success and write
+// it nowhere.
+
+func TestCompleteSubtaskRecordsItsNoteInTheParentTasksLedger(t *testing.T) {
+	const parent = "22222222-2222-2222-2222-222222222222"
+	const subtaskID = parent + ".001"
+	note := "final review completed, structure documented"
+
+	task := group3NewTask(parent, []string{subtaskID}, 0)
+	taskRepo := &useCasesGroup3FakeTaskRepository{
+		findByID: func(context.Context, value_objects.TaskId) (*entities.Task, error) { return task, nil },
+		atomic:   func(context.Context, string) (bool, error) { return true, nil },
+	}
+	subtask := group3NewSubtask(subtaskID, parent)
+	subRepo := &useCasesGroup3FakeSubtaskRepository{
+		findByID: func(context.Context, string) (*entities.Subtask, error) { return subtask, nil },
+	}
+	ledger := &subtaskNoteLedger{}
+	summary := "implemented the endpoint with tests and documented it in the changelog"
+
+	if _, err := NewCompleteSubtaskUseCase(taskRepo, subRepo).
+		WithLedger(StatusLedger{Tx: &ledgerFakeTx{}, Ledger: ledger, Events: ledger}).
+		Execute(context.Background(), parent, subtaskID, nil, &summary, nil, nil, &note); err != nil {
+		t.Fatalf("Execute: %v", err)
+	}
+	if ledger.writes != 1 {
+		t.Fatalf("ledger writes = %d, want 1: the note this completion REQUIRES reached no reader", ledger.writes)
+	}
+	if ledger.taskID != parent {
+		t.Fatalf("note recorded against %q, want the parent task %q: task_events.task_id is the parent's",
+			ledger.taskID, parent)
+	}
+	if ledger.subtaskID != subtaskID {
+		t.Fatalf("note names subtask %q, want %q: subtask_id is what tells a task's own notes from its subtask's",
+			ledger.subtaskID, subtaskID)
+	}
+	if want := "=== Progress 1 ===\n" + note; ledger.note.Content != want {
+		t.Fatalf("note content = %q, want %q", ledger.note.Content, want)
+	}
+	if want := value_objects.IsoFormat(*subtask.UpdatedAt); ledger.note.Timestamp != want {
+		t.Fatalf("note timestamp = %q, want the completion's own touched instant %q", ledger.note.Timestamp, want)
+	}
+	if !subtask.IsCompleted() {
+		t.Fatal("the subtask was not completed")
+	}
+	if subRepo.saveCalls != 1 {
+		t.Fatalf("subtask save calls = %d, want 1", subRepo.saveCalls)
+	}
+}
+
+func TestCompleteSubtaskWithoutALedgerRefusesRatherThanDroppingTheNote(t *testing.T) {
+	const parent = "33333333-3333-3333-3333-333333333333"
+	const subtaskID = parent + ".001"
+	note := "final review completed, structure documented"
+
+	task := group3NewTask(parent, []string{subtaskID}, 0)
+	taskRepo := &useCasesGroup3FakeTaskRepository{
+		findByID: func(context.Context, value_objects.TaskId) (*entities.Task, error) { return task, nil },
+	}
+	subtask := group3NewSubtask(subtaskID, parent)
+	subRepo := &useCasesGroup3FakeSubtaskRepository{
+		findByID: func(context.Context, string) (*entities.Subtask, error) { return subtask, nil },
+	}
+	summary := "implemented the endpoint with tests and documented it in the changelog"
+
+	if _, err := NewCompleteSubtaskUseCase(taskRepo, subRepo).
+		Execute(context.Background(), parent, subtaskID, nil, &summary, nil, nil, &note); !errors.Is(err, ErrLedgerNotWired) {
+		t.Fatalf("err = %v, want ErrLedgerNotWired: a completion that drops its note must fail, not succeed quietly", err)
+	}
+	if subRepo.saveCalls != 0 {
+		t.Fatalf("subtask save calls = %d, want 0: the completion must not commit beside a note it never wrote", subRepo.saveCalls)
+	}
+}
+
+func TestCompleteSubtaskWithoutANoteWritesNoLedgerEntry(t *testing.T) {
+	const parent = "44444444-4444-4444-4444-444444444444"
+	const subtaskID = parent + ".001"
+
+	task := group3NewTask(parent, []string{subtaskID}, 0)
+	taskRepo := &useCasesGroup3FakeTaskRepository{
+		findByID: func(context.Context, value_objects.TaskId) (*entities.Task, error) { return task, nil },
+		atomic:   func(context.Context, string) (bool, error) { return true, nil },
+	}
+	subtask := group3NewSubtask(subtaskID, parent)
+	subRepo := &useCasesGroup3FakeSubtaskRepository{
+		findByID: func(context.Context, string) (*entities.Subtask, error) { return subtask, nil },
+	}
+	ledger := &subtaskNoteLedger{}
+	summary := "implemented the endpoint with tests and documented it in the changelog"
+
+	if _, err := NewCompleteSubtaskUseCase(taskRepo, subRepo).
+		WithLedger(StatusLedger{Tx: &ledgerFakeTx{}, Ledger: ledger, Events: ledger}).
+		Execute(context.Background(), parent, subtaskID, nil, &summary, nil, nil, nil); err != nil {
+		t.Fatalf("Execute: %v", err)
+	}
+	if ledger.writes != 0 {
+		t.Fatalf("ledger writes = %d, want 0: a completion with no note records nothing", ledger.writes)
+	}
+	if subRepo.saveCalls != 1 {
+		t.Fatalf("subtask save calls = %d, want 1: no note skips the entry, not the completion", subRepo.saveCalls)
 	}
 }

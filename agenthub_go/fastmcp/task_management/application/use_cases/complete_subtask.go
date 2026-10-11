@@ -25,6 +25,14 @@ type completeSubtaskAtomicIncrementer interface {
 type CompleteSubtaskUseCase struct {
 	taskRepository    repositories.TaskRepository
 	subtaskRepository repositories.SubtaskRepository // nil mirrors the Python default None
+
+	// ledger is where the note a completion carries is RECORDED, in the same transaction as the
+	// subtask's save. A note this path accepts and never writes is a silent drop - the same defect the
+	// update half of the tool had - and a subtask's note belongs to the PARENT TASK's ledger
+	// (task_events.task_id has an FK to tasks.id) with subtask_id naming the writer. Unset leaves a
+	// completion that carries no note exactly as it was, and makes one that does carry a note fail
+	// loudly rather than be dropped (StatusLedger.SaveProgress's contract).
+	ledger StatusLedger
 }
 
 // NewCompleteSubtaskUseCase mirrors __init__(task_repository, subtask_repository=None).
@@ -32,8 +40,15 @@ func NewCompleteSubtaskUseCase(taskRepository repositories.TaskRepository, subta
 	return &CompleteSubtaskUseCase{taskRepository: taskRepository, subtaskRepository: subtaskRepository}
 }
 
-// Execute ports execute(). userID is accepted but unused by the Python body.
-func (uc *CompleteSubtaskUseCase) Execute(ctx context.Context, taskID any, id any, userID *string, completionSummary *string, insightsFound []any, testingNotes *string) (*entities.OrderedMap[any], error) {
+// WithLedger attaches the task-event ledger seam, wired by the composition root.
+func (uc *CompleteSubtaskUseCase) WithLedger(l StatusLedger) *CompleteSubtaskUseCase {
+	uc.ledger = l
+	return uc
+}
+
+// Execute ports execute(). userID is accepted but unused by the Python body. progressNotes is the
+// note the completion carries, and it is REQUIRED on the tool path that reaches here.
+func (uc *CompleteSubtaskUseCase) Execute(ctx context.Context, taskID any, id any, userID *string, completionSummary *string, insightsFound []any, testingNotes *string, progressNotes *string) (*entities.OrderedMap[any], error) {
 	taskIDObj, err := completeSubtaskConvertToTaskID(taskID)
 	if err != nil {
 		return nil, err
@@ -77,8 +92,41 @@ func (uc *CompleteSubtaskUseCase) Execute(ctx context.Context, taskID any, id an
 		if err := subtask.Complete(); err != nil {
 			return nil, err
 		}
-		if _, err := uc.subtaskRepository.Save(ctx, subtask); err != nil {
-			return nil, err
+
+		// The note this completion carries is MANDATORY on the tool path (the handler refuses a
+		// complete without one) and its home is the ledger: O1c dropped the progress columns, so there
+		// is no column left to hold it. It belongs to the PARENT task's ledger with subtask_id naming
+		// the writer, and its number is the task's sequence, assigned by the ledger while it writes,
+		// inside this save's transaction.
+		var noteEntries []LedgerProgress
+		if text := progressNoteText(progressNotes); text != "" {
+			timestamp := ""
+			if subtask.UpdatedAt != nil {
+				timestamp = value_objects.IsoFormat(*subtask.UpdatedAt)
+			}
+			noteEntries = append(noteEntries, LedgerProgress{
+				SubtaskID: value_objects.PyStr(id),
+				Content:   text,
+				Timestamp: timestamp,
+			})
+		}
+
+		// The completion and its note commit together or not at all: task_events.task_id has an FK to
+		// the parent task, and an entry written outside this transaction could commit beside a save
+		// that rolled back. With a note present and no ledger wired this FAILS rather than completing
+		// the subtask and dropping the note - the silent drop is the defect this replaces.
+		save := func(ctx context.Context) error {
+			_, err := uc.subtaskRepository.Save(ctx, subtask)
+			return err
+		}
+		var saveErr error
+		if len(noteEntries) > 0 {
+			saveErr = uc.ledger.SaveProgress(ctx, save, value_objects.PyStr(taskID), noteEntries)
+		} else {
+			saveErr = save(ctx)
+		}
+		if saveErr != nil {
+			return nil, saveErr
 		}
 		success = true
 
