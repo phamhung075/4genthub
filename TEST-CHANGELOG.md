@@ -2,6 +2,30 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-11 - the subtask route's progress note and one shape for an empty details
+
+- EXTENDED `fastmcp/server/routes/port_routes_draft_test.go`: `TestPortUpdateSubtaskKeyOrder` now passes
+  `progress_notes` through `UpdateSubtask` and pins the key list
+  `[title, status, progress_percentage, progress_notes]`, which is where the route's defect lived; added
+  `TestPortUpdateSubtaskWithoutProgressNotesKeepsTheOldKeys` so the note stays opt-in rather than defaulted.
+- CHANGED ONE EXPECTATION in `fastmcp/types/dto_test.go`:
+  `TestSubtaskDTOservesDetailsFromItsOwnProgressHistory` asserted `details == nil` and "serves details as
+  null" for a subtask with no progress; it now asserts the empty string on the DTO and on the wire
+  (`ModelDump`), with the comment naming the reason - the task path serves `""` for the same meaning and
+  one meaning gets one shape. The populated-join assertion in the same case is untouched.
+- NO NEW TEST FILE: a second case for the same shape was written and then removed, because that existing
+  case already owns the claim and two homes for one fact is what drifts.
+- RUN: `go test -count=1 ./fastmcp/types/ ./fastmcp/server/routes/` -> both ok;
+  `go test -count=1 ./fastmcp/server/...` -> 5 packages ok, 0 failures;
+  `go test -count=1 ./fastmcp/task_management/...` -> 68 packages ok, 0 failures;
+  `go build ./...` clean; `go vet` on the three changed packages clean; `gofmt -l` on the changed files
+  prints nothing.
+- NOT RUN: there is no PostgreSQL-backed case for the full REST chain, and deliberately so rather than by
+  omission - `NewApp` over a throwaway database answers `{"detail":"Task <id> not found"}` for the parent
+  task whatever identity the row carries, because the subtask controller resolves it through
+  `facadeService.GetTaskFacade(nil, nil, &userID).GetTask(...)`. The attempt is recorded in the changelog
+  entry with both findings it produced instead of being papered over with a case that would silently skip.
+
 ## 2026-10-11 - the script suite's stale expectations, re-measured case by case
 
 - CHANGED TWO DATA LISTS in `scripts/tests/test_team_roster.py`: `LIVE_SEATS` re-measured to five and
