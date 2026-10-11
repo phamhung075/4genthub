@@ -121,6 +121,7 @@ missing AS (
           AND te.kind = 'progress'
           AND (te.payload ->> 'progress_number')::double precision = e.number
           AND (te.payload ->> 'content') = e.content
+          AND te.subtask_id IS NOT DISTINCT FROM e.subtask_id
     )
 )
 INSERT INTO task_events (id, user_id, task_id, subtask_id, seq, user_seq, kind, actor_kind, actor_id, payload)
@@ -164,6 +165,7 @@ BEGIN
           AND te.kind = 'progress'
           AND (te.payload ->> 'progress_number')::double precision = e.number
           AND (te.payload ->> 'content') = e.content
+          AND te.subtask_id IS NOT DISTINCT FROM e.subtask_id
     );
 
     IF unheld > 0 THEN
@@ -179,6 +181,7 @@ BEGIN
      AND te.task_id = e.task_id
      AND te.kind = 'progress'
      AND (te.payload ->> 'progress_number')::double precision = e.number
+     AND te.subtask_id IS NOT DISTINCT FROM e.subtask_id
     WHERE (te.payload ->> 'content') <> e.content;
 
     IF mismatched > 0 THEN
