@@ -25,6 +25,15 @@ A fixture therefore gets two things from here and nothing else:
     same leak with a different target file);
   * `git(repo, ...)`, which runs git inside `repo` under that environment.
 
+`relocates()` is the ONE statement of that rule, and there are TWO environs it has to hold in. The one
+above scopes a fixture's own child. The other is the TEST PROCESS itself: a child that builds its own
+environment by INHERITING never calls `environment()` at all - the commit wrapper under test, and a
+generated script that shells out to git, are both like that - so an exported `GIT_DIR`, or
+`GIT_CONFIG_GLOBAL`, reaches it through the parent. A case that runs such a child therefore scrubs the
+process with `without_relocating(monkeypatch)`, which is `relocates()` over `os.environ`. One rule, two
+environs, no drift: dropping the `GIT_CONFIG*` family from `environment()` alone is the half-fix the
+reviewer's gate caught at `e0e75084`.
+
 The identity a fixture commits with is still set in ITS OWN repository (`git(repo, "config", "user.email",
 ...)`), which is the point: with the relocating variables gone, that write lands in the throwaway repo,
 because `cwd` is now the only thing that says which repository git uses.
@@ -39,10 +48,11 @@ import os
 import subprocess
 from collections.abc import Mapping
 from pathlib import Path
+from typing import Any
 
 # Read by git BEFORE the working directory, when it decides which repository it is operating on. The
 # first three and the object directories move the write targets; GIT_COMMON_DIR moves the shared one;
-# the GIT_CONFIG* family (handled by prefix, below) moves the config file the write lands in.
+# the GIT_CONFIG* family (matched by PREFIX, below) moves the config file the write lands in.
 RELOCATING = (
     "GIT_DIR",
     "GIT_WORK_TREE",
@@ -52,6 +62,40 @@ RELOCATING = (
     "GIT_ALTERNATE_OBJECT_DIRECTORIES",
 )
 
+# The part of the rule that cannot be a list: the family is OPEN (git reads GIT_CONFIG_GLOBAL,
+# GIT_CONFIG_SYSTEM, GIT_CONFIG_COUNT, GIT_CONFIG_KEY_<n>, ..., and a redirected config is the same leak
+# aimed at a different file), so it is matched by prefix.
+RELOCATING_PREFIX = "GIT_CONFIG"
+
+
+def relocates(name: str) -> bool:
+    """Whether a variable of this NAME can move the repository git uses or the config it reads.
+
+    THE ONE STATEMENT OF THE DROP RULE (see the module docstring): `environment()` filters a fixture's
+    child with it, and `without_relocating()` removes exactly the same names from the test PROCESS, so a
+    child that inherits its environment cannot be relocated either.
+    """
+    return name in RELOCATING or name.startswith(RELOCATING_PREFIX)
+
+
+def relocating_names(environ: Mapping[str, str] | None = None) -> list[str]:
+    """The names `relocates()` admits, of those PRESENT in `environ` (the process environment here)."""
+    source = os.environ if environ is None else environ
+    return [name for name in source if relocates(name)]
+
+
+def without_relocating(monkeypatch: Any) -> list[str]:
+    """Remove every relocating variable from the PROCESS environment, and report what it removed.
+
+    For a case whose child INHERITS this process's environment: `env=` on the test's own git calls cannot
+    scope a child that builds its own environment, so the variables have to be gone from here. The
+    parameter is pytest's monkeypatch, duck-typed so this module stays importable without pytest.
+    """
+    removed = relocating_names()
+    for name in removed:
+        monkeypatch.delenv(name, raising=False)
+    return removed
+
 
 def environment(**overrides: str) -> dict[str, str]:
     """The caller's environment minus every variable that can relocate a repository.
@@ -59,11 +103,7 @@ def environment(**overrides: str) -> dict[str, str]:
     `overrides` are applied afterwards, so a fixture can still add what it needs (`PRE_COMMIT_HOME`,
     `OPENRIG_SESSION`, a `PATH` prefix, `CI`) without re-introducing a relocation.
     """
-    env = {
-        key: value
-        for key, value in os.environ.items()
-        if key not in RELOCATING and not key.startswith("GIT_CONFIG")
-    }
+    env = {key: value for key, value in os.environ.items() if not relocates(key)}
     env.update(overrides)
     return env
 

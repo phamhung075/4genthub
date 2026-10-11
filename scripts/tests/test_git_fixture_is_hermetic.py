@@ -17,6 +17,7 @@ Two halves, because there are two ways for the leak to come back:
 from __future__ import annotations
 
 import ast
+import os
 import subprocess
 from pathlib import Path
 
@@ -105,3 +106,37 @@ def test_every_child_that_can_reach_git_is_given_an_explicit_environment() -> No
         + ", ".join(offenders)
         + ". Pass env=gitfixture.environment(...) (plus anything the child needs)."
     )
+
+
+def test_the_process_scrub_drops_the_family_that_environment_already_dropped(monkeypatch) -> None:
+    """The gate's MAJOR at `e0e75084`, as an assertion about the RULE rather than about one name.
+
+    `environment()` dropped the whole `GIT_CONFIG*` family from a fixture's own child, but the autouse
+    scrub in test_git_commit_capture.py looped over `RELOCATING` only - and that fixture exists because the
+    wrapper's children inherit this PROCESS rather than the call. So an exported `GIT_CONFIG_GLOBAL` (a
+    commit that demands a signature, or a `core.hooksPath` that would execute the caller's hook) reached
+    the child and turned the suite red with no local cause.
+
+    This holds the two environs to one rule; the call site that runs it is pinned where it lives, by
+    test_git_commit_capture.py::test_the_scrub_removes_the_ambient_git_config_this_module_runs_with. A child
+    that deliberately INHERITS is not spawned here either: the structural case above requires an explicit
+    `env=` on every child that can reach git, and that requirement is the other half of this same guard.
+    """
+    monkeypatch.setenv("GIT_DIR", "/tmp/gate-sentinel-gitdir")
+    monkeypatch.setenv("GIT_CONFIG_GLOBAL", "/tmp/gate-evil-gitconfig")
+    monkeypatch.setenv("GIT_CONFIG_SYSTEM", "/tmp/gate-evil-system")
+    monkeypatch.setenv("GIT_CONFIG_COUNT", "1")
+    monkeypatch.setenv("GIT_PAGER", "cat")
+
+    for name in ("GIT_DIR", "GIT_CONFIG_GLOBAL", "GIT_CONFIG_SYSTEM", "GIT_CONFIG_COUNT"):
+        assert gitfixture.relocates(name), f"{name} can relocate a repository or the config git reads"
+    assert not gitfixture.relocates("GIT_PAGER"), "not every variable is a relocating one"
+
+    env = gitfixture.environment()
+    removed = gitfixture.without_relocating(monkeypatch)
+
+    for name in ("GIT_DIR", "GIT_CONFIG_GLOBAL", "GIT_CONFIG_SYSTEM", "GIT_CONFIG_COUNT"):
+        assert name not in env, f"a fixture's own child would still inherit {name}"
+        assert name not in os.environ, f"the process scrub left {name} for an inheriting child"
+        assert name in removed, f"the scrub did not report {name}"
+    assert os.environ["GIT_PAGER"] == "cat", "the scrub removed a variable that relocates nothing"

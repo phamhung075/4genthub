@@ -4869,3 +4869,35 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
   which no test can pin deterministically), and the write-deadline path itself
   (`SendTextWithin`'s deadline is exercised only through the socket's own read failures; a test that made a peer
   stop reading would measure the kernel's buffers rather than the deadline).
+
+## 2026-10-11 — the process scrub and `environment()` cannot drift: two new cases, one per half
+
+- ADDED, `scripts/tests/test_git_fixture_is_hermetic.py::test_the_process_scrub_drops_the_family_that_environment_already_dropped`:
+  asserts the drop rule itself, from both sides, against both helpers - `relocates()` admits `GIT_DIR` and the
+  `GIT_CONFIG*` family and refuses `GIT_PAGER`; `environment()` keeps none of them; `without_relocating()` removes
+  them from the process environment AND reports them. This is the MAJOR the gate measured at `e0e75084`, where
+  `environment()` dropped the family and the autouse scrub looped over `RELOCATING` only.
+- ADDED, `scripts/tests/test_git_commit_capture.py::test_the_scrub_removes_the_ambient_git_config_this_module_runs_with`,
+  with a new `ambient_git_config` fixture that exports a `GIT_CONFIG_GLOBAL`/`GIT_CONFIG_SYSTEM` demanding a signed
+  commit. The autouse scrub requests that fixture, so the whole module now runs WITH the hostile variable present
+  and the case asserts it is gone before any body runs. This is the half that pins the CALL SITE - the defect - and
+  it fails if the fixture goes back to a list of its own names; a direct call of the fixture is not possible
+  (`pytest` refuses it: `Fixture "_no_ambient_git_location" called directly`), so the injection runs through the
+  fixture graph instead.
+- CHANGED, in the same fixture: the scrub is now `gitfixture.without_relocating(monkeypatch)`, one call to the
+  shared rule, instead of its own loop over `gitfixture.RELOCATING`. `gitfixture.py` gained `relocates(name)`,
+  `relocating_names(environ=None)` and `without_relocating(monkeypatch)`, and `environment()` now filters through
+  `relocates()` - the prefix match on the open `GIT_CONFIG` family lives in exactly one place.
+- UNCHANGED, deliberately: the structural case that requires an explicit `env=` on every child that can reach git.
+  It is why neither new case spawns a child that deliberately inherits; such a child cannot be written under
+  `scripts/tests/` without tripping it, which is the other half of the same guard.
+- PERTURBATIONS, measured one at a time and restored, each naming what turned red: `GIT_DIR` dropped from
+  `RELOCATING` -> `AssertionError: a fixture git call wrote the caller's config` plus `AssertionError: GIT_DIR can
+  relocate a repository or the config git reads`; a child appended with no `env=` -> `these children can reach git
+  without an explicit environment, so a caller's GIT_DIR would reach them: test_git_fixture_is_hermetic.py:146`;
+  the call site returned to the `RELOCATING` loop -> the wiring case fails on
+  `assert 'GIT_CONFIG_GLOBAL' not in environ({...})`, `test_a_real_commit_is_verified_as_landed_and_leaves_nothing_at_risk`
+  fails `assert 128 == 0`, and the hostile run fails both.
+- Result: the clean run `92 passed`, the hostile `GIT_CONFIG_GLOBAL` run `92 passed` (was `1 failed, 89 passed`
+  before the fix) and the hostile `GIT_DIR` run `92 passed`. Two cases added over `e0e75084`'s 90; none of the 90
+  was changed or weakened.

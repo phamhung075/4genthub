@@ -31,14 +31,46 @@ WRAPPER = REPO_ROOT / "scripts" / "git-hooks" / "git_commit_capture.py"
 THE_PARKED_WORK = "one\ntwo\n"
 
 
+@pytest.fixture
+def ambient_git_config(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Path:
+    """An ambient `GIT_CONFIG_GLOBAL`/`GIT_CONFIG_SYSTEM` that demands a signed commit: the environment the
+    gate measured at `e0e75084`, where it reached a wrapper child that inherits this process and turned the
+    suite red with no local cause.
+
+    Every case in this module runs WITH it, because the scrub below requests this fixture. The variable is
+    therefore present while the fixtures run and gone by the time a case body does, which is what makes a
+    scrub that stops covering the family fail here rather than only in a hostile run.
+    """
+    evil = tmp_path / "ambient-gitconfig"
+    evil.write_text("[commit]\n\tgpgsign = true\n", encoding="utf-8")
+    monkeypatch.setenv("GIT_CONFIG_GLOBAL", str(evil))
+    monkeypatch.setenv("GIT_CONFIG_SYSTEM", str(evil))
+    return evil
+
+
 @pytest.fixture(autouse=True)
-def _no_ambient_git_location(monkeypatch: pytest.MonkeyPatch) -> None:
+def _no_ambient_git_location(ambient_git_config: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """The wrapper's OWN child processes inherit this process's environment, so `env=` on the test's git
     calls cannot reach them: the relocating variables have to be gone from the process itself too. Two
     cases here hand the wrapper `COMMIT_COMMAND = ["git", "commit"]` and one runs a generated script that
-    shells out to git. See gitfixture.py for the incident this prevents."""
-    for name in gitfixture.RELOCATING:
-        monkeypatch.delenv(name, raising=False)
+    shells out to git. See gitfixture.py for the incident this prevents.
+
+    It scrubs through `gitfixture.without_relocating` rather than over a list of its own, so the process
+    half and `environment()` cannot drift: the gate at `e0e75084` found the drift, in the shape of an
+    exported `GIT_CONFIG_GLOBAL` reaching the child while `environment()` already dropped it."""
+    gitfixture.without_relocating(monkeypatch)
+
+
+def test_the_scrub_removes_the_ambient_git_config_this_module_runs_with() -> None:
+    """What the fixture pair above must have done before any case body runs.
+
+    `ambient_git_config` exported a config that demands a signature; the scrub runs after it and before
+    this body, so nothing here can reach a wrapper child that inherits the process. A scrub that loops over
+    `RELOCATING` only - the MAJOR the gate measured - leaves `GIT_CONFIG_GLOBAL` in place and this goes red.
+    """
+    assert "GIT_CONFIG_GLOBAL" not in os.environ
+    assert "GIT_CONFIG_SYSTEM" not in os.environ
+    assert [name for name in os.environ if gitfixture.relocates(name)] == []
 
 
 def _module():
