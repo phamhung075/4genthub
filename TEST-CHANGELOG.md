@@ -2,6 +2,56 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-11 - the fold's parity guard, four gate cases, and the red the guard actually shows
+
+- ADDED `agenthub_go/fastmcp/task_management/infrastructure/database/migration_baseline_parity_test.go`
+  (`TestBaselineMatchesEveryRegisteredTableDef`): holds `migrations/0001_baseline.sql` to the runtime
+  registry, table by table — every registered table appears EXACTLY once; per table the column-NAME set,
+  the `REFERENCES` multiset and the normalised `CHECK` expressions agree with the `TableDef` DDL; a
+  `CREATE TABLE` in the file that no `TableDef` registers fails in the other direction; a table
+  registered twice across `Tables`/`ProductionTables` fails; each column's `EnumName` must have a
+  `CREATE TYPE` BEFORE its table; and no `DROP`/`ALTER` may appear, comment lines excluded so the
+  header's prose cannot hide one.
+- WHY IT IS AN EXTERNAL TEST PACKAGE, and this is the whole reason the guard can work at all:
+  `taskdb.Tables` is ONE slice every package appends its own set to in `init()`, and those packages
+  import `taskdb` — so an internal (`package database`) test file that wanted the full registry would
+  be an import cycle. The file therefore carries the same blank imports the generator used. Measured:
+  without them the guard's own log line reads **20** registered tables; with them, **47 registered (41
+  aggregate, 6 production), 47 in `0001_baseline.sql`**.
+- ADDED `agenthub_go/fastmcp/task_management/infrastructure/database/migration_baseline_gate_test.go`,
+  four cases through the existing fake driver, each PASS: `TestApplySkipsTheBaselineOnAPopulatedCatalogue`
+  (no SQL, no ledger row), `TestApplyRunsTheBaselineOnAnEmptyCatalogue` (applies, records, and creates
+  the ledger with the step), `TestApplyLeavesStepsOtherThanTheBaselineUnaffected` (a second run applies
+  nothing), and `TestApplyRefusesTheBaselineWhenTheCatalogueCannotBeRead` (fail closed — the baseline's
+  SQL is not run when the catalogue read fails).
+- UPDATED `fakedriver_test.go` (existing file, +39 lines): the scripted fake now models the migration
+  ledger — `to_regclass('applied_migrations')`, the ledger `SELECT`, the runner's `CREATE TABLE
+  applied_migrations` and its `INSERT` — so the gate and the ledger paths are exercisable through the
+  existing `Sessions`/`DBTX` seam. No interface was added for a test.
+- RED FIRST, BY MUTATION RATHER THAN ASSERTION: with one table renamed in the baseline
+  (`CREATE TABLE seats (` → `CREATE TABLE seats_renamed (`) the guard FAILS, naming both directions —
+  `table seats: registered at runtime but absent from 0001_baseline.sql - regenerate the baseline` and
+  `table seats_renamed: present in 0001_baseline.sql but no TableDef registers it`. The file was restored
+  byte-identical (sha256 `a3e3109230355aa93098002caf4992e4746ff63bcb1a18facebad38b6422ab29` before and
+  after) and the guard passes again; no trace of the experiment is in the delivered tree.
+- VERIFIED, this seat, from `agenthub_go` with `GOCACHE`/`TMPDIR` in-tree: `gofmt -l` over the tracked
+  `.go` files printed nothing; `go build ./...` rc 0; `go vet ./...` clean; `go test -count=1 ./...` →
+  **141 packages ok, 0 FAIL**. The two new cases and the four gate cases read by name in a `-v` run
+  (all PASS above); the parity guard's log line quoted here is from that run.
+- VERIFIED WITH A REAL DATABASE, `AGENTHUB_TEST_PG_URL=postgresql://agenthub_user@127.0.0.1:55451/postgres`:
+  `TestRealPostgresCreateTablesAndSessions`, `TestApplyRecordsEachStepAndASecondRunAppliesNothing` — which
+  asserts the ledger does NOT exist after the boot path built its database, which is the baseline's skip
+  measured on a real database, not on the fake — `TestAFailedStepRecordsNothingAndLeavesNoneOfItsOwnEffect`,
+  `TestMarkBaselineRecordsAStepWithoutRunningIt`, `TestEveryTableDefColumnHasAPath`, all PASS.
+- TWO THROWAWAY DRIVERS RAN AND WERE DELETED (no repo test file, nothing left behind): the fold file
+  alone on an empty scratch database → 47 tables / 505 columns / 132 constraints / 152 indexes; the real
+  boot path twice on a fresh scratch database → 41 tables / 456 columns / 118 constraints / 126 indexes
+  with the baseline skipped and no `applied_migrations`; and the two catalogs compared table by table →
+  the file's extra tables are exactly the 6 `ProductionTables`, with 0 differing columns, 0 differing
+  constraints and 0 differing indexes on the 41 shared. All scratch databases were dropped.
+- NOT RUN, named: `TestProductionModelsCRUDRealPostgres` skips on its own pre-existing gate
+  (`TEST_DATABASE_URL` unset) — unrelated to this change and unchanged by it. Nothing else in the
+  package skipped under the DSN above. The frontend suite was not run: no frontend file changed.
 ## 2026-10-11 - the builder's empty-label shape is pinned
 
 - UPDATED `agenthub_go/fastmcp/task_management/application/services/unified_context_service_task_owned_test.go`: `TestTaskOwnedFieldsFromTask` gains the empty-labels case - a task carrying no labels serves a NON-NIL empty list - because this builder is the one place the context read overlay and the sync both take the task's own fields from, so its shape is the contract they share.

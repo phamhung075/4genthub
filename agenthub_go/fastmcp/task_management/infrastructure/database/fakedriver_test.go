@@ -23,6 +23,24 @@ type fakeDB struct {
 	// schema is what the column drift query returns; blocking marks a NOT NULL column without a default.
 	schema    []fakeColumn
 	failQuery func(q string) error
+	// ledgerExists is whether applied_migrations is present, and migrations are the names it records.
+	// Together they are the migration runner's bookkeeping as a database would hold it: the runner's
+	// gate reads the catalogue, then to_regclass, then the ledger rows, and writes rows back.
+	ledgerExists bool
+	migrations   []string
+}
+
+// markLedger records that applied_migrations now exists (the runner's CREATE TABLE ran).
+func (f *fakeDB) markLedger() { f.mu.Lock(); f.ledgerExists = true; f.mu.Unlock() }
+
+// ledgerPresent reports whether applied_migrations exists.
+func (f *fakeDB) ledgerPresent() bool { f.mu.Lock(); defer f.mu.Unlock(); return f.ledgerExists }
+
+// recordMigration appends a name to the ledger, as the runner's INSERT does.
+func (f *fakeDB) recordMigration(name string) {
+	f.mu.Lock()
+	f.migrations = append(f.migrations, name)
+	f.mu.Unlock()
 }
 
 type fakeColumn struct {
@@ -65,6 +83,16 @@ func (s *fakeStmt) Close() error  { return nil }
 func (s *fakeStmt) NumInput() int { return -1 }
 func (s *fakeStmt) Exec(args []driver.Value) (driver.Result, error) {
 	s.f.record(s.q)
+	if strings.Contains(s.q, "CREATE TABLE applied_migrations") {
+		s.f.markLedger()
+	}
+	if strings.Contains(s.q, "INSERT INTO applied_migrations") {
+		if len(args) > 0 {
+			if name, ok := args[0].(string); ok {
+				s.f.recordMigration(name)
+			}
+		}
+	}
 	if s.f.failExec != nil {
 		if err := s.f.failExec(s.q); err != nil {
 			return nil, err
@@ -129,6 +157,17 @@ func (s *fakeStmt) Query(args []driver.Value) (driver.Rows, error) {
 		return &fakeRows{cols: []string{"version"}, rows: [][]driver.Value{{"PostgreSQL 16 fake"}}}, nil
 	case s.q == "SELECT current_database()":
 		return &fakeRows{cols: []string{"db"}, rows: [][]driver.Value{{"fakedb"}}}, nil
+	case strings.Contains(s.q, "to_regclass"):
+		return &fakeRows{cols: []string{"?column?"}, rows: [][]driver.Value{{s.f.ledgerPresent()}}}, nil
+	case strings.Contains(s.q, "FROM applied_migrations"):
+		name, _ := args[0].(string)
+		var rows [][]driver.Value
+		for _, m := range s.f.migrations {
+			if m == name {
+				rows = append(rows, []driver.Value{1})
+			}
+		}
+		return &fakeRows{cols: []string{"?column?"}, rows: rows}, nil
 	}
 	return nil, fmt.Errorf("unexpected query %q", s.q)
 }
