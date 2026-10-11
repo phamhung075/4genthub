@@ -59,16 +59,6 @@ func (b repoBackend) CreateProjectRepository(userID *string) (domainrepos.Projec
 	return infrarepos.NewORMProjectRepository(b.sessions, userID)
 }
 
-type agentFactoryAdapter struct{ sessions *database.SessionManager }
-
-func (a agentFactoryAdapter) CreateRepository(any) (domainrepos.AgentRepository, error) {
-	return infrarepos.NewORMAgentRepository(a.sessions, nil, nil)
-}
-
-func (b repoBackend) NewAgentRepositoryFactory() services.RepositoryProviderAgentFactoryPort {
-	return agentFactoryAdapter{b.sessions}
-}
-
 func (b repoBackend) CreateGitBranchRepository(userID *string) (domainrepos.GitBranchRepository, error) {
 	return newGitBranchRepo(b.sessions, userID)
 }

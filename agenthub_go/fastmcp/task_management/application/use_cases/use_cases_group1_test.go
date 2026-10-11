@@ -83,17 +83,6 @@ func (f *useCasesGroup1ContextRepo) UpdateContext(_ context.Context, c *entities
 	return f.updateResult, f.updateErr
 }
 
-// useCasesGroup1AgentRepo is a fake repositories.AgentRepository.
-type useCasesGroup1AgentRepo struct {
-	repositories.AgentRepository
-	data map[string]any
-	err  error
-}
-
-func (f *useCasesGroup1AgentRepo) GetAgent(_ context.Context, _, _ string) (map[string]any, error) {
-	return f.data, f.err
-}
-
 func useCasesGroup1MustTaskID(t *testing.T, raw string) value_objects.TaskId {
 	t.Helper()
 	id, err := value_objects.NewTaskId(raw)
@@ -408,54 +397,5 @@ func TestUpdateContextSuccessWithoutData(t *testing.T) {
 	}
 	if repo.updated != taskContext {
 		t.Errorf("UpdateContext did not receive the fetched context")
-	}
-}
-
-func TestGetAgentNotFound(t *testing.T) {
-	repo := &useCasesGroup1AgentRepo{err: exceptions.NewAgentNotFoundError("Agent not found")}
-	uc := NewGetAgentUseCase(repo)
-
-	resp := uc.Execute(context.Background(), &GetAgentRequest{ProjectID: "project-1", AgentID: "agent-1"})
-	if resp.Success {
-		t.Errorf("Success = true, want false")
-	}
-	if resp.Error == nil || *resp.Error != "Agent not found" {
-		t.Errorf("Error = %v, want Agent not found", resp.Error)
-	}
-	if resp.Agent != nil {
-		t.Errorf("Agent = %v, want nil", resp.Agent)
-	}
-	if resp.WorkloadStatus != nil {
-		t.Errorf("WorkloadStatus = %v, want nil", resp.WorkloadStatus)
-	}
-}
-
-func TestGetAgentSuccess(t *testing.T) {
-	repo := &useCasesGroup1AgentRepo{data: map[string]any{
-		"id":          "agent-1",
-		"name":        "Agent One",
-		"call_agent":  "coding-agent",
-		"assignments": []any{"project-1"},
-	}}
-	uc := NewGetAgentUseCase(repo)
-
-	resp := uc.Execute(context.Background(), &GetAgentRequest{ProjectID: "project-1", AgentID: "agent-1"})
-	if !resp.Success {
-		t.Fatalf("Success = false, want true")
-	}
-	if resp.Error != nil {
-		t.Errorf("Error = %v, want nil", resp.Error)
-	}
-	if resp.Agent == nil {
-		t.Fatalf("Agent = nil, want value")
-	}
-	if resp.Agent.ID != "agent-1" || resp.Agent.Name != "Agent One" || resp.Agent.CallAgent != "coding-agent" {
-		t.Errorf("Agent = %+v", *resp.Agent)
-	}
-	if len(resp.Agent.Assignments) != 1 || resp.Agent.Assignments[0] != "project-1" {
-		t.Errorf("Assignments = %v, want [project-1]", resp.Agent.Assignments)
-	}
-	if resp.WorkloadStatus == nil || *resp.WorkloadStatus != "Available for assignment analysis" {
-		t.Errorf("WorkloadStatus = %v, want Available for assignment analysis", resp.WorkloadStatus)
 	}
 }

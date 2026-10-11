@@ -25,16 +25,6 @@ vi.mock('../../utils/contextHelpers', () => ({
   }))
 }));
 
-// Mock the WebSocket hook
-vi.mock('../../hooks/useTaskWebSocket', () => ({
-  useTaskWebSocket: vi.fn(() => ({
-    isConnected: true,
-    isReconnecting: false,
-    error: null,
-    handleTaskChanges: vi.fn()
-  }))
-}));
-
 // Mock js-cookie
 vi.mock('js-cookie', () => ({
   default: {
@@ -126,9 +116,7 @@ describe('TaskDetailsDialog', () => {
       completion_percentage: 85,
       status: 'completed',
       testing_notes: ['Unit tests passed', 'Integration tests verified']
-    },
-    progress_history: [],
-    progress_count: 0
+    }
   };
 
   const mockTaskContext = {

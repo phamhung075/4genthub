@@ -99,6 +99,7 @@ func TestUserOrDefaultTreatsEmptyAsAbsent(t *testing.T) {
 type fakeEntityLookup struct {
 	project, branch string
 	err             error
+	ownFields       map[string]any
 }
 
 func (f fakeEntityLookup) BranchProjectID(context.Context, *string, string) (string, error) {
@@ -107,6 +108,10 @@ func (f fakeEntityLookup) BranchProjectID(context.Context, *string, string) (str
 
 func (f fakeEntityLookup) TaskGitBranchID(context.Context, *string, string) (string, error) {
 	return f.branch, f.err
+}
+
+func (f fakeEntityLookup) TaskOwnedFields(context.Context, *string, string) (map[string]any, error) {
+	return f.ownFields, f.err
 }
 
 func TestAutoDetectCreateIDs(t *testing.T) {

@@ -2,8 +2,9 @@ package handlers
 
 // formatter.go declares the minimal view of the interface-layer
 // StandardResponseFormatter (task_management/interface/utils/response_formatter.py)
-// that the git branch handlers use. That module has no Go port yet; the interface
-// is declared here and reported as a dependency. `metaMap` mirrors the helper
+// that the git branch handlers use. That module is ported as MCPResponseFormatter
+// in interface/utils/response_formatter.go; the interface is declared here and
+// reported as a dependency. `metaMap` mirrors the helper
 // pattern used by the ported agent handlers.
 
 import (

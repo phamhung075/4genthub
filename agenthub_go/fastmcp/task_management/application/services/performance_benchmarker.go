@@ -362,7 +362,9 @@ func (b *PerformanceBenchmarker) BenchmarkResponseOptimization(optimizer any, te
 // BenchmarkContextSelection ports benchmark_context_selection. In Python the
 // sibling imports (context_field_selector / context_template_manager) fail at
 // import time, and the same self.benchmark defect is present; only the defect is
-// reproduced here (the unported imports cannot be).
+// reproduced here (the import-time failure cannot be: both siblings are ported,
+// application/services/context_field_selector.go and
+// application/services/context_template_manager.go).
 func (b *PerformanceBenchmarker) BenchmarkContextSelection(fieldSelector any, templateManager any, testContexts []map[string]any) *entities.OrderedMap[any] {
 	fieldSets := []string{"minimal", "summary", "detail"}
 	operations := []string{"task.get", "task.list", "task.update"}

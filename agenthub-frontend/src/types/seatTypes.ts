@@ -82,7 +82,24 @@ export interface Room {
   id: string;
   slug: string;
   name: string;
+  /** The team this room is shared with; empty while the room is private to its owner. */
+  team_id: string;
+  /**
+   * The caller's standing on THIS room, as the server computed it (`seatAdminRoomRole`): `owner` when
+   * the room is the caller's, `viewer` when it is shared with a team the caller belongs to. It exists
+   * so the page never reconstructs authorization from ids - a viewer is not offered a control the
+   * route would refuse. `GET /rooms` returns both the caller's own rooms AND the rooms shared with
+   * their teams, so without this field the two are indistinguishable.
+   */
+  role: OwnershipRole;
 }
+
+/**
+ * The owner/viewer vocabulary the server uses for a room's standing AND for a team membership
+ * (`team_management/domain/repositories/team_repository.go:19-20`), so the page and the wire agree on
+ * one spelling rather than two.
+ */
+export type OwnershipRole = 'owner' | 'viewer';
 
 export interface SeatTypeModuleRef {
   slug: string;
@@ -229,7 +246,7 @@ export interface ResolvedSeat {
 }
 
 // =============================================================================
-// Bridge machines (live status reported by scripts/openrig_bridge.py)
+// Bridge machines (live status reported by the 4genteam bridge)
 // =============================================================================
 
 export type SeatRunState = 'running' | 'idle' | 'blocked' | 'stopped' | 'unknown';
@@ -262,12 +279,31 @@ export interface MachineAgentStatus {
   pane_id: string;
 }
 
+/**
+ * One edge as the per-PC bridge reports it.
+ *
+ * The report names its endpoints by seat KEY (`from`/`to`), not by seat id, and carries no `allow`
+ * flag: it says what the rig is RUNNING, not what the cloud denies. It arrives on
+ * `POST /api/v2/openrig/seat-status` under `edges` (replaced whole on every report) and comes back
+ * on each machine from `GET /api/v2/openrig/machines`. It is OPTIONAL on the read because the
+ * machines route did not carry it before the server half shipped; absent and empty mean the same
+ * thing to every consumer here.
+ */
+export interface MachineEdge {
+  room: string;
+  from: string;
+  to: string;
+  kind: SeatLinkKind;
+}
+
 export interface MachineStatus {
   machine_id: string;
   last_seen: string;
   online: boolean;
   seats: MachineSeatStatus[];
   agents: MachineAgentStatus[];
+  /** The edges this machine's rig is running; see {@link MachineEdge}. */
+  edges?: MachineEdge[];
 }
 
 // =============================================================================
@@ -307,13 +343,14 @@ export interface SeatLinkRequest {
 }
 
 /**
- * Body of POST /api/v2/openrig/seats/{seat}/messages - one message handed to a seat's session.
+ * Body of POST /api/v2/openrig/rooms/{room}/seats/{seat}/messages - one message to a seat's session.
  *
  * THIS SHAPE IS THE INTERFACE THE CHAT INPUT IS BUILT AGAINST, pinned in one place
  * (`seatApi.sendSeatMessage`) so the route's author aligns it in a single edit. `text` is the
- * whole body; the route carries no room, unlike every other seat route, because the seat key in
- * the path is the seat's own identity. (If the route lands with a different field name, it is
- * this type and that one method that change - the component reads neither.)
+ * whole body; the route is room-scoped like every other seat route - a seat is unique per
+ * (room_id, seat_key), so the key alone names a seat only by guessing its room. (If the route
+ * lands with a different field name, it is this type and that one method that change - the
+ * component reads neither.)
  */
 export interface SeatMessageRequest {
   text: string;
@@ -360,20 +397,32 @@ export type SeatPinChoice = 'pin-latest' | 'follow-latest' | 'company-default';
 
 export interface SeatModulesTabProps {
   seatType: SeatType | undefined;
+  /**
+   * False for a viewer of a shared room. The write affordances are then ABSENT rather than disabled:
+   * the server refuses a viewer's write with a 404 that says "room not found" about a room they are
+   * legitimately reading, so there is no truthful per-action reason to show beside a dead control.
+   */
+  canWrite: boolean;
 }
 
 export interface SeatLlmPanelProps {
   room: string;
   seat: Seat;
+  /** See `SeatModulesTabProps.canWrite`. */
+  canWrite: boolean;
 }
 
 export interface SeatPermissionPolicyPanelProps {
   room: string;
   seat: Seat;
+  /** See `SeatModulesTabProps.canWrite`. */
+  canWrite: boolean;
 }
 
 export interface SeatLinksTabProps {
   roomSeats: Seat[];
+  /** See `SeatModulesTabProps.canWrite`. */
+  canWrite: boolean;
 }
 
 // =============================================================================
@@ -388,6 +437,30 @@ export interface RoomsResponse {
 export interface RoomResponse {
   success: boolean;
   room: Room;
+}
+
+/** One team the caller belongs to, as `GET /teams` reports it. */
+export interface TeamSummary {
+  id: string;
+  slug: string;
+  name: string;
+  owner_user_id: string;
+}
+
+export interface TeamMembership {
+  team: TeamSummary;
+  /** The caller's role IN THE TEAM, not on any room. The picker only needs the memberships. */
+  role: OwnershipRole;
+}
+
+export interface TeamsResponse {
+  success: boolean;
+  teams: TeamMembership[];
+}
+
+/** The whole sharing body: one team slug, or an empty string to make the room private again. */
+export interface SetRoomTeamRequest {
+  team: string;
 }
 
 export interface SeatTypesResponse {

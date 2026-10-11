@@ -14,7 +14,7 @@ import { useSetSeatPermissionPolicy } from '../../hooks/useSeats';
 import { SEAT_PERMISSION_POLICIES } from '../../types/seatTypes';
 import type { SeatPermissionPolicy, SeatPermissionPolicyPanelProps } from '../../types/seatTypes';
 
-export const SeatPermissionPolicyPanel: React.FC<SeatPermissionPolicyPanelProps> = ({ room, seat }) => {
+export const SeatPermissionPolicyPanel: React.FC<SeatPermissionPolicyPanelProps> = ({ room, seat, canWrite }) => {
   const update = useSetSeatPermissionPolicy(room, seat.seat_key);
   const [policy, setPolicy] = useState<SeatPermissionPolicy>(seat.permission_policy);
 
@@ -51,6 +51,7 @@ export const SeatPermissionPolicyPanel: React.FC<SeatPermissionPolicyPanelProps>
               aria-label="Permission policy"
               value={policy}
               onChange={e => setPolicy(e.target.value as SeatPermissionPolicy)}
+              disabled={!canWrite}
             >
               {SEAT_PERMISSION_POLICIES.map(value => (
                 <option key={value} value={value}>
@@ -70,10 +71,12 @@ export const SeatPermissionPolicyPanel: React.FC<SeatPermissionPolicyPanelProps>
               <AlertDescription>{update.error.message}</AlertDescription>
             </Alert>
           )}
-          <Button type="submit" disabled={unchanged || update.isPending}>
-            {update.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-            Save
-          </Button>
+          {canWrite && (
+            <Button type="submit" disabled={unchanged || update.isPending}>
+              {update.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+              Save
+            </Button>
+          )}
         </form>
       </CardContent>
     </Card>

@@ -138,12 +138,12 @@ func TestResponseOptimizer_SimplifyGuidanceTips(t *testing.T) {
 
 func TestResponseOptimizer_FlattenExplicitNilPartialFailures(t *testing.T) {
 	r := NewResponseOptimizer()
-	resp := zpRespOM("confirmation", zpRespOM("data_persisted", true, "partial_failures", nil))
+	resp := zpRespOM("confirmation", zpRespOM("data_present", true, "partial_failures", nil))
 	out := r.FlattenStructure(resp)
 	if !out.Has("confirmation") {
 		t.Fatal("explicit None partial_failures must not flatten (None != [])")
 	}
-	resp = zpRespOM("confirmation", zpRespOM("data_persisted", true, "partial_failures", []any{}))
+	resp = zpRespOM("confirmation", zpRespOM("data_present", true, "partial_failures", []any{}))
 	if r.FlattenStructure(resp).Has("confirmation") {
 		t.Fatal("empty list should flatten")
 	}
@@ -177,7 +177,7 @@ func TestResponseOptimizer_MergeMetadataWithholdsAnUnpersistedHandle(t *testing.
 				"operation_id", v.id,
 				"operation", v.operation,
 				"timestamp", "2026-10-08T16:40:48.997744+00:00",
-				"confirmation", zpRespOM("data_persisted", v.persisted),
+				"confirmation", zpRespOM("data_present", v.persisted),
 			)
 			metaAny, _ := r.MergeMetadata(resp).Get("meta")
 			meta, _ := metaAny.(*entities.OrderedMap[any])
@@ -188,7 +188,7 @@ func TestResponseOptimizer_MergeMetadataWithholdsAnUnpersistedHandle(t *testing.
 			if id, has := meta.Get("id"); has && id != nil {
 				t.Errorf("refused call exposed a handle: %#v", id)
 			}
-			if persisted, ok := meta.Get("persisted"); !ok || persisted != false {
+			if persisted, ok := meta.Get("data_present"); !ok || persisted != false {
 				t.Errorf("persisted must still be reported as false: %v %#v", ok, meta)
 			}
 		})
@@ -200,7 +200,7 @@ func TestResponseOptimizer_MergeMetadataWithholdsAnUnpersistedHandle(t *testing.
 		"success", true,
 		"operation_id", "1b9d74f2-828c-438e-8daa-2a6eb9f09d6a",
 		"operation", "create",
-		"confirmation", zpRespOM("data_persisted", true),
+		"confirmation", zpRespOM("data_present", true),
 	))
 	metaOKAny, _ := ok.Get("meta")
 	metaOK, _ := metaOKAny.(*entities.OrderedMap[any])

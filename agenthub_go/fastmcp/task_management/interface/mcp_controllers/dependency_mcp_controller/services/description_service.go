@@ -6,7 +6,8 @@ import "agenthub/fastmcp/task_management/domain/entities"
 
 // AllDescriptionsLoader is the minimal surface of the Python
 // interface/utils/description_loader.DescriptionLoader.get_all_descriptions(),
-// which has no Go port. Callers wire it; when nil the result is empty.
+// ported in interface/utils/description_loader.go. Callers wire it; when nil the
+// result is empty.
 var AllDescriptionsLoader func() map[string]any
 
 // DescriptionService manages dependency descriptions.

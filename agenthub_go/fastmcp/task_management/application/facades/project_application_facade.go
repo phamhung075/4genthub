@@ -49,7 +49,9 @@ type ProjectApplicationFacade struct {
 
 // NewProjectApplicationFacade mirrors __init__(project_service=None, user_id=None).
 // Python builds ProjectManagementService from GlobalRepositoryManager when no service is
-// given; there is no Go equivalent factory, so a ready user-scoped service is required.
+// given; the Go equivalent is ProjectFacadeBuilder in
+// application/factories/project_facade_factory.go, so this constructor requires a ready
+// user-scoped service.
 func NewProjectApplicationFacade(projectService projectServiceWithUser, manager projectRepositoryManager, userID *string) *ProjectApplicationFacade {
 	return &ProjectApplicationFacade{projectService: projectService, userID: userID, manager: manager}
 }

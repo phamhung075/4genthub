@@ -74,7 +74,7 @@ type AITaskCreationUseCase struct {
 
 // NewAITaskCreationUseCase builds the use case. Python constructs its
 // AITaskIntegrationService from the facade; the service is injected instead
-// because that module has no Go port yet.
+// because that module is ported in application/services/ai_integration_service.go.
 func NewAITaskCreationUseCase(taskRepository repositories.TaskRepository,
 	taskFacade AITaskFacade, aiIntegrationService AITaskIntegrationService) *AITaskCreationUseCase {
 	return &AITaskCreationUseCase{

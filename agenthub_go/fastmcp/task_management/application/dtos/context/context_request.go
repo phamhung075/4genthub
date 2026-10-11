@@ -77,15 +77,6 @@ type AddInsightRequest struct {
 	Importance string
 }
 
-// AddProgressRequest is the request DTO for adding progress.
-type AddProgressRequest struct {
-	TaskID  string
-	Action  string
-	Agent   string
-	Details string
-	Status  string
-}
-
 // UpdateNextStepsRequest is the request DTO for updating next steps.
 type UpdateNextStepsRequest struct {
 	TaskID    string
@@ -96,14 +87,6 @@ type UpdateNextStepsRequest struct {
 func NewAddInsightRequest(r AddInsightRequest) *AddInsightRequest {
 	if r.Importance == "" {
 		r.Importance = "medium"
-	}
-	return &r
-}
-
-// NewAddProgressRequest applies the Python defaults details="" and status="completed".
-func NewAddProgressRequest(r AddProgressRequest) *AddProgressRequest {
-	if r.Status == "" {
-		r.Status = "completed"
 	}
 	return &r
 }

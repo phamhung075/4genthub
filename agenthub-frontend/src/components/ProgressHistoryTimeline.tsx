@@ -19,7 +19,7 @@ interface ProgressHistoryTimelineProps {
  */
 export const ProgressHistoryTimeline: React.FC<ProgressHistoryTimelineProps> = ({
   progressHistory,
-  progressCount = 0,
+  progressCount,
   variant = 'full',
   maxHeight = 'max-h-96',
   className = ''
@@ -32,6 +32,10 @@ export const ProgressHistoryTimeline: React.FC<ProgressHistoryTimelineProps> = (
     return null;
   }
 
+  // 4a0a8c7a stopped serving progress_count, and the count that is true to what is rendered is
+  // how many entries the SERVED text parses into. Callers may still pass one explicitly.
+  const displayCount = progressCount ?? entries.length;
+
   // Summary variant - just show count and latest
   if (variant === 'summary') {
     const latestEntry = entries[entries.length - 1];
@@ -42,7 +46,7 @@ export const ProgressHistoryTimeline: React.FC<ProgressHistoryTimelineProps> = (
       <div className={`text-sm text-muted-foreground ${className}`}>
         <div className="flex items-center gap-2">
           <MessageSquare className="w-4 h-4" />
-          <span>{progressCount} progress {progressCount === 1 ? 'entry' : 'entries'}</span>
+          <span>{displayCount} progress {displayCount === 1 ? 'entry' : 'entries'}</span>
           {truncatedSummary && (
             <>
               <span>·</span>
@@ -68,7 +72,7 @@ export const ProgressHistoryTimeline: React.FC<ProgressHistoryTimelineProps> = (
                 <Clock className="w-4 h-4" />
                 <span>Progress History</span>
                 <Badge variant="secondary" className="text-xs">
-                  {progressCount}
+                  {displayCount}
                 </Badge>
               </div>
               {isExpanded ? (
@@ -93,7 +97,7 @@ export const ProgressHistoryTimeline: React.FC<ProgressHistoryTimelineProps> = (
         <Clock className="w-4 h-4" />
         <h4 className="font-semibold text-sm">Progress History</h4>
         <Badge variant="secondary" className="text-xs">
-          {progressCount} {progressCount === 1 ? 'entry' : 'entries'}
+          {displayCount} {displayCount === 1 ? 'entry' : 'entries'}
         </Badge>
       </div>
       <ProgressTimelineContent entries={entries} maxHeight={maxHeight} />

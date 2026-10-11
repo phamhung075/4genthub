@@ -10,7 +10,7 @@ import (
 
 func TestSubtaskBehaviour(t *testing.T) {
 	id, parent := value_objects.GenerateNewTaskId(), value_objects.GenerateNewTaskId()
-	st, err := CreateSubtask(id, "s", "d", parent, nil, nil, SubtaskOptions{Assignees: []string{"coding-agent", " ", "@x"}})
+	st, err := CreateSubtask(id, "s", "d", parent, nil, nil, SubtaskOptions{Assignees: []string{"@coding-agent", " ", "@x"}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -46,7 +46,7 @@ func TestRestoreSubtaskKeepsAStoredBareNameThatNewSubtaskRefuses(t *testing.T) {
 	parent := value_objects.GenerateNewTaskId()
 	in := Subtask{Title: "s", Description: "d", ParentTaskID: &parent, Assignees: []string{"go-dev"}}
 	if _, err := NewSubtask(in); err == nil {
-		t.Fatal("NewSubtask must refuse a bare name that is no role")
+		t.Fatal("NewSubtask must refuse a bare name")
 	}
 	got, err := RestoreSubtask(in)
 	if err != nil {
@@ -63,7 +63,7 @@ func TestSubtaskAddAssigneeUsesTheOneRule(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := st.AddAssignee("coding-agent"); err != nil {
+	if err := st.AddAssignee("@coding-agent"); err != nil {
 		t.Fatal(err)
 	}
 	if err := st.AddAssignee("@go-dev"); err != nil {
@@ -75,23 +75,25 @@ func TestSubtaskAddAssigneeUsesTheOneRule(t *testing.T) {
 	if strings.Join(st.Assignees, ",") != "@coding-agent,@go-dev" {
 		t.Fatalf("assignees = %v", st.Assignees)
 	}
+	if err := st.AddAssignee("coding-agent"); err == nil {
+		t.Fatal("a bare role name must be refused")
+	}
 	if err := st.AddAssignee("go-dev"); err == nil {
-		t.Fatal("a bare name that is no role must be refused")
+		t.Fatal("a bare name must be refused")
 	}
 	if strings.Join(st.Assignees, ",") != "@coding-agent,@go-dev" {
 		t.Fatalf("a refused add must change nothing: %v", st.Assignees)
 	}
 }
 
-// What a stored row shows: a known role or '@' name in its '@' form, any other stored
-// name as stored, and no assignees as none.
+// What a stored row shows: an '@' name in its '@' form, any other stored name as
+// stored, and no assignees as none.
 func TestRestoreSubtaskAssigneeForms(t *testing.T) {
 	parent := value_objects.GenerateNewTaskId()
 	cases := []struct{ in, want []string }{
 		{[]string{"go-dev"}, []string{"go-dev"}},
 		{[]string{"custom", "@lead"}, []string{"custom", "@lead"}},
 		{[]string{"@go-dev"}, []string{"@go-dev"}},
-		{[]string{"coding-agent"}, []string{"@coding-agent"}},
 		{nil, []string{}},
 		{[]string{}, []string{}},
 	}

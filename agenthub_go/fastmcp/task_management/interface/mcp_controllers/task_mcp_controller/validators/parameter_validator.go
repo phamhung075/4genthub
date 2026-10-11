@@ -60,8 +60,8 @@ func (v *ParameterValidator) ValidateCreateTaskParams(title, gitBranchID, descri
 
 	if assignees != nil && !v.isValidAssigneesList(assignees) {
 		return false, v.createValidationError(
-			"assignees", "A list of valid agent identifiers or user IDs",
-			"Assignees should be agent identifiers (e.g., 'coding-agent') or user IDs (e.g., 'user123')")
+			"assignees", "A list of assignee seat keys in '@<seat_key>' form",
+			"Assignees should be seat keys in '@<seat_key>' form (e.g., '@lead')")
 	}
 
 	if labels != nil && !v.isValidLabelsList(labels) {

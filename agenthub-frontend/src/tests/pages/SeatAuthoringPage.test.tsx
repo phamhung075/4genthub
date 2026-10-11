@@ -20,6 +20,7 @@ vi.mock('../../services/seatApi', () => ({
     getOverlay: vi.fn(),
     putOverlay: vi.fn(),
     getModuleVersion: vi.fn(),
+    getResolvedSeat: vi.fn(),
   },
 }));
 
@@ -126,6 +127,17 @@ beforeEach(() => {
           : JSON.stringify({ name: 'sequential-thinking', type: 'stdio', command: 'npx', args: ['-y', 'pkg'] }),
     },
   }));
+  mockApi.getResolvedSeat.mockResolvedValue({
+    success: true,
+    resolved_seat: {
+      room: 'dev',
+      seat: 'alice',
+      hash: 'abc123',
+      runtime: 'claude-code',
+      files: [{ path: 'rules.md', content: 'rule: do the thing' }],
+      policy: { max_turns: 5 },
+    },
+  });
 });
 
 describe('SeatAuthoringPage', () => {
@@ -137,10 +149,11 @@ describe('SeatAuthoringPage', () => {
     expect(within(card).getByText('rules@1.0.0')).toBeInTheDocument();
   });
 
-  // An mcp module's content is ONE server block the renderer parses, and the publish route checks the
-  // KIND rather than the block - measured on the running backend: `{"kind":"mcp","content":"not a
-  // block"}` is accepted with 200. So the form refuses the plain-text shape here, instead of letting
-  // some seat's resolve refuse it later and look like a broken seat.
+  // An mcp module's content is ONE server block the renderer parses. The publish route REFUSES an
+  // unrenderable content itself (`ValidateModuleContent`, seat_admin_mount.go:926 - a 400, or a 422 for a
+  // credential shape), so the form's refusal here is that same rule decided earlier and with a better
+  // message, not the only check. It still earns its place: it keeps the user out of a round trip, and it is
+  // what stops some seat's resolve refusing the block later and looking like a broken seat.
   it('refuses mcp content that is not one server block, and accepts a block', async () => {
     renderPage();
     fireEvent.change(await screen.findByLabelText('Module kind'), { target: { value: 'mcp' } });
@@ -347,6 +360,61 @@ describe('SeatAuthoringPage', () => {
   });
 });
 
+// The preview is the SAME component the seat-detail page renders, given THIS page's selection as
+// props. The authoring route is /seats/authoring and carries no :room/:seat, so a component that
+// read the route would render an empty snapshot here while looking like a data problem - these two
+// cases pin the props wiring and the fact that a changed selection carries through.
+describe('SeatAuthoringPage preview', () => {
+  it('renders the resolved snapshot for the selected room and seat', async () => {
+    renderPage();
+
+    expect(await screen.findByText('Resolved snapshot')).toBeInTheDocument();
+    expect(mockApi.getResolvedSeat).toHaveBeenCalledWith('dev', 'alice');
+    expect(await screen.findByText('abc123')).toBeInTheDocument();
+    // The path renders twice by design (the Files list button and the active-file heading), so pin
+    // the file's CONTENT, which is unique and proves the file pane rendered.
+    expect(screen.getByText('rule: do the thing')).toBeInTheDocument();
+  });
+
+  it('follows the seat selection rather than a route parameter', async () => {
+    mockApi.listSeats.mockResolvedValue({
+      success: true,
+      seats: [
+        {
+          id: 'seat-1',
+          room_id: 'room-dev',
+          seat_key: 'alice',
+          seat_type: 'coder',
+          seat_type_id: 'type-1',
+          pinned_version: '1.0.0',
+          runtime: 'claude-code',
+          model: '',
+          permission_policy: 'standard',
+        },
+        {
+          id: 'seat-2',
+          room_id: 'room-dev',
+          seat_key: 'bob',
+          seat_type: 'coder',
+          seat_type_id: 'type-1',
+          pinned_version: '1.0.0',
+          runtime: 'claude-code',
+          model: '',
+          permission_policy: 'standard',
+        },
+      ],
+    });
+    renderPage();
+    await screen.findByText('Resolved snapshot');
+
+    fireEvent.change(screen.getByLabelText('Compose seat'), { target: { value: 'bob' } });
+
+    await waitFor(() => {
+      expect(mockApi.getResolvedSeat).toHaveBeenCalledWith('dev', 'bob');
+    });
+  });
+});
+
 describe('SeatAuthoringPage composer', () => {
   const overlaysFor = (ops: Partial<Record<SeatOverlayScope, SeatOverlayOp[]>>) => {
     mockApi.getOverlay.mockImplementation(async (scope) => ({
@@ -418,12 +486,71 @@ describe('SeatAuthoringPage composer', () => {
     );
   });
 
+  it('fills the version from the module that was chosen, so adding is a choice and a click instead of typing', async () => {
+    overlaysFor({});
+    // The version must be the CHOSEN module's and no other's: 2.3.4 belongs to `style` alone, so a
+    // fill taken from the wrong entry - or a hardcoded default - cannot pass this case.
+    mockApi.listModules.mockResolvedValue({
+      success: true,
+      modules: [
+        { slug: 'rules', kind: 'instruction', version: '1.0.0', sha256: 'abcdef0123456789' },
+        { slug: 'style', kind: 'document', version: '2.3.4', sha256: 'bbbbbbbbbbbbbbbb' },
+      ],
+    });
+    await openComposer();
+
+    // Nothing is typed into the version field at any point in this case.
+    expect(screen.getByLabelText('Block version')).toHaveValue('');
+    fireEvent.change(screen.getByLabelText('Add a block'), { target: { value: 'style' } });
+    expect(screen.getByLabelText('Block version')).toHaveValue('2.3.4');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add at Seat' }));
+    await waitFor(() =>
+      expect(mockApi.putOverlay).toHaveBeenCalledWith(
+        'seat',
+        { ops: [{ kind: 'add', slug: 'style', version: '2.3.4', content: '' }] },
+        'dev',
+        'alice'
+      )
+    );
+  });
+
   it('refuses to add a block already in effect at this level', async () => {
     overlaysFor({});
     await openComposer();
 
     expect(screen.getByRole('option', { name: 'rules (already in effect)' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Add at Seat' })).toBeDisabled();
+  });
+
+  it('keeps an mcp option disabled while its server entry has not been read yet', async () => {
+    // `useMcpServers` returns {} until its per-module reads land, so in that window the content is
+    // UNCHECKED rather than known-good. Offering the option enabled there is the same hole as offering an
+    // invalid server: the entry has to exist AND parse before the block is addable.
+    mockApi.listModules.mockResolvedValue({
+      success: true,
+      modules: [{ slug: 'pending-mcp', kind: 'mcp', version: '1.0.0', sha256: 'abcdef0123456789' }],
+    });
+    mockApi.getModuleVersion.mockImplementation(() => new Promise<never>(() => {})); // never lands
+    overlaysFor({});
+    await openComposer();
+
+    expect(screen.getByRole('option', { name: 'pending-mcp (server not checked)' })).toBeDisabled();
+  });
+
+  it('keeps an mcp option disabled when its content is not one server block', async () => {
+    mockApi.listModules.mockResolvedValue({
+      success: true,
+      modules: [{ slug: 'broken-mcp', kind: 'mcp', version: '1.0.0', sha256: 'abcdef0123456789' }],
+    });
+    mockApi.getModuleVersion.mockResolvedValue({
+      success: true,
+      module: { slug: 'broken-mcp', kind: 'mcp', version: '1.0.0', checksum: 'sum', content: 'not a block' },
+    });
+    overlaysFor({});
+    await openComposer();
+
+    expect(screen.getByRole('option', { name: 'broken-mcp (invalid server)' })).toBeDisabled();
   });
 
   it('shows why a block cannot be removed at this level rather than doing nothing', async () => {
@@ -594,5 +721,54 @@ describe('SeatAuthoringPage mcp blocks', () => {
     fireEvent.change(await screen.findByLabelText('Module kind'), { target: { value: 'mcp' } });
 
     expect(screen.getByLabelText('Module kind')).toHaveValue('mcp');
+  });
+});
+
+describe('SeatAuthoringPage module prefill', () => {
+  it('prefills the publish form from the module row that was chosen', async () => {
+    mockApi.getModuleVersion.mockResolvedValue({
+      success: true,
+      module: {
+        slug: 'rules',
+        kind: 'instruction',
+        version: '1.0.0',
+        content: 'rules body\n',
+        checksum: 'sum',
+      },
+    });
+    renderPage();
+
+    // The row's action is the entry point: without it the prefill could not be reached from the page.
+    fireEvent.click(await screen.findByRole('button', { name: /edit and publish rules/i }));
+
+    await waitFor(() => expect(screen.getByLabelText('Module slug')).toHaveValue('rules'));
+    expect(screen.getByLabelText('Module version')).toHaveValue('1.0.0');
+    await waitFor(() => expect(screen.getByLabelText('Module content')).toHaveValue('rules body\n'));
+    // The block's OWN version was read, and the form is now editing that block, not creating one.
+    expect(mockApi.getModuleVersion).toHaveBeenCalledWith('rules', '1.0.0');
+    expect(screen.getByRole('button', { name: /publish new version/i })).toBeInTheDocument();
+  });
+
+  it('prefills the same form from a COMPOSER row, because a block is edited where it is seen in context', async () => {
+    mockApi.getModuleVersion.mockResolvedValue({
+      success: true,
+      module: {
+        slug: 'rules',
+        kind: 'instruction',
+        version: '1.0.0',
+        content: 'rules body\n',
+        checksum: 'sum',
+      },
+    });
+    renderPage();
+
+    // The composer's row, not the Modules row above: this is the second entry point, and the
+    // accessible name carries the version so the two are never confused for one another.
+    fireEvent.click(await screen.findByRole('button', { name: 'Edit and publish block rules@1.0.0' }));
+
+    await waitFor(() => expect(screen.getByLabelText('Module slug')).toHaveValue('rules'));
+    expect(screen.getByLabelText('Module version')).toHaveValue('1.0.0');
+    await waitFor(() => expect(screen.getByLabelText('Module content')).toHaveValue('rules body\n'));
+    expect(mockApi.getModuleVersion).toHaveBeenCalledWith('rules', '1.0.0');
   });
 });

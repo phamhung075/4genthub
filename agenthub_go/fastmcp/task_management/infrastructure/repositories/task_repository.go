@@ -164,6 +164,69 @@ func taskRepoEnsureEstimatedEffort(value any) string {
 	return s
 }
 
+// repoDecodeStringList decodes a JSONB string-array column (acceptance_criteria, scope) into
+// []string. The fresh default is '[]'; NULL/empty and a non-array value decode to an empty list,
+// the same tolerance subtaskRepoDecodeAssignees applies to a row written under an older shape.
+func repoDecodeStringList(raw []byte) ([]string, error) {
+	if len(raw) == 0 {
+		return []string{}, nil
+	}
+	decoded, err := entities.DecodeJSON(raw)
+	if err != nil {
+		return nil, err
+	}
+	if decoded == nil {
+		return []string{}, nil
+	}
+	list, ok := decoded.([]any)
+	if !ok {
+		return []string{}, nil
+	}
+	out := []string{}
+	for _, item := range list {
+		if s, ok := item.(string); ok {
+			out = append(out, s)
+		} else {
+			out = append(out, value_objects.PyStr(item))
+		}
+	}
+	return out, nil
+}
+
+// repoPlainValue replaces the *entities.OrderedMap[any] objects DecodeJSON yields for JSON objects
+// with the map[string]any shape the entity fields, and their own writers, use - recursively, so a
+// decoded value is the same container type a freshly written one is.
+//
+// The depth matters. A JSON column decoded into a map[string]any FIELD must not carry an OrderedMap
+// one level down, because every reader of that field type-asserts map[string]any: an entry that
+// stayed an OrderedMap was silently skipped (GetProgressHistoryText read `m["content"].(string)` off
+// a nil map, so a task's details came back as the join of empty strings - "\n\n" for two notes -
+// while the write had stored both, row 87c58552).
+func repoPlainValue(v any) any {
+	switch x := v.(type) {
+	case *entities.OrderedMap[any]:
+		out := map[string]any{}
+		for _, key := range x.Keys() {
+			value, _ := x.Get(key)
+			out[key] = repoPlainValue(value)
+		}
+		return out
+	case map[string]any:
+		out := map[string]any{}
+		for key, value := range x {
+			out[key] = repoPlainValue(value)
+		}
+		return out
+	case []any:
+		out := make([]any, len(x))
+		for i, item := range x {
+			out[i] = repoPlainValue(item)
+		}
+		return out
+	}
+	return v
+}
+
 // taskRepoDecodeHistory decodes a JSON progress_history column to map[string]any.
 func taskRepoDecodeHistory(raw []byte) map[string]any {
 	if len(raw) == 0 {
@@ -180,7 +243,7 @@ func taskRepoDecodeHistory(raw []byte) map[string]any {
 	out := map[string]any{}
 	for _, key := range ordered.Keys() {
 		value, _ := ordered.Get(key)
-		out[key] = value
+		out[key] = repoPlainValue(value)
 	}
 	return out
 }
@@ -317,6 +380,14 @@ func (r *ORMTaskRepository) taskRepoModelToEntity(ctx context.Context, s databas
 	}
 	createdAt, updatedAt := row.CreatedAt, row.UpdatedAt
 	userID := row.UserID
+	acceptanceCriteria, err := repoDecodeStringList(row.AcceptanceCriteria)
+	if err != nil {
+		return nil, err
+	}
+	scope, err := repoDecodeStringList(row.Scope)
+	if err != nil {
+		return nil, err
+	}
 	entity, err := entities.NewTask(entities.Task{
 		BaseTimestampEntity: base.BaseTimestampEntity{CreatedAt: &createdAt, UpdatedAt: &updatedAt},
 		Title:               row.Title,
@@ -330,6 +401,8 @@ func (r *ORMTaskRepository) taskRepoModelToEntity(ctx context.Context, s databas
 		EstimatedEffort:     row.EstimatedEffort,
 		DueDate:             row.DueDate,
 		Assignees:           assigneeIDs,
+		AcceptanceCriteria:  acceptanceCriteria,
+		Scope:               scope,
 		Labels:              labelNames,
 		Subtasks:            subtaskIDs,
 		CompletedSubtasks:   int(completed),
@@ -375,6 +448,8 @@ func (r *ORMTaskRepository) taskRepoEntityToModelDict(task *entities.Task) Kwarg
 	}
 	m.Set("progress_history", task.ProgressHistory)
 	m.Set("progress_count", task.ProgressCount)
+	m.Set("acceptance_criteria", append([]string{}, task.AcceptanceCriteria...))
+	m.Set("scope", append([]string{}, task.Scope...))
 	m.Set("estimated_effort", taskRepoEnsureEstimatedEffort(task.EstimatedEffort))
 	m.Set("due_date", task.DueDate)
 	m.Set("context_id", task.ContextID)
@@ -670,6 +745,20 @@ func (r *ORMTaskRepository) DeleteTask(ctx context.Context, taskID string) (bool
 				return err
 			}
 			if _, err := s.ExecContext(ctx, `DELETE FROM task_labels WHERE task_id = $1::uuid`, taskID); err != nil {
+				return err
+			}
+			// The task-event ledger. task_events.task_id is the one foreign key into tasks with NO
+			// ON DELETE CASCADE (task_event_tables.go: "No CASCADE on the foreign key, by this
+			// schema's design: the application layer cascades"), while the tables above cascade in
+			// the database. Nothing else deletes these rows, so without this statement a task that
+			// has any event row beyond the status check cannot be deleted at all: PostgreSQL refuses
+			// the parent delete with 23503, this function swallows the error into `false` like
+			// Python, and the caller reports OPERATION_FAILED with no reason.
+			//
+			// One statement covers the whole ledger for the task, subtask events included: every
+			// event row carries the parent task_id (task_events.task_id is NOT NULL and
+			// subtask_id is a plain uuid with no foreign key), so an event is addressed by its task.
+			if _, err := s.ExecContext(ctx, `DELETE FROM task_events WHERE task_id = $1::uuid`, taskID); err != nil {
 				return err
 			}
 			if row.GitBranchID != "" {
@@ -1283,6 +1372,8 @@ func (r *ORMTaskRepository) taskRepoSave(ctx context.Context, task *entities.Tas
 				"priority", taskPriority,
 				"progress_history", task.ProgressHistory,
 				"progress_count", task.ProgressCount,
+				"acceptance_criteria", append([]string{}, task.AcceptanceCriteria...),
+				"scope", append([]string{}, task.Scope...),
 				"estimated_effort", taskRepoEnsureEstimatedEffort(task.EstimatedEffort),
 				"due_date", task.DueDate,
 				"context_id", task.ContextID,

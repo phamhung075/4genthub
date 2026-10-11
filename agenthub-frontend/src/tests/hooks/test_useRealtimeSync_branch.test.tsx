@@ -29,15 +29,6 @@ vi.mock('../../utils/logger', () => ({
   }
 }));
 
-vi.mock('../../hooks/useWebSocketV2', () => ({
-  useWebSocketV2: () => ({
-    isConnected: true,
-    subscribe: vi.fn(),
-    unsubscribe: vi.fn(),
-    send: vi.fn(),
-  })
-}));
-
 vi.mock('../../components/ui/toast', () => ({
   useSuccessToast: () => vi.fn(),
   useInfoToast: () => vi.fn(),

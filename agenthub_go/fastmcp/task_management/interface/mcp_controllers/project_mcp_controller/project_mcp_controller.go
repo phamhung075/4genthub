@@ -35,7 +35,7 @@ type ProjectMaintenanceHandler interface {
 
 // ProjectOperationFactory is the minimal view of
 // factories.ProjectOperationFactory (Python project_mcp_controller/factories/operation_factory.py),
-// which has no Go port yet.
+// ported in project_mcp_controller/factories/operation_factory.go.
 type ProjectOperationFactory interface {
 	HandleOperation(ctx context.Context, operation string, facade *facades.ProjectApplicationFacade, userID *string, params ProjectOperationParams) *entities.OrderedMap[any]
 	CRUDHandler() ProjectCRUDHandler
@@ -52,7 +52,7 @@ type ProjectOperationParams struct {
 
 // ProjectResponseFactory is the minimal view of
 // factories.ProjectResponseFactory (project_mcp_controller/factories/response_factory.py),
-// which has no Go port yet.
+// ported in project_mcp_controller/factories/response_factory.go.
 type ProjectResponseFactory interface {
 	CreateMissingFieldError(field, operation string) *entities.OrderedMap[any]
 }

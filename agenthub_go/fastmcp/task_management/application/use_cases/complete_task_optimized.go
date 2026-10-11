@@ -14,8 +14,8 @@ import (
 
 // optimizedContextManager is the context-manager surface used by
 // OptimizedCompleteTaskUseCase (Python's self._context_manager). The unified
-// context facade has no Go port yet, so the minimal consumer-side interface is
-// declared here.
+// context facade is ported in application/facades/unified_context_facade.go, so the
+// minimal consumer-side interface is declared here.
 type optimizedContextManager interface {
 	GetContext(ctx context.Context, taskID string) (map[string]any, error)
 	UpdateContext(ctx context.Context, taskID string, data map[string]any, mergeMode bool) error

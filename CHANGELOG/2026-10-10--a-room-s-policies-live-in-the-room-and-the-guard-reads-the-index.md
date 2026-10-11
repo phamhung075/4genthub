@@ -1,0 +1,15 @@
+## A room's policies live in the room, and the guard reads the index
+
+### Fixed
+- `scripts/tests/test_team_definition.py`, `test_every_room_names_files_that_resolve`: a module of `kind: policy` must now resolve **inside the room that declares it**, and the failure names both — the module and the room whose directory the path escaped. This closes the reviewer's gate finding on `b4ca5c68`: that commit fixed `4genthub-client`'s borrowing, but borrowing stayed a LEGAL configuration, because the guard resolved the path and never bounded it. `4genthub-ab` (an owner row, `f465d5df`) still used it. Instruction modules are deliberately NOT bounded — they may point at the Go seed library's blocks — so the bound is on the policy kind.
+
+### Changed
+- `scripts/tests/test_team_definition.py`, `ROOMS`: the room set is derived from the **index** (`git ls-files -- 'scripts/team/*/team.json'`) instead of a directory walk. `scripts/team` is where a room definition is written before it is committed, so an untracked directory there is somebody's work in progress rather than part of the release: it must be able to make the suite neither red nor green. Consequences, stated rather than left to inference: `4genthub-ab` is now simply not part of the suite (its borrowing stays the owner row `f465d5df`, not a red guard, because it is outside the index and belongs to a live rig), and **if that room ever ships, this tightened guard must pass on it — which means it owns its policies.**
+
+### Verified
+- Acceptance over the tracked rooms: `PYTHONPATH=agenthub_client/src python3 -m pytest --noconftest -p no:cacheprovider scripts/tests/test_team_definition.py scripts/tests/test_seatcheck_guard.py -q` -> **41 passed**, 2 warnings (it was 46 while the directory walk also counted the untracked `4genthub-ab`).
+- **THE RED, BY EFFECT.** Copied `4genthub-client` to `scripts/team/zz-borrow-room`, repointed its `client-policy-lead` at `../4genthub-min/policy-lead.json`, and made the copy visible to git (`git add -N scripts/team/zz-borrow-room/team.json`, since an untracked room is deliberately outside the suite): `pytest ... -q -k names_files_that_resolve` -> **1 failed, 3 passed**, and the failure is the message this row asked for — `zz-borrow-room/client-policy-lead: its policy resolves to /…/scripts/team/4genthub-min/policy-lead.json, outside /…/scripts/team/zz-borrow-room - a room's policies live in the room that declares them` — while the three tracked rooms stayed green. The copy was removed (`git reset --`, `shutil.rmtree`) and the same command is green again at 41 with `git ls-files` back to three rooms and `git status` showing only the untracked `4genthub-ab`.
+- Every policy module of every tracked room resolves inside its room, listed by name: the client room's four (`client-policy-{lead,go-dev,reviewer,writer}.json`) and the min room's ten; the dev room declares no policies.
+
+### Not changed
+- `scripts/team/4genthub-ab/` is untouched: it is outside the index, its rig is live, and its definition is the owner's decision on `f465d5df`.

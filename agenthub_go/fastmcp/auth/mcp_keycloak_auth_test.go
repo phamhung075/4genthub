@@ -51,7 +51,7 @@ func TestGetAllowedTools(t *testing.T) {
 	}
 
 	dev := a.GetAllowedTools([]string{"mcp-developer"})
-	if got := keys(dev); !reflect.DeepEqual(got, []string{"project", "task", "context", "agent", "development"}) {
+	if got := keys(dev); !reflect.DeepEqual(got, []string{"project", "task", "context", "development"}) {
 		t.Fatalf("developer keys = %v", got)
 	}
 	devTask, _ := dev.Get("task")
@@ -59,7 +59,7 @@ func TestGetAllowedTools(t *testing.T) {
 		t.Fatalf("developer task = %v", devTask)
 	}
 
-	// mcp-tools merges into the existing task/context/agent keys.
+	// mcp-tools merges into the existing task/context keys.
 	merged := a.GetAllowedTools([]string{"mcp-developer", "mcp-tools"})
 	mergedTask, _ := merged.Get("task")
 	if !sameSet(mergedTask.([]string), []string{"manage_task", "manage_subtask", "search_task"}) {

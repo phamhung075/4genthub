@@ -107,6 +107,23 @@ func TestTaskContextUnified(t *testing.T) {
 	if err := tc2.UpdateProgress(10, nil, false); err == nil || err.Error() != "Progress cannot decrease from 40 to 10. Set allow_decrease=True to override." {
 		t.Fatalf("decrease: %v", err)
 	}
+	// One home for one idea: the entry lands in progress_updates (the key the live path writes)
+	// and carries the whole transition, and the retired progress_history name is not written at all.
+	notes := "halfway"
+	if err := tc2.UpdateProgress(60, &notes, true); err != nil || tc2.Progress != 60 {
+		t.Fatalf("update: %v %d", err, tc2.Progress)
+	}
+	if _, retired := tc2.Metadata["progress_history"]; retired {
+		t.Fatalf("progress_history is the retired name and must not be written: %#v", tc2.Metadata["progress_history"])
+	}
+	updates, _ := tc2.ImplementationNotes["progress_updates"].([]any)
+	if len(updates) != 1 {
+		t.Fatalf("progress_updates entries = %d, want 1: %#v", len(updates), tc2.ImplementationNotes)
+	}
+	entry, _ := updates[0].(map[string]any)
+	if entry["old_progress"] != 40 || entry["new_progress"] != 60 || entry["notes"] != "halfway" || entry["timestamp"] == nil {
+		t.Fatalf("progress_updates entry lost the transition: %#v", entry)
+	}
 	if err := tc2.AddInsight("nope", "c", "system", "medium"); err == nil ||
 		err.Error() != "Invalid category: nope. Must be one of ['insight', 'challenge', 'solution', 'decision', 'technical', 'business']" {
 		t.Fatalf("category: %v", err)

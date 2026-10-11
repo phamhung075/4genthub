@@ -34,7 +34,7 @@ func newSubmitFeedbackTestApp(t *testing.T, service *seatservices.SeatFeedbackSe
 	t.Helper()
 	controller := seatcontrollers.NewSubmitFeedbackController(feedbackTestAuth{}, service)
 	tools, err := interfacelayer.NewDDDCompliantMCPTools(interfacelayer.Dependencies{
-		FacadeService:     taskservices.NewFacadeService(nil, nil, nil, nil, nil, nil, nil),
+		FacadeService:     taskservices.NewFacadeService(nil, nil, nil, nil, nil, nil),
 		DatabaseAvailable: true,
 		SubmitFeedback:    controller,
 	}, nil)

@@ -45,8 +45,8 @@ func NewApp(ctx context.Context, sessions *database.SessionManager) (*App, error
 	a.projects = projectControllerAdapter{c: api_controllers.NewProjectAPIController(projectFacadeProvider{sessions: sessions, ctxFactory: ctxFactory})}
 	a.branches = branchControllerAdapter{c: api_controllers.NewBranchAPIController(branchFacadeProvider{sessions}, branchRepoProvider{sessions}), sessions: sessions}
 	taskProvider := taskFacadeProvider{sessions: sessions, ctxFactory: ctxFactory, notifier: newTaskNotifier(sessions)}
-	projectFactory, branchFactory, agentFactory, contextFactory, tokenFactory := buildMCPFacadeFactories(ctx, sessions, ctxFactory)
-	facadeService := services.NewFacadeService(taskFacadeFactory{taskProvider}, subtaskFacadeFactory{factory: factories.NewSubtaskFacadeFactory(services.RepositoryProviderService{}.GetInstance()), ctxFactory: ctxFactory, sessions: sessions}, projectFactory, branchFactory, agentFactory, contextFactory, tokenFactory)
+	projectFactory, branchFactory, contextFactory, tokenFactory := buildMCPFacadeFactories(ctx, sessions, ctxFactory)
+	facadeService := services.NewFacadeService(taskFacadeFactory{taskProvider}, subtaskFacadeFactory{factory: factories.NewSubtaskFacadeFactory(services.RepositoryProviderService{}.GetInstance()), ctxFactory: ctxFactory, sessions: sessions}, projectFactory, branchFactory, contextFactory, tokenFactory)
 	services.SetInstance(facadeService)
 	a.tasks = userTaskControllerAdapter{c: taskapicontroller.NewTaskAPIController(facadeService)}
 	a.subtasks = subtaskControllerAdapter{c: api_controllers.NewSubtaskAPIController(facadeService).WithSubtaskRepositories(func(userID *string) (repositories.SubtaskRepository, error) {
@@ -80,6 +80,7 @@ func NewApp(ctx context.Context, sessions *database.SessionManager) (*App, error
 	if err := wireMissedNotificationStore(sessions); err != nil {
 		return nil, err
 	}
+	wireOwnershipChecker(sessions)
 	return a, nil
 }
 
@@ -135,8 +136,9 @@ func (a *App) Handler() http.Handler {
 	mountSeatRigSpecRoutes(mux, a.Sessions)
 	mountSeatStatusRoutes(mux, a.Sessions)
 	mountSeatFeedbackRoutes(mux, a.Sessions)
-	mountMachineTokenRoutes(mux, a.Sessions)
 	mountTeamRoutes(mux, a.Sessions)
+	// The ledger's own layer: the cross-task cursor and the intents route (P2, P3).
+	mountLedgerRoutes(mux, a.Sessions)
 	mountMiscRoutes(mux)
 	return withCORS(mux)
 }

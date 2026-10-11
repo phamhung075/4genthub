@@ -88,16 +88,6 @@ func (r *draftPortSubtaskRepo) GetSubtaskProgress(ctx context.Context, parent va
 	return r.progress, nil
 }
 
-type draftPortAgentRepo struct {
-	repositories.AgentRepository
-	result map[string]any
-	err    error
-}
-
-func (r *draftPortAgentRepo) ListAgents(ctx context.Context, projectID string) (map[string]any, error) {
-	return r.result, r.err
-}
-
 type draftPortProjectRepo struct {
 	services.CascadeProjectRepository
 	project *entities.Project
@@ -293,26 +283,6 @@ func TestDraftPortGetSubtasks(t *testing.T) {
 	}
 	if v, _ := progress.Get("completed"); v != 0 {
 		t.Fatalf("progress completed = %v", v)
-	}
-}
-
-func TestDraftPortListAgents(t *testing.T) {
-	repo := &draftPortAgentRepo{result: map[string]any{
-		"agents":       []any{map[string]any{"id": "a1", "name": "Agent", "call_agent": "agent", "assignments": []any{"x"}}},
-		"total_agents": 1,
-	}}
-	response := NewListAgentsUseCase(repo).Execute(context.Background(), &ListAgentsRequest{ProjectID: "p1"})
-	if !response.Success || response.TotalAgents != 1 || len(response.Agents) != 1 {
-		t.Fatalf("response = %+v", response)
-	}
-	if response.Agents[0].ID != "a1" || response.Agents[0].CallAgent != "agent" {
-		t.Fatalf("agent = %+v", response.Agents[0])
-	}
-
-	notFound := NewListAgentsUseCase(&draftPortAgentRepo{err: exceptions.NewProjectNotFoundError("nope")})
-	bad := notFound.Execute(context.Background(), &ListAgentsRequest{ProjectID: "p2"})
-	if bad.Success || bad.Error == nil || *bad.Error != "nope" {
-		t.Fatalf("not found response = %+v", bad)
 	}
 }
 

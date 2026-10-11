@@ -2,6 +2,7 @@ package use_cases
 
 import (
 	"context"
+	"errors"
 	"reflect"
 	"testing"
 
@@ -20,6 +21,7 @@ type completeTaskFakeTaskRepository struct {
 	findAllErr error
 	saves      []*entities.Task
 	saveErr    error
+	saveErrOn  string
 }
 
 func (f *completeTaskFakeTaskRepository) FindByID(_ context.Context, _ value_objects.TaskId) (*entities.Task, error) {
@@ -28,7 +30,12 @@ func (f *completeTaskFakeTaskRepository) FindByID(_ context.Context, _ value_obj
 
 func (f *completeTaskFakeTaskRepository) Save(_ context.Context, task *entities.Task) (*entities.Task, error) {
 	f.saves = append(f.saves, task)
-	return task, f.saveErr
+	// saveErrOn narrows saveErr to a single task, so a test can fail the DEPENDENT task's write while the
+	// completed task's own write - which runs first - still succeeds.
+	if f.saveErr != nil && (f.saveErrOn == "" || (task.ID != nil && task.ID.Value == f.saveErrOn)) {
+		return task, f.saveErr
+	}
+	return task, nil
 }
 
 func (f *completeTaskFakeTaskRepository) FindAll(_ context.Context) ([]*entities.Task, error) {
@@ -70,7 +77,7 @@ func completeTaskAssertKeys(t *testing.T, got []string, want []string) {
 
 func TestCompleteTaskNotFound(t *testing.T) {
 	repo := &completeTaskFakeTaskRepository{task: nil}
-	uc := NewCompleteTaskUseCase(repo, nil, nil, nil)
+	uc := NewCompleteTaskUseCase(repo, nil, nil, nil).WithLedger(noopLedger())
 
 	resp, err := uc.Execute(context.Background(), completeTaskTestID, nil, nil, nil)
 	if err == nil {
@@ -91,7 +98,7 @@ func TestCompleteTaskAlreadyCompletedUpdatesSummary(t *testing.T) {
 	task.Status = &done
 
 	repo := &completeTaskFakeTaskRepository{task: task}
-	uc := NewCompleteTaskUseCase(repo, nil, nil, nil)
+	uc := NewCompleteTaskUseCase(repo, nil, nil, nil).WithLedger(noopLedger())
 	summary := "finished the work"
 
 	resp, err := uc.Execute(context.Background(), id.Value, &summary, nil, nil)
@@ -129,7 +136,7 @@ func TestCompleteTaskAlreadyCompletedWithoutSummary(t *testing.T) {
 	task.Status = &done
 
 	repo := &completeTaskFakeTaskRepository{task: task}
-	uc := NewCompleteTaskUseCase(repo, nil, nil, nil)
+	uc := NewCompleteTaskUseCase(repo, nil, nil, nil).WithLedger(noopLedger())
 
 	resp, err := uc.Execute(context.Background(), id.Value, nil, nil, nil)
 	if err != nil {
@@ -146,7 +153,7 @@ func TestCompleteTaskAlreadyCompletedWithoutSummary(t *testing.T) {
 func TestCompleteTaskMissingSummary(t *testing.T) {
 	task, id := completeTaskNewTestTask(t)
 	repo := &completeTaskFakeTaskRepository{task: task}
-	uc := NewCompleteTaskUseCase(repo, nil, nil, nil)
+	uc := NewCompleteTaskUseCase(repo, nil, nil, nil).WithLedger(noopLedger())
 
 	resp, err := uc.Execute(context.Background(), id.Value, nil, nil, nil)
 	if err != nil {
@@ -176,7 +183,7 @@ func TestCompleteTaskSuccess(t *testing.T) {
 	task, id := completeTaskNewTestTask(t)
 	repo := &completeTaskFakeTaskRepository{task: task}
 	subRepo := &completeTaskFakeSubtaskRepository{} // no subtasks
-	uc := NewCompleteTaskUseCase(repo, subRepo, nil, nil)
+	uc := NewCompleteTaskUseCase(repo, subRepo, nil, nil).WithLedger(noopLedger())
 	summary := "all done"
 
 	resp, err := uc.Execute(context.Background(), id.Value, &summary, nil, nil)
@@ -274,7 +281,7 @@ func TestCompleteTaskSuccessBroadcasts(t *testing.T) {
 	task, id := completeTaskNewTestTask(t)
 	repo := &completeTaskFakeTaskRepository{task: task}
 	hooks := &completeTaskFakeHooks{}
-	uc := NewCompleteTaskUseCase(repo, &completeTaskFakeSubtaskRepository{}, nil, nil).WithHooks(hooks)
+	uc := NewCompleteTaskUseCase(repo, &completeTaskFakeSubtaskRepository{}, nil, nil).WithHooks(hooks).WithLedger(noopLedger())
 	summary := "all done"
 
 	if _, err := uc.Execute(context.Background(), id.Value, &summary, nil, nil); err != nil {
@@ -300,7 +307,7 @@ func TestCompleteTaskIncompleteSubtasks(t *testing.T) {
 
 	repo := &completeTaskFakeTaskRepository{task: task}
 	subRepo := &completeTaskFakeSubtaskRepository{subtasks: []*entities.Subtask{subtask}}
-	uc := NewCompleteTaskUseCase(repo, subRepo, nil, nil)
+	uc := NewCompleteTaskUseCase(repo, subRepo, nil, nil).WithLedger(noopLedger())
 	summary := "trying"
 
 	resp, err := uc.Execute(context.Background(), id.Value, &summary, nil, nil)
@@ -366,6 +373,52 @@ func TestCompleteTaskIncompleteSubtasks(t *testing.T) {
 	}
 }
 
+// A dependent task's unblock is a status write of its own, and when it fails the failure must reach this use
+// case's caller. Discarding it is what made a write that did not happen read as success.
+func TestCompleteTaskReportsAFailedDependentUnblock(t *testing.T) {
+	taskA, idA := completeTaskNewTestTask(t)
+
+	idB, err := value_objects.NewTaskId("33333333-3333-3333-3333-333333333333")
+	if err != nil {
+		t.Fatalf("NewTaskId: %v", err)
+	}
+	taskB, err := entities.NewTask(entities.Task{ID: &idB, Title: "Dependent", Description: "d"})
+	if err != nil {
+		t.Fatalf("NewTask: %v", err)
+	}
+	blocked, _ := value_objects.NewTaskStatus("blocked")
+	taskB.Status = &blocked
+	taskB.Dependencies = []value_objects.TaskId{idA}
+
+	// Only the dependent task's save fails; taskA's own save is the earlier write in the flow.
+	repo := &completeTaskFakeTaskRepository{
+		task: taskA, allTasks: []*entities.Task{taskA, taskB},
+		saveErr: errors.New("dependent save failed"), saveErrOn: idB.Value,
+	}
+	subRepo := &completeTaskFakeSubtaskRepository{}
+	uc := NewCompleteTaskUseCase(repo, subRepo, nil, nil).WithLedger(noopLedger())
+	summary := "done"
+
+	if _, err := uc.Execute(context.Background(), idA.Value, &summary, nil, nil); err == nil {
+		t.Fatal("a dependent task whose unblock failed to save was reported as success")
+	}
+}
+
+// The dependent scan's own lookup failure was skipped the same way a failed save was: the caller saw a completed
+// task while the unblock pass never ran. Same class, same rule - no discarded error on this path reads as success.
+func TestCompleteTaskReportsAFailedDependentLookup(t *testing.T) {
+	taskA, idA := completeTaskNewTestTask(t)
+
+	repo := &completeTaskFakeTaskRepository{task: taskA, findAllErr: errors.New("dependent lookup failed")}
+	subRepo := &completeTaskFakeSubtaskRepository{}
+	uc := NewCompleteTaskUseCase(repo, subRepo, nil, nil).WithLedger(noopLedger())
+	summary := "done"
+
+	if _, err := uc.Execute(context.Background(), idA.Value, &summary, nil, nil); err == nil {
+		t.Fatal("a dependent scan whose lookup failed was reported as success")
+	}
+}
+
 func TestCompleteTaskUnblocksDependentTask(t *testing.T) {
 	taskA, idA := completeTaskNewTestTask(t)
 
@@ -383,7 +436,7 @@ func TestCompleteTaskUnblocksDependentTask(t *testing.T) {
 
 	repo := &completeTaskFakeTaskRepository{task: taskA, allTasks: []*entities.Task{taskA, taskB}}
 	subRepo := &completeTaskFakeSubtaskRepository{}
-	uc := NewCompleteTaskUseCase(repo, subRepo, nil, nil)
+	uc := NewCompleteTaskUseCase(repo, subRepo, nil, nil).WithLedger(noopLedger())
 	summary := "done"
 
 	if _, err := uc.Execute(context.Background(), idA.Value, &summary, nil, nil); err != nil {

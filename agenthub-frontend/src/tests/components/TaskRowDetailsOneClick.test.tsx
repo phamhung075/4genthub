@@ -56,7 +56,6 @@ vi.mock('../../api', () => ({
   // the result untrustworthy, so it is spelled out rather than assumed unused.
   getTaskContext: vi.fn().mockResolvedValue(null),
   getAvailableAgents: vi.fn().mockResolvedValue([]),
-  getSubtaskSummaries: vi.fn().mockResolvedValue({ subtasks: [] }),
   getCurrentUserId: vi.fn().mockReturnValue('u1'),
   createTask: vi.fn(),
   updateTask: vi.fn(),
@@ -69,7 +68,10 @@ vi.mock('../../contexts/AuthContext', () => ({
   useAuth: () => ({ user: { id: 'u1' }, tokens: { access_token: 't' } }),
 }));
 
-vi.mock('../ui/toast', () => ({
+// THE TOAST BOUNDARY, pointed at the REAL module (src/components/ui/toast): the path used to be
+// '../ui/toast', which resolves to src/tests/ui/toast — nonexistent — so this factory shielded nothing
+// and the real hooks ran. Ruled by the lead: aim it rather than delete it.
+vi.mock('../../components/ui/toast', () => ({
   useErrorToast: () => vi.fn(),
   useSuccessToast: () => vi.fn(),
   useInfoToast: () => vi.fn(),
@@ -79,8 +81,6 @@ vi.mock('../ui/toast', () => ({
 // THE TRANSPORT BOUNDARY: no socket exists under jsdom, so this is stated rather than hidden.
 vi.mock('../../hooks/useWebSocketV2', () => ({
   useWebSocket: () => ({ isConnected: false, client: null }),
-  useTaskWebSocket: () => ({ isConnected: false, client: null }),
-  useWebSocketV2: () => ({ isConnected: false, client: null }),
 }));
 
 vi.mock('../../utils/logger', () => ({

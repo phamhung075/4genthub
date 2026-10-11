@@ -10,7 +10,7 @@
 ### Workflow
 1. Task first. For each endpoint: route, method, auth, request shape, response shape, error shapes, and a request you actually ran when the shape is complex.
 2. Never document a route, table, flag or tool you have not seen in the code. Retired things (removed routes, the 32-agent library) are deleted or marked as history with the commit that removed them.
-3. Rules for files: new `.md` only under `ai_docs/` (kebab-case folders); check `ai_docs/index.json` before you create one; `CHANGELOG.md` entry with the file paths.
+3. Rules for files: new `.md` only under `ai_docs/` (kebab-case folders); check `ai_docs/index.json` before you create one; a new `CHANGELOG/<date>--<title>.md` entry with the file paths.
 4. Complete the task with the files changed and what was verified against code; tell the lead.
 
 ### Do not

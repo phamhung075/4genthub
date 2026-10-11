@@ -31,6 +31,14 @@ export const SessionsPage: React.FC = () => {
 
   const selected = sessions.find((session) => session.id === sessionId) ?? null;
 
+  // THE SEAT'S IDENTITY IS THE SESSION'S OWN DATA - the (room_slug, seat_key) pair the connector
+  // wrote at ingest, serialized by GET /api/v2/sessions (`sessionRow` in
+  // agenthub_go/fastmcp/session_stream/repository.go). The list renders it, which is what phase 1
+  // needs. NOTHING HERE DERIVES A ROOM FROM THE NAME: the `@rig` suffix is a naming convention, and
+  // a room guessed from it posts to the wrong room silently. The chat input that consumed the pair
+  // is PHASE 2 (rigd-boundaries.md section 3: commands carry their own scope, a human-only issuer
+  // and a local opt-in), so `SeatInputBox` is not mounted on this page.
+
   return (
     <div className="mx-auto w-full max-w-6xl p-4 md:p-6">
       <header className="mb-4 flex items-start justify-between gap-4">
@@ -76,10 +84,6 @@ export const SessionsPage: React.FC = () => {
               events={stream.events}
               status={stream.status}
               error={stream.error}
-              // The identifier this page holds is the session's name - the row's own seat fact.
-              // Turning it into the route's `{seat_key}` is the route's decision, and it is this
-              // one line if the answer differs from the name.
-              seatKey={selected?.name ?? null}
             />
           </CardContent>
         </Card>

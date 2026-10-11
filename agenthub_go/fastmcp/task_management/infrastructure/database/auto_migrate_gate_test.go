@@ -89,28 +89,6 @@ func TestEnsureAIColumnsRespectsAutoMigrateGate(t *testing.T) {
 	}
 }
 
-func TestRunAutoMigrationsRespectsAutoMigrateGate(t *testing.T) {
-	clearAutoMigrate(t)
-	f := newFakeDB()
-	db, _ := f.open("", EngineOptions{})
-	if !RunAutoMigrations(context.Background(), db) {
-		t.Fatal("expected no-op success when AUTO_MIGRATE is off")
-	}
-	if len(f.statements) != 0 {
-		t.Fatalf("expected no statements, got %v", f.statements)
-	}
-
-	t.Setenv("AUTO_MIGRATE", "true")
-	f2 := newFakeDB()
-	db2, _ := f2.open("", EngineOptions{})
-	if !RunAutoMigrations(context.Background(), db2) {
-		t.Fatal("expected success when AUTO_MIGRATE is on")
-	}
-	if joined := strings.Join(f2.statements, "\n"); !strings.Contains(joined, "ALTER TABLE tasks ADD COLUMN progress_state") {
-		t.Fatalf("expected progress_state migration, got %v", f2.statements)
-	}
-}
-
 func TestDBInitializerSkipsInitSQLWithoutAutoMigrate(t *testing.T) {
 	clearAutoMigrate(t)
 	f := &fakeDB{tables: map[string][]string{}}

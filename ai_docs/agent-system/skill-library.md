@@ -53,7 +53,7 @@ carries the same 52 rows plus the curation in a form a check can parse.
 | `openrig-skills` | plugin | `packages/daemon/assets/plugins/openrig-core/skills/openrig-skills` | `e5f47e24a4c3cb1afceb1a3a93647313e9c30830aff58faabb5fa57838d1206c` |
 | `openrig-software-factory` | canonical/core | `skills/_canonical/core/openrig-software-factory` | `33930e72341661eaaa9d3c5ac945297926f430d643b6f279fcb7f693ac30b7f7` |
 | `openrig-upgrade` | canonical/core | `skills/_canonical/core/openrig-upgrade` | `c3555c66abe0426e2990aec024849f644cf43320a65b8f1211e96d3b234f6e83` |
-| `openrig-user` | plugin | `packages/daemon/assets/plugins/openrig-core/skills/openrig-user` | `6fa8ad6e639db93a23f4d1a19d4cd446189199d5ba05c269c18ea1b8afa6e3f2` |
+| `openrig-user` | plugin | `packages/daemon/assets/plugins/openrig-core/skills/openrig-user` | `f3d34e6ae4c22fbe147f52abdd896bdd18c12ec3d7c224cb6cd9502d699d4ecb` |
 | `orchestration-team` | canonical/pods | `skills/_canonical/pods/orchestration-team` | `d13e08782a64b92b4db3f51d083f11fd6753f06e68052dbf2da174ab5618fa90` |
 | `orienting-to-an-inherited-seat` | plugin | `packages/daemon/assets/plugins/openrig-core/skills/orienting-to-an-inherited-seat` | `1721dfb2e66c4f1775b4d5d9a5c12340baa8042c4d26f999f85008f9a186baf3` |
 | `oversight-team` | canonical/pods | `skills/_canonical/pods/oversight-team` | `a48de41350453a09b231e01a89cc1dd3d4a64e082df090a7b0e04034227d2bb4` |
@@ -216,7 +216,20 @@ Naming the remainder is what makes each default set a choice rather than everyth
 
 ## Provenance
 
-Generated from the OpenRig repository HEAD at the time of writing; the 35 canonical skills
-are mirrored to `packages/daemon/specs/agents/shared/skills/` upstream, and OpenRig guards its
-own mirrors with pinned digests (`scripts/skill-edge-digests.generated.json`). This file applies
-the same idea to the copy 4genthub seeds from.
+**Re-verified 2026-10-09 against OpenRig `31fe301b`**, the commit now pinned in `generated_from`.
+All 54 row-sides were recomputed from the committed blobs: 53 matched, and one had drifted —
+`openrig-user`, whose `SKILL.md` was changed by OpenRig `31fe301b` (2026-10-08), *after* this
+inventory was built, leaving `6fa8ad6e…` recorded against a file that now hashes to `f3d34e6a…`.
+The stored digest was corrected. Two things made that drift worth chasing rather than noting:
+
+- `generated_from` named "HEAD at the time of writing", which cannot be recomputed. Unpinned, a
+  reader cannot tell a current digest from a stale one; the commit is now named.
+- The digest is load-bearing. `publish-skills` verifies each file it reads against this
+  inventory's digest and **refuses the whole run** when one is stale — `team_setup.py`:
+  *"the inventory is stale - regenerate it before publishing"*. Measured before the fix: the
+  command aborted on `openrig-user` and published nothing.
+
+The 35 canonical skills are mirrored to `packages/daemon/specs/agents/shared/skills/` upstream,
+and OpenRig guards its own mirrors with pinned digests (`scripts/skill-edge-digests.generated.json`).
+This file applies the same idea to the copy 4genthub seeds from. It is hand-maintained: no
+script writes it, so a source-side change must be re-measured here by hand.

@@ -4,13 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
 
-	seatservices "agenthub/fastmcp/seat_management/application/services"
 	"agenthub/fastmcp/seat_management/domain/repositories"
 	"agenthub/fastmcp/seat_management/domain/resolver"
 	"agenthub/fastmcp/task_management/infrastructure/database"
@@ -60,8 +60,10 @@ func (f *fakeSeatStatus) List(_ context.Context, userID string) ([]repositories.
 
 var seatStatusTestNow = time.Date(2026, 10, 3, 12, 0, 0, 0, time.UTC)
 
-// seatStatusTestToken is the machine token of machine pc-home of the test user.
-const seatStatusTestToken = "mt_seat-status-test-token"
+const (
+	tokenTestUserA = "11111111-1111-4111-8111-111111111111"
+	tokenTestUserB = "22222222-2222-4222-8222-222222222222"
+)
 
 func seatStatusTestMux(t *testing.T, source seatStatusSource) *http.ServeMux {
 	t.Helper()
@@ -69,16 +71,9 @@ func seatStatusTestMux(t *testing.T, source seatStatusSource) *http.ServeMux {
 	newSeatStatusSource = func(*database.SessionManager) (seatStatusSource, error) { return source, nil }
 	previousNow := seatStatusNow
 	seatStatusNow = func() time.Time { return seatStatusTestNow }
-	previousTokens := newMachineTokenRepo
-	tokens := &fakeMachineTokens{tokens: []*repositories.MachineToken{{
-		ID: "tok", UserID: "11111111-1111-4111-8111-111111111111", MachineID: "pc-home",
-		TokenHash: seatservices.HashMachineToken(seatStatusTestToken),
-	}}}
-	newMachineTokenRepo = func(*database.SessionManager) (repositories.MachineTokenRepository, error) { return tokens, nil }
 	t.Cleanup(func() {
 		newSeatStatusSource = previous
 		seatStatusNow = previousNow
-		newMachineTokenRepo = previousTokens
 	})
 	authenticateTestUser(t)
 	mux := http.NewServeMux()
@@ -88,7 +83,7 @@ func seatStatusTestMux(t *testing.T, source seatStatusSource) *http.ServeMux {
 
 func postSeatStatus(mux *http.ServeMux, body string) *httptest.ResponseRecorder {
 	req := httptest.NewRequest(http.MethodPost, "/api/v2/openrig/seat-status", strings.NewReader(body))
-	req.Header.Set("Authorization", "Bearer "+seatStatusTestToken)
+	req.Header.Set("Authorization", "Bearer test-token")
 	rec := httptest.NewRecorder()
 	mux.ServeHTTP(rec, req)
 	return rec
@@ -105,6 +100,15 @@ func getMachines(mux *http.ServeMux) *httptest.ResponseRecorder {
 const validSeatStatusBody = `{"machine_id":"pc-home","reported_at":"2026-10-03T11:59:30Z",` +
 	`"seats":[{"room":"eng","seat":"coder","state":"running","runtime":"claude-code","pinned_hash":"abc123","detail":"working","redacted":false}],` +
 	`"agents":[{"agent":"claude","status":"idle","pane_id":"w5:p3"}]}`
+
+// validSeatStatusBodyWithEdges is the same report carrying a topology: two links, of two different
+// kinds, so an implementation that kept only the first entry or dropped the kind cannot pass.
+const validSeatStatusBodyWithEdges = `{"machine_id":"pc-home","reported_at":"2026-10-03T11:59:30Z",` +
+	`"seats":[{"room":"eng","seat":"coder","state":"running","runtime":"claude-code","pinned_hash":"abc123","detail":"working","redacted":false}],` +
+	`"agents":[{"agent":"claude","status":"idle","pane_id":"w5:p3"}],` +
+	`"edges":[{"room":"eng","from":"lead","to":"coder","kind":"delegates_to"},{"room":"eng","from":"qa","to":"lead","kind":"escalates_to"}]}`
+
+const seatStatusTestUserID = "11111111-1111-4111-8111-111111111111"
 
 func TestSeatStatusPostStoresAndGetServes(t *testing.T) {
 	fake := &fakeSeatStatus{}
@@ -343,5 +347,99 @@ func TestSeatStatusGetReportsExpectedHashAndSync(t *testing.T) {
 	// key order: runtime, pinned_hash (what the seat has PINNED), expected_hash, sync, detail
 	if !strings.Contains(rec.Body.String(), `"runtime":"claude-code","pinned_hash":"h1","expected_hash":"h1","sync":"in_sync","detail":`) {
 		t.Fatalf("seat keys out of order: %s", rec.Body.String())
+	}
+}
+
+// ACCEPTANCE (b) - a report WITHOUT `edges` is accepted, keeps its seats, and reads back with an
+// EMPTY edge set rather than a missing key - lives ALONE in seat_status_no_edges_test.go. It is
+// alone on purpose: every test in THIS file needs a symbol the `edges` change adds, so this file
+// cannot compile at 02bfd416^, and the red for the wire contract has to be something a stranger can
+// run against the parent. See that file's header for the two commands that reproduce it.
+
+// ACCEPTANCE (a): well-formed edges persist and GET /machines returns them unchanged, in the
+// order reported. The exact rendered string is asserted, so a column name leaking onto the wire
+// (from_seat for from) or a lost kind fails here rather than in the frontend.
+func TestSeatStatusPostStoresEdgesAndGetServesThem(t *testing.T) {
+	fake := &fakeSeatStatus{}
+	mux := seatStatusTestMux(t, fake)
+	if rec := postSeatStatus(mux, validSeatStatusBodyWithEdges); rec.Code != http.StatusOK {
+		t.Fatalf("POST with edges = %d %s", rec.Code, rec.Body.String())
+	}
+	stored := fake.byUser[seatStatusTestUserID]["pc-home"]
+	want := []repositories.MachineEdge{
+		{Room: "eng", From: "lead", To: "coder", Kind: "delegates_to"},
+		{Room: "eng", From: "qa", To: "lead", Kind: "escalates_to"},
+	}
+	if len(stored.Edges) != len(want) || stored.Edges[0] != want[0] || stored.Edges[1] != want[1] {
+		t.Fatalf("stored edges = %+v, want %+v", stored.Edges, want)
+	}
+	rec := getMachines(mux)
+	const rendered = `"edges":[{"room":"eng","from":"lead","to":"coder","kind":"delegates_to"},` +
+		`{"room":"eng","from":"qa","to":"lead","kind":"escalates_to"}]`
+	if body := rec.Body.String(); !strings.Contains(body, rendered) {
+		t.Fatalf("GET must serve the reported edges unchanged and in order:\n%s\nwant %s", body, rendered)
+	}
+
+	// The other half of the replace rule, and the reason it is safe to send none: a later report
+	// with no edges replaces the set with the empty one instead of leaving these two behind.
+	if rec := postSeatStatus(mux, validSeatStatusBody); rec.Code != http.StatusOK {
+		t.Fatalf("second POST without edges = %d %s", rec.Code, rec.Body.String())
+	}
+	if left := fake.byUser[seatStatusTestUserID]["pc-home"].Edges; len(left) != 0 {
+		t.Fatalf("edges after a report carrying none = %+v, want the empty set", left)
+	}
+	if body := getMachines(mux).Body.String(); !strings.Contains(body, `"edges":[]`) {
+		t.Fatalf("machines body after the edgeless report:\n%s", body)
+	}
+}
+
+// ACCEPTANCE (d): a malformed edge is refused with a 4xx that NAMES the field, so whoever reads the
+// 400 knows which entry to fix. The unknown-field case is the (c) control inside the edges object:
+// DisallowUnknownFields reaches a nested array element too.
+func TestSeatStatusPostRejectsMalformedEdgesNamingTheField(t *testing.T) {
+	cases := map[string]struct{ body, want string }{
+		"bad kind":      {strings.Replace(validSeatStatusBodyWithEdges, `"delegates_to"`, `"shouts"`, 1), `edges[0].kind`},
+		"bad room":      {strings.Replace(validSeatStatusBodyWithEdges, `"room":"eng","from"`, `"room":"e/ng","from"`, 1), `edges[0]: room slug`},
+		"bad from":      {strings.Replace(validSeatStatusBodyWithEdges, `"from":"lead"`, `"from":"lea.d"`, 1), `edges[0]: seat key`},
+		"empty to":      {strings.Replace(validSeatStatusBodyWithEdges, `"to":"coder"`, `"to":""`, 1), `edges[0]: seat key`},
+		"self edge":     {strings.Replace(validSeatStatusBodyWithEdges, `"from":"qa","to":"lead"`, `"from":"lead","to":"lead"`, 1), `edges[1]: from and to are the same seat`},
+		"duplicate":     {strings.Replace(validSeatStatusBodyWithEdges, `{"room":"eng","from":"qa","to":"lead","kind":"escalates_to"}`, `{"room":"eng","from":"lead","to":"coder","kind":"delegates_to"}`, 1), `edges[1]: duplicate edge`},
+		"unknown field": {strings.Replace(validSeatStatusBodyWithEdges, `"kind":"delegates_to"}`, `"kind":"delegates_to","extra":1}`, 1), `unknown field`},
+	}
+	for name, tc := range cases {
+		fake := &fakeSeatStatus{}
+		rec := postSeatStatus(seatStatusTestMux(t, fake), tc.body)
+		if rec.Code != http.StatusBadRequest {
+			t.Errorf("%s: status = %d, want 400 (%s)", name, rec.Code, rec.Body.String())
+			continue
+		}
+		if !strings.Contains(rec.Body.String(), tc.want) {
+			t.Errorf("%s: body must name the field (%q): %s", name, tc.want, rec.Body.String())
+		}
+		if len(fake.byUser) != 0 {
+			t.Errorf("%s: an invalid report was stored", name)
+		}
+	}
+}
+
+// ACCEPTANCE (d), the cap: one past the limit the report is refused NAMING the cap rather than
+// truncated, and nothing is stored.
+func TestSeatStatusPostRejectsTooManyEdges(t *testing.T) {
+	var b strings.Builder
+	b.WriteString(`{"machine_id":"pc-home","reported_at":"2026-10-03T11:59:30Z","seats":[],"agents":[],"edges":[`)
+	for i := 0; i <= seatStatusMaxEdges; i++ {
+		if i > 0 {
+			b.WriteString(",")
+		}
+		fmt.Fprintf(&b, `{"room":"eng","from":"s%d","to":"t%d","kind":"can_observe"}`, i, i)
+	}
+	b.WriteString(`]}`)
+	fake := &fakeSeatStatus{}
+	rec := postSeatStatus(seatStatusTestMux(t, fake), b.String())
+	if rec.Code != http.StatusBadRequest || !strings.Contains(rec.Body.String(), fmt.Sprintf("edges cannot exceed %d", seatStatusMaxEdges)) {
+		t.Fatalf("status = %d body = %s, want 400 naming the cap", rec.Code, rec.Body.String())
+	}
+	if len(fake.byUser) != 0 {
+		t.Fatalf("an over-cap report was stored")
 	}
 }

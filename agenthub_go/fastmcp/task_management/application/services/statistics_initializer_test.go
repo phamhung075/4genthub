@@ -69,10 +69,6 @@ func (statsInitBackend) CreateProjectRepository(userID *string) (domainrepos.Pro
 	return nil, nil
 }
 
-func (statsInitBackend) NewAgentRepositoryFactory() repoProviderAgentRepositoryFactory {
-	return nil
-}
-
 func (statsInitBackend) CreateGitBranchRepository(userID *string) (domainrepos.GitBranchRepository, error) {
 	return nil, nil
 }

@@ -1,0 +1,8 @@
+## The gemini twin's four missed lines are fixed, and the read-back that found them is recorded
+
+### Fixed
+- **`.gemini/gemini.local.md:5,9,200,237` still named `CLAUDE.md` after `366a6fae`, which claimed nine sites per file and the class closed at `0 and 0`.** The claim was false for that file: its read-back shows the commit carrying only **three** of the six line changes the edits made (`:113`, `:358`, `:359`). The four missing lines now name `AGENTS.md`, so both twins match at all nine sites — `:5` with the rename named (`f7a809dc`), `:9`'s version-control row, and the two root-file lists at `:200` and `:237`, which keep the count of five true.
+
+### Verified
+- **Read back from the committed blob, not from the edit's echo:** `git show HEAD:.gemini/gemini.local.md | grep -c 'CLAUDE\.md'` → **1**, against **four** before — and the one that remains is deliberate: the rename parenthetical `(renamed from \`CLAUDE.md\` in \`f7a809dc\`)`, which is what a reader needs in order to find the old name from the new one. The stale-reference count is **0** in both twins.
+- **Cause of the loss, as far as the evidence goes and no further:** the four lines were written and were gone by the commit six minutes later; no tracked file writes that path; `git stash list` is empty; and another seat's commit (`73f7b253`, 23:07:27) landed inside the edit window while this repository's pre-commit hook stashes and restores unstaged worktree files — **named as a suspect, not a cause.** The path is also the output of the `/generate-local-rules` command, so a regeneration would restore exactly this kind of old text; no run was observed. **What is established is rule 64's own instrument: the read-back caught it, the success echo did not.**

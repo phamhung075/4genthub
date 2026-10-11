@@ -2,19 +2,18 @@
 DATABASE agenthub | rolname = 'agenthub_user'
 
 ## About This File
-This file (`CLAUDE.local.md`) contains **local, environment-specific rules** for AI agents working on this project. It is NOT checked into version control and complements the main `CLAUDE.md` file.
+This file (`.gemini/gemini.local.md`) contains **local, environment-specific rules** for AI agents working on this project. It IS tracked in this repository (`git ls-files` lists it; `git check-ignore` does not ignore it) and complements the main `AGENTS.md` file (renamed from `CLAUDE.md` in `f7a809dc`).
 
 | File | Purpose | Version Control |
 |------|---------|----------------|
-| **CLAUDE.md** | Main AI agent instructions (shared across team) | ✅ Checked in |
-| **CLAUDE.local.md** | Local environment rules and overrides | ❌ NOT checked in |
+| **AGENTS.md** | Main AI agent instructions (shared across team) | ✅ Checked in |
+| **CLAUDE.local.md** | Local environment rules and overrides | ✅ Tracked in this repository |
 
 **Quick Dev Commands:**
 - Restart after code change: `echo "R" | ./docker-system/docker-menu.sh`
 - Server entry point: `fastmcp.server.mcp_entry_point`
 - Docker menu rebuild: `./docker-system/docker-menu.sh` → option R
-- Run tests: `./scripts/test-menu.sh` or `python scripts/run-tests.py`
-- Database schema verification: `python scripts/verify_init_schema.py`
+- Run tests: `cd agenthub_go && go test ./...`; client: `cd agenthub_client && PYTHONPATH=src python3 -m pytest`
 
 **Critical Principles:**
 - Keycloak is source of truth for user authentication
@@ -27,8 +26,8 @@ This file (`CLAUDE.local.md`) contains **local, environment-specific rules** for
 ## 🚨 AGENTHUB-SPECIFIC: Test Fixing Priority
 
 **ORM Locations:**
-- **ORM Models**: `agenthub_main/src/fastmcp/task_management/domain/entities/*.py`
-- **Tests**: `agenthub_main/src/tests/`
+- **ORM Models**: `agenthub_go/fastmcp/task_management/domain/entities/*.go`
+- **Tests**: `*_test.go` beside the code, under `agenthub_go/`
 - **Rule**: ORM entity definitions = SOURCE OF TRUTH
 
 **Common Test Scenarios:**
@@ -108,10 +107,10 @@ with pytest.raises(ValueError, match="cannot exceed 1000"):
 | Path | Purpose | Port |
 |------|---------|------|
 | `agenthub-frontend/` | React/TypeScript frontend | 3800 |
-| `agenthub_main/src/` | Python/FastMCP/DDD backend | 8000 |
-| `agenthub_main/src/tests/` | Test files (unit, integration, e2e, performance) | - |
+| `agenthub_go/` | Go/DDD backend | 8000 |
+| `agenthub_go/**/*_test.go` | Go tests beside the code they test | - |
 | `00_RESOURCES/*` | Reference materials only (IGNORE) | - |
-| `00_RULES/*` | Legacy rules (use CLAUDE.md instead) | - |
+| `00_RULES/*` | Legacy rules (use AGENTS.md instead) | - |
 
 ### 4-Tier Context Hierarchy
 ```
@@ -127,7 +126,7 @@ GLOBAL (per-user) → PROJECT → BRANCH → TASK
 | **Database** | PostgreSQL (dev), SQLite fallback | Path: `/data/agenthub.db` (Docker volume) |
 | **Auth** | Keycloak + JWT tokens | Source of truth for user identity |
 | **Container** | Docker + docker-compose | PostgreSQL Local (recommended for dev) |
-| **MCP** | 15+ tool categories | 32 specialized agents |
+| **MCP** | 15+ tool categories | project agents registered, assigned and rebalanced via `manage_agent` |
 
 ### Local URLs & Paths
 - **Backend**: http://localhost:8000
@@ -195,10 +194,10 @@ ai_docs/
 
 | Rule | Description |
 |------|-------------|
-| **Test files** | Must be in `agenthub_main/src/tests/` only |
-| **Document files** | Must be in `ai_docs/` (except 5 allowed root files) |
+| **Test files** | Go tests: `*_test.go` beside the code; client tests: `agenthub_client/tests/` |
+| **Document files** | Must be in `ai_docs/` (except 4 allowed root files) |
 | **Kebab-case folders** | All ai_docs subfolders use lowercase-with-dashes |
-| **Root .md files** | ONLY 5 allowed: README.md, CHANGELOG.md, TEST-CHANGELOG.md, CLAUDE.md, CLAUDE.local.md |
+| **Root .md files** | ONLY 4 allowed: README.md, TEST-CHANGELOG.md, AGENTS.md, CLAUDE.local.md |
 | **Index files** | Auto-generated index.json (not index.md) |
 
 ---
@@ -206,7 +205,7 @@ ai_docs/
 ## 🔒 Essential Rules & File System Protection
 
 ### Changelog Updates (CRITICAL)
-**MANDATORY**: AI agents MUST update CHANGELOG.md when making ANY project changes
+**MANDATORY**: AI agents MUST record ANY project change by adding ONE new file `CHANGELOG/<YYYY-MM-DD>--<kebab-title>.md` (format and newest entries: `CHANGELOG/README.md`). Never edit an existing entry to add a new change, and do not read the whole directory: `ls CHANGELOG | tail` lists the newest.
 - Add new features → `### Added`
 - Document fixes → `### Fixed`
 - Breaking changes → `### Changed`
@@ -215,9 +214,9 @@ ai_docs/
 - Describe impact and testing performed
 
 **CHANGELOG LOCATION RULES**:
-- **Root CHANGELOG.md**: Project-wide changes (`/home/daihu/__projects__/4genthub/CHANGELOG.md`)
+- **Root `CHANGELOG/`**: Project-wide changes, one file per change (`/home/daihu/__projects__/4genthub/CHANGELOG/`)
 - **Frontend CHANGELOG.md**: Frontend-only changes (`agenthub-frontend/CHANGELOG.md`)
-- **NEVER** create CHANGELOG.md in other subdirectories
+- **NEVER** create CHANGELOG.md or a CHANGELOG/ directory in other subdirectories
 - **NEVER** add changelog entries to CLAUDE.local.md
 
 ### Context Management
@@ -235,15 +234,15 @@ ai_docs/
 #### Root Directory Restrictions
 - **NO file creation in root** (except files in `.allowed_root_files`)
 - **NO folder creation in root** (all folders should already exist)
-- **Allowed root files**: README.md, CHANGELOG.md, TEST-CHANGELOG.md, CLAUDE.md, CLAUDE.local.md
+- **Allowed root files**: README.md, TEST-CHANGELOG.md, AGENTS.md, CLAUDE.local.md
 
 #### File Type Restrictions
 | File Type | Allowed Location | Notes |
 |-----------|-----------------|-------|
-| **.md files** | `ai_docs/` | Except 5 allowed root files |
-| **Test files** | Directories in `.valid_test_paths` | `agenthub_main/src/tests/` |
+| **.md files** | `ai_docs/` | Except 4 allowed root files |
+| **Test files** | Directories in `.valid_test_paths` | `agenthub_go/`, `agenthub_client/tests/` |
 | **.sh scripts** | `scripts/` or `docker-system/` | No scripts in root |
-| **.venv** | `agenthub_main/.venv` | Only ONE .venv allowed |
+| **.venv** | `agenthub_client/.venv` | Only ONE .venv allowed |
 | **logs/** | Project root | Only ONE logs folder |
 | **.env* files** | Cannot be read/created | Security protection |
 
@@ -257,7 +256,7 @@ Located in `.claude/hooks/`:
 - **pre_tool_use.py**: Enforces file system protection rules
 - **post_tool_use.py**: Updates documentation index
 - **utils/session_tracker.py**: Manages 2-hour work sessions
-- **utils/docs_indexer.py**: Generates/maintains index.json
+- **utils/docs_indexer.py**: Generates/maintains index.json, including its final newline (`4d3247e`, `4genthub-hooks`). Before that commit a regenerated index had none, so this repository's own `end-of-file-fixer` refused the next commit over it and rewrote the file - the content was correct and only the terminal byte was missing.
 - **utils/env_loader.py**: Loads environment variables safely
 - **status_lines/status_line.py**: Displays environment paths
 
@@ -288,7 +287,7 @@ Follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/):
 ## 🎯 AI Workflow Best Practices
 
 ### MANDATORY Behaviors
-1. ✅ **UPDATE CHANGELOG.md** for ALL project changes (NOT CLAUDE.local.md)
+1. ✅ **ADD ONE `CHANGELOG/<date>--<title>.md` FILE** for ALL project changes (NOT CLAUDE.local.md)
 2. ✅ **CHECK ai_docs/index.json** for existing documentation before creating
 3. ✅ **FOLLOW DDD patterns** in codebase
 4. ✅ **TEST code examples** before documenting
@@ -336,26 +335,9 @@ echo "R" | ./docker-system/docker-menu.sh
 
 ## 🗄️ Database Schema Management
 
-**Schema File**: `agenthub_main/src/fastmcp/task_management/infrastructure/database/init_schema_postgresql.sql`
+**Schema File**: `agenthub_go/fastmcp/task_management/infrastructure/database/init_schema_postgresql.sql`
 
-| Script | Purpose | When to Use |
-|--------|---------|-------------|
-| `scripts/verify_init_schema.py` | Verify SQL file matches database (tables + columns) | After database changes or ORM updates |
-| `scripts/deep_verify_schema.py` | Deep verification (types, constraints, FKs) | Before production deployment |
-| `scripts/check_fk_cascade.py` | Check foreign key CASCADE behavior | Verify architectural compliance |
-| `scripts/generate_schema_sql.py` | Regenerate SQL from actual database | After ORM model changes |
-
-**Quick Commands**:
-```bash
-# Verify schema matches database
-python scripts/verify_init_schema.py
-
-# Deep verification with types/constraints
-python scripts/deep_verify_schema.py
-
-# Regenerate SQL file from current database
-python scripts/generate_schema_sql.py
-```
+The schema is the Go server's `init_schema_postgresql.sql`; change it together with the ORM entity it mirrors.
 
 **Critical Architecture Note**:
 - Database uses **NO CASCADE** on all foreign keys (intentional DDD design)
@@ -373,9 +355,8 @@ python scripts/generate_schema_sql.py
 - **Status**: ✅ Validated 2025-11-07 | 100% comprehensive | Token-optimized
 
 **Other Resources**:
-- **Comprehensive Rules**: See CLAUDE.md for complete agent switching, MCP tasks, and delegation models
-- **Vision System**: Refer to CLAUDE.md for workflow guidance and progress tracking details
-- **Agent Library**: 32 specialized agents documented in CLAUDE.md
+- **Comprehensive Rules**: See `AGENTS.md` for the complete task, MCP and delegation rules
+- **Vision System**: Refer to `AGENTS.md` for workflow guidance and progress tracking details
 - **Troubleshooter**: Use Task tool to launch Claude Code troubleshooter agent when needed
 ---
 

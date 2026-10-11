@@ -38,6 +38,7 @@ import type {
   SeatSettingsResponse,
   SeatTypesResponse,
   SeatsResponse,
+  TeamsResponse,
 } from '../types/seatTypes';
 
 const OPENRIG = '/api/v2/openrig';
@@ -78,6 +79,20 @@ export const seatApi = {
 
   deleteRoom: (room: string) =>
     apiRequest<DeletedResponse>(`${OPENRIG}/rooms/${segment(room)}`, { method: 'DELETE' }),
+
+  /**
+   * Share one room with one team, or make it private again with an empty team.
+   *
+   * OWNER-ONLY ON THE WIRE: the handler resolves the room through `GetRoomBySlug(userID, slug)`, which
+   * returns the caller's own room only, so a viewer's call is a 404 in the server's own words, and a
+   * team slug outside the caller's memberships is a 404 too. The caller must hold the room body's
+   * `role: 'owner'` before this is offered - the page does not probe the refusal.
+   */
+  setRoomTeam: (room: string, team: string) =>
+    apiRequest<RoomResponse>(`${OPENRIG}/rooms/${segment(room)}/team`, jsonPut({ team })),
+
+  /** The teams the caller belongs to; the picker's options, and the only slugs the route accepts. */
+  listTeams: () => apiRequest<TeamsResponse>(`${OPENRIG}/teams`),
 
   // Seat types and modules
   listSeatTypes: () => apiRequest<SeatTypesResponse>(`${OPENRIG}/seat-types`),
@@ -155,9 +170,13 @@ export const seatApi = {
       { method: 'DELETE' }
     ),
 
-  // Messages. The seat key is the whole path: this route is not room-scoped, unlike the rest.
-  sendSeatMessage: (seat: string, data: SeatMessageRequest) =>
-    apiRequest<SeatMessageResponse>(`${OPENRIG}/seats/${segment(seat)}/messages`, jsonBody(data)),
+  // Messages. Room-scoped like every other seat route: a seat is unique per (room_id, seat_key),
+  // so the key alone names a seat only by guessing its room.
+  sendSeatMessage: (room: string, seat: string, data: SeatMessageRequest) =>
+    apiRequest<SeatMessageResponse>(
+      `${OPENRIG}/rooms/${segment(room)}/seats/${segment(seat)}/messages`,
+      jsonBody(data)
+    ),
 
   // Bridge machines
   fetchMachines: () => apiRequest<MachinesResponse>(`${OPENRIG}/machines`),

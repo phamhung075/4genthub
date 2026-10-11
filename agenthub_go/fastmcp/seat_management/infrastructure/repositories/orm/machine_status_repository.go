@@ -10,14 +10,15 @@ import (
 	baserepo "agenthub/fastmcp/task_management/infrastructure/repositories"
 )
 
-// ORMMachineStatusRepository is the ORM MachineStatusRepository over machines and seat_status.
+// ORMMachineStatusRepository is the ORM MachineStatusRepository over machines, seat_status and
+// machine_edges.
 type ORMMachineStatusRepository struct {
 	*baserepo.ORMRepository[seatdb.MachineORM]
 }
 
 var _ domainrepo.MachineStatusRepository = (*ORMMachineStatusRepository)(nil)
 
-// NewORMMachineStatusRepository builds the repository over machines and seat_status.
+// NewORMMachineStatusRepository builds the repository over machines, seat_status and machine_edges.
 func NewORMMachineStatusRepository(sessions *database.SessionManager) (*ORMMachineStatusRepository, error) {
 	base, err := baserepo.NewORMRepository[seatdb.MachineORM]("machines", sessions)
 	if err != nil {
@@ -26,7 +27,8 @@ func NewORMMachineStatusRepository(sessions *database.SessionManager) (*ORMMachi
 	return &ORMMachineStatusRepository{ORMRepository: base}, nil
 }
 
-// ReplaceSnapshot upserts the machine and replaces its seat statuses in one transaction.
+// ReplaceSnapshot upserts the machine and replaces its seat statuses, agent snapshot and edge set
+// in one transaction.
 func (r *ORMMachineStatusRepository) ReplaceSnapshot(ctx context.Context, userID string, machine domainrepo.Machine) error {
 	agents, err := json.Marshal(machine.Agents)
 	if err != nil {
@@ -57,12 +59,31 @@ func (r *ORMMachineStatusRepository) ReplaceSnapshot(ctx context.Context, userID
 					return err
 				}
 			}
+			// The edge set is replaced wholesale too, like the seats and the agent snapshot: a
+			// report that carries no edges leaves the machine with none, which is what the
+			// seats-and-agents precedent does and what keeps a stale link from outliving the rig
+			// it describes.
+			if _, err := s.ExecContext(ctx,
+				`DELETE FROM "machine_edges" WHERE "user_id" = $1 AND "machine_id" = $2`,
+				userID, machine.MachineID,
+			); err != nil {
+				return err
+			}
+			for _, edge := range machine.Edges {
+				if _, err := s.ExecContext(ctx,
+					`INSERT INTO "machine_edges" ("user_id", "machine_id", "room", "from_seat", "to_seat", "kind") `+
+						`VALUES ($1, $2, $3, $4, $5, $6)`,
+					userID, machine.MachineID, edge.Room, edge.From, edge.To, edge.Kind,
+				); err != nil {
+					return err
+				}
+			}
 			return nil
 		})
 	})
 }
 
-// List returns the user's machines with their seat statuses and agents.
+// List returns the user's machines with their seat statuses, agents and reported edges.
 func (r *ORMMachineStatusRepository) List(ctx context.Context, userID string) ([]domainrepo.Machine, error) {
 	var machines []domainrepo.Machine
 	err := r.GetDBSession(ctx, func(ctx context.Context, s database.DBTX) error {
@@ -119,7 +140,30 @@ func (r *ORMMachineStatusRepository) List(ctx context.Context, userID string) ([
 				machines[i].Seats = append(machines[i].Seats, seat)
 			}
 		}
-		return seatRows.Err()
+		if err := seatRows.Err(); err != nil {
+			return err
+		}
+
+		edgeRows, err := s.QueryContext(ctx,
+			`SELECT "machine_id", "room", "from_seat", "to_seat", "kind" FROM "machine_edges" WHERE "user_id" = $1 `+
+				`ORDER BY "room", "from_seat", "to_seat", "kind"`, userID)
+		if err != nil {
+			return err
+		}
+		defer edgeRows.Close()
+		for edgeRows.Next() {
+			var (
+				machineID string
+				edge      domainrepo.MachineEdge
+			)
+			if err := edgeRows.Scan(&machineID, &edge.Room, &edge.From, &edge.To, &edge.Kind); err != nil {
+				return err
+			}
+			if i, ok := index[machineID]; ok {
+				machines[i].Edges = append(machines[i].Edges, edge)
+			}
+		}
+		return edgeRows.Err()
 	})
 	return machines, err
 }
@@ -136,6 +180,15 @@ func (r *ORMMachineStatusRepository) DeleteSeatStatusForSeat(ctx context.Context
 func (r *ORMMachineStatusRepository) DeleteSeatStatusForRoom(ctx context.Context, userID, roomSlug string) error {
 	return r.GetDBSession(ctx, func(ctx context.Context, s database.DBTX) error {
 		_, err := s.ExecContext(ctx, `DELETE FROM "seat_status" WHERE "user_id" = $1 AND "room" = $2`, userID, roomSlug)
+		return err
+	})
+}
+
+// DeleteMachineEdgesForRoom removes the room's reported topology edges, on every machine, for the
+// user. No foreign key cascades, so the room's deletion path calls this explicitly.
+func (r *ORMMachineStatusRepository) DeleteMachineEdgesForRoom(ctx context.Context, userID, roomSlug string) error {
+	return r.GetDBSession(ctx, func(ctx context.Context, s database.DBTX) error {
+		_, err := s.ExecContext(ctx, `DELETE FROM "machine_edges" WHERE "user_id" = $1 AND "room" = $2`, userID, roomSlug)
 		return err
 	})
 }

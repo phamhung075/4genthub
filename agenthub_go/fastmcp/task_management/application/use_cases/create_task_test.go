@@ -52,9 +52,9 @@ func createTaskMustID(t *testing.T, value string) value_objects.TaskId {
 
 func createTaskResponseKeys() []string {
 	return []string{"id", "title", "description", "status", "priority", "details", "estimatedEffort",
-		"assignees", "labels", "dependencies", "subtasks", "dueDate", "created_at", "updated_at",
+		"assignees", "acceptance_criteria", "scope", "labels", "dependencies", "subtasks", "dueDate", "created_at", "updated_at",
 		"git_branch_id", "project_id", "context_id", "context_data", "dependency_relationships",
-		"progress_percentage", "progress_history", "progress_count", "subtask_count", "completed_subtasks"}
+		"progress_percentage", "subtask_count", "completed_subtasks"}
 }
 
 func TestCreateTaskUseCaseSuccess(t *testing.T) {
@@ -69,7 +69,7 @@ func TestCreateTaskUseCaseSuccess(t *testing.T) {
 		Description:     &desc,
 		Details:         "first steps",
 		EstimatedEffort: "3h",
-		Assignees:       []string{"coding-agent", "@bob"},
+		Assignees:       []string{"@coding-agent", "@bob"},
 		Labels:          []string{"bug"},
 	})
 	if err != nil {
@@ -111,8 +111,8 @@ func TestCreateTaskUseCaseSuccess(t *testing.T) {
 	if tr.Details != "=== Progress 1 ===\nfirst steps" {
 		t.Fatalf("details = %q", tr.Details)
 	}
-	if !reflect.DeepEqual(tr.Assignees, []string{"coding-agent", "bob-agent"}) {
-		t.Fatalf("assignees = %v", tr.Assignees)
+	if !reflect.DeepEqual(tr.Assignees, []string{"@coding-agent", "@bob"}) {
+		t.Fatalf("assignees = %v, want the stored values unchanged", tr.Assignees)
 	}
 	if !reflect.DeepEqual(tr.Labels, []string{"bug"}) {
 		t.Fatalf("labels = %v", tr.Labels)

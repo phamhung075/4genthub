@@ -55,7 +55,7 @@ services:
   mcp-backend:
     build:
       context: ../..
-      dockerfile: docker-system/docker/Dockerfile.backend.production
+      dockerfile: docker-system/docker/Dockerfile.backend.go
     container_name: agenthub-backend
     restart: unless-stopped
     env_file:
@@ -65,12 +65,10 @@ services:
       DATABASE_HOST: postgres
       # Ensure production settings
       ENV: production
-      ENV: production
       NODE_ENV: production
     ports:
-      - "${MCP_PORT:-8001}:8001"
+      - "${MCP_PORT:-8000}:8000"
     volumes:
-      - ./agenthub_main:/app/agenthub_main:ro
       - ./logs:/app/logs
     networks:
       - agenthub_network
@@ -78,7 +76,7 @@ services:
       postgres:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      test: ["CMD", "/agenthub", "-healthcheck"]
       interval: 30s
       timeout: 10s
       retries: 3

@@ -17,9 +17,30 @@ type fakeDB struct {
 	statements []string
 	tables     map[string][]string
 	failExec   func(q string) error
+	// failTablesRead fails the information_schema.tables read specifically: a failed catalogue read and
+	// an empty database must be distinguishable, and only a seam that fails THAT query can show it.
+	failTablesRead func(q string) error
 	// schema is what the column drift query returns; blocking marks a NOT NULL column without a default.
 	schema    []fakeColumn
 	failQuery func(q string) error
+	// ledgerExists is whether applied_migrations is present, and migrations are the names it records.
+	// Together they are the migration runner's bookkeeping as a database would hold it: the runner's
+	// gate reads the catalogue, then to_regclass, then the ledger rows, and writes rows back.
+	ledgerExists bool
+	migrations   []string
+}
+
+// markLedger records that applied_migrations now exists (the runner's CREATE TABLE ran).
+func (f *fakeDB) markLedger() { f.mu.Lock(); f.ledgerExists = true; f.mu.Unlock() }
+
+// ledgerPresent reports whether applied_migrations exists.
+func (f *fakeDB) ledgerPresent() bool { f.mu.Lock(); defer f.mu.Unlock(); return f.ledgerExists }
+
+// recordMigration appends a name to the ledger, as the runner's INSERT does.
+func (f *fakeDB) recordMigration(name string) {
+	f.mu.Lock()
+	f.migrations = append(f.migrations, name)
+	f.mu.Unlock()
 }
 
 type fakeColumn struct {
@@ -62,6 +83,16 @@ func (s *fakeStmt) Close() error  { return nil }
 func (s *fakeStmt) NumInput() int { return -1 }
 func (s *fakeStmt) Exec(args []driver.Value) (driver.Result, error) {
 	s.f.record(s.q)
+	if strings.Contains(s.q, "CREATE TABLE applied_migrations") {
+		s.f.markLedger()
+	}
+	if strings.Contains(s.q, "INSERT INTO applied_migrations") {
+		if len(args) > 0 {
+			if name, ok := args[0].(string); ok {
+				s.f.recordMigration(name)
+			}
+		}
+	}
 	if s.f.failExec != nil {
 		if err := s.f.failExec(s.q); err != nil {
 			return nil, err
@@ -73,6 +104,11 @@ func (s *fakeStmt) Query(args []driver.Value) (driver.Rows, error) {
 	s.f.record(s.q)
 	switch {
 	case strings.Contains(s.q, "information_schema.tables"):
+		if s.f.failTablesRead != nil {
+			if err := s.f.failTablesRead(s.q); err != nil {
+				return nil, err
+			}
+		}
 		var rows [][]driver.Value
 		for _, t := range []string{"subtasks", "tasks"} {
 			if _, ok := s.f.tables[t]; ok {
@@ -97,10 +133,41 @@ func (s *fakeStmt) Query(args []driver.Value) (driver.Rows, error) {
 			rows = append(rows, []driver.Value{c})
 		}
 		return &fakeRows{cols: []string{"column_name"}, rows: rows}, nil
+	case strings.Contains(s.q, "pg_attribute"):
+		// The ensurer's verify pass reads the catalogue back. This double exists to model the DDL path,
+		// not to disagree with it, so it answers from the same TableDef the schema is built from: a
+		// relation the registry does not know returns no rows, which is how a fake database says it
+		// does not have that table.
+		if s.f.failQuery != nil {
+			if err := s.f.failQuery(s.q); err != nil {
+				return nil, err
+			}
+		}
+		var rows [][]driver.Value
+		for _, def := range Tables {
+			if def.Name != args[0].(string) {
+				continue
+			}
+			for _, c := range def.Columns {
+				rows = append(rows, []driver.Value{c.Name, c.SQLType, !c.Nullable})
+			}
+		}
+		return &fakeRows{cols: []string{"attname", "format_type", "attnotnull"}, rows: rows}, nil
 	case s.q == "SELECT version()":
 		return &fakeRows{cols: []string{"version"}, rows: [][]driver.Value{{"PostgreSQL 16 fake"}}}, nil
 	case s.q == "SELECT current_database()":
 		return &fakeRows{cols: []string{"db"}, rows: [][]driver.Value{{"fakedb"}}}, nil
+	case strings.Contains(s.q, "to_regclass"):
+		return &fakeRows{cols: []string{"?column?"}, rows: [][]driver.Value{{s.f.ledgerPresent()}}}, nil
+	case strings.Contains(s.q, "FROM applied_migrations"):
+		name, _ := args[0].(string)
+		var rows [][]driver.Value
+		for _, m := range s.f.migrations {
+			if m == name {
+				rows = append(rows, []driver.Value{1})
+			}
+		}
+		return &fakeRows{cols: []string{"?column?"}, rows: rows}, nil
 	}
 	return nil, fmt.Errorf("unexpected query %q", s.q)
 }

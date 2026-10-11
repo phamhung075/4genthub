@@ -97,7 +97,11 @@ func TestSubtaskRepositorySaveFindByIDAndIsolation(t *testing.T) {
 	ctx := context.Background()
 	repo := subtaskRepoNewRepo(t, fx, fx.userID)
 
-	entity := subtaskRepoNewEntity(t, fx.parent, "first", "todo", 0, []string{"coding-agent"})
+	// '@coding-agent', not a bare role name: the assignee rule accepts '@<seat_key>' only (the
+	// 32-role registry retired with the manage_agent tool), and this case builds its entity through
+	// NewSubtask, which refuses a bare name. The assignees value is incidental to this case's subject
+	// - save, find by id, and user isolation - so it stays one '@' assignee rather than being dropped.
+	entity := subtaskRepoNewEntity(t, fx.parent, "first", "todo", 0, []string{"@coding-agent"})
 	if entity.ID != nil {
 		t.Fatal("expected a generated id to be absent before save")
 	}

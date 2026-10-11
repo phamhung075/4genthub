@@ -153,6 +153,31 @@
         "match": "rig seat set-*",
         "approval": "deny",
         "sibling": "ask the lead."
+      },
+      {
+        "match": "cat *e2e-test-account*",
+        "approval": "deny",
+        "sibling": "the test account is read inside the test process only; printing the file leaks the password into the transcript."
+      },
+      {
+        "match": "grep *e2e-test-account*",
+        "approval": "deny",
+        "sibling": "the test account is read inside the test process only; printing the file leaks the password into the transcript."
+      },
+      {
+        "match": "head *e2e-test-account*",
+        "approval": "deny",
+        "sibling": "the test account is read inside the test process only; printing the file leaks the password into the transcript."
+      },
+      {
+        "match": "tail *e2e-test-account*",
+        "approval": "deny",
+        "sibling": "the test account is read inside the test process only; printing the file leaks the password into the transcript."
+      },
+      {
+        "match": "sed *e2e-test-account*",
+        "approval": "deny",
+        "sibling": "the test account is read inside the test process only; printing the file leaks the password into the transcript."
       }
     ]
   },

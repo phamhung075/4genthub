@@ -1,1 +1,0 @@
-"""Unit tests for auth domain value objects"""

@@ -254,7 +254,7 @@ func TestNewRouteDepsEmptyAppDoesNotPanic(t *testing.T) {
 
 // TestRemovedTaskRoutesAreAbsent pins the removal of the two task routes that
 // could only answer 500 (owner ruling 2026-10-08; decision note
-// ai_docs/architecture-design/decision-task-stats-endpoint.md, option C).
+// ai_docs/core-architecture/agenthub-system-architecture.md D3, option C).
 //
 // THE 404 ASSERTION IS OBSERVABLE FOR /api/tasks/{task_id} ONLY. The v2 stats
 // path sits UNDER THE "GET /api/v2/tasks/" PREFIX ROUTE, which in Go's ServeMux

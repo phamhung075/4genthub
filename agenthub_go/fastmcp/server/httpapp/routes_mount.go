@@ -166,16 +166,50 @@ func mountPerformanceRoutes(mux *http.ServeMux) {
 	}))
 }
 
+// metadataUsersOtherThan returns the users metadata addresses as recipients that are not caller, in
+// the order they appear. It reads user_ids and user_id, the two keys routes.BroadcastDataChange
+// resolves its recipients from, so the route can tell whether a frame would land in another user's
+// dashboard.
+func metadataUsersOtherThan(metadata *entities.OrderedMap[any], caller string) []string {
+	if metadata == nil {
+		return nil
+	}
+	var named []string
+	if v, ok := metadata.Get("user_ids"); ok {
+		switch list := v.(type) {
+		case []any:
+			for _, id := range list {
+				if s, ok := id.(string); ok && s != "" && s != caller {
+					named = append(named, s)
+				}
+			}
+		case []string:
+			for _, s := range list {
+				if s != "" && s != caller {
+					named = append(named, s)
+				}
+			}
+		}
+	}
+	if v, ok := metadata.Get("user_id"); ok {
+		if s, ok := v.(string); ok && s != "" && s != caller {
+			named = append(named, s)
+		}
+	}
+	return named
+}
+
 // --- broadcast_routes.py (/api/v2/broadcast) ---
 
 func mountBroadcastRoutes(mux *http.ServeMux, deps routeDeps) {
-	mux.HandleFunc("POST /api/v2/broadcast/notify", func(w http.ResponseWriter, r *http.Request) {
+	// The bridge is the only caller, so the target user is the caller's, never the body's.
+	mux.HandleFunc("POST /api/v2/broadcast/notify", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		m, ok := jsonBody(w, r)
 		if !ok {
 			return
 		}
 		var missing []string
-		for _, f := range []string{"event_type", "entity_type", "entity_id", "user_id"} {
+		for _, f := range []string{"event_type", "entity_type", "entity_id"} {
 			if _, has := m[f]; !has {
 				missing = append(missing, f)
 			}
@@ -184,13 +218,30 @@ func mountBroadcastRoutes(mux *http.ServeMux, deps routeDeps) {
 			writeMissing(w, "body", missing...)
 			return
 		}
+		metadata := orderedMapOf(m["metadata"])
+		// 338fe3a0, widened 2026-10-10 (lead-authorized): a client may address ITSELF and nobody else.
+		// BroadcastDataChange resolves the recipients it stores for while they are offline from
+		// metadata.user_ids and metadata.user_id for EVERY entity type, and the dashboard toasts task,
+		// subtask, project, branch, seat and room as well as notification (the task case is
+		// agenthub-frontend/src/hooks/useRealtimeSync.ts:161-162), so a client naming another user there
+		// writes into that user's dashboard with the text, the title and the sender of its choosing. No
+		// client presents a scope or a service identity that authorizes targeting another user, so such
+		// a frame is refused here whatever its entity type, rather than silently re-addressed. The
+		// internal producers are unaffected - they call routes.BroadcastDataChange directly and never
+		// come through this route (seatBroadcastFn passes nil metadata; the task/subtask facades stamp
+		// the camelCase actor key metadata.userId, which is not a recipient key).
+		if named := metadataUsersOtherThan(metadata, userID(u)); len(named) > 0 {
+			writeDetail(w, http.StatusForbidden,
+				"a frame may only be addressed to its sender: metadata names "+strings.Join(named, ", "))
+			return
+		}
 		req := routes.BroadcastRequest{
 			EventType:  getOptString(m, "event_type"),
 			EntityType: getOptString(m, "entity_type"),
 			EntityID:   getOptString(m, "entity_id"),
-			UserID:     getOptString(m, "user_id"),
+			UserID:     userID(u),
 			Data:       orderedMapOf(m["data"]),
-			Metadata:   orderedMapOf(m["metadata"]),
+			Metadata:   metadata,
 		}
 		if deps.broadcast == nil {
 			writeDetail(w, http.StatusInternalServerError, "Broadcast is not configured")
@@ -198,7 +249,7 @@ func mountBroadcastRoutes(mux *http.ServeMux, deps routeDeps) {
 		}
 		body, err := routes.TriggerBroadcast(r.Context(), req, deps.broadcast)
 		writeResult(w, body, err)
-	})
+	}))
 }
 
 // --- context_routes.py (/api/v2/contexts) ---

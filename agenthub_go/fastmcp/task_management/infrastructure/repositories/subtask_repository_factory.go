@@ -55,19 +55,19 @@ func FindProjectRoot() string {
 	_, file, _, _ := runtime.Caller(0)
 	currentPath := utilities.PyPath(file)
 	for utilities.PyParent(currentPath) != currentPath {
-		if subtaskRepoFactoryPathExists(utilities.PyJoin(currentPath, "agenthub_main")) {
+		if subtaskRepoFactoryPathExists(utilities.PyJoin(currentPath, "agenthub_go")) {
 			return currentPath
 		}
 		currentPath = utilities.PyParent(currentPath)
 	}
 	cwd, _ := os.Getwd()
 	cwd = utilities.PyPath(cwd)
-	if subtaskRepoFactoryPathExists(utilities.PyJoin(cwd, "agenthub_main")) {
+	if subtaskRepoFactoryPathExists(utilities.PyJoin(cwd, "agenthub_go")) {
 		return cwd
 	}
 	currentPath = utilities.PyPath(file)
 	for utilities.PyParent(currentPath) != currentPath {
-		if utilities.PyName(currentPath) == "agenthub_main" {
+		if utilities.PyName(currentPath) == "agenthub_go" {
 			return utilities.PyParent(currentPath)
 		}
 		currentPath = utilities.PyParent(currentPath)
@@ -76,12 +76,12 @@ func FindProjectRoot() string {
 	if !subtaskRepoFactoryPathExists(dataPath) {
 		cwd, _ := os.Getwd()
 		cwd = utilities.PyPath(cwd)
-		if subtaskRepoFactoryPathExists(utilities.PyJoin(cwd, "agenthub_main")) {
+		if subtaskRepoFactoryPathExists(utilities.PyJoin(cwd, "agenthub_go")) {
 			return cwd
 		}
 		current := utilities.PyPath(file)
 		for utilities.PyParent(current) != current {
-			if subtaskRepoFactoryPathExists(utilities.PyJoin(current, "agenthub_main")) {
+			if subtaskRepoFactoryPathExists(utilities.PyJoin(current, "agenthub_go")) {
 				return current
 			}
 			current = utilities.PyParent(current)
@@ -139,7 +139,7 @@ func (f *SubtaskRepositoryFactory) GetSubtaskDBPath(projectID, gitBranchName str
 	if envDBPath := subtaskRepoFactoryGetenv("MCP_DB_PATH", ""); envDBPath != "" {
 		return envDBPath
 	}
-	return utilities.PyJoin(f.ProjectRoot, "agenthub_main", "database", "data", "agenthub.db")
+	return utilities.PyJoin(f.ProjectRoot, "data", "agenthub.db")
 }
 
 // ---- helpers -------------------------------------------------------------------

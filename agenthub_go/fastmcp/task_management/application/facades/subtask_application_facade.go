@@ -29,7 +29,9 @@ type SubtaskRepositoryFactory interface {
 }
 
 // SubtaskContextResolver covers the DB-backed context derivation helpers in the
-// Python module (get_session + ORM models + auth_helper), which have no Go port.
+// Python module (get_session + ORM models + auth_helper); their Go ports are
+// infrastructure/database/session_manager.go, infrastructure/database/models.go and
+// interface/mcp_controllers/auth_helper/auth_helper.go.
 type SubtaskContextResolver interface {
 	DeriveContextFromTask(ctx context.Context, taskID string) (*entities.OrderedMap[any], error)
 	DeriveContextFromGitBranchID(ctx context.Context, gitBranchID string) (*entities.OrderedMap[any], error)
@@ -213,11 +215,13 @@ func (f *SubtaskApplicationFacade) handleCreateSubtask(ctx context.Context, task
 	}
 
 	request, err := subtask.NewAddSubtaskRequest(subtask.AddSubtaskRequest{
-		TaskID:      taskID,
-		Title:       title,
-		Description: omStringDefault(subtaskData, "description", ""),
-		Assignees:   omStrings(subtaskData, "assignees"),
-		Priority:    omStringPtr(subtaskData, "priority"),
+		TaskID:             taskID,
+		Title:              title,
+		Description:        omStringDefault(subtaskData, "description", ""),
+		Assignees:          omStrings(subtaskData, "assignees"),
+		AcceptanceCriteria: omStrings(subtaskData, "acceptance_criteria"),
+		Scope:              omStrings(subtaskData, "scope"),
+		Priority:           omStringPtr(subtaskData, "priority"),
 	})
 	if err != nil {
 		return nil, err
@@ -297,6 +301,8 @@ func (f *SubtaskApplicationFacade) handleUpdateSubtask(ctx context.Context, task
 		Status:             omStringPtr(subtaskData, "status"),
 		Priority:           omStringPtr(subtaskData, "priority"),
 		Assignees:          omAnySlice(subtaskData, "assignees"),
+		AcceptanceCriteria: omStrings(subtaskData, "acceptance_criteria"),
+		Scope:              omStrings(subtaskData, "scope"),
 		ProgressPercentage: omIntPtr(subtaskData, "progress_percentage"),
 		ProgressNotes:      omStringPtr(subtaskData, "progress_notes"),
 	}
@@ -502,9 +508,9 @@ func (f *SubtaskApplicationFacade) handleCompleteSubtask(ctx context.Context, ta
 }
 
 // completeEnriched ports the enrichment block. The Python code queries the ORM
-// model directly for persistence-only fields (blockers, progress_history,
-// completion_summary, insights_found, impact_on_parent); those have no Go port,
-// so they are taken from the request or defaulted.
+// model directly for persistence-only fields (blockers, completion_summary,
+// insights_found, impact_on_parent); those have no Go port, so they are taken
+// from the request or defaulted.
 func (f *SubtaskApplicationFacade) completeEnriched(ctx context.Context, subtaskID string,
 	subtaskRepository repositories.SubtaskRepository, completionSummary, testingNotes *string,
 	insightsFound []any) *entities.OrderedMap[any] {
@@ -542,8 +548,6 @@ func (f *SubtaskApplicationFacade) completeEnriched(ctx context.Context, subtask
 	out.Set("assignees", assignees)
 	out.Set("insights_found", insights)
 	out.Set("blockers", []any{})
-	out.Set("progress_history", entities.NewOrderedMap[any]())
-	out.Set("progress_count", 0)
 	out.Set("impact_on_parent", "")
 	return out
 }

@@ -12,7 +12,7 @@
  */
 
 import React, { useMemo, useState } from 'react';
-import { Boxes, Minus, Plus, RotateCcw, Trash2 } from 'lucide-react';
+import { Boxes, Minus, Pencil, Plus, RotateCcw, Trash2 } from 'lucide-react';
 import { Alert, AlertDescription } from '../ui/alert';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
@@ -32,6 +32,7 @@ import {
 } from '../../lib/blockComposition';
 import { mcpServerLabel } from '../../lib/mcpBlock';
 import type { McpServerEntry } from '../../hooks/useSeats';
+import type { EditableBlock } from './ModulePublishForm';
 import type {
   ModuleSummary,
   SeatModuleKind,
@@ -52,6 +53,12 @@ export interface SeatComposerProps {
   isSaving: boolean;
   saveError: string | null;
   onApply: (scope: SeatOverlayScope, ops: SeatOverlayOp[]) => void;
+  /**
+   * Hands ONE block to an editor OUTSIDE this component - the slug the row shows, the version IN
+   * EFFECT at this level, and its kind. OPTIONAL, and the affordance is rendered only when a caller
+   * asks for it: the composer is otherwise a read-and-arrange surface.
+   */
+  onEditBlock?: (block: EditableBlock) => void;
 }
 
 const SCOPE_LABEL: Record<SeatOverlayScope, string> = {
@@ -128,6 +135,7 @@ export const SeatComposer: React.FC<SeatComposerProps> = ({
   isSaving,
   saveError,
   onApply,
+  onEditBlock,
 }) => {
   const [scope, setScope] = useState<SeatOverlayScope>('seat');
   const [addSlug, setAddSlug] = useState('');
@@ -244,6 +252,7 @@ export const SeatComposer: React.FC<SeatComposerProps> = ({
             const block = row.block;
             if (!block) return null;
             const outcome = removalOutcome(row, scope);
+            const editKind = kindBySlug[row.slug] as SeatModuleKind | undefined;
             const mcpEntry = mcpServers[row.slug];
             const mcpLabel =
               kindBySlug[row.slug] === 'mcp'
@@ -273,17 +282,40 @@ export const SeatComposer: React.FC<SeatComposerProps> = ({
                     </Badge>
                   )}
                   {block.overridden && <Badge variant="outline">overridden</Badge>}
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    className="ml-auto"
-                    disabled={isSaving}
-                    onClick={() => onApply(scope, withRemovedBlock(scopeOps, row.slug))}
-                  >
-                    <Minus className="h-4 w-4" />
-                    Remove here
-                  </Button>
+                  <div className="ml-auto flex items-center gap-2">
+                    {/* WHAT AN EDIT CARRIES, and why it is the ROW's version rather than the modules
+                        list's: the list holds each module's LATEST published version, while a
+                        composed block is the version IN EFFECT here - so a pinned block would be
+                        edited, and republished, from a tree the user is not looking at. The KIND
+                        comes from the list because a composed block carries none; a slug the list
+                        does not carry gets NO affordance rather than one that opens a form which
+                        cannot be filled. The visible label matches the Modules row's; the
+                        accessible name carries the version so the two entry points stay apart. */}
+                    {onEditBlock && editKind && (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        aria-label={`Edit and publish block ${row.slug}@${block.version}`}
+                        onClick={() =>
+                          onEditBlock({ slug: row.slug, version: block.version, kind: editKind })
+                        }
+                      >
+                        <Pencil className="h-4 w-4" />
+                        Edit and publish
+                      </Button>
+                    )}
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      disabled={isSaving}
+                      onClick={() => onApply(scope, withRemovedBlock(scopeOps, row.slug))}
+                    >
+                      <Minus className="h-4 w-4" />
+                      Remove here
+                    </Button>
+                  </div>
                 </div>
                 <p className="mt-1 text-xs text-base-secondary">Removing here: {outcome.label}</p>
                 {block.pinnedAt && (
@@ -338,7 +370,15 @@ export const SeatComposer: React.FC<SeatComposerProps> = ({
               id="composer-add-slug"
               aria-label="Add a block"
               value={addSlug}
-              onChange={(event) => setAddSlug(event.target.value)}
+              onChange={(event) => {
+                const slug = event.target.value;
+                setAddSlug(slug);
+                // The version is part of the add op, so it cannot be dropped - but it must not be
+                // TYPED either: the modules list carries each module's latest published version, so
+                // choosing a module fills it and the add becomes a choice and a click. The field
+                // stays editable, because naming an older version is a legitimate thing to do.
+                setAddVersion(modules.find((module) => module.slug === slug)?.version ?? '');
+              }}
             >
               <option value="">Choose a module…</option>
               {modules.map((module) => {
@@ -347,19 +387,30 @@ export const SeatComposer: React.FC<SeatComposerProps> = ({
                   scope
                 );
                 const entry = mcpServers[module.slug];
-                const mcpInvalid = module.kind === 'mcp' && entry !== undefined && !entry.parse.ok;
+                // UNKNOWN IS NOT VALID. `useMcpServers` returns {} until its per-module reads land - and stays
+                // {} if they fail - so an mcp module can have NO entry here. Offering the option enabled in
+                // that window adds a block whose content nothing has checked, which is the same hole as
+                // presenting an invalid server as valid: the entry has to exist AND parse to be addable.
+                const mcpUnavailable = module.kind === 'mcp' && (entry === undefined || !entry.parse.ok);
                 const label =
                   module.kind === 'mcp' && entry && entry.parse.ok
                     ? `${module.slug} — ${mcpServerLabel(entry.parse.server)}`
                     : module.slug;
+                const suffix = mcpUnavailable
+                  ? entry === undefined
+                    ? ' (server not checked)'
+                    : ' (invalid server)'
+                  : outcome.allowed
+                    ? ''
+                    : ' (already in effect)';
                 return (
                   <option
                     key={module.slug}
                     value={module.slug}
-                    disabled={!outcome.allowed || mcpInvalid}
+                    disabled={!outcome.allowed || mcpUnavailable}
                   >
                     {label}
-                    {mcpInvalid ? ' (invalid server)' : outcome.allowed ? '' : ' (already in effect)'}
+                    {suffix}
                   </option>
                 );
               })}

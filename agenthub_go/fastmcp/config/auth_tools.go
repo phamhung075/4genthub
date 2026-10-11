@@ -27,9 +27,10 @@ type TokenInfo struct {
 	LastUsed   *time.Time
 }
 
-// AuthMiddleware is the fastmcp.auth.AuthMiddleware surface AuthenticationTools uses. The
-// Python module imports it from a package that has no Go port yet, so the required surface
-// is declared here; AuthenticateRequest returning a nil *TokenInfo is Python's None.
+// AuthMiddleware is the fastmcp.auth.AuthMiddleware surface AuthenticationTools uses. That
+// class has no Go implementation - the Go auth package ports the validator and the
+// middlewares, not this surface - so what the consumer needs is declared here;
+// AuthenticateRequest returning a nil *TokenInfo is Python's None.
 type AuthMiddleware interface {
 	Enabled() bool
 	AuthenticateRequest(token string) (*TokenInfo, error)

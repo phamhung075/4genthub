@@ -45,12 +45,15 @@ type UnifiedContextService struct {
 	EntityLookup EntityIDLookup
 }
 
-// EntityIDLookup is the git branch / task repository access create_context uses to
-// auto-detect project_id and git_branch_id. An empty id with a nil error means the
-// entity has no such value.
+// EntityIDLookup is the git branch / task repository access this service needs: the ids
+// create_context auto-detects (project_id, git_branch_id) and, for a task context, the live
+// task fields the read path serves in place of the record's creation-time copy.
 type EntityIDLookup interface {
 	BranchProjectID(ctx context.Context, userID *string, branchID string) (string, error)
 	TaskGitBranchID(ctx context.Context, userID *string, taskID string) (string, error)
+	// TaskOwnedFields returns the live task's own fields, in the shape
+	// TaskOwnedFieldsFromTask produces. A task that does not exist yields nil, nil.
+	TaskOwnedFields(ctx context.Context, userID *string, taskID string) (map[string]any, error)
 }
 
 // WithEntityLookup returns the service with the given entity lookup.
@@ -346,6 +349,7 @@ func (s *UnifiedContextService) GetContext(ctx context.Context, level, contextID
 	if includeInherited {
 		contextData = s.resolveInheritanceSync(ctx, contextLevel, contextEntity, contextData)
 	}
+	contextData = s.overlayTaskOwnedFields(ctx, contextLevel, contextID, effectiveUserID, contextData)
 	resp := entities.NewOrderedMap[any]()
 	resp.Set("success", true)
 	resp.Set("context", contextData)
@@ -353,6 +357,36 @@ func (s *UnifiedContextService) GetContext(ctx context.Context, level, contextID
 	resp.Set("context_id", zpUCSEntityID(contextEntity))
 	resp.Set("inherited", includeInherited)
 	return resp, nil
+}
+
+// overlayTaskOwnedFields serves the live task's own fields (status, priority, labels,
+// assignees, created_at, updated_at) in place of the copy the context record was created with.
+// The task entity is their source of truth; everything the context itself owns - objective,
+// estimated_effort, progress, insights, next_steps, notes - is left as stored. A nil lookup, a
+// lookup error, a task that no longer exists or a record without task_data leaves the stored
+// copy in place rather than failing the read.
+func (s *UnifiedContextService) overlayTaskOwnedFields(ctx context.Context, level value_objects.ContextLevel, contextID string, userID *string, contextData *entities.OrderedMap[any]) *entities.OrderedMap[any] {
+	if level != value_objects.ContextLevelTask || s.EntityLookup == nil || contextData == nil {
+		return contextData
+	}
+	live, err := s.EntityLookup.TaskOwnedFields(ctx, userID, contextID)
+	if err != nil || len(live) == 0 {
+		return contextData
+	}
+	stored, present := zpUCSGetPresent(contextData, "task_data")
+	if !present {
+		return contextData
+	}
+	taskData := zpUCSAsOrdered(stored)
+	for _, key := range []string{"status", "priority", "labels", "assignees", "created_at", "updated_at"} {
+		v, ok := live[key]
+		if !ok {
+			continue
+		}
+		taskData.Set(key, v)
+	}
+	contextData.Set("task_data", taskData)
+	return contextData
 }
 
 // UpdateContext mirrors update_context.
@@ -563,7 +597,12 @@ func (s *UnifiedContextService) AddProgress(ctx context.Context, level, contextI
 	}
 	contextVal, _ := contextResult.Get("context")
 	contextOM := zpUCSAsOrdered(contextVal)
-	progressUpdates := zpUCSList(contextOM, "progress_updates")
+	// The entity's load (createContextEntity / updateContextEntity) reads its notes from the top-level
+	// implementation_notes key, so a note written anywhere else is a write no reader can find. Inside that
+	// map the merge replaces progress_updates wholesale; at the top level it would append-merge and
+	// duplicate the entry on every call.
+	implementationNotes := zpUCSAsOrdered(zpUCSGetOr(contextOM, "implementation_notes", nil))
+	progressUpdates := zpUCSList(implementationNotes, "progress_updates")
 	progress := entities.NewOrderedMap[any]()
 	progress.Set("content", content)
 	if agent != nil {
@@ -573,8 +612,9 @@ func (s *UnifiedContextService) AddProgress(ctx context.Context, level, contextI
 	}
 	progress.Set("timestamp", value_objects.IsoFormat(time.Now().UTC()))
 	progressUpdates = append(progressUpdates, progress)
+	implementationNotes.Set("progress_updates", progressUpdates)
 	update := entities.NewOrderedMap[any]()
-	update.Set("progress_updates", progressUpdates)
+	update.Set("implementation_notes", implementationNotes)
 	return s.UpdateContext(ctx, level, contextID, update, true, nil)
 }
 
@@ -917,7 +957,6 @@ func (s *UnifiedContextService) createContextEntity(level value_objects.ContextL
 		metadata := zpUCSAsOrdered(zpUCSGetOr(data, "metadata", nil)).Copy()
 		metadata.Set("execution_context", zpUCSGetOr(data, "execution_context", nil))
 		metadata.Set("discovered_patterns", zpUCSGetOr(data, "discovered_patterns", nil))
-		metadata.Set("implementation_notes", zpUCSGetOr(data, "implementation_notes", nil))
 		metadata.Set("test_results", zpUCSGetOr(data, "test_results", nil))
 		metadata.Set("blockers", zpUCSGetOr(data, "blockers", nil))
 		t := entities.NewTaskContextUnified(contextID, branchIDStr)

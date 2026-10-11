@@ -4,7 +4,7 @@ Architecture you work inside: the brain is 4genthub in the cloud, the office is 
 
 What clean means here, as checks anyone can run:
 - Go: gofmt reports nothing for the files you touched, go vet passes, go test passes for the affected packages.
-- Frontend: no new TypeScript errors (23 old ones removed 2026-10-03; count now zero), vitest passes, vite build passes.
+- Frontend: `npx tsc --noEmit -p .` prints no `error TS` line, vitest passes, vite build passes.
 - Scripts: the script tests pass with --noconftest.
 - No compatibility code, no dead code, no duplicated definitions, one source of truth per concept.
 - Every change has a test and a changelog entry.

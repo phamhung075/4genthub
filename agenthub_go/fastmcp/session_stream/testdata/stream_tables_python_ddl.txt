@@ -1,3 +1,11 @@
+# FROZEN SNAPSHOT, NOT A LIVE MIRROR: the schema Python's Base.metadata.create_all created for
+# agent_sessions and agent_session_events, captured while the Go models printed this text line for
+# line - 30 lines each, diffed before this golden file was made (TEST-CHANGELOG 3040).
+# Frozen 2026-10-09 at a50929c6, "chore: remove agenthub_main, the retired Python backend", which
+# deleted the only source that could print it: it can NEVER be re-derived, agenthub_main is gone and
+# no `class AgentSession` remains anywhere in this repository.
+# The Go schema's deliberate divergences from it are declared in schema_test.go, each naming the commit
+# that made it; anything else is drift, and the comparison fails in both directions.
 == table agent_sessions
 col id | character varying | 36 | NO | None | 1
 col user_id | character varying | 64 | NO | None | 2

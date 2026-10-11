@@ -147,17 +147,22 @@ func RunConnectorVerb(ctx context.Context, args []string, stdout, stderr io.Writ
 	return 0
 }
 
-// firstRigSession asks the rig which session names exist. The shape of `rig ps --json` is not
-// re-derived here: every plausible key is accepted and, when none matches, the verb says what it saw
-// rather than reporting a session that does not exist.
-func firstRigSession(ctx context.Context) (string, error) {
+// rigSessionCandidates asks the rig which session names exist, in the order `rig ps --json` reports
+// them. The shape of `rig ps --json` is not re-derived here: every plausible key is accepted, a
+// candidate without a usable name is skipped, and duplicates are dropped rather than listed twice.
+//
+// It exists separately from firstRigSession because FIRST is only a safe answer when there is exactly
+// one: this environment reports fourteen sessions, so a verb that types text into a prompt must be able
+// to see the whole set and refuse, rather than taking the first and hoping. That distinction is why the
+// extraction is here and the refusal is at the caller.
+func rigSessionCandidates(ctx context.Context) ([]string, error) {
 	out, err := runRig(ctx, "ps", "--json")
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	var decoded any
 	if err := json.Unmarshal([]byte(out), &decoded); err != nil {
-		return "", fmt.Errorf("rig ps --json did not answer JSON: %w", err)
+		return nil, fmt.Errorf("rig ps --json did not answer JSON: %w", err)
 	}
 	var candidates []map[string]any
 	switch v := decoded.(type) {
@@ -183,14 +188,37 @@ func firstRigSession(ctx context.Context) (string, error) {
 			}
 		}
 	}
+	var names []string
+	seen := map[string]bool{}
 	for _, c := range candidates {
 		for _, key := range []string{"sessionName", "session_name", "name", "id", "logicalId"} {
-			if value, ok := c[key].(string); ok && value != "" {
-				return value, nil
+			value, ok := c[key].(string)
+			if !ok || value == "" {
+				continue
 			}
+			if !seen[value] {
+				seen[value] = true
+				names = append(names, value)
+			}
+			break
 		}
 	}
-	return "", fmt.Errorf("rig ps --json named no session this verb can send; pass --session <name>")
+	return names, nil
+}
+
+// firstRigSession returns the FIRST session the rig reports. ITS BEHAVIOUR IS UNCHANGED by the
+// extraction above, deliberately: other verbs call it, and redefining what "the first" means for them
+// is a different change with a different blast radius. A verb that TYPES text into a prompt does not use
+// this — it reads the whole candidate set and refuses when it holds more than one.
+func firstRigSession(ctx context.Context) (string, error) {
+	names, err := rigSessionCandidates(ctx)
+	if err != nil {
+		return "", err
+	}
+	if len(names) == 0 {
+		return "", fmt.Errorf("rig ps --json named no session this verb can send; pass --session <name>")
+	}
+	return names[0], nil
 }
 
 func rigTranscript(ctx context.Context, session string) (string, error) {

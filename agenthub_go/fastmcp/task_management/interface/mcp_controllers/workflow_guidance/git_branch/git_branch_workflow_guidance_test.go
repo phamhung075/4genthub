@@ -28,7 +28,7 @@ func TestGitBranchWorkflowGuidanceCreate(t *testing.T) {
 		t.Fatalf("examples len = %d, want 2", len(ex))
 	}
 	code, _ := ex[0].(*entities.OrderedMap[any]).Get("code")
-	wantCode := "manage_git_branch(\n    action=\"assign_agent\",\n    project_id=\"P1\",\n    git_branch_id=\"B1\",\n    agent_id=\"coding-agent\"\n)"
+	wantCode := "manage_git_branch(\n    action=\"assign_agent\",\n    project_id=\"P1\",\n    git_branch_id=\"B1\",\n    agent_id=\"@go-dev\"\n)"
 	if code != wantCode {
 		t.Errorf("examples[0].code = %q, want %q", code, wantCode)
 	}

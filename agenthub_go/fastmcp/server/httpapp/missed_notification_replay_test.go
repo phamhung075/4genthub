@@ -22,11 +22,22 @@ import (
 
 // newMissedNotificationAppEnv creates a throwaway database (AGENTHUB_TEST_PG_URL, see
 // tools/testpg) with all tables and returns a session manager over it.
+//
+// THE SKIP IS LOUD ON PURPOSE, because three cases in this package depend on this bring-up - the
+// offline notification store and its replay, the in-process boot, and schema-migration idempotence -
+// and the suite's CI job runs `go vet ./... && go test ./...` with no database service and no
+// AGENTHUB_TEST_PG_URL (.github/workflows/ci.yml). None of the three runs there, so a skip that says
+// only "not set" reads as coverage. To run them:
+//
+//	bash tools/testpg/start.sh
+//	AGENTHUB_TEST_PG_URL=postgresql://agenthub_user@127.0.0.1:55432/postgres go test -count=1 ./fastmcp/server/httpapp/
 func newMissedNotificationAppEnv(t *testing.T) *database.SessionManager {
 	t.Helper()
 	admin := os.Getenv("AGENTHUB_TEST_PG_URL")
 	if admin == "" {
-		t.Skip("AGENTHUB_TEST_PG_URL not set")
+		t.Skip("SKIPPED, NOT PASSED: AGENTHUB_TEST_PG_URL is unset, so this case did NOT run - " +
+			"and .github/workflows/ci.yml provides no database either; the comment above names the " +
+			"two commands that run it")
 	}
 	adm, err := sql.Open("pgx", admin)
 	if err != nil {
@@ -144,6 +155,10 @@ func TestMissedNotificationStoredOfflineAndReplayedOnce(t *testing.T) {
 	targetToken := wsTestTokenFor(t, target, nil)
 	otherToken := wsTestTokenFor(t, other, nil)
 
+	// ac2d6106: the notify ingress takes the user token and the target user is that token's user,
+	// never the body's. The token below belongs to `target`; the body posted below names `other`
+	// in its user_id field to prove that field cannot move the write.
+
 	server := httptest.NewServer(app.Handler())
 	defer server.Close()
 
@@ -151,14 +166,15 @@ func TestMissedNotificationStoredOfflineAndReplayedOnce(t *testing.T) {
 	// The producer puts the notification payload in `data`; BroadcastDataChange copies it to
 	// payload.data.primary, which is the frame the frontend consumer reads.
 	body := `{"event_type":"notification","entity_type":"notification","entity_id":"msg-live-1",` +
-		`"user_id":"` + target + `","data":{"id":"msg-live-1","title":"live notification"},` +
+		`"user_id":"` + other + `","data":{"id":"msg-live-1","title":"live notification"},` +
 		`"metadata":{"user_id":"` + target + `"}}`
 	req, err := http.NewRequest(http.MethodPost, server.URL+"/api/v2/broadcast/notify", bytes.NewBufferString(body))
 	if err != nil {
 		t.Fatal(err)
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer anything")
+	// The token names `target`; the body's user_id names `other` and must not move it.
+	req.Header.Set("Authorization", "Bearer "+targetToken)
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		t.Fatal(err)

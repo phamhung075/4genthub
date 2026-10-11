@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"fmt"
 
 	appexceptions "agenthub/fastmcp/task_management/application"
 	usecases "agenthub/fastmcp/task_management/application/use_cases"
@@ -46,7 +47,8 @@ type TaskContextSyncService struct {
 }
 
 // NewTaskContextSyncService mirrors __init__; the Python builds the hierarchical
-// context facade internally, Go receives it because FacadeService has no Go port.
+// context facade internally, Go receives it because FacadeService is ported in
+// application/services/facade_service.go and wired from the composition root.
 // It also resolves the git branch repository from RepositoryProviderService with the
 // same fail-fast behaviour as _get_git_branch_repository.
 func NewTaskContextSyncService(taskRepository repositories.TaskRepository,
@@ -198,8 +200,11 @@ func zpTaskCtxSyncStringValue(v any) string {
 	}
 }
 
-// SyncSubtaskCounts mirrors sync_subtask_counts. Python swallows all exceptions
-// (logging is dropped), so failures return nil.
+// SyncSubtaskCounts mirrors sync_subtask_counts. Its own preconditions still swallow: an unusable task
+// id, an absent or unusable subtask repository (the nil-repo case pins it) and a failed subtask read
+// all return nil, because none of them leaves anything to record. The context work does NOT swallow -
+// a read error, an unsuccessful read body and a refused update all reach the caller, which is what
+// stopped this defect living behind an hourly staleness.
 func (s *TaskContextSyncService) SyncSubtaskCounts(ctx context.Context, taskID string, subtaskRepository repositories.SubtaskRepository) error {
 	taskIDObj, err := value_objects.NewTaskId(taskID)
 	if err != nil {
@@ -256,22 +261,20 @@ func (s *TaskContextSyncService) SyncSubtaskCounts(ctx context.Context, taskID s
 
 	contextResult, err := s.hierarchicalContextService.GetContext(ctx, "task", taskID, false, false, nil)
 	if err != nil {
-		return nil
+		return fmt.Errorf("the task context could not be read: %w", err)
 	}
-	if contextResult != nil && value_objects.PyTruthy(zpTaskCtxSyncGet(contextResult, "success")) {
-		contextData, _ := zpTaskCtxSyncGet(contextResult, "context_data").(*entities.OrderedMap[any])
-		if contextData == nil {
-			contextData = entities.NewOrderedMap[any]()
-		}
-		subtasksData := entities.NewOrderedMap[any]()
-		subtasksData.Set("items", subtaskItems)
-		subtasksData.Set("total_count", totalCount)
-		subtasksData.Set("completed_count", completedCount)
-		subtasksData.Set("progress_percentage", progressPercentage)
-		contextData.Set("subtasks", subtasksData)
-		if _, err := s.hierarchicalContextService.UpdateContext(ctx, "task", taskID, contextData, false); err != nil {
-			return nil
-		}
+	if contextResult == nil || !value_objects.PyTruthy(zpTaskCtxSyncGet(contextResult, "success")) {
+		return fmt.Errorf("the task context could not be read: %v", zpTaskCtxSyncGet(contextResult, "error"))
+	}
+	contextData := zpUCSAsOrdered(zpTaskCtxSyncGet(contextResult, "context"))
+	subtasksData := entities.NewOrderedMap[any]()
+	subtasksData.Set("items", subtaskItems)
+	subtasksData.Set("total_count", totalCount)
+	subtasksData.Set("completed_count", completedCount)
+	subtasksData.Set("progress_percentage", progressPercentage)
+	contextData.Set("subtasks", subtasksData)
+	if _, err := s.hierarchicalContextService.UpdateContext(ctx, "task", taskID, contextData, false); err != nil {
+		return fmt.Errorf("the subtask counts did not land: %w", err)
 	}
 	return nil
 }
@@ -280,22 +283,17 @@ func (s *TaskContextSyncService) SyncSubtaskCounts(ctx context.Context, taskID s
 func (s *TaskContextSyncService) SyncTaskStatus(ctx context.Context, taskID string, newStatus string) error {
 	contextResult, err := s.hierarchicalContextService.GetContext(ctx, "task", taskID, false, false, nil)
 	if err != nil {
-		return nil
+		return fmt.Errorf("the task context could not be read: %w", err)
 	}
-	if contextResult != nil && value_objects.PyTruthy(zpTaskCtxSyncGet(contextResult, "success")) {
-		contextData, _ := zpTaskCtxSyncGet(contextResult, "context_data").(*entities.OrderedMap[any])
-		if contextData == nil {
-			contextData = entities.NewOrderedMap[any]()
-		}
-		metadata, ok := zpTaskCtxSyncGet(contextData, "metadata").(*entities.OrderedMap[any])
-		if !ok || metadata == nil {
-			metadata = entities.NewOrderedMap[any]()
-			contextData.Set("metadata", metadata)
-		}
-		metadata.Set("status", newStatus)
-		if _, err := s.hierarchicalContextService.UpdateContext(ctx, "task", taskID, contextData, false); err != nil {
-			return nil
-		}
+	if contextResult == nil || !value_objects.PyTruthy(zpTaskCtxSyncGet(contextResult, "success")) {
+		return fmt.Errorf("the task context could not be read: %v", zpTaskCtxSyncGet(contextResult, "error"))
+	}
+	contextData := zpUCSAsOrdered(zpTaskCtxSyncGet(contextResult, "context"))
+	metadata := zpUCSAsOrdered(zpTaskCtxSyncGet(contextData, "metadata"))
+	metadata.Set("status", newStatus)
+	contextData.Set("metadata", metadata)
+	if _, err := s.hierarchicalContextService.UpdateContext(ctx, "task", taskID, contextData, false); err != nil {
+		return fmt.Errorf("the status did not land in the task context: %w", err)
 	}
 	return nil
 }
@@ -304,53 +302,34 @@ func (s *TaskContextSyncService) SyncTaskStatus(ctx context.Context, taskID stri
 func (s *TaskContextSyncService) SyncTaskMetadata(ctx context.Context, taskID string, task *entities.Task) error {
 	contextResult, err := s.hierarchicalContextService.GetContext(ctx, "task", taskID, false, false, nil)
 	if err != nil {
-		return nil
+		return fmt.Errorf("the task context could not be read: %w", err)
 	}
 	if contextResult == nil || !value_objects.PyTruthy(zpTaskCtxSyncGet(contextResult, "success")) {
-		return nil
+		return fmt.Errorf("the task context could not be read: %v", zpTaskCtxSyncGet(contextResult, "error"))
 	}
-	contextData, _ := zpTaskCtxSyncGet(contextResult, "context_data").(*entities.OrderedMap[any])
-	if contextData == nil {
-		contextData = entities.NewOrderedMap[any]()
-	}
+	contextData := zpUCSAsOrdered(zpTaskCtxSyncGet(contextResult, "context"))
+	metadata := zpUCSAsOrdered(zpTaskCtxSyncGet(contextData, "metadata"))
+	objective := zpUCSAsOrdered(zpTaskCtxSyncGet(contextData, "objective"))
 
-	metadata, ok := zpTaskCtxSyncGet(contextData, "metadata").(*entities.OrderedMap[any])
-	if !ok || metadata == nil {
-		metadata = entities.NewOrderedMap[any]()
-		contextData.Set("metadata", metadata)
-	}
-	objective, ok := zpTaskCtxSyncGet(contextData, "objective").(*entities.OrderedMap[any])
-	if !ok || objective == nil {
-		objective = entities.NewOrderedMap[any]()
-		contextData.Set("objective", objective)
-	}
-
-	metadata.Set("status", zpTaskCtxSyncStringValue(task.Status))
-	metadata.Set("priority", zpTaskCtxSyncStringValue(task.Priority))
-	metadata.Set("labels", task.Labels)
-
-	assignees := make([]string, 0, len(task.Assignees))
-	for _, a := range task.Assignees {
-		if len(a) > 0 && a[0] == '@' {
-			assignees = append(assignees, a)
-		} else {
-			assignees = append(assignees, "@"+a)
+	// The task's own fields are shared with the context read overlay, so both serve the same
+	// values from the same place.
+	live := TaskOwnedFieldsFromTask(task)
+	for _, key := range []string{"status", "priority", "labels", "assignees", "created_at", "updated_at"} {
+		v, ok := live[key]
+		if !ok {
+			continue
 		}
+		metadata.Set(key, v)
 	}
-	metadata.Set("assignees", assignees)
+	contextData.Set("metadata", metadata)
 
-	if task.CreatedAt != nil {
-		metadata.Set("created_at", value_objects.IsoFormat(*task.CreatedAt))
-	}
-	if task.UpdatedAt != nil {
-		metadata.Set("updated_at", value_objects.IsoFormat(*task.UpdatedAt))
-	}
 	if task.EstimatedEffort != "" {
 		objective.Set("estimated_effort", task.EstimatedEffort)
 	}
+	contextData.Set("objective", objective)
 
 	if _, err := s.hierarchicalContextService.UpdateContext(ctx, "task", taskID, contextData, false); err != nil {
-		return nil
+		return fmt.Errorf("the task metadata did not land in the task context: %w", err)
 	}
 	return nil
 }

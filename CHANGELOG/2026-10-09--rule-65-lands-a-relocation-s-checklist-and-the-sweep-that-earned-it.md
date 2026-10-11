@@ -1,0 +1,8 @@
+## Rule 65 lands: a relocation's checklist, and the sweep that earned it
+
+### Added
+- `agenthub_go/NEXT_GEN.md`: **rule 65**, the relocation checklist the lead adopted from this seat's sweep — (i) grep the old path as a STRING across every language before staging a deletion, because tests, fixtures, refusal messages and docs hold paths no import graph sees; (ii) every moved entry point needs a verb or a door at its new home, or the obvious word falls through to something worse; (iii) a file that ships inside a package must be named in package-data, or it exists only in an editable checkout. Each clause carries the commit that earned it (`ff6fed10`, `ec220212`, `b10ed919`); the lead's clause (iv) sits immediately after (iii) — **THE COUNT FOUND FIFTY FILES; READING THE LINES FOUND TWO** — and the instrument's limit is stated beside the rule, because a sweep is a candidate list and not a work list.
+- Landed only after the architect cleared it, `NEXT_GEN.md` being that seat's file: they confirmed it equalled HEAD, nothing staged, rule 64 the last rule, no edit held. The ask was made although the file was clean — ownership is the condition, not current file state, and a clean diff is not permission. Rule 64's own discipline ran on this commit: `git diff HEAD --numstat -- agenthub_go/NEXT_GEN.md` before, `git show --numstat` after.
+
+### Not in this commit
+- The sweep's live residue stays held with the line decision: `README.md:141-143,147`, `ai_docs/operations/openrig-seat-limits.md:26-28` and `ai_docs/operations/seat-approval-and-the-startup-call.md:151`. The writer's `WRITER-BLOCKED-DOC-DEFECTS-2026-10-09.md` carries their exact patches and now carries this seat's line ranges.

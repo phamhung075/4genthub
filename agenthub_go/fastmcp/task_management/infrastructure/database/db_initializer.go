@@ -4,16 +4,27 @@ package database
 // task_management/infrastructure/database/db_initializer.py).
 //
 // Base.metadata.create_all/drop_all map to createAll and dropAllSchemaTables over Tables.
-// The init SQL file is read from the Python source tree (the generated SQL has no Go copy),
-// exactly as the Python reads it from its own directory. The naive "split on ;" and the
-// "skip statements starting with -- or /*" rule are kept verbatim.
+// The init SQL is EMBEDDED in this package, so the binary carries the schema instead of reading a
+// source path at runtime: that path resolved through runtime.Caller and failed inside the distroless
+// image, whose contents and working directory are not a source tree (row b231a84b). The naive
+// "split on ;" stays verbatim; the comment rule does NOT - skipping a chunk that STARTS with a comment
+// discarded the statement underneath it, so all 23 CREATE TABLE statements never ran (row 12444cc2).
+//
+// DELIBERATE DEPARTURE FROM THE REFERENCE - it must NOT be "restored" as a fidelity fix. The Python
+// `_get_existing_tables` (agenthub_main db_initializer.py:133-146 at a50929c6^, the commit that removed
+// the Python tree) catches `Exception`, logs "Failed to get existing tables" and returns an EMPTY SET;
+// initialize() then reads that failed read as an empty database - line 69 falls into the "Database is
+// empty - initializing with SQL files..." branch at 84-85 - and runs the init file, DROP TABLE IF
+// EXISTS ... CASCADE included. THIS PORT REFUSES INSTEAD: ExistingTables returns the error, Initialize
+// treats a failed read as CANNOT TELL and returns false WITHOUT running the SQL (row 8ee196db, lead
+// directed). A parity sweep that finds this difference and moves it back toward the Python re-opens
+// exactly that DROP.
 
 import (
 	"context"
 	"database/sql"
-	"os"
-	"path/filepath"
-	"runtime"
+	_ "embed"
+	"log"
 	"strings"
 	"sync"
 )
@@ -53,7 +64,9 @@ func NewDatabaseInitializer(ctx context.Context, deps Deps, cfg *DatabaseConfig)
 
 // Initialize mirrors initialize(): verify, then either verify the existing structure or run
 // the PostgreSQL init SQL file. The init SQL file is DDL, so it only runs when AUTO_MIGRATE=true;
-// without the opt-in a missing schema is reported as not initialized. It returns the Python bool.
+// without the opt-in a missing schema is reported as not initialized. A catalogue that cannot be READ
+// is neither empty nor populated - it is CANNOT TELL, and it refuses the DDL rather than unlocking it
+// (row 8ee196db). It returns the Python bool.
 func (d *DatabaseInitializer) Initialize() bool {
 	if d.cfg == nil || d.cfg.Engine == nil {
 		return false
@@ -61,7 +74,25 @@ func (d *DatabaseInitializer) Initialize() bool {
 	if !d.VerifyConnection() {
 		return false
 	}
-	if len(d.ExistingTables()) > 0 {
+	// The schema also carries `DROP TABLE IF EXISTS ... CASCADE` statements, and they DO run. Safety
+	// here is TWO conditions, and the second is the one that used to be missing: the catalogue must have
+	// ANSWERED - a failed read is not an empty database, it is CANNOT TELL, and the ERROR BRANCH BELOW
+	// returns false on it -
+	// and it must have answered EMPTY, so an empty database drops nothing and a populated one never
+	// reaches the SQL.
+	//
+	// The guard in db_initializer_verify_test.go covers the branch order those conditions create. It
+	// CANNOT see a failed read, because the fake it drives reports it as empty; the failed read is
+	// covered by TestInitializeRefusesTheDDLWhenTheCatalogueCannotBeRead. A guard that cannot see a case
+	// must not read as though it could.
+	existing, err := d.ExistingTables()
+	if err != nil {
+		// FAIL CLOSED. The next statements of that SQL are DROP TABLE IF EXISTS ... CASCADE, so an
+		// unreadable catalogue must refuse the run rather than pass for an empty database and unlock it.
+		log.Printf("database: could not read the existing tables (%v); refusing to run the init SQL, whose DROP TABLE IF EXISTS statements would run against a catalogue that could not be read", err)
+		return false
+	}
+	if len(existing) > 0 {
 		d.VerifyTableStructure()
 		d.Initialized = true
 		return true
@@ -69,7 +100,14 @@ func (d *DatabaseInitializer) Initialize() bool {
 	if !autoMigrateEnabled() {
 		return false
 	}
-	if d.ExecuteInitSQLFile("init_schema_postgresql.sql") {
+	if d.ExecuteInitSQLFile() {
+		// Running the schema is not the same as having it: VerifyTableStructure is what separates
+		// "the statements were accepted" from "the required tables exist", and the run used to report
+		// success for a database it had not built (rows b231a84b and 12444cc2).
+		if !d.VerifyTableStructure() {
+			log.Printf("database: the init SQL ran but the required tables are not all present; leaving the database uninitialized")
+			return false
+		}
 		d.Initialized = true
 		return true
 	}
@@ -85,17 +123,22 @@ func (d *DatabaseInitializer) VerifyConnection() bool {
 	return err == nil
 }
 
-// ExistingTables returns the current table names as a set.
-func (d *DatabaseInitializer) ExistingTables() map[string]bool {
-	out := map[string]bool{}
+// ExistingTables returns the current table names as a set, AND the error the read produced.
+//
+// The set alone cannot tell "the catalogue answered empty" from "the catalogue could not be read": the
+// query filters table_schema = current_schema(), so a wrong search_path or any failure answers empty.
+// That distinction is load-bearing here, because Initialize reads an empty catalogue as licence to run
+// a schema whose first statements are `DROP TABLE IF EXISTS ... CASCADE` (row 8ee196db).
+func (d *DatabaseInitializer) ExistingTables() (map[string]bool, error) {
 	tables, err := tableNames(d.ctx, d.cfg.Engine.DB)
 	if err != nil {
-		return out
+		return nil, err
 	}
+	out := map[string]bool{}
 	for _, t := range tables {
 		out[t] = true
 	}
-	return out
+	return out, nil
 }
 
 // RequiredTables returns the table names from Tables (Base.metadata).
@@ -107,41 +150,80 @@ func (d *DatabaseInitializer) RequiredTables() map[string]bool {
 	return out
 }
 
-// ExecuteInitSQLFile runs the init SQL file's statements in one transaction.
-func (d *DatabaseInitializer) ExecuteInitSQLFile(filename string) bool {
-	path := databaseInitializerSQLFilePath(filename)
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return false
-	}
+// databaseInitializerInitSQL is the schema this binary runs on a fresh database. It is EMBEDDED so the
+// asset travels with the binary: the source-path read it replaces resolved through runtime.Caller
+// against the working directory and failed in the distroless image, whose root holds the binary itself
+// and no source tree (row b231a84b). The .sql file stays the single source - edit it, never a copy.
+//
+//go:embed init_schema_postgresql.sql
+var databaseInitializerInitSQL []byte
+
+// ExecuteInitSQLFile runs the embedded schema's statements in one transaction. Every false return says
+// which error produced it: with the schema embedded, an unreadable asset - the failure that used to
+// hide behind a bare bool here (row b231a84b) - is impossible by construction.
+func (d *DatabaseInitializer) ExecuteInitSQLFile() bool {
 	tx, err := d.cfg.Engine.DB.BeginTx(d.ctx, nil)
 	if err != nil {
+		log.Printf("database: could not begin the init SQL transaction: %v", err)
 		return false
 	}
-	statements := strings.Split(string(data), ";")
+	statements := strings.Split(string(databaseInitializerInitSQL), ";")
 	for _, raw := range statements {
-		statement := strings.TrimSpace(raw)
+		statement := stripLeadingComments(raw)
 		if statement == "" {
-			continue
-		}
-		lower := strings.ToLower(statement)
-		if strings.HasPrefix(lower, "--") || strings.HasPrefix(lower, "/*") {
 			continue
 		}
 		if _, err := tx.ExecContext(d.ctx, statement); err != nil {
 			_ = tx.Rollback()
+			log.Printf("database: init SQL statement failed, rolled back: %v: %s", err, statement)
 			return false
 		}
 	}
 	if err := tx.Commit(); err != nil {
+		log.Printf("database: could not commit the init SQL transaction: %v", err)
 		return false
 	}
 	return true
 }
 
+// stripLeadingComments drops whole comment lines from the FRONT of a statement chunk and returns what
+// is left to execute. The port inherited "skip a chunk that starts with -- or /*", which threw the
+// statement away together with its comment, and every table in this schema is preceded by a
+// `-- Table: X` line - so a run over an empty database created nothing and reported success (row
+// 12444cc2). A chunk that is only a comment still yields "", and a comment INSIDE a statement is left
+// for Postgres to read.
+func stripLeadingComments(chunk string) string {
+	rest := chunk
+	for {
+		trimmed := strings.TrimSpace(rest)
+		switch {
+		case trimmed == "":
+			return ""
+		case strings.HasPrefix(trimmed, "--"):
+			newline := strings.IndexByte(trimmed, '\n')
+			if newline < 0 {
+				return ""
+			}
+			rest = trimmed[newline+1:]
+		case strings.HasPrefix(trimmed, "/*"):
+			end := strings.Index(trimmed, "*/")
+			if end < 0 {
+				return ""
+			}
+			rest = trimmed[end+2:]
+		default:
+			return trimmed
+		}
+	}
+}
+
 // VerifyTableStructure checks the required core tables are present.
 func (d *DatabaseInitializer) VerifyTableStructure() bool {
-	existing := d.ExistingTables()
+	existing, err := d.ExistingTables()
+	if err != nil {
+		log.Printf("database: could not read the existing tables (%v); the table structure cannot be verified", err)
+		return false
+	}
 	for _, name := range databaseInitializerRequiredTables {
 		if !existing[name] {
 			return false
@@ -225,16 +307,4 @@ func ResetDatabase(ctx context.Context, deps Deps, confirm bool) bool {
 		return false
 	}
 	return inst.ResetDatabase(confirm)
-}
-
-// databaseInitializerSQLFilePath resolves the generated SQL in the Python source tree,
-// relative to this Go source file (repository root is five levels up).
-func databaseInitializerSQLFilePath(filename string) string {
-	_, file, _, ok := runtime.Caller(0)
-	if !ok {
-		return filename
-	}
-	dir := filepath.Dir(file)
-	root := filepath.Clean(filepath.Join(dir, "..", "..", "..", "..", ".."))
-	return filepath.Join(root, "agenthub_main", "src", "fastmcp", "task_management", "infrastructure", "database", filename)
 }

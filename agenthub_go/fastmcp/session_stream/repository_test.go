@@ -3,6 +3,7 @@ package session_stream
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"strings"
 	"testing"
 	"time"
@@ -50,7 +51,7 @@ func TestClip(t *testing.T) {
 }
 
 func TestAppendEventsBatchLimit(t *testing.T) {
-	_, err := AppendEvents(context.Background(), nil, "u", "s", make([]any, MaxEventsPerBatch+1))
+	_, _, err := AppendEvents(context.Background(), nil, "u", "s", make([]any, MaxEventsPerBatch+1), nil)
 	var ve *tmvo.ValueError
 	if !errors.As(err, &ve) || ve.Msg != "at most 200 events per batch" {
 		t.Fatalf("err = %v, want ValueError 'at most 200 events per batch'", err)
@@ -59,7 +60,7 @@ func TestAppendEventsBatchLimit(t *testing.T) {
 
 func TestMarkOfflineWithoutSessions(t *testing.T) {
 	DefaultSessions = nil
-	err := MarkOffline(context.Background(), nil, "u", "c")
+	_, err := MarkOffline(context.Background(), nil, "u", "c")
 	if err == nil || err.Error() != "database configuration not available" {
 		t.Fatalf("err = %v", err)
 	}
@@ -72,6 +73,92 @@ func event(typ string, payload any) *entities.OrderedMap[any] {
 	return m
 }
 
+// The pair a connector reports: HALF of one is refused, because it is ambiguous and the table's own
+// CHECK could not store it - but a WHOLE pair that cannot be addressed loses the annotation and
+// keeps the session, so an unaddressable rig name never costs a connector its event stream. No
+// database is needed - the rule is checked before any statement is built.
+func TestSeatIdentityRefusesHalfAPairAndDropsAnUnaddressableOne(t *testing.T) {
+	if room, seat, dropped, err := seatIdentity(nil, nil); room != nil || seat != nil || dropped || err != nil {
+		t.Errorf("neither reported: got %v, %v, dropped=%v, err=%v - want all empty", room, seat, dropped, err)
+	}
+	for _, c := range []struct {
+		name       string
+		room, seat *string
+	}{
+		{"room without seat", new("dev"), nil},
+		{"seat without room", nil, new("alice")},
+		{"an empty room beside a seat", new(""), new("alice")},
+	} {
+		if room, seat, dropped, err := seatIdentity(c.room, c.seat); err == nil {
+			t.Errorf("%s: got %v, %v, dropped=%v with no error, want a refusal", c.name, room, seat, dropped)
+		} else if !strings.Contains(err.Error(), "room") && !strings.Contains(err.Error(), "seat") {
+			t.Errorf("%s: error = %v, want it to name the rule", c.name, err)
+		}
+	}
+	room, key, dropped, err := seatIdentity(new("dev"), new("alice"))
+	if err != nil || dropped || room == nil || key == nil || *room != "dev" || *key != "alice" {
+		t.Errorf("a whole pair must pass through: %v, %v, dropped=%v, %v", room, key, dropped, err)
+	}
+	// namePattern is OpenRig's POD OR MEMBER ID rule, and room_slug carries a RIG name - a rig the
+	// server did not render may be named anything, so the annotation goes and nothing else does.
+	for _, c := range []struct {
+		name       string
+		room, seat *string
+	}{
+		{"a rig name that carries a dot", new("4genthub.dev"), new("go-dev")},
+		{"a rig name that carries a space", new("not a room"), new("alice")},
+		{"a member that cannot name one", new("dev"), new("-lead")},
+	} {
+		room, seat, dropped, err := seatIdentity(c.room, c.seat)
+		if err != nil || !dropped || room != nil || seat != nil {
+			t.Errorf("%s: got %v, %v, dropped=%v, err=%v - want the pair dropped with no error", c.name, room, seat, dropped, err)
+		}
+	}
+}
+
+// A dropped pair is not a shrug: the warning is the only trace of what was discarded, so it names
+// both halves exactly as the frame sent them - that is what tells an operator which rig could not
+// be addressed. A two-value swap here would leave the log silent about the values it is about.
+func TestDroppedSeatPairWarnsWithBothValues(t *testing.T) {
+	rec := &recordingHandler{}
+	prev := slog.Default()
+	slog.SetDefault(slog.New(rec))
+	defer slog.SetDefault(prev)
+
+	warnUnaddressableSeatPair("key1", "conn1", "4genthub.dev", "go-dev")
+
+	if len(rec.records) != 1 {
+		t.Fatalf("records = %d, want exactly 1", len(rec.records))
+	}
+	got := rec.records[0]
+	if got.Level != slog.LevelWarn {
+		t.Errorf("level = %v, want warn", got.Level)
+	}
+	fields := map[string]string{}
+	got.Attrs(func(a slog.Attr) bool { fields[a.Key] = a.Value.String(); return true })
+	for k, want := range map[string]string{
+		"session_key": "key1", "connector_id": "conn1", "room_slug": "4genthub.dev", "seat_key": "go-dev",
+	} {
+		if fields[k] != want {
+			t.Errorf("%s = %q, want %q", k, fields[k], want)
+		}
+	}
+}
+
+// recordingHandler keeps the records a logger emitted, so a test can read a warning as a fact.
+type recordingHandler struct{ records []slog.Record }
+
+func (h *recordingHandler) Enabled(context.Context, slog.Level) bool { return true }
+
+func (h *recordingHandler) Handle(_ context.Context, r slog.Record) error {
+	h.records = append(h.records, r)
+	return nil
+}
+
+func (h *recordingHandler) WithAttrs([]slog.Attr) slog.Handler { return h }
+
+func (h *recordingHandler) WithGroup(string) slog.Handler { return h }
+
 func TestRepositoryPostgres(t *testing.T) {
 	sessions := testdb.NewSessions(t)
 	ctx := context.Background()
@@ -81,11 +168,13 @@ func TestRepositoryPostgres(t *testing.T) {
 	sid := SessionIDFor(user, connector, key)
 
 	project := "proj"
-	row, err := UpsertSession(ctx, sessions, user, connector, key, "name", &project)
+	room, seat := "dev", "alice"
+	up, err := UpsertSession(ctx, sessions, user, connector, key, "name", &project, &room, &seat, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	wantKeys := []string{"id", "name", "project", "status", "connector_id", "last_seq", "created_at", "last_seen"}
+	row := up.Row
+	wantKeys := []string{"id", "name", "project", "status", "connector_id", "last_seq", "created_at", "last_seen", "room_slug", "seat_key", "seat_state"}
 	if got := row.Keys(); strings.Join(got, ",") != strings.Join(wantKeys, ",") {
 		t.Fatalf("row keys = %v, want %v", got, wantKeys)
 	}
@@ -103,11 +192,11 @@ func TestRepositoryPostgres(t *testing.T) {
 	}
 
 	// A different user has a different deterministic id and cannot see user1's row.
-	rowOther, err := UpsertSession(ctx, sessions, "user2", connector, key, "n", nil)
+	rowOther, err := UpsertSession(ctx, sessions, "user2", connector, key, "n", nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if otherID, _ := rowOther.Get("id"); otherID == sid {
+	if otherID, _ := rowOther.Row.Get("id"); otherID == sid {
 		t.Fatalf("user2 got user1's id")
 	}
 	if g, _ := GetSessionForUser(ctx, sessions, "user2", sid); g != nil {
@@ -116,15 +205,49 @@ func TestRepositoryPostgres(t *testing.T) {
 
 	// Update keeps project when the new one is empty, updates name.
 	empty := ""
-	row2, err := UpsertSession(ctx, sessions, user, connector, key, "renamed", &empty)
+	up2, err := UpsertSession(ctx, sessions, user, connector, key, "renamed", &empty, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
+	row2 := up2.Row
 	if v, _ := row2.Get("name"); v != "renamed" {
 		t.Errorf("name = %v", v)
 	}
 	if v, _ := row2.Get("project"); v != "proj" {
 		t.Errorf("project = %v, want proj (kept)", v)
+	}
+	if v, _ := row2.Get("room_slug"); v != "dev" {
+		t.Errorf("room_slug = %v, want dev (kept: the frame carried no pair)", v)
+	}
+	if v, _ := row2.Get("seat_key"); v != "alice" {
+		t.Errorf("seat_key = %v, want alice (kept: the frame carried no pair)", v)
+	}
+
+	// A frame that names BOTH halves but cannot address them KEEPS THE SESSION and drops the pair:
+	// the session still exists, and the identity the connector carried is gone rather than stored
+	// raw. This is what a rig the server never rendered reaches - namePattern is the pod-or-member
+	// rule, while room_slug holds a rig name.
+	badRoom, badSeat := "4genthub.dev", "go-dev"
+	upDropped, err := UpsertSession(ctx, sessions, user, connector, key, "renamed", nil, &badRoom, &badSeat, nil)
+	if err != nil {
+		t.Fatalf("an unaddressable pair must not refuse the frame: %v", err)
+	}
+	droppedRow := upDropped.Row
+	if v, _ := droppedRow.Get("room_slug"); v != nil {
+		t.Errorf("room_slug = %v, want nil (the pair was not addressable)", v)
+	}
+	if v, _ := droppedRow.Get("seat_key"); v != nil {
+		t.Errorf("seat_key = %v, want nil", v)
+	}
+	storedRow, err := GetSessionForUser(ctx, sessions, user, sid)
+	if err != nil || storedRow == nil {
+		t.Fatalf("the session must still exist after an unaddressable pair: %v, %v", storedRow, err)
+	}
+	if v, _ := storedRow.Get("room_slug"); v != nil {
+		t.Errorf("stored room_slug = %v, want nil", v)
+	}
+	if v, _ := storedRow.Get("seat_key"); v != nil {
+		t.Errorf("stored seat_key = %v, want nil", v)
 	}
 
 	// Append assigns seq server-side.
@@ -132,7 +255,7 @@ func TestRepositoryPostgres(t *testing.T) {
 	p1.Set("text", "one")
 	p2 := entities.NewOrderedMap[any]()
 	p2.Set("text", "two")
-	stored, err := AppendEvents(ctx, sessions, user, sid, []any{event("message", p1), event("output", p2)})
+	stored, _, err := AppendEvents(ctx, sessions, user, sid, []any{event("message", p1), event("output", p2)}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -153,7 +276,7 @@ func TestRepositoryPostgres(t *testing.T) {
 	}
 
 	// Non-object events are rejected.
-	_, err = AppendEvents(ctx, sessions, user, sid, []any{"nope"})
+	_, _, err = AppendEvents(ctx, sessions, user, sid, []any{"nope"}, nil)
 	var ve *tmvo.ValueError
 	if !errors.As(err, &ve) || ve.Msg != "each event must be an object" {
 		t.Fatalf("non-object event err = %v", err)
@@ -161,7 +284,7 @@ func TestRepositoryPostgres(t *testing.T) {
 
 	// Unknown session is a PermissionError.
 	var pe *PermissionError
-	_, err = AppendEvents(ctx, sessions, user, "00000000-0000-0000-0000-000000000000", []any{event("message", p1)})
+	_, _, err = AppendEvents(ctx, sessions, user, "00000000-0000-0000-0000-000000000000", []any{event("message", p1)}, nil)
 	if !errors.As(err, &pe) || pe.Msg != "unknown session" {
 		t.Fatalf("unknown session err = %v", err)
 	}
@@ -169,7 +292,7 @@ func TestRepositoryPostgres(t *testing.T) {
 	// Oversized payload becomes {"truncated": true}.
 	big := entities.NewOrderedMap[any]()
 	big.Set("x", strings.Repeat("a", MaxPayloadChars))
-	storedBig, err := AppendEvents(ctx, sessions, user, sid, []any{event("message", big)})
+	storedBig, _, err := AppendEvents(ctx, sessions, user, sid, []any{event("message", big)}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -213,7 +336,7 @@ func TestRepositoryPostgres(t *testing.T) {
 		t.Fatalf("user2 must not see user1 session: %v", g)
 	}
 
-	if err := MarkOffline(ctx, sessions, user, connector); err != nil {
+	if _, err := MarkOffline(ctx, sessions, user, connector); err != nil {
 		t.Fatal(err)
 	}
 	off, _ := GetSessionForUser(ctx, sessions, user, sid)
@@ -234,7 +357,7 @@ func TestRepositoryPostgres(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	_, err = UpsertSession(ctx, sessions, user, connector, key, "x", nil)
+	_, err = UpsertSession(ctx, sessions, user, connector, key, "x", nil, nil, nil, nil)
 	if !errors.As(err, &pe) || pe.Msg != "session belongs to another user" {
 		t.Fatalf("foreign row upsert err = %v", err)
 	}
@@ -246,10 +369,11 @@ func TestRepositoryPostgres(t *testing.T) {
 func TestSessionTimestampsRenderAsNaiveUTC(t *testing.T) {
 	sessions := testdb.NewSessions(t)
 	ctx := context.Background()
-	row, err := UpsertSession(ctx, sessions, "user1", "conn1", "key1", "name", nil)
+	up, err := UpsertSession(ctx, sessions, "user1", "conn1", "key1", "name", nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
+	row := up.Row
 	for _, key := range []string{"created_at", "last_seen"} {
 		v, _ := row.Get(key)
 		s, ok := v.(string)
@@ -262,5 +386,142 @@ func TestSessionTimestampsRenderAsNaiveUTC(t *testing.T) {
 		if _, err := time.Parse("2006-01-02T15:04:05", strings.SplitN(s, ".", 2)[0]); err != nil {
 			t.Errorf("%s = %q is not an ISO timestamp: %v", key, s, err)
 		}
+	}
+}
+
+// UpsertSession must tell the socket path what to push (2.3a): an inserted row is a `created`, a
+// changed seat_state or status is an `updated`, and a frame that changed neither pushes nothing.
+// The flags are the whole answer the caller gets, so each one is asserted on its own.
+func TestUpsertSessionReportsCreatedAndStateChanges(t *testing.T) {
+	sessions := testdb.NewSessions(t)
+	ctx := context.Background()
+	user, connector, key := "user1", "conn1", "key1"
+	sid := SessionIDFor(user, connector, key)
+	running, stopped := "running", "stopped"
+
+	up, err := UpsertSession(ctx, sessions, user, connector, key, "n", nil, nil, nil, &running)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !up.Created {
+		t.Errorf("first frame: Created = false, want true (the row was inserted)")
+	}
+	if up.SeatStateChanged || up.StatusChanged {
+		t.Errorf("first frame: seat_state_changed=%v status_changed=%v, want both false (created covers it)",
+			up.SeatStateChanged, up.StatusChanged)
+	}
+
+	// The same state again is no change and no status change (it was already active).
+	up, err = UpsertSession(ctx, sessions, user, connector, key, "n", nil, nil, nil, &running)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if up.Created || up.SeatStateChanged || up.StatusChanged {
+		t.Errorf("unchanged frame: Created=%v seat_state_changed=%v status_changed=%v, want all false",
+			up.Created, up.SeatStateChanged, up.StatusChanged)
+	}
+
+	// A new state is a seat_state change.
+	up, err = UpsertSession(ctx, sessions, user, connector, key, "n", nil, nil, nil, &stopped)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if up.Created || !up.SeatStateChanged || up.StatusChanged {
+		t.Errorf("state change: Created=%v seat_state_changed=%v status_changed=%v, want false/true/false",
+			up.Created, up.SeatStateChanged, up.StatusChanged)
+	}
+
+	// A frame with no state keeps the stored one and reports no change.
+	up, err = UpsertSession(ctx, sessions, user, connector, key, "n", nil, nil, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if up.SeatStateChanged || up.StatusChanged {
+		t.Errorf("no-state frame: seat_state_changed=%v status_changed=%v, want both false",
+			up.SeatStateChanged, up.StatusChanged)
+	}
+	if v, _ := up.Row.Get("seat_state"); v != "stopped" {
+		t.Errorf("seat_state = %v, want the kept stopped", v)
+	}
+
+	// MarkOffline sets status offline; the next session frame moves it back to active, which is a
+	// status change and not a seat_state change.
+	marked, err := MarkOffline(ctx, sessions, user, connector)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(marked) != 1 || marked[0].ID != sid || marked[0].SessionKey != key {
+		t.Fatalf("MarkOffline marked %v, want the one session %s/%s", marked, sid, key)
+	}
+	up, err = UpsertSession(ctx, sessions, user, connector, key, "n", nil, nil, nil, &stopped)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if up.Created || up.SeatStateChanged || !up.StatusChanged {
+		t.Errorf("reconnect: Created=%v seat_state_changed=%v status_changed=%v, want false/false/true",
+			up.Created, up.SeatStateChanged, up.StatusChanged)
+	}
+	if v, _ := up.Row.Get("status"); v != "active" {
+		t.Errorf("status = %v, want active", v)
+	}
+}
+
+// MarkOffline reports exactly the sessions it marked, so the socket emits one frame each (2.3a).
+// A row it did not move - another connector's, or one already offline - is not marked again.
+func TestMarkOfflineReturnsEachMarkedSessionOnce(t *testing.T) {
+	sessions := testdb.NewSessions(t)
+	ctx := context.Background()
+	user := "user1"
+	running := "running"
+
+	for _, key := range []string{"k1", "k2"} {
+		if _, err := UpsertSession(ctx, sessions, user, "conn1", key, "n", nil, nil, nil, &running); err != nil {
+			t.Fatal(err)
+		}
+	}
+	// Another connector's session shares the user but not the connector, so it is not marked.
+	if _, err := UpsertSession(ctx, sessions, user, "conn2", "k3", "n", nil, nil, nil, &running); err != nil {
+		t.Fatal(err)
+	}
+
+	marked, err := MarkOffline(ctx, sessions, user, "conn1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(marked) != 2 {
+		t.Fatalf("marked %d session(s), want 2: %v", len(marked), marked)
+	}
+	want := map[string]bool{SessionIDFor(user, "conn1", "k1"): true, SessionIDFor(user, "conn1", "k2"): true}
+	for _, m := range marked {
+		if !want[m.ID] {
+			t.Errorf("marked unexpected session %q", m.ID)
+		}
+		if m.SessionKey != "k1" && m.SessionKey != "k2" {
+			t.Errorf("marked session %q has key %q", m.ID, m.SessionKey)
+		}
+		if m.SeatState == nil || *m.SeatState != "running" {
+			t.Errorf("marked session %q seat_state = %v, want the last reported running", m.ID, m.SeatState)
+		}
+		delete(want, m.ID)
+	}
+	if len(want) != 0 {
+		t.Errorf("MarkOffline did not mark %v", want)
+	}
+
+	// Nothing is offline twice: a second call changes nothing and marks nothing.
+	again, err := MarkOffline(ctx, sessions, user, "conn1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(again) != 0 {
+		t.Fatalf("second MarkOffline marked %v, want nothing (already offline)", again)
+	}
+	// The other connector's session is still active.
+	other, err := GetSessionForUser(ctx, sessions, user, SessionIDFor(user, "conn2", "k3"))
+	if err != nil || other == nil {
+		t.Fatalf("other session = %v, %v", other, err)
+	}
+	if v, _ := other.Get("status"); v != "active" {
+		t.Errorf("conn2 session status = %v, want active (not this connector)", v)
 	}
 }

@@ -23,7 +23,7 @@ func newManageSeatTestApp(t *testing.T, fake *fakeSeatAdmin) *App {
 	t.Helper()
 	controller := seatcontrollers.NewManageSeatController(stubSeatAuth{}, seatservices.NewSeatAdminService(fake))
 	tools, err := interfacelayer.NewDDDCompliantMCPTools(interfacelayer.Dependencies{
-		FacadeService:     services.NewFacadeService(nil, nil, nil, nil, nil, nil, nil),
+		FacadeService:     services.NewFacadeService(nil, nil, nil, nil, nil, nil),
 		DatabaseAvailable: true,
 		ManageSeat:        controller,
 	}, nil)

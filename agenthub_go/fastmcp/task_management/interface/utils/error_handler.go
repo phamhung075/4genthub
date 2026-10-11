@@ -103,7 +103,7 @@ func (UserFriendlyErrorHandler) handleDatabaseError(exception error, operation s
 		d.Set("technical_details", tech)
 		d.Set("workaround", "Create task without labels parameter, add labels later after fix")
 		examples := entities.NewOrderedMap[any]()
-		examples.Set("create_without_labels", "manage_task(action='create', title='Task', git_branch_id='...', assignees=['coding-agent'])")
+		examples.Set("create_without_labels", "manage_task(action='create', title='Task', git_branch_id='...', assignees=['@go-dev'])")
 		d.Set("examples", examples)
 		return d
 	}
@@ -283,7 +283,7 @@ func (UserFriendlyErrorHandler) handleValidationError(exception error, operation
 			d.Set("technical_details", tech)
 			workaround := entities.NewOrderedMap[any]()
 			workaround.Set("description", "Create task without labels, add labels later")
-			workaround.Set("command", "manage_task(action='create', title='Task', git_branch_id='...', assignees=['coding-agent'])")
+			workaround.Set("command", "manage_task(action='create', title='Task', git_branch_id='...', assignees=['@go-dev'])")
 			d.Set("workaround", workaround)
 			return d
 		}

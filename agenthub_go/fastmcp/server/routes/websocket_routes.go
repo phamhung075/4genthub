@@ -5,8 +5,14 @@
 // workers, persistence helpers, authorization checks and broadcast construction
 // are ported with their key order and branches preserved.
 //
-// Missing Python dependencies are declared here as minimal interfaces (no Go
-// port exists yet): MissedNotificationStore and OwnershipChecker.
+// MissedNotificationStore and OwnershipChecker are declared here as the minimal
+// surface each consumer needs, NOT as work still to do: both have Go
+// implementations and both are assigned at startup. The store is
+// task_management/infrastructure/repositories/orm/missed_notification_repository.go,
+// assigned by wireMissedNotificationStore; the checker is httpapp/ownership_wiring.go
+// (ownershipChecker), assigned by wireOwnershipChecker from NewApp. The interfaces
+// stay because this package must not import infrastructure, and the globals stay as
+// the seam that wiring assigns and tests replace.
 package routes
 
 import (
@@ -141,7 +147,8 @@ type OwnershipChecker interface {
 	ProjectOwnedBy(ctx context.Context, projectID, userID string) (bool, error)
 }
 
-// Ownership is the injected ownership checker; nil behaves as not-found.
+// Ownership is the injected ownership checker. NewApp assigns it (httpapp/ownership_wiring.go); while
+// it is nil, or when its query fails, CheckResourceOwnership falls through to its environment answer.
 var Ownership OwnershipChecker
 
 // wrGet reads an OrderedMap key, nil-safe.
@@ -482,6 +489,17 @@ func BroadcastDataChange(ctx context.Context, eventType, entityType, entityID, u
 		ws := connection.Websocket
 		connectionUser := connection.User
 		connectionUserID := wrUserID(connectionUser)
+
+		// A notification is addressed to ONE user, and it is the only entity whose fan-out is
+		// single-recipient. Every other socket - another user's, and one with no resolved user -
+		// is not a target, and running the authorization check for it answers with TWO error
+		// frames, authorization_denied and notification_blocked, each carrying the notification's
+		// entity_id: noise on every other screen, and a cross-tenant leak of the row id. Non-target
+		// sockets are skipped rather than answered, and a notification addressed to nobody (an
+		// empty user) goes to no socket at all.
+		if entityType == "notification" && (userID == "" || connectionUserID != userID) {
+			continue
+		}
 
 		authorized := IsUserAuthorizedForMessage(ctx, ws, entityType, entityID, userID, metadata)
 		if authorized {

@@ -13,7 +13,7 @@ This system automatically validates all API responses and WebSocket messages aga
 - Logs errors and warnings for investigation
 
 ### 2. WebSocket Message Validation
-- Validates all WebSocket messages received via `useWebSocketV2` hook
+- Validates all WebSocket messages received in `src/hooks/useWebSocketV2.ts` — the `useWebSocket` (`:28`) and `useBranchWebSocket` (`:234`) hooks, which call `validateWebSocketMessage` (`src/utils/websocketValidator.ts:22`) at `:113` and `:128`, each gated by `import.meta.env.DEV || VITE_VALIDATE_RESPONSES === 'true'`. **No hook named `useWebSocketV2` is exported** — the file carries the name, the symbol does not exist in any revision, and the five test files that mocked it lost that line in `6b908d51`.
 - Checks message structure and payload integrity
 - Validates cascade data and entity updates
 - Tracks validation statistics

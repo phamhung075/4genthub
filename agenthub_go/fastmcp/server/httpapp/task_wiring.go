@@ -122,20 +122,40 @@ func (p taskFacadeProvider) TaskFacade(ctx context.Context, userID, projectID, g
 	getter := branchGetter{branchRepo}
 	branchWithProject := branchRepoWithProject{branchRepo, p.sessions}
 
+	// The status ledger. The recorder is the one writer of the task-event ledger and takes the
+	// caller's transaction, so a status write and its status_changed entry share one transaction
+	// (the decision at ai_docs/core-architecture/agenthub-system-architecture.md:612).
+	ledgerUserID, ledgerBranchID := "", ""
+	if userID != nil {
+		ledgerUserID = *userID
+	}
+	if gitBranchID != nil {
+		ledgerBranchID = *gitBranchID
+	}
+	ledger := use_cases.StatusLedger{
+		Tx:     p.sessions,
+		Ledger: services.NewTaskEventRecorder(infrarepos.NewTaskEventRepository(p.sessions, ledgerUserID, ledgerBranchID), ledgerUserID),
+	}
+
 	deps := facades.TaskFacadeDeps{
 		GitBranchRepository: branchWithProject,
 		ContextService:      unified,
 		Notifier:            p.notifier,
 		CreateTask:          use_cases.NewCreateTaskUseCase(taskRepo, getter).WithHooks(taskHooks),
-		UpdateTask:          use_cases.NewUpdateTaskUseCase(taskRepo, getter).WithHooks(taskHooks),
+		UpdateTask:          use_cases.NewUpdateTaskUseCase(taskRepo, getter).WithHooks(taskHooks).WithLedger(ledger),
 		GetTask:             use_cases.NewGetTaskUseCase(taskRepo, contextReader{unified, userID}, getter),
 		DeleteTask:          use_cases.NewDeleteTaskUseCase(taskRepo, subtaskRepo, cascadeBranchRepo{branchRepo}, projectRepo, nil),
-		CompleteTask:        use_cases.NewCompleteTaskUseCase(taskRepo, subtaskRepo, legacyTaskContextRepo{taskContextRepo}, completeContextFactory{p.ctxFactory, userID}).WithHooks(taskHooks),
+		CompleteTask:        use_cases.NewCompleteTaskUseCase(taskRepo, subtaskRepo, legacyTaskContextRepo{taskContextRepo}, completeContextFactory{p.ctxFactory, userID}).WithHooks(taskHooks).WithLedger(ledger),
 		SearchTasks:         use_cases.NewSearchTasksUseCase(taskRepo),
 		NextTask:            use_cases.NewNextTaskUseCase(taskRepo, nil),
 		DependencyResolver:  services.NewDependencyResolverService(taskRepo, userID),
-		ApplyContextFormat:  factories.ContextResponseApplyToTaskResponse,
-		CurrentUserID:       middleware.GetCurrentUserID,
+		// The resume brief's two missing seams: the ledger it is built from (the SAME repository the
+		// events route reads, scoped to the same resolved user the status ledger writes under) and the
+		// one task-level context document it carries.
+		ResumeLedger:       infrarepos.NewTaskEventRepository(p.sessions, ledgerUserID, ledgerBranchID),
+		ResumeTaskContext:  taskContextRepo,
+		ApplyContextFormat: factories.ContextResponseApplyToTaskResponse,
+		CurrentUserID:      middleware.GetCurrentUserID,
 		ProjectBranchLookup: func(ctx context.Context, id string) (*entities.OrderedMap[any], error) {
 			return nil, &AttributeError{"'ProjectManagementService' object has no attribute 'get_git_branch_by_id'"}
 		},

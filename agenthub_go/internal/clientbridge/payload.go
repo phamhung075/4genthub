@@ -43,7 +43,7 @@ type SeatStatus struct {
 	Seat     string `json:"seat"`
 	State    string `json:"state"`
 	Runtime  string `json:"runtime"`
-	Hash     string `json:"hash"`
+	Hash     string `json:"pinned_hash"`
 	Detail   string `json:"detail"`
 	Redacted bool   `json:"redacted"`
 }
@@ -62,6 +62,7 @@ type Payload struct {
 	ReportedAt  string              `json:"reported_at"`
 	Seats       []SeatStatus        `json:"seats"`
 	Agents      []AgentStatus       `json:"agents"`
+	Edges       []EdgeStatus        `json:"edges"`
 	LocalRecord map[string]SeatNote `json:"local_record,omitempty"`
 }
 

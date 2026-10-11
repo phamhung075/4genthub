@@ -26,7 +26,7 @@ func (stubTaskFacadeFactory) CreateTaskFacade(projectID, gitBranchID, userID *st
 
 func TestMCPManageTaskAIPlanRefusalReachesCaller(t *testing.T) {
 	t.Setenv("AUTH_ENABLED", "false")
-	fs := services.NewFacadeService(stubTaskFacadeFactory{}, nil, nil, nil, nil, nil, nil)
+	fs := services.NewFacadeService(stubTaskFacadeFactory{}, nil, nil, nil, nil, nil)
 	tools, err := interfacelayer.NewDDDCompliantMCPTools(interfacelayer.Dependencies{
 		FacadeService:     fs,
 		DatabaseAvailable: true,

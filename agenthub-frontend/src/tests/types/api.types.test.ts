@@ -62,7 +62,6 @@ describe('API Types', () => {
           status: 'todo',
           priority: 'medium',
           assignees: ['user1', 'user2'],
-          subtasks: [],
           has_dependencies: false,
           dependencies: ['dep-1', 'dep-2'],
           has_context: true,
@@ -78,9 +77,7 @@ describe('API Types', () => {
           details: 'Additional details',
           progress_percentage: 75,
           subtasks: ['sub-1', 'sub-2'],
-          parent_task_id: 'parent-123',
-          progress_history: { '2025-01-01': { status: 'todo' } },
-          progress_count: 5
+          parent_task_id: 'parent-123'
         };
 
         expect(task.description).toBe('Task description');
@@ -97,8 +94,6 @@ describe('API Types', () => {
         expect(task.progress_percentage).toBe(75);
         expect(task.subtasks).toEqual(['sub-1', 'sub-2']);
         expect(task.parent_task_id).toBe('parent-123');
-        expect(task.progress_history).toEqual({ '2025-01-01': { status: 'todo' } });
-        expect(task.progress_count).toBe(5);
       });
 
       it('should support subtasks as array of objects', () => {

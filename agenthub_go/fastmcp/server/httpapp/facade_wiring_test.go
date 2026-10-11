@@ -39,9 +39,9 @@ func TestBuildMCPFacadeFactoriesWireTypedFacades(t *testing.T) {
 	t.Setenv("JWT_SECRET_KEY", facadeWiringJWTSecret)
 	ctx := context.Background()
 	ctxFactory := factories.NewUnifiedContextFacadeFactory(ctx, nil)
-	project, branch, agent, unifiedContext, token := buildMCPFacadeFactories(ctx, nil, ctxFactory)
+	project, branch, unifiedContext, token := buildMCPFacadeFactories(ctx, nil, ctxFactory)
 
-	svc := services.NewFacadeService(nil, nil, project, branch, agent, unifiedContext, token)
+	svc := services.NewFacadeService(nil, nil, project, branch, unifiedContext, token)
 	userID := facadeWiringUserID
 	projectID := "11111111-1111-1111-1111-111111111111"
 
@@ -55,12 +55,6 @@ func TestBuildMCPFacadeFactoriesWireTypedFacades(t *testing.T) {
 		t.Fatalf("GetBranchFacade: %v", err)
 	} else if _, ok := got.(*facades.GitBranchApplicationFacade); !ok {
 		t.Fatalf("git branch facade has unexpected type %T", got)
-	}
-
-	if got, err := svc.GetAgentFacade(projectID, &userID); err != nil {
-		t.Fatalf("GetAgentFacade: %v", err)
-	} else if _, ok := got.(*facades.AgentApplicationFacade); !ok {
-		t.Fatalf("agent facade has unexpected type %T", got)
 	}
 
 	// The context factory is wired; a database-less factory may still fail
@@ -80,7 +74,7 @@ func TestBuildMCPFacadeFactoriesWireTypedFacades(t *testing.T) {
 // factories the same getters report the not-configured error, so the positive
 // test above is not vacuous.
 func TestFacadeServiceNilFactoriesReportUnconfigured(t *testing.T) {
-	svc := services.NewFacadeService(nil, nil, nil, nil, nil, nil, nil)
+	svc := services.NewFacadeService(nil, nil, nil, nil, nil, nil)
 	userID := facadeWiringUserID
 	projectID := "11111111-1111-1111-1111-111111111111"
 
@@ -90,7 +84,6 @@ func TestFacadeServiceNilFactoriesReportUnconfigured(t *testing.T) {
 	}{
 		{"project", getProjectFacadeErr(svc, &userID)},
 		{"branch", getBranchFacadeErr(svc, &projectID, &userID)},
-		{"agent", getAgentFacadeErr(svc, projectID, &userID)},
 		{"context", getContextFacadeErr(svc, &userID, &projectID)},
 		{"token", getTokenFacadeErr(svc)},
 	}
@@ -108,11 +101,6 @@ func getProjectFacadeErr(svc *services.FacadeService, userID *string) error {
 
 func getBranchFacadeErr(svc *services.FacadeService, projectID, userID *string) error {
 	_, err := svc.GetBranchFacade(projectID, userID)
-	return err
-}
-
-func getAgentFacadeErr(svc *services.FacadeService, projectID string, userID *string) error {
-	_, err := svc.GetAgentFacade(projectID, userID)
 	return err
 }
 

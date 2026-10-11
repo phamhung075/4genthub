@@ -1,7 +1,6 @@
 # Seat model and MCP surface
 
-> Moved out of the root `AGENTS.md` on 2026-10-05 (see
-> [`agents-md-migration-map.md`](./agents-md-migration-map.md)). The authoritative list of mounted
+> The authoritative list of mounted
 > routes, tables and MCP tools is `ai_docs/api-integration/surface-inventory.md`; this file is the
 > agent-facing summary.
 
@@ -53,11 +52,25 @@ mcp__agenthub_http__manage_git_branch  # Branches
 mcp__agenthub_http__manage_agent       # Agent registry
 mcp__agenthub_http__manage_seat        # Seats: list, get, set_occupant
 mcp__agenthub_http__call_seat          # Resolve one exact seat
+mcp__agenthub_http__submit_feedback    # Report friction (room, seat, session, layer, text)
 mcp__agenthub_http__manage_connection  # Health check
 ```
 
-The live registry publishes ten tools; `tools/list` is not gated by any `TOOL_*` environment
-variable. See `ai_docs/api-integration/mcp-tools-api-complete.md`.
+**The live registry publishes TEN tools, and this list is the ten** — corrected 2026-10-09 at
+`734b2072` because the block above named nine while the sentence below claimed ten: `submit_feedback`
+was missing (it became a published tool when the friction channel landed, and
+`ai_docs/api-integration/mcp-tools-api-complete.md` — the list this file defers to — already carries
+all ten). **How the ten arise, so a reader can check rather than count:** six are carried by
+`ToolDefinitions` (`agenthub_go/fastmcp/task_management/interface/ddd_compliant_mcp_tools.go:223-249` —
+`manage_task`, `manage_subtask`, `manage_context`, `manage_project`, `manage_git_branch`,
+`manage_agent`), and **four more are appended by `MCPToolsList`
+(`agenthub_go/fastmcp/server/httpapp/mcp_routes.go:275`)** because their controllers own their
+schemas: `manage_seat` (`:302`), `call_seat` (`:311`), `submit_feedback` (`:320`) and
+`manage_connection` (`:328`, built at `:324` by `connectionToolDefinition()`). **Re-resolved 2026-10-09: this paragraph cited `:265`, the builder's comment line rather than the method, and `:324` for the connection tool, which is the build call while the append is `:328`; the append lines for the other three were already exact.** `manage_context` is emitted only when
+the context controller is wired, which a database-backed server does. **Re-measured at this commit
+with the generator rather than by hand:** `cd agenthub_go && go run ./cmd/apirefgen -out
+/tmp/apiref.ts` -> `143 routes, 10 tools`. `tools/list` is not gated by any `TOOL_*` environment
+variable. See `ai_docs/api-integration/mcp-tools-api-complete.md` for the per-tool arguments.
 
 > **Superseded.** The earlier AGENTS.md section "MCP TOOL PERMISSIONS" stated that only the
 > principal session has MCP access and that team agents have none, and described a "Proxy Pattern"

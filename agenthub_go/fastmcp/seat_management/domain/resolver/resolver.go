@@ -113,8 +113,18 @@ type ResolvedSeat struct {
 	SeatType        string
 	SeatTypeVersion string
 	Runtime         string
-	Modules         []ResolvedModule
-	Hash            string
+	// RoomSlug and SeatKey are WHERE the seat lives, the identity the rendered MCP block names as
+	// `<room>/<seat>` so an MCP call can be attributed to the seat that made it.
+	//
+	// They are deliberately NOT part of Hash. The snapshot row is keyed by (user_id, seat_id, hash)
+	// and a seat's room and key are never changed in place - the repository exposes UpdateOccupant
+	// and UpdatePermissionPolicy and nothing else - so a hash blind to the identity cannot hand one
+	// seat another seat's header. The renderer REFUSES to emit an http MCP block without them, so
+	// that reasoning cannot quietly stop holding: the failure is loud instead.
+	RoomSlug string
+	SeatKey  string
+	Modules  []ResolvedModule
+	Hash     string
 }
 
 const (

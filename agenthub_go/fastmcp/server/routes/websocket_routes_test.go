@@ -79,6 +79,56 @@ func TestSeatBroadcastReachesOnlyTheOwningUsersSocket(t *testing.T) {
 	}
 }
 
+// A notification is addressed to one user, and it is the only entity whose fan-out is
+// single-recipient. Every other socket - another user's, and one with no resolved user - must get
+// NOTHING: the authorization check would otherwise answer each of them with an authorization_denied
+// and a notification_blocked frame, both carrying the notification's entity_id, which is noise on
+// every other screen and a cross-tenant leak of the row id.
+func TestNotificationFanOutSkipsEveryNonTargetSocket(t *testing.T) {
+	target, other, anonymous := &fakeWS{}, &fakeWS{}, &fakeWS{}
+	connectionsMu.Lock()
+	connections[target] = &WebSocketConnection{
+		Websocket: target,
+		User:      &authdomain.User{ID: strPtr("u-target")},
+		ClientID:  "c1",
+	}
+	connections[other] = &WebSocketConnection{
+		Websocket: other,
+		User:      &authdomain.User{ID: strPtr("u-other")},
+		ClientID:  "c2",
+	}
+	connections[anonymous] = &WebSocketConnection{Websocket: anonymous, ClientID: "c3"}
+	connectionsMu.Unlock()
+	defer func() {
+		connectionsMu.Lock()
+		delete(connections, target)
+		delete(connections, other)
+		delete(connections, anonymous)
+		connectionsMu.Unlock()
+	}()
+
+	const entityID = "msg-target-only"
+	data := entities.NewOrderedMap[any]()
+	data.Set("id", entityID)
+	data.Set("title", "a notification for the target")
+	if err := BroadcastDataChange(context.Background(), "notification", "notification", entityID, "u-target", data, nil); err != nil {
+		t.Fatalf("BroadcastDataChange: %v", err)
+	}
+
+	if len(target.sent) != 1 {
+		t.Fatalf("the target received %d frames, want 1", len(target.sent))
+	}
+	if got := string(target.sent[0]); !strings.Contains(got, `"entity":"notification"`) || !strings.Contains(got, entityID) {
+		t.Fatalf("target frame is not the notification: %s", got)
+	}
+	// The defect this pins: both of these sockets used to be told, in error frames naming the row.
+	for name, ws := range map[string]*fakeWS{"another user": other, "a socket with no user": anonymous} {
+		if len(ws.sent) != 0 {
+			t.Fatalf("%s received %d frame(s), want 0: %s", name, len(ws.sent), ws.sent[0])
+		}
+	}
+}
+
 func omKeys(t *testing.T, m *entities.OrderedMap[any], want ...string) {
 	t.Helper()
 	got := m.Keys()

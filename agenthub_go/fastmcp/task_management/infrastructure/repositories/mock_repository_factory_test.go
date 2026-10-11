@@ -105,7 +105,7 @@ func TestMockRepositoryFactoryAndCreateRepositories(t *testing.T) {
 		t.Fatal("factory must return the same instances")
 	}
 	m := CreateMockRepositories()
-	if got := m.Keys(); len(got) != 5 || got[0] != "project" || got[4] != "agent" {
+	if got := m.Keys(); len(got) != 4 || got[0] != "project" || got[3] != "subtask" {
 		t.Fatalf("key order=%v", got)
 	}
 	if _, ok := m.Get("task"); !ok {

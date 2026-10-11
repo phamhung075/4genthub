@@ -65,7 +65,8 @@ type MCPTokenRecord struct {
 }
 
 // MCPTokenValidationService is the minimal interface for the Python
-// auth.services.mcp_token_service singleton, which has no Go port.
+// auth.services.mcp_token_service singleton, ported in
+// auth/services/mcp_token_service.go.
 type MCPTokenValidationService interface {
 	ValidateMCPToken(ctx context.Context, token string) (*MCPTokenRecord, error)
 }

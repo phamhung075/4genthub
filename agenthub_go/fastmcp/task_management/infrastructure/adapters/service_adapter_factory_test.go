@@ -79,10 +79,6 @@ func TestRepositoryFactoryAdapter(t *testing.T) {
 	if branchRepo == nil {
 		t.Fatal("expected git branch repository")
 	}
-	agentRepo := rf.CreateAgentRepository()
-	if agentRepo == nil {
-		t.Fatal("expected agent repository")
-	}
 	ctxRepo := rf.CreateContextRepository()
 	if ctxRepo == nil {
 		t.Fatal("expected context repository")

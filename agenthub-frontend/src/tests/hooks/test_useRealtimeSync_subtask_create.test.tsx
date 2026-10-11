@@ -138,10 +138,10 @@ describe('Subtask CREATE Payload Validation (WebSocket Protocol v2.0)', () => {
   });
 
   describe('Backend Payload Generation Compliance', () => {
-    it('should generate payload structure matching Pydantic SubtaskCreatePayload', () => {
+    it('should generate payload structure matching the backend SubtaskCreatePayload', () => {
       /**
        * This test documents the expected backend payload structure
-       * Backend should generate this via SubtaskCreatePayload Pydantic model
+       * Backend generates this via SubtaskCreatePayload (Go: fastmcp/task_management/domain/websocket_protocol.go:322-333)
        */
       const backendPayloadStructure = {
         id: expect.any(String),                    // UUID
@@ -197,20 +197,18 @@ describe('Subtask CREATE Payload Validation (WebSocket Protocol v2.0)', () => {
   describe('Integration Checks', () => {
     it('should ensure backend SubtaskCreatePayload includes timestamp fields', () => {
       /**
-       * Backend Fix Verification:
+       * Backend Fix Verification (the Python backend was retired; this is the Go port):
        *
-       * File: agenthub_main/src/fastmcp/task_management/domain/websocket_protocol.py
-       * Lines: 215-224
+       * File: agenthub_go/fastmcp/task_management/domain/websocket_protocol.go
+       * Lines: 322-333 (type at 322-328, ModelDump at 330-333)
        *
-       * class SubtaskCreatePayload(BaseModel):
-       *     id: str
-       *     title: str
-       *     description: Optional[str] = None
-       *     status: str
-       *     task_id: str
-       *     progress_percentage: Optional[int] = None
-       *     created_at: Optional[str] = None    ← Must be present
-       *     updated_at: Optional[str] = None    ← Must be present (FIXED)
+       * type SubtaskCreatePayload struct {
+       *     ID, Title            string
+       *     Description          *string
+       *     Status, TaskID       string
+       *     ProgressPercentage   *int
+       *     CreatedAt, UpdatedAt *string   <- both dumped: "created_at", "updated_at"
+       * }
        */
 
       // This test documents what the backend MUST include
@@ -230,21 +228,21 @@ describe('Subtask CREATE Payload Validation (WebSocket Protocol v2.0)', () => {
 
     it('should ensure payload construction includes both timestamps', () => {
       /**
-       * Backend Payload Construction Verification:
+       * Backend Payload Construction Verification (Go port):
        *
-       * File: agenthub_main/src/fastmcp/task_management/application/facades/subtask_application_facade.py
-       * Lines: 341-350
+       * File: agenthub_go/fastmcp/task_management/application/facades/subtask_application_facade.go
+       * Lines: 261-271 (broadcastCreated)
        *
-       * payload = SubtaskCreatePayload(
-       *     id=subtask_dict.get("id"),
-       *     title=subtask_dict.get("title"),
-       *     description=subtask_dict.get("description"),
-       *     status=subtask_dict.get("status", "todo"),
-       *     task_id=task_id,
-       *     progress_percentage=subtask_dict.get("progress_percentage"),
-       *     created_at=subtask_dict.get("created_at"),
-       *     updated_at=subtask_dict.get("updated_at")  ← MUST be included (FIXED)
-       * )
+       * payload := domain.SubtaskCreatePayload{
+       *     ID:                 omStringDefault(sub, "id", ""),
+       *     Title:              omStringDefault(sub, "title", ""),
+       *     Description:        omStringPtr(sub, "description"),
+       *     Status:             omStringDefault(sub, "status", "todo"),
+       *     TaskID:             taskID,
+       *     ProgressPercentage: omIntPtr(sub, "progress_percentage"),
+       *     CreatedAt:          omStringPtr(sub, "created_at"),
+       *     UpdatedAt:          omStringPtr(sub, "updated_at"),  <- MUST be included
+       * }
        */
 
       // Verify frontend can process payload with both timestamps
@@ -279,7 +277,7 @@ describe('Subtask CREATE Payload Validation (WebSocket Protocol v2.0)', () => {
  * - Mismatch caused WebSocket validation failures
  *
  * Protocol Compliance:
- * - Frontend: responseValidator.ts:267-349 (validateSubtask)
- * - Backend: websocket_protocol.py:215-224 (SubtaskCreatePayload)
- * - Construction: subtask_application_facade.py:341-350
+ * - Frontend: src/utils/responseValidator.ts (validateSubtask)
+ * - Backend: agenthub_go/fastmcp/task_management/domain/websocket_protocol.go:322-333 (SubtaskCreatePayload)
+ * - Construction: agenthub_go/fastmcp/task_management/application/facades/subtask_application_facade.go:261-271
  */

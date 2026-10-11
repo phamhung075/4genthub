@@ -58,6 +58,16 @@ func taskContextRepoTaskData(entity *entities.TaskContextUnified) map[string]any
 	return taskData
 }
 
+// taskContextRepoImplementationNotes is the column's one home on the write side: the entity's own field, with
+// the same empty-map default the other context maps get. It used to be read out of entity.Metadata, which is
+// how a service write and a repository read could pass each other without meeting.
+func taskContextRepoImplementationNotes(notes map[string]any) map[string]any {
+	if notes == nil {
+		return map[string]any{}
+	}
+	return notes
+}
+
 func taskContextRepoMetadataValue(metadata map[string]any, key string, fallback any) any {
 	if metadata != nil {
 		if v, ok := metadata[key]; ok {
@@ -90,7 +100,7 @@ func (r *TaskContextRepository) Create(ctx context.Context, entity *entities.Tas
 			"parent_branch_context_id", entity.BranchID,
 			"task_data", taskData,
 			"local_overrides", taskContextRepoMetadataValue(entity.Metadata, "local_overrides", map[string]any{}),
-			"implementation_notes", taskContextRepoMetadataValue(entity.Metadata, "implementation_notes", map[string]any{}),
+			"implementation_notes", taskContextRepoImplementationNotes(entity.ImplementationNotes),
 			"delegation_triggers", taskContextRepoMetadataValue(entity.Metadata, "delegation_triggers", map[string]any{}),
 			"inheritance_disabled", taskContextRepoMetadataValue(entity.Metadata, "inheritance_disabled", false),
 			"force_local_only", taskContextRepoMetadataValue(entity.Metadata, "force_local_only", false),
@@ -152,7 +162,7 @@ func (r *TaskContextRepository) Update(ctx context.Context, contextID string, en
 			"parent_branch_id", entity.BranchID,
 			"task_data", taskData,
 			"local_overrides", taskContextRepoMetadataValue(entity.Metadata, "local_overrides", map[string]any{}),
-			"implementation_notes", taskContextRepoMetadataValue(entity.Metadata, "implementation_notes", map[string]any{}),
+			"implementation_notes", taskContextRepoImplementationNotes(entity.ImplementationNotes),
 			"delegation_triggers", taskContextRepoMetadataValue(entity.Metadata, "delegation_triggers", map[string]any{}),
 			"inheritance_disabled", taskContextRepoMetadataValue(entity.Metadata, "inheritance_disabled", false),
 			"force_local_only", taskContextRepoMetadataValue(entity.Metadata, "force_local_only", false),
@@ -265,9 +275,11 @@ func taskContextRepoToEntity(row *database.TaskContext) *entities.TaskContextUni
 	localOverrides := globalContextRepoJSONMap(row.LocalOverrides)
 	implementationNotes := globalContextRepoJSONMap(row.ImplementationNotes)
 	delegationTriggers := globalContextRepoJSONMap(row.DelegationTriggers)
+	// implementation_notes has ONE home: the entity's own field, written from and read into the column. It
+	// used to travel through Metadata on both sides, which is how a write through the service and a read
+	// through this repository could pass each other without ever meeting.
 	metadata := map[string]any{
 		"local_overrides":      localOverrides,
-		"implementation_notes": implementationNotes,
 		"delegation_triggers":  delegationTriggers,
 		"inheritance_disabled": row.InheritanceDisabled,
 		"force_local_only":     row.ForceLocalOnly,
@@ -284,6 +296,7 @@ func taskContextRepoToEntity(row *database.TaskContext) *entities.TaskContextUni
 	return &entities.TaskContextUnified{
 		ID: id, BranchID: branchID, TaskData: clean, Progress: progress,
 		Insights: insights, NextSteps: nextSteps, Metadata: metadata,
+		ImplementationNotes: implementationNotes,
 	}
 }
 

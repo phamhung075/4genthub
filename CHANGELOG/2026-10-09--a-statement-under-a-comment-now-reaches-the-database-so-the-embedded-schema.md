@@ -1,0 +1,10 @@
+## A statement under a comment now reaches the database, so the embedded schema actually creates its tables
+
+### Fixed
+- `agenthub_go/fastmcp/task_management/infrastructure/database/db_initializer.go` — the init SQL was split on `;` and any chunk starting with `--` or `/*` was SKIPPED WHOLE, discarding the statement together with its comment. Every table in this schema is preceded by a `-- Table: X` line, so **all 23 `CREATE TABLE` statements never ran**: a run over an empty database sent 101 of its 176 non-empty chunks, created nothing, and returned success. `stripLeadingComments` now removes whole leading comment lines and runs what is left — the executed set is the whole asset, 176 statements. The naive split on `;` is unchanged; the file header no longer claims the comment rule is kept verbatim.
+- **LATENT, not live, and the reach matters:** the SQL path has no boot caller. `cmd/agenthub/main.go:37` and `fastmcp/server/mcp_entry_point.go:40` call `database.InitDatabase`, which calls `cfg.CreateTables` when `AUTO_MIGRATE=true`, so the Go `Tables` registry is the live creator in production; `DatabaseInitializer.Initialize` is reached only through `CheckAndInit`/`InitializeDatabaseOnStartup`, which nothing outside tests calls. This repairs a path that is one call away from mattering, not a running system.
+
+### Verified
+- **SEEN RED FIRST:** `TestExecuteInitSQLFileExecutesEveryCreateTableTheAssetCarries` derives the expected tables FROM the asset and failed on the parent for all 24 — `the schema never executed the CREATE TABLE for agents` through the same line for `users`. It passes with the fix, and the executed count rises from **101 to 176** statements, which is every non-empty chunk.
+- `go test -count=1 ./fastmcp/task_management/infrastructure/database/` → **ok**; `go vet` clean; `gofmt -l` prints nothing.
+- **NOT RUN, and it stays parked:** the real-Postgres half. A fake driver accepts any statement, so 176 is what the splitter EMITTED, not what Postgres accepted; the reviewer's limit is quoted here on purpose.

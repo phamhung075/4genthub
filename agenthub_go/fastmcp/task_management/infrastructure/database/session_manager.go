@@ -185,10 +185,18 @@ func (m *SessionManager) WithSession(ctx context.Context, fn func(ctx context.Co
 	return nil
 }
 
+// InTransaction reports whether ctx already carries a transaction. A write that must land in the
+// caller's transaction - rather than in one of its own - asks this first, so "beside it" is
+// refused loudly instead of committed quietly.
+func (m *SessionManager) InTransaction(ctx context.Context) bool {
+	_, ok := ctx.Value(txKey{}).(*sql.Tx)
+	return ok
+}
+
 // Transaction runs fn in one transaction: every WithSession on the context passed to fn shares
 // it. A nested Transaction reuses the outer one.
 func (m *SessionManager) Transaction(ctx context.Context, fn func(ctx context.Context) error) error {
-	if _, ok := ctx.Value(txKey{}).(*sql.Tx); ok {
+	if m.InTransaction(ctx) {
 		return fn(ctx)
 	}
 	conn, err := m.cfg.GetSession(ctx)

@@ -22,8 +22,9 @@ const (
 )
 
 // ResponseFormatter is the minimal view of the interface-layer
-// StandardResponseFormatter used by these handlers. That module has no Go port
-// yet; the interface is declared here and reported as a dependency.
+// StandardResponseFormatter used by these handlers. That module is ported as
+// MCPResponseFormatter in interface/utils/response_formatter.go; the interface is
+// declared here and reported as a dependency.
 type ResponseFormatter interface {
 	CreateSuccessResponse(operation string, data any, workflowGuidance *entities.OrderedMap[any]) *entities.OrderedMap[any]
 	CreateErrorResponse(operation, errorMessage, errorCode string, metadata *entities.OrderedMap[any]) *entities.OrderedMap[any]
@@ -37,6 +38,9 @@ type TaskFacade interface {
 	CreateTask(ctx context.Context, request *dtostask.CreateTaskRequest) *entities.OrderedMap[any]
 	UpdateTask(ctx context.Context, request *dtostask.UpdateTaskRequest) *entities.OrderedMap[any]
 	GetTask(ctx context.Context, taskID string, includeContext bool) (*entities.OrderedMap[any], error)
+	// ResumeBrief is the resume action's read: the brief is built in the application layer and this
+	// interface only demands it, because the brief's shape is not the interface layer's to know.
+	ResumeBrief(ctx context.Context, taskID string) (*entities.OrderedMap[any], error)
 	DeleteTask(ctx context.Context, taskID string, userID *string) *entities.OrderedMap[any]
 	CompleteTask(ctx context.Context, taskID, completionSummary string, testingNotes, userID *string) *entities.OrderedMap[any]
 	AddDependency(ctx context.Context, taskID, dependencyID string) *entities.OrderedMap[any]
@@ -45,7 +49,8 @@ type TaskFacade interface {
 }
 
 // UnifiedContextFacade is the facade_service.get_unified_context_facade() ->
-// resolve_context surface used by get_task. FacadeService has no Go port yet.
+// resolve_context surface used by get_task. FacadeService is ported in
+// application/services/facade_service.go.
 type UnifiedContextFacade interface {
 	ResolveContext(ctx context.Context, level, contextID string, includeInherited bool) *entities.OrderedMap[any]
 }
@@ -83,21 +88,21 @@ func (h *CRUDHandler) CreateTask(ctx context.Context, facade TaskFacade,
 	if len(assignees) == 0 {
 		return h.createStandardizedError("create_task", "assignees",
 			"At least one agent must be assigned to the task",
-			"Include 'assignees' with at least one valid agent (e.g., ['coding-agent'] or ['@test-orchestrator-agent'])")
+			"Include 'assignees' with at least one '@<seat_key>' (for example '@lead')")
 	}
 
-	// One rule for every path (see entities.NormalizeAssignees): '@<name>' (a seat key or
-	// a role) is kept, a bare known role or legacy name becomes '@<role>', anything else is rejected.
+	// One rule for every path (see entities.NormalizeAssignees): '@<seat_key>' is kept and is
+	// the only valid assignee identity; every bare name is rejected.
 	validatedAssignees, err := entities.NormalizeAssignees(assignees)
 	if err != nil {
 		return h.createStandardizedError("create_task", "assignees",
-			"'@<seat_key>' (for example '@lead') or a known agent role",
-			err.Error()+" Use '@<seat_key>', or a known agent role like 'coding-agent'")
+			"'@<seat_key>' (for example '@lead')",
+			err.Error()+" Use '@<seat_key>' (for example '@lead')")
 	}
 	if len(validatedAssignees) == 0 {
 		return h.createStandardizedError("create_task", "assignees",
 			"At least one valid agent must be assigned",
-			"Provide at least one '@<seat_key>' or known agent role like 'coding-agent'")
+			"Provide at least one '@<seat_key>' (for example '@lead')")
 	}
 	assignees = validatedAssignees
 
@@ -120,18 +125,20 @@ func (h *CRUDHandler) CreateTask(ctx context.Context, facade TaskFacade,
 	}
 
 	request, reqErr := dtostask.NewCreateTaskRequest(dtostask.CreateTaskRequest{
-		Title:           *title,
-		GitBranchID:     *gitBranchID,
-		Description:     description,
-		Status:          kwString(kwargs, "status"),
-		Priority:        kwString(kwargs, "priority"),
-		Details:         details,
-		EstimatedEffort: kwStringValue(kwargs, "estimated_effort"),
-		Assignees:       assignees,
-		Labels:          labels,
-		DueDate:         kwString(kwargs, "due_date"),
-		Dependencies:    dependencies,
-		UserID:          kwString(kwargs, "user_id"),
+		Title:              *title,
+		GitBranchID:        *gitBranchID,
+		Description:        description,
+		Status:             kwString(kwargs, "status"),
+		Priority:           kwString(kwargs, "priority"),
+		Details:            details,
+		EstimatedEffort:    kwStringValue(kwargs, "estimated_effort"),
+		Assignees:          assignees,
+		Labels:             labels,
+		AcceptanceCriteria: kwStrings(kwargs, "acceptance_criteria"),
+		Scope:              kwStrings(kwargs, "scope"),
+		DueDate:            kwString(kwargs, "due_date"),
+		Dependencies:       dependencies,
+		UserID:             kwString(kwargs, "user_id"),
 	})
 	if reqErr != nil {
 		return h.responseFormatter.CreateErrorResponse("create",
@@ -189,6 +196,8 @@ func (h *CRUDHandler) UpdateTask(ctx context.Context, facade TaskFacade,
 	if v := kwStrings(kwargs, "labels"); v != nil {
 		request.Labels = v
 	}
+	request.AcceptanceCriteria = kwStrings(kwargs, "acceptance_criteria")
+	request.Scope = kwStrings(kwargs, "scope")
 	request.DueDate = kwString(kwargs, "due_date")
 	request.ContextID = kwString(kwargs, "context_id")
 	request.CompletionSummary = kwString(kwargs, "completion_summary")
@@ -269,6 +278,29 @@ func enrichTaskInheritedContext(ctx context.Context, result, taskData *entities.
 		taskData.Set("context_available", true)
 		taskData.Set("inherited_context_available", false)
 	}
+}
+
+// ResumeTask is the resume action's handler: it asks the facade for the task's resume brief and hands
+// the brief back as the response's payload. It is a READ, so it follows get's shape - a success flag
+// beside the payload under its own key - and a failure (no such task, no ledger read) is reported
+// through the response formatter rather than dressed up as an empty brief.
+func (h *CRUDHandler) ResumeTask(ctx context.Context, facade TaskFacade, taskID string) *entities.OrderedMap[any] {
+
+	if taskID == "" {
+		return h.createStandardizedError("resume_task", "task_id", "A valid task_id string",
+			"Include 'task_id' in your request")
+	}
+
+	brief, err := facade.ResumeBrief(ctx, taskID)
+	if err != nil {
+		return h.responseFormatter.CreateErrorResponse("resume_task", err.Error(),
+			ErrorCodeOperationFailed, nil)
+	}
+
+	result := entities.NewOrderedMap[any]()
+	result.Set("success", true)
+	result.Set("brief", brief)
+	return result
 }
 
 // DeleteTask ports delete_task(facade, task_id, user_id=None).

@@ -88,7 +88,8 @@ func (uc *AddSubtaskUseCase) Execute(ctx context.Context, request *subtaskdto.Ad
 		}
 
 		subtask, err := entities.CreateSubtask(subtaskID, request.Title, request.Description, taskID, status, priority,
-			entities.SubtaskOptions{Assignees: request.Assignees, ProgressPercentage: progressPercentage})
+			entities.SubtaskOptions{Assignees: request.Assignees, ProgressPercentage: progressPercentage,
+				AcceptanceCriteria: request.AcceptanceCriteria, Scope: request.Scope})
 		if err != nil {
 			return nil, err
 		}

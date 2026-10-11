@@ -14,12 +14,6 @@ import (
 	"agenthub/fastmcp/task_management/domain/value_objects"
 )
 
-// AgentNameResolver is task.to_dict's lazy import of
-// application.use_cases.agent_mappings.resolve_agent_name. The domain package
-// cannot import the application layer in Go (import cycle), so the use_cases
-// package registers the function in its init().
-var AgentNameResolver func(name string) string
-
 // NormalizeDatetime converts a naive or aware datetime to a UTC-aware one.
 func NormalizeDatetime(s string) (time.Time, error) {
 	t, err := value_objects.ParseISO(s)
@@ -33,23 +27,25 @@ func NormalizeDatetime(s string) (time.Time, error) {
 // Python None; zero values of ProgressState/Status/Priority take the Python defaults.
 type Task struct {
 	base.BaseTimestampEntity
-	Title             string
-	Description       string
-	ID                *value_objects.TaskId
-	Status            *value_objects.TaskStatus
-	Priority          *value_objects.Priority
-	GitBranchID       *string
-	ProgressHistory   map[string]any
-	ProgressCount     int
-	EstimatedEffort   string
-	Assignees         []string
-	Labels            []string
-	Dependencies      []value_objects.TaskId
-	Subtasks          []string
-	CompletedSubtasks int
-	DueDate           *string
-	ContextID         *string
-	UserID            *string
+	Title              string
+	Description        string
+	ID                 *value_objects.TaskId
+	Status             *value_objects.TaskStatus
+	Priority           *value_objects.Priority
+	GitBranchID        *string
+	ProgressHistory    map[string]any
+	ProgressCount      int
+	EstimatedEffort    string
+	Assignees          []string
+	Labels             []string
+	AcceptanceCriteria []string
+	Scope              []string
+	Dependencies       []value_objects.TaskId
+	Subtasks           []string
+	CompletedSubtasks  int
+	DueDate            *string
+	ContextID          *string
+	UserID             *string
 
 	// OverallProgress is an int in Python until _recalculate_overall_progress
 	// turns it into a float; OverallProgressIsFloat keeps that distinction for to_dict.
@@ -88,6 +84,12 @@ func NewTask(t Task) (*Task, error) {
 	}
 	if s.Labels == nil {
 		s.Labels = []string{}
+	}
+	if s.AcceptanceCriteria == nil {
+		s.AcceptanceCriteria = []string{}
+	}
+	if s.Scope == nil {
+		s.Scope = []string{}
 	}
 	if s.Dependencies == nil {
 		s.Dependencies = []value_objects.TaskId{}
@@ -321,21 +323,10 @@ func (t *Task) UpdateEstimatedEffort(effort string) error {
 	return nil
 }
 
-// normalizeAssignee resolves legacy roles, valid roles and @-prefixed names;
-// known is false when the assignee is none of those.
+// normalizeAssignee accepts an '@<seat_key>' assignee and refuses every bare
+// name: with the agent role registry retired, a seat key is the only identity an
+// assignee can carry.
 func normalizeAssignee(assignee string) (validated string, known bool) {
-	if resolved, ok := value_objects.ResolveLegacyRole(assignee); ok {
-		if !strings.HasPrefix(resolved, "@") {
-			resolved = "@" + resolved
-		}
-		return resolved, true
-	}
-	if value_objects.IsValidRole(assignee) {
-		if !strings.HasPrefix(assignee, "@") {
-			assignee = "@" + assignee
-		}
-		return assignee, true
-	}
 	if strings.HasPrefix(assignee, "@") {
 		return assignee, true
 	}
@@ -356,11 +347,6 @@ func (t *Task) UpdateAssignees(assignees []string) error {
 	return nil
 }
 
-// AddAssigneeRole adds an AgentRole assignee as "@<role>".
-func (t *Task) AddAssigneeRole(role value_objects.AgentRole) error {
-	return t.AddAssignee("@" + string(role))
-}
-
 func (t *Task) AddAssignee(assignee string) error {
 	if strings.TrimSpace(assignee) == "" {
 		return nil
@@ -379,10 +365,6 @@ func (t *Task) AddAssignee(assignee string) error {
 	}
 	t.emit("assignees", map[string]any{"action": "assignee_added", "new_value": validated})
 	return nil
-}
-
-func (t *Task) RemoveAssigneeRole(role value_objects.AgentRole) error {
-	return t.RemoveAssignee("@" + string(role))
 }
 
 func (t *Task) RemoveAssignee(assignee string) error {
@@ -410,42 +392,14 @@ func (t *Task) GetPrimaryAssignee() *string {
 func (t *Task) GetAssigneesCount() int { return len(t.Assignees) }
 func (t *Task) IsMultiAssignee() bool  { return len(t.Assignees) > 1 }
 
-func titleName(s string) string {
-	return value_objects.PyTitle(strings.ReplaceAll(strings.ReplaceAll(s, "-", " "), "_", " "))
-}
-
-func roleInfo(assignee string) map[string]any {
-	if role, ok := value_objects.GetRoleBySlug(assignee); ok {
-		return map[string]any{
-			"role": string(role), "display_name": role.DisplayName(), "folder_name": role.FolderName(), "metadata": nil,
-		}
-	}
-	return map[string]any{
-		"role": assignee, "display_name": titleName(assignee),
-		"folder_name": strings.ReplaceAll(assignee, "-", "_"), "metadata": nil,
-	}
-}
-
-// GetAssigneesInfo returns role information for all assignees.
-func (t *Task) GetAssigneesInfo() []map[string]any {
-	info := []map[string]any{}
-	for _, a := range t.Assignees {
-		if a == "" {
-			continue
-		}
-		info = append(info, roleInfo(a))
-	}
-	return info
-}
-
 func (t *Task) GetInheritedAssigneesForSubtasks() []string {
 	return append([]string{}, t.Assignees...)
 }
 
 // NormalizeAssignees is the one assignee rule of every path that stores assignees (REST and
-// MCP create, task and subtask updates, subtask creation): blank entries are dropped, the rest is stripped,
-// '@<name>' (a seat key or a role) is kept as given, a bare known role or legacy name becomes
-// '@<role>', and any other bare name is rejected.
+// MCP create, task and subtask updates, subtask creation): blank entries are dropped, the rest is
+// stripped, and '@<seat_key>' is the only accepted identity - kept exactly as given. Any bare name,
+// whether a seat key or a retired role, is rejected.
 func NormalizeAssignees(assignees []string) ([]string, error) {
 	if len(assignees) == 0 {
 		return []string{}, nil
@@ -462,7 +416,7 @@ func NormalizeAssignees(assignees []string) ([]string, error) {
 	}
 	if len(invalid) > 0 {
 		return nil, value_objects.ValueErrorf(
-			"Invalid assignees: %s. An assignee is '@<seat_key>' or a known agent role.", value_objects.PyRepr(invalid))
+			"Invalid assignees: %s. An assignee is '@<seat_key>'.", value_objects.PyRepr(invalid))
 	}
 	return validated, nil
 }
@@ -822,18 +776,6 @@ func (t *Task) GetEffortLevel() string {
 	return e.GetLevel()
 }
 
-// GetAssigneeRoleInfo returns role info for the primary assignee; empty metadata becomes nil.
-func (t *Task) GetAssigneeRoleInfo() map[string]any {
-	if len(t.Assignees) == 0 {
-		return nil
-	}
-	info := roleInfo(t.Assignees[0])
-	if md, ok := info["metadata"].(map[string]any); ok && len(md) == 0 {
-		info["metadata"] = nil
-	}
-	return info
-}
-
 func (t *Task) CanBeStarted() bool { return t.Status.IsTodo() }
 
 func (t *Task) SetContextID(id string) error {
@@ -1077,23 +1019,22 @@ func (t *Task) MarkAsRetrieved() error {
 	return nil
 }
 
-// ToDict converts the task to its dictionary representation; it needs AgentNameResolver
-// (registered by the application layer) to normalize assignee names.
+// ToDict converts the task to its dictionary representation. Assignees are carried AS STORED:
+// normalizeAssignee already made them '@<seat_key>' or '@<role>' (task.go:320-337, via
+// NormalizeAssignees at :443-462) and the client compares on exactly that form
+// (agenthub-frontend/src/api.ts:366, TaskEditDialog.tsx:169), so resolving them here would strip the
+// '@' and append '-agent' and make every comparison miss (row 0adcfe7f). The Python normalised in
+// to_dict (task_response.py:182-190); that is a DELIBERATE departure, not an oversight, and must not
+// be "restored" as a fidelity fix.
 func (t *Task) ToDict() (map[string]any, error) {
-	if AgentNameResolver == nil {
-		return nil, errors.New("entities.AgentNameResolver is not registered (application use_cases.agent_mappings)")
-	}
-	assignees := []string{}
-	for _, a := range t.Assignees {
-		assignees = append(assignees, AgentNameResolver(a))
-	}
 	deps := t.GetDependencyIDs()
 	result := map[string]any{
 		"id": t.idStr(), "title": t.Title, "description": t.Description, "git_branch_id": strOrNil(t.GitBranchID),
 		"status": t.Status.Value, "priority": t.Priority.Value,
-		"progress_history": t.ProgressHistory, "progress_count": t.ProgressCount,
-		"estimatedEffort": t.EstimatedEffort, "assignees": assignees,
-		"labels": append([]string{}, t.Labels...), "dependencies": deps, "dependency_count": len(t.Dependencies),
+		"estimatedEffort": t.EstimatedEffort, "assignees": append([]string{}, t.Assignees...),
+		"acceptance_criteria": append([]string{}, t.AcceptanceCriteria...),
+		"scope":               append([]string{}, t.Scope...),
+		"labels":              append([]string{}, t.Labels...), "dependencies": deps, "dependency_count": len(t.Dependencies),
 		"subtasks": append([]string{}, t.Subtasks...), "subtask_count": len(t.Subtasks),
 		"completed_subtasks": t.CompletedSubtasks, "dueDate": nil,
 		"created_at": nil, "updated_at": t.updatedAtISO(), "context_id": strOrNil(t.ContextID),

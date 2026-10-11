@@ -43,21 +43,21 @@ func (s *SeatResolutionService) ResolveSeat(ctx context.Context, userID, roomSlu
 		return nil, err
 	}
 	if room == nil {
-		return nil, fmt.Errorf("room %q not found", roomSlug)
+		return nil, fmt.Errorf("%w: room %q", ErrRoomNotFound, roomSlug)
 	}
 	seat, err := s.Seats.FindByRoomAndKey(ctx, userID, room.ID, seatKey)
 	if err != nil {
 		return nil, err
 	}
 	if seat == nil {
-		return nil, fmt.Errorf("seat %q not found in room %q", seatKey, roomSlug)
+		return nil, fmt.Errorf("%w: seat %q", ErrSeatNotFound, seatKey)
 	}
 	seatType, err := s.SeatTypes.GetByID(ctx, userID, seat.SeatTypeID)
 	if err != nil {
 		return nil, err
 	}
 	if seatType == nil {
-		return nil, fmt.Errorf("seat type of seat %q not found", seatKey)
+		return nil, fmt.Errorf("%w: seat %q", ErrSeatTypeNotFound, seatKey)
 	}
 	version, err := s.seatTypeVersion(ctx, userID, seatType.Slug, seat)
 	if err != nil {
@@ -82,6 +82,9 @@ func (s *SeatResolutionService) ResolveSeat(ctx context.Context, userID, roomSlu
 	if err != nil {
 		return nil, err
 	}
+	// Where the seat lives travels with it into the render: the MCP block names the seat so a call
+	// can be attributed to it, and the renderer refuses to emit an http block without it.
+	resolved.RoomSlug, resolved.SeatKey = roomSlug, seatKey
 	spec, err := seatrenderer.RenderSeat(resolved, s.MCPURL)
 	if err != nil {
 		return nil, err

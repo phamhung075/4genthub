@@ -17,7 +17,8 @@ func wsTestSessions(t *testing.T) (*database.SessionManager, *sql.DB) {
 	t.Helper()
 	admin := os.Getenv("AGENTHUB_TEST_PG_URL")
 	if admin == "" {
-		t.Skip("AGENTHUB_TEST_PG_URL not set")
+		t.Skip("SKIPPED, NOT PASSED: AGENTHUB_TEST_PG_URL is unset, so this case did NOT run - " +
+			"bash tools/testpg/start.sh prints a URL to pass to it")
 	}
 	adm, err := sql.Open("pgx", admin)
 	if err != nil {
@@ -160,8 +161,8 @@ func TestSyncBroadcastTaskCompletionAndCascade(t *testing.T) {
 	m := cap.meta[0]
 	keys := m.Keys()
 	want := []string{"git_branch_id", "timestamp", "task_title", "parent_branch_id", "parent_branch_title",
-		"status", "title", "completion_summary", "testing_notes", "progress_percentage", "progress_history",
-		"progress_count", "assignees", "description", "insights_found", "blockers"}
+		"status", "title", "completion_summary", "testing_notes", "progress_percentage",
+		"assignees", "description", "insights_found", "blockers"}
 	if fmt.Sprint(keys) != fmt.Sprint(want) {
 		t.Fatalf("keys %v", keys)
 	}

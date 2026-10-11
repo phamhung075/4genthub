@@ -9,7 +9,7 @@
 | **manage_project** | create, list, project_health_check | name | Project coordination |
 | **manage_git_branch** | create, assign_agent, get_statistics | project_id, git_branch_name | Branch operations |
 | **manage_context** | create, get, resolve, delegate | level, context_id | Context records at four levels (global \| project \| branch \| task) |
-| **manage_agent** | register, assign, get, list, update, unassign, unregister, rebalance | project_id, name, call_agent (field) | Agent registry orchestration |
+| ~~**`manage_agent`**~~ **RETIRED 2026-10-10** | *removed by `76b800b9` with the `agents` table and the role registry* | — | *was: agent registration and assignment* |
 | **manage_seat** | list, get, set_occupant | room, seat, runtime, model | Seat management (switch a seat's occupant) |
 | **call_seat** | N/A (single action) | room, seat | Resolve one exact seat and its rendered context files |
 | **submit_feedback** | N/A (single action) | room, seat, session, layer, text | Report friction from a seat: the layer it is in, the room and seat, and what happened |
@@ -17,7 +17,7 @@
 
 **Common Pattern**: All tools require `action` parameter except `call_seat`, `submit_feedback` and `manage_connection`.
 
-The live registry publishes **ten** tools, the ten rows above. `manage_context` is published when the context controller is wired, which it is on a database-backed server. `manage_seat`, `call_seat`, `submit_feedback` and `manage_connection` are appended to the `tools/list` registry by `getMCPToolsList` (`mcp_routes.go:249-279`) rather than carried in `ToolDefinitions()`; `tools/list` is not gated by any `TOOL_*` environment variable. **Measured at HEAD `763b8196` (2026-10-06): a booted server answers `tools/list` with exactly these ten names.** **RE-MEASURED 2026-10-08 at HEAD `88d27758`: the same TEN names are what a connected client receives — verified live from the client side (the ten routes this seat's own session exposes) rather than from the registry alone, and the set is unchanged since `763b8196`.**
+The live registry publishes **ten** tools, the ten rows above. `manage_context` is published when the context controller is wired, which it is on a database-backed server. `manage_seat`, `call_seat`, `submit_feedback` and `manage_connection` are appended to the `tools/list` registry by `App.MCPToolsList` (`mcp_routes.go:275`; the four appends at `:301`, `:310`, `:319`, `:328`) rather than carried in `ToolDefinitions()`; `tools/list` is not gated by any `TOOL_*` environment variable. **RE-RESOLVED 2026-10-09 at HEAD `36716e6e`: the builder was renamed — `getMCPToolsList` resolves nowhere in `agenthub_go`, its one-line alias having been deleted — and the five registry tests pass (`ok agenthub/fastmcp/server/httpapp 0.024s`), so the ten names above are unchanged.** **Measured at HEAD `763b8196` (2026-10-06): a booted server answers `tools/list` with exactly these ten names.** **RE-MEASURED 2026-10-08 at HEAD `88d27758`: the same TEN names are what a connected client receives — verified live from the client side (the ten routes this seat's own session exposes) rather than from the registry alone, and the set is unchanged since `763b8196`.**
 
 ---
 
@@ -346,6 +346,8 @@ manage_context(
 
 ### manage_agent
 
+**RETIRED 2026-10-10 (`76b800b9 refactor(agents): retire the manage_agent tool, the agents table and the role registry`).** The tool, the `agents` table and the 32-role registry are gone at HEAD, and `@<seat_key>` is the only assignee identity — `register` became a seat creation, `assign` a task assignee, `list`/`get` `manage_seat list`, and `rebalance` the lead's queue. **The material below is kept as a record of the tool as it was served, not as documentation of a live surface**; `surface-inventory.md` §4 carries the commands that confirm the absence, and `manage_agent_absent_test.go` fails the build if the tool is published again.
+
 **Purpose**: Agent registration and assignment
 
 **Actions**: register, assign, get, list, update, unassign, unregister, rebalance
@@ -417,7 +419,7 @@ manage_seat(action="set_occupant", room="4genthub-dev", seat="lead",
 
 **Response**: `{"success": true, "seats": [...]}` for list, `{"success": true, "seat": {...}}` for get/set_occupant; failures are `{"success": false, "error": "..."}`.
 
-Go-only tool, appended to `tools/list` by `ManageSeatInputSchema()` (`fastmcp/seat_management/interface/mcp_controllers/manage_seat_controller.go`; appended at `fastmcp/server/httpapp/mcp_routes.go:257`).
+Go-only tool, appended to `tools/list` by `ManageSeatInputSchema()` (`fastmcp/seat_management/interface/mcp_controllers/manage_seat_controller.go`; appended at `fastmcp/server/httpapp/mcp_routes.go:301`, the `ManageSeatToolName` entry at `:302`).
 
 ---
 
@@ -439,7 +441,7 @@ call_seat(room="4genthub-dev", seat="lead")
 
 **Response**: `{"success": true, "room": ..., "seat": ..., "hash": ..., "runtime": ..., "policy": ..., "files": [{"path": ..., "content": ...}]}`; failures are `{"success": false, "error": "..."}`.
 
-Go-only tool, appended to `tools/list` by `CallSeatInputSchema()` (`fastmcp/seat_management/interface/mcp_controllers/call_seat_controller.go`; appended at `fastmcp/server/httpapp/mcp_routes.go:266`).
+Go-only tool, appended to `tools/list` by `CallSeatInputSchema()` (`fastmcp/seat_management/interface/mcp_controllers/call_seat_controller.go`; appended at `fastmcp/server/httpapp/mcp_routes.go:310`, the `CallSeatToolName` entry at `:311`).
 
 ---
 

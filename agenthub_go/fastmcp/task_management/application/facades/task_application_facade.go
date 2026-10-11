@@ -81,6 +81,17 @@ type TaskFacadeDeps struct {
 	ContextSync        TaskFacadeContextSync
 	DependencyResolver *services.DependencyResolverService
 
+	// ResumeLedger is the task-event ledger read the resume brief is built from: the SAME ledger the
+	// events route reads (infrastructure/repositories.TaskEventRepository), scoped to one user and
+	// addressed by task id. It is a field rather than a read through ContextService or the task
+	// repository because no existing seam reaches the ledger.
+	ResumeLedger services.TaskResumeEventRead
+	// ResumeTaskContext is the TASK-LEVEL context document read the resume brief carries. The
+	// unified context facade cannot answer it - it resolves a level's INHERITED view, which is
+	// manage_context action=resolve's job - so the repository that holds the one document is handed
+	// in here instead.
+	ResumeTaskContext services.TaskResumeContextRead
+
 	// ApplyContextFormat is ContextResponseFactory.apply_to_task_response (factories imports
 	// this package, so it is injected).
 	ApplyContextFormat func(*entities.OrderedMap[any]) *entities.OrderedMap[any]
@@ -108,6 +119,61 @@ type TaskApplicationFacade struct {
 // TaskRepository exposes the repository the facade was built with (Python reads
 // facade._task_repository from the AI handler).
 func (f *TaskApplicationFacade) TaskRepository() FacadeTaskRepository { return f.taskRepository }
+
+// ResumeBrief builds the resume brief for ONE task out of the task's own facts and its ledger.
+//
+// THE BRIEF IS NOT BUILT HERE. Its sections, their order and its budget belong to
+// services.TaskResumeService, which is the one place they are decided and the one place they are
+// tested; this method's whole job is to hand that service the five reads it declares, taken from
+// what the facade already holds:
+//
+//	tasks        the facade's own task repository (FindByID)
+//	subtasks     the facade's own subtask repository (FindByParentTaskID)
+//	dependencies the facade's own task repository, one FindByID per dependency id
+//	contexts     deps.ResumeTaskContext, the one task-level document
+//	ledger       deps.ResumeLedger, the same ledger the events route reads
+//
+// The identity that scopes every one of those reads belongs to the repository instance the
+// composition handed in, never to the brief: two callers resume one task with byte-identical
+// briefs. The brief is returned WHOLE - nothing is trimmed to fit the budget.
+func (f *TaskApplicationFacade) ResumeBrief(ctx context.Context, taskID string) (*entities.OrderedMap[any], error) {
+	return services.NewTaskResumeService(
+		f.taskRepository,
+		f.subtaskRepository,
+		resumeDependencyStatuses{repo: f.taskRepository},
+		f.deps.ResumeTaskContext,
+		f.deps.ResumeLedger,
+	).Resume(ctx, taskID)
+}
+
+// resumeDependencyStatuses answers the statuses of the tasks a brief's task depends on, keyed by the
+// id the brief asked about. The rule lives in the service - a dependency that is not done blocks, and
+// so does one this reader cannot resolve - so this reader answers FACTS only: one FindByID per
+// dependency through the facade's own repository, and a dependency that comes back missing or
+// statusless is LEFT OUT of the map rather than invented as done.
+type resumeDependencyStatuses struct{ repo FacadeTaskRepository }
+
+func (r resumeDependencyStatuses) StatusesOf(ctx context.Context, taskIDs []string) (map[string]string, error) {
+	statuses := make(map[string]string, len(taskIDs))
+	for _, raw := range taskIDs {
+		id, err := facadeTaskID(raw)
+		if err != nil {
+			// Not a task id at all, so it cannot be resolved: it stays OUT of the map, which the
+			// service reports as a blocker - the same treatment a dependency the read cannot find
+			// gets. It is never treated as done.
+			continue
+		}
+		task, err := r.repo.FindByID(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		if task == nil || task.Status == nil {
+			continue
+		}
+		statuses[raw] = task.Status.Value
+	}
+	return statuses, nil
+}
 
 // NewTaskApplicationFacade builds the facade. subtaskRepository may be nil (Python allows
 // None).
@@ -620,16 +686,24 @@ func (f *TaskApplicationFacade) UpdateTask(ctx context.Context, request dtostask
 	}
 
 	if wasActuallyUpdated && f.deps.Notifier != nil {
-		const userID = "system" // UpdateTaskRequest has no user_id
-		var full *entities.OrderedMap[any]
-		if current != nil {
-			full, err = taskDictOf(current)
-			if err != nil {
-				full = completeTask
+		// The frame is matched to a browser by this stamp: Rule 1 of IsUserAuthorizedForMessage
+		// compares it with the connection's own user, and Rule 2 asks the ownership checker, which
+		// answers only when the resource can be shown to belong to that user. A "system" stamp names
+		// no actor, so it is refused wherever ownership cannot be established - while the event is
+		// real. UpdateTaskRequest carries no user id, so the acting user comes from the request
+		// context exactly as create reads it; "system" stays the stamp for an event with no actor.
+		const systemUserID = "system"
+		userID := systemUserID
+		if f.deps.CurrentUserID != nil {
+			if u := f.deps.CurrentUserID(ctx); u != nil && *u != "" {
+				userID = *u
 			}
-		} else {
-			full = completeTask
 		}
+		// The payload describes the task AFTER the update. `current` is the PRE-update fetch that
+		// checkForMeaningfulUpdate compares against, so building from it delivered the old status,
+		// title and priority while updated_at came from the new row - and the frontend writes this
+		// dict straight into the task it displays.
+		full := completeTask
 		var validated any = taskDict
 		title, status, priority, branch := facadeDictGet(full, "title"), facadeDictGet(full, "status"), facadeDictGet(full, "priority"), facadeDictGet(full, "git_branch_id")
 		if title != nil && status != nil && priority != nil && branch != nil {

@@ -16,7 +16,8 @@ type WebSocketPayloadBuilder struct{}
 // BuildTaskPayload mirrors WebSocketPayloadBuilder.build_task_payload.
 //
 // task_response is the Python `task_response=None` optional TaskResponse DTO.
-// include_progress_history is the Python default-True flag.
+// includeProgressHistory mirrors the Python default-True flag; with the history gone from the
+// payload it now gates the details string alone.
 func (WebSocketPayloadBuilder) BuildTaskPayload(
 	task *entities.Task,
 	taskResponse *taskdtos.TaskResponse,
@@ -37,13 +38,10 @@ func (WebSocketPayloadBuilder) BuildTaskPayload(
 		payload.Set("subtask_count", taskResponse.SubtaskCount())
 		payload.Set("completed_subtasks", taskResponse.CompletedSubtasks)
 		payload.Set("progress_percentage", taskResponse.ProgressPercentage)
-		payload.Set("progress_count", taskResponse.ProgressCount)
 
 		if includeProgressHistory {
-			payload.Set("progress_history", taskResponse.ProgressHistory)
 			payload.Set("details", taskResponse.Details)
 		} else {
-			payload.Set("progress_history", map[string]any{})
 			payload.Set("details", "")
 		}
 	} else {
@@ -53,17 +51,10 @@ func (WebSocketPayloadBuilder) BuildTaskPayload(
 		payload.Set("completed_subtasks", 0)
 		// Python has no `progress_percentage` attribute on Task, so hasattr is False -> 0.
 		payload.Set("progress_percentage", 0)
-		payload.Set("progress_count", task.ProgressCount)
 
 		if includeProgressHistory {
-			if task.ProgressHistory != nil {
-				payload.Set("progress_history", task.ProgressHistory)
-			} else {
-				payload.Set("progress_history", map[string]any{})
-			}
 			payload.Set("details", task.GetProgressHistoryText())
 		} else {
-			payload.Set("progress_history", map[string]any{})
 			payload.Set("details", "")
 		}
 	}

@@ -132,17 +132,6 @@ type MachineORM struct {
 	Agents    json.RawMessage `db:"agents"`
 }
 
-// MachineTokenORM is a row of machine_tokens. token_hash is the SHA-256 hex of the bearer
-// token, which is never stored; RevokedAt nil means the token is active.
-type MachineTokenORM struct {
-	ID        string     `db:"id"`
-	UserID    string     `db:"user_id"`
-	MachineID string     `db:"machine_id"`
-	TokenHash string     `db:"token_hash"`
-	CreatedAt time.Time  `db:"created_at"`
-	RevokedAt *time.Time `db:"revoked_at"`
-}
-
 // SeatStatusORM is a row of seat_status. (user_id, machine_id, room, seat) is the primary key.
 type SeatStatusORM struct {
 	UserID      string    `db:"user_id"`
@@ -155,4 +144,17 @@ type SeatStatusORM struct {
 	Detail      string    `db:"detail"`
 	Redacted    bool      `db:"redacted"`
 	ReportedAt  time.Time `db:"reported_at"`
+}
+
+// MachineEdgeORM is a row of machine_edges: one directed link of the topology a machine reported.
+// (user_id, machine_id, room, from_seat, to_seat, kind) is the primary key, so a report that
+// repeats a link stores it once. The columns are from_seat and to_seat because `from` and `to`
+// are SQL keywords; the wire names them from and to.
+type MachineEdgeORM struct {
+	UserID    string `db:"user_id"`
+	MachineID string `db:"machine_id"`
+	Room      string `db:"room"`
+	From      string `db:"from_seat"`
+	To        string `db:"to_seat"`
+	Kind      string `db:"kind"`
 }

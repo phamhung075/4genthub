@@ -8,7 +8,7 @@ import (
 )
 
 // zpTaskAuthResponseFormatter mirrors the response_formatter.create_error_response
-// call surface (the FastAPI response formatter has no Go port yet).
+// call surface (ported in interface/utils/response_formatter.go).
 type zpTaskAuthResponseFormatter interface {
 	CreateErrorResponse(operation, errMsg, errorCode string) *entities.OrderedMap[any]
 }
@@ -89,8 +89,9 @@ func (s *TaskAuthorizationService) IsValidAction(action string) bool {
 }
 
 // ExtractTokenFromContext mirrors extract_token_from_context. The Python
-// request-context middleware has no Go equivalent; the authenticated token is read
-// from the same context keys the auth middleware uses, with the same graceful
+// request-context middleware is ported in
+// fastmcp/auth/middleware/request_context_middleware.go; the authenticated token is read
+// from the same context keys that middleware uses, with the same graceful
 // fallback to nil.
 func (s *TaskAuthorizationService) ExtractTokenFromContext(ctx context.Context) map[string]any {
 	user, _ := ctx.Value(authdomain.UserContextKey).(authdomain.TokenPayloadProvider)

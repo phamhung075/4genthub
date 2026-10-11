@@ -34,7 +34,9 @@ type SeatAdminStore interface {
 	ListSeats(ctx context.Context, userID, roomID string) ([]repositories.Seat, error)
 	UpdateSeatOccupant(ctx context.Context, userID, seatID, runtime, model string) error
 	UpdateSeatPermissionPolicy(ctx context.Context, userID, seatID, permissionPolicy string) error
+	UpdateSeatPinnedVersion(ctx context.Context, userID, seatID, pinnedVersion string) error
 	GetModuleVersion(ctx context.Context, userID, slug, version string) (*repositories.ModuleVersion, error)
+	GetSeatTypeVersion(ctx context.Context, userID, slug, version string) (*repositories.SeatTypeVersion, error)
 	LatestSeatTypeVersion(ctx context.Context, userID, slug string) (*repositories.SeatTypeVersion, error)
 	AddSeatTypeVersion(ctx context.Context, userID, slug, version, defaultRuntime string, refs []resolver.ModuleRef) (*repositories.SeatTypeVersion, error)
 }
@@ -140,6 +142,35 @@ func (s *SeatAdminService) SetPermissionPolicy(ctx context.Context, userID, room
 		return nil, err
 	}
 	seat.PermissionPolicy = permissionPolicy
+	return s.view(ctx, userID, room, seat)
+}
+
+// SetPinnedVersion pins the seat to one version of its seat type, which is how a seat is moved
+// from the version whose guide it runs to a newer one. The version must exist for the seat's
+// type - the same check handleCreateSeat makes when a create pins one - so an unknown version
+// is ErrInvalidSeatTypeVersion and never reaches the store. The next resolve renders the pinned
+// version; a seat already launched keeps the snapshot it was launched with.
+func (s *SeatAdminService) SetPinnedVersion(ctx context.Context, userID, roomSlug, seatKey, pinnedVersion string) (*SeatView, error) {
+	room, seat, err := s.seat(ctx, userID, roomSlug, seatKey)
+	if err != nil {
+		return nil, err
+	}
+	slugs, err := s.seatTypeSlugs(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	seatTypeSlug := slugs[seat.SeatTypeID]
+	version, err := s.store.GetSeatTypeVersion(ctx, userID, seatTypeSlug, pinnedVersion)
+	if err != nil {
+		return nil, err
+	}
+	if version == nil {
+		return nil, fmt.Errorf("%w: seat type %q has no version %q", ErrInvalidSeatTypeVersion, seatTypeSlug, pinnedVersion)
+	}
+	if err := s.store.UpdateSeatPinnedVersion(ctx, userID, seat.ID, pinnedVersion); err != nil {
+		return nil, err
+	}
+	seat.PinnedVersion = &pinnedVersion
 	return s.view(ctx, userID, room, seat)
 }
 

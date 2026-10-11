@@ -127,7 +127,6 @@ describe('TaskRow - Subtask Badge Display (TDD Phase 2)', () => {
     it('should display subtask count badge when task has subtasks', () => {
       // This test WILL FAIL until we add subtask_count to TaskSummary
       const taskWithSubtasks = createTaskSummary({
-        // @ts-expect-error - Testing type extension
         subtask_count: 3,
         completed_subtasks: 1
       });
@@ -151,7 +150,6 @@ describe('TaskRow - Subtask Badge Display (TDD Phase 2)', () => {
 
     it('should NOT display subtask badge when subtask_count is 0', () => {
       const taskWithoutSubtasks = createTaskSummary({
-        // @ts-expect-error - Testing type extension
         subtask_count: 0,
         completed_subtasks: 0
       });
@@ -197,7 +195,6 @@ describe('TaskRow - Subtask Badge Display (TDD Phase 2)', () => {
   describe('Subtask Badge Content', () => {
     it('should show correct subtask count', () => {
       const taskWith5Subtasks = createTaskSummary({
-        // @ts-expect-error - Testing type extension
         subtask_count: 5,
         completed_subtasks: 2
       });
@@ -220,7 +217,6 @@ describe('TaskRow - Subtask Badge Display (TDD Phase 2)', () => {
 
     it('should handle single subtask correctly', () => {
       const taskWithOneSubtask = createTaskSummary({
-        // @ts-expect-error - Testing type extension
         subtask_count: 1,
         completed_subtasks: 0
       });
@@ -246,7 +242,6 @@ describe('TaskRow - Subtask Badge Display (TDD Phase 2)', () => {
     it('should display badge even when task is NOT expanded', () => {
       // CRITICAL TEST: Badge should show in collapsed state using summary data
       const taskWithSubtasks = createTaskSummary({
-        // @ts-expect-error - Testing type extension
         subtask_count: 4,
         completed_subtasks: 2
       });
@@ -272,7 +267,6 @@ describe('TaskRow - Subtask Badge Display (TDD Phase 2)', () => {
     it('should use summary.subtask_count over fullTask.subtasks.length', () => {
       // Even if fullTask is available, should prefer summary.subtask_count
       const taskWithSubtasks = createTaskSummary({
-        // @ts-expect-error - Testing type extension
         subtask_count: 3,
         completed_subtasks: 1
       });
@@ -303,7 +297,6 @@ describe('TaskRow - Subtask Badge Display (TDD Phase 2)', () => {
   describe('Type Safety', () => {
     it('should handle subtask_count as number type', () => {
       const taskWithSubtasks = createTaskSummary({
-        // @ts-expect-error - Testing type extension
         subtask_count: 10,
         completed_subtasks: 5
       });

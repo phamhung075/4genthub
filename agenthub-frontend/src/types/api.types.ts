@@ -77,16 +77,23 @@ export interface Task {
   due_date?: string;
   estimated_effort?: string;
   labels?: string[];
+  /**
+   * The verifiable conditions the work must meet. Served on the wire as `acceptance_criteria` by
+   * `TaskResponse.ToDict` (agenthub_go/fastmcp/task_management/application/dtos/task/task_response.go,
+   * whose golden key list asserts the name) - declared here because the payload carries it, NOT because
+   * a surface reads it: nothing in the app renders this or `scope` yet.
+   */
+  acceptance_criteria?: string[];
+  /** Globs the work may touch, served as `scope` by the same DTO. See the note on `acceptance_criteria`. */
+  scope?: string[];
   details?: string;
   progress_percentage?: number;
   progress_state?: any; // Optional progress state (computed from status/percentage if not provided)
   subtasks?: Subtask[] | string[]; // Phase 2: Can be array of subtask objects (without parent_task_id) or subtask IDs
   parent_task_id?: string; // Identifies if this task is actually a subtask
-  progress_history?: Record<string, any>; // Progress history entries
   subtask_count?: number; // Total number of subtasks
   completed_subtasks?: number; // Number of completed subtasks
   dependency_count?: number; // Total number of dependencies
-  progress_count?: number; // Number of progress history entries
 }
 
 export interface Subtask {
@@ -98,14 +105,22 @@ export interface Subtask {
   status: string;
   priority: string;
   assignees?: string[];
+  /**
+   * The same two columns as `Task`'s, carried on subtask payloads too:
+   * `subtask_repository.go` decodes both from the row and writes both back
+   * (agenthub_go/fastmcp/task_management/infrastructure/repositories/subtask_repository.go). Declared
+   * for the same reason - the wire has them, no surface reads them yet.
+   */
+  acceptance_criteria?: string[];
+  scope?: string[];
   progress_percentage?: number;
   created_at?: string;
   updated_at?: string;
   completed_at?: string; // Timestamp when subtask was completed
   progress_notes?: string;
   completion_summary?: string;
-  progress_history?: Record<string, import('./utilityTypes').ProgressHistoryEntry>; // Detailed progress tracking
-  progress_count?: number; // Number of progress entries
+  /** The joined progress history text, served once the additive SubtaskDTO re-expose lands (4a0a8c7a removed `progress_history`/`progress_count` from the payloads, and this interface no longer declares them - O1c). */
+  details?: string;
 }
 
 export interface Project {

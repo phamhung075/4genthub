@@ -7,13 +7,11 @@ package services
 
 import (
 	"context"
-	"sort"
 	"strconv"
 
 	"agenthub/fastmcp/task_management/application/use_cases"
 	"agenthub/fastmcp/task_management/domain/entities"
 	"agenthub/fastmcp/task_management/domain/repositories"
-	"agenthub/fastmcp/task_management/domain/value_objects"
 )
 
 // zpProjectApplicationUserScoped is the minimal optional user-scoping interface
@@ -97,176 +95,6 @@ func (s *ProjectApplicationService) CreateGitBranch(ctx context.Context, project
 // ProjectHealthCheck mirrors project_health_check.
 func (s *ProjectApplicationService) ProjectHealthCheck(ctx context.Context, projectID *string) (*entities.OrderedMap[any], error) {
 	return s.projectHealthCheckUseCase.Execute(ctx, projectID)
-}
-
-// RegisterAgent mirrors register_agent.
-func (s *ProjectApplicationService) RegisterAgent(ctx context.Context, projectID, agentID, name string, capabilities []string) *entities.OrderedMap[any] {
-	project, err := s.userScopedRepository().FindByID(ctx, projectID)
-	if err != nil || project == nil {
-		out := entities.NewOrderedMap[any]()
-		out.Set("success", false)
-		out.Set("error", "Project with ID '"+projectID+"' not found")
-		return out
-	}
-
-	agentCapabilities := map[entities.AgentCapability]struct{}{}
-	if capabilities != nil {
-		for _, cap := range capabilities {
-			if _, ok := value_objects.GetRoleBySlug(cap); ok {
-				agentCapabilities[entities.AgentCapability(cap)] = struct{}{}
-			}
-		}
-	}
-
-	agentIDValue, idErr := value_objects.NewAgentId(agentID)
-	if idErr != nil {
-		out := entities.NewOrderedMap[any]()
-		out.Set("success", false)
-		out.Set("error", idErr.Error())
-		return out
-	}
-	agent, agentErr := entities.NewAgent(entities.Agent{
-		ID:           &agentIDValue,
-		Name:         name,
-		Capabilities: agentCapabilities,
-	})
-	if agentErr != nil {
-		out := entities.NewOrderedMap[any]()
-		out.Set("success", false)
-		out.Set("error", agentErr.Error())
-		return out
-	}
-
-	if regErr := project.RegisterAgent(agent); regErr != nil {
-		out := entities.NewOrderedMap[any]()
-		out.Set("success", false)
-		out.Set("error", regErr.Error())
-		return out
-	}
-	if updateErr := s.userScopedRepository().Update(ctx, project); updateErr != nil {
-		out := entities.NewOrderedMap[any]()
-		out.Set("success", false)
-		out.Set("error", updateErr.Error())
-		return out
-	}
-
-	agentDict := entities.NewOrderedMap[any]()
-	agentDict.Set("id", agentID)
-	agentDict.Set("name", agent.Name)
-	agentDict.Set("capabilities", zpProjectApplicationCapabilityList(agent))
-	createdAt := ""
-	if agent.CreatedAt != nil {
-		createdAt = value_objects.IsoFormat(*agent.CreatedAt)
-	}
-	agentDict.Set("created_at", createdAt)
-
-	out := entities.NewOrderedMap[any]()
-	out.Set("success", true)
-	out.Set("agent", agentDict)
-	out.Set("message", "Agent '"+agentID+"' registered successfully")
-	return out
-}
-
-// AssignAgentToTree mirrors assign_agent_to_tree.
-func (s *ProjectApplicationService) AssignAgentToTree(ctx context.Context, projectID, agentID, gitBranchID string) *entities.OrderedMap[any] {
-	project, err := s.userScopedRepository().FindByID(ctx, projectID)
-	if err != nil || project == nil {
-		out := entities.NewOrderedMap[any]()
-		out.Set("success", false)
-		out.Set("error", "Project with ID '"+projectID+"' not found")
-		return out
-	}
-
-	if assignErr := project.AssignAgentToTree(agentID, gitBranchID); assignErr != nil {
-		out := entities.NewOrderedMap[any]()
-		out.Set("success", false)
-		out.Set("error", assignErr.Error())
-		return out
-	}
-	if updateErr := s.userScopedRepository().Update(ctx, project); updateErr != nil {
-		out := entities.NewOrderedMap[any]()
-		out.Set("success", false)
-		out.Set("error", updateErr.Error())
-		return out
-	}
-
-	out := entities.NewOrderedMap[any]()
-	out.Set("success", true)
-	out.Set("message", "Agent '"+agentID+"' assigned to tree '"+gitBranchID+"' successfully")
-	return out
-}
-
-// UnregisterAgent mirrors unregister_agent.
-func (s *ProjectApplicationService) UnregisterAgent(ctx context.Context, projectID, agentID string) *entities.OrderedMap[any] {
-	project, err := s.userScopedRepository().FindByID(ctx, projectID)
-	if err != nil || project == nil {
-		out := entities.NewOrderedMap[any]()
-		out.Set("success", false)
-		out.Set("error", "Project with ID '"+projectID+"' not found")
-		return out
-	}
-
-	if !project.RegisteredAgents.Has(agentID) {
-		out := entities.NewOrderedMap[any]()
-		out.Set("success", false)
-		out.Set("error", "Agent '"+agentID+"' not found in project '"+projectID+"'")
-		return out
-	}
-
-	agent, _ := project.RegisteredAgents.Get(agentID)
-	project.RegisteredAgents.Delete(agentID)
-
-	assignmentsToRemove := []string{}
-	for _, branchID := range project.AgentAssignments.Keys() {
-		if assignedAgentID, _ := project.AgentAssignments.Get(branchID); assignedAgentID == agentID {
-			assignmentsToRemove = append(assignmentsToRemove, branchID)
-		}
-	}
-	for _, branchID := range assignmentsToRemove {
-		project.AgentAssignments.Delete(branchID)
-	}
-
-	sessionsToRemove := []string{}
-	for _, sessionID := range project.ActiveWorkSessions.Keys() {
-		session, _ := project.ActiveWorkSessions.Get(sessionID)
-		if session != nil && session.AgentID == agentID {
-			sessionsToRemove = append(sessionsToRemove, sessionID)
-		}
-	}
-	for _, sessionID := range sessionsToRemove {
-		project.ActiveWorkSessions.Delete(sessionID)
-	}
-
-	resourcesToUnlock := []string{}
-	for _, resource := range project.ResourceLocks.Keys() {
-		if lockedAgentID, _ := project.ResourceLocks.Get(resource); lockedAgentID == agentID {
-			resourcesToUnlock = append(resourcesToUnlock, resource)
-		}
-	}
-	for _, resource := range resourcesToUnlock {
-		project.ResourceLocks.Delete(resource)
-	}
-
-	// Python deliberately uses the unscoped repository here.
-	if updateErr := s.projectRepository.Update(ctx, project); updateErr != nil {
-		out := entities.NewOrderedMap[any]()
-		out.Set("success", false)
-		out.Set("error", updateErr.Error())
-		return out
-	}
-
-	agentDict := entities.NewOrderedMap[any]()
-	agentDict.Set("id", agentID)
-	agentDict.Set("name", agent.Name)
-	agentDict.Set("capabilities", zpProjectApplicationCapabilityList(agent))
-
-	out := entities.NewOrderedMap[any]()
-	out.Set("success", true)
-	out.Set("agent", agentDict)
-	out.Set("removed_sessions", len(sessionsToRemove))
-	out.Set("unlocked_resources", len(resourcesToUnlock))
-	out.Set("message", "Agent '"+agentID+"' unregistered successfully")
-	return out
 }
 
 // CleanupObsolete mirrors cleanup_obsolete(project_id=None).
@@ -373,18 +201,6 @@ func zpProjectApplicationCleanupProjectData(project *entities.Project) []string 
 	}
 
 	return cleanedItems
-}
-
-// zpProjectApplicationCapabilityList mirrors
-// [cap.value for cap in agent.capabilities]; Python set order is unspecified,
-// so we sort for determinism.
-func zpProjectApplicationCapabilityList(agent *entities.Agent) []string {
-	out := []string{}
-	for capability := range agent.Capabilities {
-		out = append(out, string(capability))
-	}
-	sort.Strings(out)
-	return out
 }
 
 func zpProjectApplicationID(project *entities.Project) string {

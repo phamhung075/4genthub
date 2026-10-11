@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -55,11 +56,21 @@ type CompleteTaskUseCase struct {
 	completionService     *services.TaskCompletionService
 	contextFacadeFactory  completeTaskContextFacadeFactory
 	hooks                 CompleteTaskHooks
+
+	// ledger writes each status move and its status_changed entry in one transaction. Unset leaves
+	// the save exactly as it was.
+	ledger StatusLedger
 }
 
 // WithHooks sets the status/metadata sync hooks (nil disables them).
 func (uc *CompleteTaskUseCase) WithHooks(h CompleteTaskHooks) *CompleteTaskUseCase {
 	uc.hooks = h
+	return uc
+}
+
+// WithLedger wires the status ledger (unset leaves the status writes as they were).
+func (uc *CompleteTaskUseCase) WithLedger(l StatusLedger) *CompleteTaskUseCase {
+	uc.ledger = l
 	return uc
 }
 
@@ -122,13 +133,20 @@ func (uc *CompleteTaskUseCase) Execute(
 		return response, nil
 	}
 
-	// Save the task
-	if _, err := uc.taskRepository.Save(ctx, task); err != nil {
+	// Save the task, with its status_changed entry, in one transaction. The entry reports the
+	// transition the row makes: executeCore may already have moved todo -> in_progress, and that
+	// move was recorded by its own call.
+	if err := uc.ledger.SaveStatus(ctx, func(ctx context.Context) error {
+		_, err := uc.taskRepository.Save(ctx, task)
+		return err
+	}, taskIDStr); err != nil {
 		return nil, err
 	}
 
 	// Update dependent tasks
-	uc.updateDependentTasks(ctx, task)
+	if err := uc.updateDependentTasks(ctx, task); err != nil {
+		return nil, err
+	}
 
 	// Handle domain events (only TaskUpdated events are inspected).
 	for _, event := range task.GetEvents() {
@@ -366,11 +384,15 @@ func (uc *CompleteTaskUseCase) executeCore(
 		}
 	}
 
-	// Handle state transition from todo -> in_progress -> done.
+	// Handle state transition from todo -> in_progress -> done. The move to in_progress is a status
+	// write of its own, so it carries its own entry, in its own transaction.
 	if strings.ToLower(task.Status.String()) == "todo" {
 		inProgress, _ := value_objects.NewTaskStatus("in_progress")
 		task.Status = &inProgress
-		if _, err := uc.taskRepository.Save(ctx, task); err != nil {
+		if err := uc.ledger.SaveStatus(ctx, func(ctx context.Context) error {
+			_, err := uc.taskRepository.Save(ctx, task)
+			return err
+		}, taskIDStr); err != nil {
 			return nil, false, err
 		}
 	}
@@ -410,10 +432,16 @@ func (uc *CompleteTaskUseCase) executeCore(
 			fac.UpdateContext("task", taskIDStr,
 				completeTaskCompletionContextUpdate(*completionSummary, nextRecommendations, testingNotes, nil),
 				true)
-			// Synchronize task status and metadata after completion (failures only logged).
+			// Synchronize task status and metadata after completion. The completion itself does not
+			// fail on them, but they are logged: this is the pair whose silence left a done task
+			// resolving as todo.
 			if uc.hooks != nil {
-				_ = uc.hooks.SyncTaskStatus(ctx, taskIDStr, "done")
-				_ = uc.hooks.SyncTaskMetadata(ctx, taskIDStr, task, "")
+				if err := uc.hooks.SyncTaskStatus(ctx, taskIDStr, "done"); err != nil {
+					log.Printf("[complete_task] the status did not land in the context of %s: %v", taskIDStr, err)
+				}
+				if err := uc.hooks.SyncTaskMetadata(ctx, taskIDStr, task, ""); err != nil {
+					log.Printf("[complete_task] the metadata did not land in the context of %s: %v", taskIDStr, err)
+				}
 			}
 		}
 		// THE BROADCAST IS NOT GATED ON THE CONTEXT FACADE, and my first attempt had it inside that
@@ -569,11 +597,14 @@ func (uc *CompleteTaskUseCase) newFacade(gitBranchID, projectID *string) complet
 	return uc.contextFacadeFactory.CreateFacade(gitBranchID, projectID)
 }
 
-// updateDependentTasks mirrors _update_dependent_tasks (errors swallowed).
-func (uc *CompleteTaskUseCase) updateDependentTasks(ctx context.Context, completedTask *entities.Task) {
+// updateDependentTasks mirrors _update_dependent_tasks, with one deliberate difference: no discarded error on
+// this path may read as success. A failed scan of the dependent tasks is returned, and so is a dependent task's
+// failed status write - Python logged both and continued, which is how a pass that never ran and a write that
+// never happened both reached the caller as a completed task.
+func (uc *CompleteTaskUseCase) updateDependentTasks(ctx context.Context, completedTask *entities.Task) error {
 	allTasks, err := uc.taskRepository.FindAll(ctx)
 	if err != nil {
-		return
+		return err
 	}
 
 	completedID := ""
@@ -605,25 +636,37 @@ func (uc *CompleteTaskUseCase) updateDependentTasks(ctx context.Context, complet
 	}
 
 	for _, dependentTask := range dependentTasks {
-		uc.updateSingleDependentTask(ctx, dependentTask, allTasks)
+		if err := uc.updateSingleDependentTask(ctx, dependentTask, allTasks); err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 // updateSingleDependentTask mirrors _update_single_dependent_task.
-func (uc *CompleteTaskUseCase) updateSingleDependentTask(ctx context.Context, dependentTask *entities.Task, allTasks []*entities.Task) {
+func (uc *CompleteTaskUseCase) updateSingleDependentTask(ctx context.Context, dependentTask *entities.Task, allTasks []*entities.Task) error {
 	allDependenciesComplete := completeTaskAllDependenciesComplete(dependentTask, allTasks)
 	if allDependenciesComplete && dependentTask.Status != nil {
 		switch dependentTask.Status.Value {
 		case "blocked":
 			todo, _ := value_objects.NewTaskStatus("todo")
 			dependentTask.Status = &todo
-			_, _ = uc.taskRepository.Save(ctx, dependentTask)
+			// The unblock is this OTHER task's status write, so it carries its own entry, in its own
+			// transaction. Python logs a failure here and continues; that discard is exactly what made a
+			// failed write read as success to this use case's caller, so the error is returned instead.
+			if err := uc.ledger.SaveStatus(ctx, func(ctx context.Context) error {
+				_, err := uc.taskRepository.Save(ctx, dependentTask)
+				return err
+			}, ledgerTaskID(dependentTask)); err != nil {
+				return err
+			}
 		case "todo":
 			// Ready to start: all dependencies completed.
 		default:
 			// No change needed.
 		}
 	}
+	return nil
 }
 
 // completeTaskAllDependenciesComplete mirrors _check_all_dependencies_complete.

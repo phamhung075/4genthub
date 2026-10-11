@@ -8,62 +8,6 @@ import (
 	"agenthub/fastmcp/task_management/domain/events"
 )
 
-func TestAgentEventHandlersStatistics(t *testing.T) {
-	h := NewAgentEventHandlers(nil, nil, nil)
-	ctx := context.Background()
-
-	a := events.NewAgentAssigned()
-	a.AgentID, a.TaskID, a.Role = "agent-1", "task-1", "worker"
-	h.HandleAgentAssigned(ctx, a)
-
-	b := events.NewAgentAssigned()
-	b.AgentID, b.TaskID, b.Role = "agent-1", "task-2", "worker"
-	h.HandleAgentAssigned(ctx, b)
-
-	u := events.NewAgentUnassigned()
-	u.AgentID, u.TaskID = "agent-1", "task-1"
-	h.HandleAgentUnassigned(ctx, u)
-
-	id := "agent-1"
-	got := h.GetAgentStatistics(ctx, &id)
-	stats := got["statistics"].(map[string]int)
-	if stats["assignments"] != 2 || stats["unassignments"] != 1 {
-		t.Fatalf("unexpected stats: %#v", stats)
-	}
-	workload := got["workload"].(map[string]any)
-	tasks := workload["active_tasks"].([]string)
-	if len(tasks) != 1 || tasks[0] != "task-2" {
-		t.Fatalf("unexpected active_tasks: %#v", tasks)
-	}
-	if workload["total_assignments"].(int) != 2 {
-		t.Fatalf("unexpected total_assignments: %#v", workload["total_assignments"])
-	}
-}
-
-func TestAgentEventHandlersPerformanceCap(t *testing.T) {
-	h := NewAgentEventHandlers(nil, nil, nil)
-	ctx := context.Background()
-	for i := 0; i < 35; i++ {
-		e := events.NewAgentPerformanceEvaluated()
-		e.AgentID = "a"
-		e.OverallScore = float64(i)
-		h.HandleAgentPerformanceEvaluated(ctx, e)
-	}
-	if len(h.PerformanceHistory["a"]) != 30 {
-		t.Fatalf("expected cap of 30, got %d", len(h.PerformanceHistory["a"]))
-	}
-}
-
-func TestAgentEventHandlersProcessEventRoutes(t *testing.T) {
-	h := NewAgentEventHandlers(nil, nil, nil)
-	e := events.NewAgentAssigned()
-	e.AgentID, e.TaskID = "x", "y"
-	h.ProcessEvent(context.Background(), e)
-	if h.AgentStats["x"]["assignments"] != 1 {
-		t.Fatalf("ProcessEvent did not route AgentAssigned")
-	}
-}
-
 func TestHintEventHandlersStatistics(t *testing.T) {
 	h := NewHintEventHandlers(nil, nil)
 	ctx := context.Background()

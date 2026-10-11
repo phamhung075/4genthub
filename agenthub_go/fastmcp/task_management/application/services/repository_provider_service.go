@@ -23,12 +23,6 @@ type repoProviderSubtaskRepositoryFactory interface {
 	CreateSubtaskRepository(projectID, gitBranchName string, userID *string) (domainrepos.SubtaskRepository, error)
 }
 
-// repoProviderAgentRepositoryFactory is the consumer-side view of AgentRepositoryFactory
-// (the provider caches the factory, then calls create_repository).
-type repoProviderAgentRepositoryFactory interface {
-	CreateRepository(session any) (domainrepos.AgentRepository, error)
-}
-
 // repoProviderFactoryBackend is the consumer-side boundary to the infrastructure
 // repository factories and concrete repository constructors. It bundles the lazy
 // imports performed inside each RepositoryProviderService method.
@@ -37,7 +31,6 @@ type repoProviderFactoryBackend interface {
 	NewORMTaskRepository(session any, gitBranchID *string, projectID *string, gitBranchName string, userID *string) (domainrepos.TaskRepository, error)
 	NewSubtaskRepositoryFactory() repoProviderSubtaskRepositoryFactory
 	CreateProjectRepository(userID *string) (domainrepos.ProjectRepository, error)
-	NewAgentRepositoryFactory() repoProviderAgentRepositoryFactory
 	CreateGitBranchRepository(userID *string) (domainrepos.GitBranchRepository, error)
 	NewGlobalContextRepository(session any) (domainrepos.ContextRepository, error)
 	NewProjectContextRepository(session any) (domainrepos.ContextRepository, error)
@@ -109,18 +102,6 @@ func (s *RepositoryProviderService) GetProjectRepository(userID *string, session
 	return s.repoProviderFactories.CreateProjectRepository(userID)
 }
 
-// GetAgentRepository gets an agent repository instance. The factory is cached under
-// "agent" and create_repository is called each time, as in Python.
-func (s *RepositoryProviderService) GetAgentRepository(session any) (domainrepos.AgentRepository, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if _, ok := s.repoProviderRepositories["agent"]; !ok {
-		s.repoProviderRepositories["agent"] = s.repoProviderFactories.NewAgentRepositoryFactory()
-	}
-	factory := s.repoProviderRepositories["agent"].(repoProviderAgentRepositoryFactory)
-	return factory.CreateRepository(session)
-}
-
 // GetGitBranchRepository gets a git branch repository instance.
 func (s *RepositoryProviderService) GetGitBranchRepository(session any, userID *string) (domainrepos.GitBranchRepository, error) {
 	return s.repoProviderFactories.CreateGitBranchRepository(userID)
@@ -187,7 +168,6 @@ type (
 	RepositoryProviderBackend            = repoProviderFactoryBackend
 	RepositoryProviderTaskFactoryPort    = repoProviderTaskRepositoryFactory
 	RepositoryProviderSubtaskFactoryPort = repoProviderSubtaskRepositoryFactory
-	RepositoryProviderAgentFactoryPort   = repoProviderAgentRepositoryFactory
 )
 
 // SetRepositoryProviderBackend wires the infrastructure factories used by

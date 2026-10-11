@@ -19,9 +19,10 @@ import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Select } from '../components/ui/select-simple';
-import { ModulePublishForm } from '../components/seats/ModulePublishForm';
+import { ModulePublishForm, type EditableBlock } from '../components/seats/ModulePublishForm';
 import { McpBlockForm } from '../components/seats/McpBlockForm';
 import { SeatComposer } from '../components/seats/SeatComposer';
+import { SeatPreview } from '../components/seats/SeatPreview';
 import { SeatTypeVersionForm } from '../components/seats/SeatTypeVersionForm';
 import {
   useMcpServers,
@@ -52,6 +53,13 @@ export const SeatAuthoringPage: React.FC = () => {
 
   const [room, setRoom] = useState('');
   const [seat, setSeat] = useState('');
+  /**
+   * The block the publish form below is editing: it prefills the form, and is cleared once it is
+   * published. Narrowed to the three fields the form reads, so the SAME setter takes a Modules
+   * row's full `ModuleSummary` and a composer row's composed block - which carries those three and
+   * nothing else - with neither widened nor cast.
+   */
+  const [editingModule, setEditingModule] = useState<EditableBlock | null>(null);
   const roomSlug = rooms.some((entry) => entry.slug === room) ? room : rooms[0]?.slug ?? '';
   const { seats } = useSeats(roomSlug);
   const seatKey = seats.some((entry) => entry.seat_key === seat) ? seat : seats[0]?.seat_key ?? '';
@@ -136,17 +144,26 @@ export const SeatAuthoringPage: React.FC = () => {
         ) : seats.length === 0 ? (
           <p className="text-sm text-muted-foreground">This room has no seats yet.</p>
         ) : (
-          <SeatComposer
-            room={roomSlug}
-            seat={seatKey}
-            seatType={selectedSeatType}
-            modules={modules}
-            mcpServers={mcpServers}
-            overlays={{ company: companyOverlay, room: roomOverlay, seat: seatOverlay }}
-            isSaving={updateOverlay.isPending}
-            saveError={composerError}
-            onApply={handleApply}
-          />
+          <>
+            {/* ONE form and now TWO entry points: the Modules row above, and the composer's own
+                rows, which hand in the block AS COMPOSED at the level being viewed. */}
+            <SeatComposer
+              room={roomSlug}
+              seat={seatKey}
+              seatType={selectedSeatType}
+              modules={modules}
+              mcpServers={mcpServers}
+              overlays={{ company: companyOverlay, room: roomOverlay, seat: seatOverlay }}
+              isSaving={updateOverlay.isPending}
+              saveError={composerError}
+              onApply={handleApply}
+              onEditBlock={setEditingModule}
+            />
+            {/* The SAME component the seat-detail page renders, given this page's own selection as
+                PROPS: /seats/authoring carries no :room/:seat, so a component that read the route
+                would show an empty snapshot here and read as a data problem. */}
+            <SeatPreview room={roomSlug} seat={seatKey} />
+          </>
         )}
       </section>
 
@@ -185,12 +202,28 @@ export const SeatAuthoringPage: React.FC = () => {
                   (types/websocket-protocol.ts:473). Without it the missing key threw during render
                   and unmounted the whole page instead of degrading this one cell. */}
               <code className="text-xs text-muted-foreground">{module.sha256?.substring(0, 8) || 'unknown'}</code>
+              {/* The entry point for "edit a block and publish a new version": it hands THIS block to
+                  the form below, which prefills from it. The visible label is the same on every row,
+                  so the accessible name carries the slug and stays one button per module. */}
+              <Button
+                variant="outline"
+                size="sm"
+                className="ml-auto"
+                aria-label={`Edit and publish ${module.slug}`}
+                onClick={() => setEditingModule(module)}
+              >
+                Edit and publish
+              </Button>
             </div>
           ))}
         </CardContent>
       </Card>
 
-      <ModulePublishForm />
+      <ModulePublishForm
+        block={editingModule}
+        onPublished={() => setEditingModule(null)}
+        onCancelEdit={() => setEditingModule(null)}
+      />
 
       <McpBlockForm />
 

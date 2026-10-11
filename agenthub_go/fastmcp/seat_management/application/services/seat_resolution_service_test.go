@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"testing"
 
@@ -284,6 +285,71 @@ func (c storeCatalog) Get(slug, version string) (resolver.ModuleVersion, bool) {
 }
 
 func (storeCatalog) Err() error { return nil }
+
+// missData is the fixed data the three lookups below answer from, so ResolveSeat's three misses
+// are exercisable without a database.
+type missData struct {
+	room     *repositories.Room
+	seat     *repositories.Seat
+	seatType *repositories.SeatType
+}
+
+type missRooms struct {
+	repositories.RoomRepository
+	data *missData
+}
+
+func (m missRooms) GetBySlug(context.Context, string, string) (*repositories.Room, error) {
+	return m.data.room, nil
+}
+
+type missSeats struct {
+	repositories.SeatRepository
+	data *missData
+}
+
+func (m missSeats) FindByRoomAndKey(context.Context, string, string, string) (*repositories.Seat, error) {
+	return m.data.seat, nil
+}
+
+type missSeatTypes struct {
+	repositories.SeatTypeRepository
+	data *missData
+}
+
+func (m missSeatTypes) GetByID(context.Context, string, string) (*repositories.SeatType, error) {
+	return m.data.seatType, nil
+}
+
+func missService(room *repositories.Room, seat *repositories.Seat, seatType *repositories.SeatType) *SeatResolutionService {
+	data := &missData{room: room, seat: seat, seatType: seatType}
+	return &SeatResolutionService{Rooms: missRooms{data: data}, Seats: missSeats{data: data}, SeatTypes: missSeatTypes{data: data}}
+}
+
+// ResolveSeat's three misses carry the sentinels the seat routes map to 404, so the STATUS is
+// decided by identity and never by the message. httpapp's TestResolveSeatStatusMapping pins the
+// other end of that chain: the same three sentinels answer 404 with the surviving bodies, and an
+// unrelated error that merely SAYS "not found" is this server's own failure (500).
+func TestResolveSeatMissesCarryTheirSentinel(t *testing.T) {
+	room := &repositories.Room{ID: "r1", Slug: "dev"}
+	seat := &repositories.Seat{ID: "s1", RoomID: "r1", SeatKey: "alice", SeatTypeID: "st1"}
+	seatType := &repositories.SeatType{ID: "st1", Slug: "coder"}
+
+	cases := []struct {
+		miss string
+		svc  *SeatResolutionService
+		want error
+	}{
+		{"unknown room", missService(nil, seat, seatType), ErrRoomNotFound},
+		{"unknown seat", missService(room, nil, seatType), ErrSeatNotFound},
+		{"unknown seat type", missService(room, seat, nil), ErrSeatTypeNotFound},
+	}
+	for _, c := range cases {
+		if _, err := c.svc.ResolveSeat(context.Background(), "u", "dev", "alice"); !errors.Is(err, c.want) {
+			t.Errorf("%s: err = %v, want it to wrap %v", c.miss, err, c.want)
+		}
+	}
+}
 
 // ValidateOverlayResolution refuses a candidate whose fold breaks an affected seat, naming the
 // failing op and scope, and allows a candidate that keeps every affected seat resolvable.

@@ -365,6 +365,20 @@ export const apiReference: ApiReference = {
     },
     {
       "method": "GET",
+      "path": "/api/v2/ledger",
+      "pathParams": [],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "POST",
+      "path": "/api/v2/ledger/intents",
+      "pathParams": [],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "GET",
       "path": "/api/v2/openrig/feedback",
       "pathParams": [],
       "handler": "",
@@ -381,22 +395,6 @@ export const apiReference: ApiReference = {
       "method": "GET",
       "path": "/api/v2/openrig/machines",
       "pathParams": [],
-      "handler": "",
-      "description": ""
-    },
-    {
-      "method": "POST",
-      "path": "/api/v2/openrig/machines",
-      "pathParams": [],
-      "handler": "",
-      "description": ""
-    },
-    {
-      "method": "DELETE",
-      "path": "/api/v2/openrig/machines/{machine}/token",
-      "pathParams": [
-        "machine"
-      ],
       "handler": "",
       "description": ""
     },
@@ -552,6 +550,37 @@ export const apiReference: ApiReference = {
       "description": ""
     },
     {
+      "method": "GET",
+      "path": "/api/v2/openrig/rooms/{room}/seats/{seat}/messages",
+      "pathParams": [
+        "room",
+        "seat"
+      ],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "POST",
+      "path": "/api/v2/openrig/rooms/{room}/seats/{seat}/messages",
+      "pathParams": [
+        "room",
+        "seat"
+      ],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "POST",
+      "path": "/api/v2/openrig/rooms/{room}/seats/{seat}/messages/{id}/ack",
+      "pathParams": [
+        "room",
+        "seat",
+        "id"
+      ],
+      "handler": "",
+      "description": ""
+    },
+    {
       "method": "PUT",
       "path": "/api/v2/openrig/rooms/{room}/seats/{seat}/occupant",
       "pathParams": [
@@ -584,6 +613,16 @@ export const apiReference: ApiReference = {
     {
       "method": "PUT",
       "path": "/api/v2/openrig/rooms/{room}/seats/{seat}/permission-policy",
+      "pathParams": [
+        "room",
+        "seat"
+      ],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v2/openrig/rooms/{room}/seats/{seat}/pin",
       "pathParams": [
         "room",
         "seat"
@@ -910,6 +949,15 @@ export const apiReference: ApiReference = {
     },
     {
       "method": "POST",
+      "path": "/api/v2/tasks/{id}/evidence",
+      "pathParams": [
+        "id"
+      ],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "POST",
       "path": "/api/v2/tasks/{task_id}/subtasks/summaries",
       "pathParams": [
         "task_id"
@@ -1171,11 +1219,20 @@ export const apiReference: ApiReference = {
   "tools": [
     {
       "name": "manage_task",
-      "description": "\nTASK MANAGEMENT - Complete lifecycle: CRUD | search | dependencies | workflow | vision insights | progress tracking\n\nUSE FOR: Task operations creation→completion | AI recommendations | Project organization | Team collaboration\n\nAI RULES: Create before work (\u003e1 file edit) | Use 'next' for recommendations | Update progress regularly | Complete with summaries | Search before creating | Use manage_subtask for complex work\n\n| Action              | Required                          | Optional                           | Description                        |\n|---------------------|-----------------------------------|------------------------------------|------------------------------------|\n| create              | git_branch_id, title, assignees   | description, status, priority, details, estimated_effort, labels, due_date, dependencies | Create task (min 1 agent)         |\n| update              | task_id                           | title, description, status, priority, details, estimated_effort, assignees, labels, due_date, context_id | Update task                        |\n| get                 | task_id                           | include_context                    | Retrieve task                      |\n| delete              | task_id                           |                                    | Remove task                        |\n| complete            | task_id                           | completion_summary, testing_notes  | Complete task                      |\n| list                | (none)                            | status, priority, assignees, labels, limit, git_branch_id | List with filters                  |\n| search              | query                             | limit, git_branch_id               | Full-text search                   |\n| next                | git_branch_id                     | include_context                    | Get recommended task               |\n| add_dependency      | task_id, dependency_id            |                                    | Add dependency                     |\n| remove_dependency   | task_id, dependency_id            |                                    | Remove dependency                  |\n| ai_plan             | requirements, title, git_branch_id| description, context, auto_create_tasks | AI task plan                       |\n| ai_create           | title, git_branch_id              | enable_ai_breakdown, enable_smart_assignment, ai_requirements | AI-enhanced task                   |\n| ai_enhance          | task_id                           | analyze_complexity, suggest_optimizations, identify_risks | AI insights                        |\n| ai_analyze          | requirements                      | context                            | Analyze requirements               |\n| ai_suggest_agents   | requirements                      | available_agents                   | Suggest agents                     |\n\nVALIDATION: Two-stage (schema: 'action' only → business logic: action-specific) | CRUD needs task_id | Create needs git_branch_id+title+assignees (min 1) | Search needs query | Dependencies need task_id+dependency_id\n\nKEY PARAMS: assignees (@agent-name, comma-separated, REQUIRED for create) | priority (low|medium|high|urgent|critical, affects 'next') | status (todo|in_progress|blocked|review|testing|done|cancelled) | dependencies (task IDs, comma-separated) | include_context (true for vision)\n\nVISION (Auto): Task enrichment | Priority estimation | Workflow hints | Progress tracking | Blocker detection | Impact analysis | Context updates\n\nBEST PRACTICES: Create before work | Specific titles | Update status | Detailed summaries | Search first | Define deps upfront | Use labels\n\nPROGRESS UPDATES: When updating 'status' or 'progress_percentage', you MUST include the 'details' parameter with at least 10 characters describing the progress made. This enforces documentation best practices and ensures all changes are tracked.\n\nExamples:\n```python\n# ❌ WRONG - Will fail validation\nmanage_task(action=\"update\", task_id=\"xxx\", status=\"in_progress\")\n\n# ✅ CORRECT - Includes required details\nmanage_task(\n    action=\"update\",\n    task_id=\"xxx\",\n    status=\"in_progress\",\n    details=\"Started implementation of authentication module\"\n)\n\n# ✅ CORRECT - Progress percentage with details\nmanage_task(\n    action=\"update\",\n    task_id=\"xxx\",\n    progress_percentage=50,\n    details=\"Completed database schema design and API endpoint structure\"\n)\n```\n\nDEPENDENCIES: Sequential (A→B→C) | Parallel | Blocking | Cross-feature | Add IF task needs output OR sequence part\n\nERRORS: Missing fields→specific error | Unknown actions→valid list | Internal→logged+generic | Vision→don't block\n",
+      "description": "\nTASK MANAGEMENT - Complete lifecycle: CRUD | search | dependencies | workflow | vision insights | progress tracking\n\nUSE FOR: Task operations creation→completion | AI recommendations | Project organization | Team collaboration\n\nAI RULES: Create before work (\u003e1 file edit) | Use 'next' for recommendations | Update progress regularly | Complete with summaries | Search before creating | Use manage_subtask for complex work\n\n| Action              | Required                          | Optional                           | Description                        |\n|---------------------|-----------------------------------|------------------------------------|------------------------------------|\n| create              | git_branch_id, title, assignees   | description, status, priority, details, estimated_effort, labels, due_date, dependencies, acceptance_criteria, scope | Create task (min 1 agent)         |\n| update              | task_id                           | title, description, status, priority, details, estimated_effort, assignees, labels, due_date, context_id, acceptance_criteria, scope | Update task                        |\n| get                 | task_id                           | include_context                    | Retrieve task                      |\n| delete              | task_id                           |                                    | Remove task                        |\n| complete            | task_id                           | completion_summary, testing_notes  | Complete task                      |\n| list                | (none)                            | status, priority, assignees, labels, limit, git_branch_id | List with filters                  |\n| search              | query                             | limit, git_branch_id               | Full-text search                   |\n| next                | git_branch_id                     | include_context                    | Get recommended task               |\n| add_dependency      | task_id, dependency_id            |                                    | Add dependency                     |\n| remove_dependency   | task_id, dependency_id            |                                    | Remove dependency                  |\n| resume              | task_id                           |                                    | Resume brief from the ledger       |\n| ai_plan             | requirements, title, git_branch_id| description, context, auto_create_tasks | AI task plan                       |\n| ai_create           | title, git_branch_id              | enable_ai_breakdown, enable_smart_assignment, ai_requirements | AI-enhanced task                   |\n| ai_enhance          | task_id                           | analyze_complexity, suggest_optimizations, identify_risks | AI insights                        |\n| ai_analyze          | requirements                      | context                            | Analyze requirements               |\n| ai_suggest_agents   | requirements                      | available_agents                   | Suggest agents                     |\n\nVALIDATION: Two-stage (schema: 'action' only → business logic: action-specific) | CRUD needs task_id | Create needs git_branch_id+title+assignees (min 1) | Search needs query | Dependencies need task_id+dependency_id\n\nKEY PARAMS: assignees (@agent-name, comma-separated, REQUIRED for create) | priority (low|medium|high|urgent|critical, affects 'next') | status (todo|in_progress|blocked|review|testing|done|cancelled) | dependencies (task IDs, comma-separated) | acceptance_criteria (JSON array of strings to verify) | scope (JSON array of glob patterns the work may touch) | include_context (true for vision)\n\nVISION (Auto): Task enrichment | Priority estimation | Workflow hints | Progress tracking | Blocker detection | Impact analysis | Context updates\n\nBEST PRACTICES: Create before work | Specific titles | Update status | Detailed summaries | Search first | Define deps upfront | Use labels\n\nPROGRESS UPDATES: When updating 'status' or 'progress_percentage', you MUST include the 'details' parameter with at least 10 characters describing the progress made. This enforces documentation best practices and ensures all changes are tracked.\n\nExamples:\n```python\n# ❌ WRONG - Will fail validation\nmanage_task(action=\"update\", task_id=\"xxx\", status=\"in_progress\")\n\n# ✅ CORRECT - Includes required details\nmanage_task(\n    action=\"update\",\n    task_id=\"xxx\",\n    status=\"in_progress\",\n    details=\"Started implementation of authentication module\"\n)\n\n# ✅ CORRECT - Progress percentage with details\nmanage_task(\n    action=\"update\",\n    task_id=\"xxx\",\n    progress_percentage=50,\n    details=\"Completed database schema design and API endpoint structure\"\n)\n```\n\nDEPENDENCIES: Sequential (A→B→C) | Parallel | Blocking | Cross-feature | Add IF task needs output OR sequence part\n\nERRORS: Missing fields→specific error | Unknown actions→valid list | Internal→logged+generic | Vision→don't block\n",
       "parameters": {
         "properties": {
+          "acceptance_criteria": {
+            "default": null,
+            "description": "[OPTIONAL] Acceptance criteria - the verifiable conditions that must hold for the work to be done, as a JSON array of strings (a comma-separated string is also accepted). Optional for: create, update.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Acceptance Criteria",
+            "type": "array"
+          },
           "action": {
-            "description": "Task management action. Valid: 'create', 'update', 'get', 'delete', 'complete', 'list', 'search', 'next', 'add_dependency', 'remove_dependency', 'ai_plan', 'ai_create', 'ai_enhance', 'ai_analyze', 'ai_suggest_agents'. Use 'create' to start new work, 'next' to find work, 'complete' when done. AI actions provide intelligent task planning and enhancement.",
+            "description": "Task management action. Valid: 'create', 'update', 'get', 'delete', 'complete', 'list', 'search', 'next', 'add_dependency', 'remove_dependency', 'resume', 'ai_plan', 'ai_create', 'ai_enhance', 'ai_analyze', 'ai_suggest_agents'. Use 'create' to start new work, 'next' to find work, 'resume' to pick up where a task left off, 'complete' when done. AI actions provide intelligent task planning and enhancement.",
             "title": "Action",
             "type": "string"
           },
@@ -1210,7 +1267,7 @@ export const apiReference: ApiReference = {
               }
             ],
             "default": null,
-            "description": "[OPTIONAL] **REQUIRED for create action** - Assignee identifiers (minimum 1 required). Use @seat-key format (e.g., '@lead', '@go-dev'); a known agent role such as 'coding-agent' is accepted and becomes '@coding-agent'. A bare name that is not a known role is rejected. For multiple assignees use comma-separated: '@lead,@go-dev'.",
+            "description": "[OPTIONAL] **REQUIRED for create action** - Assignee identifiers (minimum 1 required). Use the '@\u003cseat_key\u003e' form (e.g., '@lead', '@go-dev'); it is the only accepted assignee identity. A bare name, including a retired agent role, is rejected. For multiple assignees use comma-separated: '@lead,@go-dev'.",
             "title": "Assignees"
           },
           "auto_create_tasks": {
@@ -1389,6 +1446,15 @@ export const apiReference: ApiReference = {
             "title": "Requirements",
             "type": "string"
           },
+          "scope": {
+            "default": null,
+            "description": "[OPTIONAL] Scope - glob patterns for the files or areas the work may touch, as a JSON array of strings (a comma-separated string is also accepted), e.g. ['internal/**', 'cmd/*.go']. Optional for: create, update.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Scope",
+            "type": "array"
+          },
           "sort_by": {
             "default": null,
             "description": "[OPTIONAL] Field to sort results by. Optional. Examples: 'created_at', 'updated_at', 'priority', 'status', 'title'.",
@@ -1421,7 +1487,7 @@ export const apiReference: ApiReference = {
           },
           "task_id": {
             "default": null,
-            "description": "[OPTIONAL] Task identifier (UUID). Required for: update, get, delete, complete, add/remove_dependency. Get from create response or list/search results.",
+            "description": "[OPTIONAL] Task identifier (UUID). Required for: update, get, delete, complete, add/remove_dependency, resume. Get from create response or list/search results.",
             "title": "Task Id",
             "type": "string"
           },
@@ -1453,9 +1519,18 @@ export const apiReference: ApiReference = {
     },
     {
       "name": "manage_subtask",
-      "description": "\nSUBTASK MANAGEMENT - Hierarchical breakdown: CRUD | progress tracking | auto parent updates | context sync\n\nUSE FOR: Breaking down complex tasks | Granular progress | Multi-step workflows\n\nAI RULES: Use for tasks with multiple steps | Update with progress_notes (MANDATORY for update/complete) | progress_percentage auto-maps status | Complete with detailed summaries | All actions auto-update parent\n\n| Action   | Required                 | Optional                           | Description                  |\n|----------|--------------------------|------------------------------------|-----------------------------|\n| create   | task_id, title           | description, status, priority, assignees, progress_notes | Create subtask                  |\n| update   | task_id, subtask_id, progress_notes | title, description, status, priority, assignees, progress_percentage, blockers, insights_found | Update with progress history    |\n| delete   | task_id, subtask_id      |                                    | Remove subtask              |\n| get      | task_id, subtask_id      |                                    | Retrieve subtask            |\n| list     | task_id                  |                                    | List all subtasks           |\n| complete | task_id, subtask_id, completion_summary, progress_notes | impact_on_parent, insights_found | Complete with context       |\n\nVALIDATION: task_id always required | subtask_id for update/delete/get/complete | title for create | progress_notes MANDATORY for update/complete | completion_summary MANDATORY for complete\n\nKEY PARAMS: progress_notes (MANDATORY update/complete, builds timestamped history) | completion_summary (MANDATORY complete, be specific) | progress_percentage (0-100, auto-maps: 0=todo, 1-99=in_progress, 100=done) | assignees (inherits from parent if not specified)\n\nAUTO FEATURES: Progress history tracking | Agent inheritance | Parent progress recalc | Status mapping | Blocker escalation | Insight propagation | Workflow hints\n\nBEST PRACTICES: Update with progress_notes every step | Complete with detailed summary | Use progress_percentage over status | Let assignees inherit\n\n**Progress Documentation Requirements**: The 'progress_notes' parameter is MANDATORY for 'update' and 'complete' actions. This builds timestamped progress history and ensures visibility into work progress. Operations will fail without this field.\n\nUSAGE EXAMPLES:\n```python\n# ❌ WRONG - Will fail validation\nmanage_subtask(action=\"update\", task_id=\"xxx\", subtask_id=\"yyy\", progress_percentage=50)\n\n# ✅ CORRECT - Includes required progress_notes\nmanage_subtask(\n    action=\"update\",\n    task_id=\"xxx\",\n    subtask_id=\"yyy\",\n    progress_percentage=50,\n    progress_notes=\"Completed UI mockup, starting on API integration\"\n)\n\n# ❌ WRONG - Complete without progress_notes\nmanage_subtask(action=\"complete\", task_id=\"xxx\", subtask_id=\"yyy\", completion_summary=\"Done\")\n\n# ✅ CORRECT - Complete with both required fields\nmanage_subtask(\n    action=\"complete\",\n    task_id=\"xxx\",\n    subtask_id=\"yyy\",\n    completion_summary=\"Completed JWT token structure with proper expiry times\",\n    progress_notes=\"Final review completed, structure documented\"\n)\n```\n\nERRORS: Missing fields→specific error | Unknown actions→valid list | Internal→logged+generic | Context updates→don't block\n",
+      "description": "\nSUBTASK MANAGEMENT - Hierarchical breakdown: CRUD | progress tracking | auto parent updates | context sync\n\nUSE FOR: Breaking down complex tasks | Granular progress | Multi-step workflows\n\nAI RULES: Use for tasks with multiple steps | Update with progress_notes (MANDATORY for update/complete) | progress_percentage auto-maps status | Complete with detailed summaries | All actions auto-update parent\n\n| Action   | Required                 | Optional                           | Description                  |\n|----------|--------------------------|------------------------------------|-----------------------------|\n| create   | task_id, title           | description, status, priority, assignees, progress_notes, acceptance_criteria, scope | Create subtask                  |\n| update   | task_id, subtask_id, progress_notes | title, description, status, priority, assignees, progress_percentage, blockers, insights_found, acceptance_criteria, scope | Update with progress history    |\n| delete   | task_id, subtask_id      |                                    | Remove subtask              |\n| get      | task_id, subtask_id      |                                    | Retrieve subtask            |\n| list     | task_id                  |                                    | List all subtasks           |\n| complete | task_id, subtask_id, completion_summary, progress_notes | impact_on_parent, insights_found | Complete with context       |\n\nVALIDATION: task_id always required | subtask_id for update/delete/get/complete | title for create | progress_notes MANDATORY for update/complete | completion_summary MANDATORY for complete\n\nKEY PARAMS: progress_notes (MANDATORY update/complete, builds timestamped history) | completion_summary (MANDATORY complete, be specific) | progress_percentage (0-100, auto-maps: 0=todo, 1-99=in_progress, 100=done) | assignees (inherits from parent if not specified) | acceptance_criteria (JSON array of strings to verify) | scope (JSON array of glob patterns the work may touch)\n\nAUTO FEATURES: Progress history tracking | Agent inheritance | Parent progress recalc | Status mapping | Blocker escalation | Insight propagation | Workflow hints\n\nBEST PRACTICES: Update with progress_notes every step | Complete with detailed summary | Use progress_percentage over status | Let assignees inherit\n\n**Progress Documentation Requirements**: The 'progress_notes' parameter is MANDATORY for 'update' and 'complete' actions. This builds timestamped progress history and ensures visibility into work progress. Operations will fail without this field.\n\nUSAGE EXAMPLES:\n```python\n# ❌ WRONG - Will fail validation\nmanage_subtask(action=\"update\", task_id=\"xxx\", subtask_id=\"yyy\", progress_percentage=50)\n\n# ✅ CORRECT - Includes required progress_notes\nmanage_subtask(\n    action=\"update\",\n    task_id=\"xxx\",\n    subtask_id=\"yyy\",\n    progress_percentage=50,\n    progress_notes=\"Completed UI mockup, starting on API integration\"\n)\n\n# ❌ WRONG - Complete without progress_notes\nmanage_subtask(action=\"complete\", task_id=\"xxx\", subtask_id=\"yyy\", completion_summary=\"Done\")\n\n# ✅ CORRECT - Complete with both required fields\nmanage_subtask(\n    action=\"complete\",\n    task_id=\"xxx\",\n    subtask_id=\"yyy\",\n    completion_summary=\"Completed JWT token structure with proper expiry times\",\n    progress_notes=\"Final review completed, structure documented\"\n)\n```\n\nERRORS: Missing fields→specific error | Unknown actions→valid list | Internal→logged+generic | Context updates→don't block\n",
       "parameters": {
         "properties": {
+          "acceptance_criteria": {
+            "default": null,
+            "description": "[OPTIONAL] Acceptance criteria - the verifiable conditions that must hold for the subtask to be done, as a JSON array of strings (a comma-separated string is also accepted). Optional for create and update",
+            "items": {
+              "type": "string"
+            },
+            "title": "Acceptance Criteria",
+            "type": "array"
+          },
           "action": {
             "description": "[OPTIONAL] Subtask management action to perform. Valid values: create, update, delete, get, list, complete",
             "title": "Action",
@@ -1463,7 +1538,7 @@ export const apiReference: ApiReference = {
           },
           "assignees": {
             "default": null,
-            "description": "[OPTIONAL] Agent identifiers - **Inherits from parent task if not specified**. Use @agent-name format. Comma-separated for multiple: 'coding-agent,@test-orchestrator-agent'. Leave empty to inherit parent's agents automatically.",
+            "description": "[OPTIONAL] Assignee seat keys in the '@\u003cseat_key\u003e' form - **Inherits from the parent task if not specified**. A bare name is rejected. Comma-separated for multiple: '@lead,@go-dev'. Leave empty to inherit the parent task's assignees automatically.",
             "title": "Assignees",
             "type": "string"
           },
@@ -1538,6 +1613,15 @@ export const apiReference: ApiReference = {
             "description": "[OPTIONAL] Integer 0-100 representing completion. Automatically maps to status (0=todo, 1-99=in_progress, 100=done). Use this instead of status field",
             "title": "Progress Percentage",
             "type": "integer"
+          },
+          "scope": {
+            "default": null,
+            "description": "[OPTIONAL] Scope - glob patterns for the files or areas the subtask may touch, as a JSON array of strings (a comma-separated string is also accepted), e.g. ['internal/**', 'cmd/*.go']. Optional for create and update",
+            "items": {
+              "type": "string"
+            },
+            "title": "Scope",
+            "type": "array"
           },
           "skills_learned": {
             "default": null,
@@ -1796,67 +1880,6 @@ export const apiReference: ApiReference = {
             "description": "[REQUIRED for all actions] Project identifier for the git branch operation",
             "title": "Project Id",
             "type": "string"
-          },
-          "user_id": {
-            "default": null,
-            "description": "[OPTIONAL] User identifier for authentication and audit trails",
-            "title": "User Id",
-            "type": "string"
-          }
-        },
-        "required": [
-          "action"
-        ],
-        "type": "object"
-      },
-      "actions": []
-    },
-    {
-      "name": "manage_agent",
-      "description": "\nAGENT MANAGEMENT - Registration \u0026 assignment: 33 specialized agents (coding, testing, architecture, DevOps, security, ML, etc.)\n\nACTIONS: register | assign | get | list | update | unassign | unregister | rebalance\n\nKEY PARAMS: project_id (REQUIRED for all) | name (REQUIRED for register) | agent_id (REQUIRED for most except register/list/rebalance) | git_branch_id (REQUIRED for assign/unassign)\n\nREGISTRATION: agent_id auto-generated if not provided\n\nERRORS: Missing fields→specific error | Unknown actions→valid list | Internal→logged+generic\n",
-      "parameters": {
-        "properties": {
-          "action": {
-            "description": "[OPTIONAL] Agent management action to perform. Valid values: register, assign, get, list, update, unassign, unregister, rebalance",
-            "title": "Action",
-            "type": "string"
-          },
-          "agent_id": {
-            "default": null,
-            "description": "[REQUIRED for most actions except 'register', 'list', and 'rebalance'] Agent identifier. Required for most actions except register/list/rebalance",
-            "title": "Agent Id",
-            "type": "string"
-          },
-          "call_agent": {
-            "default": null,
-            "description": "[OPTIONAL] Call agent string or configuration. Optional, for register/update actions",
-            "title": "Call Agent",
-            "type": "string"
-          },
-          "git_branch_id": {
-            "default": null,
-            "description": "[REQUIRED for 'assign' and 'unassign' actions] Task tree identifier. Required for assign/unassign actions",
-            "title": "Git Branch Id",
-            "type": "string"
-          },
-          "name": {
-            "default": null,
-            "description": "[REQUIRED for 'register' action] Agent name. Required for register, optional for update",
-            "title": "Name",
-            "type": "string"
-          },
-          "project_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "[REQUIRED for all actions] [REQUIRED] Project identifier for agent management. No default value - must be provided",
-            "title": "Project Id"
           },
           "user_id": {
             "default": null,

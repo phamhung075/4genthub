@@ -7,8 +7,8 @@ import (
 )
 
 // ParameterValidator is the minimal view of task_mcp_controller/validators/
-// parameter_validator.py. That module has no Go port yet; the interface is
-// declared here and reported as a dependency.
+// parameter_validator.py. That module is ported in validators/parameter_validator.go;
+// the interface is declared here and reported as a dependency.
 type ParameterValidator interface {
 	ValidateCreateTaskParams(title, gitBranchID, description, status, priority, dueDate *string,
 		assignees, labels, dependencies []string) (bool, *entities.OrderedMap[any])
@@ -49,7 +49,7 @@ type ValidationFactory struct {
 
 // NewValidationFactory ports __init__(response_formatter). Python constructs the
 // validators itself; they are resolved through the constructor hooks above
-// because those modules have no Go port yet.
+// because those modules are ported under validators/.
 func NewValidationFactory(responseFormatter ResponseFormatter) *ValidationFactory {
 	return &ValidationFactory{
 		responseFormatter:  responseFormatter,

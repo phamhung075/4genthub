@@ -10,13 +10,19 @@ import (
 
 	"agenthub/fastmcp/task_management/domain/entities"
 	tmvo "agenthub/fastmcp/task_management/domain/value_objects"
+	"agenthub/fastmcp/task_management/infrastructure"
 	"agenthub/fastmcp/task_management/infrastructure/database"
+
+	seatnames "agenthub/fastmcp/seat_management/domain/repositories"
 )
 
-// MAX_EVENTS_PER_BATCH and MAX_PAYLOAD_CHARS.
+// MAX_EVENTS_PER_BATCH, MAX_PAYLOAD_CHARS and MAX_CURSOR_BYTES.
 const (
 	MaxEventsPerBatch = 200
 	MaxPayloadChars   = 64 * 1024
+	// MaxCursorBytes bounds the connector's opaque resume position (rigd-boundaries.md 2.2: "at
+	// most 512 bytes"). It is the column's width too, so the two cannot drift apart.
+	MaxCursorBytes = 512
 )
 
 // streamNamespace is uuid.UUID("6f1c2d3e-4a5b-4c6d-8e7f-0a1b2c3d4e5f").
@@ -112,16 +118,38 @@ func sessionRow(s *database.AgentSession) *entities.OrderedMap[any] {
 	} else {
 		m.Set("last_seen", tmvo.IsoFormatNaive(s.LastSeen))
 	}
+	// The seat's identity, observed by the connector and reported at ingest. Null means the
+	// connector could not name one - the session has no seat to send to, which is a fact about the
+	// session rather than an error.
+	if s.RoomSlug != nil {
+		m.Set("room_slug", *s.RoomSlug)
+	} else {
+		m.Set("room_slug", nil)
+	}
+	if s.SeatKey != nil {
+		m.Set("seat_key", *s.SeatKey)
+	} else {
+		m.Set("seat_key", nil)
+	}
+	// 2.3a: the browser row carries the seat state the connector last reported, and null when no
+	// connector has reported one. It is not the connection fact `status` above; the two are
+	// independent and the dashboard applies the ruled precedence over them.
+	if s.SeatState != nil {
+		m.Set("seat_state", *s.SeatState)
+	} else {
+		m.Set("seat_state", nil)
+	}
 	return m
 }
 
-const sessionCols = "id, user_id, connector_id, session_key, name, project, status, last_seq, created_at, last_seen"
+const sessionCols = "id, user_id, connector_id, session_key, name, project, status, last_seq, created_at, last_seen, room_slug, seat_key, client_cursor, seat_state"
 
 type rowScanner interface{ Scan(dest ...any) error }
 
 func scanAgentSession(row rowScanner, dst *database.AgentSession) error {
 	return row.Scan(&dst.ID, &dst.UserID, &dst.ConnectorID, &dst.SessionKey, &dst.Name,
-		&dst.Project, &dst.Status, &dst.LastSeq, &dst.CreatedAt, &dst.LastSeen)
+		&dst.Project, &dst.Status, &dst.LastSeq, &dst.CreatedAt, &dst.LastSeen, &dst.RoomSlug, &dst.SeatKey,
+		&dst.ClientCursor, &dst.SeatState)
 }
 
 func scanAgentSessionEvent(row rowScanner, dst *database.AgentSessionEvent) error {
@@ -142,14 +170,100 @@ func truncatedPayload() *entities.OrderedMap[any] {
 	return m
 }
 
+// seatIdentity checks the pair a connector reports: both or neither. HALF A PAIR IS REFUSED - it is
+// ambiguous, and ck_agent_sessions_seat_pair could not store it - but a WHOLE PAIR THAT CANNOT BE
+// ADDRESSED LOSES THE ANNOTATION AND KEEPS THE SESSION, which the dropped result reports to the
+// caller. The two failures are not comparable: the pair is an annotation on the session, while
+// namePattern is OpenRig's POD OR MEMBER ID rule and room_slug holds a RIG name the server may
+// never have rendered - so an unaddressable annotation must never cost the connector its whole
+// event stream. A dropped pair is not stored raw either: every non-null pair in the table stays a
+// name a reader can use without re-validating it, rather than a stale carrier that looks
+// addressable. The rule itself is the one the room and seat tables already use, imported rather
+// than copied so there is one statement of it. The dependency is a pure domain package: no query, no
+// foreign key, so the hot socket path stays free of seat_management's storage.
+func seatIdentity(roomSlug, seatKey *string) (room, seat *string, dropped bool, err error) {
+	room, seat = clip(roomSlug), clip(seatKey)
+	if (room == nil) != (seat == nil) {
+		return nil, nil, false, &tmvo.ValueError{Msg: "room and seat must be reported together"}
+	}
+	if room == nil {
+		return nil, nil, false, nil
+	}
+	for _, named := range []struct {
+		kind, value string
+	}{{"room", *room}, {"seat", *seat}} {
+		if err := seatnames.ValidateName(named.kind, named.value); err != nil {
+			return nil, nil, true, nil
+		}
+	}
+	return room, seat, false, nil
+}
+
+// warnUnaddressableSeatPair reports a pair the frame named that cannot be addressed. The session is
+// kept and the pair is dropped, so this warning is the only trace of what was discarded: it names
+// both halves exactly as the connector sent them, which is what tells an operator which rig could
+// not be addressed.
+func warnUnaddressableSeatPair(sessionKey, connectorID, room, seat string) {
+	infrastructure.GetLogger("session_stream").Warn(
+		"session frame named a seat pair that cannot be addressed; keeping the session and dropping the pair",
+		"session_key", sessionKey, "connector_id", connectorID, "room_slug", room, "seat_key", seat)
+}
+
+// SessionUpsert is what a session frame reports back to the socket: the stored row, and the client
+// cursor the last events batch committed. session_ack carries the row's last_seq and that cursor,
+// which is how a connector that lost its ack resumes exactly where its source stopped (2.1, 2.2).
+type SessionUpsert struct {
+	Row    *entities.OrderedMap[any]
+	Cursor *string
+	// Created reports that this frame inserted a new row: the first `session` frame for a new
+	// (user_id, connector_id, session_key). 2.3a emits `created` for it and nothing else.
+	Created bool
+	// SeatStateChanged reports that the stored seat_state differs from the one the row held. A
+	// frame that carries no state, or one equal to the stored value, leaves it false.
+	SeatStateChanged bool
+	// StatusChanged reports that the write moved status. Only a row that was offline and is being
+	// re-registered by a live connector can change: the update always writes "active".
+	StatusChanged bool
+}
+
+// reportedState is session.state, checked against the two ruled values (2.3a) and clipped to the
+// column. Null means the frame carried no state, and a frame that carries none must not overwrite
+// the state an earlier one reported - the same rule the project and the seat pair follow.
+func reportedState(state *string) (*string, error) {
+	if state == nil || *state == "" {
+		return nil, nil
+	}
+	s := pyClip(*state, 20)
+	if s != "running" && s != "stopped" {
+		return nil, &tmvo.ValueError{Msg: "bad state"}
+	}
+	return &s, nil
+}
+
 // UpsertSession is upsert_session.
-func UpsertSession(ctx context.Context, sessions *database.SessionManager, userID, connectorID, sessionKey, name string, project *string) (*entities.OrderedMap[any], error) {
+func UpsertSession(ctx context.Context, sessions *database.SessionManager, userID, connectorID, sessionKey, name string, project, roomSlug, seatKey, state *string) (*SessionUpsert, error) {
 	sessions, err := resolveSessions(sessions)
 	if err != nil {
 		return nil, err
 	}
+	// The state is checked before any statement is built, so a bad value costs the connector its
+	// frame and nothing else.
+	seatState, err := reportedState(state)
+	if err != nil {
+		return nil, err
+	}
+	// The values as the frame sent them, for the warning below: in the dropped case both are
+	// non-nil after clip, so they are safe to name.
+	frameRoom, frameSeat := roomSlug, seatKey
+	roomSlug, seatKey, dropped, err := seatIdentity(roomSlug, seatKey)
+	if err != nil {
+		return nil, err
+	}
+	if dropped {
+		warnUnaddressableSeatPair(sessionKey, connectorID, *frameRoom, *frameSeat)
+	}
 	sid := SessionIDFor(userID, connectorID, sessionKey)
-	var out *entities.OrderedMap[any]
+	var out *SessionUpsert
 	err = sessions.WithSession(ctx, func(ctx context.Context, s database.DBTX) error {
 		var existing database.AgentSession
 		scanErr := scanAgentSession(s.QueryRowContext(ctx, "SELECT "+sessionCols+" FROM agent_sessions WHERE id = $1", sid), &existing)
@@ -168,38 +282,70 @@ func UpsertSession(ctx context.Context, sessions *database.SessionManager, userI
 				SessionKey:  sessionKey,
 				Name:        pyClip(name, 255),
 				Project:     clip(project),
+				RoomSlug:    roomSlug,
+				SeatKey:     seatKey,
+				SeatState:   seatState,
 				Status:      "active",
 				LastSeq:     0,
 				CreatedAt:   ts,
 				LastSeen:    ts,
 			}
 			if _, err := s.ExecContext(ctx,
-				"INSERT INTO agent_sessions (id, user_id, connector_id, session_key, name, project, status, last_seq, created_at, last_seen) "+
-					"VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
+				"INSERT INTO agent_sessions (id, user_id, connector_id, session_key, name, project, status, last_seq, created_at, last_seen, room_slug, seat_key, seat_state) "+
+					"VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)",
 				row.ID, row.UserID, row.ConnectorID, row.SessionKey, row.Name, row.Project,
-				row.Status, row.LastSeq, row.CreatedAt, row.LastSeen); err != nil {
+				row.Status, row.LastSeq, row.CreatedAt, row.LastSeen, row.RoomSlug, row.SeatKey, row.SeatState); err != nil {
 				return err
 			}
-			out = sessionRow(&row)
+			out = &SessionUpsert{Row: sessionRow(&row), Cursor: row.ClientCursor, Created: true}
 			return nil
 		}
 
-		// Existing row: update name, keep the project when the new value is empty.
+		// Existing row: update name, keep the project when the new value is empty, and move the seat
+		// identity when the frame carried one - the pair travels together or not at all, which
+		// seatIdentity has already enforced. A frame that named a pair which could not be addressed
+		// carries no usable identity, so the stored pair is cleared rather than kept: the session then
+		// says what the connector said - no seat it can name.
 		newProject := existing.Project
 		if p := clip(project); p != nil {
 			newProject = p
 		}
+		newRoom, newSeat := existing.RoomSlug, existing.SeatKey
+		switch {
+		case dropped:
+			newRoom, newSeat = nil, nil
+		case roomSlug != nil:
+			newRoom, newSeat = roomSlug, seatKey
+		}
+		newState := existing.SeatState
+		if seatState != nil {
+			newState = seatState
+		}
+		// What the socket path must push (2.3a): a state the frame named that differs from the one
+		// the row now holds, and a status this write moves from offline back to active. A frame that
+		// carries no state keeps the stored one, so it reports no state change. Both are read before
+		// `existing` is overwritten with the new values below.
+		seatStateChanged := seatState != nil && (existing.SeatState == nil || *existing.SeatState != *seatState)
+		statusChanged := existing.Status != "active"
 		ts := tNow()
 		if _, err := s.ExecContext(ctx,
-			"UPDATE agent_sessions SET name = $1, project = $2, status = $3, last_seen = $4 WHERE id = $5",
-			pyClip(name, 255), newProject, "active", ts, sid); err != nil {
+			"UPDATE agent_sessions SET name = $1, project = $2, status = $3, last_seen = $4, room_slug = $5, seat_key = $6, seat_state = $7 WHERE id = $8",
+			pyClip(name, 255), newProject, "active", ts, newRoom, newSeat, newState, sid); err != nil {
 			return err
 		}
 		existing.Name = pyClip(name, 255)
 		existing.Project = newProject
+		existing.RoomSlug = newRoom
+		existing.SeatKey = newSeat
+		existing.SeatState = newState
 		existing.Status = "active"
 		existing.LastSeen = ts
-		out = sessionRow(&existing)
+		out = &SessionUpsert{
+			Row:              sessionRow(&existing),
+			Cursor:           existing.ClientCursor,
+			SeatStateChanged: seatStateChanged,
+			StatusChanged:    statusChanged,
+		}
 		return nil
 	})
 	if err != nil {
@@ -208,16 +354,26 @@ func UpsertSession(ctx context.Context, sessions *database.SessionManager, userI
 	return out, nil
 }
 
-// AppendEvents is append_events: append events, assigning seq on the server.
-func AppendEvents(ctx context.Context, sessions *database.SessionManager, userID, sessionID string, events []any) ([]*entities.OrderedMap[any], error) {
+// AppendEvents is append_events: append events, assigning seq on the server, and commit the
+// connector's cursor in the SAME transaction (rigd-boundaries.md 5 step 1). Committing both
+// together is the whole point of storing the cursor at all: "stored" and "resumable from" cannot
+// disagree, so a batch whose ack was lost is resumed from and never re-sent (2.1, option A).
+//
+// The returned cursor is the value the transaction stored - the one the frame carried, or null
+// when it carried none, which is what events_ack echoes.
+func AppendEvents(ctx context.Context, sessions *database.SessionManager, userID, sessionID string, events []any, cursor *string) ([]*entities.OrderedMap[any], *string, error) {
 	if len(events) > MaxEventsPerBatch {
-		return nil, &tmvo.ValueError{Msg: fmt.Sprintf("at most %d events per batch", MaxEventsPerBatch)}
+		return nil, nil, &tmvo.ValueError{Msg: fmt.Sprintf("at most %d events per batch", MaxEventsPerBatch)}
+	}
+	if cursor != nil && len(*cursor) > MaxCursorBytes {
+		return nil, nil, &tmvo.ValueError{Msg: "cursor is too long"}
 	}
 	sessions, err := resolveSessions(sessions)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	stored := []*entities.OrderedMap[any]{}
+	var storedCursor *string
 	err = sessions.WithSession(ctx, func(ctx context.Context, s database.DBTX) error {
 		for _, ev := range events {
 			if _, ok := ev.(*entities.OrderedMap[any]); !ok {
@@ -264,17 +420,19 @@ func AppendEvents(ctx context.Context, sessions *database.SessionManager, userID
 			stored = append(stored, m)
 		}
 
+		// The cursor moves with the events above, never in a statement of its own.
 		if _, err := s.ExecContext(ctx,
-			"UPDATE agent_sessions SET last_seq = $1, last_seen = $2 WHERE id = $3",
-			row.LastSeq, tNow(), sessionID); err != nil {
+			"UPDATE agent_sessions SET last_seq = $1, last_seen = $2, client_cursor = $3 WHERE id = $4",
+			row.LastSeq, tNow(), cursor, sessionID); err != nil {
 			return err
 		}
+		storedCursor = cursor
 		return nil
 	})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return stored, nil
+	return stored, storedCursor, nil
 }
 
 // ListSessions is list_sessions, newest last_seen first.
@@ -379,16 +537,59 @@ func ListEvents(ctx context.Context, sessions *database.SessionManager, userID, 
 	return out, nil
 }
 
+// OfflineSession is one session MarkOffline moved offline: its id and session key are what the
+// socket names in the one `updated` frame it emits for the row (2.3a), and SeatState is the last
+// reported state the frame carries alongside the new offline status.
+type OfflineSession struct {
+	ID         string
+	SessionKey string
+	SeatState  *string
+}
+
 // MarkOffline is mark_offline: all of a connector's sessions become offline.
-func MarkOffline(ctx context.Context, sessions *database.SessionManager, userID, connectorID string) error {
+func MarkOffline(ctx context.Context, sessions *database.SessionManager, userID, connectorID string) ([]OfflineSession, error) {
 	sessions, err := resolveSessions(sessions)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return sessions.WithSession(ctx, func(ctx context.Context, s database.DBTX) error {
-		_, err := s.ExecContext(ctx,
+	marked := []OfflineSession{}
+	err = sessions.WithSession(ctx, func(ctx context.Context, s database.DBTX) error {
+		// Read the connector's rows before the write, because the write sets every row offline and
+		// the RETURNING form would only ever hand back the new value. The UPDATE still touches every
+		// row (last_seen keeps moving, as before), but only the rows whose status actually changed
+		// are reported: a push for an unchanged row would be a frame for nothing (2.3a).
+		rows, err := s.QueryContext(ctx,
+			"SELECT id, session_key, status, seat_state FROM agent_sessions WHERE user_id = $1 AND connector_id = $2",
+			userID, connectorID)
+		if err != nil {
+			return err
+		}
+		for rows.Next() {
+			var id, sessionKey, status string
+			var seatState *string
+			if err := rows.Scan(&id, &sessionKey, &status, &seatState); err != nil {
+				rows.Close()
+				return err
+			}
+			if status != "offline" {
+				marked = append(marked, OfflineSession{ID: id, SessionKey: sessionKey, SeatState: seatState})
+			}
+		}
+		if err := rows.Err(); err != nil {
+			rows.Close()
+			return err
+		}
+		// The rows must be closed before the UPDATE runs on the same connection.
+		if err := rows.Close(); err != nil {
+			return err
+		}
+		_, err = s.ExecContext(ctx,
 			"UPDATE agent_sessions SET status = $1, last_seen = $2 WHERE user_id = $3 AND connector_id = $4",
 			"offline", tNow(), userID, connectorID)
 		return err
 	})
+	if err != nil {
+		return nil, err
+	}
+	return marked, nil
 }

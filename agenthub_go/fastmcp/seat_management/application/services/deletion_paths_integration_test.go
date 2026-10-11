@@ -47,6 +47,7 @@ type deletionStore struct {
 	overlays repositories.OverlayRepository
 	resolved repositories.ResolvedSeatRepository
 	machines repositories.MachineStatusRepository
+	messages repositories.SeatMessageRepository
 }
 
 func (s *deletionStore) GetRoomBySlug(ctx context.Context, userID, slug string) (*repositories.Room, error) {
@@ -89,6 +90,18 @@ func (s *deletionStore) DeleteSeatStatusForSeat(ctx context.Context, userID, roo
 	return s.machines.DeleteSeatStatusForSeat(ctx, userID, roomSlug, seatKey)
 }
 
+func (s *deletionStore) DeleteSeatMessagesForSeat(ctx context.Context, userID, roomSlug, seatKey string) error {
+	return s.messages.DeleteForSeat(ctx, userID, roomSlug, seatKey)
+}
+
+func (s *deletionStore) DeleteSeatMessagesForRoom(ctx context.Context, userID, roomSlug string) error {
+	return s.messages.DeleteForRoom(ctx, userID, roomSlug)
+}
+
+func (s *deletionStore) DeleteMachineEdgesForRoom(ctx context.Context, userID, roomSlug string) error {
+	return s.machines.DeleteMachineEdgesForRoom(ctx, userID, roomSlug)
+}
+
 func (s *deletionStore) DeleteRoom(ctx context.Context, userID, roomID string) error {
 	return s.rooms.Delete(ctx, userID, roomID)
 }
@@ -99,7 +112,7 @@ func (s *deletionStore) InTransaction(ctx context.Context, fn func(ctx context.C
 
 // deletionTables is every table either path could reach, so "nothing else moved" is measured
 // rather than asserted.
-var deletionTables = []string{"rooms", "seats", "seat_links", "overlays", "resolved_seats", "seat_status", "machines", "seat_types", "seat_type_versions"}
+var deletionTables = []string{"rooms", "seats", "seat_links", "overlays", "resolved_seats", "seat_status", "machine_edges", "machines", "seat_types", "seat_type_versions"}
 
 func deletionCounts(t *testing.T, db *sql.DB, userID string) map[string]int {
 	t.Helper()
@@ -132,7 +145,8 @@ func deletionDiff(before, after map[string]int) string {
 func TestDeletionPathsIntegration(t *testing.T) {
 	url := os.Getenv("SEAT_TEST_DATABASE_URL")
 	if url == "" {
-		t.Skip("SEAT_TEST_DATABASE_URL is required")
+		t.Skip("SKIPPED, NOT PASSED: SEAT_TEST_DATABASE_URL is unset, so this case did NOT run - " +
+			"it applies the seat schema to a PostgreSQL it is given; bash tools/testpg/start.sh prints a URL")
 	}
 	db, err := sql.Open("pgx", url)
 	must(t, err)
@@ -164,8 +178,10 @@ func TestDeletionPathsIntegration(t *testing.T) {
 	must(t, err)
 	machines, err := seatorm.NewORMMachineStatusRepository(sessions)
 	must(t, err)
+	messages, err := seatorm.NewORMSeatMessageRepository(sessions)
+	must(t, err)
 
-	store := &deletionStore{sessions: sessions, rooms: rooms, seats: seats, links: links, overlays: overlays, resolved: resolved, machines: machines}
+	store := &deletionStore{sessions: sessions, rooms: rooms, seats: seats, links: links, overlays: overlays, resolved: resolved, machines: machines, messages: messages}
 	svc := services.NewRoomDeletionService(store)
 
 	seatType, err := seatTypes.Save(ctx, user, repositories.SeatType{Slug: "del-type", Name: "Deletion type"})

@@ -8,7 +8,8 @@ import (
 )
 
 // gbWrapGitBranchService is the consumer-side surface of GitBranchService
-// (application/services/git_branch_service.py), which has no Go port yet. The
+// (application/services/git_branch_service.py), ported in
+// application/services/git_branch_service.go. The
 // Python wrapper runs the async coroutine through _run_async; Go service methods
 // are synchronous, so the wrapper delegates directly and passes ctx.
 type gbWrapGitBranchService interface {

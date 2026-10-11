@@ -1,7 +1,6 @@
 # Task workflow and reporting
 
-> Moved out of the root `AGENTS.md` on 2026-10-05 (see
-> [`agents-md-migration-map.md`](./agents-md-migration-map.md)). This is guidance for the agenthub
+> This is guidance for the agenthub
 > **MCP task surface** (`manage_task` / `manage_subtask`). A seat in a rig moves its own work
 > through the queue (`rig queue`), not through MCP tasks; the MCP surface is the product the user
 > drives.

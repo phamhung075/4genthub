@@ -142,7 +142,8 @@ func TestProductionModelsCRUD(t *testing.T) {
 func TestProductionModelsCRUDRealPostgres(t *testing.T) {
 	dsn := os.Getenv(prodTestDatabaseURLEnv)
 	if dsn == "" {
-		t.Skip(prodTestDatabaseURLEnv + " not set")
+		t.Skip("SKIPPED, NOT PASSED: " + prodTestDatabaseURLEnv + " is unset, so this case did NOT run - " +
+			"it needs a DSN whose database already carries the production-like schema (see the note at the top of this file)")
 	}
 	db, err := PgxOpener(dsn, EngineOptions{PoolSize: 2, MaxOverflow: 2})
 	if err != nil {

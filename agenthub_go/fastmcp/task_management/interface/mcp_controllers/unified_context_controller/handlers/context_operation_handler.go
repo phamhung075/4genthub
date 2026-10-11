@@ -14,8 +14,9 @@ import (
 )
 
 // ContextResponseFormatter is the minimal view of the interface-layer
-// StandardResponseFormatter (interface/utils/response_formatter.py), which has
-// no Go port yet. Declared here and reported as a dependency.
+// StandardResponseFormatter (interface/utils/response_formatter.py), which is
+// ported as MCPResponseFormatter in interface/utils/response_formatter.go.
+// Declared here and reported as a dependency.
 type ContextResponseFormatter interface {
 	CreateErrorResponse(operation, errorMessage, errorCode string, metadata *entities.OrderedMap[any]) *entities.OrderedMap[any]
 	FormatContextResponse(facadeResponse *entities.OrderedMap[any], operation string, standardizeFieldNames bool) *entities.OrderedMap[any]

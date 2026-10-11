@@ -1,7 +1,7 @@
 package services
 
 // AuthContextService is the minimal surface DebugService needs from
-// ContextImportService (Python import-probing module, not ported).
+// ContextImportService (ported in auth_helper/services/context_import_service.go).
 type AuthContextService interface {
 	UserContextAvailable() bool
 	GetCurrentUserID() *string

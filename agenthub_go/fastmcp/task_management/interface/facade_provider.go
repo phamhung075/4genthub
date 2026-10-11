@@ -31,7 +31,6 @@ type FacadeProvider struct {
 	subtaskFacade any
 	projectFacade any
 	branchFacade  any
-	agentFacade   any
 	contextFacade any
 	tokenFacade   any
 }
@@ -116,23 +115,6 @@ func (p *FacadeProvider) GetBranchFacade(userID *string) (any, error) {
 	return p.branchFacade, nil
 }
 
-// GetAgentFacade ports get_agent_facade(session=None, user_id=None). The Go
-// service additionally needs a project id, which Python does not pass here.
-func (p *FacadeProvider) GetAgentFacade(userID *string) (any, error) {
-	if p.agentFacade == nil {
-		service, err := p.requireService()
-		if err != nil {
-			return nil, err
-		}
-		v, err := service.GetAgentFacade("", userID)
-		if err != nil {
-			return nil, err
-		}
-		p.agentFacade = v
-	}
-	return p.agentFacade, nil
-}
-
 // GetContextFacade ports get_context_facade(session=None, user_id=None).
 func (p *FacadeProvider) GetContextFacade(userID *string) (any, error) {
 	if p.contextFacade == nil {
@@ -171,7 +153,6 @@ func (p *FacadeProvider) ClearCache() {
 	p.subtaskFacade = nil
 	p.projectFacade = nil
 	p.branchFacade = nil
-	p.agentFacade = nil
 	p.contextFacade = nil
 	p.tokenFacade = nil
 }

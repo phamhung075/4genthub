@@ -10,8 +10,6 @@ prompt = """
 
 ## Read
 - `@README.md`
-- `@ai_docs/cc_hooks_docs.md`
-- `@ai_docs/uv-single-file-scripts.md`
 
 ## Finish
 Run TTS summary agent

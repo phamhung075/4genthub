@@ -1,7 +1,6 @@
 package entities
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -22,6 +21,8 @@ type Subtask struct {
 	Status             *value_objects.TaskStatus
 	Priority           *value_objects.Priority
 	Assignees          []string
+	AcceptanceCriteria []string
+	Scope              []string
 	ProgressPercentage int // 0-100
 	ProgressHistory    map[string]any
 	ProgressCount      int
@@ -44,10 +45,11 @@ func NewSubtask(st Subtask) (*Subtask, error) {
 }
 
 // RestoreSubtask rebuilds a subtask from stored data: it applies the defaults and
-// validates the entity but does not reject stored assignees. A known role or '@' name is
-// shown in its '@' form, any other stored name stays as stored. A row written under an
-// older assignee rule must still load, or one such row would fail every list that
-// contains it; the rule applies to what is written (NewSubtask, UpdateAssignees).
+// validates the entity but does not reject stored assignees. An '@' name is kept in its '@'
+// form and any other stored name stays exactly as stored - nothing is prefixed, and no role
+// table is consulted. A row written under an older assignee rule must still load, or one such
+// row would fail every list that contains it; the rule applies to what is written
+// (NewSubtask, UpdateAssignees).
 func RestoreSubtask(st Subtask) (*Subtask, error) {
 	s := st
 	if s.Assignees != nil {
@@ -68,6 +70,12 @@ func RestoreSubtask(st Subtask) (*Subtask, error) {
 	}
 	if s.Assignees == nil {
 		s.Assignees = []string{}
+	}
+	if s.AcceptanceCriteria == nil {
+		s.AcceptanceCriteria = []string{}
+	}
+	if s.Scope == nil {
+		s.Scope = []string{}
 	}
 	if s.ProgressHistory == nil {
 		s.ProgressHistory = map[string]any{}
@@ -257,10 +265,6 @@ func (s *Subtask) AppendProgress(content string) error {
 	return nil
 }
 
-func (s *Subtask) AddAssigneeRole(role value_objects.AgentRole) error {
-	return s.AddAssignee("@" + string(role))
-}
-
 func (s *Subtask) AddAssignee(assignee string) error {
 	if strings.TrimSpace(assignee) == "" {
 		return nil
@@ -279,10 +283,6 @@ func (s *Subtask) AddAssignee(assignee string) error {
 	}
 	s.emit("subtask_assignees", "assignee_added", validated)
 	return nil
-}
-
-func (s *Subtask) RemoveAssigneeRole(role value_objects.AgentRole) error {
-	return s.RemoveAssignee("@" + string(role))
 }
 
 func (s *Subtask) RemoveAssignee(assignee string) error {
@@ -351,25 +351,20 @@ func (s *Subtask) GetEvents() []events.Event {
 	return out
 }
 
-// ToDict converts the subtask to a dictionary; parent_task_id only when requested.
-// Needs AgentNameResolver (see Task.ToDict).
+// ToDict converts the subtask to a dictionary; parent_task_id only when requested. Assignees are
+// carried AS STORED, the same rule as Task.ToDict - see the departure note there.
 func (s *Subtask) ToDict(includeParentID bool) (map[string]any, error) {
-	if AgentNameResolver == nil {
-		return nil, errors.New("entities.AgentNameResolver is not registered (application use_cases.agent_mappings)")
-	}
-	assignees := []string{}
-	for _, a := range s.Assignees {
-		assignees = append(assignees, AgentNameResolver(a))
-	}
 	var id any
 	if s.ID != nil {
 		id = s.ID.Value
 	}
 	result := map[string]any{
 		"id": id, "title": s.Title, "description": s.Description,
-		"status": s.Status.String(), "priority": s.Priority.String(), "assignees": assignees,
-		"progress_percentage": s.ProgressPercentage, "progress_history": s.ProgressHistory,
-		"progress_count": s.ProgressCount, "created_at": nil, "updated_at": nil,
+		"status": s.Status.String(), "priority": s.Priority.String(),
+		"assignees":           append([]string{}, s.Assignees...),
+		"acceptance_criteria": append([]string{}, s.AcceptanceCriteria...),
+		"scope":               append([]string{}, s.Scope...),
+		"progress_percentage": s.ProgressPercentage, "created_at": nil, "updated_at": nil,
 	}
 	if s.CreatedAt != nil {
 		result["created_at"] = value_objects.IsoFormat(*s.CreatedAt)
@@ -386,6 +381,8 @@ func (s *Subtask) ToDict(includeParentID bool) (map[string]any, error) {
 // SubtaskOptions are the kwargs Subtask.create passes through.
 type SubtaskOptions struct {
 	Assignees          []string
+	AcceptanceCriteria []string
+	Scope              []string
 	ProgressPercentage int
 	CreatedAt          *time.Time
 	UpdatedAt          *time.Time
@@ -396,7 +393,8 @@ func CreateSubtask(id value_objects.TaskId, title, description string, parent va
 	status *value_objects.TaskStatus, priority *value_objects.Priority, opts SubtaskOptions) (*Subtask, error) {
 	st := Subtask{
 		ID: &id, Title: title, Description: description, ParentTaskID: &parent, Status: status, Priority: priority,
-		Assignees: opts.Assignees, ProgressPercentage: opts.ProgressPercentage,
+		Assignees: opts.Assignees, AcceptanceCriteria: opts.AcceptanceCriteria, Scope: opts.Scope,
+		ProgressPercentage: opts.ProgressPercentage,
 	}
 	st.CreatedAt, st.UpdatedAt = opts.CreatedAt, opts.UpdatedAt
 	return NewSubtask(st)

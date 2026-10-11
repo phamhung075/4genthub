@@ -290,6 +290,34 @@ CREATE TABLE IF NOT EXISTS seat_feedback (
 
 CREATE INDEX IF NOT EXISTS ix_seat_feedback_user_id ON seat_feedback (user_id);
 
+-- Table: seat_messages
+-- Text a window addressed to a seat, held until the client that holds that seat's terminal pulls it.
+-- SEAT-OWNED AND KEYED BY THE REPORTED NAMES, like seat_feedback, and for a stronger reason: no seat
+-- table carries a session column, so the server cannot address a session from a seat at all, and the
+-- point of this store is to hold a message while the seat is DOWN. It is also the FIRST
+-- SERVER-AUTHORED ROW A CLIENT CONSUMES on this axis — every other store here (seat_status,
+-- seat_feedback, the session stream) is client-authored.
+-- delivered_at and machine_id ARE the ack: delivery is at-least-once, so a row with delivered_at NULL
+-- is pending and comes back on the next pull, while an acked one never does, and machine_id records
+-- which machine actually took it. There is NO TTL: a message for a seat that never comes back stays
+-- readable, and any bound would be explicit policy rather than a sweep (missed_notifications is the
+-- precedent). Room and seat are names rather than references, so the deletion path removes these rows
+-- itself — this schema has no CASCADE by design.
+CREATE TABLE IF NOT EXISTS seat_messages (
+    id UUID PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    room TEXT NOT NULL,
+    seat TEXT NOT NULL,
+    text TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    delivered_at TIMESTAMP WITH TIME ZONE,
+    machine_id TEXT NOT NULL DEFAULT ''
+);
+
+-- ONE index serves both jobs: the pull walks (user_id, room, seat) for pending rows in (created_at,
+-- id) order, and the seat- and room-level deletes take a prefix of the same key.
+CREATE INDEX IF NOT EXISTS ix_seat_messages_seat ON seat_messages (user_id, room, seat, created_at, id);
+
 -- Table: machines
 -- One row per (user, bridge machine). agents is the latest herdr agent snapshot, a JSON
 -- array of {agent, status, pane_id}; last_seen is server time of the last status report.
@@ -300,22 +328,6 @@ CREATE TABLE IF NOT EXISTS machines (
     agents JSONB NOT NULL DEFAULT '[]'::jsonb,
     PRIMARY KEY (user_id, machine_id)
 );
-
--- Table: machine_tokens
--- Bearer tokens of the per-PC bridge, one active token per (user, machine). Only the SHA-256
--- hex of a token is stored; the token itself is shown once at registration. A revoked token
--- keeps its row (revoked_at set) and never authenticates again.
-CREATE TABLE IF NOT EXISTS machine_tokens (
-    id UUID PRIMARY KEY,
-    user_id TEXT NOT NULL,
-    machine_id TEXT NOT NULL,
-    token_hash TEXT NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-    revoked_at TIMESTAMP WITH TIME ZONE,
-    CONSTRAINT uq_machine_tokens_token_hash UNIQUE (token_hash)
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS uq_machine_tokens_active ON machine_tokens (user_id, machine_id) WHERE revoked_at IS NULL;
 
 -- Table: seat_status
 -- The latest reported state of each seat on a machine. A report replaces the machine's
@@ -333,3 +345,23 @@ CREATE TABLE IF NOT EXISTS seat_status (
     reported_at TIMESTAMP WITH TIME ZONE NOT NULL,
     PRIMARY KEY (user_id, machine_id, room, seat)
 );
+
+-- Table: machine_edges
+-- The topology a machine reported: one row per directed link of one room, replaced wholesale by
+-- each report exactly like seat_status. room, from_seat and to_seat are reported names, not
+-- foreign keys, so an edge is removed by the application layer when its room is deleted - the
+-- no-CASCADE rule the rest of this schema follows. `from` and `to` are SQL keywords, hence the
+-- from_seat/to_seat spellings; the wire names the two ends from and to.
+CREATE TABLE IF NOT EXISTS machine_edges (
+    user_id TEXT NOT NULL,
+    machine_id TEXT NOT NULL,
+    room TEXT NOT NULL,
+    from_seat TEXT NOT NULL,
+    to_seat TEXT NOT NULL,
+    kind TEXT NOT NULL,
+    CONSTRAINT ck_machine_edges_kind CHECK (kind IN ('delegates_to', 'spawned_by', 'can_observe', 'collaborates_with', 'escalates_to')),
+    CONSTRAINT ck_machine_edges_distinct CHECK (from_seat <> to_seat),
+    PRIMARY KEY (user_id, machine_id, room, from_seat, to_seat, kind)
+);
+
+CREATE INDEX IF NOT EXISTS ix_machine_edges_user_room ON machine_edges (user_id, room);

@@ -51,14 +51,3 @@ func TestCleanupProjectDataRemovesOrphans(t *testing.T) {
 		t.Fatalf("orphans were not removed")
 	}
 }
-
-func TestProjectCapabilityListSorted(t *testing.T) {
-	agent := &entities.Agent{Capabilities: map[entities.AgentCapability]struct{}{
-		entities.AgentCapability("debugger-agent"): {},
-		entities.AgentCapability("coding-agent"):   {},
-	}}
-	got := zpProjectApplicationCapabilityList(agent)
-	if len(got) != 2 || got[0] != "coding-agent" || got[1] != "debugger-agent" {
-		t.Fatalf("capabilities = %v", got)
-	}
-}

@@ -81,6 +81,59 @@ describe('Dialog components', () => {
       expect(onOpenChange).not.toHaveBeenCalled();
     });
 
+    // A NESTED dialog must be the ONLY one Escape closes. The keydown listener sat on `document`
+    // once per open dialog, so one keypress reached every mounted dialog and the inner closed
+    // together with its parent. This is the real shape, not a contrived one: TaskDetailsDialog
+    // hosts LazySubtaskList, which opens SubtaskDetailsDialog inside the parent's subtree.
+    it('closes only the topmost dialog when Escape is pressed inside a nested one', () => {
+      const onOuterChange = vi.fn();
+      const onInnerChange = vi.fn();
+      render(
+        <Dialog open={true} onOpenChange={onOuterChange}>
+          <DialogContent>
+            <DialogTitle>Outer</DialogTitle>
+            <Dialog open={true} onOpenChange={onInnerChange}>
+              <DialogContent>
+                <DialogTitle>Inner</DialogTitle>
+              </DialogContent>
+            </Dialog>
+          </DialogContent>
+        </Dialog>
+      );
+
+      fireEvent.keyDown(document, { key: 'Escape' });
+
+      expect(onInnerChange).toHaveBeenCalledWith(false);
+      expect(onOuterChange).not.toHaveBeenCalled();
+    });
+
+    // The same dismissal delivered by the mouse already stops AT the inner dialog: DialogContent
+    // calls stopPropagation, so the click never reaches the parent's overlay handler. Measured, not
+    // assumed - this case passed before the fix. Pinned so that removing that stopPropagation cannot
+    // silently re-open the reported defect for the backdrop path.
+    it('closes only the topmost dialog when the nested backdrop is clicked', () => {
+      const onOuterChange = vi.fn();
+      const onInnerChange = vi.fn();
+      render(
+        <Dialog open={true} onOpenChange={onOuterChange}>
+          <DialogContent>
+            <DialogTitle>Outer</DialogTitle>
+            <Dialog open={true} onOpenChange={onInnerChange}>
+              <DialogContent>
+                <DialogTitle>Inner</DialogTitle>
+              </DialogContent>
+            </Dialog>
+          </DialogContent>
+        </Dialog>
+      );
+
+      const overlays = document.querySelectorAll('.theme-modal-overlay');
+      fireEvent.click(overlays[overlays.length - 1]);
+
+      expect(onInnerChange).toHaveBeenCalledWith(false);
+      expect(onOuterChange).not.toHaveBeenCalled();
+    });
+
     it('sets body overflow to hidden when open', () => {
       const onOpenChange = vi.fn();
       render(
@@ -124,6 +177,34 @@ describe('Dialog components', () => {
       unmount();
 
       expect(document.body.style.overflow).toBe('unset');
+    });
+
+    // Closing a NESTED dialog must not unlock the page while its parent is still open. The
+    // per-instance cleanup set `overflow: unset` unconditionally, because it could not see that
+    // another dialog was still mounted - the same missing notion of nesting as the Escape defect.
+    it('keeps the body locked when a nested dialog closes and its parent stays open', () => {
+      const onOuterChange = vi.fn();
+      const onInnerChange = vi.fn();
+      const nested = (innerOpen: boolean) => (
+        <Dialog open={true} onOpenChange={onOuterChange}>
+          <DialogContent>
+            <DialogTitle>Outer</DialogTitle>
+            <Dialog open={innerOpen} onOpenChange={onInnerChange}>
+              <DialogContent>
+                <DialogTitle>Inner</DialogTitle>
+              </DialogContent>
+            </Dialog>
+          </DialogContent>
+        </Dialog>
+      );
+      const { rerender } = render(nested(true));
+
+      expect(document.body.style.overflow).toBe('hidden');
+
+      // The inner one closes; the parent is still on screen and must still hold the page.
+      rerender(nested(false));
+
+      expect(document.body.style.overflow).toBe('hidden');
     });
 
     it('renders with correct overlay structure', () => {

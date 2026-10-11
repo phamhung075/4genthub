@@ -33,7 +33,7 @@ type ToolEntry struct {
 // WIRING FAULT and the seam refuses it as a sentinel rather than answering with an empty surface - so
 // every error here is fatal, and the sentinel is checked by identity rather than by matching prose.
 func toolsFromServer() ([]ToolEntry, error) {
-	facade := services.NewFacadeService(nil, nil, nil, nil, nil, nil, nil)
+	facade := services.NewFacadeService(nil, nil, nil, nil, nil, nil)
 	registry, err := interfacelayer.NewDDDCompliantMCPTools(interfacelayer.Dependencies{
 		FacadeService:     facade,
 		DatabaseAvailable: true,

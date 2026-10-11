@@ -74,6 +74,7 @@ type seatAdminSource interface {
 	ListSeats(ctx context.Context, userID, roomID string) ([]repositories.Seat, error)
 	UpdateSeatOccupant(ctx context.Context, userID, seatID, runtime, model string) error
 	UpdateSeatPermissionPolicy(ctx context.Context, userID, seatID, permissionPolicy string) error
+	UpdateSeatPinnedVersion(ctx context.Context, userID, seatID, pinnedVersion string) error
 	UpsertOverlay(ctx context.Context, userID string, overlay repositories.Overlay) (*repositories.Overlay, error)
 	FindOverlay(ctx context.Context, userID, scope, roomID, seatID string) (*repositories.Overlay, error)
 	UpsertSeatLink(ctx context.Context, userID string, link repositories.SeatLink) (*repositories.SeatLink, error)
@@ -84,6 +85,9 @@ type seatAdminSource interface {
 	DeleteRoomOverlay(ctx context.Context, userID, roomID string) error
 	DeleteSeatStatusForRoom(ctx context.Context, userID, roomSlug string) error
 	DeleteSeatStatusForSeat(ctx context.Context, userID, roomSlug, seatKey string) error
+	DeleteMachineEdgesForRoom(ctx context.Context, userID, roomSlug string) error
+	DeleteSeatMessagesForSeat(ctx context.Context, userID, roomSlug, seatKey string) error
+	DeleteSeatMessagesForRoom(ctx context.Context, userID, roomSlug string) error
 	DeleteResolvedSeats(ctx context.Context, userID, seatID string) error
 	DeleteSeat(ctx context.Context, userID, seatID string) error
 	DeleteRoom(ctx context.Context, userID, roomID string) error
@@ -130,13 +134,18 @@ var newSeatAdminSource = func(sessions *database.SessionManager) (seatAdminSourc
 	if err != nil {
 		return nil, err
 	}
-	return &seatAdminRepos{sessions: sessions, resolved: resolved, machines: machines, rooms: rooms, seatTypes: seatTypes, modules: modules, seats: seats, overlays: overlays, links: links, settings: settings}, nil
+	messages, err := seatorm.NewORMSeatMessageRepository(sessions)
+	if err != nil {
+		return nil, err
+	}
+	return &seatAdminRepos{sessions: sessions, resolved: resolved, machines: machines, messages: messages, rooms: rooms, seatTypes: seatTypes, modules: modules, seats: seats, overlays: overlays, links: links, settings: settings}, nil
 }
 
 type seatAdminRepos struct {
 	sessions  *database.SessionManager
 	resolved  repositories.ResolvedSeatRepository
 	machines  repositories.MachineStatusRepository
+	messages  repositories.SeatMessageRepository
 	rooms     repositories.RoomRepository
 	seatTypes repositories.SeatTypeRepository
 	modules   repositories.ModuleRepository
@@ -224,6 +233,10 @@ func (s *seatAdminRepos) UpdateSeatPermissionPolicy(ctx context.Context, userID,
 	return s.seats.UpdatePermissionPolicy(ctx, userID, seatID, permissionPolicy)
 }
 
+func (s *seatAdminRepos) UpdateSeatPinnedVersion(ctx context.Context, userID, seatID, pinnedVersion string) error {
+	return s.seats.UpdatePinnedVersion(ctx, userID, seatID, pinnedVersion)
+}
+
 func (s *seatAdminRepos) UpsertOverlay(ctx context.Context, userID string, overlay repositories.Overlay) (*repositories.Overlay, error) {
 	return s.overlays.Upsert(ctx, userID, overlay)
 }
@@ -262,6 +275,18 @@ func (s *seatAdminRepos) DeleteSeatStatusForSeat(ctx context.Context, userID, ro
 
 func (s *seatAdminRepos) DeleteSeatStatusForRoom(ctx context.Context, userID, roomSlug string) error {
 	return s.machines.DeleteSeatStatusForRoom(ctx, userID, roomSlug)
+}
+
+func (s *seatAdminRepos) DeleteMachineEdgesForRoom(ctx context.Context, userID, roomSlug string) error {
+	return s.machines.DeleteMachineEdgesForRoom(ctx, userID, roomSlug)
+}
+
+func (s *seatAdminRepos) DeleteSeatMessagesForSeat(ctx context.Context, userID, roomSlug, seatKey string) error {
+	return s.messages.DeleteForSeat(ctx, userID, roomSlug, seatKey)
+}
+
+func (s *seatAdminRepos) DeleteSeatMessagesForRoom(ctx context.Context, userID, roomSlug string) error {
+	return s.messages.DeleteForRoom(ctx, userID, roomSlug)
 }
 
 func (s *seatAdminRepos) DeleteResolvedSeats(ctx context.Context, userID, seatID string) error {
@@ -333,6 +358,9 @@ func mountSeatAdminRoutes(mux *http.ServeMux, sessions *database.SessionManager)
 	})))
 	mux.HandleFunc("PUT /api/v2/openrig/rooms/{room}/seats/{seat}/permission-policy", authed(seatMutation("seat", "updated", func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleSetSeatPermissionPolicy(w, r, u, sessions)
+	})))
+	mux.HandleFunc("PUT /api/v2/openrig/rooms/{room}/seats/{seat}/pin", authed(seatMutation("seat", "updated", func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+		handleSetSeatPin(w, r, u, sessions)
 	})))
 	mux.HandleFunc("PUT /api/v2/openrig/rooms/{room}/overlay", authed(seatMutation("room", "updated", func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleRoomOverlay(w, r, u, sessions)
@@ -465,6 +493,10 @@ type seatAdminOccupantRequest struct {
 
 type seatAdminPermissionPolicyRequest struct {
 	PermissionPolicy string `json:"permission_policy"`
+}
+
+type seatAdminPinRequest struct {
+	PinnedVersion string `json:"pinned_version"`
 }
 
 type seatAdminSettingsRequest struct {
@@ -608,7 +640,7 @@ func handleCreateRoom(w http.ResponseWriter, r *http.Request, u *authdomain.User
 	}
 	body := entities.NewOrderedMap[any]()
 	body.Set("success", true)
-	body.Set("room", seatAdminRoomBody(room))
+	body.Set("room", seatAdminRoomBody(room, userID(u)))
 	writeJSON(w, http.StatusOK, body)
 }
 
@@ -624,7 +656,7 @@ func handleListRooms(w http.ResponseWriter, r *http.Request, u *authdomain.User,
 	}
 	out := make([]any, 0, len(rooms))
 	for i := range rooms {
-		out = append(out, seatAdminRoomBody(&rooms[i]))
+		out = append(out, seatAdminRoomBody(&rooms[i], userID(u)))
 	}
 	body := entities.NewOrderedMap[any]()
 	body.Set("success", true)
@@ -720,7 +752,7 @@ func handleSetRoomTeam(w http.ResponseWriter, r *http.Request, u *authdomain.Use
 	}
 	body := entities.NewOrderedMap[any]()
 	body.Set("success", true)
-	body.Set("room", seatAdminRoomBody(updated))
+	body.Set("room", seatAdminRoomBody(updated, userID(u)))
 	writeJSON(w, http.StatusOK, body)
 }
 
@@ -1155,6 +1187,31 @@ func handleSetSeatPermissionPolicy(w http.ResponseWriter, r *http.Request, u *au
 		return
 	}
 	log.Printf("[SEAT] user %s set permission policy of %s/%s to %s", userID(u), r.PathValue("room"), r.PathValue("seat"), req.PermissionPolicy)
+	body := entities.NewOrderedMap[any]()
+	body.Set("success", true)
+	body.Set("seat", seatservices.SeatBody(&view.Seat, view.SeatTypeSlug))
+	writeJSON(w, http.StatusOK, body)
+}
+
+// handleSetSeatPin pins the seat to one version of its seat type. The version is checked against
+// the seat's type before the store is touched, so an unknown version is a 400 and not a silent
+// write: writeSeatAdminServiceError maps ErrInvalidSeatTypeVersion to http.StatusBadRequest, the
+// same refusal handleCreateSeat produces for a pin that names a version that does not exist.
+func handleSetSeatPin(w http.ResponseWriter, r *http.Request, u *authdomain.User, sessions *database.SessionManager) {
+	source, ok := seatAdminSourceFor(w, sessions)
+	if !ok {
+		return
+	}
+	var req seatAdminPinRequest
+	if !decodeSeatAdminBody(w, r, &req) {
+		return
+	}
+	view, err := seatservices.NewSeatAdminService(source).SetPinnedVersion(r.Context(), userID(u), r.PathValue("room"), r.PathValue("seat"), req.PinnedVersion)
+	if err != nil {
+		writeSeatAdminServiceError(w, err)
+		return
+	}
+	log.Printf("[SEAT] user %s pinned %s/%s to %s", userID(u), r.PathValue("room"), r.PathValue("seat"), req.PinnedVersion)
 	body := entities.NewOrderedMap[any]()
 	body.Set("success", true)
 	body.Set("seat", seatservices.SeatBody(&view.Seat, view.SeatTypeSlug))
@@ -1606,16 +1663,32 @@ func seatAdminLinkKind(kind string) bool {
 	return commpolicy.ValidKind(commpolicy.LinkKind(kind))
 }
 
-func seatAdminRoomBody(room *repositories.Room) *entities.OrderedMap[any] {
+// seatAdminRoomBody builds the room wire body for ONE caller. role is the caller's standing on
+// this room, and it is derived from the ownership every write path already authorizes on: a
+// mutation matches "user_id" = the caller (SetTeam answers ErrRoomNotOwned otherwise), so the
+// wire can never say owner for a caller those routes would 404 on. A client needs it because
+// team_id is non-empty for BOTH the owner of a shared room and a viewer reading it, and a room
+// row offers owner-only controls (delete, add seat) that the server refuses for a viewer.
+func seatAdminRoomBody(room *repositories.Room, callerID string) *entities.OrderedMap[any] {
 	body := entities.NewOrderedMap[any]()
 	body.Set("id", room.ID)
 	body.Set("slug", room.Slug)
 	body.Set("name", room.Name)
+	body.Set("role", seatAdminRoomRole(room, callerID))
 	// team_id is the sharing state of the room: empty while the room is private to its owner.
 	// The raw id is emitted rather than the slug so a list stays one query; the palette already
 	// reads GET /api/v2/openrig/teams for the slugs.
 	body.Set("team_id", room.TeamID)
 	return body
+}
+
+// seatAdminRoomRole names the ownership test in the teams vocabulary, so a room row and a team
+// row spell the same fact the same way (team_mount.go emits RoleOwner the same way).
+func seatAdminRoomRole(room *repositories.Room, callerID string) string {
+	if room.UserID == callerID {
+		return teamrepositories.RoleOwner
+	}
+	return teamrepositories.RoleViewer
 }
 
 func seatAdminModuleBody(module *repositories.ModuleVersion) *entities.OrderedMap[any] {

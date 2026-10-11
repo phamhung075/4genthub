@@ -31,7 +31,7 @@ export const TopologyPage: React.FC = () => {
   const { rooms, isLoading, error, refetch } = useTopology();
 
   const seatCount = rooms.reduce((total, entry) => total + entry.seats.length, 0);
-  const linkCount = rooms.reduce((total, entry) => total + entry.links.length, 0);
+  const edgeCount = rooms.reduce((total, entry) => total + entry.edges.length, 0);
 
   return (
     <div className="mx-auto w-full max-w-6xl p-4 md:p-6">
@@ -40,8 +40,8 @@ export const TopologyPage: React.FC = () => {
           <h1 className="text-2xl font-semibold text-base-primary">Topology</h1>
           <p className="text-sm text-base-secondary">
             {rooms.length} {rooms.length === 1 ? 'room' : 'rooms'} · {seatCount}{' '}
-            {seatCount === 1 ? 'seat' : 'seats'} · {linkCount}{' '}
-            {linkCount === 1 ? 'link' : 'links'}
+            {seatCount === 1 ? 'seat' : 'seats'} · {edgeCount}{' '}
+            {edgeCount === 1 ? 'edge' : 'edges'}
           </p>
         </div>
         <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isLoading}>

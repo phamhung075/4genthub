@@ -80,8 +80,8 @@ if check_port 5432; then
     fi
 fi
 
-if check_port 8001; then
-    echo -e "${YELLOW}⚠️  Port 8001 (MCP Server) is already in use${NC}"
+if check_port 8000; then
+    echo -e "${YELLOW}⚠️  Port 8000 (MCP Server) is already in use${NC}"
     read -p "Stop existing MCP server? [y/N]: " -n 1 -r
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
@@ -115,77 +115,31 @@ if [ $attempt -eq $max_attempts ]; then
     exit 1
 fi
 
-# Initialize database schema (if needed)
-echo -e "${BLUE}Checking database schema...${NC}"
-if [ -f "./agenthub_main/src/fastmcp/task_management/infrastructure/migrations/001_initial_schema.sql" ]; then
-    echo "Applying database migrations..."
-    docker-compose -f "$COMPOSE_FILE" exec -T postgres psql -U "$DATABASE_USER" -d "$DATABASE_NAME" \
-        -f /docker-entrypoint-initdb.d/001_initial_schema.sql 2>/dev/null || true
-fi
+# Run the Go server in Docker
+echo -e "${BLUE}Building MCP server Docker image...${NC}"
+docker-compose -f "$COMPOSE_FILE" build mcp-backend
 
-# Choose how to run MCP server
-echo -e "${BLUE}Select MCP server mode:${NC}"
-echo "1) Docker container (recommended for production)"
-echo "2) Local Python (for development/debugging)"
-read -p "Choice [1]: " server_mode
-server_mode=${server_mode:-1}
+echo -e "${BLUE}Starting MCP server in Docker...${NC}"
+docker-compose -f "$COMPOSE_FILE" up -d mcp-backend
 
-if [ "$server_mode" = "1" ]; then
-    # Run MCP server in Docker
-    echo -e "${BLUE}Building MCP server Docker image...${NC}"
-    docker-compose -f "$COMPOSE_FILE" build mcp-backend
-    
-    echo -e "${BLUE}Starting MCP server in Docker...${NC}"
-    docker-compose -f "$COMPOSE_FILE" up -d mcp-backend
-    
-    # Wait for MCP server to be ready
-    echo -e "${BLUE}Waiting for MCP server to be ready...${NC}"
-    max_attempts=20
-    attempt=0
-    while [ $attempt -lt $max_attempts ]; do
-        if curl -s http://localhost:8001/health >/dev/null 2>&1; then
-            echo -e "${GREEN}✅ MCP server is ready${NC}"
-            break
-        fi
-        echo -n "."
-        sleep 2
-        attempt=$((attempt + 1))
-    done
-    
-    if [ $attempt -eq $max_attempts ]; then
-        echo -e "${RED}❌ MCP server failed to start${NC}"
-        docker-compose -f "$COMPOSE_FILE" logs mcp-backend
-        exit 1
+# Wait for MCP server to be ready
+echo -e "${BLUE}Waiting for MCP server to be ready...${NC}"
+max_attempts=20
+attempt=0
+while [ $attempt -lt $max_attempts ]; do
+    if curl -s http://localhost:8000/health >/dev/null 2>&1; then
+        echo -e "${GREEN}✅ MCP server is ready${NC}"
+        break
     fi
-else
-    # Run MCP server locally
-    echo -e "${BLUE}Starting MCP server locally...${NC}"
-    
-    # Check Python environment
-    if [ ! -d "./agenthub_main/venv" ]; then
-        echo -e "${YELLOW}Creating Python virtual environment...${NC}"
-        python3 -m venv ./agenthub_main/venv
-        source ./agenthub_main/venv/bin/activate
-        pip install -r ./agenthub_main/requirements.txt
-    else
-        source ./agenthub_main/venv/bin/activate
-    fi
-    
-    # Start MCP server
-    export PYTHONPATH="./agenthub_main/src:$PYTHONPATH"
-    export ENV_FILE="$ENV_FILE"
-    nohup python ./agenthub_main/src/mcp_http_server.py > "$LOG_DIR/mcp-server.log" 2>&1 &
-    MCP_PID=$!
-    echo "MCP server started with PID: $MCP_PID"
-    
-    # Wait for server to be ready
-    echo -e "${BLUE}Waiting for MCP server to be ready...${NC}"
-    sleep 5
-    if ! curl -s http://localhost:8001/health >/dev/null 2>&1; then
-        echo -e "${RED}❌ MCP server failed to start${NC}"
-        tail -n 50 "$LOG_DIR/mcp-server.log"
-        exit 1
-    fi
+    echo -n "."
+    sleep 2
+    attempt=$((attempt + 1))
+done
+
+if [ $attempt -eq $max_attempts ]; then
+    echo -e "${RED}❌ MCP server failed to start${NC}"
+    docker-compose -f "$COMPOSE_FILE" logs mcp-backend
+    exit 1
 fi
 
 # Optional: Start PgAdmin
@@ -205,9 +159,9 @@ echo -e "${GREEN}     agenthub Production Server Started Successfully${NC}"
 echo -e "${GREEN}============================================================${NC}"
 echo ""
 echo -e "${BLUE}Services:${NC}"
-echo -e "  • MCP Server:    ${GREEN}http://localhost:8001${NC}"
-echo -e "  • API Docs:      ${GREEN}http://localhost:8001/docs${NC}"
-echo -e "  • Health Check:  ${GREEN}http://localhost:8001/health${NC}"
+echo -e "  • Go server:     ${GREEN}http://localhost:8000${NC}"
+echo -e "  • API Docs:      ${GREEN}http://localhost:8000/docs${NC}"
+echo -e "  • Health Check:  ${GREEN}http://localhost:8000/health${NC}"
 
 if [ "$AUTH_ENABLED" = "true" ]; then
     echo -e "  • Keycloak:      ${GREEN}$KEYCLOAK_URL${NC}"

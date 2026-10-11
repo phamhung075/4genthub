@@ -1,8 +1,8 @@
-description = "Rewrite CHANGELOG.md - concise and organized, keep essential changes"
+description = "Rewrite one CHANGELOG/ entry file - concise and organized, keep essential changes"
 prompt = """
 # Changelog Resume
 
-**Purpose**: Create concise, organized CHANGELOG.md
+**Purpose**: Rewrite the named `CHANGELOG/<date>--<title>.md` entry (pass it in the instructions; never the whole directory) concise and organized
 
 **Keep**: All essential changes
 **Make**: More organized and concise

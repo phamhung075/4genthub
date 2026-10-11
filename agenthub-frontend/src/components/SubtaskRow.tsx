@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { Subtask } from "../api";
 import { SubtaskSummary } from "../api-lazy";
 import { useSubtaskAnimation } from "../hooks/useSubtaskAnimation";
+import { parseProgressHistory } from "../utils/progressHistoryUtils";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { HolographicStatusBadge, HolographicPriorityBadge } from "./ui/holographic-badges";
@@ -72,6 +73,10 @@ const SubtaskRow: React.FC<SubtaskRowProps> = ({
       logger.error('Failed to copy subtask name', { component: 'SubtaskRow', error: err });
     }
   }, [summary.title]);
+
+  // 4a0a8c7a stopped serving progress_count, and the count that is true to what is rendered is
+  // how many entries the SERVED history text parses into - the same derivation the timeline uses.
+  const progressEntries = parseProgressHistory(fullSubtask?.details).length;
 
   // Use the animation hook
   const {
@@ -276,9 +281,9 @@ const SubtaskRow: React.FC<SubtaskRowProps> = ({
                   <strong>Progress Notes:</strong> {fullSubtask.progress_notes}
                 </div>
               )}
-              {fullSubtask.progress_count && fullSubtask.progress_count > 0 && (
+              {progressEntries > 0 && (
                 <div className="text-xs text-gray-600 dark:text-gray-400">
-                  <strong>Progress Updates:</strong> {fullSubtask.progress_count} {fullSubtask.progress_count === 1 ? 'update' : 'updates'} recorded
+                  <strong>Progress Updates:</strong> {progressEntries} {progressEntries === 1 ? 'update' : 'updates'} recorded
                   <span className="text-gray-500 ml-1">(view details for history)</span>
                 </div>
               )}

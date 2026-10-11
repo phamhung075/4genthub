@@ -17,7 +17,6 @@ func validTaskEventData() *entities.OrderedMap[any] {
 		"subtask_count", int64(2),
 		"completed_subtasks", int64(1),
 		"progress_percentage", int64(50),
-		"progress_count", int64(2),
 		"created_at", "2024-01-01T00:00:00+00:00",
 		"updated_at", "2024-01-02T00:00:00+00:00",
 	)
@@ -71,7 +70,6 @@ func TestValidateMessageTaskMissingRequired(t *testing.T) {
 		"Task event 'task.created': Missing required field 'subtask_count'",
 		"Task event 'task.created': Missing required field 'completed_subtasks'",
 		"Task event 'task.created': Missing required field 'progress_percentage'",
-		"Task event 'task.created': Missing required field 'progress_count'",
 		"Task event 'task.created': Missing required field 'created_at'",
 		"Task event 'task.created': Missing required field 'updated_at'",
 	}
@@ -200,10 +198,10 @@ func TestWebSocketMessageLoggerCountersAndStats(t *testing.T) {
 	l := NewWebSocketMessageLogger()
 
 	errs := l.LogMessage("task.created", entities.NewOrderedMap[any](), nil, true)
-	if len(errs) != 11 {
+	if len(errs) != 10 {
 		t.Fatalf("len(errs) = %d", len(errs))
 	}
-	if l.MessageCount != 1 || l.ErrorCount != 1 || len(l.ValidationErrors) != 11 {
+	if l.MessageCount != 1 || l.ErrorCount != 1 || len(l.ValidationErrors) != 10 {
 		t.Fatalf("counters = %d/%d/%d", l.MessageCount, l.ErrorCount, len(l.ValidationErrors))
 	}
 
@@ -282,7 +280,7 @@ func TestGlobalWebSocketLogger(t *testing.T) {
 	}
 
 	errs := LogWebSocketMessage("task.created", entities.NewOrderedMap[any](), nil, true)
-	if len(errs) != 11 {
+	if len(errs) != 10 {
 		t.Fatalf("len(errs) = %d", len(errs))
 	}
 	if GetWebSocketLogger().ErrorCount != 1 {

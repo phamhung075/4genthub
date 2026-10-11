@@ -1,6 +1,7 @@
 // token_router.go ports server/routes/token_router.py. FastAPI APIRouter and
 // Depends plumbing dropped; handlers, response fields in Python declaration
-// order and status codes kept. TokenAPIController has no Go port yet.
+// order and status codes kept. TokenAPIController IS ported
+// (task_management/interface/api_controllers/token_api_controller.go).
 package routes
 
 import (

@@ -12,9 +12,10 @@ import (
 )
 
 // AITaskFacade is the TaskApplicationFacade surface AITaskPlanningService accepts.
-// The Python class TaskApplicationFacade has no Go port; the service only checks
-// whether a facade was supplied (execute_plan_with_mcp), never calling a method,
-// so this interface declares no methods.
+// The Python class TaskApplicationFacade IS ported
+// (task_management/application/facades/task_application_facade.go); the service only
+// checks whether a facade was supplied (execute_plan_with_mcp), never calling a
+// method, so this interface declares no methods.
 type AITaskFacade interface{}
 
 // AIAgentCapabilities is one entry of the agent capability mapping.

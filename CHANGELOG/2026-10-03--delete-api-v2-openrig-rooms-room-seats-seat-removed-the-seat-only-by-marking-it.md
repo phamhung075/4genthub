@@ -1,0 +1,6 @@
+### Changed
+
+**Removing a seat is a hard delete; the seat `status` is gone** (2026-10-03)
+
+- `DELETE /api/v2/openrig/rooms/{room}/seats/{seat}` removed the seat only by marking it `removed`, so the row kept holding `UNIQUE (room_id, seat_key)`: re-adding the same key was a 409 while list/get/delete answered 404, and the old links, overlay and snapshots would have come back with the key. `RoomDeletionService.RemoveSeat` now deletes, in one transaction and with `user_id` on every DELETE, the seat's links (both directions), overlay, resolved snapshots, reported statuses and the seat itself, the same cascade as room delete (`seat_management/application/services/room_deletion_service.go`). An unknown seat or another user's seat is a 404; a second delete is a 404; the same key can be added again from scratch.
+- Removed the dead status machinery: `SeatRepository.MarkRemoved`, `Seat.Status`, the `seats.status` column and `ck_seats_status` (ORM `seat_orm.go`, `seat_tables.go`, `seat_management_postgresql.sql`), `ErrSeatRemoved` (it was a 409), the five `removed` filters (list, link-cycle check, resolution, rigspec seats and edges) and `status` in the seat JSON body. New `MachineStatusRepository.DeleteSeatStatusForSeat`. Breaking for clients: the seat body has no `status` field (frontend badge to be removed by web-dev).

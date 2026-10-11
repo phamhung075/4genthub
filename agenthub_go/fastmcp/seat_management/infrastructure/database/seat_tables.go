@@ -264,26 +264,6 @@ var seatDatabaseTables = []taskdb.TableDef{
 			"\tPRIMARY KEY (user_id, machine_id)\n" +
 			")",
 	}},
-	{Name: "machine_tokens", Model: "MachineTokenORM", Columns: []taskdb.ColumnDef{
-		{Name: "id", Attr: "id", GoField: "ID", SQLType: "UUID", Nullable: false, PrimaryKey: true, Default: taskdb.DefaultUUIDv4},
-		{Name: "user_id", Attr: "user_id", GoField: "UserID", SQLType: "TEXT", Nullable: false},
-		{Name: "machine_id", Attr: "machine_id", GoField: "MachineID", SQLType: "TEXT", Nullable: false},
-		{Name: "token_hash", Attr: "token_hash", GoField: "TokenHash", SQLType: "TEXT", Nullable: false},
-		{Name: "created_at", Attr: "created_at", GoField: "CreatedAt", SQLType: "TIMESTAMP WITH TIME ZONE", Nullable: false, Default: taskdb.DefaultNowUTC},
-		{Name: "revoked_at", Attr: "revoked_at", GoField: "RevokedAt", SQLType: "TIMESTAMP WITH TIME ZONE", Nullable: true},
-	}, DDL: []string{
-		"CREATE TABLE machine_tokens (\n" +
-			"\tid UUID NOT NULL,\n" +
-			"\tuser_id TEXT NOT NULL,\n" +
-			"\tmachine_id TEXT NOT NULL,\n" +
-			"\ttoken_hash TEXT NOT NULL,\n" +
-			"\tcreated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),\n" +
-			"\trevoked_at TIMESTAMP WITH TIME ZONE,\n" +
-			"\tPRIMARY KEY (id),\n" +
-			"\tCONSTRAINT uq_machine_tokens_token_hash UNIQUE (token_hash)\n" +
-			")",
-		"CREATE UNIQUE INDEX uq_machine_tokens_active ON machine_tokens (user_id, machine_id) WHERE revoked_at IS NULL",
-	}},
 	{Name: "seat_status", Model: "SeatStatusORM", Columns: []taskdb.ColumnDef{
 		{Name: "user_id", Attr: "user_id", GoField: "UserID", SQLType: "TEXT", Nullable: false, PrimaryKey: true},
 		{Name: "machine_id", Attr: "machine_id", GoField: "MachineID", SQLType: "TEXT", Nullable: false, PrimaryKey: true},
@@ -309,6 +289,30 @@ var seatDatabaseTables = []taskdb.TableDef{
 			"\treported_at TIMESTAMP WITH TIME ZONE NOT NULL,\n" +
 			"\tPRIMARY KEY (user_id, machine_id, room, seat)\n" +
 			")",
+	}},
+	// The topology a machine reported. Like seat_status it is a reported snapshot replaced
+	// wholesale by each report, so room, from_seat and to_seat are names rather than foreign
+	// keys, and the room's rows are removed by the application layer when the room goes.
+	{Name: "machine_edges", Model: "MachineEdgeORM", Columns: []taskdb.ColumnDef{
+		{Name: "user_id", Attr: "user_id", GoField: "UserID", SQLType: "TEXT", Nullable: false, PrimaryKey: true},
+		{Name: "machine_id", Attr: "machine_id", GoField: "MachineID", SQLType: "TEXT", Nullable: false, PrimaryKey: true},
+		{Name: "room", Attr: "room", GoField: "Room", SQLType: "TEXT", Nullable: false, PrimaryKey: true},
+		{Name: "from_seat", Attr: "from_seat", GoField: "From", SQLType: "TEXT", Nullable: false, PrimaryKey: true},
+		{Name: "to_seat", Attr: "to_seat", GoField: "To", SQLType: "TEXT", Nullable: false, PrimaryKey: true},
+		{Name: "kind", Attr: "kind", GoField: "Kind", SQLType: "TEXT", Nullable: false, PrimaryKey: true},
+	}, DDL: []string{
+		"CREATE TABLE machine_edges (\n" +
+			"\tuser_id TEXT NOT NULL,\n" +
+			"\tmachine_id TEXT NOT NULL,\n" +
+			"\troom TEXT NOT NULL,\n" +
+			"\tfrom_seat TEXT NOT NULL,\n" +
+			"\tto_seat TEXT NOT NULL,\n" +
+			"\tkind TEXT NOT NULL,\n" +
+			"\tCONSTRAINT ck_machine_edges_kind CHECK (kind IN ('delegates_to', 'spawned_by', 'can_observe', 'collaborates_with', 'escalates_to')),\n" +
+			"\tCONSTRAINT ck_machine_edges_distinct CHECK (from_seat <> to_seat),\n" +
+			"\tPRIMARY KEY (user_id, machine_id, room, from_seat, to_seat, kind)\n" +
+			")",
+		"CREATE INDEX ix_machine_edges_user_room ON machine_edges (user_id, room)",
 	}},
 	// The seat friction channel (Directive H). layer's CHECK is checked against
 	// domain/feedback's vocabulary by TestSeatFeedbackLayerCheckMatchesDomain, and the columns
@@ -343,6 +347,42 @@ var seatDatabaseTables = []taskdb.TableDef{
 			"\tPRIMARY KEY (id)\n" +
 			")",
 		"CREATE INDEX ix_seat_feedback_user_id ON seat_feedback (user_id)",
+	}},
+	// Messages a window addressed to a seat, held until the client that holds that seat's terminal
+	// pulls them. IT IS THE FIRST SERVER-AUTHORED ROW A CLIENT CONSUMES on this axis: every other
+	// store here is client-authored. Keyed by the reported names rather than by a seat reference,
+	// because no seat table carries a session column and a seat that is DOWN is exactly when a message
+	// waits. delivered_at is the ack (at-least-once: an unacked row comes back on the next pull) and
+	// there is no TTL — a bound would be explicit policy, never a sweep.
+	{Name: "seat_messages", Model: "SeatMessageORM", Columns: []taskdb.ColumnDef{
+		{Name: "id", Attr: "id", GoField: "ID", SQLType: "UUID", Nullable: false, PrimaryKey: true, Default: taskdb.DefaultUUIDv4},
+		{Name: "user_id", Attr: "user_id", GoField: "UserID", SQLType: "TEXT", Nullable: false},
+		{Name: "room", Attr: "room", GoField: "Room", SQLType: "TEXT", Nullable: false},
+		{Name: "seat", Attr: "seat", GoField: "Seat", SQLType: "TEXT", Nullable: false},
+		{Name: "text", Attr: "text", GoField: "Text", SQLType: "TEXT", Nullable: false},
+		{Name: "created_at", Attr: "created_at", GoField: "CreatedAt", SQLType: "TIMESTAMP WITH TIME ZONE", Nullable: false, Default: taskdb.DefaultNowUTC},
+		// Nullable, and that is the state rather than a gap: NULL is what makes a row PENDING, and it
+		// is the column the pull filters on.
+		{Name: "delivered_at", Attr: "delivered_at", GoField: "DeliveredAt", SQLType: "TIMESTAMP WITH TIME ZONE", Nullable: true},
+		{Name: "machine_id", Attr: "machine_id", GoField: "MachineID", SQLType: "TEXT", Nullable: false, Default: taskdb.DefaultString, DefaultValue: "\"\""},
+	}, DDL: []string{
+		// No DEFAULT on id, like every other table's RUNTIME DDL: the INSERT supplies the UUID from Go
+		// (taskdb.DefaultUUIDv4), because createAll runs on databases where uuid-ossp has not been
+		// created and uuid_generate_v4() does not exist. The schema file's copy keeps it for direct SQL.
+		"CREATE TABLE seat_messages (\n" +
+			"\tid UUID NOT NULL,\n" +
+			"\tuser_id TEXT NOT NULL,\n" +
+			"\troom TEXT NOT NULL,\n" +
+			"\tseat TEXT NOT NULL,\n" +
+			"\ttext TEXT NOT NULL,\n" +
+			"\tcreated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),\n" +
+			"\tdelivered_at TIMESTAMP WITH TIME ZONE,\n" +
+			"\tmachine_id TEXT NOT NULL DEFAULT '',\n" +
+			"\tPRIMARY KEY (id)\n" +
+			")",
+		// ONE index serves both jobs, as the schema file's copy explains: the pull's keyset
+		// (user_id, room, seat) + (created_at, id), and the seat- and room-level deletes' prefix.
+		"CREATE INDEX ix_seat_messages_seat ON seat_messages (user_id, room, seat, created_at, id)",
 	}},
 }
 

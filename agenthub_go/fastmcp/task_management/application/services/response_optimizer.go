@@ -187,13 +187,13 @@ func (o *ResponseOptimizer) FlattenStructure(response *entities.OrderedMap[any])
 	if conf := zpRespGetMap(response, "confirmation"); conf != nil {
 		// Python: confirmation.get("partial_failures", []) == [] -- an explicit None is not [].
 		partial, hasPartial := conf.Get("partial_failures")
-		if conf.Len() <= 3 && conf.Has("data_persisted") && (!hasPartial || zpRespIsEmptyList(partial)) {
+		if conf.Len() <= 3 && conf.Has("data_present") && (!hasPartial || zpRespIsEmptyList(partial)) {
 			meta := zpRespGetMap(response, "meta")
 			if meta == nil {
 				meta = entities.NewOrderedMap[any]()
 				response.Set("meta", meta)
 			}
-			meta.Set("persisted", zpRespGet(conf, "data_persisted", false))
+			meta.Set("data_present", zpRespGet(conf, "data_present", false))
 			response.Delete("confirmation")
 		}
 	}
@@ -347,13 +347,13 @@ func (o *ResponseOptimizer) MergeMetadata(response *entities.OrderedMap[any]) *e
 	meta, _ := response.Get("meta")
 	metaMap, _ := meta.(*entities.OrderedMap[any])
 	conf := zpRespGetMap(response, "confirmation")
-	// data_persisted is false exactly when the call failed or carried no data, so an
+	// data_present is false exactly when the call failed or carried no data, so an
 	// operation_id on such a response names no row. Exposing it as "id" gave every caller
 	// a phantom handle: a refused create returned meta.id, and every later update against
 	// that id answered "Task not found". Absent proof of persistence is not proof of a row.
 	persisted := false
 	if conf != nil {
-		if v, ok := conf.Get("data_persisted"); ok {
+		if v, ok := conf.Get("data_present"); ok {
 			persisted = value_objects.PyTruthy(v)
 		}
 	}
@@ -370,8 +370,8 @@ func (o *ResponseOptimizer) MergeMetadata(response *entities.OrderedMap[any]) *e
 		}
 	}
 	if conf != nil {
-		if v, ok := conf.Get("data_persisted"); ok {
-			metaMap.Set("persisted", v)
+		if v, ok := conf.Get("data_present"); ok {
+			metaMap.Set("data_present", v)
 		}
 		if v, ok := conf.Get("partial_failures"); ok && value_objects.PyTruthy(v) {
 			metaMap.Set("partial_failures", v)

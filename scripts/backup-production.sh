@@ -51,7 +51,7 @@ if docker ps | grep -q $DB_CONTAINER; then
         -U $DATABASE_USER \
         -d $DATABASE_NAME \
         --no-password > $DB_BACKUP_FILE
-    
+
     # Compress database backup
     gzip $DB_BACKUP_FILE
     print_status "Database backup created: ${DB_BACKUP_FILE}.gz"
@@ -73,11 +73,6 @@ if [ -f "agenthub-frontend/.env.production" ]; then
     cp agenthub-frontend/.env.production $CONFIG_BACKUP_DIR/
 fi
 
-# Backup configuration files
-if [ -d "agenthub_main/configuration" ]; then
-    cp -r agenthub_main/configuration $CONFIG_BACKUP_DIR/
-fi
-
 # Backup Docker files
 cp -f Dockerfile* $CONFIG_BACKUP_DIR/ 2>/dev/null || true
 cp -f docker-compose*.yml $CONFIG_BACKUP_DIR/ 2>/dev/null || true
@@ -91,17 +86,6 @@ fi
 tar -czf "${CONFIG_BACKUP_DIR}.tar.gz" -C "$BACKUP_DIR" "${BACKUP_NAME}_config"
 rm -rf $CONFIG_BACKUP_DIR
 print_status "Configuration backup created: ${CONFIG_BACKUP_DIR}.tar.gz"
-
-# 3. Agent Library Backup
-print_status "Creating agent library backup..."
-AGENT_BACKUP_FILE="$BACKUP_DIR/${BACKUP_NAME}_agents.tar.gz"
-
-if [ -d "agenthub_main/agent-library" ]; then
-    tar -czf $AGENT_BACKUP_FILE -C "agenthub_main" agent-library
-    print_status "Agent library backup created: $AGENT_BACKUP_FILE"
-else
-    print_warning "Agent library directory not found, skipping agent backup"
-fi
 
 # 4. Application Logs Backup (if accessible)
 print_status "Creating application logs backup..."
@@ -166,13 +150,13 @@ print_status "Backup manifest created: $MANIFEST_FILE"
 # 6. Upload to cloud storage (if configured)
 if [ -n "$AWS_ACCESS_KEY_ID" ] && [ -n "$S3_BACKUP_BUCKET" ]; then
     print_status "Uploading backups to S3..."
-    
+
     for file in $BACKUP_DIR/${BACKUP_NAME}_*; do
         if [ -f "$file" ]; then
             aws s3 cp "$file" "s3://$S3_BACKUP_BUCKET/$(basename $file)" || print_warning "Failed to upload $(basename $file)"
         fi
     done
-    
+
     print_status "Backups uploaded to S3 bucket: $S3_BACKUP_BUCKET"
 else
     print_warning "S3 configuration not found, backups stored locally only"
@@ -201,6 +185,5 @@ echo ""
 echo "🔍 To restore from backup:"
 echo "   1. Database: gunzip < ${BACKUP_NAME}_database.sql.gz | docker exec -i $DB_CONTAINER psql -U $DATABASE_USER -d $DATABASE_NAME"
 echo "   2. Configuration: tar -xzf ${BACKUP_NAME}_config.tar.gz"
-echo "   3. Agents: tar -xzf ${BACKUP_NAME}_agents.tar.gz"
 echo ""
 echo "📅 Next backup should run on: $(date -d '+1 day')"

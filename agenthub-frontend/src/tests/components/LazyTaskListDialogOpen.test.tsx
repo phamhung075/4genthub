@@ -25,8 +25,6 @@ vi.mock('../../api', () => ({
   getAvailableAgents: vi.fn().mockResolvedValue([]),
   getTask: vi.fn().mockResolvedValue(null),
   getCurrentUserId: vi.fn().mockReturnValue('u1'),
-  getSubtaskSummaries: vi.fn().mockResolvedValue({ subtasks: [] }),
-  fetchTasks: vi.fn().mockResolvedValue([]),
 }));
 vi.mock('../../contexts/AuthContext', () => ({
   useAuth: () => ({ user: { id: 'u1' }, tokens: { access_token: 't' } }),
@@ -39,8 +37,6 @@ vi.mock('../../components/ui/toast', () => ({
 }));
 vi.mock('../../hooks/useWebSocketV2', () => ({
   useWebSocket: () => ({ isConnected: false, client: null }),
-  useTaskWebSocket: () => ({ isConnected: false, client: null }),
-  useWebSocketV2: () => ({ isConnected: false, client: null }),
 }));
 vi.mock('../../hooks/useRealtimeSync', () => ({ useRealtimeSync: vi.fn() }));
 
@@ -60,6 +56,10 @@ vi.mock('../../hooks/useTasks', () => ({
     isLoading: false,
     refetch: vi.fn(),
   }),
+  // The details dialog now subscribes to ['task', taskId, false] through useTask. The mocked
+  // module has to carry the export, and undefined data deliberately leaves the dialog on its
+  // task PROP, which is the path this case exercises.
+  useTask: () => ({ data: undefined, isLoading: false }),
   useTaskMutations: () => ({}),
 }));
 vi.mock('@tanstack/react-query', async () => {

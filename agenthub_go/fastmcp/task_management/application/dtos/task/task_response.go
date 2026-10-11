@@ -3,7 +3,6 @@ package task
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	"agenthub/fastmcp/task_management/application"
@@ -21,20 +20,22 @@ type GitBranchGetter interface {
 
 // TaskResponse is the response DTO for task operations.
 type TaskResponse struct {
-	ID              string
-	Title           string
-	Description     string
-	Status          string
-	Priority        string
-	Details         string
-	EstimatedEffort string
-	Assignees       []string
-	Labels          []string
-	Dependencies    []string
-	Subtasks        []any
-	DueDate         *string
-	CreatedAt       *time.Time
-	UpdatedAt       *time.Time
+	ID                 string
+	Title              string
+	Description        string
+	Status             string
+	Priority           string
+	Details            string
+	EstimatedEffort    string
+	Assignees          []string
+	Labels             []string
+	AcceptanceCriteria []string
+	Scope              []string
+	Dependencies       []string
+	Subtasks           []any
+	DueDate            *string
+	CreatedAt          *time.Time
+	UpdatedAt          *time.Time
 
 	GitBranchID *string
 	ProjectID   *string
@@ -44,19 +45,13 @@ type TaskResponse struct {
 	DependencyRelationships *DependencyRelationships
 
 	ProgressPercentage any
-	ProgressHistory    map[string]any
-	ProgressCount      int
 	CompletedSubtasks  int
 }
 
-// NewTaskResponse applies the Python __init__ defaults: progress_percentage 0 and
-// progress_history {} when falsy.
+// NewTaskResponse applies the Python __init__ default: progress_percentage 0 when falsy.
 func NewTaskResponse(r TaskResponse) *TaskResponse {
 	if r.ProgressPercentage == nil {
 		r.ProgressPercentage = 0
-	}
-	if r.ProgressHistory == nil {
-		r.ProgressHistory = map[string]any{}
 	}
 	return &r
 }
@@ -103,26 +98,25 @@ func TaskResponseFromDomain(ctx context.Context, task *entities.Task, gitBranchR
 		return nil, err
 	}
 
-	progressHistory, _ := taskDict["progress_history"].(map[string]any)
-	if progressHistory == nil {
-		progressHistory = map[string]any{}
-	}
-	progressCount := intFromAny(taskDict["progress_count"])
-
 	details := ""
 	if task != nil {
 		details = task.GetProgressHistoryText()
 	}
 
-	assigneesNormalized := []string{}
+	// THE ENTITY IS THE SOURCE OF TRUTH for what an assignee is: normalizeAssignee stores '@<seat_key>'
+	// or '@<role>' (entities/task.go:320-337, reached via NormalizeAssignees at :443-462); the picker
+	// offers '@<seat_key>' and the client compares against exactly those strings
+	// (agenthub-frontend/src/api.ts:366, TaskEditDialog.tsx:169, useTaskFilters.ts:62), and the client's
+	// validator WARNS when the '@' is missing (src/utils/responseValidator.ts:148-152). This response
+	// used to STRIP the '@' and append '-agent', so a REST-sourced 'go-dev-agent' could not match the
+	// picker's '@go-dev' - for ANY name, not just a role ending in -research (row 0adcfe7f).
+	//
+	// DELIBERATE DEPARTURE FROM THE REFERENCE, and it must not be "restored" as a fidelity fix: the
+	// Python stripped and appended at task_response.py:182-190, so this is a behaviour being CORRECTED
+	// rather than ported. The stored value is carried through unchanged.
+	assignees := []string{}
 	if assigneesRaw, ok := taskDict["assignees"].([]string); ok {
-		for _, a := range assigneesRaw {
-			name := strings.TrimLeft(a, "@")
-			if !strings.HasSuffix(name, "-agent") {
-				name = name + "-agent"
-			}
-			assigneesNormalized = append(assigneesNormalized, name)
-		}
+		assignees = append(assignees, assigneesRaw...)
 	}
 
 	actualCompleted := 0
@@ -147,7 +141,9 @@ func TaskResponseFromDomain(ctx context.Context, task *entities.Task, gitBranchR
 		Priority:                stringFromAny(taskDict["priority"]),
 		Details:                 details,
 		EstimatedEffort:         stringFromAny(taskDict["estimatedEffort"]),
-		Assignees:               assigneesNormalized,
+		Assignees:               assignees,
+		AcceptanceCriteria:      stringSliceFromAny(taskDict["acceptance_criteria"]),
+		Scope:                   stringSliceFromAny(taskDict["scope"]),
 		Labels:                  stringSliceFromAny(taskDict["labels"]),
 		Dependencies:            stringSliceFromAny(taskDict["dependencies"]),
 		Subtasks:                subtasks,
@@ -160,8 +156,6 @@ func TaskResponseFromDomain(ctx context.Context, task *entities.Task, gitBranchR
 		ContextData:             contextData,
 		DependencyRelationships: dependencyRelationships,
 		ProgressPercentage:      taskDict["progress_percentage"],
-		ProgressHistory:         progressHistory,
-		ProgressCount:           progressCount,
 		CompletedSubtasks:       actualCompleted,
 	}), nil
 }
@@ -188,6 +182,14 @@ func (r *TaskResponse) ToDict() (*entities.OrderedMap[any], error) {
 	if len(labels) == 0 {
 		labels = []string{}
 	}
+	acceptanceCriteria := r.AcceptanceCriteria
+	if len(acceptanceCriteria) == 0 {
+		acceptanceCriteria = []string{}
+	}
+	scope := r.Scope
+	if len(scope) == 0 {
+		scope = []string{}
+	}
 	dependencies := r.Dependencies
 	if len(dependencies) == 0 {
 		dependencies = []string{}
@@ -206,6 +208,8 @@ func (r *TaskResponse) ToDict() (*entities.OrderedMap[any], error) {
 	m.Set("details", r.Details)
 	m.Set("estimatedEffort", r.EstimatedEffort)
 	m.Set("assignees", assigneesList)
+	m.Set("acceptance_criteria", acceptanceCriteria)
+	m.Set("scope", scope)
 	m.Set("labels", labels)
 	m.Set("dependencies", dependencies)
 	m.Set("subtasks", subtasks)
@@ -218,8 +222,6 @@ func (r *TaskResponse) ToDict() (*entities.OrderedMap[any], error) {
 	m.Set("context_data", contextDataSerialized)
 	m.Set("dependency_relationships", nil)
 	m.Set("progress_percentage", r.ProgressPercentage)
-	m.Set("progress_history", r.ProgressHistory)
-	m.Set("progress_count", r.ProgressCount)
 	m.Set("subtask_count", r.SubtaskCount())
 	m.Set("completed_subtasks", r.CompletedSubtasks)
 	return m, nil

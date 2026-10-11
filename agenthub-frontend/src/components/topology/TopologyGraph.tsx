@@ -8,8 +8,8 @@
  */
 
 import React from 'react';
-import type { RoomTopology } from '../../hooks/useTopology';
-import type { Seat, SeatLink } from '../../types/seatTypes';
+import type { RoomEdgeSource, RoomTopology, TopologyEdge } from '../../hooks/useTopology';
+import type { Seat } from '../../types/seatTypes';
 import { LINK_STYLES, type LinkStyle } from './linkStyles';
 
 interface Point {
@@ -23,6 +23,16 @@ const GAP_X = 32;
 const GAP_Y = 28;
 const PAD = 8;
 const MAX_COLS = 3;
+
+/**
+ * Which source a room's edges were drawn from, in words. Shown per room because the two sources are
+ * never blended: a reader has to be able to tell a cloud graph from a reported one.
+ */
+const EDGE_SOURCE_LABEL: Record<RoomEdgeSource, string> = {
+  cloud: 'Edges from cloud links',
+  report: 'Edges from the machine report',
+  none: 'No cloud links and no machine report',
+};
 
 /** Deterministic grid: never wider than MAX_COLS, columns grow with the seat count. */
 function layout(seats: Seat[]): Record<string, Point> {
@@ -72,17 +82,23 @@ function SeatNode({ seat, point }: { seat: Seat; point: Point }) {
   );
 }
 
+/**
+ * One drawn edge. A cloud link carries `allow`; a report edge carries `null`, drawn exactly like an
+ * allowed link (a running edge is not a denial) and marked `unreported` in the DOM rather than being
+ * given a flag the report never sent.
+ */
 function Edge({
   from,
   to,
-  link,
+  edge,
   style,
 }: {
   from: Point;
   to: Point;
-  link: SeatLink;
+  edge: TopologyEdge;
   style: LinkStyle;
 }) {
+  const denied = edge.allow === false;
   return (
     <line
       x1={from.x}
@@ -91,17 +107,17 @@ function Edge({
       y2={to.y}
       stroke={style.color}
       strokeWidth={2}
-      strokeDasharray={link.allow ? style.dash : '1 3'}
-      opacity={link.allow ? 0.9 : 0.5}
+      strokeDasharray={denied ? '1 3' : style.dash}
+      opacity={denied ? 0.5 : 0.9}
       markerEnd="url(#topology-arrow)"
-      data-link-kind={link.kind}
-      data-link-allow={link.allow}
+      data-link-kind={edge.kind}
+      data-link-allow={edge.allow === null ? 'unreported' : String(edge.allow)}
     />
   );
 }
 
 function RoomGroup({ entry }: { entry: RoomTopology }) {
-  const { room, seats, links } = entry;
+  const { room, seats, edges, edgeSource } = entry;
   const positions = layout(seats);
   const { width, height } = svgSize(seats.length);
 
@@ -113,6 +129,7 @@ function RoomGroup({ entry }: { entry: RoomTopology }) {
           {room.slug} · {seats.length} {seats.length === 1 ? 'seat' : 'seats'}
         </span>
       </header>
+      <p className="mb-2 text-xs text-base-secondary">{EDGE_SOURCE_LABEL[edgeSource]}</p>
 
       {seats.length === 0 ? (
         <p className="py-6 text-center text-sm text-base-secondary">No seats in this room.</p>
@@ -139,17 +156,17 @@ function RoomGroup({ entry }: { entry: RoomTopology }) {
             </marker>
           </defs>
 
-          {links.map((link) => {
-            const from = positions[link.from_seat_id];
-            const to = positions[link.to_seat_id];
+          {edges.map((edge) => {
+            const from = positions[edge.from_seat_id];
+            const to = positions[edge.to_seat_id];
             if (!from || !to) return null;
             return (
               <Edge
-                key={link.id}
+                key={edge.id}
                 from={from}
                 to={to}
-                link={link}
-                style={LINK_STYLES[link.kind]}
+                edge={edge}
+                style={LINK_STYLES[edge.kind]}
               />
             );
           })}

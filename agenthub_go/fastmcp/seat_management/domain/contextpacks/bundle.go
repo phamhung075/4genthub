@@ -40,6 +40,14 @@ type PlainFileEntry struct {
 	EstimatedTokens int
 }
 
+// PlainFileRef names a file that was skipped because it is missing. The source reports these as
+// `{path}` entries, not bare strings — `context-pack-compose.test.ts` pins it with
+// `toEqual([{ path: "absent.md" }])` — so the path travels as a field here exactly as it does in the
+// bundle half, where the missing entry also carries its role.
+type PlainFileRef struct {
+	Path string
+}
+
 // PlainFileAssembly is the exact content a delivery verb can resolve without coupling the
 // context noun to the transport.
 type PlainFileAssembly struct {
@@ -47,7 +55,7 @@ type PlainFileAssembly struct {
 	Bytes           int
 	EstimatedTokens int
 	Files           []PlainFileEntry
-	MissingFiles    []string
+	MissingFiles    []PlainFileRef
 }
 
 // AssemblePlainFiles concatenates present file contents in declared order. The durable store
@@ -67,10 +75,10 @@ func AssemblePlainFiles(files []PlainFileInput) PlainFileAssembly {
 		entries = append(entries, PlainFileEntry{Path: f.Path, Bytes: fileBytes, EstimatedTokens: EstimateTokensFromBytes(fileBytes)})
 	}
 	text := strings.Join(texts, PlainComposeSeparator)
-	missing := []string{}
+	missing := []PlainFileRef{}
 	for _, f := range files {
 		if f.Content == nil {
-			missing = append(missing, f.Path)
+			missing = append(missing, PlainFileRef{Path: f.Path})
 		}
 	}
 	return PlainFileAssembly{
@@ -108,14 +116,53 @@ type BundleFileRef struct {
 	Role string
 }
 
+// BundleFileEntry is one PRESENT file: its role travels with its byte and token projection, which
+// is the shape the TypeScript assembler returns per file (AssembledBundle.files). Keeping them in
+// one entry is what stops a consumer from having to zip two slices that only the append order
+// keeps aligned.
+type BundleFileEntry struct {
+	Path            string
+	Role            string
+	Bytes           int
+	EstimatedTokens int
+}
+
 // AssembledBundle is one paste-ready bundle plus its per-file projection.
 type AssembledBundle struct {
 	Text            string
 	Bytes           int
 	EstimatedTokens int
-	Files           []BundleFileRef // present files, with the byte/token projection in FilesMeta
-	FilesMeta       []PlainFileEntry
+	Files           []BundleFileEntry
 	MissingFiles    []BundleFileRef
+}
+
+// jsTrimEnd removes exactly what JavaScript's String.prototype.trimEnd removes: the ECMAScript
+// WhiteSpace set (tab, VT, FF, space, NBSP, ZWNBSP, and the Zs separators) plus the LineTerminator
+// set (LF, CR, LS, PS). That is NOT Go's unicode.IsSpace — that set adds U+0085 (NEL) and would
+// trim a byte the source contract keeps, so the set is spelled out rather than delegated.
+func jsTrimEnd(s string) string {
+	return strings.TrimRightFunc(s, isECMAScriptSpace)
+}
+
+// jsTrim removes exactly what String.prototype.trim removes — the same set at BOTH ends. It exists
+// because the source calls .trim() on a pack's purpose (bundle-assembler.ts) and `strings.TrimSpace`
+// is NOT that function: measured against the engine over the whole BMP, the two sets differ at
+// exactly two code points — U+FEFF, which ECMAScript strips and unicode.IsSpace keeps, and U+0085,
+// which unicode.IsSpace strips and ECMAScript keeps. A purpose carrying a leading BOM therefore has
+// to lose it here, as it does in the assembler this ports.
+func jsTrim(s string) string {
+	return strings.TrimFunc(s, isECMAScriptSpace)
+}
+
+// isECMAScriptSpace is the one definition of the ECMAScript WhiteSpace + LineTerminator set, shared
+// by jsTrimEnd and jsTrim so the two ends cannot drift apart.
+func isECMAScriptSpace(r rune) bool {
+	switch r {
+	case '\t', '\n', '\v', '\f', '\r', ' ', '\u00a0', '\u1680', '\u2028', '\u2029',
+		'\u202f', '\u205f', '\u3000', '\ufeff':
+		return true
+	}
+	return r >= '\u2000' && r <= '\u200a'
 }
 
 // AssembleBundle concatenates a pack into one paste-ready string:
@@ -134,11 +181,13 @@ func AssembleBundle(pack BundlePack, readFile func(absPath string) (string, erro
 	}
 	sections := []string{fmt.Sprintf("%s %s v%s", packHeaderPrefix, pack.Name, pack.Version)}
 	if pack.Purpose != "" {
-		sections = append(sections, strings.TrimSpace(pack.Purpose))
+		// The source calls .trim() here, not Go's TrimSpace: measured over the whole BMP the two
+		// sets differ at exactly U+FEFF (ECMAScript strips it, unicode.IsSpace keeps it) and U+0085
+		// (the reverse). jsTrim is the ECMAScript set, at both ends.
+		sections = append(sections, jsTrim(pack.Purpose))
 	}
 
-	files := []BundleFileRef{}
-	meta := []PlainFileEntry{}
+	files := []BundleFileEntry{}
 	missing := []BundleFileRef{}
 	for _, f := range pack.Files {
 		if f.AbsolutePath == nil {
@@ -155,14 +204,14 @@ func AssembleBundle(pack BundlePack, readFile func(absPath string) (string, erro
 			header += " — " + f.Summary
 		}
 		sections = append(sections, header)
-		sections = append(sections, strings.TrimRight(content, " \t\r\n"))
+		sections = append(sections, jsTrimEnd(content))
 		fileBytes := len(content)
-		files = append(files, BundleFileRef{Path: f.Path, Role: f.Role})
-		meta = append(meta, PlainFileEntry{Path: f.Path, Bytes: fileBytes, EstimatedTokens: EstimateTokensFromBytes(fileBytes)})
+		files = append(files, BundleFileEntry{Path: f.Path, Role: f.Role, Bytes: fileBytes,
+			EstimatedTokens: EstimateTokensFromBytes(fileBytes)})
 	}
 	text := strings.Join(sections, "\n\n") + "\n"
 	return AssembledBundle{
 		Text: text, Bytes: len(text), EstimatedTokens: EstimateTokensOf(text),
-		Files: files, FilesMeta: meta, MissingFiles: missing,
+		Files: files, MissingFiles: missing,
 	}, nil
 }

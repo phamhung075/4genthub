@@ -604,16 +604,6 @@ func (m *MockSubtaskRepository) DeleteByParentTaskID(_ context.Context, parentTa
 	return len(toDelete) > 0, nil
 }
 
-// MockAgentRepository is MockAgentRepository. Python's class only holds a dict.
-type MockAgentRepository struct {
-	Agents *entities.OrderedMap[*entities.Agent]
-}
-
-// NewMockAgentRepository builds an empty mock agent repository.
-func NewMockAgentRepository() *MockAgentRepository {
-	return &MockAgentRepository{Agents: entities.NewOrderedMap[*entities.Agent]()}
-}
-
 // MockTaskRepositoryFunc mirrors Python's `lambda p, b, u: MockTaskRepository()`.
 type MockTaskRepositoryFunc func(projectID, gitBranchID, userID *string) *MockTaskRepository
 
@@ -626,7 +616,6 @@ type MockRepositoryFactory struct {
 	gitBranchRepo *MockGitBranchRepository
 	taskRepo      *MockTaskRepository
 	subtaskRepo   *MockSubtaskRepository
-	agentRepo     *MockAgentRepository
 }
 
 // NewMockRepositoryFactory builds the factory with one instance of each mock.
@@ -636,7 +625,6 @@ func NewMockRepositoryFactory() *MockRepositoryFactory {
 		gitBranchRepo: NewMockGitBranchRepository(),
 		taskRepo:      NewMockTaskRepository(),
 		subtaskRepo:   NewMockSubtaskRepository(),
-		agentRepo:     NewMockAgentRepository(),
 	}
 }
 
@@ -658,9 +646,6 @@ func (f *MockRepositoryFactory) GetSubtaskRepository(_, _, _ *string) *MockSubta
 	return f.subtaskRepo
 }
 
-// GetAgentRepository is get_agent_repository.
-func (f *MockRepositoryFactory) GetAgentRepository() *MockAgentRepository { return f.agentRepo }
-
 // CreateMockRepositories is create_mock_repositories. Key order matches Python's dict.
 func CreateMockRepositories() *entities.OrderedMap[any] {
 	m := entities.NewOrderedMap[any]()
@@ -668,7 +653,6 @@ func CreateMockRepositories() *entities.OrderedMap[any] {
 	m.Set("git_branch", NewMockGitBranchRepository())
 	m.Set("task", MockTaskRepositoryFunc(func(_, _, _ *string) *MockTaskRepository { return NewMockTaskRepository() }))
 	m.Set("subtask", MockSubtaskRepositoryFunc(func(_, _, _ *string) *MockSubtaskRepository { return NewMockSubtaskRepository() }))
-	m.Set("agent", NewMockAgentRepository())
 	return m
 }
 

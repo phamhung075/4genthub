@@ -1,4 +1,10 @@
-// Code generated from infrastructure/database/models.py (SQLAlchemy metadata); DO NOT EDIT.
+// ORIGIN: generated from infrastructure/database/models.py (SQLAlchemy metadata) during the port
+// from the Python backend. THAT GENERATOR IS GONE - no models.py and no generator script remain in
+// this repository, and agenthub_main carries none either - so this FILE IS HAND-MAINTAINED now:
+// edit it directly, keep each row struct and its Tables entry in step, and update the SQL to match
+// the structs. The "DO NOT EDIT" marker outlived its generator by months and was corrected on
+// 2026-10-10, when the agent_sessions seat pair (room_slug, seat_key, row 655227df) was added; a
+// marker asserting a cause that no longer exists stops every future seat from doing ordinary work.
 package database
 
 import (
@@ -72,29 +78,25 @@ type AgentSession struct {
 	LastSeq     int64     `db:"last_seq"`
 	CreatedAt   time.Time `db:"created_at"`
 	LastSeen    time.Time `db:"last_seen"`
+	// The seat's identity, as the connector observed it: the room slug and the seat key, written
+	// at ingest and null together when the connector could not name a seat. The pair is enforced by
+	// ck_agent_sessions_seat_pair and by the ingest, never by this struct.
+	RoomSlug *string `db:"room_slug"`
+	SeatKey  *string `db:"seat_key"`
+	// The connector's own position in the source it reads, opaque to the server and at most 512
+	// bytes (rigd-boundaries.md 2.2). It is written by append_events in the SAME transaction as the
+	// events and read back in session_ack, which is what makes a resume after a lost ack exact
+	// (2.1, option A). Null means the session never reported one: resume from the source's start.
+	ClientCursor *string `db:"client_cursor"`
+	// The state the connector last reported for this session's seat, written from session.state on
+	// every session frame (2.3a). It is NOT status: status is the connection fact MarkOffline sets.
+	// Null means no connector has reported a state - an old one-shot upload, or one that could not
+	// name the seat. The ruled values are running and stopped.
+	SeatState *string `db:"seat_state"`
 }
 
 // GetUserID satisfies repositories.HasUserID (user isolation).
 func (r *AgentSession) GetUserID() string { return r.UserID }
-
-// Agent is a row of agents.
-type Agent struct {
-	ID                string          `db:"id"`
-	Name              string          `db:"name"`
-	Description       string          `db:"description"`
-	Role              string          `db:"role"`
-	Capabilities      json.RawMessage `db:"capabilities"`
-	Status            string          `db:"status"`
-	AvailabilityScore float64         `db:"availability_score"`
-	LastActiveAt      *time.Time      `db:"last_active_at"`
-	CreatedAt         time.Time       `db:"created_at"`
-	UpdatedAt         time.Time       `db:"updated_at"`
-	Metadata          json.RawMessage `db:"metadata"`
-	UserID            string          `db:"user_id"`
-}
-
-// GetUserID satisfies repositories.HasUserID (user isolation).
-func (r *Agent) GetUserID() string { return r.UserID }
 
 // APIToken is a row of api_tokens.
 type APIToken struct {
@@ -423,6 +425,8 @@ type Task struct {
 	AIExecutionHistory   json.RawMessage `db:"ai_execution_history"`
 	AILastExecution      *time.Time      `db:"ai_last_execution"`
 	AIModelPreferences   json.RawMessage `db:"ai_model_preferences"`
+	AcceptanceCriteria   json.RawMessage `db:"acceptance_criteria"`
+	Scope                json.RawMessage `db:"scope"`
 }
 
 // GetUserID satisfies repositories.HasUserID (user isolation).
@@ -486,6 +490,8 @@ type Subtask struct {
 	AIExecutionHistory   json.RawMessage `db:"ai_execution_history"`
 	AILastExecution      *time.Time      `db:"ai_last_execution"`
 	AIModelPreferences   json.RawMessage `db:"ai_model_preferences"`
+	AcceptanceCriteria   json.RawMessage `db:"acceptance_criteria"`
+	Scope                json.RawMessage `db:"scope"`
 }
 
 // GetUserID satisfies repositories.HasUserID (user isolation).
@@ -598,27 +604,13 @@ var Tables = []TableDef{
 		{Name: "last_seq", Attr: "last_seq", GoField: "LastSeq", SQLType: "INTEGER", Nullable: false, PrimaryKey: false, Default: DefaultInt, DefaultValue: "0", ServerDefault: "", ForeignKey: "", OnDelete: "", EnumName: ""},
 		{Name: "created_at", Attr: "created_at", GoField: "CreatedAt", SQLType: "TIMESTAMP WITHOUT TIME ZONE", Nullable: false, PrimaryKey: false, Default: DefaultNowUTCNaive, DefaultValue: "", ServerDefault: "", ForeignKey: "", OnDelete: "", EnumName: ""},
 		{Name: "last_seen", Attr: "last_seen", GoField: "LastSeen", SQLType: "TIMESTAMP WITHOUT TIME ZONE", Nullable: false, PrimaryKey: false, Default: DefaultNowUTCNaive, DefaultValue: "", ServerDefault: "", ForeignKey: "", OnDelete: "", EnumName: ""},
+		{Name: "room_slug", Attr: "room_slug", GoField: "RoomSlug", SQLType: "VARCHAR(255)", Nullable: true, PrimaryKey: false, Default: DefaultNone, DefaultValue: "", ServerDefault: "", ForeignKey: "", OnDelete: "", EnumName: ""},
+		{Name: "seat_key", Attr: "seat_key", GoField: "SeatKey", SQLType: "VARCHAR(255)", Nullable: true, PrimaryKey: false, Default: DefaultNone, DefaultValue: "", ServerDefault: "", ForeignKey: "", OnDelete: "", EnumName: ""},
+		{Name: "client_cursor", Attr: "client_cursor", GoField: "ClientCursor", SQLType: "VARCHAR(512)", Nullable: true, PrimaryKey: false, Default: DefaultNone, DefaultValue: "", ServerDefault: "", ForeignKey: "", OnDelete: "", EnumName: ""},
+		{Name: "seat_state", Attr: "seat_state", GoField: "SeatState", SQLType: "VARCHAR(20)", Nullable: true, PrimaryKey: false, Default: DefaultNone, DefaultValue: "", ServerDefault: "", ForeignKey: "", OnDelete: "", EnumName: ""},
 	}, DDL: []string{
-		"CREATE TABLE agent_sessions (\n\tid VARCHAR(36) NOT NULL,\n\tuser_id VARCHAR(64) NOT NULL,\n\tconnector_id VARCHAR(64) NOT NULL,\n\tsession_key VARCHAR(255) NOT NULL,\n\tname VARCHAR(255) NOT NULL,\n\tproject VARCHAR(255),\n\tstatus VARCHAR(20) NOT NULL,\n\tlast_seq INTEGER NOT NULL,\n\tcreated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,\n\tlast_seen TIMESTAMP WITHOUT TIME ZONE NOT NULL,\n\tPRIMARY KEY (id),\n\tCONSTRAINT uq_agent_sessions_key UNIQUE (user_id, connector_id, session_key)\n)",
+		"CREATE TABLE agent_sessions (\n\tid VARCHAR(36) NOT NULL,\n\tuser_id VARCHAR(64) NOT NULL,\n\tconnector_id VARCHAR(64) NOT NULL,\n\tsession_key VARCHAR(255) NOT NULL,\n\tname VARCHAR(255) NOT NULL,\n\tproject VARCHAR(255),\n\tstatus VARCHAR(20) NOT NULL,\n\tlast_seq INTEGER NOT NULL,\n\tcreated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,\n\tlast_seen TIMESTAMP WITHOUT TIME ZONE NOT NULL,\n\troom_slug VARCHAR(255),\n\tseat_key VARCHAR(255),\n\tclient_cursor VARCHAR(512),\n\tseat_state VARCHAR(20),\n\tPRIMARY KEY (id),\n\tCONSTRAINT uq_agent_sessions_key UNIQUE (user_id, connector_id, session_key),\n\tCONSTRAINT ck_agent_sessions_seat_pair CHECK ((room_slug IS NULL) = (seat_key IS NULL))\n)",
 		"CREATE INDEX ix_agent_sessions_user_id ON agent_sessions (user_id)",
-	}},
-	{Name: "agents", Model: "Agent", Columns: []ColumnDef{
-		{Name: "id", Attr: "id", GoField: "ID", SQLType: "UUID", Nullable: false, PrimaryKey: true, Default: DefaultNone, DefaultValue: "", ServerDefault: "", ForeignKey: "", OnDelete: "", EnumName: ""},
-		{Name: "name", Attr: "name", GoField: "Name", SQLType: "VARCHAR", Nullable: false, PrimaryKey: false, Default: DefaultNone, DefaultValue: "", ServerDefault: "", ForeignKey: "", OnDelete: "", EnumName: ""},
-		{Name: "description", Attr: "description", GoField: "Description", SQLType: "TEXT", Nullable: false, PrimaryKey: false, Default: DefaultString, DefaultValue: "\"\"", ServerDefault: "", ForeignKey: "", OnDelete: "", EnumName: ""},
-		{Name: "role", Attr: "role", GoField: "Role", SQLType: "VARCHAR", Nullable: false, PrimaryKey: false, Default: DefaultString, DefaultValue: "\"assistant\"", ServerDefault: "", ForeignKey: "", OnDelete: "", EnumName: ""},
-		{Name: "capabilities", Attr: "capabilities", GoField: "Capabilities", SQLType: "JSON", Nullable: false, PrimaryKey: false, Default: DefaultEmptyList, DefaultValue: "", ServerDefault: "", ForeignKey: "", OnDelete: "", EnumName: ""},
-		{Name: "status", Attr: "status", GoField: "Status", SQLType: "VARCHAR", Nullable: false, PrimaryKey: false, Default: DefaultString, DefaultValue: "\"available\"", ServerDefault: "", ForeignKey: "", OnDelete: "", EnumName: ""},
-		{Name: "availability_score", Attr: "availability_score", GoField: "AvailabilityScore", SQLType: "FLOAT", Nullable: false, PrimaryKey: false, Default: DefaultFloat, DefaultValue: "1.0", ServerDefault: "", ForeignKey: "", OnDelete: "", EnumName: ""},
-		{Name: "last_active_at", Attr: "last_active_at", GoField: "LastActiveAt", SQLType: "TIMESTAMP WITHOUT TIME ZONE", Nullable: true, PrimaryKey: false, Default: DefaultNone, DefaultValue: "", ServerDefault: "", ForeignKey: "", OnDelete: "", EnumName: ""},
-		{Name: "created_at", Attr: "created_at", GoField: "CreatedAt", SQLType: "TIMESTAMP WITHOUT TIME ZONE", Nullable: false, PrimaryKey: false, Default: DefaultNone, DefaultValue: "", ServerDefault: "", ForeignKey: "", OnDelete: "", EnumName: ""},
-		{Name: "updated_at", Attr: "updated_at", GoField: "UpdatedAt", SQLType: "TIMESTAMP WITHOUT TIME ZONE", Nullable: false, PrimaryKey: false, Default: DefaultNone, DefaultValue: "", ServerDefault: "", ForeignKey: "", OnDelete: "", EnumName: ""},
-		{Name: "metadata", Attr: "model_metadata", GoField: "Metadata", SQLType: "JSON", Nullable: false, PrimaryKey: false, Default: DefaultEmptyDict, DefaultValue: "", ServerDefault: "", ForeignKey: "", OnDelete: "", EnumName: ""},
-		{Name: "user_id", Attr: "user_id", GoField: "UserID", SQLType: "VARCHAR", Nullable: false, PrimaryKey: false, Default: DefaultNone, DefaultValue: "", ServerDefault: "", ForeignKey: "", OnDelete: "", EnumName: ""},
-	}, DDL: []string{
-		"CREATE TABLE agents (\n\tid UUID NOT NULL,\n\tname VARCHAR NOT NULL,\n\tdescription TEXT NOT NULL,\n\trole VARCHAR NOT NULL,\n\tcapabilities JSON NOT NULL,\n\tstatus VARCHAR NOT NULL,\n\tavailability_score FLOAT NOT NULL,\n\tlast_active_at TIMESTAMP WITHOUT TIME ZONE,\n\tcreated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,\n\tupdated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,\n\tmetadata JSON NOT NULL,\n\tuser_id VARCHAR NOT NULL,\n\tPRIMARY KEY (id)\n)",
-		"CREATE INDEX idx_agent_availability ON agents (availability_score)",
-		"CREATE INDEX idx_agent_status ON agents (status)",
 	}},
 	{Name: "api_tokens", Model: "APIToken", Columns: []ColumnDef{
 		{Name: "id", Attr: "id", GoField: "ID", SQLType: "VARCHAR", Nullable: false, PrimaryKey: true, Default: DefaultNone, DefaultValue: "", ServerDefault: "", ForeignKey: "", OnDelete: "", EnumName: ""},
@@ -870,8 +862,10 @@ var Tables = []TableDef{
 		{Name: "ai_execution_history", Attr: "ai_execution_history", GoField: "AIExecutionHistory", SQLType: "JSON", Nullable: false, PrimaryKey: false, Default: DefaultEmptyList, DefaultValue: "", ServerDefault: "[]", ForeignKey: "", OnDelete: "", EnumName: ""},
 		{Name: "ai_last_execution", Attr: "ai_last_execution", GoField: "AILastExecution", SQLType: "TIMESTAMP WITHOUT TIME ZONE", Nullable: true, PrimaryKey: false, Default: DefaultNone, DefaultValue: "", ServerDefault: "", ForeignKey: "", OnDelete: "", EnumName: ""},
 		{Name: "ai_model_preferences", Attr: "ai_model_preferences", GoField: "AIModelPreferences", SQLType: "JSON", Nullable: false, PrimaryKey: false, Default: DefaultEmptyDict, DefaultValue: "", ServerDefault: "{}", ForeignKey: "", OnDelete: "", EnumName: ""},
+		{Name: "acceptance_criteria", Attr: "acceptance_criteria", GoField: "AcceptanceCriteria", SQLType: "JSON", Nullable: false, PrimaryKey: false, Default: DefaultEmptyList, DefaultValue: "", ServerDefault: "", ForeignKey: "", OnDelete: "", EnumName: ""},
+		{Name: "scope", Attr: "scope", GoField: "Scope", SQLType: "JSON", Nullable: false, PrimaryKey: false, Default: DefaultEmptyList, DefaultValue: "", ServerDefault: "", ForeignKey: "", OnDelete: "", EnumName: ""},
 	}, DDL: []string{
-		"CREATE TABLE tasks (\n\tid UUID NOT NULL,\n\ttitle VARCHAR NOT NULL,\n\tdescription TEXT NOT NULL,\n\tgit_branch_id UUID NOT NULL,\n\tstatus VARCHAR NOT NULL,\n\tpriority VARCHAR NOT NULL,\n\tprogress_history JSON NOT NULL,\n\tprogress_count INTEGER NOT NULL,\n\testimated_effort VARCHAR NOT NULL,\n\tdue_date VARCHAR,\n\tcreated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,\n\tupdated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,\n\tcompleted_at TIMESTAMP WITHOUT TIME ZONE,\n\tcompletion_summary TEXT NOT NULL,\n\ttesting_notes TEXT NOT NULL,\n\tcontext_id UUID,\n\tprogress_percentage INTEGER NOT NULL,\n\tprogress_state progressstate NOT NULL,\n\tcompleted_subtasks INTEGER,\n\tsubtask_count INTEGER,\n\tuser_id VARCHAR NOT NULL,\n\tai_system_prompt TEXT DEFAULT '' NOT NULL,\n\tai_request_prompt TEXT DEFAULT '' NOT NULL,\n\tai_work_context JSON DEFAULT '{}' NOT NULL,\n\tai_completion_criteria TEXT DEFAULT '' NOT NULL,\n\tai_execution_history JSON DEFAULT '[]' NOT NULL,\n\tai_last_execution TIMESTAMP WITHOUT TIME ZONE,\n\tai_model_preferences JSON DEFAULT '{}' NOT NULL,\n\tPRIMARY KEY (id),\n\tFOREIGN KEY(git_branch_id) REFERENCES project_git_branchs (id) ON DELETE CASCADE\n)",
+		"CREATE TABLE tasks (\n\tid UUID NOT NULL,\n\ttitle VARCHAR NOT NULL,\n\tdescription TEXT NOT NULL,\n\tgit_branch_id UUID NOT NULL,\n\tstatus VARCHAR NOT NULL,\n\tpriority VARCHAR NOT NULL,\n\tprogress_history JSON NOT NULL,\n\tprogress_count INTEGER NOT NULL,\n\testimated_effort VARCHAR NOT NULL,\n\tdue_date VARCHAR,\n\tcreated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,\n\tupdated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,\n\tcompleted_at TIMESTAMP WITHOUT TIME ZONE,\n\tcompletion_summary TEXT NOT NULL,\n\ttesting_notes TEXT NOT NULL,\n\tcontext_id UUID,\n\tprogress_percentage INTEGER NOT NULL,\n\tprogress_state progressstate NOT NULL,\n\tcompleted_subtasks INTEGER,\n\tsubtask_count INTEGER,\n\tuser_id VARCHAR NOT NULL,\n\tai_system_prompt TEXT DEFAULT '' NOT NULL,\n\tai_request_prompt TEXT DEFAULT '' NOT NULL,\n\tai_work_context JSON DEFAULT '{}' NOT NULL,\n\tai_completion_criteria TEXT DEFAULT '' NOT NULL,\n\tai_execution_history JSON DEFAULT '[]' NOT NULL,\n\tai_last_execution TIMESTAMP WITHOUT TIME ZONE,\n\tai_model_preferences JSON DEFAULT '{}' NOT NULL,\n\tacceptance_criteria JSON DEFAULT '[]' NOT NULL,\n\tscope JSON DEFAULT '[]' NOT NULL,\n\tPRIMARY KEY (id),\n\tFOREIGN KEY(git_branch_id) REFERENCES project_git_branchs (id) ON DELETE CASCADE\n)",
 		"CREATE INDEX idx_task_branch ON tasks (git_branch_id)",
 		"CREATE INDEX idx_task_created ON tasks (created_at)",
 		"CREATE INDEX idx_task_priority ON tasks (priority)",
@@ -906,8 +900,10 @@ var Tables = []TableDef{
 		{Name: "ai_execution_history", Attr: "ai_execution_history", GoField: "AIExecutionHistory", SQLType: "JSON", Nullable: false, PrimaryKey: false, Default: DefaultEmptyList, DefaultValue: "", ServerDefault: "[]", ForeignKey: "", OnDelete: "", EnumName: ""},
 		{Name: "ai_last_execution", Attr: "ai_last_execution", GoField: "AILastExecution", SQLType: "TIMESTAMP WITHOUT TIME ZONE", Nullable: true, PrimaryKey: false, Default: DefaultNone, DefaultValue: "", ServerDefault: "", ForeignKey: "", OnDelete: "", EnumName: ""},
 		{Name: "ai_model_preferences", Attr: "ai_model_preferences", GoField: "AIModelPreferences", SQLType: "JSON", Nullable: false, PrimaryKey: false, Default: DefaultEmptyDict, DefaultValue: "", ServerDefault: "{}", ForeignKey: "", OnDelete: "", EnumName: ""},
+		{Name: "acceptance_criteria", Attr: "acceptance_criteria", GoField: "AcceptanceCriteria", SQLType: "JSON", Nullable: false, PrimaryKey: false, Default: DefaultEmptyList, DefaultValue: "", ServerDefault: "", ForeignKey: "", OnDelete: "", EnumName: ""},
+		{Name: "scope", Attr: "scope", GoField: "Scope", SQLType: "JSON", Nullable: false, PrimaryKey: false, Default: DefaultEmptyList, DefaultValue: "", ServerDefault: "", ForeignKey: "", OnDelete: "", EnumName: ""},
 	}, DDL: []string{
-		"CREATE TABLE subtasks (\n\tid UUID NOT NULL,\n\ttask_id UUID NOT NULL,\n\ttitle VARCHAR NOT NULL,\n\tdescription TEXT NOT NULL,\n\tstatus VARCHAR NOT NULL,\n\tpriority VARCHAR NOT NULL,\n\tassignees JSON NOT NULL,\n\testimated_effort VARCHAR,\n\tprogress_percentage INTEGER NOT NULL,\n\tprogress_history JSON NOT NULL,\n\tprogress_count INTEGER NOT NULL,\n\tprogress_state progressstate NOT NULL,\n\tprogress_notes TEXT NOT NULL,\n\tblockers TEXT NOT NULL,\n\tcompletion_summary TEXT NOT NULL,\n\timpact_on_parent TEXT NOT NULL,\n\tinsights_found JSON NOT NULL,\n\tuser_id VARCHAR NOT NULL,\n\tcreated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,\n\tupdated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,\n\tcompleted_at TIMESTAMP WITHOUT TIME ZONE,\n\tai_system_prompt TEXT DEFAULT '' NOT NULL,\n\tai_request_prompt TEXT DEFAULT '' NOT NULL,\n\tai_work_context JSON DEFAULT '{}' NOT NULL,\n\tai_completion_criteria TEXT DEFAULT '' NOT NULL,\n\tai_execution_history JSON DEFAULT '[]' NOT NULL,\n\tai_last_execution TIMESTAMP WITHOUT TIME ZONE,\n\tai_model_preferences JSON DEFAULT '{}' NOT NULL,\n\tPRIMARY KEY (id),\n\tFOREIGN KEY(task_id) REFERENCES tasks (id) ON DELETE CASCADE\n)",
+		"CREATE TABLE subtasks (\n\tid UUID NOT NULL,\n\ttask_id UUID NOT NULL,\n\ttitle VARCHAR NOT NULL,\n\tdescription TEXT NOT NULL,\n\tstatus VARCHAR NOT NULL,\n\tpriority VARCHAR NOT NULL,\n\tassignees JSON NOT NULL,\n\testimated_effort VARCHAR,\n\tprogress_percentage INTEGER NOT NULL,\n\tprogress_history JSON NOT NULL,\n\tprogress_count INTEGER NOT NULL,\n\tprogress_state progressstate NOT NULL,\n\tprogress_notes TEXT NOT NULL,\n\tblockers TEXT NOT NULL,\n\tcompletion_summary TEXT NOT NULL,\n\timpact_on_parent TEXT NOT NULL,\n\tinsights_found JSON NOT NULL,\n\tuser_id VARCHAR NOT NULL,\n\tcreated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,\n\tupdated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,\n\tcompleted_at TIMESTAMP WITHOUT TIME ZONE,\n\tai_system_prompt TEXT DEFAULT '' NOT NULL,\n\tai_request_prompt TEXT DEFAULT '' NOT NULL,\n\tai_work_context JSON DEFAULT '{}' NOT NULL,\n\tai_completion_criteria TEXT DEFAULT '' NOT NULL,\n\tai_execution_history JSON DEFAULT '[]' NOT NULL,\n\tai_last_execution TIMESTAMP WITHOUT TIME ZONE,\n\tai_model_preferences JSON DEFAULT '{}' NOT NULL,\n\tacceptance_criteria JSON DEFAULT '[]' NOT NULL,\n\tscope JSON DEFAULT '[]' NOT NULL,\n\tPRIMARY KEY (id),\n\tFOREIGN KEY(task_id) REFERENCES tasks (id) ON DELETE CASCADE\n)",
 		"CREATE INDEX idx_subtask_status ON subtasks (status)",
 		"CREATE INDEX idx_subtask_task ON subtasks (task_id)",
 	}},

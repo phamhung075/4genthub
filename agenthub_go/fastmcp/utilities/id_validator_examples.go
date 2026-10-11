@@ -8,7 +8,8 @@ import (
 	"agenthub/fastmcp/task_management/domain/value_objects"
 )
 
-// --- Minimal facade interfaces (the real facade service is not ported) ---------------
+// --- Minimal facade interfaces (the real facade service is ported in
+// application/services/facade_service.go) ---------------------------------------------
 
 // FacadeService mirrors the duck-typed facade service used by the examples.
 type FacadeService interface {

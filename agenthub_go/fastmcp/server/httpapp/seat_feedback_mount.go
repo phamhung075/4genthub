@@ -4,7 +4,7 @@ package httpapp
 // reporting for its seats submits friction, and the owner reads it grouped by the layer the
 // friction is in.
 //
-//	POST /api/v2/openrig/feedback   user token OR machine token
+//	POST /api/v2/openrig/feedback   user token, tenant-scoped by the caller
 //	GET  /api/v2/openrig/feedback   user token, tenant-scoped by the caller
 //
 // This file owns the transport only. The writer contract — the layer vocabulary, the bounds, and
@@ -14,17 +14,6 @@ package httpapp
 // The layer is a first-class column with a closed vocabulary (domain/feedback, checked against the
 // DDL by TestSeatFeedbackLayerCheckMatchesDomain), not a tag: the read side groups by it, and a
 // free-text layer would fragment that grouping into near-duplicates.
-//
-// AUTH, and the one deliberate looseness in it. The POST accepts a user token or a machine token
-// because the two submission paths differ: an MCP-calling seat carries its AGENTHUB_TOKEN (a user
-// token) while a bridge holds only its machine token. Either way the row is written under the
-// TOKEN'S user id, so a machine token cannot write outside its own tenant. What a machine token is
-// NOT restricted to is the seat set: it may name any room and seat in its tenant, because the token
-// is bound to a machine (machine_token_mount.go) and not to seats, and the precedent is
-// POST /seat-status — that route checks only that the report names the token's own machine, and it
-// has no roster to check a seat against. Enforcing "this seat is on this machine" here would need a
-// join against a snapshot that is replaced wholesale and can legitimately be empty, so it would
-// refuse true reports to catch nothing: the tenant boundary already holds.
 
 import (
 	"bytes"
@@ -32,11 +21,9 @@ import (
 	"errors"
 	"net/http"
 	"sort"
-	"strings"
 	"time"
 
 	authdomain "agenthub/fastmcp/auth/domain/entities"
-	authinterface "agenthub/fastmcp/auth/interface"
 	"agenthub/fastmcp/seat_management/application/services"
 	"agenthub/fastmcp/seat_management/domain/feedback"
 	"agenthub/fastmcp/seat_management/domain/repositories"
@@ -70,56 +57,12 @@ type seatFeedbackSubmission struct {
 }
 
 func mountSeatFeedbackRoutes(mux *http.ServeMux, sessions *database.SessionManager) {
-	mux.HandleFunc("POST /api/v2/openrig/feedback", seatFeedbackAuthed(sessions, func(w http.ResponseWriter, r *http.Request, poster services.SeatFeedbackPoster) {
-		handleSubmitSeatFeedback(w, r, poster, sessions)
+	mux.HandleFunc("POST /api/v2/openrig/feedback", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+		handleSubmitSeatFeedback(w, r, services.SeatFeedbackPoster{UserID: userID(u)}, sessions)
 	}))
 	mux.HandleFunc("GET /api/v2/openrig/feedback", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleListSeatFeedback(w, r, u, sessions)
 	}))
-}
-
-// seatFeedbackAuthed accepts a machine token or a user token on the POST.
-//
-// The machine token is tried first, and the order is load-bearing rather than arbitrary: a machine
-// token is an exact hash match in the machine-token store, while the user path can resolve a token
-// that is not a user token at all when the deployment runs the auth layer's development fallback.
-// Asking the exact store first is the only order that answers the same way in every deployment.
-//
-// An invalid machine token is not an error: it falls through to the user path, which is what lets
-// one header carry both credentials. A machine-token LOOKUP failure is an error, because falling
-// through would answer "not authenticated" for a broken store.
-func seatFeedbackAuthed(sessions *database.SessionManager, h func(w http.ResponseWriter, r *http.Request, poster services.SeatFeedbackPoster)) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		scheme, bearer, _ := strings.Cut(r.Header.Get("Authorization"), " ")
-		if !strings.EqualFold(scheme, "bearer") || strings.TrimSpace(bearer) == "" {
-			writeDetail(w, http.StatusForbidden, "Not authenticated")
-			return
-		}
-		bearer = strings.TrimSpace(bearer)
-
-		svc, ok := machineTokenServiceFor(w, sessions)
-		if !ok {
-			return
-		}
-		token, err := svc.Authenticate(r.Context(), bearer)
-		switch {
-		case err == nil && token != nil:
-			h(w, r, services.SeatFeedbackPoster{UserID: token.UserID, MachineID: token.MachineID})
-			return
-		case errors.Is(err, services.ErrInvalidMachineToken):
-			// Not a machine token: the user path gets it.
-		case err != nil:
-			writeDetail(w, http.StatusInternalServerError, "machine token lookup failed")
-			return
-		}
-
-		u, err := authinterface.GetCurrentUser(r.Context(), &bearer, nil)
-		if err != nil {
-			writeDetail(w, http.StatusForbidden, "Not authenticated")
-			return
-		}
-		h(w, withAuthContext(r, u), services.SeatFeedbackPoster{UserID: userID(u)})
-	}
 }
 
 func seatFeedbackServiceFor(w http.ResponseWriter, sessions *database.SessionManager) (*services.SeatFeedbackService, bool) {

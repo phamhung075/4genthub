@@ -1,7 +1,6 @@
 package value_objects
 
 import (
-	"math"
 	"testing"
 	"time"
 )
@@ -57,25 +56,6 @@ func TestHints(t *testing.T) {
 	}
 	if c.RemoveExpiredHints() != 1 || c.ClearHintsByType(HintTypeCompletion) != 2 || len(c.Hints) != 1 {
 		t.Fatal("removal counts")
-	}
-}
-
-func TestPerformanceMetricsAndAgentScores(t *testing.T) {
-	m := NewAgentPerformanceMetrics("a")
-	q := 0.5
-	m.UpdateWithTaskResult(true, 2, &q)
-	m.UpdateWithTaskResult(false, 4, nil)
-	if m.AverageCompletionTime != 3 || m.QualityScore != 0.5 || m.SuccessRate() != 0.5 {
-		t.Fatal(m)
-	}
-	caps := NewAgentCapabilities(AgentsAgentRoleDeveloper)
-	caps.ExpertiseAreas[AgentExpertiseBackend] = struct{}{}
-	caps.SkillLevels["go"] = 0.5
-	p := NewAgentProfile("a", "A", caps)
-	role := AgentsAgentRoleDeveloper
-	got := p.OverallSuitabilityScore(TaskRequirements{Role: &role, Expertise: []AgentExpertise{AgentExpertiseBackend, AgentExpertiseCloud}, Skills: []SkillRequirement{{"go", 1.0}}})
-	if want := 0.7; math.Abs(got-want) > 1e-9 {
-		t.Fatal(got, want)
 	}
 }
 

@@ -10,7 +10,7 @@ The agenthub Docker infrastructure is managed through a centralized menu system 
 
 ## Active Docker Compose Configurations
 
-### Production Configurations (in `agenthub_main/docker/`)
+### Production Configurations (in `docker-system/docker/`)
 1. **docker-compose.postgresql.yml**
    - Local PostgreSQL database
    - Backend + Frontend services
@@ -84,7 +84,6 @@ The agenthub Docker infrastructure is managed through a centralized menu system 
 
 ## Obsolete Files
 All unused docker-compose files have been moved to backup directories:
-- `agenthub_main/docker/obsolete_docker_compose_backup/`
 - `docker-system/docker/obsolete_docker_compose_backup/`
 
 These can be safely deleted once confirmed they are no longer needed.

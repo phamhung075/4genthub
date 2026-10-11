@@ -23,12 +23,24 @@ overrides:
 
   # The dev-toolchain set: pnpm audit reports these twelve, the platform's alert list
   # does not name them. Every patched version below is a PATCH or MINOR of what is
-  # installed except glob, which is a major and is the one real risk here.
-  vitest: '^3.2.6'
+  # installed except two MAJORS: glob, and vitest, whose only patched release is 4.1.11
+  # (GHSA-82fw-gwwq-j7x9, path traversal in @vitest/mocker) - a DEV-only dependency, so
+  # production is untouched by the jump. NOTE that an override outranks the range in
+  # package.json: while this line said ^3.2.6, `pnpm add vitest@^4.1.11` wrote the new
+  # range into package.json and the lockfile still resolved 3.2.7, because the override
+  # is what governs. Both files move together or neither does.
+  vitest: '^4.1.11'
   tinypool: '^2.1.2'
   vite: '^7.3.5'
   rollup: '^4.59.0'
   postcss: '^8.5.18'
+  # GHSA-rj75-hqrm-r3gf / CVE-2026-104844 (quadratic complexity in flat selector parsing),
+  # fixed in 7.1.6. The consumers are tailwindcss 3.4.17 and postcss-nested 6.2.0, whose
+  # declared ranges stop at 6.x - and an override outranks a declared range, which is the
+  # only route short of the tailwind major (COST-TAILWIND-V4-2026-10-07.md). The consumer
+  # risk is NOT an install error but a silently dropped utility class, so the proof is a
+  # built-CSS diff, not a green unit suite.
+  postcss-selector-parser: '^7.1.6'
   nanoid: '^3.3.18'
   browserslist: '^4.28.7'
   flatted: '^3.4.0'

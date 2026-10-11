@@ -1,0 +1,5 @@
+## Appendix A gains the companion rule: a citation asserts the now, a quotation asserts the then
+
+### Added
+- `ai_docs/api-integration/surface-inventory.md` Appendix A: **the rule the file-name sweep needs beside it, because that sweep lands on quotations by construction.** A CITATION asserts what the code says NOW; a QUOTATION asserts what a document said THEN — only the first can be a finding, and a quotation that disagrees with the current code is doing its job. The separating test is what the sentence ATTRIBUTES: "the handler is X" can be wrong, "the report said X" is wrong only if the report did not say it. **Do not repair a quotation — check the attribution, then leave the text.** Instances named: the a2635977 false clause kept verbatim inside its own correction (`CHANGELOG.md:18`, `:32`) and §5.4's `PROD_READINESS_REPORT.md` block, whose two line numbers are the report's own, taken at `c4ff8d42`.
+- Raised as the open item on the `841cfad4` gate (whose verdict lifted the hold on a2635977) and landed here; no command moves with it, because no grep separates a citation from a quotation — the rendering is what must be read.

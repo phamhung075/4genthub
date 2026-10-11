@@ -12,7 +12,7 @@ source "${SCRIPT_DIR}/lib/core.sh"
 dev_command() {
     local subcommand="$1"
     shift
-    
+
     case "$subcommand" in
         setup)
             dev_setup "$@"
@@ -34,7 +34,7 @@ dev_command() {
 # Setup development environment
 dev_setup() {
     info "Setting up development environment..."
-    
+
     # Check if in test mode
     if [[ "${DOCKER_CLI_TEST_MODE:-}" == "true" ]]; then
         echo "Creating necessary directories..."
@@ -61,36 +61,35 @@ dev_setup() {
         echo "  ./docker-cli.sh db shell         # Access database shell"
         return 0
     fi
-    
+
     # Check prerequisites
     check_docker
     check_docker_compose
-    
+
     # Create necessary directories
-    mkdir -p "${PROJECT_ROOT}/agenthub_main/data"
     mkdir -p "${PROJECT_ROOT}/backups"
     mkdir -p "${PROJECT_ROOT}/logs"
-    
+
     # Check if .env exists
     if [[ ! -f "${PROJECT_ROOT}/.env" ]]; then
         error ".env file not found in project root. Please create it from .env.example"
         return 1
     fi
-    
+
     # Load development environment
     load_environment "dev"
-    
+
     # Ensure network
     ensure_network "agenthub-network"
-    
+
     # Start services
     start_command
-    
+
     # Seed data if enabled
     if [[ "${SEED_DATA:-true}" == "true" ]]; then
         dev_seed
     fi
-    
+
     success "Development environment setup complete!"
     echo ""
     echo "🚀 Quick start:"
@@ -107,14 +106,14 @@ dev_setup() {
 # Reset development data
 dev_reset() {
     warning "This will reset all development data!"
-    
+
     if ! confirm "Continue?"; then
         info "Operation cancelled"
         return 0
     fi
-    
+
     info "Resetting development environment..."
-    
+
     # Check if in test mode
     if [[ "${DOCKER_CLI_TEST_MODE:-}" == "true" ]]; then
         echo "Stopping agenthub_postgres_1 ... done"
@@ -138,31 +137,31 @@ dev_reset() {
         success "Development environment reset complete"
         return 0
     fi
-    
+
     # Stop services
     stop_command
-    
+
     # Remove volumes
     info "Removing development volumes..."
     docker volume rm agenthub-postgres-data 2>/dev/null || true
     docker volume rm agenthub-redis-data 2>/dev/null || true
-    
+
     # Start services
     start_command
-    
+
     # Reset database
     db_operation reset
-    
+
     # Seed data
     dev_seed
-    
+
     success "Development environment reset complete"
 }
 
 # Seed development data
 dev_seed() {
     info "Seeding development data..."
-    
+
     # Check if in test mode
     if [[ "${DOCKER_CLI_TEST_MODE:-}" == "true" ]]; then
         echo "Running seed script..."
@@ -171,13 +170,13 @@ dev_seed() {
         success "Development data seeded"
         return 0
     fi
-    
+
     local backend_container=$(get_container_id "backend")
     if [[ -z "$backend_container" ]]; then
         error "Backend container not found"
         return 1
     fi
-    
+
     # Run seed script
     docker exec "$backend_container" python scripts/seed_data.py || {
         warning "Seed script not found or failed"
@@ -192,7 +191,7 @@ from fastmcp.task_management.domain.entities import Project, GitBranch, Task
 
 try:
     db = next(get_db())
-    
+
     # Create sample project
     project = Project(
         name="Sample Project",
@@ -200,7 +199,7 @@ try:
     )
     db.add(project)
     db.commit()
-    
+
     # Create sample branch
     branch = GitBranch(
         project_id=project.id,
@@ -209,7 +208,7 @@ try:
     )
     db.add(branch)
     db.commit()
-    
+
     # Create sample tasks
     tasks = [
         Task(
@@ -231,28 +230,28 @@ try:
             status="todo"
         )
     ]
-    
+
     for task in tasks:
         db.add(task)
-    
+
     db.commit()
     print("✅ Development data seeded successfully")
-    
+
 except Exception as e:
     print(f"❌ Error seeding data: {e}")
     sys.exit(1)
 EOF
     }
-    
+
     success "Development data seeded"
 }
 
 # Build command
 build_command() {
     local service="${1:-all}"
-    
+
     info "Building Docker images..."
-    
+
     # Check if in test mode
     if [[ "${DOCKER_CLI_TEST_MODE:-}" == "true" ]]; then
         if [[ "$service" == "all" ]]; then
@@ -266,27 +265,27 @@ build_command() {
         success "Build completed"
         return 0
     fi
-    
+
     check_docker
     check_docker_compose
-    
+
     local compose_args=$(compose_file_args)
     cd "$SCRIPT_DIR"
-    
+
     if [[ "$service" == "all" ]]; then
         docker compose $compose_args build --parallel
     else
         validate_service_name "$service" || return 1
         docker compose $compose_args build "$service"
     fi
-    
+
     success "Build completed"
 }
 
 # Test command
 test_command() {
     local test_type="${1:-all}"
-    
+
     # Check if we're already in test mode and being tested
     if [[ "${DOCKER_CLI_TEST_MODE:-}" == "true" ]] && [[ "${DOCKER_CLI_TESTING_TESTS:-}" == "true" ]]; then
         case "$test_type" in
@@ -309,7 +308,7 @@ test_command() {
         esac
         return 0
     fi
-    
+
     source "${SCRIPT_DIR}/test/test-runner.sh"
     run_tests "$test_type"
 }

@@ -19,7 +19,7 @@ const (
 
 // ResponseFormatter mirrors create_error_response of the interface-layer
 // StandardResponseFormatter (task_management/interface/utils/response_formatter.py),
-// which has no Go port yet.
+// which is ported as MCPResponseFormatter in interface/utils/response_formatter.go.
 type ResponseFormatter interface {
 	CreateSuccessResponse(operation string, data any, metadata *entities.OrderedMap[any]) *entities.OrderedMap[any]
 	CreateErrorResponse(operation, errorMessage string, errorCode ErrorCode, metadata *entities.OrderedMap[any]) *entities.OrderedMap[any]

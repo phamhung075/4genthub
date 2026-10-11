@@ -1,0 +1,13 @@
+## The architecture doc's D2 record still said the fleet scripts "move in stage 2"
+
+### Fixed
+- `ai_docs/core-architecture/agenthub-system-architecture.md`, D2's "Python tooling outside the backend" paragraph: it said the eight fleet scripts "survive the backend removal unchanged and move in stage 2". The move has happened — the modules live in `agenthub_client/src/agenthub_client/` (`bridge.py`, `compact.py`, `scrub.py`, `seat_client.py`, `seat_policy.py`, `seat_sync.py`, `team_setup.py`, `watch.py`) and are reached through `4genteam` — and **every `scripts/openrig_*.py` path, with all nine of its `scripts/tests/test_openrig_*.py` files, is absent from the working tree AND the index**. The dated note added there also states the trap a reader will otherwise walk into: **the deletion is STAGED, not committed** (it is held with the pending line decision), so `git show HEAD:scripts/openrig_seat_sync.py` still resolves while the file on disk does not — which is why git history keeps showing scripts no developer has.
+- The same section's status line asserted the canonical test command still covered twelve script tests. The command runs, but `scripts/tests/` now collects three files, and the line says so with its measurement instead of leaving the difference to be read as a deleted suite.
+- The compaction-supervisor marker in the turn-time findings named `openrig_compact_supervisor.py`, a path that no longer exists; it now names `agenthub_client/src/agenthub_client/compact.py` and the verbs that run it (`4genteam compact`, `compact-run`).
+
+### An instrument failure worth recording, because it nearly became the edit
+- My first look at this tree was an `ls scripts/` and `ls scripts/tests/` whose output **still listed `openrig_bridge.py` and the eight script tests**, while `[ -e … ]`, `find` and `stat` all said they do not exist. I re-measured with absolute paths before writing a word, and the re-measurement is what the note above records. **The listing lied, not the tree** — and written from the first reading, the document would have said the opposite of the fact. Same family as the rule this repository already carries: before trusting a check, ask what dimension it can see.
+
+### Verified
+- `find /home/daihu/__projects__/4genthub/scripts -maxdepth 1 -name "openrig_*.py"` -> empty; `stat scripts/openrig_bridge.py` -> `No such file or directory`; `git ls-files --error-unmatch scripts/openrig_seat_sync.py` -> exit 1; `ls -la scripts/tests/` -> `pytest.ini`, `test_prepare_commit_msg_seat.py`, `test_seat_policy_commit_form.py`, `test_team_roster.py`.
+- The modules are where the note says (`ls agenthub_client/src/agenthub_client/`) and the verb exists (`4genteam --help` lists `compact-run`).

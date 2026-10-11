@@ -330,12 +330,16 @@ export const SubtaskDetailsDialog: React.FC<SubtaskDetailsDialogProps> = ({
                         </p>
                       </div>
                     )}
-                    {fullSubtask.progress_history && (
+                    {/* 4a0a8c7a dropped progress_history/progress_count, and SubtaskDTO serves
+                        neither `details` nor the history YET. The additive one-line DTO re-expose
+                        is requested from go-dev, and this read already points at the field it will
+                        serve, so the block renders the moment that line lands - and stays hidden
+                        until then rather than reading a field that will never arrive again. */}
+                    {fullSubtask.details && (
                       <div>
                         <span className="text-sm font-medium block mb-2">Progress History:</span>
                         <ProgressHistoryTimeline
-                          progressHistory={fullSubtask.progress_history}
-                          progressCount={fullSubtask.progress_count}
+                          progressHistory={fullSubtask.details}
                           variant="compact"
                           className="mt-1"
                         />

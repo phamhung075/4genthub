@@ -29,6 +29,8 @@ import (
 	"agenthub/fastmcp/auth"
 	authdomain "agenthub/fastmcp/auth/domain/entities"
 	authinterface "agenthub/fastmcp/auth/interface"
+	rigdb "agenthub/fastmcp/rig_safeguard/infrastructure/database"
+	rigsafeguard "agenthub/fastmcp/rig_safeguard/infrastructure/repositories/orm"
 	"agenthub/fastmcp/server/routes"
 	"agenthub/fastmcp/session_stream"
 	"agenthub/fastmcp/task_management/domain/entities"
@@ -237,6 +239,39 @@ func wsReplayMissedNotifications(ctx context.Context, conn *wsConn, userID strin
 	}
 }
 
+// agentSessionEntity is the realtime frame's entity for a session row (2.3a). It is not "session",
+// which reads as an auth session; the browser handles `agent_session` by invalidating its sessions
+// list, the same placing as `seat`.
+const agentSessionEntity = "agent_session"
+
+// agentSessionBroadcastFn emits one agent_session change frame on the existing WS v2 envelope (the
+// same routes.BroadcastDataChange the seat frames use, so delivery keeps its per-user scoping). It
+// is a package-level seam so tests can observe the frames without a live socket, mirroring
+// seatBroadcastFn in seat_admin_mount.go.
+var agentSessionBroadcastFn = func(ctx context.Context, action, entity, id, userID string, data *entities.OrderedMap[any]) error {
+	return routes.BroadcastDataChange(ctx, action, entity, id, userID, data, nil)
+}
+
+// wsAgentSessionData is the 2.3a push payload: the row's id, its seat_state and its status, and
+// nothing else. The browser does not parse the row out of the frame - it invalidates its sessions
+// list - so the payload is the minimum that names what changed.
+func wsAgentSessionData(id string, seatState any, status string) *entities.OrderedMap[any] {
+	data := entities.NewOrderedMap[any]()
+	data.Set("id", id)
+	data.Set("seat_state", seatState)
+	data.Set("status", status)
+	return data
+}
+
+// wsAgentSessionRowData reads a session row's seat_state and status out of the row an UpsertSession
+// returned, which is the row the browser will read back from GET /api/v2/sessions.
+func wsAgentSessionRowData(id string, row *entities.OrderedMap[any]) *entities.OrderedMap[any] {
+	seatState, _ := row.Get("seat_state")
+	status, _ := row.Get("status")
+	statusStr, _ := status.(string)
+	return wsAgentSessionData(id, seatState, statusStr)
+}
+
 // handleConnector ports connector_ingest: authenticate from ?token= or the bearer
 // header, require the sessions:write scope, accept, then serve hello/session/events.
 // Both refusals COMPLETE the handshake and close with 1008 plus a reason (wsRejectUpgrade):
@@ -279,12 +314,34 @@ func handleConnector(sessions *database.SessionManager) http.HandlerFunc {
 			if connectorID == "" {
 				return
 			}
-			if wsReleaseConnector(userID, connectorID) && sessions != nil {
-				_ = session_stream.MarkOffline(ctx, sessions, userID, connectorID)
+			if wsReleaseConnector(userID, connectorID) {
+				if sessions != nil {
+					// 2.3a: MarkOffline emits ONE `updated` frame per session it marks - the rows
+					// whose status actually moved to offline - each naming the row's id, its last
+					// reported seat_state and the new offline status.
+					if marked, err := session_stream.MarkOffline(ctx, sessions, userID, connectorID); err == nil {
+						for _, m := range marked {
+							var seatState any
+							if m.SeatState != nil {
+								seatState = *m.SeatState
+							}
+							_ = agentSessionBroadcastFn(ctx, "updated", agentSessionEntity, m.ID, userID,
+								wsAgentSessionData(m.ID, seatState, "offline"))
+						}
+					}
+				}
+				// The connector's last socket is gone, which is the moment 7.3's dead-man is armed
+				// and the only place it is: a reconnect inside the heartbeat close cancels it in
+				// hello, so a connector that comes back is never alerted for the gap.
+				wsArmConnectorDeadman(userID, connectorID)
 			}
 		}()
 
 		for {
+			// 2.2's server half of the heartbeat: the socket is closed after 3 x heartbeat_s with
+			// no frame. The deadline is refreshed on every frame, so it measures silence rather
+			// than connection age.
+			_ = conn.SetReadDeadline(time.Now().Add(wsConnectorIdleTimeout()))
 			raw, err := conn.ReceiveText(ctx)
 			if err != nil {
 				return
@@ -319,9 +376,26 @@ func handleConnector(sessions *database.SessionManager) http.HandlerFunc {
 					connectorID = cid
 					wsAcquireConnector(userID, cid)
 				}
+				// hello.protocol is the client's version and a missing one means 1; ready.protocol is
+				// the smaller of the two, so neither side speaks past the other (2.2). hello's
+				// client_version is accepted and unused: nothing on this side reads it.
+				protocol := wsInt(wsGet(msg, "protocol"))
+				if protocol < 1 {
+					protocol = 1
+				}
+				if protocol > connectorProtocolVersion {
+					protocol = connectorProtocolVersion
+				}
+				// ready.capabilities is the subset of the client's list this server enables, and it
+				// is also what the safeguard frame is gated on below (2.3.1, 7.6).
+				capabilities := wsEnabledCapabilities(wsCapabilities(wsGet(msg, "capabilities")))
+				wsNoteConnectorHello(userID, cid, capabilities)
 				ready := entities.NewOrderedMap[any]()
 				ready.Set("type", "ready")
 				ready.Set("connector_id", cid)
+				ready.Set("protocol", protocol)
+				ready.Set("heartbeat_s", connectorHeartbeatSeconds)
+				ready.Set("capabilities", capabilities)
 				_ = wsSend(ctx, conn, ready)
 				continue
 			}
@@ -332,6 +406,14 @@ func handleConnector(sessions *database.SessionManager) http.HandlerFunc {
 			}
 
 			switch kind {
+			case "ping":
+				// 2.2: ping carries the client's unix ms and pong echoes it. The echo is the
+				// client's proof that the socket is served, and the server's proof that the client
+				// is alive - which is why the connector loop no longer answers it with an error.
+				pong := entities.NewOrderedMap[any]()
+				pong.Set("type", "pong")
+				pong.Set("t", wsGet(msg, "t"))
+				_ = wsSend(ctx, conn, pong)
 			case "session":
 				key := wsStrOrEmpty(wsGet(msg, "session_key"))
 				if key == "" || len(key) > 255 {
@@ -342,21 +424,43 @@ func handleConnector(sessions *database.SessionManager) http.HandlerFunc {
 				if name == "" {
 					name = key
 				}
-				row, err := session_stream.UpsertSession(ctx, sessions, userID, connectorID, key, name, wsOptString(wsGet(msg, "project")))
+				// The seat's identity as the connector observed it, and the state it reports for
+				// that seat (session.state, 2.3a). The writer refuses half a pair - it is ambiguous
+				// - and drops a whole pair it cannot address, keeping the session and warning: an
+				// annotation never costs the connector its event stream. session.source (2.2) is
+				// deliberately NOT stored: no column is named for it and nothing on this side reads
+				// it, so the field is accepted and ignored rather than carried into a table that
+				// does not exist.
+				upsert, err := session_stream.UpsertSession(ctx, sessions, userID, connectorID, key, name,
+					wsOptString(wsGet(msg, "project")), wsOptString(wsGet(msg, "room")), wsOptString(wsGet(msg, "seat")),
+					wsOptString(wsGet(msg, "state")))
 				if err != nil {
-					_ = wsSend(ctx, conn, wsConnectorError("internal error"))
+					_ = wsSend(ctx, conn, wsConnectorError(wsAppendError(err)))
 					continue
 				}
-				id, _ := row.Get("id")
+				id, _ := upsert.Row.Get("id")
 				if idStr, ok := id.(string); ok {
 					known[key] = idStr
+					// 2.3a: the first frame for a new session is `created`; a frame that changed the
+					// seat_state or the status is `updated`; a frame that changed neither emits
+					// nothing. The push is emitted before the ack, so a connector that has its ack has
+					// the push too.
+					switch {
+					case upsert.Created:
+						_ = agentSessionBroadcastFn(ctx, "created", agentSessionEntity, idStr, userID, wsAgentSessionRowData(idStr, upsert.Row))
+					case upsert.SeatStateChanged || upsert.StatusChanged:
+						_ = agentSessionBroadcastFn(ctx, "updated", agentSessionEntity, idStr, userID, wsAgentSessionRowData(idStr, upsert.Row))
+					}
 				}
-				lastSeq, _ := row.Get("last_seq")
+				lastSeq, _ := upsert.Row.Get("last_seq")
 				ack := entities.NewOrderedMap[any]()
 				ack.Set("type", "session_ack")
 				ack.Set("session_key", key)
 				ack.Set("session_id", id)
 				ack.Set("last_seq", lastSeq)
+				// The stored cursor, or null. This is the resume point after a lost ack: the client
+				// reads its source from here and never re-sends what the cursor has passed (2.1).
+				ack.Set("cursor", wsCursor(upsert.Cursor))
 				_ = wsSend(ctx, conn, ack)
 			case "events":
 				sid, registered := known[wsStrOrEmpty(wsGet(msg, "session_key"))]
@@ -365,7 +469,10 @@ func handleConnector(sessions *database.SessionManager) http.HandlerFunc {
 					_ = wsSend(ctx, conn, wsConnectorError("unknown session"))
 					continue
 				}
-				stored, err := session_stream.AppendEvents(ctx, sessions, userID, sid, events)
+				// The cursor commits with the events in one transaction (2.1, option A), so the ack
+				// echoes a value that is already durable when it arrives - and a lost ack can only
+				// mean one stored batch, never a stored batch and half a resume point.
+				stored, cursor, err := session_stream.AppendEvents(ctx, sessions, userID, sid, events, wsOptString(wsGet(msg, "cursor")))
 				if err != nil {
 					_ = wsSend(ctx, conn, wsConnectorError(wsAppendError(err)))
 					continue
@@ -383,7 +490,43 @@ func handleConnector(sessions *database.SessionManager) http.HandlerFunc {
 				ack.Set("type", "events_ack")
 				ack.Set("session_id", sid)
 				ack.Set("last_seq", lastSeq)
+				ack.Set("cursor", wsCursor(cursor))
 				_ = wsSend(ctx, conn, ack)
+			case "safeguard":
+				// 7.6: only a connector whose hello advertised `safeguards` and whose ready echoed it
+				// sends this frame. A server that does not enable the capability answers
+				// `unknown_type` and keeps the socket open (2.3), which is what this does for a
+				// connector that did not advertise it.
+				if !wsConnectorSafeguardsEnabled(userID, connectorID) {
+					_ = wsSend(ctx, conn, wsConnectorError("unknown type"))
+					continue
+				}
+				row := rigdb.RigSafeguardORM{
+					UserID:      userID,
+					ConnectorID: connectorID,
+					Rig:         wsStrOrEmpty(wsGet(msg, "rig")),
+					Safeguard:   wsStrOrEmpty(wsGet(msg, "safeguard")),
+					State:       wsStrOrEmpty(wsGet(msg, "state")),
+					PID:         wsOptInt(wsGet(msg, "pid")),
+					Restarts:    wsInt64(wsGet(msg, "restarts")),
+					AgeS:        wsInt64(wsGet(msg, "age_s")),
+					LastBeatAt:  wsOptUnixMillis(wsGet(msg, "at")),
+				}
+				// 7.3: the frame is an upsert, the latest state wins, and it carries no seq, no
+				// cursor and no ack - the ONE thing it produces is the alert, and only on a
+				// transition the server can see (running -> stopped/silent/failing, or restarts up).
+				alert, err := rigsafeguard.Upsert(ctx, sessions, row)
+				if err != nil {
+					_ = wsSend(ctx, conn, wsConnectorError(wsAppendError(err)))
+					continue
+				}
+				if alert {
+					// The state is stored whether or not the push lands. A lost notice is not a lost
+					// transition: the next re-sent row is no longer a transition at all (7.3), so the
+					// error is carried and dropped rather than turned into a frame the client does
+					// not expect - 7.3 gives this frame no ack of any kind.
+					_ = raiseRigSafeguardAlert(ctx, userID, connectorID, row)
+				}
 			default:
 				_ = wsSend(ctx, conn, wsConnectorError("unknown type"))
 			}
@@ -391,8 +534,10 @@ func handleConnector(sessions *database.SessionManager) http.HandlerFunc {
 	}
 }
 
-// wsAppendError maps append_events failures to the connector error text: the typed
-// ValueError/PermissionError carry their message, anything else is internal.
+// wsAppendError maps a typed failure from the stream writers - append_events and the session
+// frame - to the connector error text: the typed ValueError/PermissionError carry their message,
+// anything else is internal. A refused seat identity therefore says which rule it broke rather
+// than reporting "internal error".
 func wsAppendError(err error) string {
 	switch e := err.(type) {
 	case *value_objects.ValueError:
@@ -443,11 +588,28 @@ func wsErrorData(message, code string) *entities.OrderedMap[any] {
 	return m
 }
 
+// wsConnectorError builds the connector's error frame. 2.2 adds `code` (a stable identifier) and
+// `fatal` to the message the frame already carried. The code is the message lower-cased with its
+// spaces underscored, which is what makes the one code the doc NAMES fall out of the message
+// exactly: "unknown type" is `unknown_type` (2.3.3). The message stays where it was, so the frames
+// the connector tests already assert are unchanged apart from the two new fields.
+//
+// fatal is false on every frame this server sends. 2.2 makes a fatal error one the server closes the
+// socket after, and phase 1 rules no condition that costs a connector its whole socket: a refused
+// frame costs it that frame, and the loop continues.
 func wsConnectorError(message string) *entities.OrderedMap[any] {
 	m := entities.NewOrderedMap[any]()
 	m.Set("type", "error")
 	m.Set("error", message)
+	m.Set("code", wsConnectorErrorCode(message))
+	m.Set("fatal", false)
 	return m
+}
+
+// wsConnectorErrorCode is the stable code for an error message: the same words, lower case, spaces
+// underscored.
+func wsConnectorErrorCode(message string) string {
+	return strings.ReplaceAll(strings.ToLower(message), " ", "_")
 }
 
 func wsErrorID() string {
@@ -568,6 +730,10 @@ func (c *wsConn) Accept(context.Context) error { return nil }
 
 func (c *wsConn) ClientHost() string { return c.clientHost }
 func (c *wsConn) ClientPort() int    { return c.clientPort }
+
+// SetReadDeadline bounds how long this socket may stay silent. The connector loop refreshes it
+// before every read, so a socket that sends no frame for wsConnectorIdleTimeout is closed (2.2).
+func (c *wsConn) SetReadDeadline(t time.Time) error { return c.conn.SetReadDeadline(t) }
 
 func (c *wsConn) Close(_ context.Context, code int, reason string) error {
 	if code == 0 {

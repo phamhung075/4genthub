@@ -1,10 +1,9 @@
-import React, { useEffect, useState, useCallback } from "react";
-import Cookies from 'js-cookie';
+import React, { useEffect, useState } from "react";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Separator } from "./ui/separator";
-import { Task, Subtask, getTask, getTaskContext, getCurrentUserId } from "../api";
+import { Task, Subtask, getTaskContext } from "../api";
 import ClickableAssignees from "./ClickableAssignees";
 import { formatContextDisplay } from "../utils/contextHelpers";
 import logger from "../utils/logger";
@@ -13,7 +12,9 @@ import RawJSONDisplay from "./ui/RawJSONDisplay";
 import { EnhancedJSONViewer } from "./ui/EnhancedJSONViewer";
 import { CopyableId } from "./ui/CopyableId";
 import { ProgressHistoryTimeline } from "./ProgressHistoryTimeline";
-import { useTaskWebSocket } from '../hooks/useTaskWebSocket';
+import { TaskEventTimeline } from './TaskEventTimeline';
+import { useTask } from '../hooks/useTasks';
+
 
 interface TaskDetailsDialogProps {
   open: boolean;
@@ -30,143 +31,37 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
   onClose,
   onAgentClick
 }) => {
-  const [fullTask, setFullTask] = useState<Task | null>(null);
   const [taskContext, setTaskContext] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
   const [contextLoading, setContextLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'details' | 'context'>('details');
   const [jsonCopied, setJsonCopied] = useState(false);
-  const [recentlyUpdated, setRecentlyUpdated] = useState(false);
 
-  // Get authentication context for WebSocket - use cookies and JWT decode
-  const token = Cookies.get('access_token') || '';
-  const userId = getCurrentUserId() || '';
+  // THE DIALOG IS A LIVE READER OF THE CACHE THE REALTIME LAYER WRITES. useRealtimeSync's
+  // 'updated' branch writes ['task', taskId, false] and ['task', taskId, true]; this subscribes
+  // to the first, so a status that arrives over the socket reaches an OPEN dialog. It used to
+  // render a local snapshot (fullTask, seeded from the prop and from its own getTask call),
+  // which nothing refreshed while the dialog stayed open - the operator's report.
+  const { data: liveTask, isLoading } = useTask(task?.id, false);
 
-  // Use fullTask if available for displayTask - Task type is already the entity itself
-  const displayTask = fullTask || task;
+  // Task type is already the entity itself. The prop is the fallback for the render(s) before
+  // the query answers, so a task handed in by the list host still displays immediately.
+  const displayTask = liveTask ?? task;
 
-  // WebSocket integration for real-time updates
-  useTaskWebSocket({
-    userId: userId || '',
-    token: token || '',
-    taskTreeId: displayTask?.git_branch_id || '',
-    projectId: displayTask?.project_id || '',
-    onTaskUpdate: useCallback((notification: any) => {
-      // Only update if this notification is for the currently displayed task
-      if (!displayTask || !notification?.entityId) return false;
-
-      if (notification.entityId === displayTask.id) {
-        logger.debug('[TaskDetailsDialog] Received WebSocket update for current task:', notification);
-
-        // If notification has full task data, use it directly
-        if (notification.data && notification.eventType === 'updated') {
-          logger.debug('[TaskDetailsDialog] Updating task from WebSocket data');
-          setFullTask(prevTask => ({
-            ...prevTask,
-            ...notification.data,
-            // Preserve nested objects that might not be in notification
-            context_data: notification.data.context_data || prevTask?.context_data
-          }));
-
-          // Show visual feedback
-          setRecentlyUpdated(true);
-          setTimeout(() => setRecentlyUpdated(false), 2000);
-
-          // Also refetch context if available
-          if (notification.entityId) {
-            setContextLoading(true);
-            getTaskContext(notification.entityId)
-              .then(context => {
-                // Same context extraction logic as lines 89-111
-                if (context?.data?.resolved_context) {
-                  setTaskContext(context.data.resolved_context);
-                } else if (context?.resolved_context) {
-                  setTaskContext(context.resolved_context);
-                } else if (context?.data) {
-                  setTaskContext(context.data);
-                } else {
-                  setTaskContext(context);
-                }
-              })
-              .catch(error => logger.error('Error fetching updated context:', error))
-              .finally(() => setContextLoading(false));
-          }
-
-          return true; // Handled successfully
-        }
-
-        // If notification doesn't have full data, trigger API fallback
-        if (notification.eventType === 'api_fallback_needed') {
-          logger.debug('[TaskDetailsDialog] API fallback triggered, refetching task');
-          setLoading(true);
-          getTask(displayTask.id)
-            .then(fetchedTask => {
-              // Task type is already the entity itself, no need to access .task property
-              if (fetchedTask?.id) {
-                setFullTask(fetchedTask);
-                setRecentlyUpdated(true);
-                setTimeout(() => setRecentlyUpdated(false), 2000);
-              }
-            })
-            .catch(error => logger.error('Error refetching task:', error))
-            .finally(() => setLoading(false));
-          return true; // Handled
-        }
-      }
-
-      return false; // Not handled
-    }, [displayTask?.id])
-  });
-
-  // Set initial task when it changes - but don't clear if null
+  // Fetch the task CONTEXT when the dialog opens. The TASK itself is no longer fetched here:
+  // useTask above owns that request (the same getTask call, on the key the realtime layer
+  // writes), so this effect's own getTask was a duplicate of it.
   useEffect(() => {
-    logger.debug('[TaskDetailsDialog] Task prop changed:', task);
-    // Task type is already the entity itself, no wrapper object
-    if (task && task.id) {
-      logger.debug('[TaskDetailsDialog] Setting fullTask from prop:', task);
-      setFullTask(task);
-    } else {
-      logger.debug('[TaskDetailsDialog] Task prop is null or has no ID, not clearing fullTask');
-    }
-  }, [task]);
+    const taskId = task?.id;
+    logger.debug('[TaskDetailsDialog] Dialog open', { open, taskId, taskProp: task });
 
-  // Fetch full task with context when dialog opens
-  useEffect(() => {
-    // Only fetch if we have a task ID, either from prop or from fullTask
-    const taskId = task?.id || fullTask?.id;
-    logger.debug('[TaskDetailsDialog] Dialog open', { open, taskId, taskProp: task, fullTask });
-    
     if (open && taskId) {
-      setLoading(true);
       setContextLoading(true);
-      
-      logger.debug('[TaskDetailsDialog] Fetching task details for ID:', taskId);
-      // Fetch task details
-      getTask(taskId) // Fixed: removed invalid second parameter
-        .then(fetchedTask => {
-          logger.debug('[TaskDetailsDialog] Fetched task:', fetchedTask);
-          // Task type is already the entity itself, no wrapper object
-          if (fetchedTask && fetchedTask.id) {
-            logger.debug('[TaskDetailsDialog] Setting fullTask to:', fetchedTask);
-            setFullTask(fetchedTask);
-          } else {
-            logger.warn('[TaskDetailsDialog] No valid task data in response');
-          }
-          // Don't clear on failure - keep the initial task data
-        })
-        .catch(error => {
-          logger.error('[TaskDetailsDialog] Error fetching task:', error);
-          // Don't overwrite with null - keep existing data
-        })
-        .finally(() => {
-          setLoading(false);
-        });
-      
+
       // Fetch task context separately
       getTaskContext(taskId)
         .then(context => {
           logger.debug('Raw context response:', context);
-          
+
           // Extract the actual context data from the response
           if (context) {
             if (context.data && context.data.resolved_context) {
@@ -206,7 +101,6 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
     if (!open) {
       // Delay clearing to avoid flashing when dialog quickly reopens
       const timer = setTimeout(() => {
-        setFullTask(null);
         setTaskContext(null);
         setActiveTab('details');
       }, 300);
@@ -216,7 +110,7 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
 
   // Format context data using helper functions
   const contextDisplay = formatContextDisplay(displayTask?.context_data);
-  
+
 
   // Copy JSON to clipboard
   const copyJsonToClipboard = () => {
@@ -231,7 +125,7 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
     }
   };
 
-  
+
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'urgent': return 'destructive';
@@ -262,11 +156,6 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
         <DialogHeader>
           <DialogTitle className="text-xl text-left flex items-center gap-2">
             {displayTask?.title || 'Task Details'}
-            {recentlyUpdated && (
-              <Badge variant="secondary" className="ml-2 text-xs">
-                Updated
-              </Badge>
-            )}
           </DialogTitle>
 
           {/* Tab Navigation */}
@@ -281,9 +170,9 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
             >
               <Info className="w-4 h-4" />
               Details
-              {loading && <span className="text-xs">(Loading...)</span>}
+              {isLoading && <span className="text-xs">(Loading...)</span>}
             </button>
-            
+
             <button
               onClick={() => setActiveTab('context')}
               className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
@@ -301,7 +190,7 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
             </button>
           </div>
         </DialogHeader>
-        
+
         <div className="flex-1 overflow-hidden flex flex-col">
           {/* Details Tab Content */}
           {activeTab === 'details' && (
@@ -410,18 +299,28 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
                   <div>
                     <h4 className="font-semibold text-sm mb-3 text-text dark:text-text">Assignment & Organization</h4>
                     <div className="space-y-3 theme-context-insights">
-                      {/* Progress History Timeline */}
-                      {displayTask.progress_history && (
+                      {/* Progress History Timeline. 4a0a8c7a dropped progress_history and
+                          progress_count from this payload and serves the joined history text as
+                          `details` instead, so the guard and the prop follow the field that is
+                          actually served - reading the dropped ones made this block silently
+                          never render, and no test could see it because the test built its own
+                          payload. */}
+                      {displayTask.details && (
                         <div>
                           <ProgressHistoryTimeline
-                            progressHistory={displayTask.progress_history}
-                            progressCount={displayTask.progress_count}
+                            progressHistory={displayTask.details}
                             variant="full"
                             className="mt-1"
                           />
                         </div>
                       )}
-                      
+
+                      {/* Execution Ledger: the events the task actually wrote (task_events). The
+                          phase it shows is derived from these events, never from the task row -
+                          ProgressHistoryTimeline above reads the older progress fields, which O1c
+                          replaces with events. */}
+                      <TaskEventTimeline taskId={displayTask.id} />
+
                       {/* Assignees */}
                       {displayTask.assignees && displayTask.assignees.length > 0 && (
                         <div>
@@ -436,7 +335,7 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
                           </div>
                         </div>
                       )}
-                      
+
                       {/* Labels */}
                       {displayTask.labels && displayTask.labels.length > 0 && (
                         <div>
@@ -537,13 +436,13 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
                   {displayTask.context_data && (
                     <>
                       <Separator />
-                      
+
                       {/* Enhanced Context Display */}
                       {contextDisplay.hasInfo && (
                         <div>
                           <h4 className="font-semibold text-sm mb-3 text-text dark:text-text">Task Completion Details</h4>
                           <div className="theme-context-completion space-y-3">
-                        
+
                         {/* Completion Summary */}
                         {contextDisplay.completionSummary && (
                           <div>
@@ -603,7 +502,7 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
                       View Complete Raw Task Data (JSON)
                     </summary>
                     <div className="mt-3">
-                      <RawJSONDisplay 
+                      <RawJSONDisplay
                         jsonData={displayTask}
                         title="Task Data"
                         fileName="task.json"
@@ -614,7 +513,7 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
               )}
             </div>
           )}
-          
+
           {/* Context Tab Content */}
           {activeTab === 'context' && (
             <div className="space-y-4 overflow-y-auto flex-1 p-4">
@@ -635,7 +534,7 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
                       Complete hierarchical view of task context and inherited data
                     </p>
                   </div>
-                  
+
                   {/* Task Execution Section */}
                   {(taskContext.task_data || taskContext.execution_context || taskContext.discovered_patterns || taskContext.local_decisions) && (
                     <div className="rounded-lg border overflow-hidden" style={{backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-surface-border)'}}>
@@ -658,7 +557,7 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
                             </div>
                           </details>
                         )}
-                      
+
                         {/* Execution Context */}
                         {taskContext.execution_context && Object.keys(taskContext.execution_context).length > 0 && (
                           <details className="group">
@@ -671,7 +570,7 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
                             </div>
                           </details>
                         )}
-                      
+
                         {/* Discovered Patterns */}
                         {taskContext.discovered_patterns && Object.keys(taskContext.discovered_patterns).length > 0 && (
                           <details className="group">
@@ -684,7 +583,7 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
                             </div>
                           </details>
                         )}
-                      
+
                         {/* Local Decisions */}
                         {taskContext.local_decisions && Object.keys(taskContext.local_decisions).length > 0 && (
                           <details className="group">
@@ -700,7 +599,7 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
                       </div>
                     </div>
                   )}
-                  
+
                   {/* Implementation Notes Section */}
                   {taskContext.implementation_notes && Object.keys(taskContext.implementation_notes).length > 0 && (
                     <div className="rounded-lg border overflow-hidden" style={{backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-surface-border)'}}>
@@ -715,7 +614,7 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
                       </div>
                     </div>
                   )}
-                  
+
                   {/* Metadata Section */}
                   {taskContext.metadata && (
                     <div className="rounded-lg border overflow-hidden" style={{backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-surface-border)'}}>
@@ -730,7 +629,7 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
                       </div>
                     </div>
                   )}
-                  
+
                   {/* Inheritance Information */}
                   {(taskContext._inheritance || taskContext.inheritance_metadata || taskContext.inheritance_disabled !== undefined) && (
                     <div className="rounded-lg border overflow-hidden" style={{backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-surface-border)'}}>
@@ -752,7 +651,7 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
                       </div>
                     </div>
                   )}
-                  
+
                   {/* Debug Information - Collapsed by Default */}
                   <details className="theme-context-raw p-4 rounded-lg">
                     <summary className="cursor-pointer text-sm font-medium text-text-secondary hover:text-text">
@@ -760,14 +659,14 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
                     </summary>
                     <div className="mt-3">
                       <p className="text-xs text-text-secondary mb-2">Complete context structure for debugging purposes</p>
-                      <RawJSONDisplay 
+                      <RawJSONDisplay
                         jsonData={taskContext}
                         title="Task Context"
                         fileName="task_context.json"
                       />
                     </div>
                   </details>
-                  
+
                 </>
               ) : (
                 <div className="text-center py-8 theme-context-section rounded-lg">
@@ -797,9 +696,9 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
                     detailsElements.forEach(details => {
                       details.open = true;
                     });
-                    
+
                     // Dispatch custom event for EnhancedJSONViewer components
-                    window.dispatchEvent(new CustomEvent('json-expand-all', { 
+                    window.dispatchEvent(new CustomEvent('json-expand-all', {
                       detail: { viewerId: 'all' }
                     }));
                   }}
@@ -815,9 +714,9 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
                     detailsElements.forEach(details => {
                       details.open = false;
                     });
-                    
+
                     // Dispatch custom event for EnhancedJSONViewer components
-                    window.dispatchEvent(new CustomEvent('json-collapse-all', { 
+                    window.dispatchEvent(new CustomEvent('json-collapse-all', {
                       detail: { viewerId: 'all' }
                     }));
                   }}

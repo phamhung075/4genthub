@@ -275,7 +275,7 @@ func TestUserBCannotListReadReplayOrAppendToUserAsSession(t *testing.T) {
 		t.Fatalf("user A's events changed: %d %v", status, body)
 	}
 	// and the repository itself refuses B an append to A's session
-	if _, err := session_stream.AppendEvents(context.Background(), env.sessions, "user-b", sidA, []any{entities.NewOrderedMap[any]()}); err == nil ||
+	if _, _, err := session_stream.AppendEvents(context.Background(), env.sessions, "user-b", sidA, []any{entities.NewOrderedMap[any]()}, nil); err == nil ||
 		err.Error() != "unknown session" {
 		t.Fatalf("repository append for another user: %v", err)
 	}
@@ -482,6 +482,59 @@ func TestSessionListIsNewestLastSeenFirst(t *testing.T) {
 	rows = env.sessionList(t, "user-1")
 	if len(rows) != 2 || rows[0]["id"] != first || rows[1]["id"] != second {
 		t.Fatalf("list order after touching s1 = %v, want [%s %s]", rows, first, second)
+	}
+}
+
+// The dashboard's send path reads THIS response, so the seat pair has to arrive ON THE WIRE and not
+// merely sit in the table: the assertion is over the decoded body of GET /api/v2/sessions. The room
+// must be the one the connector REPORTED - a session name is a pod or a member, never a rig, so a
+// value derived from it would be a different answer.
+func TestSessionListCarriesTheSeatPairTheConnectorReported(t *testing.T) {
+	env := newPGStreamEnv(t)
+	c := env.connector(t, "user-1")
+	c.hello("c1")
+	c.send(map[string]any{"type": "session", "session_key": "s1", "name": "coder",
+		"room": "dev", "seat": "alice"})
+	if ack := c.recv(); ack["type"] != "session_ack" {
+		t.Fatalf("session frame answered %v", ack)
+	}
+
+	rows := env.sessionList(t, "user-1")
+	if len(rows) != 1 {
+		t.Fatalf("sessions = %v, want one", rows)
+	}
+	for _, want := range []struct{ key, value string }{{"room_slug", "dev"}, {"seat_key", "alice"}} {
+		got, present := rows[0][want.key]
+		if !present {
+			t.Errorf("%s is absent from the response %v", want.key, rows[0])
+			continue
+		}
+		if got != want.value {
+			t.Errorf("%s = %#v, want %q", want.key, got, want.value)
+		}
+	}
+}
+
+// A connector that cannot name a seat is a fact about the session, not an error, and the pair it did
+// not report must arrive as null rather than "": an empty string is a seat the UI would offer to send
+// to. Null and ABSENT are different answers too - a client reading the field by name needs the key.
+func TestSessionListCarriesAnUnreportedSeatPairAsNull(t *testing.T) {
+	env := newPGStreamEnv(t)
+	env.connector(t, "user-1").ingest("s1")
+
+	rows := env.sessionList(t, "user-1")
+	if len(rows) != 1 {
+		t.Fatalf("sessions = %v, want one", rows)
+	}
+	for _, key := range []string{"room_slug", "seat_key"} {
+		got, present := rows[0][key]
+		if !present {
+			t.Errorf("%s is absent from the response %v; null is an answer, an absent key is not", key, rows[0])
+			continue
+		}
+		if got != nil {
+			t.Errorf("%s = %#v, want null (an empty string would read as a named-but-blank seat)", key, got)
+		}
 	}
 }
 

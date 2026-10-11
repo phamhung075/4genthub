@@ -25,8 +25,6 @@ var tokenCostPairs = []struct {
 	{"delete_branch", 3},
 	{"list_branches", 1},
 	{"get_branch", 1},
-	{"assign_agent_branch", 3},
-	{"unassign_agent_branch", 2},
 	{"get_branch_statistics", 2},
 	{"archive_branch", 3},
 	{"restore_branch", 3},
@@ -54,13 +52,8 @@ var tokenCostPairs = []struct {
 	{"list_subtasks", 1},
 	{"get_subtask", 1},
 	// Agent operations
-	{"register_agent", 5},
 	{"assign_agent", 3},
 	{"unassign_agent", 2},
-	{"get_agent", 1},
-	{"list_agents", 1},
-	{"update_agent", 3},
-	{"unregister_agent", 3},
 	// Context operations
 	{"create_context", 5},
 	{"update_context", 3},

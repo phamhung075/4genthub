@@ -456,5 +456,17 @@ func (c *DatabaseConfig) CreateTables(ctx context.Context) error {
 		}
 	}
 	EnsureAIColumnsExist(ctx, c.Engine.DB)
-	return RunColumnEnsurers(ctx, c.Engine.DB)
+	if err := RunColumnEnsurers(ctx, c.Engine.DB); err != nil {
+		return err
+	}
+	// The embedded migrations run LAST, against the schema createAll and the ensurers have left: a
+	// step that creates or alters a registered table needs createAll to have run, and one that builds
+	// on an ensurer's column needs the ensurer to have run. Every step and its ledger row commit
+	// together (migration_runner.go), so a failure leaves the record of what did run.
+	set, err := LoadMigrations()
+	if err != nil {
+		return err
+	}
+	_, err = (&Runner{Sessions: NewSessionManager(c), Set: set}).Apply(ctx)
+	return err
 }

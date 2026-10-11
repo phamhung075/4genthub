@@ -4,12 +4,14 @@
 
 | Operation | Command | Use Case |
 |-----------|---------|----------|
-| **Deploy production** | `./scripts/deployment/deploy-production.sh --environment production` | Full production deployment |
-| **Health check** | `./scripts/deployment/health-checks/comprehensive-health-check.sh` | Verify system health |
-| **Rollback** | `./scripts/deployment/rollback/rollback-production.sh --environment production` | Revert failed deployment |
+| **Deploy production** | *struck 2026-10-09: the script is gone from the working tree and the index (staged deletion, held) and no in-tree replacement exists* | Full production deployment (`scripts/deployment/deploy-production.sh`) |
+| **Health check** | *struck 2026-10-09: same state* | Verify system health (`scripts/deployment/health-checks/comprehensive-health-check.sh`) |
+| **Rollback** | *struck 2026-10-09: same state* | Revert failed deployment (`scripts/deployment/rollback/rollback-production.sh`) |
 | **Apply migration** | `AUTO_MIGRATE=true ./agenthub` (Go `CreateTables` + startup auto-migrations) | Update database schema |
 | **Database reset** | Drop/recreate the database, then boot with `AUTO_MIGRATE=true` | Fresh local development |
-| **Monitor metrics** | http://localhost:9090 (Prometheus) | Track system performance |
+| **Monitor metrics** | `curl -sS http://localhost:8000/ws/metrics` — the Go server's own metrics surface, in Prometheus text format from its in-process registry; **no Prometheus or Grafana stack is defined by this repository** | Track system performance |
+
+> **STRUCK 2026-10-09: the deployment scripts this guide names are gone from the working tree and the index (staged deletion, held).** The four removed paths are `scripts/deployment/deploy-production.sh`, `scripts/deployment/health-checks/comprehensive-health-check.sh`, `scripts/deployment/health-checks/smoke-tests.sh` and `scripts/deployment/rollback/rollback-production.sh` (`git status --porcelain -- scripts/deployment/` -> four `D` entries). **The deletion is STAGED, not committed — it is held with the pending line decision — so `git show HEAD:scripts/deployment/deploy-production.sh` still resolves while the file on disk does not.** Nine commands in this guide ran those paths (the three table rows above, three in *Deployment Execution* and three in *Rollback Procedures*); all nine are struck, and none is runnable. **No replacement is named here, because the tree has none:** `4genteam --help` (2026-10-09) lists no deploy, rollback or health-check verb, so the client package is not their moved home. What the working tree still carries under `scripts/deployment/` is exactly three files — `caprover-env-setup.sh`, `force-caprover-rebuild.sh` and `security/apply-security-fixes.sh` — plus `scripts/deploy-frontend.sh`, `docker-system/deployment-manager.sh` and the root `captain-definition.backend` / `captain-definition.frontend` the CapRover path uses. `.github/workflows/production-deployment.yml` is in the same state, so the CI/CD paragraph below describes a workflow that is no longer on disk.
 
 ---
 
@@ -30,31 +32,26 @@
 - **`production-deployment.yml`** — triggered by a push to `main`, a `v*.*.*` tag, or a manual
   dispatch (with an `environment` choice of `production` or `staging`). Jobs: **Security Scan**
   (Trivy, results uploaded as SARIF to the Security tab) → **Build Images** (backend and
-  frontend) → **Deploy to Staging** → **Deploy to Production**.
-- **`test_coverage.yml`** — triggered by push/PR and a daily schedule. Jobs: a test matrix,
-  performance tests and a coverage report, all running the **archived Python tree**
-  (`working-directory: agenthub_main`).
+  frontend) → **Deploy to Staging** → **Deploy to Production**. **DATED NOTE 2026-10-09: that file is absent from the working tree and the index — staged for deletion and held with the pending line decision (`git status --porcelain -- .github/workflows/` → `D .github/workflows/production-deployment.yml`) — so this paragraph describes the workflow at HEAD, not on disk.**
+- **`test_coverage.yml`** — removed with the Python tree: it only ran the archived Python
+  suite (`working-directory: agenthub_main`). **CORRECTED 2026-10-10 (writer seat): this read "No workflow now runs Go or frontend tests.", and that is FALSE of this tree — `.github/workflows/ci.yml` runs both, and it is the only workflow left in the directory.** See the next item.
 
-**Two facts about that pipeline worth stating in the operations manual:** neither workflow
-installs or runs Go, and neither runs the frontend test runner — so a green pipeline says
-nothing about whether the shipped server passes its tests. The de-link of the archived tree
-from CI is tracked in `agenthub_go/NEXT_GEN.md` (directive 6).
+**`ci.yml` is the workflow that runs the code's own suites, and it is the only file left in `.github/workflows/` (measured 2026-10-10: `ls .github/workflows/` lists `ci.yml` alone).** It has two jobs, each declaring its `working-directory` — `ci.yml:13` (`agenthub_go`) and `ci.yml:27` (`agenthub-frontend`). The **`go`** job (`:9-21`) runs `go vet ./...` (`:20`) and `go test ./...` (`:21`); the **`frontend`** job (`:23-40`) runs `pnpm install --frozen-lockfile` (`:38`), `pnpm test` (`:39`) and `pnpm build` (`:40`). Triggers are a push to `main` or a pull request (`:3-6`). **CORRECTED 2026-10-10 (writer seat): the paragraph here read "**Two facts about that pipeline worth stating in the operations manual:** neither workflow installs or runs Go, and neither runs the frontend test runner — so a green pipeline says nothing about whether the shipped server passes its tests."** Both halves were true of the two workflows it described and FALSE of the repository, because it did not name `ci.yml` at all. What survives, stated precisely rather than dropped: **the `go` job declares no PostgreSQL service, so the tests gated on `AGENTHUB_TEST_PG_URL` SKIP in CI — and this repository's own rule is that a skip is not a pass (the same reading is recorded for the ledger tests at `NEXT_GEN.md` O1a).** So a green `ci.yml` is evidence that the Go unit tests and the frontend suite pass, and is NOT evidence about the PostgreSQL-backed tests. The de-link of the archived tree from CI is tracked in `agenthub_go/NEXT_GEN.md` (directive 6).
 
 ### Deployment Execution
 
 ```bash
 # 1. Pre-deployment validation
 ./scripts/deployment/security/apply-security-fixes.sh --environment production
-./scripts/deployment/deploy-production.sh --dry-run --environment production
 
-# 2. Execute deployment
-./scripts/deployment/deploy-production.sh --environment production
+# 2. Execute deployment and 4. Health checks: STRUCK 2026-10-09.
+#    scripts/deployment/deploy-production.sh and
+#    scripts/deployment/health-checks/comprehensive-health-check.sh are absent from the
+#    working tree and the index (staged deletion, held), and no in-tree replacement
+#    exists — see the note under the Quick Reference table.
 
 # 3. Monitor deployment
-docker-compose -f docker-system/docker-compose.production-enhanced.yml logs -f
-
-# 4. Health checks
-./scripts/deployment/health-checks/comprehensive-health-check.sh --environment production
+docker-compose -f docker-system/docker/docker-compose.production.yml logs -f
 ```
 
 ### Infrastructure Components
@@ -66,27 +63,11 @@ docker-compose -f docker-system/docker-compose.production-enhanced.yml logs -f
 | Frontend | React dashboard (dev `npm run dev`) | 3800 | — |
 | Reverse proxy | CapRover's nginx terminates TLS in production | 80/443 | — |
 
-> Earlier revisions of this guide listed **Redis**, **Prometheus** and **Grafana** rows here, and a `timestamp_health_monitor.py` dashboard elsewhere. **None of those components is defined by this repository**: there is no `monitoring/` directory (`git ls-files monitoring/` → 0), and the Go module carries no Redis client (`fastmcp/server/session_store.go:23` sets `zpSessionRedisAvailable = false`). They are not part of this deployment as the repository describes it.
+> Earlier revisions of this guide listed **Redis**, **Prometheus** and **Grafana** rows here, and a `timestamp_health_monitor.py` dashboard elsewhere. **None of those components is defined by this repository**: there is no `monitoring/` directory (`git ls-files monitoring/` → 0), and the Go module carries no Redis client (`fastmcp/server/session_store.go:23` sets `zpSessionRedisAvailable = false`). They are not part of this deployment as the repository describes it. **CORRECTED 2026-10-09 (writer seat): the Quick Reference row above still read `http://localhost:9090 (Prometheus)` while this note said the repository defines no Prometheus — one file contradicting itself, which tells a reader less than a stale path does, because neither half can be trusted. The row now names the surface that exists (`GET /ws/metrics` on the Go server, Prometheus text format from the in-process registry), so the two halves agree.**
 
 ### Rollback Procedures
 
-**Automatic Rollback** (CI/CD triggered):
-```bash
-./scripts/deployment/rollback/rollback-production.sh \
-    --environment production \
-    --auto-confirm
-```
-
-**Manual Rollback**:
-```bash
-# Rollback to previous version
-./scripts/deployment/rollback/rollback-production.sh --environment production
-
-# Rollback to specific version
-./scripts/deployment/rollback/rollback-production.sh \
-    --environment production \
-    --version v1.2.3
-```
+**Automatic Rollback** (CI/CD triggered) and **Manual Rollback** were both `./scripts/deployment/rollback/rollback-production.sh` invocations: `--environment production --auto-confirm` for the first, and `--environment production` with an optional `--version v1.2.3` for the second. **STRUCK 2026-10-09 — that script is absent from the working tree and the index (staged deletion, held) and no in-tree replacement exists** (see the note under the Quick Reference table). The commands are removed rather than left to be run.
 
 **Rollback Validation**: Verify services running → Run health checks → Validate functionality → Monitor stability → Notify stakeholders
 
@@ -288,7 +269,7 @@ AUTO_MIGRATE=true ./agenthub
 
 **Monitoring, as this repository actually provides it**:
 - **`GET /health`** — liveness plus the deployed version (the deploy-confirmation signal).
-- **`GET /ws/metrics`** — WebSocket connection metrics (`fastmcp/server/httpapp/misc_mount.go:72`).
+- **`GET /ws/metrics`** — WebSocket connection metrics (`fastmcp/server/httpapp/misc_mount.go:73`).
 - **Performance metrics** — `GET /api/v1/performance/metrics/overview`, `/timeseries` and `/alerts`.
 - **PostgreSQL** — the `pg_stat_statements` queries below.
 
@@ -480,7 +461,7 @@ pg_restore -d agenthub backup.dump
 **Horizontal Scaling**:
 ```bash
 # Scale MCP backend
-docker-compose -f docker-system/docker-compose.production-enhanced.yml \
+docker-compose -f docker-system/docker/docker-compose.production.yml \
     up -d --scale mcp-backend=3
 ```
 

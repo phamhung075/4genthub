@@ -113,16 +113,6 @@ func (r *draftProjectRepo) FindByID(_ context.Context, id string) (*entities.Pro
 	return r.byID[id], r.findErr
 }
 
-type draftAgentRepo struct {
-	repositories.AgentRepository
-	result *entities.Agent
-	err    error
-}
-
-func (r *draftAgentRepo) RegisterAgent(context.Context, *entities.Agent) (*entities.Agent, error) {
-	return r.result, r.err
-}
-
 type draftRuleRepo struct {
 	repositories.RuleRepository
 	rules     map[string]*entities.RuleContent

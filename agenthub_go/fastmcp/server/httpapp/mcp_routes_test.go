@@ -25,7 +25,7 @@ const toolsGoldenPath = "../../task_management/interface/testdata/tools_golden.j
 // needed.
 func newMCPTestApp(t *testing.T) *App {
 	t.Helper()
-	fs := services.NewFacadeService(nil, nil, nil, nil, nil, nil, nil)
+	fs := services.NewFacadeService(nil, nil, nil, nil, nil, nil)
 	tools, err := interfacelayer.NewDDDCompliantMCPTools(interfacelayer.Dependencies{
 		FacadeService:     fs,
 		DatabaseAvailable: true,
@@ -126,7 +126,7 @@ func TestMCPToolsCallSerializesResult(t *testing.T) {
 	t.Setenv("AUTH_ENABLED", "false")
 	app := newMCPTestApp(t)
 
-	for _, name := range []string{"get_mcp_status", "check_session_health", "manage_agent"} {
+	for _, name := range []string{"get_mcp_status", "check_session_health"} {
 		t.Run(name, func(t *testing.T) {
 			payload := fmt.Sprintf(`{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":%q,"arguments":{}}}`, name)
 			rec := postMCP(t, app, payload, "")

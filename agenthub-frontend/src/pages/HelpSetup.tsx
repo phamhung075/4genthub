@@ -2,6 +2,7 @@ import { ArrowLeft } from 'lucide-react';
 import React, { useState, useMemo } from 'react';
 import {
   ClaudeHooks,
+  ConnectMachine,
   DockerSetup,
   GettingStartedGuide,
   HelpSection,
@@ -33,6 +34,7 @@ export const HelpSetup: React.FC = () => {
     MCPConfiguration({ expandedSections, toggleSection, deploymentMode }),
     UsingMCPTools({ expandedSections, toggleSection, deploymentMode }),
     DockerSetup({ expandedSections, toggleSection, deploymentMode }),
+    ConnectMachine({ expandedSections, toggleSection, deploymentMode }),
     ClaudeHooks({ expandedSections, toggleSection, deploymentMode }),
     Troubleshooting({ expandedSections, toggleSection, deploymentMode })
   ], [deploymentMode, expandedSections]);

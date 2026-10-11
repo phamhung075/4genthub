@@ -13,6 +13,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"unicode/utf8"
 
 	"agenthub/fastmcp/seat_management/domain/secretscan"
 )
@@ -28,6 +29,48 @@ const (
 // substitutes it from its configuration. Every other ${VAR} reference is left verbatim for
 // the client runtime to expand from the seat's environment.
 const PlatformURLPlaceholder = "${AGENTHUB_MCP_URL}"
+
+// SeatHeader is the header every rendered http MCP block carries and the MCP route reads back: the
+// seat's identity, `<room>/<seat>`. It is an ATTRIBUTION claim, never an authorization one - the
+// route reads it to say who made a call, and decides nothing else from it.
+const SeatHeader = "X-Agenthub-Seat"
+
+// SeatValue is that header's value, in one place so the renderer that writes it and the route that
+// reads it cannot drift into two shapes.
+func SeatValue(roomSlug, seatKey string) string {
+	return roomSlug + "/" + seatKey
+}
+
+// SeatValueMaxLen bounds a header value by the column the ledger records it in: task_events.actor_id
+// is VARCHAR(255), and a value past that width used to fail the INSERT and roll the CALLER'S OWN
+// status write back with it - a header losing a legitimate write. The bound lives here, with the
+// shape, so the renderer and the route cannot disagree about how long an identity may be.
+//
+// It counts CHARACTERS, because the column does: PostgreSQL's VARCHAR(255) admits 255 characters
+// however many bytes they take, so a byte bound would refuse a legal identity whose seat key carries
+// an accented letter.
+const SeatValueMaxLen = 255
+
+// ValidateSeatValue refuses a header value that cannot be recorded as an actor id: it checks what
+// the column holds, and that the value has the `<room>/<seat>` shape SeatValue writes - a value with
+// no separator, or with an empty side, names no seat at all.
+//
+// It does NOT check that the room or the seat exists: this is a shape and a width, not a lookup, and
+// resolving a seat belongs to the resolver. It also splits only at the FIRST separator, so a seat key
+// that itself contains one is still accepted - the rule must refuse junk without ever refusing what
+// the renderer produces. The value is quoted if it is printed, so a hostile header cannot inflate the
+// message.
+func ValidateSeatValue(v string) error {
+	if chars := utf8.RuneCountInString(v); chars > SeatValueMaxLen {
+		return fmt.Errorf("seat header is %d characters, past the %d an actor id is recorded in: %.60q",
+			chars, SeatValueMaxLen, v)
+	}
+	room, seat, ok := strings.Cut(v, "/")
+	if !ok || room == "" || seat == "" {
+		return fmt.Errorf("seat header %q is not <room>/<seat>", v)
+	}
+	return nil
+}
 
 // Server is one MCP server as a block's content describes it.
 type Server struct {

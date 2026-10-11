@@ -1,0 +1,8 @@
+## The surface inventory's drift checker exists, is not in the repo, and was already red — so the gate is now stated with its failing half
+
+### Fixed
+- `ai_docs/api-integration/surface-inventory.md`: the paragraph naming `COUNTS-AUDIT.py` as the checker that re-derives its headline figures is TRUE, and what it did not say was where the script is or that it is outside this repository — so a reader of the tree could not reach it. It now carries the exact path (`/home/daihu/.openrig/agenthub-seats/4genthub-min/COUNTS-AUDIT.py`), the fact that a seat runs it and CI cannot, and the evidence for both halves: **exit 0 on the tree it describes, and `--self-test` perturbs one expectation by one and requires the audit to notice.** The failing half is stated because a checker never seen to fail is the same object as no checker at all.
+
+### Measured
+- The audit against this tree: **11 numbers, 10 matching, `httpapp route registrations` differing.** Its expectation read **124** while the tree had read **125** since `O1a` added `GET /{id}/events` — so **it was red before `e6829b32`, for a reason that had nothing to do with this work**, and that was found by running it rather than by reading it. Re-derived, not adjusted: `git grep -c 'mux.HandleFunc('` over `fastmcp/server/httpapp` minus `_test.go` gives **125** at both `1a1ae32c` and `88d27758`, and **123** at HEAD. The expectation is corrected to 123, which is what the inventory paragraph already recorded (`125 -> 123`), and the audit now exits 0.
+- The failing half, demonstrated twice and independently: `--self-test` prints `perturbed 'httpapp route registrations' by +1 -> exit 1 (PASS)`, and a copy perturbed by hand (`core tables` 20 -> 21) exits **1** and names that row.

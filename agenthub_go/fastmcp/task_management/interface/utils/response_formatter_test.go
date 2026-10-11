@@ -25,11 +25,11 @@ func TestCreateResponseKeyOrderAndShapes(t *testing.T) {
 	}
 	conf, _ := res.Get("confirmation")
 	c := conf.(*entities.OrderedMap[any])
-	if c.Keys()[0] != "operation_completed" || c.Keys()[1] != "data_persisted" || c.Keys()[2] != "partial_failures" || c.Keys()[3] != "operation_details" {
+	if c.Keys()[0] != "operation_completed" || c.Keys()[1] != "data_present" || c.Keys()[2] != "partial_failures" || c.Keys()[3] != "operation_details" {
 		t.Fatalf("confirmation keys=%v", c.Keys())
 	}
-	if v, _ := c.Get("data_persisted"); v != true {
-		t.Errorf("data_persisted=%#v", v)
+	if v, _ := c.Get("data_present"); v != true {
+		t.Errorf("data_present=%#v", v)
 	}
 	od, _ := c.Get("operation_details")
 	details := od.(*entities.OrderedMap[any])
@@ -68,8 +68,8 @@ func TestCreateErrorResponseShape(t *testing.T) {
 	if v, _ := c.Get("operation_completed"); v != false {
 		t.Errorf("operation_completed=%#v", v)
 	}
-	if v, _ := c.Get("data_persisted"); v != false {
-		t.Errorf("data_persisted=%#v", v)
+	if v, _ := c.Get("data_present"); v != false {
+		t.Errorf("data_present=%#v", v)
 	}
 	errAny, _ := res.Get("error")
 	e := errAny.(*entities.OrderedMap[any])

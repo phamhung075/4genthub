@@ -37,6 +37,11 @@ type fakeSeatAdmin struct {
 
 	deletedStatusRooms []string
 	deletedStatusSeats []string
+	deletedEdgeRooms   []string
+	// The message store's two, so a deletion test can assert that undelivered text went with the seat
+	// or the room rather than being left behind.
+	deletedMessageRooms []string
+	deletedMessageSeats []string
 }
 
 func newFakeSeatAdmin() *fakeSeatAdmin {
@@ -226,6 +231,15 @@ func (f *fakeSeatAdmin) UpdateSeatPermissionPolicy(_ context.Context, _, seatID,
 	return nil
 }
 
+func (f *fakeSeatAdmin) UpdateSeatPinnedVersion(_ context.Context, _, seatID, pinnedVersion string) error {
+	for _, s := range f.seats {
+		if s.ID == seatID {
+			s.PinnedVersion = &pinnedVersion
+		}
+	}
+	return nil
+}
+
 func (f *fakeSeatAdmin) UpdateSeatOccupant(_ context.Context, _, seatID, runtime, model string) error {
 	for _, s := range f.seats {
 		if s.ID == seatID {
@@ -313,6 +327,21 @@ func (f *fakeSeatAdmin) DeleteSeatStatusForRoom(_ context.Context, _, roomSlug s
 
 func (f *fakeSeatAdmin) DeleteSeatStatusForSeat(_ context.Context, _, roomSlug, seatKey string) error {
 	f.deletedStatusSeats = append(f.deletedStatusSeats, roomSlug+"/"+seatKey)
+	return nil
+}
+
+func (f *fakeSeatAdmin) DeleteMachineEdgesForRoom(_ context.Context, _, roomSlug string) error {
+	f.deletedEdgeRooms = append(f.deletedEdgeRooms, roomSlug)
+	return nil
+}
+
+func (f *fakeSeatAdmin) DeleteSeatMessagesForSeat(_ context.Context, _, roomSlug, seatKey string) error {
+	f.deletedMessageSeats = append(f.deletedMessageSeats, roomSlug+"/"+seatKey)
+	return nil
+}
+
+func (f *fakeSeatAdmin) DeleteSeatMessagesForRoom(_ context.Context, _, roomSlug string) error {
+	f.deletedMessageRooms = append(f.deletedMessageRooms, roomSlug)
 	return nil
 }
 
@@ -1043,8 +1072,10 @@ func TestSeatAdminRemoveSeatIsAHardDelete(t *testing.T) {
 	if len(fake.overlays) != 0 {
 		t.Errorf("overlay of the removed seat left: %+v", fake.overlays)
 	}
-	if strings.Join(fake.deletedResolved, ",") != "seat-a" || strings.Join(fake.deletedStatusSeats, ",") != "dev/alice" {
-		t.Errorf("snapshots deleted = %v, statuses deleted = %v, want seat-a and dev/alice", fake.deletedResolved, fake.deletedStatusSeats)
+	if strings.Join(fake.deletedResolved, ",") != "seat-a" || strings.Join(fake.deletedStatusSeats, ",") != "dev/alice" ||
+		strings.Join(fake.deletedMessageSeats, ",") != "dev/alice" {
+		t.Errorf("snapshots deleted = %v, statuses deleted = %v, messages deleted = %v, want seat-a and dev/alice for both",
+			fake.deletedResolved, fake.deletedStatusSeats, fake.deletedMessageSeats)
 	}
 	if rec := doTestRequest(t, mux, http.MethodDelete, seatPath, ""); rec.Code != http.StatusNotFound {
 		t.Errorf("second delete: status = %d, want 404", rec.Code)
@@ -1270,6 +1301,12 @@ func TestSeatAdminDeleteRoom(t *testing.T) {
 	}
 	if strings.Join(fake.deletedStatusRooms, ",") != "dev" {
 		t.Errorf("seat status deleted for rooms %v, want only dev", fake.deletedStatusRooms)
+	}
+	if strings.Join(fake.deletedEdgeRooms, ",") != "dev" {
+		t.Errorf("topology edges deleted for rooms %v, want only dev", fake.deletedEdgeRooms)
+	}
+	if strings.Join(fake.deletedMessageRooms, ",") != "dev" {
+		t.Errorf("seat messages deleted for rooms %v, want only dev", fake.deletedMessageRooms)
 	}
 	if rec := doTestRequest(t, mux, http.MethodDelete, "/api/v2/openrig/rooms/dev", ""); rec.Code != http.StatusNotFound {
 		t.Errorf("delete again: status = %d, want 404", rec.Code)

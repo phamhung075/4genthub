@@ -479,7 +479,6 @@ func NewProjectManagementService(projectRepo repositories.ProjectRepository, use
 		CleanupObsolete:    use_cases.NewCleanupObsoleteUseCase(projectRepo),
 		ProjectHealthCheck: use_cases.NewProjectHealthCheckUseCase(projectRepo),
 		ValidateIntegrity:  zpProjValidateIntegrityAdapter{use_cases.NewValidateIntegrityUseCase(projectRepo)},
-		RebalanceAgents:    use_cases.NewRebalanceAgentsUseCase(projectRepo),
 	}
 	return zpProjNewService(projectRepo, userID, deps, notifier, gitBranchRepo, taskCounter)
 }

@@ -20,7 +20,7 @@ type Lock struct {
 	Path string `json:"path"`
 }
 
-// ReadLock ports openrig_seat_sync.py's read_lock, and its three outcomes are all load-bearing - the
+// ReadLock ports agenthub_client/src/agenthub_client/seat_sync.py's read_lock, and its three outcomes are all load-bearing - the
 // two failure branches are exactly the kind a port drops silently:
 //
 //	no file (or a directory)      -> the zero Lock and no error: the seat was never pulled, which

@@ -14,7 +14,9 @@ import (
 	authperm "agenthub/fastmcp/auth/domain"
 	"agenthub/fastmcp/auth/middleware"
 	"agenthub/fastmcp/config"
+	"agenthub/fastmcp/seat_management/domain/mcpblock"
 	seatcontrollers "agenthub/fastmcp/seat_management/interface/mcp_controllers"
+	"agenthub/fastmcp/task_management/application/services"
 	"agenthub/fastmcp/task_management/domain/entities"
 	"agenthub/fastmcp/task_management/domain/value_objects"
 	interfacelayer "agenthub/fastmcp/task_management/interface"
@@ -366,6 +368,29 @@ func (a *App) dispatchMCPTool(ctx context.Context, r *http.Request, name string,
 		}
 	}
 
+	// THE SEAT'S CLAIM ON ITS OWN CALLS, read from the header every rendered MCP block carries
+	// (mcpblock.SeatHeader). ATTRIBUTION ONLY: nothing below decides access from it, and a call
+	// without it is attributed to the user, never to the system.
+	//
+	// A VALUE THAT CANNOT BECOME AN ACTOR ID IS REFUSED HERE, BEFORE ANY WORK IS ATTEMPTED, rather
+	// than left for the database to refuse: actor_id is VARCHAR(255), so an over-long header used to
+	// fail the INSERT and roll back the CALLER'S OWN status write - a header losing a legitimate
+	// write, which is what the reviewer measured. The refusal is the boundary's own error result, so
+	// the caller learns why and nothing was written.
+	if seatID := r.Header.Get(mcpblock.SeatHeader); seatID != "" {
+		if err := mcpblock.ValidateSeatValue(seatID); err != nil {
+			return map[string]any{
+				"success": false,
+				"error": map[string]any{
+					"message":   err.Error(),
+					"code":      "INVALID_SEAT_HEADER",
+					"operation": name,
+				},
+			}, true
+		}
+		ctx = services.WithActor(ctx, services.SeatActor(seatID))
+	}
+
 	orderedArgs := entities.NewOrderedMap[any]()
 	for k, v := range args {
 		orderedArgs.Set(k, v)
@@ -452,18 +477,6 @@ func (a *App) dispatchMCPTool(ctx context.Context, r *http.Request, name string,
 			return res, false
 		}
 		return map[string]any{"error": "ContextController not initialized"}, true
-
-	case "manage_agent":
-		if a.mcpTools != nil && a.mcpTools.AgentController != nil {
-			pID := getOptStringPtr(args, "project_id")
-			agID := getOptStringPtr(args, "agent_id", "id")
-			name := getOptStringPtr(args, "name")
-			callAgent := getOptStringPtr(args, "call_agent")
-			bID := getOptStringPtr(args, "git_branch_id", "branch_id")
-			res := a.mcpTools.AgentController.ManageAgent(ctx, action, pID, agID, name, callAgent, bID, userID)
-			return res, false
-		}
-		return map[string]any{"error": "AgentController not initialized"}, true
 
 	case seatcontrollers.ManageSeatToolName:
 		if a.mcpTools != nil && a.mcpTools.ManageSeatController != nil {

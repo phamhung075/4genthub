@@ -2,19 +2,26 @@
 
 The cloud owns what a seat is and resolves it to a snapshot named by a hash. The local client
 compares each seat's pinned hash with the cloud's, adopts a newer snapshot, and can restart the
-seat so it loads it. Tool: `scripts/openrig_seat_client.py` (it calls `openrig_seat_sync.py rig`
-to adopt, so the pinning rules live in one place: never fall back to another snapshot).
+seat so it loads it. Tool: `agenthub_client/internal/clientseat/` (`seat.go` holds `Commands` at `:52`) — **CORRECTED 2026-10-10 (writer seat, at the pinned client commit `eaa6ba7`): this named `agenthub_client/src/agenthub_client/seat_client.py`, which the client's Go port retired** — run as
+`4genteam seat` (it calls `4genteam sync rig ROOM --update` to adopt, so the pinning rules live in
+one place: never fall back to another snapshot; a missing pin is an error).
 
 ```
-cloud room  --hash per seat-->  openrig_seat_client.py  --rig ROOM --update-->  <store>/<room>/rig
-                                         |                                              |
-                                         +-- relaunch (when quiet) -->  seat loads it at start
+cloud room  --hash per seat-->  4genteam seat  --4genteam sync rig ROOM --update-->  <store>/<room>/rig
+                                      |                                                      |
+                                      +-- relaunch (when quiet) -->  seat loads it at start
 ```
 
-**`openrig_seat_client.py` is retiring into `agenthub-client sync`.** `status` is already ported —
-`agenthub-client sync status <room>` is the same check. `sync` and `watch` stay on this script until
-`agenthub-client sync rig` and `sync watch` are ported; **the script and its test are deleted in that
-commit.** (Architect decision: `ai_docs/architecture-design/decision-seat-client-fold.md`.)
+**The `scripts/openrig_*.py` paths this document used to instruct are gone, and the port they were
+waiting on has happened.** `scripts/openrig_seat_client.py` and `scripts/openrig_seat_sync.py`
+moved into the client package as `seat_client.py` and `seat_sync.py`; both are absent from the
+working tree and the index (the deletion is staged with the pending line decision, not yet
+committed, so `git show HEAD:scripts/openrig_seat_client.py` still resolves while the file on disk
+does not). The console script is `4genteam` (also installed as `agenthub-client`), which runs
+`agenthub_client.cli:main`. **Two older instructions are therefore dead and must not be followed:**
+`python3 scripts/openrig_seat_client.py …`, and `agenthub-client sync status <room>` — the latter
+was never a verb, because `sync` is `seat_sync` (`pull`, `rig`, `bundle`, `offline-install`,
+`respawn`, `install-checker`, `switch`), while per-seat `status` lives under `4genteam seat`.
 
 Environment: `AGENTHUB_URL` (for production `https://api.4genthub.com`) and `AGENTHUB_TOKEN`. The
 token is passed on in the environment and never printed or written. The store is
@@ -23,18 +30,34 @@ token is passed on in the environment and never printed or written. The store is
 ## Commands
 
 ```bash
-python3 scripts/openrig_seat_client.py status 4genthub-dev                    # pinned vs cloud, per seat
-python3 scripts/openrig_seat_client.py sync 4genthub-dev                      # adopt newer snapshots only
-python3 scripts/openrig_seat_client.py sync 4genthub-dev --relaunch quiet     # adopt, then restart changed seats
-python3 scripts/openrig_seat_client.py watch 4genthub-dev --interval 60 --relaunch quiet
+4genteam seat status 4genthub-dev                    # pinned vs cloud, per seat
+4genteam seat sync 4genthub-dev                      # adopt newer snapshots only
+4genteam seat sync 4genthub-dev --relaunch quiet     # adopt, then restart changed seats
+4genteam seat watch 4genthub-dev --interval 60 --relaunch quiet
+4genteam sync rig 4genthub-dev --update              # materialize the room: rig.yaml plus links
+4genteam seat reseat 4genthub-min --seat go-dev --seat lead   # restart live seats at their quiet point
+4genteam send [--from NAME] 4genthub-min lead "text"          # one signed message to one seat
 ```
 
 `--seat NAME` (repeatable) limits the work; `--rig NAME` when the rig name differs from the room.
+`4genteam seat sync` is the per-seat loop; `4genteam sync` is the module that pulls, pins and
+materializes (`--help` lists its seven subcommands).
 
 | Mode | Effect |
 |---|---|
 | `--relaunch none` (default) | adopt only; a running seat keeps what it loaded and changes at its next launch |
 | `--relaunch quiet` | restart each changed seat after it has been idle 30 s; a seat that is not quiet within 25 min is reported and left running |
+
+`seat reseat RIG --seat NAME...` restarts each named seat once it is quiet, one after the other, whatever its
+pin says. Use it when a seat has to load something that is not part of its snapshot: a new skill, a new cwd, a
+changed guide in the repo. `seat sync --relaunch quiet` cannot do that, because a seat whose pin is already
+current is reported "in sync" and is never restarted. The DeepSeek peak gate applies (`--allow-peak` skips it).
+`--force` skips the quiet wait. Before each restart the client also replaces the omp seat's own skill directory
+(`~/.openrig/state/omp/<session>/agent/skills`) with the skills `sync rig` built for it, because nothing else copies
+them there. A `rig launch` whose reply times out counts as done when the seat's tmux session comes up within 3 minutes.
+
+`send` puts `From NAME:` in front of the text (default `owner session`) because `rig send` does not carry the
+sender outside a seat shell, and it passes the text to `rig` as one argument, so a shell expands nothing in it.
 
 Exit codes: 0 ok (`status`: all in sync), 2 usage or environment, 3 a cloud, sync or relaunch step
 failed, 4 `status` found a seat behind or not pulled.
@@ -46,5 +69,69 @@ failed, 4 `status` found a seat behind or not pulled.
   It becomes syncable once the cloud has a room for it, which is part of
   `SEAT-CONTEXT-AS-BLOCKS.md`.
 - **A running seat never changes live.** Adopting changes the files; the seat reads them at launch.
+- **The cloud's copy of a room's module text can lag the repo, and a resolved hash does not say
+  otherwise** (measured 2026-10-10, `4genthub-min`). The room serves a copy of `project-4genthub`
+  (version 1.0.0) that differs from its source `scripts/team/4genthub/project-4genthub.txt` in three
+  hunks - the `PROJECT.` line still reads "being ported from the Python backend in `agenthub_main`"
+  although the tree retired that backend (`python-backend-final`); the LAYOUT bullet
+  "`agenthub_main`: legacy Python backend; its script tests live in `agenthub_main/src/tests/scripts`."
+  still exists although the repo deleted it; and TESTS still carries that pre-move pytest command plus
+  a TypeScript-error baseline the tree removed on 2026-10-03 - and the guide block itself differs the
+  same way (`guide-reviewer` still names the pre-move pytest command, `shared-modules/guide-common.md`
+  still says to `git add -- <path>` and stage first where the settled form at `guide-common.md:22` is a
+  pathspec commit with no pre-stage). `4genthub-min/lead` resolved to the same snapshot hash on
+  2026-10-08 21:23Z and on 2026-10-10, which rules out a stale cache but not a publish that landed
+  **unreferenced**, because an unreferenced version changes nothing a seat sees; the one command that
+  separates the two is `GET /api/v2/openrig/modules` (latest per module, with `sha256`) or `GET /api/v2/openrig/modules/{slug}/versions/{version}`. **No corrected body had reached a
+  seat in the two days before 2026-10-10.** The corrections are committed in the repo (`0ea06c77`,
+  `1f0b177a`, `d1114170`) and publishing them is the principal's token, not a seat's; a corrected body
+  must also go out as a NEW version and the refs must name it, because a module version is immutable
+  (`modulecontent.go:4`) and the manifests name literal versions, so an unreferenced publish renders the
+  old row and looks exactly like a publish that never happened. Until it lands, a seat that needs the
+  current text reads the repo source, not the served render.
+
+  **RE-MEASURED 2026-10-10 20:35Z (writer seat) — the repo half moved, the served half
+  did not, and the divergence is now two hunks in source against three in what a seat
+  reads.** The TypeScript-baseline hunk above is **fixed in the repo**: the four
+  `scripts/team/4genthub` sites were rewritten to name the command and carry no count
+  (`8edb60a1` `mission.md`, `d0a18574` `area-web-frontend.txt`, `b60cc986`
+  `project-4genthub.txt`, `e1720a0b` `area-quality.txt`), and the ref at
+  `scripts/team/4genthub/team.json:9` now names **1.0.2**, not 1.0.1 (`88424aa4`) — so
+  the next publish of this module cannot reuse 1.0.1, and no `pinned_version` of any
+  other room was touched. **A seat still reads the old text, and that is the half the
+  deploy did not touch — production's own version is a different claim.** `0.0.34` held
+  at 20:31Z, from the process that had been serving since before the push (the lead
+  read it at `uptime_seconds` 3772); at 20:32:39Z `/health` moved to `0.0.35` from a
+  NEW process, and re-measured here at 20:35:41Z it reads `version 0.0.35` with
+  `uptime_seconds 245.2` — a process started ≈20:31:36Z — and the lead then ran ASK 4's
+  acceptance himself (a board status change lands), so the write path is repaired.
+  **What a seat READS is not repaired.** Measured with `call_seat`, room `4genthub-min`,
+  seat `lead`, hash
+  `2426785a140553447f089e4a8b4ca13a1fdf6cc85f97f67360c82198a9002f1f` (read 20:35Z): the
+  rendered `project-4genthub` block still carries all three hunks verbatim — the
+  `PROJECT.` line "being ported from the Python backend in `agenthub_main`", the LAYOUT
+  bullet "`agenthub_main`: legacy Python backend; its script tests live in
+  `agenthub_main/src/tests/scripts`.", and the pre-move pytest line beside a "(23 known
+  pre-existing errors)" TS baseline — while the **pin** in that same render is `1.3.0`
+  (`agent.yaml` `version: "1.3.0"` and `seat-type-version: 1.3.0`). So the pin is not
+  the stale part; the served body is. Pins, measured by the lead through the seat API on
+  2026-10-10: all ten `4genthub-min` seats read `pinned_version` **1.3.0**, the
+  `4genthub-dev` room's eight seats read **1.0.0**, and `4genthub-client` and
+  `4genthub-ab` read **1.3.0**. `main` is at `c510c065`. So the **source** now diverges
+  from the served body in **two** hunks (the `PROJECT.` line and the LAYOUT bullet)
+  while **what a seat reads** still carries all **three**. The remaining chain is two
+  applies, as the disposition ruled: the armed 1.0.1 run, then a second publish of
+  1.0.2 plus a re-resolve and `4genteam sync rig --update`. The publish and the
+  re-resolve need the principal's production token; a seat does not start them.
+
+  **A method note for the next reader of the three census instruments, because getting
+  it wrong looks exactly like a defect in them.** `scripts/S3-REDERIVE.py`,
+  `scripts/CITATION-AUDIT.py` and `scripts/COUNTS-AUDIT.py` read the cited file **at a
+  rev and the document at that rev too** (`git show`, never the worktree), so they can
+  only judge a **commit**. An uncommitted correction is invisible to them and they will
+  report the pre-edit state as stale. Commit, then run the audit — do not pre-check.
+  Verified by rerunning all three after their commits: `S3-REDERIVE.py` `FRESH 66` exit
+  0 (it takes no argument; with none it defaults to `rev=HEAD base=a7990665`),
+  `COUNTS-AUDIT.py` exit 0, `CITATION-AUDIT.py` `rows 145  stale 0  unresolved 0`.
 - **Not yet built:** the frontend "Apply" button. When the cloud records apply requests, `watch`
   will act on them; today `watch` compares hashes by polling.

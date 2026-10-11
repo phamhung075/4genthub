@@ -8,7 +8,6 @@ import (
 
 	"agenthub/fastmcp/task_management/application/dtos/subtask"
 	. "agenthub/fastmcp/task_management/application/dtos/task"
-	usecases "agenthub/fastmcp/task_management/application/use_cases"
 	"agenthub/fastmcp/task_management/domain/entities"
 	"agenthub/fastmcp/task_management/domain/value_objects"
 )
@@ -16,7 +15,7 @@ import (
 func TestCreateTaskRequestNormalization(t *testing.T) {
 	r, err := NewCreateTaskRequest(CreateTaskRequest{
 		Title: "t", GitBranchID: "b",
-		Assignees: []string{"coding-agent", "test-orchestrator-agent", "system-architect-agent", "@custom", "@already"},
+		Assignees: []string{"@coding-agent", "@test-orchestrator-agent", "@system-architect-agent", "@custom", "@already"},
 		Labels:    []string{"bug", "  Frontend ", "weird label!", ""},
 	})
 	if err != nil {
@@ -25,6 +24,11 @@ func TestCreateTaskRequestNormalization(t *testing.T) {
 	wantAssignees := []string{"@coding-agent", "@test-orchestrator-agent", "@system-architect-agent", "@custom", "@already"}
 	if !reflect.DeepEqual(r.Assignees, wantAssignees) {
 		t.Fatalf("assignees = %v", r.Assignees)
+	}
+	if _, err := NewCreateTaskRequest(CreateTaskRequest{
+		Title: "t", GitBranchID: "b", Assignees: []string{"coding-agent"},
+	}); err == nil || err.Error() != "Invalid assignees: ['coding-agent']. An assignee is '@<seat_key>'." {
+		t.Fatalf("bare name: %v", err)
 	}
 	wantLabels := []string{"bug", "Frontend", "weird label!"}
 	if !reflect.DeepEqual(r.Labels, wantLabels) {
@@ -153,9 +157,9 @@ func TestTaskResponseToDict(t *testing.T) {
 		t.Fatalf("err = %v", err)
 	}
 	want := []string{"id", "title", "description", "status", "priority", "details", "estimatedEffort",
-		"assignees", "labels", "dependencies", "subtasks", "dueDate", "created_at", "updated_at",
+		"assignees", "acceptance_criteria", "scope", "labels", "dependencies", "subtasks", "dueDate", "created_at", "updated_at",
 		"git_branch_id", "project_id", "context_id", "context_data", "dependency_relationships",
-		"progress_percentage", "progress_history", "progress_count", "subtask_count", "completed_subtasks"}
+		"progress_percentage", "subtask_count", "completed_subtasks"}
 	if !reflect.DeepEqual(m.Keys(), want) {
 		t.Fatalf("keys = %v", m.Keys())
 	}
@@ -182,9 +186,6 @@ func TestTaskResponseToDictDependencyError(t *testing.T) {
 }
 
 func TestTaskResponseFromDomain(t *testing.T) {
-	entities.AgentNameResolver = usecases.ResolveAgentName
-	defer func() { entities.AgentNameResolver = nil }()
-
 	task := sampleDomainTask()
 	resp, err := TaskResponseFromDomain(context.Background(), task, nil, nil, nil, nil, nil)
 	if err != nil {
@@ -193,8 +194,8 @@ func TestTaskResponseFromDomain(t *testing.T) {
 	if want := task.GetProgressHistoryText(); resp.Details != want {
 		t.Fatalf("details = %q, want %q", resp.Details, want)
 	}
-	if !reflect.DeepEqual(resp.Assignees, []string{"coding-agent", "bob-agent"}) {
-		t.Fatalf("assignees = %v", resp.Assignees)
+	if !reflect.DeepEqual(resp.Assignees, []string{"@coding-agent", "bob"}) {
+		t.Fatalf("assignees = %v, want the stored values unchanged", resp.Assignees)
 	}
 	if resp.SubtaskCount() != 2 || resp.CompletedSubtasks != 1 {
 		t.Fatalf("counts = %d %d", resp.SubtaskCount(), resp.CompletedSubtasks)
@@ -216,8 +217,7 @@ func sampleTaskResponse() TaskResponse {
 		Assignees: []string{"coding-agent", "bob-agent"}, Labels: []string{"bug"},
 		Dependencies: []string{"d1"}, Subtasks: []any{"s1", "s2"}, DueDate: &due,
 		CreatedAt: &created, UpdatedAt: &updated, GitBranchID: &git, ContextID: &ctxID,
-		ProgressPercentage: 42, ProgressHistory: map[string]any{"progress_1": map[string]any{"x": 1}},
-		ProgressCount: 1, CompletedSubtasks: 1,
+		ProgressPercentage: 42, CompletedSubtasks: 1,
 	}
 }
 
@@ -266,9 +266,6 @@ func (f fakeTaskRepo) GetCompletedSubtaskCounts(ctx context.Context, ids []strin
 }
 
 func TestTaskListResponseFromDomainList(t *testing.T) {
-	entities.AgentNameResolver = usecases.ResolveAgentName
-	defer func() { entities.AgentNameResolver = nil }()
-
 	gb := "gb-1"
 	task := sampleDomainTask()
 	task.GitBranchID = &gb

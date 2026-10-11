@@ -13,6 +13,8 @@ type UpdateTaskRequest struct {
 	EstimatedEffort    *string
 	Assignees          []string
 	Labels             []string
+	AcceptanceCriteria []string
+	Scope              []string
 	DueDate            *string
 	ContextID          *string
 	CompletionSummary  *string
