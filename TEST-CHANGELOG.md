@@ -2,6 +2,24 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-11 - useBranchSummaries: the empty fallback's identity is pinned, and the /dashboard loop ends
+
+- `agenthub-frontend/src/tests/useBranchSummaries.test.tsx` gains one case: **the hook returns ONE
+  identity for its empty fallback, across renders and across instances.** It asserts `toBe` and not
+  `toEqual` - `[]` equals `[]` but is not the same array, and that difference was the defect:
+  `data?.branches ?? []` minted a fresh array on every render while `ProjectList` memoized `taskCounts`
+  on it and `useProjectAnimations` wrote that object into state while depending on it, so on a cold
+  `/dashboard` (no query cache, before the query resolves) React logged `Maximum update depth
+  exceeded` until the data arrived.
+- **The case was observed RED before it was green**, in the same worktree, by reverse-applying the hook
+  change and keeping the test: 1 failed | 4 passed, the failure exactly on
+  `expect(result.current.summaries).toBe(summaries)`; with the change restored, 1 file / 5 passed.
+  `npx tsc --noEmit -p .` -> 0 `error TS` in both states.
+- Browser side on the same tree, `check-responsive.mjs --routes /dashboard` against the local build:
+  **0 console errors and 0 failed requests at desktop, laptop and mobile**, against the unfixed arm's 11
+  (laptop, 409 characters rendered) and 15 (mobile, 214). The character counts are identical in both
+  arms, so the difference is the loop alone.
+
 ## 2026-10-11 - the shell spec's band: WIDTHS gains 768 and 1023, and the theme click learns where it is
 
 - `agenthub-frontend/e2e/shell.spec.ts`, on the architect's band ruling

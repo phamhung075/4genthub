@@ -7,7 +7,18 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { branchService } from '../services/branchService';
+import type { BranchSummary, Project } from '../types/api.types';
 import type { UseBranchSummariesOptions } from '../types/hookTypes';
+
+// Stable fallback identities, shared by every render and every instance. `?? []` mints a new array
+// on every render, and callers memoize on this value: ProjectList derives `taskCounts` from it and
+// `useProjectAnimations` writes that object into state while depending on it, so a fresh identity
+// per render is an infinite render -> effect -> setState loop. Measured on /dashboard in a COLD
+// context (the e2e toolkit's shape - a fresh browser context per viewport, no query cache): React
+// logs "Maximum update depth exceeded" until the query resolves, and it does so with NO webSocket
+// events possible at all, which is what refuted the WS-churn explanation for that finding.
+const NO_BRANCHES: BranchSummary[] = [];
+const NO_PROJECTS: Project[] = [];
 
 export function useBranchSummaries(options: UseBranchSummariesOptions = {}) {
   const { projectIds, autoRefresh = false, refreshInterval = 30000 } = options;
@@ -26,8 +37,8 @@ export function useBranchSummaries(options: UseBranchSummariesOptions = {}) {
   });
 
   return {
-    summaries: data?.branches ?? [],
-    projects: data?.projects ?? [],
+    summaries: data?.branches ?? NO_BRANCHES,
+    projects: data?.projects ?? NO_PROJECTS,
     loading: isLoading,
     error: error?.message ?? null,
     refresh: refetch,

@@ -110,4 +110,31 @@ describe('useBranchSummaries (React Query)', () => {
 
     expect(branchService.loadUserSummaries).toHaveBeenCalledTimes(1);
   });
+
+  // The fallback must be one identity, and this asserts the identity rather than the contents:
+  // [] equals [] but is not the same array, and that difference is the whole bug. `data?.branches
+  // ?? []` mints a new array per render while callers memoize on the value - ProjectList derives
+  // taskCounts from `projects` and useProjectAnimations writes that object into state while
+  // depending on it - so a pending query becomes a render -> effect -> setState loop and React
+  // logs "Maximum update depth exceeded" on /dashboard until the query resolves.
+  it('returns one identity for the empty fallback, across renders and instances', () => {
+    // A query that never resolves is what keeps `data` undefined, which is when the fallback is
+    // the returned value.
+    vi.mocked(branchService.loadUserSummaries).mockReturnValue(new Promise<never>(() => {}));
+
+    const { result, rerender } = renderHook(() => useBranchSummaries(), { wrapper });
+    const summaries = result.current.summaries;
+    const projects = result.current.projects;
+
+    expect(summaries).toEqual([]);
+    expect(projects).toEqual([]);
+
+    rerender();
+    expect(result.current.summaries).toBe(summaries);
+    expect(result.current.projects).toBe(projects);
+
+    const second = renderHook(() => useBranchSummaries(), { wrapper });
+    expect(second.result.current.summaries).toBe(summaries);
+    expect(second.result.current.projects).toBe(projects);
+  });
 });
