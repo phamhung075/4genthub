@@ -4,6 +4,7 @@ package use_cases
 import (
 	"context"
 	"fmt"
+	"log"
 	"strconv"
 
 	task "agenthub/fastmcp/task_management/application/dtos/task"
@@ -164,9 +165,13 @@ func (u *UpdateTaskUseCase) Execute(ctx context.Context, request task.UpdateTask
 		return nil, err
 	}
 
-	// Auto-sync task context after update (best effort; the update never fails on it).
+	// Auto-sync task context after update: the update itself never fails on it, but a sync that
+	// did not land is reported, not swallowed - a context left holding the creation-time copy of
+	// the task's own fields is what let a done task resolve as todo.
 	if u.hooks != nil {
-		_ = u.hooks.SyncTaskMetadata(ctx, taskIDStr, taskEntity, "")
+		if err := u.hooks.SyncTaskMetadata(ctx, taskIDStr, taskEntity, ""); err != nil {
+			log.Printf("[update_task] the task context did not take the update for %s: %v", taskIDStr, err)
+		}
 	}
 
 	taskResponse, err := task.TaskResponseFromDomain(ctx, taskEntity, u.gitBranchRepository, nil, nil, nil, nil)

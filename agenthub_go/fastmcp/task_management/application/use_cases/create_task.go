@@ -4,6 +4,7 @@ package use_cases
 import (
 	"context"
 	"errors"
+	"log"
 
 	task "agenthub/fastmcp/task_management/application/dtos/task"
 	"agenthub/fastmcp/task_management/domain/entities"
@@ -200,5 +201,10 @@ func (u *CreateTaskUseCase) autoCreateTaskContext(ctx context.Context, taskEntit
 	if _, err := u.taskRepository.Save(ctx, taskEntity); err != nil {
 		return
 	}
-	_ = u.hooks.SyncTaskMetadata(ctx, taskIDStr, taskEntity, userID)
+	// The task context exists now, so the metadata sync mirrors the task's own fields onto it.
+	// It may not fail the create, but it is reported: silence here is what leaves a context
+	// holding the creation-time copy of the task's fields.
+	if err := u.hooks.SyncTaskMetadata(ctx, taskIDStr, taskEntity, userID); err != nil {
+		log.Printf("[create_task] the task context did not take the new task %s: %v", taskIDStr, err)
+	}
 }
