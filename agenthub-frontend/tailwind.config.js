@@ -89,8 +89,10 @@ module.exports = {
           light: 'var(--color-info-light)',
           dark: 'var(--color-info-dark)',
         },
-        // The one accent. Every chrome surface paints from these, so a second hue
-        // appearing anywhere in the shell is a defect rather than a style choice.
+        // The one accent, and the source a chrome surface should paint from: the CSS
+        // token layer declares it, Tailwind names it here, and MUI's palette names the
+        // same value (R1), bound to the CSS by the token-parity test. A second hue in
+        // the shell is therefore a defect rather than a style choice.
         accent: {
           DEFAULT: 'var(--color-accent)',
           hover: 'var(--color-accent-hover)',
