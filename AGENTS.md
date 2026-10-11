@@ -23,6 +23,10 @@ restore, before concluding anything about where you are.
   directory by the launch.
 - **The work queue** — `rig queue` (owned work, handoffs, block/wake state).
 - **The board and decisions** — `agenthub_go/NEXT_GEN.md`.
+- **Project skills** — one source: `agenthub_client/skills/` (`share/` and `rooms/<room>/` are delivered to seats
+  by `4genteam sync rig`; `client/` is for the LLM running the client, e.g. `rig-runtime-switch`,
+  `seat-runtime-switch`, `spawn-team`, `watch-team`). Ruling: `ai_docs/core-architecture/seat-skills.md`.
+  `.agents/skills` is being retired; do not add skills there.
 - **4genthub's own records** — tasks and context go into 4genthub itself through the `agenthub_http` MCP
   tools (`manage_task`, `manage_context`). **See §5** for how to call them, and for what to do when the
   device is not mounted in your session yet.
