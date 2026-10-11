@@ -2,6 +2,19 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-11 - correction: the unfixed script suite's clean-tree result
+
+- MEASURED, to settle the one number the gate could not reproduce:
+  `python3 -m pytest --noconftest -p no:cacheprovider scripts/tests -q` on the UNFIXED tree
+  (`e0e75084^`, in a detached worktree, `GIT_DIR` unset) gives **88 passed** - not the
+  `12 failed, 76 passed` that an earlier version of the CHANGELOG entry and of `e0e75084`'s message
+  claimed. The same command on the FIXED tree at this branch's tip gives **92 passed** (the suite has
+  grown since that run's 88/90).
+- CHANGED nothing but the record: the `12 failed, 76 passed` half is withdrawn from
+  `CHANGELOG/2026-10-11--the-script-suites-git-fixtures-cannot-write-the-callers-repository.md` with the
+  command, the tree and the result that replace it. The hostile run's `30 failed, 42 passed, 4 skipped`,
+  the six staged paths and the two shared-repository digests are untouched.
+
 ## 2026-10-11 - the script suite's git fixtures cannot write the caller's repository
 
 - ADDED `scripts/tests/gitfixture.py`: `environment()`, the caller's environment minus every variable

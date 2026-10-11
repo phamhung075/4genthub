@@ -33,12 +33,28 @@ Unfixed, that wrote exactly
     	email = scan@test.invalid
     	name = scan test
 
-into that `GIT_DIR`'s config, staged those same six paths into its index, and turned the run from red
-(`12 failed, 76 passed`) into `30 failed, 42 passed, 4 skipped` - the collection shrank because the
+into that `GIT_DIR`'s config, staged those same six paths into its index, and turned the run from
+`88 passed` into `30 failed, 42 passed, 4 skipped` - the collection shrank because the
 census cases parametrize over rows they discover through git, which is the same variable the run had
 just moved out from under them. The live shared repository was measured before and after that run:
 `user.name` and `user.email` still unset, config sha256 `28fe6c39bff326bd54c295bfaeba7a0cfe79ec937a473b519f2cd8a55b6a3b6f`
 and index sha256 `13fc2fdce7d271f13a287d3336a162da8be2d5b40be19edcd0986203a65eac71` unchanged.
+
+### Correction (2026-10-11)
+
+An earlier version of this entry, and of `e0e75084`'s commit message, said the unfixed code took the run
+from `12 failed, 76 passed`. **That figure is withdrawn.** The review that flagged it measured a clean tree
+at 88 collected with 88 passed, and re-running the unfixed tree here gives `88 passed`:
+
+    git worktree add --detach /tmp/wt-e0eprev e0e75084^
+    cd /tmp/wt-e0eprev && python3 -m pytest --noconftest -p no:cacheprovider scripts/tests -q
+    → 88 passed, 3 warnings in 9.59s
+
+So the red half of the claim needed a state the record never named - the damaged environment, not a clean
+tree - and the clean-tree figure stands in its place. **Nothing else in this entry changes:** the hostile
+run's `30 failed, 42 passed, 4 skipped`, the six staged paths, the injected identity and the two
+shared-repository digests were confirmed byte for byte when they were written. The suite has grown since:
+the same command at this branch's tip, on the fixed tree, gives `92 passed`.
 
 ### The fix
 
