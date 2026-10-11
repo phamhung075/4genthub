@@ -373,6 +373,55 @@ describe('SeatDetailPage', () => {
     expect(screen.queryByText('rules')).not.toBeInTheDocument();
   });
 
+  // GATE-f541f2f5 M1. The standing comes from the rooms list, and that list can be in flight, can
+  // fail, or can settle without naming this room. None of the three is a statement about the caller,
+  // so none may be rendered as the viewer's: the sentence claims something false about the owner's own
+  // room, and the stripped write surfaces take a capability away from them. Each case carries a
+  // POSITIVE control - the state's own visible reason - so "no Save and no sentence" cannot pass
+  // against a page that rendered nothing at all.
+  describe('the rooms list that decides the standing', () => {
+    it('does not render an owner as a viewer while the rooms list has not answered', async () => {
+      const { promise: neverSettles } = Promise.withResolvers<never>();
+      mockApi.listRooms.mockReturnValue(neverSettles);
+
+      renderDetail();
+
+      expect(await screen.findByText(/loading your rooms/i)).toBeInTheDocument();
+      expect(screen.queryByText(/Writing is the owner/)).toBeNull();
+      // Withheld visibly rather than decided, exactly as the pending resolve above is treated: while
+      // the wire has said nothing about the caller, the standing-dependent panels do not render.
+      expect(screen.queryByRole('tab', { name: /llm/i })).toBeNull();
+    });
+
+    it('reports a failed rooms read, and Retry re-reads the standing instead of leaving it a viewer', async () => {
+      mockApi.listRooms.mockRejectedValue(new Error('rooms unavailable'));
+
+      renderDetail();
+
+      expect(await screen.findByText('rooms unavailable')).toBeInTheDocument();
+      expect(screen.queryByText(/Writing is the owner/)).toBeNull();
+      expect(screen.queryByRole('button', { name: 'Save' })).toBeNull();
+
+      // The failure is not a dead end: the owner's own page comes back once the list answers.
+      mockApi.listRooms.mockResolvedValue({ success: true, rooms: [ownerRoom] });
+      fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+
+      expect(await screen.findByText('rules')).toBeInTheDocument();
+      expect(screen.queryByText(/Writing is the owner/)).toBeNull();
+      expect(mockApi.listRooms).toHaveBeenCalledTimes(2);
+    });
+
+    it('does not read a settled list that omits the room as a viewer', async () => {
+      mockApi.listRooms.mockResolvedValue({ success: true, rooms: [] });
+
+      renderDetail();
+
+      expect(await screen.findByText(/do not name room/i)).toBeInTheDocument();
+      expect(screen.queryByText(/Writing is the owner/)).toBeNull();
+      expect(screen.queryByRole('button', { name: 'Save' })).toBeNull();
+    });
+  });
+
   it('offers the five OpenRig link kinds with labels and message rules', async () => {
     renderDetail();
     await screen.findByText('rules');

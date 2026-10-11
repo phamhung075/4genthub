@@ -52,6 +52,14 @@ export interface SeatComposerProps {
   mcpServers?: Record<string, McpServerEntry>;
   isSaving: boolean;
   saveError: string | null;
+  /**
+   * Whether the caller may write here, decided once by the owner of the standing (`Room.role` as the
+   * server computed it) and handed down. FALSE removes every control that writes an overlay - each
+   * row's Remove here / Restore, the Add button and each op's delete - because the room-scoped write
+   * routes resolve the room through an owner-only lookup and answer a viewer with a 404 on the room
+   * they are reading. The blocks themselves stay readable: this is a read-and-arrange surface.
+   */
+  canWrite: boolean;
   onApply: (scope: SeatOverlayScope, ops: SeatOverlayOp[]) => void;
   /**
    * Hands ONE block to an editor OUTSIDE this component - the slug the row shows, the version IN
@@ -134,6 +142,7 @@ export const SeatComposer: React.FC<SeatComposerProps> = ({
   mcpServers = {},
   isSaving,
   saveError,
+  canWrite,
   onApply,
   onEditBlock,
 }) => {
@@ -305,16 +314,18 @@ export const SeatComposer: React.FC<SeatComposerProps> = ({
                         Edit and publish
                       </Button>
                     )}
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      disabled={isSaving}
-                      onClick={() => onApply(scope, withRemovedBlock(scopeOps, row.slug))}
-                    >
-                      <Minus className="h-4 w-4" />
-                      Remove here
-                    </Button>
+                    {canWrite && (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled={isSaving}
+                        onClick={() => onApply(scope, withRemovedBlock(scopeOps, row.slug))}
+                      >
+                        <Minus className="h-4 w-4" />
+                        Remove here
+                      </Button>
+                    )}
                   </div>
                 </div>
                 <p className="mt-1 text-xs text-base-secondary">Removing here: {outcome.label}</p>
@@ -337,7 +348,7 @@ export const SeatComposer: React.FC<SeatComposerProps> = ({
                 <Boxes className="h-4 w-4 shrink-0 opacity-40" />
                 <span className="font-medium">{row.slug}</span>
                 <span className="text-xs">{outcome.reason}</span>
-                {row.removedHere && (
+                {canWrite && row.removedHere && (
                   <Button
                     type="button"
                     size="sm"
@@ -428,10 +439,12 @@ export const SeatComposer: React.FC<SeatComposerProps> = ({
               onChange={(event) => setAddVersion(event.target.value)}
             />
           </div>
-          <Button type="button" disabled={!canAdd || isSaving} onClick={handleAdd}>
-            <Plus className="h-4 w-4" />
-            Add at {SCOPE_LABEL[scope]}
-          </Button>
+          {canWrite && (
+            <Button type="button" disabled={!canAdd || isSaving} onClick={handleAdd}>
+              <Plus className="h-4 w-4" />
+              Add at {SCOPE_LABEL[scope]}
+            </Button>
+          )}
           {!addOutcome.allowed && addSlug !== '' && (
             <p className="w-full text-xs text-base-secondary">{addOutcome.reason}</p>
           )}
@@ -450,16 +463,18 @@ export const SeatComposer: React.FC<SeatComposerProps> = ({
                     {op.slug}
                     {op.version ? `@${op.version}` : ''}
                   </span>
-                  <Button
-                    type="button"
-                    size="icon"
-                    variant="ghost"
-                    aria-label={`Delete ${op.kind} ${op.slug}`}
-                    disabled={isSaving}
-                    onClick={() => onApply(scope, scopeOps.filter((_, i) => i !== index))}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  {canWrite && (
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="ghost"
+                      aria-label={`Delete ${op.kind} ${op.slug}`}
+                      disabled={isSaving}
+                      onClick={() => onApply(scope, scopeOps.filter((_, i) => i !== index))}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
                 </li>
               ))}
             </ul>

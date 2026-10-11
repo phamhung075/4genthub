@@ -372,7 +372,6 @@ describe('AuthContext', () => {
               'Content-Type': 'application/json',
               'Accept': 'application/json'
             },
-            credentials: 'include',
             body: JSON.stringify({ refresh_token: mockTokens.refresh_token })
           })
         );
@@ -413,7 +412,6 @@ describe('AuthContext', () => {
               'Content-Type': 'application/json',
               'Accept': 'application/json'
             },
-            credentials: 'include',
             body: JSON.stringify({
               email: 'test@example.com',
               password: 'password'
@@ -544,7 +542,6 @@ describe('AuthContext', () => {
             'Content-Type': 'application/json',
             'Accept': 'application/json'
           },
-          credentials: 'include',
           body: JSON.stringify({
             email: 'new@example.com',
             password: 'password',
@@ -1055,7 +1052,6 @@ describe('AuthContext', () => {
             'Content-Type': 'application/json',
             'Accept': 'application/json'
           },
-          credentials: 'include',
           body: JSON.stringify({
             refresh_token: mockTokens.refresh_token
           })

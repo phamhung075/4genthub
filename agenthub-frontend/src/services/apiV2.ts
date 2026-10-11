@@ -15,7 +15,12 @@ const getAuthToken = (): string | null => {
   return Cookies.get('access_token') || null;
 };
 
-// Create headers with authentication
+// AUTH SURFACE, AND WHY NO CALL IN THIS FILE PASSES `credentials`.
+// Auth is the `Authorization: Bearer` header getAuthHeaders() builds below, from the JS-visible
+// `access_token` cookie, and the Go API sets no cookie of its own (Set-Cookie appears nowhere under
+// agenthub_go outside tests) - so `credentials: 'include'`, which the calls in this file and in
+// AuthContext used to carry, had nothing to include and is gone from every call site. Do not re-add
+// it; the ruling that settled this sits at the completeSubtask call below.
 const getAuthHeaders = (noCacheBypass: boolean = false): HeadersInit => {
   const token = getAuthToken();
   const headers: HeadersInit = {
@@ -67,7 +72,6 @@ const handleResponse = async <T>(response: Response, originalUrl?: string, origi
             const retryResponse = await fetch(originalUrl, {
               ...originalInit,
               headers: newHeaders,
-              credentials: 'include', // Include cookies for CORS
             });
 
             if (retryResponse.ok) {
@@ -267,7 +271,6 @@ const refreshTokenAndRetry = async (): Promise<void> => {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
     },
-    credentials: 'include', // Include cookies for CORS
     body: JSON.stringify({ refresh_token }),
   });
 
@@ -319,7 +322,6 @@ const fetchWithRetry = async (url: string, init?: RequestInit) => {
   return deduplicateRequest(url, method, body, async () => {
     const response = await fetch(url, {
       ...init,
-      credentials: 'include', // Include cookies for CORS
     });
     return handleResponse(response, url, init);
   });
@@ -352,7 +354,6 @@ export const taskApiV2 = {
     return fetchWithRetry(url.toString(), {
       method: 'GET',
       headers: getAuthHeaders(),
-      credentials: 'include',
     });
   },
 
@@ -368,7 +369,6 @@ export const taskApiV2 = {
     return fetchWithRetry(url.toString(), {
       method: 'GET',
       headers: getAuthHeaders(),
-      credentials: 'include',
     });
   },
 
@@ -386,7 +386,6 @@ export const taskApiV2 = {
     return fetchWithRetry(url.toString(), {
       method: 'GET',
       headers: getAuthHeaders(),
-      credentials: 'include',
     });
   },
 
@@ -403,7 +402,6 @@ export const taskApiV2 = {
       method: 'POST',
       headers: getAuthHeaders(),
       body: JSON.stringify(taskData),
-      credentials: 'include',
     });
   },
 
@@ -456,28 +454,26 @@ export const taskApiV2 = {
     return fetchWithRetry(`${API_BASE_URL}/api/v2/tasks/${taskId}`, {
       method: 'DELETE',
       headers: getAuthHeaders(),
-      credentials: 'include',
     });
   },
 
-  // Complete a task - fix parameter format for backend
+  // Complete a task. The server reads this action's input as REQUIRED FastAPI-style query
+  // parameters (`queryReq` in agenthub_go/fastmcp/server/httpapp/task_routes.go: an absent
+  // completion_summary is answered with a 422), so both fields ride the query string. A form
+  // body is never read, and sending one is what made this action fail every time.
   completeTask: async (taskId: string, completionData: {
     completion_summary: string;
     testing_notes?: string;
   }) => {
-    const formData = new URLSearchParams();
-    formData.append('completion_summary', completionData.completion_summary);
+    const params = new URLSearchParams();
+    params.set('completion_summary', completionData.completion_summary);
     if (completionData.testing_notes) {
-      formData.append('testing_notes', completionData.testing_notes);
+      params.set('testing_notes', completionData.testing_notes);
     }
 
-    return fetchWithRetry(`${API_BASE_URL}/api/v2/tasks/${taskId}/complete`, {
+    return fetchWithRetry(`${API_BASE_URL}/api/v2/tasks/${taskId}/complete?${params.toString()}`, {
       method: 'POST',
-      headers: {
-        ...getAuthHeaders(),
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: formData,
+      headers: getAuthHeaders(),
     });
   },
 };
@@ -489,7 +485,6 @@ export const projectApiV2 = {
     return fetchWithRetry(`${API_BASE_URL}/api/v2/projects/`, {
       method: 'GET',
       headers: getAuthHeaders(),
-      credentials: 'include',
     });
   },
 
@@ -534,7 +529,6 @@ export const projectApiV2 = {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: formData.toString(),
-      credentials: 'include',
     });
     return handleResponse(response);
   },
@@ -544,7 +538,6 @@ export const projectApiV2 = {
     const response = await fetch(`${API_BASE_URL}/api/v2/projects/${projectId}`, {
       method: 'DELETE',
       headers: getAuthHeaders(),
-      credentials: 'include',
     });
     return handleResponse(response);
   },
@@ -570,7 +563,6 @@ export const subtaskApiV2 = {
       headers: {
         ...getAuthHeaders(),
       },
-      credentials: 'include',
     });
     return handleResponse(response);
   },
@@ -595,7 +587,6 @@ export const subtaskApiV2 = {
     const response = await fetch(url.toString(), {
       method: 'GET',
       headers: getAuthHeaders(), // This includes the Bearer token
-      credentials: 'include',
     });
     return handleResponse(response);
   },
@@ -607,23 +598,27 @@ export const subtaskApiV2 = {
     status?: string;
     progress_percentage?: number;
   }) => {
-    const formData = new URLSearchParams();
-    if (updates.title) formData.append('title', updates.title);
-    if (updates.description) formData.append('description', updates.description);
-    if (updates.status) formData.append('status', updates.status);
+    // Every field rides the QUERY, because the route reads them there and nowhere else: title,
+    // description and status through `queryOpt`, progress_percentage straight off `r.URL.Query()`,
+    // with no body parse at all (agenthub_go/fastmcp/server/httpapp/subtask_routes.go:36-48). The
+    // form body this call used to send was read by nothing, so an edit answered 200 and left the row
+    // unchanged while the UI showed it saved.
+    const params = new URLSearchParams();
+    if (updates.title) params.append('title', updates.title);
+    if (updates.description) params.append('description', updates.description);
+    if (updates.status) params.append('status', updates.status);
     if (updates.progress_percentage !== undefined) {
-      formData.append('progress_percentage', updates.progress_percentage.toString());
+      params.append('progress_percentage', updates.progress_percentage.toString());
     }
+    const query = params.toString();
 
-    const response = await fetch(`${API_BASE_URL}/api/v2/subtasks/${subtaskId}`, {
-      method: 'PUT',
-      headers: {
-        ...getAuthHeaders(),
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: formData,
-      credentials: 'include',
-    });
+    const response = await fetch(
+      `${API_BASE_URL}/api/v2/subtasks/${subtaskId}${query ? `?${query}` : ''}`,
+      {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+      }
+    );
     return handleResponse(response);
   },
 
@@ -632,7 +627,6 @@ export const subtaskApiV2 = {
     const response = await fetch(`${API_BASE_URL}/api/v2/subtasks/${subtaskId}`, {
       method: 'DELETE',
       headers: getAuthHeaders(),
-      credentials: 'include',
     });
     return handleResponse(response);
   },
@@ -652,7 +646,6 @@ export const subtaskApiV2 = {
     const response = await fetch(url.toString(), {
       method: 'GET',
       headers: getAuthHeaders(),
-      credentials: 'include',
     });
 
     console.log('🔍 [apiV2.listSubtasksForTask] RESPONSE STATUS:', response.status);
@@ -671,19 +664,25 @@ export const subtaskApiV2 = {
 
   // Complete a subtask
   completeSubtask: async (subtaskId: string, completionNotes?: string) => {
-    const formData = new URLSearchParams();
+    // The note rides the QUERY for the same reason as updateSubtask's fields: the route reads it with
+    // `queryOpt` (subtask_routes.go:53-56) and never a body, so the note this call used to send was
+    // silently dropped while the completion itself succeeded.
+    const params = new URLSearchParams();
     if (completionNotes) {
-      formData.append('completion_notes', completionNotes);
+      params.append('completion_notes', completionNotes);
     }
+    const query = params.toString();
 
-    const response = await fetch(`${API_BASE_URL}/api/v2/subtasks/${subtaskId}/complete`, {
-      method: 'POST',
-      headers: {
-        ...getAuthHeaders(),
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: formData,
-    });
+    const response = await fetch(
+      `${API_BASE_URL}/api/v2/subtasks/${subtaskId}/complete${query ? `?${query}` : ''}`,
+      {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        // No `credentials`: auth is the Bearer header above, built from the JS-visible
+        // access_token cookie, and the Go API sets no cookie of its own - so `include` can
+        // carry nothing either way.
+      }
+    );
     return handleResponse(response);
   },
 };
@@ -700,7 +699,6 @@ export const contextApiV2 = {
     return fetchWithRetry(url.toString(), {
       method: 'GET',
       headers: getAuthHeaders(),
-      credentials: 'include',
     });
   },
 
@@ -710,7 +708,6 @@ export const contextApiV2 = {
       method: 'PUT',
       headers: getAuthHeaders(),
       body: JSON.stringify(data),
-      credentials: 'include',
     });
     return handleResponse(response);
   },
@@ -720,7 +717,6 @@ export const contextApiV2 = {
     const response = await fetch(`${API_BASE_URL}/api/v2/contexts/${level}/${contextId}`, {
       method: 'DELETE',
       headers: getAuthHeaders(),
-      credentials: 'include',
     });
     return handleResponse(response);
   },
@@ -730,7 +726,6 @@ export const contextApiV2 = {
     const response = await fetch(`${API_BASE_URL}/api/v2/contexts/${level}/${contextId}/resolve`, {
       method: 'GET',
       headers: getAuthHeaders(),
-      credentials: 'include',
     });
     return handleResponse(response);
   },
@@ -743,7 +738,6 @@ export const branchApiV2 = {
     const response = await fetch(`${API_BASE_URL}/api/v2/branches/${branchId}`, {
       method: 'GET',
       headers: getAuthHeaders(),
-      credentials: 'include',
     });
     return handleResponse(response);
   },
@@ -779,7 +773,6 @@ export const branchApiV2 = {
     const response = await fetch(`${API_BASE_URL}/api/v2/branches/${branchId}`, {
       method: 'DELETE',
       headers: getAuthHeaders(),
-      credentials: 'include',
     });
     return handleResponse(response);
   },
@@ -822,7 +815,6 @@ export const branchApiV2 = {
       method: 'POST',
       headers: getAuthHeaders(true), // Enable aggressive cache busting headers
       body: JSON.stringify(requestBody),
-      credentials: 'include',
       // Additional cache busting
       cache: 'no-store',
     });
@@ -838,7 +830,6 @@ export const connectionApiV2 = {
     const response = await fetch(`${API_BASE_URL}/health`, {
       method: 'GET',
       headers: getAuthHeaders(),
-      credentials: 'include',
     });
     return handleResponse(response);
   },
@@ -848,7 +839,6 @@ export const connectionApiV2 = {
     const response = await fetch(`${API_BASE_URL}/api/v2/connections/status`, {
       method: 'GET',
       headers: getAuthHeaders(),
-      credentials: 'include',
     });
     return handleResponse(response);
   },
