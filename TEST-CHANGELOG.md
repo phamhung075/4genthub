@@ -2,6 +2,11 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-11 - the list's batch reads never see an id that is not an id
+
+- ADDED, one case in `agenthub_go/fastmcp/task_management/application/dtos/task/task_test.go`: `TestTaskListResponseDoesNotQueryRowsWithNoID`. `taskIDString` renders a row with no id as the literal `"None"`, and both batch reads cast their id slice `::uuid`; the counts read swallows its error and the notes read returns it, so such a page failed the whole list. The case's `uuidStrictProgressEvents` fake refuses a non-uuid exactly as the cast does, so the case fails for the query's own reason.
+- MEASURED RED FIRST: with the id slice built from `taskIDString` again, the case fails `a row with no id failed the whole list: invalid input syntax for type uuid: "None"` - the reviewer's report, reproduced by the case rather than asserted.
+
 ## 2026-10-11 - the schema guard covers indexes (and the regex that had to go)
 
 - EXTENDED `agenthub_go/fastmcp/task_management/infrastructure/database/schema_matches_definitions_test.go`: `TestSchemaMatchesGoDefinitions` now compares the registry's indexes with the baseline's, not just columns, references, CHECKs and defaults. 60 statements, two of them UNIQUE, and a unique index is the whole invariant for `uq_overlays_target` and `uq_team_members_one_owner` - so losing one kept the guard green before this. Per table, both directions (an index whose table no definition registers is a failure too). New helpers: `goDefStepIndexes`, `goDefIndexStatements`, `goDefLooksLikeIndex`, `goDefIndexParts`, `goDefNormalizeStatement`; `goDefSortedKeys` is now generic over the map's value type, so it sorts the index map as well.

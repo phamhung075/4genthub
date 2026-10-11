@@ -2,6 +2,7 @@ package task_test
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"testing"
 	"time"
@@ -329,6 +330,52 @@ func TestTaskListResponseFromDomainList(t *testing.T) {
 	}
 	if len(ledger.calls) != 1 || !reflect.DeepEqual(ledger.calls[0], []string{"tid", "tid-2"}) {
 		t.Fatalf("ledger reads = %v, want one batched read of both rows", ledger.calls)
+	}
+}
+
+// uuidStrictProgressEvents is the ::uuid cast the real read performs: a value that is not a uuid fails
+// the query, and - unlike GetCompletedSubtaskCounts, which swallows its error - this read returns it, so
+// the whole list fails with it.
+type uuidStrictProgressEvents struct{ inner *fakeProgressEvents }
+
+func (f uuidStrictProgressEvents) ProgressEventsByTask(ctx context.Context, taskIDs []string) (map[string][]*entities.TaskEvent, error) {
+	for _, id := range taskIDs {
+		if id == "" || id == "None" {
+			return nil, fmt.Errorf("invalid input syntax for type uuid: %q", id)
+		}
+	}
+	return f.inner.ProgressEventsByTask(ctx, taskIDs)
+}
+
+// TestTaskListResponseDoesNotQueryRowsWithNoID is the reviewer's MINOR on 95c60881, and the regression
+// the batched read introduced: both reads of a page cast their id slice ::uuid, and taskIDString renders
+// a row with no id as the literal "None". The counts read swallows a bad id; the notes read does not, so
+// a page holding such a row became a failed list where it used to render. The ids that are ids are the
+// ones queried, and the row renders what it has: no count, no notes.
+func TestTaskListResponseDoesNotQueryRowsWithNoID(t *testing.T) {
+	gb := "gb-1"
+	withID := sampleDomainTask()
+	withID.GitBranchID = &gb
+	noID := sampleDomainTask()
+	noID.ID = nil
+	noID.GitBranchID = &gb
+
+	ledger := uuidStrictProgressEvents{inner: &fakeProgressEvents{}}
+	resp, err := TaskListResponseFromDomainList(context.Background(), []*entities.Task{withID, noID},
+		fakeBranchRepo{branches: map[string]*entities.GitBranch{"gb-1": {ProjectID: "proj-9"}}},
+		fakeTaskRepo{counts: map[string]int{"tid": 3}}, ledger, nil, nil)
+	if err != nil {
+		t.Fatalf("a row with no id failed the whole list: %v", err)
+	}
+	if resp.Count != 2 || len(resp.Tasks) != 2 {
+		t.Fatalf("count = %d, rows = %d, want both rows", resp.Count, len(resp.Tasks))
+	}
+	if len(ledger.inner.calls) != 1 || !reflect.DeepEqual(ledger.inner.calls[0], []string{"tid"}) {
+		t.Fatalf("ledger reads = %v, want one batched read of the ids that are ids", ledger.inner.calls)
+	}
+	if got := resp.Tasks[1]; got.Details != "" || got.CompletedSubtasks != 0 {
+		t.Fatalf("the row with no id rendered details=%q completed=%d, want nothing: it has no ledger to read",
+			got.Details, got.CompletedSubtasks)
 	}
 }
 

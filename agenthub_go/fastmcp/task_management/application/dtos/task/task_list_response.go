@@ -74,7 +74,15 @@ func TaskListResponseFromDomainList(ctx context.Context, tasks []*entities.Task,
 
 	taskIDs := make([]string, 0, len(tasks))
 	for _, task := range tasks {
-		taskIDs = append(taskIDs, taskIDString(task))
+		// A row with no id has no uuid to read by, and BOTH reads below cast their slice ::uuid. Only the
+		// ids that are ids are queried: taskIDString renders such a row as the literal "None", and the
+		// counts read swallows a query error while the notes read does not, so before this the notes read
+		// turned a page holding such a row into a failed list where the same page used to render. The row
+		// still finds no count and no notes, which is what it has.
+		if task.ID == nil || !value_objects.PyTruthy(task.ID.Value) {
+			continue
+		}
+		taskIDs = append(taskIDs, task.ID.Value)
 	}
 	completedCounts := map[string]int{}
 	if taskRepository != nil && len(taskIDs) > 0 {
