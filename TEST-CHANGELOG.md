@@ -2,6 +2,22 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-11 - the two schema guards build together again, by naming only
+
+- FIXED a build break at the assembled tip: `migration_baseline_parity_test.go` (the release line's) and the
+  fold's `schema_matches_definitions_test.go` are both `package database_test` and declared **four** names
+  twice - `TestSchemaMatchesGoDefinitions` (the name commit `10b27cdb` had given the release line's guard)
+  and the helpers `readBaselineSQL`, `assertBaselineHasNoDropOrAlter`, `baselineMigrationFile`. The package
+  did not compile: `go vet ./...` first said `TestSchemaMatchesGoDefinitions redeclared in this block`, and
+  after the ruled rename it said `baselineMigrationFile redeclared in this block`.
+- CHANGED names only, all in the RELEASE line's file: the test is restored to its pre-`10b27cdb` name
+  `TestBaselineMatchesEveryRegisteredTableDef` (function line and doc comment verbatim from
+  `git show 10b27cdb^`), and the three helpers take a `parity` prefix (`parityReadBaselineSQL`,
+  `parityAssertBaselineHasNoDropOrAlter`, `parityBaselineMigrationFile`). The fold's file is untouched, so
+  its gated blob `354f1415` - one of the o1c take's 17 - stays byte-identical to `3bcc632a`.
+- MEASURED: `go vet ./...` rc=0; `gofmt -l` empty on the file; no assertion, no test logic, no package and
+  no file moved.
+
 ## 2026-10-11 - the pin route's store is now covered against real SQL
 
 - ADDED `agenthub_go/fastmcp/server/httpapp/seat_admin_pin_pg_test.go`:
