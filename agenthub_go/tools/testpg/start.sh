@@ -8,7 +8,7 @@ set -euo pipefail
 ROOT="${AGENTHUB_TESTPG_DIR:-$HOME/.cache/agenthub-testpg}"
 PORT="${AGENTHUB_TESTPG_PORT:-55432}"
 VERSION=16.4.0
-mkdir -p "$ROOT" "$ROOT/sock"
+mkdir -p "$ROOT"
 if [ ! -x "$ROOT/bin/postgres" ]; then
   curl -sfL -o "$ROOT/pg.jar" "https://repo1.maven.org/maven2/io/zonky/test/postgres/embedded-postgres-binaries-linux-amd64/$VERSION/embedded-postgres-binaries-linux-amd64-$VERSION.jar"
   python3 -c "import zipfile,sys;zipfile.ZipFile('$ROOT/pg.jar').extract('postgres-linux-x86_64.txz','$ROOT')"
@@ -20,7 +20,13 @@ fi
 # that is not up, or for one up on a different port than the URL names - the old `|| true` here did
 # exactly that, and cost another seat a false red whose 31 failures were a dead socket and a DSN that
 # pointed nowhere, not its commit.
-"$ROOT/bin/pg_ctl" -D "$ROOT/data" -o "-p $PORT -k $ROOT/sock -c listen_addresses=127.0.0.1" -l "$ROOT/pg.log" -w start >/dev/null 2>&1 || true
+# TCP ONLY, and that is the point: a seat HOME is deep enough that a Unix-domain socket under it
+# exceeds the 107-byte sun_path limit, and PostgreSQL then refuses to start at all - the caller sees
+# "Unix-domain socket path ... is too long (maximum 107 bytes)" and "FATAL: could not create any
+# Unix-domain sockets" in pg.log, and has to relocate the cluster by hand. unix_socket_directories=''
+# means no socket path exists to be too long. This is the recipe the session_stream package's testdb.go
+# has documented all along; the two diverged and this one was wrong.
+"$ROOT/bin/pg_ctl" -D "$ROOT/data" -o "-p $PORT -c listen_addresses=127.0.0.1 -c unix_socket_directories=''" -l "$ROOT/pg.log" -w start >/dev/null 2>&1 || true
 if ! "$ROOT/bin/pg_ctl" -D "$ROOT/data" status >/dev/null 2>&1; then
   echo "ERROR: no cluster is running under $ROOT/data, so there is no URL to print." >&2
   if [ -f "$ROOT/pg.log" ]; then
