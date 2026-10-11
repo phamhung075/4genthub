@@ -44,6 +44,8 @@ Track test suite changes, fixes, and improvements for agenthub.
   frontend file changed), and no production database was contacted.
 
 
+## 2026-10-11 - the fold's parity guard, four gate cases, and the red the guard actually shows
+
 - ADDED `agenthub_go/fastmcp/task_management/infrastructure/database/migration_baseline_parity_test.go`
   (`TestSchemaMatchesGoDefinitions`): holds `migrations/0001_baseline.sql` to the runtime
   registry, table by table — every registered table appears EXACTLY once; per table the column-NAME set,
@@ -98,6 +100,14 @@ Track test suite changes, fixes, and improvements for agenthub.
 - NOT RUN, named: `TestProductionModelsCRUDRealPostgres` skips on its own pre-existing gate
   (`TEST_DATABASE_URL` unset) — unrelated to this change and unchanged by it. Nothing else in the
   package skipped under the DSN above. The frontend suite was not run: no frontend file changed.
+- CORRECTED IN THE GATE'S FIX COMMIT (prose only, one commit, no behaviour change): two texts in
+  `column_paths_test.go` still said the migration set was empty and no baseline existed, and the
+  sibling changelog said the baseline was 912 lines. It is **911** lines by `wc -l` and the file ends
+  with a newline; the guard now says what is true - the baseline EXISTS, and what the comparison it
+  describes still lacks is a database that has the baseline RECORDED. The fold entry's OWN heading,
+  dropped by a bad edit in `b09c1026` (which merged this entry into the one above it), is restored in
+  the same commit.
+
 ## 2026-10-11 - the builder's empty-label shape is pinned
 
 - UPDATED `agenthub_go/fastmcp/task_management/application/services/unified_context_service_task_owned_test.go`: `TestTaskOwnedFieldsFromTask` gains the empty-labels case - a task carrying no labels serves a NON-NIL empty list - because this builder is the one place the context read overlay and the sync both take the task's own fields from, so its shape is the contract they share.

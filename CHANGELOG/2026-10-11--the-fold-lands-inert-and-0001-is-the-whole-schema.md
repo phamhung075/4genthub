@@ -34,8 +34,8 @@ on a database that already has the schema, and nothing here marks anything.
   (**41**: task_management 19, task_events, auth 2 + email_tokens, seat 15, team 2, rig_safeguards 1)
   first, then `taskdb.ProductionTables` (**6**: `agent_import_history`, `applied_migrations`,
   `token_transactions`, `user_agent_configurations_md`, `user_api_tokens`, `user_sessions`). 47
-  `CREATE TABLE`, one `CREATE TYPE progressstate` emitted before the table whose columns carry it, 912
-  lines, sha256 `a3e3109230355aa93098002caf4992e4746ff63bcb1a18facebad38b6422ab29`. Plain DDL: **no**
+  `CREATE TABLE`, one `CREATE TYPE progressstate` emitted before the table whose columns carry it, 911
+  lines (`wc -l`, and the file ends with a newline), sha256 `a3e3109230355aa93098002caf4992e4746ff63bcb1a18facebad38b6422ab29`. Plain DDL: **no**
   `DROP`, **no** `ALTER`, **no** `IF NOT EXISTS` — a faithful snapshot, not an idempotent guess.
 - **The second registry is the finding that shaped the file.** `ProductionTables` is deliberately
   outside the aggregate (`models_prod.go:19-25`; three of its tables carry a `user_id` FK to `users`),

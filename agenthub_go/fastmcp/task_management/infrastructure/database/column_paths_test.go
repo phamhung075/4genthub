@@ -22,10 +22,13 @@ package database_test
 // WHAT IT CANNOT SEE, and this is the honest limit, not a TODO:
 //   - A column added to a TableDef AFTER a live database was created. This fixture is a FRESH
 //     database, so createAll builds such a column from the DDL and it looks reachable. Catching
-//     that shape needs a recorded baseline - a folded 0001 that says what the schema was when the
-//     database was made - so that a column newer than the baseline can be required to appear in a
-//     migration step or an ensurer. The migration set is empty today (migrations/ holds only its
-//     README), so there is no baseline and this instrument cannot make that comparison.
+//     that shape needs a database whose schema IS the folded baseline - migrations/0001_baseline.sql,
+//     landed, the whole registry in one file - with that baseline RECORDED for the database, so a
+//     column newer than the baseline can be required to appear in a migration step or an ensurer.
+//     This fixture is not that database: createAll builds the catalogue first, so the baseline step
+//     is skipped and nothing is recorded. While no database is marked, the registry and the baseline
+//     must still be EQUAL, and that equality is what TestSchemaMatchesGoDefinitions holds: a
+//     registered column missing from the baseline fails there, not here.
 //   - WHICH path provided a column. It proves a column reached the schema, never that an ensurer
 //     or a migration step was the thing that carried it.
 //
@@ -80,7 +83,8 @@ func TestEveryTableDefColumnHasAPath(t *testing.T) {
 
 	if len(missing) == 0 && len(drift) == 0 {
 		t.Logf("measured: 0 registered column(s) without a path; the existing-database half stays unchecked - "+
-			"no baseline is recorded (the migration set holds %d step(s)), so a column added after a live database "+
+			"no baseline is recorded for this database (the migration set holds %d step(s); the baseline is "+
+			"skipped here because createAll already built the catalogue), so a column added after a live database "+
 			"was created is indistinguishable here from one that was always there", len(set))
 	}
 }
