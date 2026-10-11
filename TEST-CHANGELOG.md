@@ -2,6 +2,14 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-11 - the room's standing gets its red-first case, and the room fixture learns to carry a role
+
+- CHANGED `agenthub-frontend/src/tests/pages/SeatAuthoringPage.test.tsx`: the file-scope `listRooms` fixture now serves `team_id` and `role: 'owner'`. `Room.role` is REQUIRED on the served row and is what decides every write control the page offers, so without it each existing case silently asserted a VIEWER's page - and the write paths passed only because no gate existed yet. With the gate in place those cases would fail on the absent controls, which is the signal the field was missing rather than a regression in them.
+- ADDED, `describe('SeatAuthoringPage room standing')` in the same file, two cases: (1) a viewer of a shared room keeps the READ - the composed blocks and a row's inheritance label are asserted present - and is offered NO control that writes an overlay, with `Add at Seat` and `Remove here` asserted ABSENT, plus the standing sentence present, because absent controls with no reason read as a broken page; (2) the owner still gets `Remove here` ENABLED and `Add at Seat` present, and the viewer sentence asserted NOT to render, so the gate is not a blanket hide.
+- MEASURED RED FIRST, at the pre-gate tip: case (1) fails with the offered control printed in the failure - `Add at Seat</button> instead` at `src/tests/pages/SeatAuthoringPage.test.tsx:805` - while case (2) already passes. That asymmetry is what makes (1) the defect's own case and (2) its control rather than a second copy of it.
+- CHANGED `agenthub-frontend/src/tests/components/SeatComposerEditEntry.test.tsx` and `SeatComposerPurposes.test.tsx`: both `composerFixture`s supply `canWrite: true`, the prop `SeatComposer` now requires. Their subjects are the read and edit-entry surfaces rather than standing, so the owner value keeps them asserting what they were written for.
+- MEASURED, in `wt/fe-dev`, from `agenthub-frontend`: the three suites this change touches -> **3 files / 42 tests passed** (40 before, +2); `npx tsc --noEmit -p .` -> **0** `error TS`; `npx vitest run` -> **122 files / 1888 tests passed, 0 failed** (144.66s; 1886 plus this change's own two cases).
+
 ## 2026-10-11 - the complete action's request is asserted where the server reads it
 
 - ADDED `agenthub-frontend/src/tests/services/apiV2.test.ts` (`describe('completeTask')`): a case asserting the request carries `completion_summary` (and `testing_notes` when given) in the URL's **query**, with `method: 'POST'` and **no body** - the shape `queryReq` in `agenthub_go/fastmcp/server/httpapp/task_routes.go` accepts. MEASURED RED at the pre-fix call site (`2ae4c944`): `AssertionError: expected null to be 'Task completed successfully'`, 1 failed | 31 passed (32); the same assertion passes at the fix.

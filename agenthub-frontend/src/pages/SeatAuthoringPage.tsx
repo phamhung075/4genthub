@@ -72,10 +72,29 @@ export const SeatAuthoringPage: React.FC = () => {
   } = useSeatOverlays(roomSlug, seatKey);
   const updateOverlay = useUpdateOverlay(roomSlug, seatKey);
 
+  /**
+   * The caller's standing on the room being composed, as the server computed it (`Room.role`).
+   * GET /rooms serves the caller's own rooms AND the rooms shared with their teams, and every
+   * room-scoped route resolves the room through an owner-only lookup - so a viewer's write comes
+   * back as a 404 saying "room not found" about a room they are legitimately reading. One predicate
+   * for every write surface below, and the SAME field the two sibling pages gate on
+   * (SeatsPage.tsx:98, SeatDetailPage.tsx:650-653). `roomSlug` is always a member of `rooms` while
+   * the composer renders, so an absent role is not reachable here; should one arrive, it fails
+   * closed rather than offering the write.
+   */
+  const roomRole = rooms.find((entry) => entry.slug === roomSlug)?.role;
+  const isRoomViewer = roomRole === 'viewer';
+  const canWrite = roomRole === 'owner';
+
   const selectedSeat = seats.find((entry) => entry.seat_key === seatKey);
   const selectedSeatType = seatTypes.find((type) => type.slug === selectedSeat?.seat_type);
 
   const handleApply = (scope: SeatOverlayScope, ops: SeatOverlayOp[]) => {
+    // The controls are ABSENT for a viewer and the handler refuses too: neither a stray click nor a
+    // dispatched apply can reach a mutation the server would refuse with a 404.
+    if (!canWrite) {
+      return;
+    }
     updateOverlay.mutate({ scope, ops });
   };
 
@@ -145,6 +164,17 @@ export const SeatAuthoringPage: React.FC = () => {
           <p className="text-sm text-muted-foreground">This room has no seats yet.</p>
         ) : (
           <>
+            {/* ONE sentence for a viewer, mirroring the room row's and the seat detail page's. The
+                server refuses a viewer's write with a 404 on a room they are reading, so there is no
+                per-action reason to quote beside a dead control - the affordances are absent
+                instead, and this is why. */}
+            {isRoomViewer && (
+              <p className="text-sm text-muted-foreground">
+                This room is one its owner shared with a team you belong to, so you can read it and the
+                composition of its seats. Writing is the owner's: the overlay blocks added or removed at
+                the company, room and seat levels.
+              </p>
+            )}
             {/* ONE form and now TWO entry points: the Modules row above, and the composer's own
                 rows, which hand in the block AS COMPOSED at the level being viewed. */}
             <SeatComposer
@@ -156,6 +186,7 @@ export const SeatAuthoringPage: React.FC = () => {
               overlays={{ company: companyOverlay, room: roomOverlay, seat: seatOverlay }}
               isSaving={updateOverlay.isPending}
               saveError={composerError}
+              canWrite={canWrite}
               onApply={handleApply}
               onEditBlock={setEditingModule}
             />
