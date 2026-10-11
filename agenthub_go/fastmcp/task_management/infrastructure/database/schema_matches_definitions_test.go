@@ -73,6 +73,7 @@ func TestSchemaMatchesGoDefinitions(t *testing.T) {
 	}
 
 	created := map[string]string{}
+	indexed := map[string][]string{}
 	order := []string{}
 	for _, step := range steps {
 		bodies, err := goDefStepTableBodies(step)
@@ -84,6 +85,13 @@ func TestSchemaMatchesGoDefinitions(t *testing.T) {
 				order = append(order, name)
 			}
 			created[name] = bodies[name]
+		}
+		stepIndexes, err := goDefStepIndexes(step)
+		if err != nil {
+			t.Fatalf("%v", err)
+		}
+		for table, statements := range stepIndexes {
+			indexed[table] = append(indexed[table], statements...)
 		}
 	}
 
@@ -125,12 +133,27 @@ func TestSchemaMatchesGoDefinitions(t *testing.T) {
 			t.Errorf("table %s: column DEFAULTs differ between the migration set and the runtime DDL\n migrations: %v\n runtime:    %v",
 				def.Name, want, got)
 		}
+		// Indexes are the axes a rollback, an ALTER and a probe do NOT see: the column set can be
+		// identical while a UNIQUE index that holds an invariant is gone, and a unique index IS the
+		// invariant for the seat and team tables (uq_overlays_target, uq_team_members_one_owner). The
+		// registry declares them in the same DDL slice as the CREATE TABLE, so losing one from the
+		// baseline keeps every other comparison here green.
+		if got, want := goDefIndexStatements(def.DDL), indexed[def.Name]; !goDefEqualSets(got, want) {
+			t.Errorf("table %s: indexes differ between the migration set and the runtime DDL\n migrations: %v\n runtime:    %v",
+				def.Name, want, got)
+		}
 	}
 
 	// The other direction, so a baseline can never carry a table Go has stopped defining.
 	for _, name := range order {
 		if _, ok := goDefTableByName(name); !ok {
 			t.Errorf("table %s: a migration creates it but no Go definition registers it", name)
+		}
+	}
+	// ... and the same for an index whose table nobody registers.
+	for _, table := range goDefSortedKeys(indexed) {
+		if _, ok := goDefTableByName(table); !ok {
+			t.Errorf("table %s: a migration creates indexes for it but no Go definition registers it", table)
 		}
 	}
 }
@@ -168,6 +191,89 @@ func goDefStepTableBodies(step taskdb.Migration) (map[string]string, error) {
 	return bodies, nil
 }
 
+// goDefStepIndexes returns every CREATE INDEX statement in one step, keyed by the table it is ON. The
+// table is read from the statement rather than from the "-- table" comment above it, because the
+// statement is what the database executes.
+func goDefStepIndexes(step taskdb.Migration) (map[string][]string, error) {
+	indexes := map[string][]string{}
+	for _, raw := range strings.Split(step.SQL, "\n") {
+		line := strings.TrimSpace(raw)
+		if !goDefLooksLikeIndex(line) {
+			continue
+		}
+		_, _, table, ok := goDefIndexParts(line)
+		if !ok {
+			return nil, &goDefParseError{step: step.Name, text: line}
+		}
+		indexes[table] = append(indexes[table], goDefNormalizeStatement(line))
+	}
+	return indexes, nil
+}
+
+// goDefIndexStatements returns the CREATE INDEX statements of one runtime table's DDL slice, which is
+// the same slice that carries its CREATE TABLE.
+func goDefIndexStatements(ddl []string) []string {
+	out := []string{}
+	for _, stmt := range ddl {
+		if goDefLooksLikeIndex(strings.TrimSpace(stmt)) {
+			out = append(out, goDefNormalizeStatement(stmt))
+		}
+	}
+	return out
+}
+
+// goDefLooksLikeIndex says whether a statement claims to be a CREATE INDEX, so a statement that claims
+// it and cannot be read is a failure rather than a statement nobody looked at.
+func goDefLooksLikeIndex(stmt string) bool {
+	lower := strings.ToLower(strings.Join(strings.Fields(stmt), " "))
+	return strings.HasPrefix(lower, "create index ") || strings.HasPrefix(lower, "create unique index ")
+}
+
+// goDefIndexParts reads the three fields the comparison groups an index by: whether it is UNIQUE, its
+// name and the table it is ON. It parses words rather than matching a pattern on purpose: the first
+// attempt used one regex whose optional pieces sat next to optional quotes, and it silently matched
+// nothing on the runtime statements - a guard that reports "no indexes here" for a file full of them is
+// worse than no guard, because it reads as agreement. A fixed shape read word by word cannot do that.
+func goDefIndexParts(stmt string) (unique bool, name, table string, ok bool) {
+	words := strings.Fields(strings.ToLower(stmt))
+	if len(words) < 4 || words[0] != "create" {
+		return false, "", "", false
+	}
+	i := 1
+	if words[i] == "unique" {
+		unique = true
+		i++
+	}
+	if i >= len(words) || words[i] != "index" {
+		return false, "", "", false
+	}
+	i++
+	if i+2 < len(words) && words[i] == "if" && words[i+1] == "not" && words[i+2] == "exists" {
+		i += 3
+	}
+	// <name> ON <table>
+	if i+2 >= len(words) || words[i+1] != "on" {
+		return false, "", "", false
+	}
+	name = strings.Trim(words[i], `"`)
+	table = strings.Trim(words[i+2], `"`)
+	if name == "" || table == "" {
+		return false, "", "", false
+	}
+	return unique, name, table, true
+}
+
+// goDefNormalizeStatement makes the two sources' text comparable. They write the same statement and
+// differ in exactly the ways they must: the runtime DDL carries no IF NOT EXISTS and no semicolon, and
+// the migration carries both, because createAll runs before the runner on this path and the step has to
+// be re-runnable. Whitespace and letter case are layout, so both are collapsed - the words, the column
+// list, the uniqueness and the WHERE clause that remain are the index.
+func goDefNormalizeStatement(s string) string {
+	s = strings.ToLower(strings.Join(strings.Fields(s), " "))
+	s = strings.ReplaceAll(s, "if not exists ", "")
+	return strings.TrimSpace(strings.TrimSuffix(strings.TrimSpace(s), ";"))
+}
+
 // goDefParseError is what an unparsable statement returns, so the test can name the step and the line.
 type goDefParseError struct {
 	step string
@@ -198,7 +304,7 @@ func goDefStepNames(steps []taskdb.Migration) []string {
 }
 
 // goDefSortedKeys sorts a body map's keys, so the comparison's error output is stable.
-func goDefSortedKeys(m map[string]string) []string {
+func goDefSortedKeys[V any](m map[string]V) []string {
 	out := make([]string, 0, len(m))
 	for k := range m {
 		out = append(out, k)

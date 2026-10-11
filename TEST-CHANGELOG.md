@@ -2,6 +2,12 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-11 - the schema guard covers indexes (and the regex that had to go)
+
+- EXTENDED `agenthub_go/fastmcp/task_management/infrastructure/database/schema_matches_definitions_test.go`: `TestSchemaMatchesGoDefinitions` now compares the registry's indexes with the baseline's, not just columns, references, CHECKs and defaults. 60 statements, two of them UNIQUE, and a unique index is the whole invariant for `uq_overlays_target` and `uq_team_members_one_owner` - so losing one kept the guard green before this. Per table, both directions (an index whose table no definition registers is a failure too). New helpers: `goDefStepIndexes`, `goDefIndexStatements`, `goDefLooksLikeIndex`, `goDefIndexParts`, `goDefNormalizeStatement`; `goDefSortedKeys` is now generic over the map's value type, so it sorts the index map as well.
+- MEASURED RED, two directions in one run: `UNIQUE` dropped from `uq_overlays_target` in the baseline, and `ix_email_tokens_email`'s column list drifted in the registry - the guard names both tables and prints each side's statement. Reverted, green.
+- RECORDED, because the first attempt is instructive: that parse began as a single regex with optional groups next to optional quotes, which matched the migration's `IF NOT EXISTS` form and silently matched nothing on the runtime's bare form - an empty list reads exactly like agreement. Replaced by a word-by-word parse of the statement's fixed shape; the normalized statement text is still what is compared.
+
 ## 2026-10-11 - the two findings GATE c663cca2 left open: the subtask note, and the number read inside the transaction
 
 - ADDED `agenthub_go/fastmcp/task_management/application/use_cases/subtask_progress_note_test.go`: three cases over the note a `manage_subtask` update carries - it reaches the PARENT task's ledger naming the subtask, its content is the stored form, its number and timestamp are the writer's; an update without a note writes nothing; a whitespace-only note writes nothing and still saves the subtask. Its `subtaskNoteLedger` is a seam that records the subtask id, which the task-level fakes cannot see.

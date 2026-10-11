@@ -8,9 +8,16 @@
 -- Every statement carries IF NOT EXISTS because createAll (the Go registry's own DDL) runs before the
 -- runner on this path, so the tables are usually already there when this step is reached.
 --
--- Written from the runtime registry by a throwaway command in .gotmp (since deleted), then frozen:
--- applied_migrations records this file's NAME and the name is the step's identity, so this file must
--- never be renamed, reordered or edited once it has been applied anywhere.
+-- Written from the runtime registry by a throwaway command in .gotmp (since deleted).
+-- applied_migrations records this file's NAME and the name is the step's identity, so the file must
+-- never be RENAMED or REORDERED. Whether it may be EDITED depends on who has applied it, and the two
+-- rules do not collide once that is said plainly:
+--   * While NO database has recorded this step in applied_migrations, the file tracks the registry:
+--     TestSchemaMatchesGoDefinitions requires the two to be equal, so a definition change EDITS this
+--     file. That is safe, because nothing has executed it.
+--   * Once a database HAS recorded it, the file is frozen - editing it would leave that database on a
+--     schema no file describes - and the definition change goes into a NEW step instead.
+-- The guard therefore wins while the file is unapplied, and the freeze wins afterwards.
 -- TestSchemaMatchesGoDefinitions holds the registry to this file from here on.
 --
 -- The six ProductionTables are deliberately NOT here. They are registered as definitions but nothing
