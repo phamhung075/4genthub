@@ -171,14 +171,15 @@ func getValueString(obj any, key, def string) string {
 // when it has none. The task's equivalent is entities.Task.GetProgressHistoryText, reached through
 // task_response.go; the subtask read serves the repository's dict rather than the entity, so the join
 // (entities.ProgressHistoryText, the one implementation of the ordering rule) is applied here.
+// subtaskDetails renders the join into `details` for the subtask route. An empty history is served as
+// the EMPTY STRING rather than nil, which is the shape the task route serves for the same meaning: the
+// task reaches it through the dict its facade renders details from, and the Python-era rule that the
+// two routes be one API is why one meaning gets one shape. A caller that presence-checks reads null as
+// "not loaded" and "" as "none", so the difference was a bug waiting to happen rather than a nuance.
 func subtaskDetails(history any) *string {
-	m, ok := history.(map[string]any)
-	if !ok {
-		return nil
-	}
-	text := entities.ProgressHistoryText(m)
-	if text == "" {
-		return nil
+	text := ""
+	if m, ok := history.(map[string]any); ok {
+		text = entities.ProgressHistoryText(m)
 	}
 	return &text
 }

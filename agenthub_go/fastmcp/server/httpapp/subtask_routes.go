@@ -43,7 +43,7 @@ func (a *App) registerSubtaskRoutes(mux *http.ServeMux) {
 			}
 			progress = &n
 		}
-		body, err := routes.UpdateSubtask(r.Context(), r.PathValue("id"), queryOpt(r, "title"), queryOpt(r, "description"), queryOpt(r, "status"), progress, u, c)
+		body, err := routes.UpdateSubtask(r.Context(), r.PathValue("id"), queryOpt(r, "title"), queryOpt(r, "description"), queryOpt(r, "status"), queryOpt(r, "progress_notes"), progress, u, c)
 		writeResult(w, body, err)
 	}))
 	mux.HandleFunc("DELETE "+base+"/{id}", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {

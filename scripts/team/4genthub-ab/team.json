@@ -20,13 +20,13 @@
       "slug": "ab-policy-lead",
       "version": "1.1.0",
       "kind": "policy",
-      "file": "../4genthub-min/policy-lead.json"
+      "file": "ab-policy-lead.json"
     },
     {
       "slug": "ab-policy-go-dev",
       "version": "1.1.0",
       "kind": "policy",
-      "file": "../4genthub-min/policy-go-dev.json"
+      "file": "ab-policy-go-dev.json"
     },
     {
       "slug": "ab-terse",

@@ -32,6 +32,8 @@ from pathlib import Path
 
 import pytest
 
+import gitfixture
+
 pytestmark = pytest.mark.unit
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -48,7 +50,8 @@ ABSENT_REV = "0" * 40
 def run(*args, env=None, cwd=REPO_ROOT):
     return subprocess.run(
         [sys.executable, str(args[0]), *[str(a) for a in args[1:]]],
-        cwd=cwd, capture_output=True, text=True, env=env,
+        cwd=cwd, capture_output=True, text=True,
+        env=gitfixture.environment() if env is None else env,
     )
 
 
@@ -69,13 +72,11 @@ def clean_export(tmp_path_factory):
     if not (REPO_ROOT / ".git").exists():
         pytest.fail(f"the committed-revision reading needs a git checkout; {REPO_ROOT} has no .git")
     export = tmp_path_factory.mktemp("census-export") / "repo"
-    subprocess.run(["git", "worktree", "add", "--detach", str(export), "HEAD"],
-                   cwd=REPO_ROOT, check=True, capture_output=True, text=True)
+    gitfixture.git(REPO_ROOT, "worktree", "add", "--detach", str(export), "HEAD")
     try:
         yield export
     finally:
-        subprocess.run(["git", "worktree", "remove", "--force", str(export)],
-                       cwd=REPO_ROOT, capture_output=True, text=True)
+        gitfixture.git(REPO_ROOT, "worktree", "remove", "--force", str(export), check=False)
 
 
 def in_export(export, script):
@@ -245,10 +246,8 @@ def test_s3_rederive_refuses_a_document_it_can_read_nothing_from(tmp_path):
 
 def test_citation_audit_refuses_to_rewrite_under_a_gate_marker_and_leaves_the_inventory_alone():
     """The one surface that can edit the artefact it measures, pinned shut while a gate is up."""
-    import os
-
     before = digest(INVENTORY)
-    env = dict(os.environ, CI="1")
+    env = gitfixture.environment(CI="1")
     r = run(CITATION, "--write", env=env)
     out = r.stdout + r.stderr
     assert r.returncode == 2, f"--write ran with a gate marker set:\n{out}"

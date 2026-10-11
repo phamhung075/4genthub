@@ -37,6 +37,8 @@ import re
 import subprocess
 from pathlib import Path, PurePosixPath
 
+import gitfixture
+
 REPO_ROOT = Path(__file__).resolve().parents[2]
 GITIGNORE = REPO_ROOT / ".gitignore"
 
@@ -76,13 +78,7 @@ SAMPLE_NEGATIONS = ("!.env.sample", "!.env.example", "!**/.env.example")
 
 
 def _git(*args: str, stdin: bytes | None = None) -> bytes:
-    return subprocess.run(
-        ["git", *args],
-        cwd=REPO_ROOT,
-        input=stdin,
-        capture_output=True,
-        check=True,
-    ).stdout
+    return gitfixture.git(REPO_ROOT, *args, stdin=stdin, text=False).stdout
 
 
 def _present_paths() -> set[str]:
@@ -121,12 +117,12 @@ def _hidden_with_rule(paths: set[str]) -> dict[str, str]:
     """
     if not paths:
         return {}
-    answer = subprocess.run(
-        ["git", "check-ignore", "-v", "-z", "--stdin"],
-        cwd=REPO_ROOT,
-        input=b"".join(path.encode("utf-8", "surrogateescape") + b"\0" for path in sorted(paths)),
-        capture_output=True,
+    answer = gitfixture.git(
+        REPO_ROOT,
+        "check-ignore", "-v", "-z", "--stdin",
+        stdin=b"".join(path.encode("utf-8", "surrogateescape") + b"\0" for path in sorted(paths)),
         check=False,
+        text=False,
     )
     if answer.returncode not in (0, 1):
         raise subprocess.CalledProcessError(

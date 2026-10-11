@@ -182,9 +182,11 @@ func TestSubtaskToDTODictParentFallback(t *testing.T) {
 }
 
 // A subtask's OWN progress history is served as `details`, the way a task's is served from
-// entities.Task.GetProgressHistoryText (task_response.go:101, :140, :196), and the field is null when
-// the subtask has no progress. The entries are inserted out of order on purpose: the served text is
-// ordered by progress NUMBER, not by the map's key order.
+// entities.Task.GetProgressHistoryText (task_response.go:101, :140, :196), and it is the EMPTY STRING
+// when the subtask has no progress - the same shape the task path serves for the same meaning, because
+// the task reaches it through the dict its facade renders details from and one meaning with two shapes
+// ("" against null) is what a presence check turns into a bug. The entries are inserted out of order on
+// purpose: the served text is ordered by progress NUMBER, not by the map's key order.
 func TestSubtaskDTOservesDetailsFromItsOwnProgressHistory(t *testing.T) {
 	withProgress := dict(
 		"id", "s1", "title", "S", "status", "todo", "priority", "medium", "task_id", "p1",
@@ -211,11 +213,11 @@ func TestSubtaskDTOservesDetailsFromItsOwnProgressHistory(t *testing.T) {
 	if err != nil {
 		t.Fatalf("SubtaskToDTO: %v", err)
 	}
-	if withoutProgress.Details != nil {
-		t.Fatalf("details = %q, want nil for a subtask with no progress", *withoutProgress.Details)
+	if withoutProgress.Details == nil || *withoutProgress.Details != "" {
+		t.Fatalf("details = %v, want the empty string for a subtask with no progress", withoutProgress.Details)
 	}
-	if served, ok := withoutProgress.ModelDump().Get("details"); !ok || served != nil {
-		t.Fatalf("a subtask with no progress serves details as null, got %v", served)
+	if served, ok := withoutProgress.ModelDump().Get("details"); !ok || served != "" {
+		t.Fatalf("a subtask with no progress serves details as the empty string, got %v", served)
 	}
 
 	// The entity branch reads the same field through pyGetattr (progress_history -> ProgressHistory).

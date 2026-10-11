@@ -46,7 +46,15 @@ GO = f"{ROOT}/agenthub_go"
 # The numbers as the surface inventory states them. Each entry names the instrument that
 # re-derives it, because a number without its instrument is the failure this file exists for.
 EXPECTED = {
-    "httpapp route registrations": 125,     # grep -rn 'mux.HandleFunc(' fastmcp/server/httpapp, minus _test.go
+    "httpapp route registrations": 128,     # grep -rn 'mux.HandleFunc(' fastmcp/server/httpapp, minus _test.go
+                                            #   125 -> 128: three registrations landed after the last recorded
+                                            #     125, which was itself right at 42de79c2. Named from the tree
+                                            #     rather than adjusted to a total: GET /api/v2/ledger and
+                                            #     POST /api/v2/ledger/intents (ledger_mount.go:39,52, f285bdf6),
+                                            #     and POST /api/v2/tasks/{id}/evidence (task_routes.go:121,
+                                            #     5ab853d1). The document's §1 also gained those three rows in
+                                            #     the same pass, so the set join the §1 preamble describes
+                                            #     145 -> 148 holds again.
                                             #   124 -> 125 (docs duty pass 7): 42de79c2 added PUT /api/v2/
                                             #     openrig/rooms/{room}/seats/{seat}/pin at seat_admin_mount.go:362,
                                             #     handler handleSetSeatPin. The tree moved and BOTH this file and the
