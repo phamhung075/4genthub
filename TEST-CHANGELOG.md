@@ -2,6 +2,40 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-11 - the pin route's store is now covered against real SQL
+
+- ADDED `agenthub_go/fastmcp/server/httpapp/seat_admin_pin_pg_test.go`:
+  `TestSeatAdminPinReachesTheRowOnARealDatabase` - the follow-on BOTH of R1's gates named
+  (`GATE-42de79c2` and its post-hoc re-gate): `TestSeatAdminPinSeatVersion` drives the real route,
+  handler and service through a SUBSTITUTED `seatAdminSource`, so every store assertion it makes is the
+  fake's answer, and `UpdatePinnedVersion` is a plain UPDATE whose behaviour no fake can fail. The new
+  case mounts the same routes over the production source (`newSeatAdminSource(sessions)`, no seam
+  swapped) on a real PostgreSQL and reads the row back through
+  `ORMSeatRepository.FindByRoomAndKey` rather than through the response; each refusal is followed by a
+  read of the row, so a check that refuses in the body and writes anyway fails here and passes there.
+- MEASURED with the database: PASS (and the fake-store case alongside it still passes). The SECONDS are
+  deliberately not quoted, because a duration here is a fact about the box: this same case has read
+  1.47s, 6.68s and 1.6s on three box-and-load combinations, and the first of those did not reproduce on
+  the reviewer's. It has
+  been SEEN FAILING, not only seen passing: with the store statement mutated to
+  `COALESCE("pinned_version", $1)` - a bound-but-ignored parameter, so a true no-op write - it reports
+  `the row reads "1.0.0" after the pin, want "1.0.1" - the response is not the store`, and the statement
+  was then restored byte-for-byte (`git diff` over `seat_repository.go` is empty).
+- GATED like its neighbours: without `AGENTHUB_TEST_PG_URL` it skips loudly, so a run that prints
+  SKIPPED has not covered this.
+- THE TENANT SCOPE IS NOW MEASURED, NOT JUST NAMED IN THE DOC (the gate's nit, closed in the same
+  commit as this line): every request above is made as the OWNING user, so a store that dropped its
+  `user_id` scope would pass all of them while the doc claimed that behaviour was covered. The case now
+  ends by swapping `authinterface.GetCurrentUserUniversal` to a SECOND user mid-case - the pattern
+  `token_mount_wiring_test.go` already uses - and making the same calls: the room's seat list and the
+  pin both read **404** for that other user, and the owner's row is read back unchanged afterwards.
+  FALSIFICATION, done by the reviewer's own `-overlay` method so this worktree stayed a single path
+  dirty: with `roomVisibilitySQL` mutated to `TRUE` (the read loses its tenant scope) the new
+  assertion goes **RED** - `another tenant's seat list: status 200, body {"success":true,"seats":[...{"seat_key":"alice","pinned_version":"1.0.1"...}]}` -
+  and the same case is **GREEN** with no overlay. The pin half stayed 404 under that read mutation
+  because the write path resolves its room through `seatAdminRoom` (owner-only) rather than the visible
+  read; that resolution was deliberately left alone, since the read scope is what the nit named.
+
 ## 2026-10-11 - correction: the unfixed script suite's clean-tree result
 
 - MEASURED, to settle the one number the gate could not reproduce:

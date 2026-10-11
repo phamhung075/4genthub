@@ -1,137 +1,199 @@
 package httpapp
 
-// R1's acceptance against the REAL store, which is the half the committed case beside this one
-// cannot show.
-//
-// `seat_admin_pin_test.go` drives the route -> handler -> service -> version-check seam through
-// `newFakeSeatAdmin()`, so the ORM statement
-//
-//	UPDATE "seats" SET "pinned_version" = $1, "updated_at" = $2 WHERE "user_id" = $3 AND "id" = $4
-//
-// (`fastmcp/seat_management/infrastructure/repositories/orm/seat_repository.go:109`-`:117`) is
-// executed by NO committed test. The reviewer's post-hoc approve on `42de79c2` and the architect's
-// finding both said so, and the only proof was a scratch run against a real PostgreSQL that did not
-// survive its session. This case seeds rows in a real database and mounts the route with the real
-// session manager, so the statement runs and the ROW is what the assertions read.
-//
-// It needs AGENTHUB_TEST_PG_URL (see tools/testpg/start.sh) and skips loudly without it, through the
-// harness in missed_notification_replay_test.go.
-
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"strings"
 	"testing"
 
-	"agenthub/fastmcp/seat_management/domain/resolver"
-	"agenthub/fastmcp/task_management/infrastructure/database"
+	authdomain "agenthub/fastmcp/auth/domain/entities"
+	authinterface "agenthub/fastmcp/auth/interface"
+	seatorm "agenthub/fastmcp/seat_management/infrastructure/repositories/orm"
 )
 
-func TestSeatAdminPinSeatVersionAgainstTheRealStore(t *testing.T) {
-	sessions := newMissedNotificationAppEnv(t) // real PostgreSQL; skips loudly without it
+// THE STORE THE FAKE STANDS IN FOR, AGAINST REAL SQL. This is the follow-on both of R1's gates named:
+// the architect's GATE-42de79c2 ("committed pin test uses a fake store; add a SEAT_TEST_DATABASE_URL
+// case") and the reviewer's post-hoc GATE-42de79c2-r1-seat-pin-POSTHOC, which confirmed the finding as
+// non-blocking. `TestSeatAdminPinSeatVersion` in seat_admin_pin_test.go drives the real route, the
+// handler and the service - but through a SUBSTITUTED seatAdminSource, so every assertion it makes
+// about the store is the fake's answer, and `UpdatePinnedVersion` is a plain UPDATE whose behaviour
+// (does it move the row? is it scoped to the caller's tenant?) no fake can fail. BOTH of those are
+// measured below: the moved row is read back from the table, and the case ends by making the same
+// calls as ANOTHER user, which must neither see the seat nor move its pin.
+//
+// This case mounts the SAME routes over the PRODUCTION source - `newSeatAdminSource(sessions)`, built
+// by seat_mount/seat_admin_mount's own wiring, no seam swapped - on a real PostgreSQL, and reads the
+// row back through the repository rather than through the response, so the pin is proven to have
+// reached the table. The refusals are asserted with the row read AFTER them: a version check that
+// refuses in the response but writes anyway would pass the fake-store test and fail this one.
+//
+// GATED EXACTLY LIKE ITS NEIGHBOURS: without AGENTHUB_TEST_PG_URL it SKIPS LOUDLY and nothing below
+// runs, so a green line from this file means nothing unless the skip did not appear. To run it:
+//
+//	bash tools/testpg/start.sh
+//	AGENTHUB_TEST_PG_URL=postgresql://agenthub_user@127.0.0.1:55451/postgres go test -count=1 \
+//	  -run TestSeatAdminPinReachesTheRowOnARealDatabase ./fastmcp/server/httpapp/
+func TestSeatAdminPinReachesTheRowOnARealDatabase(t *testing.T) {
+	sessions := newMissedNotificationAppEnv(t) // skips loudly when AGENTHUB_TEST_PG_URL is unset
+	t.Setenv("AUTH_ENABLED", "false")
 	authenticateTestUser(t)
-	// The id authenticateTestUser's stubbed user carries, so the seeded rows belong to the caller
-	// the handler sees.
-	const user = "11111111-1111-4111-8111-111111111111"
-	ctx := context.Background()
 
-	// Seeded directly, because the subject here is the pin seam: a room, a seat type with two
-	// versions, and a seat pinned to the older one. The versions ARE the check's input - 1.4.2 is
-	// accepted and 9.9.9 is refused - and they are rows, not a constant, which is why the check can
-	// be exercised at all.
-	var roomID, seatTypeID, seatID string
-	if err := sessions.WithSession(ctx, func(ctx context.Context, s database.DBTX) error {
-		if err := s.QueryRowContext(ctx, `INSERT INTO rooms (id, user_id, slug, name, created_at, updated_at)
-			VALUES (gen_random_uuid(), $1, 'dev', 'Dev', now(), now()) RETURNING id`, user).Scan(&roomID); err != nil {
-			return err
-		}
-		if err := s.QueryRowContext(ctx, `INSERT INTO seat_types (id, user_id, slug, name, description, created_at)
-			VALUES (gen_random_uuid(), $1, 'coder', 'Coder', '', now()) RETURNING id`, user).Scan(&seatTypeID); err != nil {
-			return err
-		}
-		for _, version := range []string{"0.9.0", "1.4.2"} {
-			if _, err := s.ExecContext(ctx, `INSERT INTO seat_type_versions
-					(id, user_id, seat_type_id, version, default_runtime, module_refs, created_at)
-				VALUES (gen_random_uuid(), $1, $2, $3, 'claude-code', '[]'::jsonb, now())`,
-				user, seatTypeID, version); err != nil {
-				return err
-			}
-		}
-		return s.QueryRowContext(ctx, `INSERT INTO seats
-				(id, user_id, room_id, seat_key, seat_type_id, runtime, model, permission_policy,
-				 pinned_version, created_at, updated_at)
-			VALUES (gen_random_uuid(), $1, $2, 'alice', $3, 'claude-code', 'sonnet', $4, '0.9.0', now(), now())
-			RETURNING id`, user, roomID, seatTypeID, resolver.DefaultPermissionPolicy).Scan(&seatID)
-	}); err != nil {
-		t.Fatalf("seeding the room, the type, its versions and the seat failed: %v", err)
-	}
+	// The broadcast is not this case's subject and this mux has no broker behind it, so it is stubbed
+	// exactly as the fake-store route test stubs it: the subject here is the row.
+	previousBroadcast := seatBroadcastFn
+	seatBroadcastFn = func(context.Context, string, string, string, string, string, string) error { return nil }
+	t.Cleanup(func() { seatBroadcastFn = previousBroadcast })
 
-	// pinnedInStore reads the COLUMN, so every assertion below is about the row rather than about a
-	// response that could have been composed from the request.
-	pinnedInStore := func() string {
-		t.Helper()
-		var pinned string
-		if err := sessions.WithSession(ctx, func(ctx context.Context, s database.DBTX) error {
-			return s.QueryRowContext(ctx, `SELECT pinned_version FROM seats WHERE id = $1::uuid`, seatID).Scan(&pinned)
-		}); err != nil {
-			t.Fatalf("reading the seat's row failed: %v", err)
-		}
-		return pinned
-	}
-
-	// sessions, not nil: the second argument is what the mount resolves its real source from, so the
-	// package-level seams the fake case overrides stay default here and the store IS the database.
-	// Both mounts, in the order app.go mounts them, because the acceptance's last claim is what the
-	// RESOLVED seat renders, and that route lives in seat_mount.go rather than in the admin mount.
 	mux := http.NewServeMux()
-	mountSeatRoutes(mux, sessions)
-	mountSeatAdminRoutes(mux, sessions)
+	mountSeatAdminRoutes(mux, sessions) // the production source, not a substituted one
 
-	// (1) A version the seat's type does not have is refused, and the row is untouched: the refusal
-	// must happen BEFORE the UPDATE, which is exactly the half a fake that never runs the statement
-	// cannot show.
-	rec := doTestRequest(t, mux, http.MethodPut, "/api/v2/openrig/rooms/dev/seats/alice/pin",
-		`{"pinned_version":"9.9.9"}`)
-	if rec.Code != http.StatusBadRequest {
-		t.Errorf("pin to a version the type does not have: status = %d, want 400: %s", rec.Code, rec.Body.String())
-	}
-	if got := pinnedInStore(); got != "0.9.0" {
-		t.Errorf("the refused pin changed the row to %q, want it still 0.9.0: the version check must run "+
-			"before the UPDATE", got)
+	ctx := context.Background()
+	const user = "11111111-1111-4111-8111-111111111111" // the id authenticateTestUser resolves
+
+	// Two module versions, because a pin needs two versions of the seat's type to move between.
+	for _, version := range []string{"1.0.0", "2.0.0"} {
+		rec := doTestRequest(t, mux, http.MethodPut, "/api/v2/openrig/modules/pgpinmod/versions/"+version,
+			`{"kind":"instruction","content":"c"}`)
+		if rec.Code != http.StatusOK {
+			t.Fatalf("seeding module version %s: %d %s", version, rec.Code, rec.Body.String())
+		}
 	}
 
-	// (2) A version the type has is written, and the ORM UPDATE is what changed the row.
-	rec = doTestRequest(t, mux, http.MethodPut, "/api/v2/openrig/rooms/dev/seats/alice/pin",
-		`{"pinned_version":"1.4.2"}`)
+	rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/seat-types", `{"slug":"pgpin","name":"PgPin"}`)
 	if rec.Code != http.StatusOK {
-		t.Fatalf("pin to 1.4.2: status = %d, want 200: %s", rec.Code, rec.Body.String())
+		t.Fatalf("creating the seat type: %d %s", rec.Code, rec.Body.String())
 	}
-	if got := pinnedInStore(); got != "1.4.2" {
-		t.Errorf("the row is %q after a 200, want 1.4.2: UPDATE \"seats\" did not reach it", got)
+	// The service appends the next patch version, so these are 1.0.0 then 1.0.1 - read from the
+	// responses rather than assumed, because the point of this case is that the numbers are the
+	// database's and not a fixture's.
+	firstVersion := createSeatTypeVersion(t, mux, "pgpinmod@1.0.0")
+	secondVersion := createSeatTypeVersion(t, mux, "pgpinmod@2.0.0")
+	if firstVersion == secondVersion {
+		t.Fatalf("the two versions are both %q; this case cannot pin between them", firstVersion)
 	}
 
-	// (3) The next read of the room's seats reports the ROW, not the request.
-	rec = doTestRequest(t, mux, http.MethodGet, "/api/v2/openrig/rooms/dev/seats", "")
+	rec = doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/rooms", `{"slug":"pgpinroom","name":"PgPin room"}`)
 	if rec.Code != http.StatusOK {
-		t.Fatalf("listing the room's seats: %d %s", rec.Code, rec.Body.String())
+		t.Fatalf("creating the room: %d %s", rec.Code, rec.Body.String())
 	}
-	if !strings.Contains(rec.Body.String(), `"pinned_version":"1.4.2"`) {
-		t.Errorf("the room's seats read back without the pin: %s", rec.Body.String())
-	}
-
-	// (4) The resolve renders the pinned version, which is the claim the row's own acceptance makes.
-	rec = doTestRequest(t, mux, http.MethodGet, "/api/v2/openrig/seats/dev/alice", "")
+	rec = doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/rooms/pgpinroom/seats",
+		`{"seat_key":"alice","seat_type":"pgpin","pinned_version":"`+firstVersion+`","runtime":"claude-code"}`)
 	if rec.Code != http.StatusOK {
-		t.Errorf("resolving the pinned seat: status = %d, want 200: %s", rec.Code, rec.Body.String())
-	} else if !strings.Contains(rec.Body.String(), "1.4.2") {
-		t.Errorf("the resolved seat does not render the pinned version: %s", rec.Body.String())
+		t.Fatalf("creating the seat pinned to %s: %d %s", firstVersion, rec.Code, rec.Body.String())
 	}
 
-	// (5) A seat that does not exist is a 404, so a typo in the seat key cannot pin nothing - and the
-	// refusal comes from the store, not from a fake's table.
-	rec = doTestRequest(t, mux, http.MethodPut, "/api/v2/openrig/rooms/dev/seats/nobody/pin",
-		`{"pinned_version":"1.4.2"}`)
-	if rec.Code != http.StatusNotFound {
-		t.Errorf("pin on a seat the store does not hold: status = %d, want 404: %s", rec.Code, rec.Body.String())
+	// THE ROW, read through the repository: the route's own rendering is what the fake-store test
+	// already covers, and it is not what this case exists for.
+	rooms, err := seatorm.NewORMRoomRepository(sessions)
+	if err != nil {
+		t.Fatal(err)
 	}
+	room, err := rooms.GetBySlug(ctx, user, "pgpinroom")
+	if err != nil || room == nil {
+		t.Fatalf("reading the room back: %v (%v)", room, err)
+	}
+	seats, err := seatorm.NewORMSeatRepository(sessions)
+	if err != nil {
+		t.Fatal(err)
+	}
+	storedPin := func(what string) string {
+		t.Helper()
+		seat, err := seats.FindByRoomAndKey(ctx, user, room.ID, "alice")
+		if err != nil || seat == nil {
+			t.Fatalf("%s: reading the seat back = %v (%v)", what, seat, err)
+		}
+		if seat.PinnedVersion == nil {
+			return ""
+		}
+		return *seat.PinnedVersion
+	}
+	if got := storedPin("after the create"); got != firstVersion {
+		t.Fatalf("the seat was created pinned to %q, want %q", got, firstVersion)
+	}
+
+	rec = doTestRequest(t, mux, http.MethodPut, "/api/v2/openrig/rooms/pgpinroom/seats/alice/pin",
+		`{"pinned_version":"`+secondVersion+`"}`)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("pinning to %s: %d %s", secondVersion, rec.Code, rec.Body.String())
+	}
+	if got := storedPin("after the pin"); got != secondVersion {
+		t.Fatalf("the row reads %q after the pin, want %q - the response is not the store", got, secondVersion)
+	}
+
+	// THE REFUSALS, each followed by a read of the row: a check that refuses in the body and writes
+	// anyway is exactly the failure a fake-store test cannot see.
+	for _, refusal := range []struct {
+		name string
+		body string
+		want int
+	}{
+		{"a version the seat type does not have", `{"pinned_version":"9.9.9"}`, http.StatusBadRequest},
+		{"an omitted version", `{}`, http.StatusBadRequest},
+	} {
+		rec := doTestRequest(t, mux, http.MethodPut, "/api/v2/openrig/rooms/pgpinroom/seats/alice/pin", refusal.body)
+		if rec.Code != refusal.want {
+			t.Errorf("pin with %s: status = %d, want %d: %s", refusal.name, rec.Code, refusal.want, rec.Body.String())
+		}
+		if got := storedPin("after " + refusal.name); got != secondVersion {
+			t.Fatalf("%s moved the row to %q, want it unchanged at %q", refusal.name, got, secondVersion)
+		}
+	}
+	if rec := doTestRequest(t, mux, http.MethodPut, "/api/v2/openrig/rooms/pgpinroom/seats/nobody/pin",
+		`{"pinned_version":"`+secondVersion+`"}`); rec.Code != http.StatusNotFound {
+		t.Errorf("pin on an absent seat: status = %d, want 404: %s", rec.Code, rec.Body.String())
+	}
+
+	// THE TENANT SCOPE, measured rather than claimed. Every request above is made as the OWNING
+	// user, so a store that dropped `AND user_id = $n` from either statement would pass all of them.
+	// The resolver is swapped mid-case (as token_mount_wiring_test.go does) to make the SAME calls
+	// as another user, which must not see the room's seat and must not move its pin.
+	const otherUser = "22222222-2222-4222-8222-222222222222"
+	previousResolve := authinterface.GetCurrentUserUniversal
+	authinterface.GetCurrentUserUniversal = func(context.Context, string) (*authdomain.User, error) {
+		id := otherUser
+		return &authdomain.User{ID: &id, Email: "other@example.com", Username: "other"}, nil
+	}
+	rec = doTestRequest(t, mux, http.MethodGet, "/api/v2/openrig/rooms/pgpinroom/seats", "")
+	listCode := rec.Code
+	if body := rec.Body.String(); strings.Contains(body, "alice") || listCode >= http.StatusInternalServerError {
+		t.Errorf("another tenant's seat list: status %d, body %s - want the owner's seat absent and no server error",
+			listCode, body)
+	}
+	rec = doTestRequest(t, mux, http.MethodPut, "/api/v2/openrig/rooms/pgpinroom/seats/alice/pin",
+		`{"pinned_version":"`+firstVersion+`"}`)
+	if rec.Code == http.StatusOK {
+		t.Errorf("another tenant pinned the owner's seat: status %d, body %s", rec.Code, rec.Body.String())
+	}
+	t.Logf("another tenant: seat list %d, pin %d (want the owner's seat absent and the pin refused)", listCode, rec.Code)
+	authinterface.GetCurrentUserUniversal = previousResolve
+
+	if got := storedPin("at the end"); got != secondVersion {
+		t.Fatalf("the row moved to %q on a refused pin, want %q", got, secondVersion)
+	}
+}
+
+// createSeatTypeVersion adds one version to the seat type and returns the version the SERVICE
+// assigned, taken from the response body rather than from this file.
+func createSeatTypeVersion(t *testing.T, mux *http.ServeMux, moduleRef string) string {
+	t.Helper()
+	rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/seat-types/pgpin/versions",
+		`{"module_refs":["`+moduleRef+`"],"default_runtime":"claude-code"}`)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("adding version from %s: %d %s", moduleRef, rec.Code, rec.Body.String())
+	}
+	var body struct {
+		SeatTypeVersion struct {
+			Slug    string `json:"slug"`
+			Version string `json:"version"`
+		} `json:"seat_type_version"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
+		t.Fatalf("parsing the version response: %v: %s", err, rec.Body.String())
+	}
+	if body.SeatTypeVersion.Slug != "pgpin" || body.SeatTypeVersion.Version == "" {
+		t.Fatalf("the version response carries slug %q version %q; want pgpin and a version",
+			body.SeatTypeVersion.Slug, body.SeatTypeVersion.Version)
+	}
+	return body.SeatTypeVersion.Version
 }
