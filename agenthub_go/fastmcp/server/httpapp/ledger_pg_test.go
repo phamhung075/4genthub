@@ -654,3 +654,165 @@ func TestLedgerIntentsRefusesAnUnusableCredentialLikeTheLedgerRead(t *testing.T)
 		t.Fatalf("a user with no entries must get an empty page, got %s", validReadBody)
 	}
 }
+
+// --- the subtask reference the contract names, and the body that is not a list ---
+
+// ledgerPgSubtask inserts one subtask of taskID owned by userID and returns its id. Written straight
+// into the table for the reason ledgerPgSeedEvent is: these cases are about the ledger's check, and a
+// fixture written through the subtask routes would make them cases about those routes too.
+func ledgerPgSubtask(t *testing.T, sm *database.SessionManager, userID, taskID, title string) string {
+	t.Helper()
+	id := value_objects.NewUUIDv4()
+	ledgerExec(t, sm, `INSERT INTO subtasks
+		(id, task_id, title, description, status, priority, assignees, progress_percentage, progress_state,
+		 progress_notes, blockers, completion_summary, impact_on_parent, insights_found, user_id,
+		 created_at, updated_at, progress_history, progress_count)
+		VALUES ($1::uuid, $2::uuid, $3, '', 'todo', 'medium', '[]'::json, 0, 'INITIAL',
+		        '', '', '', '', '[]'::json, $4::varchar, now(), now(), '{}'::json, 0)`,
+		id, taskID, title, userID)
+	return id
+}
+
+// ledgerPgIntentWithSubtask is ledgerPgIntent with the reference this case exists to send: a route
+// case that never posts a non-null subtask_id is exactly the gap this row closes.
+func ledgerPgIntentWithSubtask(clientEventID, taskID, kind, subtaskID string) map[string]any {
+	item := ledgerPgIntent(clientEventID, taskID, kind, nil)
+	item["subtask_id"] = subtaskID
+	return item
+}
+
+// ledgerPgRowSubtask reads the subtask_id of the row one client_event_id wrote, so "the accepted row
+// carries the subtask the intent named" is a claim about a row rather than about an answer.
+func ledgerPgRowSubtask(t *testing.T, sm *database.SessionManager, userID, clientEventID string) string {
+	t.Helper()
+	subtask := ""
+	if err := sm.WithSession(context.Background(), func(ctx context.Context, s database.DBTX) error {
+		return s.QueryRowContext(ctx,
+			`SELECT COALESCE("subtask_id"::text, '') FROM task_events
+				WHERE "user_id" = $1::varchar AND "client_event_id" = $2::uuid`,
+			userID, clientEventID).Scan(&subtask)
+	}); err != nil {
+		t.Fatalf("reading the row's subtask: %v", err)
+	}
+	return subtask
+}
+
+// TestLedgerIntentsRefusesASubtaskThatIsNotThisTasksOwn is the ledger MAJOR of GATE 1a370e02..4f86a1ac:
+// an intent may name a subtask, and task_events' only foreign key is on task_id, so before this check
+// the row landed whatever the id named - another user's subtask, or one of a different task.
+//
+// THE SHAPES ARE ONE CASE because the token must not tell them apart: the FALSIFICATION first (this
+// task's own subtask is accepted, and the ROW carries it), then the three references that are not
+// this task's, which must all answer the SAME reason - a response that distinguished "no such
+// subtask" from "not yours" would answer whether a subtask exists to a user who cannot see it.
+func TestLedgerIntentsRefusesASubtaskThatIsNotThisTasksOwn(t *testing.T) {
+	app, sm := evidenceApp(t)
+	token, user := evidenceUser(t, ledgerPgSubjectA)
+	otherToken, otherUser := evidenceUser(t, ledgerPgSubjectB)
+
+	task := ledgerPgTask(t, app, sm, token, user, "ledger subtask task")
+	sibling := ledgerPgTask(t, app, sm, token, user, "ledger subtask sibling task")
+
+	// The other user needs a project and a branch of their OWN: evidenceSeedBranch writes its two rows
+	// under fixed ids for whichever user asks first, and a task validated against another user's
+	// branch is refused by the task route before this case can say anything about the ledger.
+	otherProject, otherBranch := value_objects.NewUUIDv4(), value_objects.NewUUIDv4()
+	ledgerExec(t, sm, `INSERT INTO projects (id,name,description,created_at,updated_at,user_id,status,metadata)
+		VALUES ($1::uuid,'ledger other project','',now(),now(),$2,'active','{}')`, otherProject, otherUser)
+	ledgerExec(t, sm, `INSERT INTO project_git_branchs (id, project_id, name, description, created_at, updated_at, priority, status, metadata, task_count, completed_task_count, user_id)
+		VALUES ($1::uuid,$2::uuid,'ledger other branch','',now(),now(),'medium','todo','{}',0,0,$3)`,
+		otherBranch, otherProject, otherUser)
+	code, foreign, body := taskCreate(t, app, otherToken, "ledger subtask other user task", otherBranch)
+	if code != http.StatusOK || foreign == "" {
+		t.Fatalf("the other user's task: POST /api/v2/tasks/ = %d, id = %q: %s", code, foreign, body)
+	}
+
+	mine := ledgerPgSubtask(t, sm, user, task, "this task's subtask")
+	stranger := ledgerPgSubtask(t, sm, otherUser, foreign, "another user's subtask")
+	elsewhere := ledgerPgSubtask(t, sm, user, sibling, "a sibling task's subtask")
+
+	acceptedID := value_objects.NewUUIDv4()
+	request, err := json.Marshal([]map[string]any{ledgerPgIntentWithSubtask(acceptedID, task, "progress", mine)})
+	if err != nil {
+		t.Fatalf("building the request: %v", err)
+	}
+	code, acceptedBody := ledgerPgPostIntents(t, app, token, string(request))
+	if code != http.StatusOK {
+		t.Fatalf("POST /api/v2/ledger/intents = %d, want 200: %s", code, acceptedBody)
+	}
+	accepted := ledgerPgDecodeAnswers(t, acceptedBody)[0]
+	if accepted.Accepted == nil || !*accepted.Accepted {
+		t.Fatalf("a subtask of THIS task must be accepted, got %s", acceptedBody)
+	}
+	if got := ledgerPgRowSubtask(t, sm, user, acceptedID); got != mine {
+		t.Fatalf("the accepted row must carry the subtask the intent named: got %q, want %q", got, mine)
+	}
+
+	for _, c := range []struct {
+		name    string
+		subtask string
+	}{
+		{"an unknown subtask", value_objects.NewUUIDv4()},
+		{"another user's subtask", stranger},
+		{"a subtask of a different task", elsewhere},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			id := value_objects.NewUUIDv4()
+			body, err := json.Marshal([]map[string]any{ledgerPgIntentWithSubtask(id, task, "progress", c.subtask)})
+			if err != nil {
+				t.Fatalf("building the request: %v", err)
+			}
+			rows := ledgerPgRowCount(t, sm, user)
+			code, refusedBody := ledgerPgPostIntents(t, app, token, string(body))
+			if code != http.StatusOK {
+				t.Fatalf("POST /api/v2/ledger/intents = %d, want 200 (a refusal is a per-item answer): %s", code, refusedBody)
+			}
+			answer := ledgerPgDecodeAnswers(t, refusedBody)[0]
+			if answer.Rejected == nil || !*answer.Rejected {
+				t.Fatalf("a subtask that is not this task's own must be refused, got %s", refusedBody)
+			}
+			if answer.Reason == nil || *answer.Reason != "unknown_subtask" {
+				t.Fatalf("the refusal must be unknown_subtask, got %s", refusedBody)
+			}
+			if answer.UserSeq != nil || answer.Seq != nil {
+				t.Fatalf("a refused item must not carry sequence numbers, got %s", refusedBody)
+			}
+			if after := ledgerPgRowCount(t, sm, user); after != rows {
+				t.Fatalf("a refused item must write no row: %d -> %d", rows, after)
+			}
+			t.Logf("OBSERVED %s -> %s", c.name, refusedBody)
+		})
+	}
+	t.Logf("OBSERVED the accepted subtask: %s", acceptedBody)
+}
+
+// TestLedgerIntentsRefusesABodyThatIsNotAList pins the mount's own guard: `null` and `[]` decode into
+// the same nil slice, so the route answered 200 [] for a body that is not a list at all while its
+// comment claimed the 422 it already answers for `{}`. The body is decoded into a POINTER now, nil
+// only for `null`, and what the route accepts is otherwise unchanged: an empty list is still a list.
+func TestLedgerIntentsRefusesABodyThatIsNotAList(t *testing.T) {
+	app, _ := evidenceApp(t)
+	token, _ := evidenceUser(t, ledgerPgSubjectC)
+
+	for _, c := range []struct {
+		name string
+		body string
+		want int
+	}{
+		{"a literal null is not a list", "null", http.StatusUnprocessableEntity},
+		{"an object is not a list", "{}", http.StatusUnprocessableEntity},
+		{"malformed JSON is not a list", "[", http.StatusUnprocessableEntity},
+		{"an empty list is a list", "[]", http.StatusOK},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			code, body := ledgerPgPostIntents(t, app, token, c.body)
+			if code != c.want {
+				t.Fatalf("POST /api/v2/ledger/intents body %s = %d, want %d: %s", c.body, code, c.want, body)
+			}
+			if c.want == http.StatusOK && strings.TrimSpace(body) != "[]" {
+				t.Fatalf("an empty list must answer the empty list of answers, got %s", body)
+			}
+			t.Logf("OBSERVED body %s -> %d %s", c.body, code, strings.TrimSpace(body))
+		})
+	}
+}

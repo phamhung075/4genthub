@@ -164,6 +164,12 @@ const (
 	ReasonUnknownTask = "unknown_task"
 	// ReasonInvalidSubtaskID: subtask_id was sent and is not a UUID.
 	ReasonInvalidSubtaskID = "invalid_subtask_id"
+	// ReasonUnknownSubtask: subtask_id was sent as a UUID and does not name a subtask OF THIS TASK
+	// that this user can see. It covers three shapes with ONE token - a subtask that does not exist,
+	// another user's subtask, and a subtask of a different task - for the reason ReasonUnknownTask
+	// covers a malformed id and another user's task with one: a token that told them apart would
+	// answer whether a subtask exists to a user who cannot see it.
+	ReasonUnknownSubtask = "unknown_subtask"
 	// ReasonInvalidPayload: payload was sent and is not an object. The ledger's payload column is
 	// written from a map, so storing something else would store nothing and call it success.
 	ReasonInvalidPayload = "invalid_payload"

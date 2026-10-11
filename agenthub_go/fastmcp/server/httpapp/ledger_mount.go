@@ -80,9 +80,15 @@ func ledgerQueryInt(w http.ResponseWriter, r *http.Request, key string, def int6
 // (that helper reads one object). A body that is not a list is refused whole with FastAPI's 422 for
 // a body of the wrong shape; an ITEM that is not an object is NOT refused here, because the route
 // answers per item and dropping one silently would lose the client's work.
+//
+// A LITERAL null IS NOT A LIST, and it is told apart from an empty one by decoding into a POINTER:
+// json.Decoder leaves a nil slice for `null` and for `[]` alike, so the pointer is nil only when the
+// body was null, while `[]` gives a pointer to an empty slice. Answering 200 [] for `null` was the
+// shape this route had until 2026-10-11 - a body that is not a list read as a list with nothing in it
+// - and it is the shape this comment used to claim it did not have.
 func ledgerIntentsBody(w http.ResponseWriter, r *http.Request) ([]ledgerentities.Intent, bool) {
-	var items []json.RawMessage
-	if err := json.NewDecoder(r.Body).Decode(&items); err != nil {
+	var items *[]json.RawMessage
+	if err := json.NewDecoder(r.Body).Decode(&items); err != nil || items == nil {
 		b, _ := json.Marshal(map[string]any{"detail": []map[string]any{{
 			"type": "list_type", "loc": []string{"body"},
 			"msg": "Input should be a valid list", "input": nil,
@@ -92,8 +98,8 @@ func ledgerIntentsBody(w http.ResponseWriter, r *http.Request) ([]ledgerentities
 		_, _ = w.Write(b)
 		return nil, false
 	}
-	out := make([]ledgerentities.Intent, 0, len(items))
-	for _, raw := range items {
+	out := make([]ledgerentities.Intent, 0, len(*items))
+	for _, raw := range *items {
 		out = append(out, ledgerIntentFromJSON(raw))
 	}
 	return out, true

@@ -459,3 +459,26 @@ func (r *TaskEventRepository) TaskVisible(ctx context.Context, taskID string) (b
 	}
 	return visible, nil
 }
+
+// SubtaskInTask reports whether the subtask exists, belongs to this repository's user, AND belongs to
+// taskID.
+//
+// IT IS THE SAME ARGUMENT ASKED ONE LEVEL DOWN. task_events references tasks(id) and nothing else, so
+// a subtask_id naming ANOTHER USER'S subtask - or a subtask of a different task - satisfies every
+// constraint the table has and lands in this user's ledger beside work the user cannot see. ONE query
+// answers all three questions, because the single refusal token the service answers with must not
+// tell them apart: a token that distinguished "no such subtask" from "not yours" would answer whether
+// a subtask exists to a user who cannot see it.
+func (r *TaskEventRepository) SubtaskInTask(ctx context.Context, taskID, subtaskID string) (bool, error) {
+	found := false
+	err := r.sessions.WithSession(ctx, func(ctx context.Context, s database.DBTX) error {
+		return s.QueryRowContext(ctx,
+			`SELECT EXISTS(SELECT 1 FROM subtasks
+				WHERE "user_id" = $1 AND "task_id" = $2::uuid AND "id" = $3::uuid)`,
+			r.userID, taskID, subtaskID).Scan(&found)
+	})
+	if err != nil {
+		return false, err
+	}
+	return found, nil
+}

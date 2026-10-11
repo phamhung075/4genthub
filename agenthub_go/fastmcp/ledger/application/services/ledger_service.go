@@ -60,6 +60,11 @@ type Ledger interface {
 	// TaskVisible reports whether the task exists AND belongs to this repository's user. A ledger
 	// entry is never appended to a task its writer cannot see.
 	TaskVisible(ctx context.Context, taskID string) (bool, error)
+	// SubtaskInTask reports whether the subtask exists, belongs to this repository's user, AND
+	// belongs to taskID. An intent may name a subtask, and task_events' only foreign key is on
+	// task_id, so this is the check that keeps a row from attaching to another user's subtask - or
+	// to a subtask of a different task. The three questions are one query and one refusal.
+	SubtaskInTask(ctx context.Context, taskID, subtaskID string) (bool, error)
 	// AppendInTx writes one entry inside the caller's transaction and returns it with the sequences
 	// the database assigned.
 	AppendInTx(ctx context.Context, in taskentities.AppendTaskEvent) (*taskentities.TaskEvent, error)
@@ -187,6 +192,19 @@ func (s *Service) submitOne(ctx context.Context, actorKind taskentities.TaskEven
 				return nil
 			}
 			subtaskID = canonical
+			// THE REFERENCE IS CHECKED BESIDE THE TASK, for the reason TaskVisible's own comment
+			// gives: the foreign key on task_id cannot reach a subtask, so a subtask_id naming
+			// another user's row - or another task's - would satisfy every constraint the table has
+			// and land in this user's ledger. The check runs BEFORE the decision reads, so a refused
+			// item costs no sequence and is not remembered (a refusal writes nothing).
+			inTask, err := s.ledger.SubtaskInTask(ctx, taskID, subtaskID)
+			if err != nil {
+				return err
+			}
+			if !inTask {
+				answer = ledgerentities.Refusal(ledgerentities.ReasonUnknownSubtask, 0)
+				return nil
+			}
 		}
 
 		var payload map[string]any

@@ -2,6 +2,34 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-11 - the ledger's subtask check and the body that is not a list
+
+- ADDED two cases in an EXISTING file, `agenthub_go/fastmcp/server/httpapp/ledger_pg_test.go`:
+  `TestLedgerIntentsRefusesASubtaskThatIsNotThisTasksOwn` and `TestLedgerIntentsRefusesABodyThatIsNotAList`,
+  with three fixtures beside them (`ledgerPgSubtask`, `ledgerPgIntentWithSubtask`, `ledgerPgRowSubtask`).
+- THE SUBTASK CASE IS FOUR SHAPES IN ONE, because the refusal token must not tell them apart: this task's
+  own subtask is ACCEPTED and the ROW is read back to prove it carries the id the intent named (the
+  falsification - a route that refused every `subtask_id` would fail there), then an unknown id, another
+  user's subtask and a subtask of a different task are each refused with `unknown_subtask`, carry no
+  sequence numbers, and write no row.
+- THE FIXTURE HAS A TRAP IN IT, measured rather than assumed: the second user needs a project and a branch
+  of their OWN. The shared `evidenceSeedBranch` writes its two rows under FIXED ids for whichever user asks
+  first, so the first version of this case died on `POST /api/v2/tasks/ = 500 ... AttributeError:
+  'ProjectManagementService' object has no attribute 'get_git_branch_by_id'` - a task validated against
+  another user's branch is refused by the TASK route before the ledger can say anything.
+- THE BODY CASE IS A TABLE OF FOUR: `null`, `{}` and a truncated `[` are 422, and `[]` is `200 []`. `null`
+  answering `200 []` is what the fix removes, and that line is why the case exists.
+- SEEN RED, THEN GREEN, in the same session: with the check and the pointer decode put back to their
+  pre-fix shape, the two cases fail with `a subtask that is not this task's own must be refused, got
+  [{"accepted":true,"user_seq":2,"seq":2}]` (and `:3`, `:4`) and with
+  `POST /api/v2/ledger/intents body null = 200, want 422: []`; restored, both pass and print the answers
+  they assert on.
+- RUN: `AGENTHUB_TEST_PG_URL=postgresql://agenthub_user@127.0.0.1:55441/postgres
+  go test -count=1 ./fastmcp/server/httpapp/ -run 'TestLedger'` over the same package. The database cases
+  RAN rather than skipping - `TestLedgerIntentsRecordsOfflineFactsUnchangedInArrivalOrder` 4.31s,
+  `TestLedgerIntentsRefusesASubtaskThatIsNotThisTasksOwn` 1.53s, `TestLedgerIntentsRefusesABodyThatIsNotAList`
+  3.38s - and a skip would have printed `SKIPPED` rather than these times.
+
 ## 2026-10-11 - the frontend gets a browser-level check, and the deployed app passes it
 
 - ADDED, all NEW: `agenthub-frontend/e2e/account.ts` (the shared test account read INSIDE the process, so no value can reach a log, a title, a trace or a commit), `agenthub-frontend/e2e/smoke.spec.ts` (one case: sign in, dashboard, Topology, Sessions, sign out) and `agenthub-frontend/playwright.config.ts` (`testDir ./e2e`, `E2E_BASE_URL` with the deployed app as default, one worker, no retries, trace and screenshot on failure only).
