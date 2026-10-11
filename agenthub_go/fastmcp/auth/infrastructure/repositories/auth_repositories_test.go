@@ -10,12 +10,19 @@ import (
 	"time"
 
 	authEntities "agenthub/fastmcp/auth/domain/entities"
+	"agenthub/fastmcp/session_stream/testdb"
 	tmentities "agenthub/fastmcp/task_management/domain/entities"
 	"agenthub/fastmcp/task_management/infrastructure/database"
 )
 
 // newAuthRepoEnv creates a throwaway database with all tables (auth models included via
 // their init registration) and returns a session manager over it.
+//
+// The bring-up is testdb.CreateSchema, not a bare cfg.CreateTables: the gated carry step
+// 0003_progress_history_carry_and_drop refuses on a database whose ledger holds no 0001_baseline
+// row, and createAll populates the catalogue before the runner runs, so a fresh fixture database
+// skips the frozen baseline without recording it and the bare boot refuses with P0001.
+// CreateSchema performs the operator's mark and boots again.
 func newAuthRepoEnv(t *testing.T) *database.SessionManager {
 	t.Helper()
 	admin := os.Getenv("AGENTHUB_TEST_PG_URL")
@@ -47,9 +54,7 @@ func newAuthRepoEnv(t *testing.T) *database.SessionManager {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := cfg.CreateTables(context.Background()); err != nil {
-		t.Fatal(err)
-	}
+	testdb.CreateSchema(t, cfg)
 	database.SetupTimestampEvents()
 	t.Cleanup(func() {
 		database.ResetInstance()

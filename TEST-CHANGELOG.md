@@ -2,6 +2,39 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-11 - the last three fixture bring-ups adopt CreateSchema, and a database-free guard holds the next one
+
+- FIXED the 12 remaining `SQLSTATE P0001` reds in the three bring-ups the `92d3e825` repair did not reach: each
+  still booted a fresh throwaway database with a bare `cfg.CreateTables`, so nothing recorded the operator's
+  `0001_baseline` mark and the gated carry step `0003_progress_history_carry_and_drop` refused.
+  - `newAuthRepoEnv` (`fastmcp/auth/infrastructure/repositories/auth_repositories_test.go`)
+  - `newTeamTestEnv` (`fastmcp/team_management/infrastructure/repositories/orm/team_repository_test.go`)
+  - `newFastmcpTestDatabase` (`fastmcp/database_init_integration_test.go`), which now brings the schema up itself
+    and returns the DSN: the boot used to sit in the case body, so the fixture had no `cfg` to hand a helper. The
+    pool it opens is closed by a cleanup registered after the drop's, so cleanups (last in, first out) close it
+    before the database is dropped.
+- ADDED the rule as a check rather than a habit:
+  `agenthub_go/fastmcp/task_management/infrastructure/database/create_tables_guard_test.go`, a DATABASE-FREE source
+  scan - no cluster, no DSN - that fails when a `_test.go` calls `CreateTables` outside an allowlist keyed by FILE
+  and ENCLOSING FUNCTION, and that fails on a STALE allowlist entry and on a scan that finds nothing: silence is
+  the defect, because the failure it catches is invisible in exactly the default run. Its walk skips
+  dot-directories (3120 `_test.go` in the module, 2631 of them under `.gomodcache/.gocache/.gotmp/.claude`) and
+  reports what it walked: **490 real files, 4 naming CreateTables, 3 call sites**.
+- LEFT ALONE the three deliberate sites, each carrying its reason in the allowlist: the second in-process boot
+  (`migration_idempotence_test.go`), the second call after `CreateSchema` (`integration_test.go`), and the case
+  that MEASURES the refusal (`progress_history_drop_integration_test.go`).
+- MEASURED, on the cluster `AGENTHUB_TEST_PG_URL` names: the three fixed packages -> **ok 27.071s / ok 13.704s /
+  ok 10.575s**, the 12 reds gone; the DB-gated `./...` over `agenthub_go` -> **141 packages `ok`, zero FAIL, zero
+  `P0001`, zero build failures**, with the three inside it at ok 44.882s / ok 8.787s / ok 7.687s; `gofmt -l` empty
+  over the tracked set; `go build ./...` rc 0; `go vet ./...` rc 0.
+- SHOWN FAILING three times, with the output, then green again: an unlisted call ->
+  `zz_guard_falsify_test.go:13 in falsifyBareBoot calls CreateTables directly` FAIL; a stale entry ->
+  `createTablesSites still lists TestRealPostgresCreateTablesAndSessionsRENAMED ... but no CreateTables call is
+  there any more` FAIL; an empty corpus -> `walked 0 _test.go file(s)` FAIL. Every temporary change was removed in
+  the same turn it was made.
+- NOT CHANGED, named: the `./...` package count moved 142 -> 141 because the guard's new home is an existing test
+  package - `fastmcp/session_stream/testdb` now reports `[no test files]` instead of `ok`. No case was deleted.
+
 ## 2026-10-11 - the four fixture bring-ups perform the operator's baseline mark
 
 - FIXED the 126 `SQLSTATE P0001` failures at `92d3e825`: the gated carry step
