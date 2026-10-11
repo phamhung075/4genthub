@@ -365,6 +365,20 @@ export const apiReference: ApiReference = {
     },
     {
       "method": "GET",
+      "path": "/api/v2/ledger",
+      "pathParams": [],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "POST",
+      "path": "/api/v2/ledger/intents",
+      "pathParams": [],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "GET",
       "path": "/api/v2/openrig/feedback",
       "pathParams": [],
       "handler": "",
