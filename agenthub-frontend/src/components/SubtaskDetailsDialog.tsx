@@ -331,7 +331,7 @@ export const SubtaskDetailsDialog: React.FC<SubtaskDetailsDialogProps> = ({
                       </div>
                     )}
                     {/* 4a0a8c7a dropped the RAW progress_history and progress_count from the
-                        payloads, and NEXT_GEN.md's O1c item (agenthub_go/NEXT_GEN.md:428) turns
+                        payloads, and the O1c box in agenthub_go/NEXT_GEN.md turns
                         progress into events, so neither field comes back. What this block
                         renders is the JOINED string, `details`, and that re-expose is in the
                         release batch (gate APPROVE on `8e4786dd`, go-dev's branch) with only the
