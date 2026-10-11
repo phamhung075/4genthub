@@ -240,7 +240,7 @@ func TestCompleteSubtaskRetryClassification(t *testing.T) {
 		},
 	}
 	uc := NewCompleteSubtaskUseCase(retryable, nil)
-	if _, err := uc.Execute(context.Background(), "123", "123.001", nil, nil, nil, nil); err == nil {
+	if _, err := uc.Execute(context.Background(), "123", "123.001", nil, nil, nil, nil, nil); err == nil {
 		t.Fatalf("expected retryable lookup error")
 	}
 	if retryable.findByIDCalls != 3 {
@@ -253,7 +253,7 @@ func TestCompleteSubtaskRetryClassification(t *testing.T) {
 		},
 	}
 	uc = NewCompleteSubtaskUseCase(nonRetryable, nil)
-	if _, err := uc.Execute(context.Background(), "123", "123.001", nil, nil, nil, nil); err == nil {
+	if _, err := uc.Execute(context.Background(), "123", "123.001", nil, nil, nil, nil, nil); err == nil {
 		t.Fatalf("expected non-retryable lookup error")
 	}
 	if nonRetryable.findByIDCalls != 1 {
@@ -275,7 +275,7 @@ func TestCompleteSubtaskNotFound(t *testing.T) {
 		},
 	}
 	uc := NewCompleteSubtaskUseCase(taskRepo, subtaskRepo)
-	_, err := uc.Execute(context.Background(), "123", "123.001", nil, nil, nil, nil)
+	_, err := uc.Execute(context.Background(), "123", "123.001", nil, nil, nil, nil, nil)
 	if err == nil {
 		t.Fatalf("expected subtask-not-found error")
 	}
@@ -306,7 +306,7 @@ func TestCompleteSubtaskParentProgress(t *testing.T) {
 	}
 
 	uc := NewCompleteSubtaskUseCase(taskRepo, subtaskRepo)
-	result, err := uc.Execute(context.Background(), parent, firstSubtask, nil, nil, nil, nil)
+	result, err := uc.Execute(context.Background(), parent, firstSubtask, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatalf("Execute returned error: %v", err)
 	}

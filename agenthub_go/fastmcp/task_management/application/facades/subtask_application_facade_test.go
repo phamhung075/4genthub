@@ -185,3 +185,89 @@ func TestHandleManageSubtaskUpdateHandsTheNoteToTheWiredLedger(t *testing.T) {
 		t.Fatalf("note content = %q, want %q", ledger.note.Content, want)
 	}
 }
+
+// zpCompleteRepo serves one task and implements the atomic increment the complete path type-asserts;
+// the update-path fake leaves the wide repository interface embedded, and this path calls that one
+// method.
+type zpCompleteRepo struct {
+	repositories.TaskRepository
+	task *entities.Task
+}
+
+func (r *zpCompleteRepo) FindByID(context.Context, value_objects.TaskId) (*entities.Task, error) {
+	return r.task, nil
+}
+
+func (r *zpCompleteRepo) Save(context.Context, *entities.Task) (*entities.Task, error) {
+	return r.task, nil
+}
+
+func (r *zpCompleteRepo) AtomicIncrementCompletedSubtasks(context.Context, string) (bool, error) {
+	return true, nil
+}
+
+// TestHandleManageSubtaskCompleteHandsTheNoteToTheWiredLedger is the complete-action twin of the update
+// case above. The facade builds BOTH note-writing use cases before the composition root calls
+// WithLedger, so a facade that wired only the one it was written for - the shape the gate found - would
+// drop every completion note silently, with the completion still reporting success.
+func TestHandleManageSubtaskCompleteHandsTheNoteToTheWiredLedger(t *testing.T) {
+	const owner = "u-owner"
+	id, err := value_objects.NewTaskId("task-1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	status, err := value_objects.NewTaskStatus("todo")
+	if err != nil {
+		t.Fatal(err)
+	}
+	priority, err := value_objects.NewPriority("medium")
+	if err != nil {
+		t.Fatal(err)
+	}
+	branch, ownerPtr := "branch-1", owner
+	task, err := entities.NewTask(entities.Task{
+		ID: &id, Title: "parent", Description: "the parent", Status: &status, Priority: &priority,
+		GitBranchID: &branch, UserID: &ownerPtr,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	subID := value_objects.GenerateSubtaskId(id, nil)
+	sub, err := entities.CreateSubtask(subID, "child", "", id, nil, nil, entities.SubtaskOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	subRepo := &zpSubtaskRepo{sub: sub}
+	ledger := &zpNoteLedger{}
+	facade := NewSubtaskApplicationFacade(&zpCompleteRepo{task: task}, subRepo, nil, nil, &ownerPtr).
+		WithLedger(use_cases.StatusLedger{Tx: passThroughTx{}, Ledger: ledger, Events: ledger})
+
+	const note = "final review completed, structure documented"
+	data := entities.NewOrderedMap[any]()
+	data.Set("subtask_id", sub.ID.Value)
+	data.Set("completion_summary", "implemented the endpoint with tests and documented it")
+	data.Set("progress_notes", note)
+
+	if _, err := facade.HandleManageSubtask(context.Background(), "complete", task.ID.Value, data, nil, true,
+		nil, nil, &ownerPtr); err != nil {
+		t.Fatalf("HandleManageSubtask(complete): %v", err)
+	}
+	if subRepo.saves != 1 {
+		t.Fatalf("the subtask was saved %d times, want 1", subRepo.saves)
+	}
+	if ledger.writes != 1 {
+		t.Fatalf("ledger writes = %d, want 1: the facade was wired with the ledger and the completion note reached no reader", ledger.writes)
+	}
+	if ledger.taskID != task.ID.Value {
+		t.Fatalf("note recorded against %q, want the parent task %q: task_events.task_id is the parent's",
+			ledger.taskID, task.ID.Value)
+	}
+	if ledger.subtaskID != sub.ID.Value {
+		t.Fatalf("note names subtask %q, want %q: subtask_id is what tells a task's own notes from its subtask's",
+			ledger.subtaskID, sub.ID.Value)
+	}
+	if want := "=== Progress 1 ===\n" + note; ledger.note.Content != want {
+		t.Fatalf("note content = %q, want %q", ledger.note.Content, want)
+	}
+}

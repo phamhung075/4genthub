@@ -121,13 +121,18 @@ func (f *SubtaskApplicationFacade) WithProgressStore(store services.TaskProgress
 	return f
 }
 
-// WithLedger wires the task-event ledger a subtask progress note is recorded in, on the one use case
-// that writes notes: update_subtask. A subtask note belongs to the PARENT task's ledger, so this is the
-// same seam the task-facing use cases take, built for the same user by the composition root.
+// WithLedger wires the task-event ledger a subtask progress note is recorded in, on the two use cases
+// that write notes: update_subtask and complete_subtask. A subtask note belongs to the PARENT task's
+// ledger, so this is the same seam the task-facing use cases take, built for the same user by the
+// composition root. Wiring only one of the two is how the other dropped its note silently, so both are
+// wired here - and again where either is built on the fly.
 func (f *SubtaskApplicationFacade) WithLedger(l usecases.StatusLedger) *SubtaskApplicationFacade {
 	f.Ledger = l
 	if f.updateSubtaskUseCase != nil {
 		f.updateSubtaskUseCase.WithLedger(l)
+	}
+	if f.completeSubtaskUseCase != nil {
+		f.completeSubtaskUseCase.WithLedger(l)
 	}
 	return f
 }
@@ -488,12 +493,13 @@ func (f *SubtaskApplicationFacade) handleCompleteSubtask(ctx context.Context, ta
 	completionSummary := omStringPtr(subtaskData, "completion_summary")
 	insightsFound := omAnySlice(subtaskData, "insights_found")
 	testingNotes := omStringPtr(subtaskData, "testing_notes")
+	progressNotes := omStringPtr(subtaskData, "progress_notes")
 
 	completeUseCase := f.completeSubtaskUseCase
 	if completeUseCase == nil {
-		completeUseCase = usecases.NewCompleteSubtaskUseCase(taskRepository, subtaskRepository)
+		completeUseCase = usecases.NewCompleteSubtaskUseCase(taskRepository, subtaskRepository).WithLedger(f.Ledger)
 	}
-	result, err := completeUseCase.Execute(ctx, taskID, actualSubtaskID, userID, completionSummary, insightsFound, testingNotes)
+	result, err := completeUseCase.Execute(ctx, taskID, actualSubtaskID, userID, completionSummary, insightsFound, testingNotes, progressNotes)
 	if err != nil {
 		return nil, err
 	}
