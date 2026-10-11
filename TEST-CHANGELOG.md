@@ -2,6 +2,25 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-11 - the API token's own usage counters, seen red before the wiring
+
+- ADDED one case in a NEW file, `agenthub_go/fastmcp/server/httpapp/api_token_usage_pg_test.go`:
+  `TestAuthenticatedAPITokenRequestAdvancesItsUsageCounters`, with its read-back helper `apiTokenUsageRow`.
+- IT IS A DATABASE CASE ON PURPOSE: both claims are claims about a ROW - `usage_count` and `last_used_at`
+  on the token that was just used - and a fake repository would only write the hypothesis back to its
+  author. It skips loudly without `AGENTHUB_TEST_PG_URL`, like its neighbours in that package.
+- SEEN RED, THEN GREEN: before the recorder was wired, the command below failed with
+  `an authenticated API-token request must advance the row's counters: before usage_count=0 last_used_at=<nil>, after usage_count=0 last_used_at=<nil>`. The request itself answered **200**, so the failure
+  isolates the missing write rather than a refused token; after `httpapp.NewApp` wires
+  `auth.APITokenUsageRecorder` to `TokenRepository.UpdateTokenUsage`, the same case passes.
+- THE TOKEN COMES FROM THE REAL PATH: the case signs the JWT with `services.JWTService.GenerateToken`
+  (`type api_token`, `jti` = the row id) and inserts the row through
+  `infrarepos.TokenRepository.CreateToken` - the pair `TokenApplicationFacade.CreateAPIToken` performs -
+  then drives the real `POST /mcp` route rather than calling the validator directly.
+- RUN: `AGENTHUB_TEST_PG_URL=postgresql://agenthub_user@127.0.0.1:55451/postgres go test -count=1 -run TestAuthenticatedAPITokenRequestAdvancesItsUsageCounters ./fastmcp/server/httpapp/` (1.52s red, 1.56s
+  green), then `go test -count=1 ./fastmcp/auth/...` and the whole `./fastmcp/server/httpapp/` package with
+  the same URL set so the database cases run instead of skipping.
+
 ## 2026-10-11 - the ledger's subtask check and the body that is not a list
 
 - ADDED two cases in an EXISTING file, `agenthub_go/fastmcp/server/httpapp/ledger_pg_test.go`:
