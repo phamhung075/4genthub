@@ -4825,3 +4825,47 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
 - DELIBERATELY NOT ASSERTED, and recorded rather than quietly dropped: `2c4582de`'s "Nothing was re-recorded" is
   retired (board `b668b4f6` item 2) because it asserts what the program did NOT do, which no test of the reader
   can hold; the measurable halves of the sentence were already stated beside it.
+
+## 2026-10-11 — P4's ledger-tip nudge: four new cases, two on rows and two on the socket
+
+- ADDED, `agenthub_go/fastmcp/server/httpapp/ws_rigd_test.go` (no database):
+  `TestConnectorLedgerTipGoesOnlyToASocketThatAdvertisedAndWasEchoed` opens THREE sockets for one user - one that
+  advertises `ledger` and is echoed it, one that advertises only `ingest`, and one that advertises `commands`
+  (which this server does not serve, so `ready` cannot echo it) - and proves the frame reaches the first, carries
+  `user_seq` and no `events`/`cursor`/`after`/`tip`, and that the two silent sockets receive nothing at all, not
+  even an error, inside 700ms. `TestConnectorLedgerTipFollowsTheLastHandshake` proves a re-sent hello without the
+  capability stops the frame on the SAME socket that just received one. `TestLedgerTipIsAServerFrameAndNotAnInput`
+  proves a client that sends `ledger_tip` is answered `unknown_type` with `fatal: false` and keeps its socket -
+  the socket-side evidence for P4's third clause, "no code path treats the frame as a source of truth".
+- CHANGED, one existing case re-pinned to a behaviour that legitimately moved:
+  `TestConnectorReadyReportsProtocolHeartbeatAndEchoedCapabilities` now expects
+  `ready.capabilities = [ingest safeguards ledger]` (was `[ingest safeguards]`). Its own claim - the server never
+  echoes a capability it does not serve - is untouched, and `commands` remains the counter-example in the same
+  case that keeps it honest.
+- ADDED, `agenthub_go/fastmcp/server/httpapp/ledger_pg_test.go` (PostgreSQL; skips loudly without
+  `AGENTHUB_TEST_PG_URL`, and a skip is not a pass). `TestLedgerTipArrivesAfterADecisionCommitsAndTheNextPullAdvancesTheCursor`
+  opens a ledger-capable connector socket for the subject the request authenticates as, asserts NOTHING is pushed
+  before the commit, drives a real decision through `POST /api/v2/ledger/intents`, reads the frame after it and
+  requires the number it carries to be the `user_seq` the commit took, then pulls `GET /api/v2/ledger?after=<cursor>`
+  and finds that entry with the tip moved past the cursor.
+  `TestAClientWithNoSocketStillConvergesByPulling` makes the same commit with NO socket open and proves the pull
+  alone returns exactly the committed entry - P4's first clause, which the frame is subordinate to.
+- RED FIRST, quoted, one mutation per clause on the database-backed path:
+  with the emission removed from `ledgerIntentsWriterAdapter.SubmitIntents`, the case fails
+  `ledger_pg_test.go:865: read frame header: read tcp 127.0.0.1:45360->127.0.0.1:46463: i/o timeout`;
+  with `ledger` dropped from `wsEnabledCapabilities`, the echo case fails with
+  `ws_rigd_test.go:173: ready.capabilities = [ingest safeguards], want [ingest safeguards ledger]` and BOTH frame
+  cases time out at `ws_rigd_test.go:689` and `:723`. Both mutations restored before the runs below.
+- Result, this seat's own runs with `AGENTHUB_TEST_PG_URL` on the 55995 cluster: `gofmt -l fastmcp/server/httpapp/`
+  prints nothing; `go build ./...` rc 0; `go vet` on the three touched packages rc 0; the frame cases
+  `go test -count=1 -run 'LedgerTip|ConnectorReadyReportsProtocolHeartbeat|ConnectorPingIsAnswered' -v ./fastmcp/server/httpapp/`
+  -> every case PASS, `ok 2.161s`; the two PG cases verbosely -> `--- PASS` 2.60s and 1.49s, each logging what it
+  observed (`ledger_tip user_seq=1`, then a pull of count 1 with tip 1); the touched packages
+  `go test -count=1 ./fastmcp/server/httpapp/ ./fastmcp/ledger/... ./fastmcp/server/routes/...`
+  -> `ok agenthub/fastmcp/server/httpapp 133.422s`, `ok agenthub/fastmcp/ledger/domain/entities 0.002s`,
+  `ok agenthub/fastmcp/server/routes 0.007s`.
+- NOT ASSERTED, and named rather than quietly dropped: the frame's ARRIVAL ORDER against a concurrent commit (the
+  payload is the tip this batch took, and a higher tip from a parallel writer costs the client one extra pull,
+  which no test can pin deterministically), and the write-deadline path itself
+  (`SendTextWithin`'s deadline is exercised only through the socket's own read failures; a test that made a peer
+  stop reading would measure the kernel's buffers rather than the deadline).

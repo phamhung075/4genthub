@@ -168,9 +168,11 @@ func TestConnectorReadyReportsProtocolHeartbeatAndEchoedCapabilities(t *testing.
 		t.Errorf("ready.heartbeat_s = %v, want %d", ready["heartbeat_s"], connectorHeartbeatSeconds)
 	}
 	caps, ok := ready["capabilities"].([]any)
-	if !ok || len(caps) != 2 || caps[0] != connectorCapabilityIngest || caps[1] != connectorCapabilitySafeguards {
-		t.Errorf("ready.capabilities = %v, want [%s %s] (commands and ledger are not served here)",
-			ready["capabilities"], connectorCapabilityIngest, connectorCapabilitySafeguards)
+	if !ok || len(caps) != 3 || caps[0] != connectorCapabilityIngest ||
+		caps[1] != connectorCapabilitySafeguards || caps[2] != connectorCapabilityLedger {
+		t.Errorf("ready.capabilities = %v, want [%s %s %s] (commands is phase 2 and is not served here)",
+			ready["capabilities"], connectorCapabilityIngest, connectorCapabilitySafeguards,
+			connectorCapabilityLedger)
 	}
 
 	// A hello with no protocol at all means 1, and a client that advertises nothing is echoed
@@ -656,5 +658,111 @@ func TestSessionStateReachesTheSessionListAndIsKeptWhenAbsent(t *testing.T) {
 	otherID, _ := other["session_id"].(string)
 	if got, ok := seatStateOf(t, env, user, otherID); !ok || got != nil {
 		t.Fatalf("seat_state for a session with no report = %v (present %v), want a null value", got, ok)
+	}
+}
+
+// TestConnectorLedgerTipGoesOnlyToASocketThatAdvertisedAndWasEchoed is P4's frame rule (2.3.1): the
+// ONE server frame the connector gained belongs to the `ledger` capability, so it is written to a
+// socket whose hello advertised that name and whose ready ECHOED it - and to nobody else.
+//
+// The fan-out is driven directly so this case needs no database: the value it carries is the one the
+// ledger's writer adapter hands it after a commit, and that path is pinned against real rows in
+// ledger_pg_test.go.
+func TestConnectorLedgerTipGoesOnlyToASocketThatAdvertisedAndWasEchoed(t *testing.T) {
+	env := newStreamEnv(t, nil)
+
+	// Advertised AND echoed: this socket is told.
+	capable := env.connector(t, "user-tip")
+	capable.rigdHello(t, "rigd-capable", connectorCapabilityIngest, connectorCapabilityLedger)
+
+	// Advertised nothing, so nothing was echoed.
+	plain := env.connector(t, "user-tip")
+	plain.rigdHello(t, "rigd-plain", connectorCapabilityIngest)
+
+	// Advertised a capability this server does NOT serve (`commands` is phase 2), so ready does not
+	// echo it: naming a capability in hello is not enough on its own, which is what the echo is for.
+	unserved := env.connector(t, "user-tip")
+	unserved.rigdHello(t, "rigd-unserved", "commands")
+
+	wsNotifyLedgerTip("user-tip", 41)
+
+	tip := capable.recv()
+	if tip["type"] != connectorLedgerTipFrame {
+		t.Fatalf("the entitled socket received %v, want %s", tip, connectorLedgerTipFrame)
+	}
+	if tip["user_seq"] != float64(41) {
+		t.Errorf("ledger_tip.user_seq = %v, want 41", tip["user_seq"])
+	}
+	// The frame is the tip and nothing else. A page, a cursor or an `after` on it would be a second
+	// place from which a client could read the ledger, and the pull is the one path (P4, 2.8).
+	for _, key := range []string{"events", "cursor", "after", "tip"} {
+		if _, present := tip[key]; present {
+			t.Errorf("ledger_tip carries %q; it carries its kind and user_seq, nothing else: %v", key, tip)
+		}
+	}
+
+	// Neither socket that was not entitled hears anything - not the frame, and not an error either:
+	// the server simply has no such frame for them.
+	for name, c := range map[string]*streamConn{"no capability": plain, "an unserved capability": unserved} {
+		_ = c.conn.SetReadDeadline(time.Now().Add(700 * time.Millisecond))
+		if opcode, payload, err := wsTryReadFrame(c.br); err == nil {
+			t.Fatalf("the socket with %s received opcode=%d payload=%q, want nothing", name, opcode, payload)
+		}
+	}
+}
+
+// TestConnectorLedgerTipFollowsTheLastHandshake: a connector may re-send hello, and the gate belongs
+// to the LAST handshake (2.3.1). A socket that drops the capability is written to no more, even
+// though the same socket took the frame a moment earlier.
+func TestConnectorLedgerTipFollowsTheLastHandshake(t *testing.T) {
+	env := newStreamEnv(t, nil)
+	c := env.connector(t, "user-tip")
+	c.rigdHello(t, "rigd-again", connectorCapabilityLedger)
+
+	wsNotifyLedgerTip("user-tip", 1)
+	if got := c.recv(); got["type"] != connectorLedgerTipFrame || got["user_seq"] != float64(1) {
+		t.Fatalf("the entitled socket received %v, want ledger_tip user_seq=1", got)
+	}
+
+	// The same connector_id re-advertises without the capability: this is the second handshake of one
+	// socket, which the handler serves rather than refusing.
+	c.send(map[string]any{
+		"type": "hello", "connector_id": "rigd-again", "protocol": 1,
+		"capabilities": []any{connectorCapabilityIngest},
+	})
+	if ready := c.recv(); ready["type"] != "ready" {
+		t.Fatalf("the re-sent hello answered %v", ready)
+	}
+
+	wsNotifyLedgerTip("user-tip", 2)
+	_ = c.conn.SetReadDeadline(time.Now().Add(700 * time.Millisecond))
+	if opcode, payload, err := wsTryReadFrame(c.br); err == nil {
+		t.Fatalf("a socket that dropped the capability received opcode=%d payload=%q, want nothing", opcode, payload)
+	}
+}
+
+// TestLedgerTipIsAServerFrameAndNotAnInput is P4's third check read from the socket's side: NO code
+// path treats the frame as a source of truth. `ledger_tip` is a server->client kind, so a client that
+// sent one is answered like any unknown kind (2.3.3) and keeps its socket - nothing reads it and
+// nothing acts on it.
+func TestLedgerTipIsAServerFrameAndNotAnInput(t *testing.T) {
+	env := newStreamEnv(t, nil)
+	c := env.connector(t, "user-tip")
+	c.rigdHello(t, "rigd-input", connectorCapabilityLedger)
+
+	c.send(map[string]any{"type": connectorLedgerTipFrame, "user_seq": 99})
+	refused := c.recv()
+	if refused["type"] != "error" || refused["code"] != "unknown_type" {
+		t.Fatalf("a client-sent ledger_tip answered %v, want unknown_type", refused)
+	}
+	if refused["fatal"] != false {
+		t.Errorf("fatal = %v, want false: the socket stays served (2.3.3)", refused["fatal"])
+	}
+
+	// Still served, and still entitled: the refusal was about the frame the client sent, not about
+	// the connection.
+	c.send(map[string]any{"type": "ping", "t": 7})
+	if pong := c.recv(); pong["type"] != "pong" || pong["t"] != float64(7) {
+		t.Fatalf("after the refusal the socket answered %v, want pong t=7", pong)
 	}
 }

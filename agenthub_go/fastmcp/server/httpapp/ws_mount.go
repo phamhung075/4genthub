@@ -311,6 +311,9 @@ func handleConnector(sessions *database.SessionManager) http.HandlerFunc {
 		known := map[string]string{}
 		defer func() {
 			_ = conn.Close(ctx, 1000, "")
+			// P4: a closing socket leaves the ledger-tip registry whether or not its handshake
+			// entitled it, so a nudge is never written to a connection this loop has left.
+			wsUnregisterLedgerTipSocket(userID, conn)
 			if connectorID == "" {
 				return
 			}
@@ -390,6 +393,10 @@ func handleConnector(sessions *database.SessionManager) http.HandlerFunc {
 				// is also what the safeguard frame is gated on below (2.3.1, 7.6).
 				capabilities := wsEnabledCapabilities(wsCapabilities(wsGet(msg, "capabilities")))
 				wsNoteConnectorHello(userID, cid, capabilities)
+				// P4's gate (2.3.1): this socket becomes entitled to `ledger_tip` from the ECHOED
+				// list ready is about to carry, and is dropped from it when a re-sent hello stops
+				// asking for the capability.
+				wsRegisterLedgerTipSocket(userID, conn, capabilities)
 				ready := entities.NewOrderedMap[any]()
 				ready.Set("type", "ready")
 				ready.Set("connector_id", cid)
@@ -556,6 +563,18 @@ func wsSend(ctx context.Context, conn *wsConn, v any) error {
 		return err
 	}
 	return conn.SendText(ctx, data)
+}
+
+// wsSendWithin is wsSend for a writer that does NOT own the socket: P4's nudge is written from the
+// request that committed the decision, so it carries a deadline (wsLedgerTipWriteTimeout) rather than
+// the socket's heartbeat alone. The context is unused exactly as it is in wsSend, which encodes and
+// writes synchronously.
+func wsSendWithin(_ context.Context, conn *wsConn, v any, timeout time.Duration) error {
+	data, err := value_objects.PyJSONDumpsCompact(v)
+	if err != nil {
+		return err
+	}
+	return conn.SendTextWithin(data, timeout)
 }
 
 // wsMessage builds the v2.0 envelope shared by the realtime replies.
@@ -750,6 +769,23 @@ func (c *wsConn) SendText(_ context.Context, data string) error {
 	return c.writeFrame(wsOpText, []byte(data))
 }
 
+// SendTextWithin writes one text frame under a write deadline, so a caller that is not this socket's
+// read loop can bound how long it waits on a peer that has stopped reading - the connector's own
+// replies are written by the loop that owns the socket and need no such bound.
+//
+// THE DEADLINE IS CLEARED BEFORE THE MUTEX IS RELEASED, because it belongs to the socket rather than
+// to this write: a pong the read loop writes next must not inherit a deadline this caller asked for
+// and then let expire.
+func (c *wsConn) SendTextWithin(data string, timeout time.Duration) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if err := c.conn.SetWriteDeadline(time.Now().Add(timeout)); err != nil {
+		return err
+	}
+	defer func() { _ = c.conn.SetWriteDeadline(time.Time{}) }()
+	return c.writeFrameLocked(wsOpText, []byte(data))
+}
+
 // ReceiveText returns the next text (or binary) message. Control frames are handled
 // inline; a close frame is answered and reported as *wslib.WebSocketDisconnect.
 func (c *wsConn) ReceiveText(context.Context) (string, error) {
@@ -846,6 +882,14 @@ func (c *wsConn) readFrame() (bool, byte, []byte, error) {
 func (c *wsConn) writeFrame(opcode byte, payload []byte) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+	return c.writeFrameLocked(opcode, payload)
+}
+
+// writeFrameLocked is writeFrame's body without the lock: the caller already holds c.mu. It exists for
+// SendTextWithin, which must set the socket's write deadline and write under ONE hold of the mutex
+// rather than two - a second writer slipping in between would write under a deadline it never asked
+// for.
+func (c *wsConn) writeFrameLocked(opcode byte, payload []byte) error {
 	header := make([]byte, 0, 10)
 	header = append(header, 0x80|opcode)
 	switch length := len(payload); {
