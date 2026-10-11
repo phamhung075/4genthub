@@ -360,7 +360,7 @@ verb is the one the binary prints. **All six items of 4.7 land** - the plan outr
 | 3 | Owner node and `4genteam send` method C | `4genteam send`; the node itself is a room member the server renders (4.6). Board task `44d2fd0b-81c8-4d31-bf2b-731d8b35bbe1` | `90845c2` (`internal/clientseat/ownersend.go`) |
 | 4 | Overlap detector, with the stale-branch alert | `4genteam overlap`, one scan in rigd's loop | `57d92bf` (`internal/clientlifecycle/overlap.go`) |
 | 5 | Stuck and idle alerts, with escalation | `4genteam stuck`, the same loop | `4fa2c7c` (`internal/clientlifecycle/stuck.go`) |
-| 6 | Done report, with the doc-drift line | printed by `4genteam evidence` before it submits | `a98e78b` (`internal/clientevidence/evidence.go`) |
+| 6 | Done report, with the doc-drift line | printed by `4genteam evidence` before it submits | `63fd184` (`internal/clientevidence/evidence.go`, its first touch); the item landed in `a98e78b` |
 
 Read a verb before trusting a row: `4genteam <verb> --help` prints what it does and what it refuses, and
 `4genteam doctor <rig>` prints the rows the doctor actually has.

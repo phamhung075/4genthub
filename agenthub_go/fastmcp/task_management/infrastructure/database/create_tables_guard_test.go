@@ -24,16 +24,27 @@
 //   - a call through a VARIABLE or a differently-named wrapper (`boot := cfg.CreateTables`): there is
 //     no identifier `CreateTables` at the call site, so there is nothing to match. The direct call is
 //     the shape every fixture here uses.
+//   - a call the PREFILTER does not recognize, which is why the prefilter is an optimization and not the
+//     rule. Before parsing, the scan asks whether the file's bytes contain `CreateTables(`, so the name
+//     and its opening parenthesis must be ADJACENT in the raw bytes: `cfg.CreateTables (ctx)` (a space
+//     before the parenthesis, which gofmt removes) or `CreateTables` followed by a newline and then `(`
+//     never reaches the AST pass, and that file is treated as if it held no call at all. Two
+//     consequences, in opposite directions: an unlisted call in such a file is NOT reported, and an
+//     allowlist entry for that file's function would read as STALE, because the scan never recorded the
+//     call the entry names. A split after the dot, or a receiver on its own line, is still seen - only
+//     the name-to-parenthesis adjacency defeats the prefilter.
 //   - whether a fixture that does call CreateSchema also asserts anything: this check is about the
 //     bring-up path, not about the cases built on it.
 //   - a violation in a file another seat writes while the walk runs: the walk can MISS a call site (a
 //     file stashed or edited away mid-scan is simply not scanned) but it can never INVENT one, because
 //     every finding cites a call this check actually read.
 //   - anything under a DOT DIRECTORY, because the walk skips those: they hold the toolchain's own corpus
-//     and this project's caches. The lead's count of this module is 3120 _test.go files with 2631 of them
-//     under .gomodcache/.gocache/.gotmp/.claude, and this guard's own count of what the walk visits is
-//     REPORTED on every run (490 at the time of writing) so that a walk which skipped the real tree as
-//     well as the corpus is visible rather than silent.
+//     and this project's caches. The 3120 _test.go files with 2631 of them under
+//     .gomodcache/.gocache/.gotmp/.claude are a count of the SHARED CHECKOUT the count was taken in, not
+//     of this commit: in a clean worktree of the same commit the module measures 490 _test.go files and
+//     NONE of them under those directories, so that pair cannot be cross-checked from a checkout. What IS
+//     reproducible is the count the guard itself REPORTS on every run - 490 in that clean worktree - so
+//     that a walk which skipped the real tree as well as the corpus is visible rather than silent.
 package database_test
 
 import (

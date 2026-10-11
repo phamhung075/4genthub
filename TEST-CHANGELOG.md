@@ -2,6 +2,26 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-11 - the guard's blind-spot block names its prefilter, and its census names the tree it measured
+
+- COMMENT-ONLY change to `agenthub_go/fastmcp/task_management/infrastructure/database/create_tables_guard_test.go`:
+  the allowlist, the predicate and the three call sites are untouched, and the guard's verdict is unchanged.
+- ADDED a fourth blind spot to its "WHAT IT CANNOT SEE" block: the scan's prefilter
+  `bytes.Contains(source, []byte("CreateTables("))` only sees a gofmt-shaped call, so `cfg.CreateTables (ctx)` or a
+  newline between the name and `(` never reaches the AST pass at all. Both directions are stated - an unlisted call
+  in such a file is not reported, and an allowlist entry for that file's function would read as STALE because the
+  call was never recorded - and so is what still defeats it: a split after the dot, or a receiver on its own line,
+  is caught, because only name-to-parenthesis adjacency is what the prefilter sees.
+- CORRECTED the census bullet, and with it the pair quoted in the entry below: the 3120 `_test.go` / 2631 under
+  `.gomodcache/.gocache/.gotmp/.claude` figures describe the SHARED CHECKOUT they were measured in, not the commit -
+  a clean worktree of the same commit measures 490 `_test.go` files and none of them under those directories, so the
+  pair cannot be cross-checked from a checkout. The reproducible number is the one the guard prints on every run,
+  together with the tree it walked.
+- MEASURED after the edit: `gofmt -l` on that file -> empty; `go test -count=1 -run
+  TestFixturesBringUpTheSchemaThroughCreateSchema ./fastmcp/task_management/infrastructure/database/` -> PASS, the run
+  reporting `walked 490 _test.go file(s) under /home/daihu/__projects__/4genthub/agenthub_go (dot-directories
+  skipped), 4 of them naming CreateTables, and found 3 call site(s) in 3 file(s)`; `go vet` on that package -> rc 0.
+
 ## 2026-10-11 - the last three fixture bring-ups adopt CreateSchema, and a database-free guard holds the next one
 
 - FIXED the 12 remaining `SQLSTATE P0001` reds in the three bring-ups the `92d3e825` repair did not reach: each
