@@ -117,6 +117,63 @@ func carriedEvents(t *testing.T, sessions *database.SessionManager, user, taskID
 	return out
 }
 
+// carriedEventIdentities returns the ledger's progress events for a task as "content|number|subtask_id"
+// tuples - the identity the carry's three predicates compare on, with the subtask id EMPTY for a
+// task-attributed row. carriedEvents above reads what the CARRY recorded; this one reads the identity a
+// case must assert on when the content alone cannot tell two notes apart, which is the only way to see
+// the subtask's note that a pre-fix carry dropped silently.
+func carriedEventIdentities(t *testing.T, sessions *database.SessionManager, user, taskID string) []string {
+	t.Helper()
+	var out []string
+	if err := sessions.WithSession(context.Background(), func(ctx context.Context, s database.DBTX) error {
+		rows, err := s.QueryContext(ctx, `SELECT payload ->> 'content', payload ->> 'progress_number',
+				COALESCE(subtask_id::text, '')
+			FROM task_events
+			WHERE user_id = $1 AND task_id = $2::uuid AND kind = 'progress'
+			ORDER BY seq`, user, taskID)
+		if err != nil {
+			return err
+		}
+		defer rows.Close()
+		for rows.Next() {
+			var content, number, subtask string
+			if err := rows.Scan(&content, &number, &subtask); err != nil {
+				return err
+			}
+			out = append(out, content+"|"+number+"|"+subtask)
+		}
+		return rows.Err()
+	}); err != nil {
+		t.Fatalf("reading the ledger's progress identities failed: %v", err)
+	}
+	return out
+}
+
+// seedSubtaskWithColumnNote writes a SUBTASK whose own progress_history holds note under key, and
+// returns the subtask's id. It is the subtask side of seedTaskWithColumnNote (in
+// progress_ledger_carry_integration_test.go): the subtask carries its parent's task_id - the column is
+// NOT NULL with a foreign key to tasks, so it ALWAYS does - and the number is the subtask column's own,
+// because each side numbers its own notes from 1. What tells the two rows apart is subtask_id, so a case
+// about a shared progress_number needs to name the id it seeded.
+func seedSubtaskWithColumnNote(t *testing.T, sessions *database.SessionManager, user, taskID, key, note string, number int) string {
+	t.Helper()
+	var subtaskID string
+	if err := sessions.WithSession(context.Background(), func(ctx context.Context, s database.DBTX) error {
+		return s.QueryRowContext(ctx, `INSERT INTO subtasks
+				(id, task_id, title, description, status, priority, assignees, progress_percentage,
+				 progress_history, progress_count, progress_state, progress_notes, blockers,
+				 completion_summary, impact_on_parent, insights_found, user_id, created_at, updated_at)
+			VALUES (gen_random_uuid(), $1::uuid, 'a subtask', '', 'todo', 'medium', '[]'::json, 0,
+				json_build_object($2::text, json_build_object('content', $3::text,
+					'timestamp', '2026-01-01T00:00:00Z', 'progress_number', $4::int)),
+				1, 'INITIAL', '', '[]'::json, '', '', '[]'::json, $5, now(), now())
+			RETURNING id`, taskID, key, note, number, user).Scan(&subtaskID)
+	}); err != nil {
+		t.Fatalf("seeding the subtask's column note failed: %v", err)
+	}
+	return subtaskID
+}
+
 // idempotentCaseName names the step under a name the database has not recorded, so the runner applies
 // it again. The name must be stable per case because a re-run of a case that half-applied would
 // otherwise see a recorded name and skip the very step under test.
@@ -136,19 +193,7 @@ func TestTheRuledCarryStepCarriesTheNotesAndDropsTheColumns(t *testing.T) {
 
 	// The subtask's note lives in the subtask's own column and belongs to the TASK's ledger, so the
 	// step has to resolve its task from the subtask row rather than assume the key it reads.
-	if err := sessions.WithSession(context.Background(), func(ctx context.Context, s database.DBTX) error {
-		_, err := s.ExecContext(ctx, `INSERT INTO subtasks
-				(id, task_id, title, description, status, priority, assignees, progress_percentage,
-				 progress_history, progress_count, progress_state, progress_notes, blockers,
-				 completion_summary, impact_on_parent, insights_found, user_id, created_at, updated_at)
-			VALUES (gen_random_uuid(), $1::uuid, 'a subtask', '', 'todo', 'medium', '[]'::json, 0,
-				json_build_object('progress_2', json_build_object('content', $2::text,
-					'timestamp', '2026-01-01T00:00:00Z', 'progress_number', 2)),
-				1, 'INITIAL', '', '[]'::json, '', '', '[]'::json, $3, now(), now())`, taskID, subtaskText, user)
-		return err
-	}); err != nil {
-		t.Fatalf("seeding the subtask's column note failed: %v", err)
-	}
+	seedSubtaskWithColumnNote(t, sessions, user, taskID, "progress_2", subtaskText, 2)
 
 	if err := applyRuledCarry(t, sessions, idempotentCaseName("carries")); err != nil {
 		t.Fatalf("the carry-and-drop step failed on a well-formed column: %v", err)
@@ -285,6 +330,163 @@ func TestTheRuledCarryStepDoesNotDuplicateANoteTheLedgerAlreadyHolds(t *testing.
 	}
 	if columnExists(t, sessions, "tasks", "progress_history") {
 		t.Errorf("tasks.progress_history still exists after the step; the drop must happen whether or not this step did the carrying")
+	}
+}
+
+// TestTheRuledCarryStepCarriesBothIdentitiesAtASharedProgressNumber is the case the three
+// `subtask_id IS NOT DISTINCT FROM` predicates were added for, and no other case builds it: a TASK note
+// and a SUBTASK note at the SAME progress_number with DIFFERENT content, which is the NORM rather than
+// an exotic shape - a subtask always carries its parent's task_id (the column is NOT NULL with a
+// foreign key to tasks), and each side numbers its own notes from 1, so both sides sitting at 1 is what
+// a task with a subtask looks like.
+//
+// Before the predicates the check joined on user, task, kind, number and content alone, so the two
+// entries collapsed onto each other's events: the task's entry met the subtask's event under the shared
+// number, the content differed, and the step REFUSED with the collision exception - a false positive
+// that blocked a well-formed carry. With them, subtask_id is part of the identity, the two notes are
+// two identities, and both are carried.
+func TestTheRuledCarryStepCarriesBothIdentitiesAtASharedProgressNumber(t *testing.T) {
+	sessions, _ := newMigrationRunnerEnv(t)
+	restorePreDropColumns(t, sessions)
+
+	const user = "user-drop-carry-shared-number"
+	const taskText = "1. the task's own note"
+	const subtaskText = "1. the subtask's note at the same number"
+	branchID := seedBranch(t, sessions, user)
+	taskID := seedTaskWithColumnNote(t, sessions, user, branchID, "shared number probe", "progress_1", taskText, 1)
+	subtaskID := seedSubtaskWithColumnNote(t, sessions, user, taskID, "progress_1", subtaskText, 1)
+
+	name := idempotentCaseName("shared-number-different-content")
+	if err := applyRuledCarry(t, sessions, name); err != nil {
+		t.Fatalf("the step refused at a shared progress_number carrying different content, but the two notes are "+
+			"different identities (the task's event has subtask_id NULL, the subtask's is %s): %v", subtaskID, err)
+	}
+
+	// Each note is in the ledger under its OWN identity - the task's row with no subtask, the subtask's
+	// under its id - and the columns are gone on both tables once the carry is in.
+	identities := carriedEventIdentities(t, sessions, user, taskID)
+	for _, want := range []string{taskText + "|1|", subtaskText + "|1|" + subtaskID} {
+		if !containsString(identities, want) {
+			t.Errorf("the ledger holds no %q; it holds %v", want, identities)
+		}
+	}
+	for _, c := range []struct{ table, column string }{
+		{"tasks", "progress_history"}, {"tasks", "progress_count"},
+		{"subtasks", "progress_history"}, {"subtasks", "progress_count"},
+	} {
+		if columnExists(t, sessions, c.table, c.column) {
+			t.Errorf("%s.%s still exists after the step; the step must drop it once the carry is in the ledger",
+				c.table, c.column)
+		}
+	}
+}
+
+// TestTheRuledCarryStepCarriesTheSubtaskAtASharedProgressNumberWhenTheContentMatches is a NAMED CONTROL,
+// not a red-first case: it is GREEN ON BOTH REVISIONS - on the parent and here - and that is a
+// measurement, not an expectation. The two notes sit at the same number with the same content, and the
+// ledger starts EMPTY, so the `missing` CTE - ONE pre-insert snapshot - sees neither note as held at its
+// evaluation and inserts BOTH entries, each carrying its own subtask_id. The parent loses nothing in
+// this shape; the loss needs the ledger to already hold the task's event, which is the case below.
+//
+// What it pins is the FIXED file's other edge: the three predicates must not over-tighten the
+// empty-ledger path. A change that made a same-content entry count as unheld, or that raised on it,
+// would show up here and nowhere else - so this case requires the carry to SUCCEED and both identities
+// to be present, with no exception anywhere.
+func TestTheRuledCarryStepCarriesTheSubtaskAtASharedProgressNumberWhenTheContentMatches(t *testing.T) {
+	sessions, _ := newMigrationRunnerEnv(t)
+	restorePreDropColumns(t, sessions)
+
+	const user = "user-drop-carry-shared-content"
+	const sharedText = "1. a note the task and its subtask both carry"
+	branchID := seedBranch(t, sessions, user)
+	taskID := seedTaskWithColumnNote(t, sessions, user, branchID, "shared content probe", "progress_1", sharedText, 1)
+	subtaskID := seedSubtaskWithColumnNote(t, sessions, user, taskID, "progress_1", sharedText, 1)
+
+	name := idempotentCaseName("shared-number-same-content")
+	if err := applyRuledCarry(t, sessions, name); err != nil {
+		t.Fatalf("the step refused at a shared progress_number carrying matching content: %v", err)
+	}
+
+	identities := carriedEventIdentities(t, sessions, user, taskID)
+	if !containsString(identities, sharedText+"|1|"+subtaskID) {
+		t.Errorf("the ledger holds no progress event for the subtask under its own id %s: the carry took the "+
+			"task's event as proof the subtask's note was held and dropped it with the column; it holds %v",
+			subtaskID, identities)
+	}
+	if !containsString(identities, sharedText+"|1|") {
+		t.Errorf("the ledger holds no progress event for the task's own note; it holds %v", identities)
+	}
+	if len(identities) != 2 {
+		t.Errorf("the ledger holds %d progress events, want 2 - one per identity: %v", len(identities), identities)
+	}
+	for _, c := range []struct{ table, column string }{
+		{"tasks", "progress_history"}, {"tasks", "progress_count"},
+		{"subtasks", "progress_history"}, {"subtasks", "progress_count"},
+	} {
+		if columnExists(t, sessions, c.table, c.column) {
+			t.Errorf("%s.%s still exists after the step; the step must drop it once the carry is in the ledger",
+				c.table, c.column)
+		}
+	}
+}
+
+// TestTheRuledCarryStepCarriesTheSubtaskNoteTheLedgerAlreadyHoldsForTheTask is the shape in which the
+// shared number and matching content really DO lose a note, and it is the state 0003 meets in
+// production: the ledger already holds the TASK's event for this note (the dual write the 0002 bridge
+// left behind) while the column still carries it, and the SUBTASK's own column note sits at the same
+// number with the same content.
+//
+// Pre-fix the subtask's entry matched the TASK's event on user, task, kind, number and content alone,
+// so it counted as already held: the carry inserted nothing for it, `unheld` reported 0, `mismatched`
+// saw equal content, the step raised NOTHING and dropped both columns - with the subtask's note in
+// them. The assertion is on the subtask-attributed row rather than on content, because the content IS
+// present either way; what is missing pre-fix is the entry under its own subtask_id.
+func TestTheRuledCarryStepCarriesTheSubtaskNoteTheLedgerAlreadyHoldsForTheTask(t *testing.T) {
+	sessions, _ := newMigrationRunnerEnv(t)
+	restorePreDropColumns(t, sessions)
+
+	const user = "user-drop-carry-dual-write"
+	const sharedText = "1. a note the ledger already attributes to the task"
+	branchID := seedBranch(t, sessions, user)
+	taskID := seedTaskWithColumnNote(t, sessions, user, branchID, "dual write probe", "progress_1", sharedText, 1)
+
+	// The ledger's own copy, attributed to the TASK (subtask_id NULL) and equal in content and number
+	// to the subtask's column note seeded next: a live dual write, not a hypothetical.
+	if err := sessions.WithSession(context.Background(), func(ctx context.Context, s database.DBTX) error {
+		_, err := s.ExecContext(ctx, `INSERT INTO task_events
+				(id, user_id, task_id, subtask_id, seq, user_seq, kind, actor_kind, actor_id, payload)
+			VALUES (gen_random_uuid(), $1, $2::uuid, NULL, 1, 1, 'progress', 'seat', 'a-seat',
+				json_build_object('content', $3::text, 'progress_number', 1,
+					'timestamp', '2026-01-01T00:00:00Z'))`, user, taskID, sharedText)
+		return err
+	}); err != nil {
+		t.Fatalf("seeding the ledger's task-attributed copy failed: %v", err)
+	}
+	subtaskID := seedSubtaskWithColumnNote(t, sessions, user, taskID, "progress_1", sharedText, 1)
+
+	name := idempotentCaseName("dual-write-shared-number")
+	if err := applyRuledCarry(t, sessions, name); err != nil {
+		t.Fatalf("the step refused on a dual-written note at a shared progress_number: %v", err)
+	}
+
+	identities := carriedEventIdentities(t, sessions, user, taskID)
+	if !containsString(identities, sharedText+"|1|"+subtaskID) {
+		t.Errorf("the ledger holds no progress event for the subtask under its own id %s: the carry took the "+
+			"task's event as proof the subtask's note was held, reported the entry as held, and dropped the note "+
+			"with the column; it holds %v", subtaskID, identities)
+	}
+	if len(identities) != 2 {
+		t.Errorf("the ledger holds %d progress events, want 2 - one per identity (the task's own and the "+
+			"subtask's): %v", len(identities), identities)
+	}
+	for _, c := range []struct{ table, column string }{
+		{"tasks", "progress_history"}, {"tasks", "progress_count"},
+		{"subtasks", "progress_history"}, {"subtasks", "progress_count"},
+	} {
+		if columnExists(t, sessions, c.table, c.column) {
+			t.Errorf("%s.%s still exists after the step; the step must drop it once the carry is in the ledger",
+				c.table, c.column)
+		}
 	}
 }
 
