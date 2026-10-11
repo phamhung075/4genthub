@@ -2,6 +2,14 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-11 - the seat detail standing gets its third state, and three cases pin it
+
+- ADDED, three cases in a new describe in the existing file `agenthub-frontend/src/tests/pages/SeatDetailPage.test.tsx`, one per way the rooms list can fail to answer: the list in flight (`listRooms` returns a promise that never settles), the list failing (`listRooms` rejects), and the list settling WITHOUT naming this room (`rooms: []`).
+- WHY THEY ARE THREE AND NOT ONE: the defect (GATE `f541f2f5`, M1) was that all three states were rendered as "viewer", so a single case would leave two of them unguarded - and the page's own third-state convention already had one case per state for the resolve read, which is the pattern copied here.
+- EACH CASE CARRIES A POSITIVE CONTROL, because "no Save and no viewer sentence" would otherwise pass against a page that rendered nothing at all: the in-flight case asserts the visible reason (`Loading your rooms, which decide what you can write here`) and that the standing-dependent tabs are absent; the failed case asserts the API's own message, an enabled `Retry`, and that clicking it re-reads the standing so the owner's page comes back (`listRooms` called twice, then the page renders); the settled-without-the-room case asserts its own message and the same absence of the viewer claim.
+- RED-FIRST MEASURED, page untouched: `npx vitest run src/tests/pages/SeatDetailPage.test.tsx` -> **3 failed | 26 passed (29)**, failing exactly the three new cases. After the fix, re-run in `wt/fe-dev`: **29 passed (29)**, and the full suite in the same worktree -> **122 files / 1881 tests passed, 0 failed**.
+- WHAT IS NOT IN THESE CASES, deliberately: no assertion pins the old predicate's shape, and none pins CSS or class names - the standing is asserted by what a reader sees and by which controls exist.
+
 ## 2026-10-11 - vitest stops collecting the Playwright spec, and the certified suite goes green
 
 - CHANGED, one config file and no test file: `agenthub-frontend/vite.config.ts`'s `test.exclude` gains `e2e/**`. Vitest's default include matches `**/*.spec.ts` and `e2e/smoke.spec.ts` is a PLAYWRIGHT spec, so vitest collected it and the file failed at IMPORT rather than as a test.
