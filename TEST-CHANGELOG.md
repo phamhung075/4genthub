@@ -4668,3 +4668,22 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
 - `fastmcp/server/routes/ledger_routes_test.go` (NEW, no database): the read encodes the cursor, the tip and every field of an entry; an empty ledger answers a tip of 0; a failed read is refused; the intents route encodes the two answer shapes disjointly; an empty batch answers an empty list; a failed write is refused.
 - `fastmcp/server/httpapp/ledger_pg_test.go` (NEW, PostgreSQL): driven through `app.Handler()` so the path under test is the production one, and it SKIPS LOUDLY without `AGENTHUB_TEST_PG_URL` — a skip is not a pass. Five cases, each a claim about ROWS: the read is one cursor across all of a user's tasks; one batch decides each item and answers a resend from its row; a stale decision succeeds once the client re-reads; offline facts are recorded unchanged in arrival order; an unusable credential is refused like the ledger read.
 - **Honest about provenance:** these cases were written by the offloaded worker alongside the implementation, so I did not observe a RED state and I am NOT claiming one. What I did instead is the part a claim cannot substitute for: I read every query the ledger adds and confirmed each carries `user_id` in the statement, read the lock and the decision, and ran the cases myself. My run: the ledger's own packages `ok` (entities 0.005s, routes 0.010s) and the five PG cases verbosely, each `--- PASS` — `TestLedgerReadIsOneCursorAcrossAllOfAUsersTasks` 1.68s, `TestLedgerIntentsOneBatchDecidesEachItemAndAnswersTheResendFromItsRow` 1.57s, `TestLedgerIntentsStaleDecisionSucceedsOnceTheClientReReads` 2.02s, `TestLedgerIntentsRecordsOfflineFactsUnchangedInArrivalOrder` 1.62s, `TestLedgerIntentsRefusesAnUnusableCredentialLikeTheLedgerRead` 1.58s; package `ok 8.474s`.
+
+## 2026-10-11 - the progress reader's dropped check, and one inert operation name
+
+- ADDED, one case in an existing file, `agenthub_go/fastmcp/task_management/domain/entities/task_test.go`:
+  `TestTheProgressReaderSkipsEntriesItCannotRead` covers five history entries - two readable, and three that are
+  a non-object value, a non-string `content`, and a missing `content` (the reviewer's post-gate minor on the
+  item-3 commit, `qitem-20261010232112` / board `b668b4f6`).
+- SEEN RED on the old code, and the red IS the defect: with `m, _ := v.(map[string]any)` and
+  `c, _ := m["content"].(string)` restored, the case fails with `GetProgressHistoryText() =
+  "\n\n=== Progress 1 ===\nfirst\n\n\n\n\n\n=== Progress 5 ===\nlast"` - four spurious empty entries between the
+  separators, exactly the rendering that made two real notes look lost. Green after the fix.
+- NO OTHER TEST RE-PINNED. The reader's callers are in the run on purpose:
+  `go test -count=1 ./fastmcp/task_management/domain/entities/ ./fastmcp/task_management/application/services/
+  ./fastmcp/task_management/application/dtos/...` rc 0 (entities ok 0.010s, services ok 0.040s, dtos and its
+  three subpackages ok 0.002s each). `gofmt -l` on the three touched files prints nothing; `go build ./...` rc 0;
+  `go vet` clean on all four.
+- DELIBERATELY NOT ASSERTED, and recorded rather than quietly dropped: `2c4582de`'s "Nothing was re-recorded" is
+  retired (board `b668b4f6` item 2) because it asserts what the program did NOT do, which no test of the reader
+  can hold; the measurable halves of the sentence were already stated beside it.

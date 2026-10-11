@@ -482,6 +482,11 @@ func numberOf(v any) float64 {
 }
 
 // GetProgressHistoryText joins the history entries ordered by progress number.
+//
+// An entry that is not an object with a string `content` contributes NOTHING: it is skipped, not rendered.
+// Reading through a value that is not a map yields a nil map, a nil map yields "", and the entry then renders
+// as an EMPTY line that is indistinguishable from a real note whose text is blank - which is how two notes
+// were reported as lost before this function's caller was corrected at the decode boundary.
 func (t *Task) GetProgressHistoryText() string {
 	if len(t.ProgressHistory) == 0 {
 		return ""
@@ -493,8 +498,15 @@ func (t *Task) GetProgressHistoryText() string {
 	}
 	entries := []entry{}
 	for k, v := range t.ProgressHistory {
-		m, _ := v.(map[string]any)
-		c, _ := m["content"].(string)
+		// BOTH assertions are checked, and the entry is skipped when either fails.
+		m, ok := v.(map[string]any)
+		if !ok {
+			continue
+		}
+		c, ok := m["content"].(string)
+		if !ok {
+			continue
+		}
 		entries = append(entries, entry{k, numberOf(m["progress_number"]), c})
 	}
 	sort.Slice(entries, func(i, j int) bool {
