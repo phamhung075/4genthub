@@ -214,6 +214,16 @@ Track test suite changes, fixes, and improvements for agenthub.
 
 ## 2026-10-11 - the seat pin's ORM UPDATE gets a committed case, and the admin mount does not carry the resolve route
 
+> **CASE SUPERSEDED AT THE MERGE (2026-10-11).** `TestSeatAdminPinSeatVersionAgainstTheRealStore`
+> existed only on the fold line. The batch merge took the release line's
+> `TestSeatAdminPinReachesTheRowOnARealDatabase` (`322d5ba5`, extended by `af366c96` with a measured
+> tenant scope) over it, and HEAD's `seat_admin_pin_pg_test.go` declares only that case. The entry
+> below is kept as the record of what `3a1663ca` (and its correction `6bb617f6`) committed. The
+> acceptance it describes is carried at HEAD by the surviving case, whose own record is the
+> `TEST-CHANGELOG.md` entry "the pin route's store is now covered against real SQL". Do not re-point
+> the two name references: the surviving case seeds different versions, mounts only the admin route,
+> and does not render the resolved seat, so re-pointing would misdescribe it.
+
 - ADDED, one case in `agenthub_go/fastmcp/server/httpapp/seat_admin_pin_pg_test.go`: `TestSeatAdminPinSeatVersionAgainstTheRealStore`. The committed case beside it drives the same route through `newFakeSeatAdmin()`, so the ORM statement `UPDATE "seats" SET "pinned_version" = …` (`seat_management/infrastructure/repositories/orm/seat_repository.go:109`) was executed by NO committed test - the reviewer's post-hoc approve on `42de79c2` and the architect's finding both said so, and the only proof was a scratch run that did not survive its session. This case seeds a room, a seat type with two version ROWS and a seat pinned to the older one, mounts the REAL sources over a real PostgreSQL, and asserts against the COLUMN rather than the response: a refused version leaves the row at `0.9.0`, an accepted one leaves it at `1.4.2`, the room's seats read the row back, the resolved seat renders it, and an absent seat is a 404 from the store.
 - MEASURED FAILURE FIRST, kept because it is the finding: the first run of this case was `resolving the pinned seat: status = 404, want 200: 404 page not found`. The admin mount (`seat_admin_mount.go`) does not carry the resolved-seat route - `seat_mount.go:210` does - so the case mounts both, in the order `app.go:134-135` mounts them. No production behaviour changed; the case was wrong about where the route lives, and the 404 is what said so.
 - MEASURED: `gofmt -l` on the new file -> empty; `go build ./...` rc 0; `go vet ./...` rc 0; `AGENTHUB_TEST_PG_URL=… go test -count=1 -run TestSeatAdminPinSeatVersionAgainstTheRealStore -v ./fastmcp/server/httpapp/` -> **PASS (1.40s)**, and the whole package with the new case: `AGENTHUB_TEST_PG_URL=… go test -count=1 ./fastmcp/server/httpapp/` -> **ok agenthub/fastmcp/server/httpapp 91.092s**.
@@ -462,6 +472,11 @@ Track test suite changes, fixes, and improvements for agenthub.
   registered twice across `Tables`/`ProductionTables` fails; each column's `EnumName` must have a
   `CREATE TYPE` BEFORE its table; and no `DROP`/`ALTER` may appear, comment lines excluded so the
   header's prose cannot hide one.
+
+  > **NAME SUPERSEDED (2026-10-11).** `10b27cdb` renamed this guard to `TestSchemaMatchesGoDefinitions`;
+  > `92d3e825` restored `TestBaselineMatchesEveryRegisteredTableDef` when the fold's own guard file
+  > collided with it in the same external test package. At HEAD that name belongs to the fold's
+  > `schema_matches_definitions_test.go`; this file's guard is `TestBaselineMatchesEveryRegisteredTableDef`.
 - WHY IT IS AN EXTERNAL TEST PACKAGE, and this is the whole reason the guard can work at all:
   `taskdb.Tables` is ONE slice every package appends its own set to in `init()`, and those packages
   import `taskdb` — so an internal (`package database`) test file that wanted the full registry would

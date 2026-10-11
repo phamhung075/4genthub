@@ -1,5 +1,15 @@
 ## The seat pin's ORM UPDATE is executed by a committed test at last
 
+> **CASE SUPERSEDED AT THE MERGE (2026-10-11).** `TestSeatAdminPinSeatVersionAgainstTheRealStore`
+> existed only on the fold line. The batch merge took the release line's
+> `TestSeatAdminPinReachesTheRowOnARealDatabase` (`322d5ba5`, extended by `af366c96` with a measured
+> tenant scope) over it, and HEAD's `seat_admin_pin_pg_test.go` declares only that case. The entry
+> below is kept as the record of what `3a1663ca` (and its correction `6bb617f6`) committed. The
+> acceptance it describes is carried at HEAD by the surviving case, whose own record is the
+> `TEST-CHANGELOG.md` entry "the pin route's store is now covered against real SQL". Do not re-point
+> the two name references: the surviving case seeds different versions, mounts only the admin route,
+> and does not render the resolved seat, so re-pointing would misdescribe it.
+
 ### Added
 - `agenthub_go/fastmcp/server/httpapp/seat_admin_pin_pg_test.go`: `TestSeatAdminPinSeatVersionAgainstTheRealStore` - R1's acceptance driven through the real store, so the statement
 
