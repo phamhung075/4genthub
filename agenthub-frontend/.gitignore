@@ -8,6 +8,12 @@
 # testing
 /coverage
 
+# e2e diagnostics: one directory per shell-spec run, 24 MB in total, and each run
+# screenshots the signed-in header. From 1024 up that header carries the account's
+# name and email (the profile block only yields in the 768-1023 band), so this is a
+# leak surface and not just clutter: test output must never be committable.
+/audit-runs/
+
 # production
 /build
 
