@@ -75,6 +75,14 @@ func (s *fakeStmt) Exec(args []driver.Value) (driver.Result, error) {
 func (s *fakeStmt) Query(args []driver.Value) (driver.Rows, error) {
 	s.f.record(s.q)
 	switch {
+	case strings.Contains(s.q, "to_regclass('applied_migrations')"):
+		// The migration runner asks whether its own ledger exists. This double answers "not yet": a
+		// database whose schema AUTO_MIGRATE creates has no ledger until the runner makes one, and the
+		// runner then creates it and records each step it applies.
+		return &fakeRows{cols: []string{"?column?"}, rows: [][]driver.Value{{false}}}, nil
+	case strings.Contains(s.q, "FROM applied_migrations"):
+		// The runner reads which steps are recorded. None are, so it applies the embedded set.
+		return &fakeRows{cols: []string{"?column?"}}, nil
 	case strings.Contains(s.q, "information_schema.tables"):
 		if s.f.failTablesRead != nil {
 			if err := s.f.failTablesRead(s.q); err != nil {

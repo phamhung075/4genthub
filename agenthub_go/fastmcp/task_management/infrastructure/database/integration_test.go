@@ -75,8 +75,14 @@ func TestRealPostgresCreateTablesAndSessions(t *testing.T) {
 		names = append(names, n)
 	}
 	rows.Close()
-	if len(names) != len(database.Tables) {
-		t.Fatalf("created %d tables, want %d: %s", len(names), len(database.Tables), strings.Join(names, ","))
+	// The registry's tables, plus the migration runner's own ledger: CreateTables runs the embedded
+	// set, and the runner creates applied_migrations when the database has none.
+	if len(names) != len(database.Tables)+1 {
+		t.Fatalf("created %d tables, want %d: %s", len(names), len(database.Tables)+1, strings.Join(names, ","))
+	}
+	var ledger bool
+	if err := db.QueryRowContext(ctx, `SELECT to_regclass('applied_migrations') IS NOT NULL`).Scan(&ledger); err != nil || !ledger {
+		t.Fatalf("the migration ledger is absent after CreateTables: %v", err)
 	}
 	var labels string
 	if err := db.QueryRowContext(ctx, "SELECT string_agg(enumlabel, ',' ORDER BY enumsortorder) FROM pg_enum e JOIN pg_type t ON t.oid=e.enumtypid WHERE t.typname='progressstate'").Scan(&labels); err != nil || labels != "INITIAL,IN_PROGRESS,COMPLETE" {
