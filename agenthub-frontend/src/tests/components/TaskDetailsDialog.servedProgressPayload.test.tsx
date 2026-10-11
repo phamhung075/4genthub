@@ -198,4 +198,59 @@ describe('TaskDetailsDialog: the ledger is the progress surface', () => {
     // Progress 2 is history-only and still reaches the reader.
     expect(screen.getByText('Second progress note')).toBeInTheDocument();
   });
+
+  // THE NIT THE GATE RECORDED, as a case: a surviving note is PLACED on the ledger's own progress
+  // numbers, not appended after it. Appending put every pre-switch note BELOW the newer ledger notes
+  // it precedes, which reads newest-first at the bottom for exactly the notes this change restores.
+  it('places a history-only note above a higher-numbered ledger note', async () => {
+    const laterLedger: TaskEventsResponse = {
+      success: true,
+      count: 1,
+      after_seq: 0,
+      events: [
+        {
+          id: 'event-5',
+          task_id: 'task-progress-1',
+          seq: 2,
+          kind: 'progress',
+          actor_kind: 'seat',
+          actor_id: 'dev/fe-dev',
+          payload: { content: '=== Progress 5 ===\nLater ledger note', progress_number: 5 },
+          created_at: '2025-08-27T11:00:00Z'
+        }
+      ]
+    };
+    const mixedPayload = {
+      ...servedPayload,
+      details: '=== Progress 1 ===\nPre-switch note\n\n=== Progress 5 ===\nLater ledger note',
+    } as unknown as Task;
+
+    vi.mocked(api.getTask).mockResolvedValue(mixedPayload);
+    vi.mocked(api.getTaskEvents).mockResolvedValue(laterLedger);
+    vi.mocked(api.getTaskContext).mockResolvedValue({ data: {} });
+
+    render(
+      <TaskDetailsDialog
+        open={true}
+        onOpenChange={() => {}}
+        task={mixedPayload}
+        onClose={() => {}}
+        onAgentClick={() => {}}
+      />
+    );
+
+    await waitFor(() => expect(screen.getByText('Task with progress')).toBeInTheDocument());
+
+    // Both notes reach the reader, each exactly once: the ledger's copy is not duplicated by the column's.
+    await screen.findByText('Pre-switch note');
+    expect(screen.getByText('Later ledger note')).toBeInTheDocument();
+    expect(screen.getAllByText('Later ledger note')).toHaveLength(1);
+
+    // And the order on screen follows the progress numbers, not the order the two sources arrive in.
+    const rows = screen.getAllByRole('listitem').map(row => row.textContent ?? '');
+    const preSwitch = rows.findIndex(text => text.includes('Pre-switch note'));
+    const later = rows.findIndex(text => text.includes('Later ledger note'));
+    expect(preSwitch).toBeGreaterThan(-1);
+    expect(preSwitch).toBeLessThan(later);
+  });
 });

@@ -303,9 +303,11 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
                           it is the ONLY progress surface here: O1c replaced the older
                           progress-history timeline with this one, so the two never render
                           together. `details` below is the served union of both sources -
-                          ProgressTextWith (task_response.go:107) joins the progress_history
-                          column's notes with the ledger's - and the timeline takes it because the
-                          ledger ALONE has no row for a note written before the dual-write switch. */}
+                          ProgressTextWith joins the progress_history column's notes with the
+                          ledger's - and the timeline takes it because the ledger ALONE has no row
+                          for a note written before the dual-write switch. Cited by NAME, not by a
+                          line: the union lives in the O1c branch of task_response.go, so a
+                          checkout without it cannot answer a line number. */}
                       <TaskEventTimeline taskId={displayTask.id} progressHistory={displayTask.details} />
 
                       {/* Assignees */}

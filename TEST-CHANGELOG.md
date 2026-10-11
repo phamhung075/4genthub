@@ -2,6 +2,12 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-11 - the timeline's order gets its own case, and a surviving note is placed by progress number
+
+- ADDED, one case in `agenthub-frontend/src/tests/components/TaskDetailsDialog.servedProgressPayload.test.tsx`: a ledger holding a single `progress` event numbered 5, and a served `details` holding notes 1 and 5. It asserts the note numbered 1 renders ABOVE the ledger's note (index order over `getAllByRole('listitem')`) and that each note renders exactly once.
+- WHY IT IS RED-FIRST: against `8d27cadf`'s component it fails at `expect(preSwitch).toBeLessThan(later)` with the observed message `expected 1 to be less than 0` - the history row was appended after the ledger's, which is the defect the gate recorded as a nit. It passes once the rows are placed on the shared progress number.
+- MEASURED, in `wt/fe-dev`, from `agenthub-frontend`: the file alone with the new case filtered -> **1 failed | 3 skipped** against `8d27cadf`'s component and **1 passed | 3 skipped** at the change; the four suites this touches -> **4 files / 41 tests passed**; `npx vitest run` -> **122 files / 1885 tests passed, 0 failed**; `npx tsc --noEmit -p tsconfig.tests.json` -> **194**, unchanged, with no error in any touched file.
+
 ## 2026-10-11 - the merged read gets its red-first case, and a note both sources hold renders once
 
 - ADDED, two cases in `agenthub-frontend/src/tests/components/TaskDetailsDialog.servedProgressPayload.test.tsx`, the file whose subject is the dialog's progress surface: (1) a task whose served `details` holds a note and whose events route is mocked EMPTY - the ledger has no row for a note written before the dual-write switch, so a dialog that renders the ledger alone cannot show it; (2) a note present in BOTH sources renders exactly once, asserted with `getAllByText(...)` of length 1, while the history-only sibling is still asserted present, so the case cannot pass by rendering nothing.

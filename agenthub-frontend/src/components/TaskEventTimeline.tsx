@@ -11,6 +11,7 @@ import {
 } from '../lib/taskTimeline';
 import { getStatusEmoji } from '../utils/statusEmojis';
 import { cleanProgressText, parseProgressHistory } from '../utils/progressHistoryUtils';
+import type { ProgressEntry } from '../types/utilityTypes';
 import type { TaskEvent } from '../types/taskTypes';
 
 export interface TaskEventTimelineProps {
@@ -58,6 +59,17 @@ const ledgerNote = (event: TaskEvent): string => {
 };
 
 /**
+ * A `progress` event's own progress number, when its payload carries one - the ledger's writer emits
+ * `{ content, progress_number }`. It is the scale the merged text numbers its notes on, so it is what
+ * lets a note with no event be PLACED against the ledger's notes instead of appended after them.
+ */
+const ledgerProgressNumber = (event: TaskEvent): number | null => {
+  if (event.kind !== 'progress') return null;
+  const value = event.payload?.['progress_number'];
+  return typeof value === 'number' ? value : null;
+};
+
+/**
  * The task's EXECUTION LEDGER (`task_events`) as a timeline, plus the notes only the served merged
  * text (`progressHistory`) has.
  *
@@ -69,8 +81,9 @@ const ledgerNote = (event: TaskEvent): string => {
  * A progress note IS the thing its event exists to carry, so the note's own text is the row. But a
  * note written before the dual-write switch has no event at all, and the served `progressHistory`
  * joins the column's notes with the ledger's for exactly that reason: the survivors - the column
- * entries no fetched `progress` event already shows - are appended as rows of the SAME list, so the
- * timeline stays the one progress surface while a pre-switch note reaches the reader again.
+ * entries no fetched `progress` event already shows - become rows of the SAME list, placed on the
+ * ledger's own progress numbers rather than appended after it, so a pre-switch note reaches the
+ * reader again AND in its own place, and the timeline stays the one progress surface.
  */
 export const TaskEventTimeline: React.FC<TaskEventTimelineProps> = ({ taskId, progressHistory, className = '' }) => {
   const { data, isLoading, error } = useTaskEvents(taskId);
@@ -96,13 +109,44 @@ export const TaskEventTimeline: React.FC<TaskEventTimelineProps> = ({ taskId, pr
 
   const phase = deriveLedgerPhase(events);
 
-  // The notes the ledger cannot show, in the merged text's own progress order (parseProgressHistory
-  // sorts by number). A column entry the ledger also has is DROPPED: the served text renders each note
-  // once, and a note must not appear twice on screen because both sources carry it.
-  const ledgerNotes = new Set(events.map(ledgerNote).filter(note => note !== ''));
-  const historyOnly = parseProgressHistory(progressHistory).filter(
-    entry => !ledgerNotes.has(cleanProgressText(entry.content)),
-  );
+  // WHICH NOTES THE LEDGER CANNOT SHOW. The producer joins the two sources on `(progress_number,
+  // content)` and renders each note once, so a column entry the ledger ALSO carries must not become a
+  // second row. The key is the pair whenever the event's own number is known, and the text alone when
+  // it is not: keying on text alone would drop a genuinely distinct note that repeats another's
+  // wording, and keying on the pair alone would duplicate every note whose event predates
+  // `progress_number` reaching the wire.
+  const ledgerKeys = new Set<string>();
+  for (const event of events) {
+    const note = ledgerNote(event);
+    if (note === '') continue;
+    const number = ledgerProgressNumber(event);
+    ledgerKeys.add(number === null ? note : `${number}|${note}`);
+  }
+  const historyOnly = parseProgressHistory(progressHistory).filter(entry => {
+    const note = cleanProgressText(entry.content);
+    return !ledgerKeys.has(note) && !ledgerKeys.has(`${entry.number}|${note}`);
+  });
+
+  // ORDER. `parseProgressHistory` sorts by number and a ledger `progress` row carries the same number,
+  // so a surviving note is placed on that shared scale: it goes before the first ledger note numbered
+  // past it, and after the last one when nothing is. Rows of other kinds - status changes and the like
+  // - keep their `seq` positions and are never displaced by a note, which has no seq to be measured
+  // against.
+  const ordered: Array<{ kind: 'event'; event: TaskEvent } | { kind: 'history'; entry: ProgressEntry }> = [];
+  const pending = [...historyOnly];
+  for (const event of events) {
+    const number = ledgerProgressNumber(event);
+    if (number !== null) {
+      let placed = 0;
+      while (placed < pending.length && pending[placed].number < number) {
+        ordered.push({ kind: 'history', entry: pending[placed] });
+        placed += 1;
+      }
+      if (placed > 0) pending.splice(0, placed);
+    }
+    ordered.push({ kind: 'event', event });
+  }
+  for (const entry of pending) ordered.push({ kind: 'history', entry });
 
   const hasRows = events.length > 0 || historyOnly.length > 0;
 
@@ -125,27 +169,26 @@ export const TaskEventTimeline: React.FC<TaskEventTimelineProps> = ({ taskId, pr
       ) : (
         <>
           <ol className="space-y-2">
-            {events.map(event => (
-              <li key={event.id} className="flex items-start gap-2 text-sm">
+            {ordered.map(row => row.kind === 'event' ? (
+              <li key={row.event.id} className="flex items-start gap-2 text-sm">
                 <Badge variant="outline" className="text-xs shrink-0 font-mono">
-                  {event.seq}
+                  {row.event.seq}
                 </Badge>
                 <div className="min-w-0">
-                  <div className="font-medium">{describeEvent(event)}</div>
+                  <div className="font-medium">{describeEvent(row.event)}</div>
                   <div className="text-xs text-muted-foreground">
-                    {formatWhen(event.created_at)} · {ACTOR_LABELS[event.actor_kind] ?? event.actor_kind}
-                    {event.actor_id ? ` (${event.actor_id})` : ''}
+                    {formatWhen(row.event.created_at)} · {ACTOR_LABELS[row.event.actor_kind] ?? row.event.actor_kind}
+                    {row.event.actor_id ? ` (${row.event.actor_id})` : ''}
                   </div>
                 </div>
               </li>
-            ))}
-            {historyOnly.map(entry => (
-              <li key={`history-${entry.number}`} className="flex items-start gap-2 text-sm">
+            ) : (
+              <li key={`history-${row.entry.number}`} className="flex items-start gap-2 text-sm">
                 <Badge variant="outline" className="text-xs shrink-0 font-mono">
-                  {entry.number}
+                  {row.entry.number}
                 </Badge>
                 <div className="min-w-0">
-                  <div className="font-medium">{cleanProgressText(entry.content)}</div>
+                  <div className="font-medium">{cleanProgressText(row.entry.content)}</div>
                   <div className="text-xs text-muted-foreground">
                     From the task's progress history
                   </div>
