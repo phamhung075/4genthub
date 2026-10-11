@@ -59,7 +59,6 @@ vi.mock('../../components/ClickableAssignees', () => ({
     <div data-testid="clickable-assignees">{(assignees ?? []).join(',')}</div>
   ),
 }));
-vi.mock('../../components/ProgressHistoryTimeline', () => ({ ProgressHistoryTimeline: () => <div /> }));
 vi.mock('../../components/ui/CopyableId', () => ({ CopyableId: ({ id }: any) => <span>{id}</span> }));
 vi.mock('../../components/ui/RawJSONDisplay', () => ({ __esModule: true, default: () => <div /> }));
 vi.mock('../../components/ui/EnhancedJSONViewer', () => ({ EnhancedJSONViewer: () => <div /> }));

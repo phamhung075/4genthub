@@ -2,8 +2,6 @@
 // Consolidated Task Types for the entire application
 // ============================================
 
-import type { ProgressHistoryEntry } from './utilityTypes';
-
 // ============================================
 // Core Task Types
 // ============================================
@@ -143,12 +141,6 @@ export interface TaskSummary {
  *
  * @see {@link SubtaskSummary} matches backend SubtaskSummaryDTO
  */
-/**
- * ProgressEntry - Individual progress entry with timestamp
- * @see {import('./utilityTypes').ProgressHistoryEntry}
- * Note: Import from utilityTypes - duplicate removed to avoid barrel export conflicts
- */
-
 export interface SubtaskSummary {
   id: string;
   title: string;
