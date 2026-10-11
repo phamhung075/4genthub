@@ -26,8 +26,9 @@ Track test suite changes, fixes, and improvements for agenthub.
   measurement. The main test now caps a single action at 15s (`page.setDefaultTimeout`) while its own
   ceiling pays for eight readings and sixteen screenshots.
 - A3 keeps its 768/900/1023 widths and its sub-label assertion, and its bound is now the strict
-  `<= innerWidth + 1` rather than parity: at 768 the document measures 768/768, where it measured 860/768
-  before the band's fix.
+  `<= innerWidth + 1` rather than parity: at 768 the document measures 768/768, where the parent `39bd2cda`
+  measured 220px of drag (988/768) and 88px at 900 (988/900). CORRECTED 2026-10-11: this line first cited
+  860/768 as the before reading, which does not reproduce from the parent.
 
 ## 2026-10-11 - the shell spec gains R1/R2/A3, and the palette gets a parity test
 
@@ -46,9 +47,15 @@ Track test suite changes, fixes, and improvements for agenthub.
   - A3 (`the sub-label yields from md, and the tablet band does not regress`): 768/900/1023, asserting
     the sub-label is hidden and that the document's OVERFLOW is no worse than the pre-fix baseline.
     The lg test's strict `<= innerWidth + 1` assertion was deliberately NOT extended to these widths in
-    this change, because the baseline itself failed it at 768 (860/768) and parity was the honest bound
-    for that moment: 92px of overflow, the number the tablet-fit item then tightened. SUPERSEDED the same
-    day - the band now fits, and A3 asserts the strict bound (see the section above).
+    this change, because the baseline itself failed it at 768 (the parent `39bd2cda` measured 220px of
+    drag there, 988/768, and 88px at 900, 988/900) and parity was the honest bound for that moment, a
+    number the tablet-fit item then tightened. SUPERSEDED the same day - the band now fits, and A3 asserts
+    the strict bound (see the section above).
+    CORRECTED 2026-10-11: this bullet first cited 860/768 and called the bound "92px of overflow". 860/768
+    does not reproduce from the parent, and 92px is the ruling's content deficit against the 720px box,
+    not the document's drag. SPEC TEXT also changed the same day, with NO VALUE CHANGE: the comment above
+    A3 in `shell.spec.ts` no longer claims parity with the parent - it says the bound is deliberately
+    stricter than the parent's 220px, chosen so a regression to 150px still fails.
 - `src/tests/theme/themeConfig.test.ts` gains a token-parity case that reads `src/styles/theme.css`
   through `readFileSync(resolve(process.cwd(), ...))` - the convention `LandingPage.head.test.ts`
   already uses; `new URL(..., import.meta.url)` is not file-scheme under vitest and fails with
@@ -74,8 +81,12 @@ Track test suite changes, fixes, and improvements for agenthub.
   pins the mapping. The primary case next to it was left alone, because it is already an equality against
   `themeConfig` and moved with the palette for free.
 - Green after that fix, all measured: `npx vitest run src/tests/theme/muiTheme.test.ts` -> 20 passed;
-  `npx vite build` -> the production artefact (entry `assets/index-CGM811WN.js`, 292348 B, minified,
-  NODE_ENV production); `npx vitest run` for the whole suite -> **122 files / 1878 tests passed,
+  `npx vite build` -> the production artefact (entry `assets/index-DT9_WKhP.js`, 292348 B, minified,
+  NODE_ENV production). CORRECTED 2026-10-11: this line first named `index-CGM811WN.js`, which does not
+  reproduce from a clean build - a clean build of `24c0c923` yields `index-DT9_WKhP.js` at the same
+  292348 B, so the first name came from the working tree rather than the tree. The lead's clean build at
+  the branch tip `1ebe8ae5` agrees in shape: entry `assets/index-CkVSyQOW.js`, 292.37 kB, its full suite
+  122 files / 1878 tests / 0 failed, 0 `error TS`; `npx vitest run` for the whole suite -> **122 files / 1878 tests passed,
   0 failed, 102.8s** - one case fewer than the 1879 the failing run counted, which is exactly the
   deletion above and not a lost assertion. The suite's stderr still prints the pre-existing
   setState-in-passive-effect React error; it is the WS item on `qitem-20261011204043`, not a failure.

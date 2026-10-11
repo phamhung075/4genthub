@@ -567,9 +567,13 @@ test('R2: the mobile drawer starts where the header ends', async ({ page }) => {
 // strict `<= innerWidth + 1` assertion above now runs at 768 and 1023 as well, and
 // the architect's band ruling of 2026-10-11 is what made that attainable by yielding
 // the profile's name/email block. The earlier caution ("do not extend the strict
-// assertion to 768, the baseline fails it" - the pre-fix reading was 860/768) is
-// therefore superseded by the fix, not ignored: parity was the state before the yield,
-// a fit is the state after it.
+// assertion to 768, the baseline fails it") is therefore superseded by the fix, not
+// ignored: parity was the state before the yield, a fit is the state after it. The
+// bound is deliberately STRICTER than the parent `39bd2cda` - the reviewer measured the
+// parent at 220px of drag at 768 (988/768) and 88px at 900 (988/900), not the 860/768
+// this comment first cited, which does not reproduce from the parent - so the assertion
+// fails on any regression, a 150px drag included, rather than only on one worse than
+// the parent was.
 const MD_WIDTHS = [768, 900, 1023] as const
 
 test('A3: the sub-label yields from md, and the tablet band fits', async ({ page }) => {
