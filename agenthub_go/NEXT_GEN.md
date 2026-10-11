@@ -341,6 +341,29 @@ Two coordination rules keep two seats from editing one file:
 
 Current assignments: `web-dev` C3 (dashboard sessions page) then F6 (topology graph); `writer` the residual documentation truth-audit (directive B continuation, docs-only); `go-dev2` D5 teams slice 1 (self-contained teams/members/roles, with the surface-inventory update riding the same commit); `go-dev` the board ticks and G3; `fe-dev` directive C closed and available.
 
+## Release record — 0.0.37, certified 2026-10-11T01:06Z, waiting on the owner's two pushes
+
+The release record proper is `CHANGELOG/2026-10-11--release-0-0-37-the-ledger-slice-the-subtask-details-and-the-client-pin.md` and the measured tip line is the lead's `DEPLOY-READY.md` at `/home/daihu/.openrig/agenthub-seats/4genthub-min/`. What follows is the part a later batch needs and that neither of those carries in one place: **the facts a reader can check, and the two decisions that are easy to get wrong.** Every number below is the lead's measurement, not a re-derivation by the author of this record.
+
+**The release.** Branch `4genthub-min/batch-0.0.37`, tip `708e3131`, **19** commits above `origin/main` (`git rev-list --count origin/main..HEAD`), a fast-forward (`git merge-base --is-ancestor origin/main HEAD` → rc 0), built in its own clean linked worktree `/home/daihu/__projects__/4genthub-batch`. The marker is `config.ReleaseVersion = "0.0.37"` at `agenthub_go/fastmcp/config/version.go:25`, committed as `294f432b` — the last commit carrying deploy content — with one **docs-only follow-on** `708e3131` (the release entry itself).
+
+**What it carries.** The ledger's cross-task read and its intents route (`f285bdf6`, `4f86a1ac`, `bccf893d`), the subtask's own progress served as details (`8e4786dd`), two frontend repairs (`4a5db09f`, `3e8c2084`), the client pin bump (`19b783c6`: `36f455e` → `d0d7599`). Battery at the marked revision `294f432b`: Go `gofmt -l` 0 real findings over tracked `.go`, `go build ./...`, `go vet ./...`, `go test ./...` all rc 0 (**141 ok, 37 with no test files, 0 FAIL, of 178 packages**, `agenthub/internal/apiref` included); frontend at `7538c21d`: `tsc --noEmit` 0 errors, `vitest run` **122 files / 1881 tests / 0 failed**, `vite build` rc 0. Five gates filed, five APPROVE.
+
+**Decision 1 — the push order, and why the second push alone fails.** **CLIENT FIRST**, then parent:
+
+1. `git -C /home/daihu/__projects__/4genthub/agenthub_client push origin 4genthub-min/go-dev:main` → 7 commits, `36f455e` → `d0d7599`.
+2. `git -C /home/daihu/__projects__/4genthub-batch push origin 4genthub-min/batch-0.0.37:main` → 19 commits, `3e07f781` → `708e3131`.
+
+The reason is a gitlink, not a preference: the parent's subtree pointer names `d0d7599`, the client's **remote** main is still at the old pin `36f455e`, and `d0d7599` exists only on the local client branch — so a parent-only push ships a gitlink whose target the client's remote cannot serve. Confirmation afterwards is the **string**, never uptime: `/health` must answer `version 0.0.37` (it answers `0.0.36` now).
+
+**Decision 2 — the artefact rule this batch learned by failing.** The API reference under `agenthub/internal/apiref` is a **build output whose drift test is a real gate**: at run 1 it failed direction 1 because the committed page omitted this batch's own two ledger routes, and was fixed as `03e0d1a1`. The consequence for the next batch is a sequencing rule: **regenerate and commit the artefact before the release entry, and finish the release entry before the marker commit** — otherwise the tip carries a docs-only commit after the marker.
+
+**How the batch was assembled, and why it cannot drift under the verdicts.** Seats' branches enter by **merge** (`539b6768`, `55764990`), so there is no cherry-pick step to redo; and both seat tips were confirmed ancestors of the release tip (`go-dev 03e0d1a1`, `fe-dev feb09b6b` → `git merge-base --is-ancestor` rc 0 each), which is why a later commit on either seat branch **cannot move `708e3131`**. The freeze was narrowed to exactly the two refs the pushes name.
+
+**Open carries, none of them blocking the push** — the two wording minors in `SubtaskDetailsDialog.tsx`'s comment (row `qitem-20261011005826`), the empty-history wire asymmetry, and the 422 body's always-null input for P6 parity. The reviewer's checkpoint file names all three.
+
+**NO SEAT PUSHES.** Nothing above was pushed, tagged or deployed by a seat; both commands are the owner's step, and `rig gateway human list` is empty, so the ask cannot be routed to them — it can only be answered.
+
 ## Checklist
 Legend: `[x]` done and its check met; `[ ]` open; `[~]` superseded by another item (not done as written; the original text is kept for traceability).
 
