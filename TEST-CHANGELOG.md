@@ -2,6 +2,12 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-11 - the complete action's request is asserted where the server reads it
+
+- ADDED `agenthub-frontend/src/tests/services/apiV2.test.ts` (`describe('completeTask')`): a case asserting the request carries `completion_summary` (and `testing_notes` when given) in the URL's **query**, with `method: 'POST'` and **no body** - the shape `queryReq` in `agenthub_go/fastmcp/server/httpapp/task_routes.go` accepts. MEASURED RED at the pre-fix call site (`2ae4c944`): `AssertionError: expected null to be 'Task completed successfully'`, 1 failed | 31 passed (32); the same assertion passes at the fix.
+- REWRITTEN the two cases that had pinned the defect: one asserted an empty form body at the BARE url, an exact header object and the mock's own echo as the result, and the other repeated the body assertion. The first is replaced by the contract case above; the second now asserts the optional-parameter branch against the same contract - the query parameters, the method, and that nothing is sent in a body, which is the property the route's 422 depends on.
+- MEASURED GREEN at the fix: `npx vitest run src/tests/services/apiV2.test.ts` -> 1 file passed, 31 passed (31), 0 failed; `npx tsc --noEmit -p .` -> 0 `error TS`; `npx tsc --noEmit -p tsconfig.tests.json` -> 194, the standing ratchet; `npx vitest run` -> 122 files passed (122), 1886 tests passed (1886), 0 failed (159.95s) - the same totals as before the change, because one case left and one arrived.
+
 ## 2026-10-11 - the index guard: case is folded outside the literal only, and a statement is read whole
 
 - CHANGED `agenthub_go/fastmcp/task_management/infrastructure/database/schema_matches_definitions_test.go`: `goDefNormalizeStatement` folds case through the new `goDefFoldOutsideLiterals` (a single-quoted literal's case is its value, so `WHERE role = 'owner'` and `WHERE role = 'Owner'` are different indexes); `goDefStepIndexes` iterates the new `goDefStatements(step.SQL)` - whole statements, the same unit the runtime side is parsed in - instead of splitting the migration on newlines. `goDefStatements` respects single-quoted literals, parentheses and `--` line comments (the migration's prose apostrophes would otherwise open a bogus literal and swallow every later statement), keeps a final statement with no trailing semicolon, and anything index-shaped that still cannot be parsed remains a `goDefParseError`, never a skip.

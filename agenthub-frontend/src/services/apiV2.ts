@@ -460,24 +460,23 @@ export const taskApiV2 = {
     });
   },
 
-  // Complete a task - fix parameter format for backend
+  // Complete a task. The server reads this action's input as REQUIRED FastAPI-style query
+  // parameters (`queryReq` in agenthub_go/fastmcp/server/httpapp/task_routes.go: an absent
+  // completion_summary is answered with a 422), so both fields ride the query string. A form
+  // body is never read, and sending one is what made this action fail every time.
   completeTask: async (taskId: string, completionData: {
     completion_summary: string;
     testing_notes?: string;
   }) => {
-    const formData = new URLSearchParams();
-    formData.append('completion_summary', completionData.completion_summary);
+    const params = new URLSearchParams();
+    params.set('completion_summary', completionData.completion_summary);
     if (completionData.testing_notes) {
-      formData.append('testing_notes', completionData.testing_notes);
+      params.set('testing_notes', completionData.testing_notes);
     }
 
-    return fetchWithRetry(`${API_BASE_URL}/api/v2/tasks/${taskId}/complete`, {
+    return fetchWithRetry(`${API_BASE_URL}/api/v2/tasks/${taskId}/complete?${params.toString()}`, {
       method: 'POST',
-      headers: {
-        ...getAuthHeaders(),
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: formData,
+      headers: getAuthHeaders(),
     });
   },
 };

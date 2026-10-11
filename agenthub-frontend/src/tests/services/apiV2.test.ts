@@ -438,34 +438,31 @@ describe('apiV2.ts', () => {
         testing_notes: 'All tests passed'
       };
 
-      it('should complete a task', async () => {
-        const mockCompletedTask = {
-          id: taskId,
-          status: 'done',
-          ...completionData
-        };
+      // The server reads this action's input as REQUIRED FastAPI-style query parameters -
+      // `queryReq` in agenthub_go/fastmcp/server/httpapp/task_routes.go, whose absence yields a
+      // 422 - so the request must carry completion_summary in the URL's query. A form body, which
+      // is what this call used to send, is never read, so the action failed every time.
+      it('sends completion_summary as a query parameter, where the server reads it', async () => {
         (global.fetch as any).mockResolvedValue({
           ok: true,
-          json: vi.fn().mockResolvedValue(mockCompletedTask)
+          json: vi.fn().mockResolvedValue({ id: taskId, status: 'done' })
         });
 
-        const result = await taskApiV2.completeTask(taskId, completionData);
+        await taskApiV2.completeTask(taskId, completionData);
 
-        const fetchCall = (global.fetch as any).mock.calls[0];
-        expect(fetchCall[0]).toBe(`http://localhost:8000/api/v2/tasks/${taskId}/complete`);
-        expect(fetchCall[1].method).toBe('POST');
-        expect(fetchCall[1].headers).toEqual({
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'Authorization': `Bearer ${mockToken}`
-        });
-        expect(fetchCall[1].credentials).toBe('include');
-        const body = fetchCall[1].body as URLSearchParams;
-        expect(body).toBeInstanceOf(URLSearchParams);
-        expect(body.get('completion_summary')).toBe('Task completed successfully');
-        expect(body.get('testing_notes')).toBe('All tests passed');
-        expect(result).toEqual(mockCompletedTask);
+        const [url, init] = (global.fetch as any).mock.calls[0];
+        const query = new URL(url).searchParams;
+        expect(query.get('completion_summary')).toBe('Task completed successfully');
+        expect(query.get('testing_notes')).toBe('All tests passed');
+        expect(init.method).toBe('POST');
+        expect(init.body).toBeUndefined();
       });
 
+      // REWRITTEN: this pair pinned the defect rather than a contract. It asserted the request
+      // carried an empty form body at the BARE url - the shape no server accepts - and an exact
+      // header object, and its result assertion was the mock's own echo. The contract it should
+      // have asserted is the one the case above it now does: the query parameters the server's
+      // `queryReq` actually reads.
       it('should handle completion without testing notes', async () => {
         const minimalData = { completion_summary: 'Done' };
         const mockResponse = { id: taskId, status: 'done' };
@@ -474,13 +471,14 @@ describe('apiV2.ts', () => {
           json: vi.fn().mockResolvedValue(mockResponse)
         });
 
-        const result = await taskApiV2.completeTask(taskId, minimalData);
+        await taskApiV2.completeTask(taskId, minimalData);
 
-        const fetchCall = (global.fetch as any).mock.calls[0];
-        const body = fetchCall[1].body as URLSearchParams;
-        expect(body.get('completion_summary')).toBe('Done');
-        expect(body.has('testing_notes')).toBe(false);
-        expect(result).toEqual(mockResponse);
+        const [url, init] = (global.fetch as any).mock.calls[0];
+        const query = new URL(url).searchParams;
+        expect(query.get('completion_summary')).toBe('Done');
+        expect(query.has('testing_notes')).toBe(false);
+        expect(init.method).toBe('POST');
+        expect(init.body).toBeUndefined();
       });
     });
 
