@@ -689,6 +689,9 @@ export const subtaskApiV2 = {
       {
         method: 'POST',
         headers: getAuthHeaders(),
+        // No `credentials`: auth is the Bearer header above, built from the JS-visible
+        // access_token cookie, and the Go API sets no cookie of its own - so `include`, which most
+        // calls in this file carry and a few (completeTask here) omit, can carry nothing either way.
       }
     );
     return handleResponse(response);
