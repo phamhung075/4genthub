@@ -639,8 +639,18 @@ export const SeatDetailPage: React.FC = () => {
   // shared with their teams, so `role` (`seatAdminRoomRole`) is the only field separating them; every
   // write on this page is gated on it, because the mutation routes resolve the room owner-only and a
   // viewer's write comes back as a 404 saying "room not found" about a seat they are reading.
-  const { rooms } = useRooms();
-  const isRoomOwner = rooms.find(candidate => candidate.slug === room)?.role === 'owner';
+  //
+  // It is read from a SETTLED list that NAMES this room, because reading `rooms` alone made an
+  // unarrived list indistinguishable from a viewer's (GATE-f541f2f5 M1): on the first paint of a deep
+  // link, and permanently when `GET /rooms` failed, an owner was shown the viewer's sentence about
+  // their own room and lost every write surface. A room the caller can READ is always named in that
+  // list, so its absence is information to act on rather than a verdict to render, and only a positive
+  // `viewer` is treated as one.
+  const { rooms, isLoading: roomsLoading, error: roomsError, refetch: refetchRooms } = useRooms();
+  const roomRole = rooms.find(candidate => candidate.slug === room)?.role;
+  const isRoomViewer = roomRole === 'viewer';
+  const canWrite = roomRole === 'owner';
+  const standingUnknown = roomRole === undefined;
 
   // Live seat sync: a seat event invalidates this page's seat keys.
   const { user, tokens } = useAuth();
@@ -714,14 +724,34 @@ export const SeatDetailPage: React.FC = () => {
       {/* ONE sentence for a viewer, mirroring the room row's. The server refuses a viewer's write with
           a 404 on a seat they are legitimately reading, so there is no per-action reason to quote
           beside a dead control - the affordances are absent instead, and this is why. */}
-      {currentSeat && !isRoomOwner && (
+      {currentSeat && isRoomViewer && (
         <p className="mb-3 text-xs text-muted-foreground">
           This seat is in a room its owner shared with a team you belong to, so you can read it and its seat
           type. Writing is the owner's: the runtime and model, the permission policy, the overlay and the links.
         </p>
       )}
 
-      {currentSeat && !resolveLoading && !resolveError && (
+      {/* The standing's STATUS, held rather than guessed - the same discipline as the resolve read above,
+          and for the same reason. A list that has not answered, that failed, or that does not name this
+          room has said NOTHING about the caller, so neither the sentence above nor the write surfaces are
+          rendered from it: an owner keeps their standing instead of losing it to an unanswered request.
+          The failed case has somewhere to go rather than leaving the page read-only forever. */}
+      {currentSeat && !resolveLoading && !resolveError && standingUnknown && (
+        roomsLoading && !roomsError ? (
+          <Loading label="Loading your rooms, which decide what you can write here..." />
+        ) : (
+          <QueryError
+            message={
+              roomsError
+                ? roomsError.message
+                : `The rooms the server returned do not name room "${room}", so whether you can write here is unknown.`
+            }
+            onRetry={() => refetchRooms()}
+          />
+        )
+      )}
+
+      {currentSeat && !standingUnknown && !resolveLoading && !resolveError && (
         <Tabs defaultValue="modules">
           <TabsList>
             <TabsTrigger value="modules">
@@ -742,19 +772,19 @@ export const SeatDetailPage: React.FC = () => {
           </TabsList>
 
           <TabsContent value="modules">
-            <ModulesTab seatType={seatType} canWrite={isRoomOwner} />
+            <ModulesTab seatType={seatType} canWrite={canWrite} />
           </TabsContent>
           <TabsContent value="links">
-            <LinksTab roomSeats={seats} canWrite={isRoomOwner} />
+            <LinksTab roomSeats={seats} canWrite={canWrite} />
           </TabsContent>
           <TabsContent value="preview">
             <SeatPreview room={room} seat={seat} />
           </TabsContent>
           <TabsContent value="llm">
-            <SeatLlmPanel room={room} seat={currentSeat} canWrite={isRoomOwner} />
+            <SeatLlmPanel room={room} seat={currentSeat} canWrite={canWrite} />
           </TabsContent>
           <TabsContent value="permissions">
-            <SeatPermissionPolicyPanel room={room} seat={currentSeat} canWrite={isRoomOwner} />
+            <SeatPermissionPolicyPanel room={room} seat={currentSeat} canWrite={canWrite} />
           </TabsContent>
         </Tabs>
       )}

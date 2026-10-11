@@ -29,6 +29,21 @@ Track test suite changes, fixes, and improvements for agenthub.
   RAN rather than skipping - `TestLedgerIntentsRecordsOfflineFactsUnchangedInArrivalOrder` 4.31s,
   `TestLedgerIntentsRefusesASubtaskThatIsNotThisTasksOwn` 1.53s, `TestLedgerIntentsRefusesABodyThatIsNotAList`
   3.38s - and a skip would have printed `SKIPPED` rather than these times.
+## 2026-10-11 - the seat detail standing gets its third state, and three cases pin it
+
+- ADDED, three cases in a new describe in the existing file `agenthub-frontend/src/tests/pages/SeatDetailPage.test.tsx`, one per way the rooms list can fail to answer: the list in flight (`listRooms` returns a promise that never settles), the list failing (`listRooms` rejects), and the list settling WITHOUT naming this room (`rooms: []`).
+- WHY THEY ARE THREE AND NOT ONE: the defect (GATE `f541f2f5`, M1) was that all three states were rendered as "viewer", so a single case would leave two of them unguarded - and the page's own third-state convention already had one case per state for the resolve read, which is the pattern copied here.
+- EACH CASE CARRIES A POSITIVE CONTROL, because "no Save and no viewer sentence" would otherwise pass against a page that rendered nothing at all: the in-flight case asserts the visible reason (`Loading your rooms, which decide what you can write here`) and that the standing-dependent tabs are absent; the failed case asserts the API's own message, an enabled `Retry`, and that clicking it re-reads the standing so the owner's page comes back (`listRooms` called twice, then the page renders); the settled-without-the-room case asserts its own message and the same absence of the viewer claim.
+- RED-FIRST MEASURED, page untouched: `npx vitest run src/tests/pages/SeatDetailPage.test.tsx` -> **3 failed | 26 passed (29)**, failing exactly the three new cases. After the fix, re-run in `wt/fe-dev`: **29 passed (29)**, and the full suite in the same worktree -> **122 files / 1881 tests passed, 0 failed**.
+- WHAT IS NOT IN THESE CASES, deliberately: no assertion pins the old predicate's shape, and none pins CSS or class names - the standing is asserted by what a reader sees and by which controls exist.
+
+## 2026-10-11 - vitest stops collecting the Playwright spec, and the certified suite goes green
+
+- CHANGED, one config file and no test file: `agenthub-frontend/vite.config.ts`'s `test.exclude` gains `e2e/**`. Vitest's default include matches `**/*.spec.ts` and `e2e/smoke.spec.ts` is a PLAYWRIGHT spec, so vitest collected it and the file failed at IMPORT rather than as a test.
+- WHY IT FAILED, precisely, because a collection failure reads like a test failure: `e2e/account.ts:17` reads the gitignored `e2e-test-account` at module scope, and no git worktree carries that file, so the run printed `FAIL e2e/smoke.spec.ts [ e2e/smoke.spec.ts ] Error: ENOENT ... e2e-test-account` beside `Test Files 1 failed | 122 passed (123)` with **Tests 1881 passed (1881)** - zero test failures under a red run.
+- THE CLASS WAS ALREADY ON THIS FILE: `src/tests/e2e/live-websocket.test.ts` carries the same exclusion, and the comment beside it claimed the repo has no Playwright config, which stopped being true when `playwright.config.ts` landed. The comment now states the real rule - Playwright owns both directories and `npx playwright test` is how they run.
+- VERIFIED, in `wt/fe-dev`, from `agenthub-frontend`: `npx vitest run` -> **rc=0, Test Files 122 passed (122), Tests 1881 passed (1881)**; the same command before the change -> **rc=1, 1 failed | 122 passed**, failing only on that unloadable file. The test total is IDENTICAL on both sides, which is the point: this change removes a load error, not a test.
+- NOT RUN, named: no Playwright invocation - the excluded spec is unchanged and is run by `npx playwright test`, whose own result (1 passed, 4.4s, against the deployed app) is recorded in the entry below.
 
 ## 2026-10-11 - the frontend gets a browser-level check, and the deployed app passes it
 
