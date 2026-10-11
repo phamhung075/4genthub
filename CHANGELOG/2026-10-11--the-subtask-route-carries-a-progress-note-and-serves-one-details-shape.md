@@ -55,9 +55,10 @@ already exercises the same use case. The attempt also turned up two things worth
 1. **One subtask request is resolved by two different user ids.** The subtask row is looked up with the
    caller's raw token subject (`getTaskIDFromSubtask` -> `NewORMSubtaskRepository(&userID)`), while the
    parent task goes through a facade that maps the subject through `domain.ValidateUserID`. For a real
-   Keycloak subject those coincide because it is already a UUID; for any other subject the two routes
-   disagree about who the caller is. Reported rather than changed, because it is an authorization
-   question and it is not what either row asked for.
+   Keycloak subject those coincide because it is already a UUID, so this is **an open question for the
+   owner rather than a defect settled here**: is a non-UUID subject (a service token, a test token, a
+   future provider) supposed to see its own subtasks? The behaviour is deliberately unchanged and the
+   question is carried to the owner.
 2. **The subtask facade comes from a process-global provider**
    (`services.RepositoryProviderService{}.GetInstance()`), so a second throwaway database in one test
    process leaves the first subtask request answering `sql: database is closed`.

@@ -25,6 +25,11 @@ Track test suite changes, fixes, and improvements for agenthub.
   task whatever identity the row carries, because the subtask controller resolves it through
   `facadeService.GetTaskFacade(nil, nil, &userID).GetTask(...)`. The attempt is recorded in the changelog
   entry with both findings it produced instead of being papered over with a case that would silently skip.
+- REASON A SECOND IN-PROCESS DATABASE CANNOT BE USED IN THIS PACKAGE: the subtask facade is built from the
+  process-global `services.RepositoryProviderService{}.GetInstance()`. The first
+  `newMissedNotificationAppEnv` binds it, that case's `t.Cleanup` drops the database it points at, and the
+  next subtask request in the same process answers `sql: database is closed`. Subtask-backed cases in this
+  package therefore keep one environment per process; the facade is not re-architected for it.
 
 ## 2026-10-11 - the script suite's stale expectations, re-measured case by case
 
