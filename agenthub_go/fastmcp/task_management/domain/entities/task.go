@@ -516,8 +516,19 @@ type ProgressEntry struct {
 func (t *Task) ProgressEntries() []ProgressEntry {
 	entries := make([]ProgressEntry, 0, len(t.ProgressHistory))
 	for k, v := range t.ProgressHistory {
-		m, _ := v.(map[string]any)
-		c, _ := m["content"].(string)
+		// A key whose value is not a note object, or an object whose content is not a string, is not a
+		// note, and neither is turned into one here. The discards this replaces are the pattern that
+		// hid the original defect: an entry invented from them would carry the empty string under
+		// number 0, which renders as a blank line AND claims that identity in the merged reader, where
+		// ProgressTextWith uses it to drop the ledger's own copy of a note.
+		m, ok := v.(map[string]any)
+		if !ok {
+			continue
+		}
+		c, ok := m["content"].(string)
+		if !ok {
+			continue
+		}
 		entries = append(entries, ProgressEntry{Number: numberOf(m["progress_number"]), Key: k, Content: c})
 	}
 	sort.Slice(entries, func(i, j int) bool {
@@ -578,7 +589,12 @@ func (t *Task) ProgressTextWith(progressEvents []*TaskEvent) string {
 			continue
 		}
 		number := numberOf(event.Payload["progress_number"])
-		content, _ := event.Payload["content"].(string)
+		content, ok := event.Payload["content"].(string)
+		if !ok {
+			// The same rule as the column side: an event whose payload carries no readable note is not
+			// a note, and it must not be rendered as a blank line or claim an identity either.
+			continue
+		}
 		id := noteIdentity{number, content}
 		if seen[id] {
 			continue

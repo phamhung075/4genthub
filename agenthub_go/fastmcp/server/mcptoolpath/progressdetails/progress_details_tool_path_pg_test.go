@@ -279,6 +279,18 @@ func TestProgressDetailsRoundTripThroughTheTools(t *testing.T) {
 		t.Logf("OBSERVED stored tasks.progress_history=%s", rawProgressHistory(t, sessions, taskID))
 		t.Logf("OBSERVED ledger task_events kinds=%s", ledgerKinds(t, sessions, taskID))
 
+		// The property that survives to this tree, asserted rather than logged: the round trip writes
+		// exactly ONE `progress` event per note - `ea3efb20`'s dual write - and none from a repair. The
+		// fix this case was written for (`2c4582de`) surfaced the notes by READING the column and
+		// re-recorded nothing, and a repair that re-wrote them would appear here as a second event for
+		// a note already stored, which is the duplicate O1c exists to remove. (At `2c4582de` itself
+		// there were no `progress` events at all; asserting zero today would pin that moment instead of
+		// the property, and would break the moment a note is written through the ledger, as it now is.)
+		if kinds := ledgerKinds(t, sessions, taskID); strings.Count(kinds, "progress") != 2 {
+			t.Errorf("the round trip left %s: want exactly one progress event per note - two for the two "+
+				"notes written - because nothing re-records a stored note", kinds)
+		}
+
 		getRes, isErr := callTool(t, plainCtx, app, "manage_task", map[string]any{"action": "get", "task_id": taskID})
 		if isErr {
 			t.Fatalf("manage_task get reported an error: %s", jsonText(getRes))
