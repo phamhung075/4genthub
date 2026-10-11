@@ -270,18 +270,49 @@ func (f fakeTaskRepo) GetCompletedSubtaskCounts(ctx context.Context, ids []strin
 	return f.counts, nil
 }
 
+// fakeProgressEvents stands in for the ledger read the list builder makes. It records the task-id
+// arguments so a test can prove the page's notes are read in ONE call rather than one call per row.
+type fakeProgressEvents struct {
+	byTask map[string][]*entities.TaskEvent
+	calls  [][]string
+}
+
+func (f *fakeProgressEvents) ProgressEventsByTask(ctx context.Context, taskIDs []string) (map[string][]*entities.TaskEvent, error) {
+	f.calls = append(f.calls, taskIDs)
+	out := map[string][]*entities.TaskEvent{}
+	for _, id := range taskIDs {
+		if events, ok := f.byTask[id]; ok {
+			out[id] = events
+		}
+	}
+	return out, nil
+}
+
 func TestTaskListResponseFromDomainList(t *testing.T) {
 	gb := "gb-1"
 	task := sampleDomainTask()
 	task.GitBranchID = &gb
+	second := sampleDomainTask()
+	other, _ := value_objects.NewTaskId("tid-2")
+	second.ID = &other
+	second.GitBranchID = &gb
 
-	resp, err := TaskListResponseFromDomainList(context.Background(), []*entities.Task{task},
+	// details render from the LEDGER, so one page's notes are read once for the whole page. The second
+	// task has no note, which is what tells a batched read that maps by id apart from a reader that
+	// hands every row the same events.
+	notes := []*entities.TaskEvent{{
+		Kind:    entities.TaskEventKindProgress,
+		Payload: map[string]any{"content": "=== Progress 1 ===\nlist note", "progress_number": float64(1)},
+	}}
+	ledger := &fakeProgressEvents{byTask: map[string][]*entities.TaskEvent{"tid": notes}}
+
+	resp, err := TaskListResponseFromDomainList(context.Background(), []*entities.Task{task, second},
 		fakeBranchRepo{branches: map[string]*entities.GitBranch{"gb-1": {ProjectID: "proj-9"}}},
-		fakeTaskRepo{counts: map[string]int{"tid": 3}}, nil, nil)
+		fakeTaskRepo{counts: map[string]int{"tid": 3}}, ledger, nil, nil)
 	if err != nil {
 		t.Fatalf("err = %v", err)
 	}
-	if resp.Count != 1 || len(resp.Tasks) != 1 {
+	if resp.Count != 2 || len(resp.Tasks) != 2 {
 		t.Fatalf("count = %d", resp.Count)
 	}
 	if resp.Tasks[0].ProjectID == nil || *resp.Tasks[0].ProjectID != "proj-9" {
@@ -289,6 +320,15 @@ func TestTaskListResponseFromDomainList(t *testing.T) {
 	}
 	if resp.Tasks[0].CompletedSubtasks != 3 {
 		t.Fatalf("completed = %d", resp.Tasks[0].CompletedSubtasks)
+	}
+	if want := task.ProgressTextWith(notes); resp.Tasks[0].Details != want || resp.Tasks[0].Details == "" {
+		t.Fatalf("row details = %q, want the ledger note %q", resp.Tasks[0].Details, want)
+	}
+	if resp.Tasks[1].Details != "" {
+		t.Fatalf("second row details = %q, want empty: that task has no ledger note", resp.Tasks[1].Details)
+	}
+	if len(ledger.calls) != 1 || !reflect.DeepEqual(ledger.calls[0], []string{"tid", "tid-2"}) {
+		t.Fatalf("ledger reads = %v, want one batched read of both rows", ledger.calls)
 	}
 }
 

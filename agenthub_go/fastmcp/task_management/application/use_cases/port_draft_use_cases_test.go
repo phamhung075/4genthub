@@ -293,7 +293,7 @@ func TestDraftPortListTasks(t *testing.T) {
 		completedCounts: map[string]int{taskID.Value: 0}}
 	status := "todo"
 	request := &dtostask.ListTasksRequest{Status: &status}
-	response, err := NewListTasksUseCase(repo, nil).Execute(context.Background(), request)
+	response, err := NewListTasksUseCase(repo, nil, nil).Execute(context.Background(), request)
 	if err != nil {
 		t.Fatalf("Execute: %v", err)
 	}

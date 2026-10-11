@@ -242,3 +242,57 @@ func (r *TaskEventRepository) Events(ctx context.Context, taskID string) ([]*ent
 		afterSeq = page[len(page)-1].Seq
 	}
 }
+
+// ProgressEventsByTask reads the progress entries of MANY tasks in ONE query, keyed by task id, each
+// task's entries oldest first. It exists because a list renders every row's details, and the list
+// builder already batches its other per-task read (GetCompletedSubtaskCounts) for the same reason: a
+// read per row turns one list request into one query per task, and the task list is the request a
+// client makes most often.
+//
+// It filters to kind='progress' in SQL rather than leaving the filter to the renderer, which is what
+// the name promises: ProgressTextWith would discard every other kind anyway, and the table carries
+// every lifecycle entry, so the filter is the difference between reading a task's notes and reading
+// its whole history.
+//
+// It does NOT page, unlike Events: Events pages to bound one task's read and then concatenates the
+// pages anyway, so the memory it saves is not real, and a batch cannot page on seq - there is no
+// single window over many tasks. Ordered by task_id then seq, which is the order the merge wants.
+func (r *TaskEventRepository) ProgressEventsByTask(ctx context.Context, taskIDs []string) (map[string][]*entities.TaskEvent, error) {
+	out := map[string][]*entities.TaskEvent{}
+	if len(taskIDs) == 0 {
+		return out, nil
+	}
+	err := r.sessions.WithSession(ctx, func(ctx context.Context, s database.DBTX) error {
+		args := []any{r.userID}
+		in := taskRepoInClause("task_id", taskIDs, &args, "::uuid")
+		rows, err := s.QueryContext(ctx, `
+			SELECT "id", "task_id", "user_id", "seq", "kind", "actor_kind", "actor_id", "payload", "created_at"
+			FROM task_events
+			WHERE "user_id" = $1 AND `+in+` AND "kind" = 'progress'
+			ORDER BY "task_id" ASC, "seq" ASC`, args...)
+		if err != nil {
+			return err
+		}
+		defer rows.Close()
+		for rows.Next() {
+			ev := &entities.TaskEvent{}
+			var kind, actorKind string
+			var payload *string
+			if err := rows.Scan(&ev.ID, &ev.TaskID, &ev.UserID, &ev.Seq, &kind, &actorKind, &ev.ActorID, &payload, &ev.CreatedAt); err != nil {
+				return err
+			}
+			ev.Kind = entities.TaskEventKind(kind)
+			ev.ActorKind = entities.TaskEventActorKind(actorKind)
+			if payload != nil {
+				_ = json.Unmarshal([]byte(*payload), &ev.Payload)
+			}
+			ev.CreatedAt = ev.CreatedAt.UTC()
+			out[ev.TaskID] = append(out[ev.TaskID], ev)
+		}
+		return rows.Err()
+	})
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}

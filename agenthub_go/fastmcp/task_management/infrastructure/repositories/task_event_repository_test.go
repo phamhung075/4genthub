@@ -205,3 +205,91 @@ func TestTaskEventAppendGivesOneGaplessUserCursorAndRefusesAResend(t *testing.T)
 		t.Fatal("actor_kind='bogus' was accepted; the database must refuse a value outside the vocabulary")
 	}
 }
+
+// TestProgressEventsByTaskIsOneReadForTheWholePage covers the reader the list and search builders use
+// to render every row's details. It is ONE call for the page, so it must group by task id, name only
+// the progress kind, keep seq order, and answer nothing for a task it was asked about that has no
+// events - and nothing for another user's task.
+func TestProgressEventsByTaskIsOneReadForTheWholePage(t *testing.T) {
+	sessions := newTestRepoEnv(t)
+	ctx := context.Background()
+	branchID := taskRepoTestBranch(t, sessions, taskRepoTestUserA)
+	repo := taskRepoTestNewRepo(t, sessions, taskRepoTestUserA, branchID, false)
+	events := NewTaskEventRepository(sessions, taskRepoTestUserA, branchID)
+
+	withNotes, err := repo.CreateTask(ctx, "Listed with notes", "D", "high", nil, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	withoutNotes, err := repo.CreateTask(ctx, "Listed without notes", "D", "high", nil, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i, content := range []string{"=== Progress 1 ===\nfirst note", "=== Progress 2 ===\nsecond note"} {
+		if _, err := events.Append(ctx, entities.AppendTaskEvent{
+			TaskID:    withNotes.ID.Value,
+			Kind:      entities.TaskEventKindProgress,
+			ActorKind: entities.TaskEventActorHuman,
+			ActorID:   "test",
+			Payload:   map[string]any{"content": content, "progress_number": i + 1},
+		}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	// The same task also carries a non-progress event: the reader names one kind, and a list row
+	// renders notes, so anything else must not come back as one.
+	if _, err := events.Append(ctx, entities.AppendTaskEvent{
+		TaskID:    withNotes.ID.Value,
+		Kind:      entities.TaskEventKindStatusChanged,
+		ActorKind: entities.TaskEventActorHuman,
+		ActorID:   "test",
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	// Another user's ledger, with a note on another user's task. The page is asked for it, and the
+	// answer must not carry it: the repository filters by user_id.
+	foreignBranch := taskRepoTestBranch(t, sessions, taskRepoTestUserB)
+	foreignEvents := NewTaskEventRepository(sessions, taskRepoTestUserB, foreignBranch)
+	foreign, err := taskRepoTestNewRepo(t, sessions, taskRepoTestUserB, foreignBranch, false).
+		CreateTask(ctx, "Another user's task", "D", "high", nil, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := foreignEvents.Append(ctx, entities.AppendTaskEvent{
+		TaskID:    foreign.ID.Value,
+		Kind:      entities.TaskEventKindProgress,
+		ActorKind: entities.TaskEventActorHuman,
+		ActorID:   "test",
+		Payload:   map[string]any{"content": "=== Progress 1 ===\nnot yours", "progress_number": 1},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	byTask, err := events.ProgressEventsByTask(ctx, []string{withNotes.ID.Value, withoutNotes.ID.Value, foreign.ID.Value})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(byTask) != 1 {
+		t.Fatalf("reader answered for %d tasks, want 1 (the page's task that HAS notes): %#v", len(byTask), byTask)
+	}
+	got := byTask[withNotes.ID.Value]
+	if len(got) != 2 {
+		t.Fatalf("notes = %d, want 2: the status event is not a note", len(got))
+	}
+	if got[0].Seq >= got[1].Seq {
+		t.Fatalf("notes are not in seq order: %d then %d", got[0].Seq, got[1].Seq)
+	}
+	if content, _ := got[0].Payload["content"].(string); content != "=== Progress 1 ===\nfirst note" {
+		t.Fatalf("first note = %q, want the seq-1 content", content)
+	}
+	if events, ok := byTask[withoutNotes.ID.Value]; ok {
+		t.Fatalf("a task with no events answered %#v, want no entry: a row with no notes is empty", events)
+	}
+	if _, ok := byTask[foreign.ID.Value]; ok {
+		t.Fatal("another user's task is in the answer: the read is not user-scoped")
+	}
+	if empty, err := events.ProgressEventsByTask(ctx, nil); err != nil || len(empty) != 0 {
+		t.Fatalf("an empty page answered %#v, %v, want an empty map and no error", empty, err)
+	}
+}
