@@ -70,6 +70,13 @@ type SubtaskApplicationFacade struct {
 	ContextResolver  SubtaskContextResolver
 	EventBroadcaster SubtaskEventBroadcaster
 	ContextSync      SubtaskContextSyncService
+
+	// Ledger is where a subtask progress note is RECORDED: the task-event ledger of the PARENT task,
+	// which is the only place a note lives now that O1c dropped the progress columns (a subtask's own
+	// included). The composition root's subtask factory sets it beside WithProgressStore; unset leaves
+	// every update that carries no note exactly as it was, and makes one that does carry a note fail
+	// loudly rather than drop it.
+	Ledger usecases.StatusLedger
 }
 
 // NewSubtaskApplicationFacade mirrors __init__.
@@ -111,6 +118,17 @@ func (f *SubtaskApplicationFacade) WithProgressStore(store services.TaskProgress
 	f.addSubtaskUseCase.ProgressUpdater = updater
 	f.updateSubtaskUseCase.ProgressUpdater = updater
 	f.removeSubtaskUseCase.ProgressUpdater = updater
+	return f
+}
+
+// WithLedger wires the task-event ledger a subtask progress note is recorded in, on the one use case
+// that writes notes: update_subtask. A subtask note belongs to the PARENT task's ledger, so this is the
+// same seam the task-facing use cases take, built for the same user by the composition root.
+func (f *SubtaskApplicationFacade) WithLedger(l usecases.StatusLedger) *SubtaskApplicationFacade {
+	f.Ledger = l
+	if f.updateSubtaskUseCase != nil {
+		f.updateSubtaskUseCase.WithLedger(l)
+	}
 	return f
 }
 
@@ -290,7 +308,7 @@ func (f *SubtaskApplicationFacade) handleUpdateSubtask(ctx context.Context, task
 
 	updateUseCase := f.updateSubtaskUseCase
 	if updateUseCase == nil {
-		updateUseCase = usecases.NewUpdateSubtaskUseCase(taskRepository, subtaskRepository)
+		updateUseCase = usecases.NewUpdateSubtaskUseCase(taskRepository, subtaskRepository).WithLedger(f.Ledger)
 	}
 
 	request := &subtask.UpdateSubtaskRequest{

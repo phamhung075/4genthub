@@ -100,22 +100,20 @@ func (u *UpdateTaskUseCase) Execute(ctx context.Context, request task.UpdateTask
 		}
 	}
 
-	// The note's number comes from the LEDGER, not from the entity: the carry step copies a dropped
-	// column's numbers into the ledger intact, so a task whose notes were numbered 1..N continues at
-	// N+1 rather than restarting (a restart would collide on the identity a reader merges by). The
-	// note is RECORDED below, inside the transaction that saves the task: dropping this entry would
-	// lose the note.
+	// The note is RECORDED below, inside the transaction that saves the task: dropping this entry would
+	// lose the note. Its NUMBER is not read here - the ledger assigns it while it writes, inside that
+	// same transaction and under the lock the append takes, because the carry step copied a dropped
+	// column's numbers in intact and two writers sharing one number would share the identity a reader
+	// merges copies by.
 	var progressNotes []LedgerProgress
 	if request.Details != nil {
-		number, err := u.ledger.NextProgressNumber(ctx, ledgerTaskID(taskEntity))
-		if err != nil {
+		if err := taskEntity.TouchForProgress(); err != nil {
 			return nil, err
 		}
-		note, err := taskEntity.AppendProgress(number, *request.Details)
-		if err != nil {
-			return nil, err
-		}
-		progressNotes = append(progressNotes, LedgerProgress{Note: note})
+		progressNotes = append(progressNotes, LedgerProgress{
+			Content:   *request.Details,
+			Timestamp: value_objects.IsoFormat(*taskEntity.UpdatedAt),
+		})
 	}
 
 	if request.EstimatedEffort != nil {

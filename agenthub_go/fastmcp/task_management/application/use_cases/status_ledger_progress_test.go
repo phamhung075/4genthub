@@ -48,6 +48,12 @@ func (c *progressCapturingLedger) RecordProgress(_ context.Context, _, _ string,
 	return c.event, nil
 }
 
+// NextProgressNumberInTx answers 1, the number a task with no note yet takes: the seam stands in for a
+// ledger whose only entry is the one it is about to record.
+func (c *progressCapturingLedger) NextProgressNumberInTx(context.Context, string) (int, error) {
+	return 1, nil
+}
+
 func (c *progressCapturingLedger) Events(context.Context, string) ([]*entities.TaskEvent, error) {
 	if c.event == nil {
 		return nil, nil

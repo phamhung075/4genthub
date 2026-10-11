@@ -281,30 +281,35 @@ func (t *Task) UpdateDescription(description string) error {
 	return nil
 }
 
-// AppendProgress builds the numbered progress note the caller records as a `progress` entry in the
-// task-event ledger, and returns it. The column is gone: the ledger is the ONE home of a note, so
-// there is no second write here and no counter on the entity.
+// TouchForProgress is the mutation a progress write makes on the TASK itself. The note lives in the
+// ledger and the column with its counter is gone, so what is left on the entity is the touch - which
+// advances updated_at, the instant the note is stamped with - and the cleared context_id the column
+// path cleared before it moved.
 //
-// The number is the CALLER's, because the ledger is where the sequence lives now. The carry step
-// copies a dropped column's numbers into the ledger intact, so a task whose notes were numbered
-// 1..N must continue at N+1 rather than restart at 1: a restart would collide on the identity a
-// reader merges by - content plus progress_number together - and the carry's own guard would then
-// skip a note the ledger "already holds", silently losing it. The caller therefore reads the task's
-// highest ledger number and hands the next one in.
-//
-// The returned entry is the payload the recorder stores: the text WITH its numbered header (the
-// shape the column stored and the carry copies), that number, and the timestamp.
-func (t *Task) AppendProgress(number int, content string) (ProgressEntry, error) {
-	header := fmt.Sprintf("=== Progress %d ===", number)
+// It does NOT build the entry, because the note's NUMBER belongs to the ledger and is assigned INSIDE
+// the writing transaction (StatusLedger.recordNotes), under the same advisory lock the append takes. A
+// number read before that transaction could race another writer and hand two notes one number - and the
+// number is not decoration: it is inside the note's text, and content plus number together is the
+// identity a reader merges copies by, so two live notes sharing one is a lost note, not a cosmetic
+// clash.
+func (t *Task) TouchForProgress() error {
 	if err := t.Touch("progress_update"); err != nil {
-		return ProgressEntry{}, err
+		return err
 	}
 	t.ContextID = nil
+	return nil
+}
+
+// NewProgressEntry builds the entry a progress note is STORED as: the text with the numbered header the
+// column used to carry, that number, and the note's timestamp. It is exported because the ledger builds
+// the entries for a task's own notes AND its subtasks' - one definition of the header, so a reader
+// merging them cannot meet two formats.
+func NewProgressEntry(number int, content, timestamp string) ProgressEntry {
 	return ProgressEntry{
 		Number:    float64(number),
-		Content:   header + "\n" + content,
-		Timestamp: value_objects.IsoFormat(*t.UpdatedAt),
-	}, nil
+		Content:   fmt.Sprintf("=== Progress %d ===\n%s", number, content),
+		Timestamp: timestamp,
+	}
 }
 
 // UpdateEstimatedEffort falls back to the MEDIUM label for invalid values.

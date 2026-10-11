@@ -17,11 +17,24 @@ type UpdateSubtaskUseCase struct {
 
 	// ProgressUpdater is optional (nil skips the parent progress update).
 	ProgressUpdater ParentTaskProgressUpdater
+
+	// ledger is where a note this update carries is RECORDED. A subtask note belongs to the PARENT
+	// TASK's ledger - task_events.task_id has an FK to tasks.id - and subtask_id is the only thing
+	// that says which subtask wrote it, which is also how the carry step writes the notes it moves out
+	// of the dropped columns. Unset leaves the update as it was for every caller that passes no note,
+	// and makes a note fail loudly rather than be dropped (StatusLedger.SaveProgress's contract).
+	ledger StatusLedger
 }
 
 // NewUpdateSubtaskUseCase builds the use case.
 func NewUpdateSubtaskUseCase(taskRepository repositories.TaskRepository, subtaskRepository repositories.SubtaskRepository) *UpdateSubtaskUseCase {
 	return &UpdateSubtaskUseCase{taskRepository: taskRepository, subtaskRepository: subtaskRepository}
+}
+
+// WithLedger attaches the task-event ledger seam, wired by the composition root.
+func (uc *UpdateSubtaskUseCase) WithLedger(l StatusLedger) *UpdateSubtaskUseCase {
+	uc.ledger = l
+	return uc
 }
 
 // Execute ports execute(). Domain errors are returned as error values.
@@ -104,8 +117,44 @@ func (uc *UpdateSubtaskUseCase) Execute(ctx context.Context, request *subtaskdto
 			subtask.Scope = append([]string{}, request.Scope...)
 		}
 
-		if _, err := uc.subtaskRepository.Save(ctx, subtask); err != nil {
-			return nil, err
+		// The note this update carries is MANDATORY on the manage_subtask update path (the handler
+		// refuses an update without one), and its home moved to the ledger with O1c: a subtask has no
+		// progress column left to hold it. The note belongs to the PARENT task's ledger with subtask_id
+		// naming the writer, and its number is the task's sequence - shared with the task's own notes,
+		// because the carry step's collision check is per (task, progress_number). The ledger assigns
+		// that number while it writes, inside this save's transaction.
+		var progressNotes []LedgerProgress
+		if text := progressNoteText(request.ProgressNotes); text != "" {
+			if err := subtask.Touch("progress_update"); err != nil {
+				return nil, err
+			}
+			timestamp := ""
+			if subtask.UpdatedAt != nil {
+				timestamp = value_objects.IsoFormat(*subtask.UpdatedAt)
+			}
+			progressNotes = append(progressNotes, LedgerProgress{
+				SubtaskID: value_objects.PyStr(request.ID),
+				Content:   text,
+				Timestamp: timestamp,
+			})
+		}
+
+		// The subtask and its note commit together or not at all: task_events.task_id has an FK to the
+		// parent task, and an entry written outside this transaction could commit beside a save that
+		// rolled back. With a note present and no ledger wired this FAILS rather than saving the
+		// subtask and dropping the note - the silent drop is the defect this replaces.
+		save := func(ctx context.Context) error {
+			_, err := uc.subtaskRepository.Save(ctx, subtask)
+			return err
+		}
+		var saveErr error
+		if len(progressNotes) > 0 {
+			saveErr = uc.ledger.SaveProgress(ctx, save, value_objects.PyStr(request.TaskID), progressNotes)
+		} else {
+			saveErr = save(ctx)
+		}
+		if saveErr != nil {
+			return nil, saveErr
 		}
 		dict, err := subtask.ToDict(true)
 		if err != nil {
@@ -143,4 +192,13 @@ func anySliceToStrings(in []any) []string {
 		out = append(out, value_objects.PyStr(v))
 	}
 	return out
+}
+
+// progressNoteText is the note a request carries, trimmed. Empty means it brought none, and a
+// whitespace-only note is nothing to record rather than a note the ledger should hold.
+func progressNoteText(in *string) string {
+	if in == nil {
+		return ""
+	}
+	return value_objects.PyStrip(*in)
 }

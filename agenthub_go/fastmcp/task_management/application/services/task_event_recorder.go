@@ -18,6 +18,9 @@ import (
 type TaskEventLedger interface {
 	AppendInTx(ctx context.Context, in entities.AppendTaskEvent) (*entities.TaskEvent, error)
 	StatusOf(ctx context.Context, taskID string) (string, error)
+	// NextProgressNumberInTx reads the number a new progress note for the task takes, inside the
+	// caller's transaction, so the writing use case never reads that tip outside one.
+	NextProgressNumberInTx(ctx context.Context, taskID string) (int, error)
 }
 
 // TaskEventRecorder is the ONE writer of the task-event ledger.
@@ -44,6 +47,13 @@ func NewTaskEventRecorder(ledger TaskEventLedger, userID string) *TaskEventRecor
 // entry report the transition the row made.
 func (r *TaskEventRecorder) StatusOf(ctx context.Context, taskID string) (string, error) {
 	return r.ledger.StatusOf(ctx, taskID)
+}
+
+// NextProgressNumberInTx reads the next NOTE number for the task, inside the caller's transaction and
+// under the same lock the append takes. It is separate from the per-event seq the append assigns: seq
+// orders the events, the number orders the notes.
+func (r *TaskEventRecorder) NextProgressNumberInTx(ctx context.Context, taskID string) (int, error) {
+	return r.ledger.NextProgressNumberInTx(ctx, taskID)
 }
 
 // Record writes one entry for a task and returns it with the sequence the database assigned. It

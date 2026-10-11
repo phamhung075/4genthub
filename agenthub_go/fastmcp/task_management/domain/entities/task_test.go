@@ -50,11 +50,19 @@ func TestTaskLifecycle(t *testing.T) {
 	if err := task.UpdateEstimatedEffort("bogus"); err != nil || task.EstimatedEffort != "medium" {
 		t.Fatal("effort")
 	}
-	// AppendProgress builds the numbered note the caller records in the ledger; the entity keeps no
-	// copy of it (the progress_history column is gone).
-	note, err := task.AppendProgress(1, "hello")
-	if err != nil || note.Content != "=== Progress 1 ===\nhello" || note.Number != 1 {
-		t.Fatalf("progress note = %+v (err %v)", note, err)
+	// The note is the ledger's to build and number (NewProgressEntry); what is left on the entity is the
+	// touch the write makes, and the entity keeps no copy of the note (the progress_history column is
+	// gone).
+	before := task.UpdatedAt
+	if err := task.TouchForProgress(); err != nil {
+		t.Fatalf("TouchForProgress: %v", err)
+	}
+	if task.UpdatedAt == before {
+		t.Fatal("TouchForProgress did not advance updated_at")
+	}
+	note := NewProgressEntry(1, "hello", value_objects.IsoFormat(*task.UpdatedAt))
+	if note.Content != "=== Progress 1 ===\nhello" || note.Number != 1 {
+		t.Fatalf("progress note = %+v", note)
 	}
 	if err := task.CompleteTask(" ", nil); err == nil {
 		t.Fatal("summary required")
@@ -77,10 +85,7 @@ func TestProgressTextWithRendersALedgerNoteOnce(t *testing.T) {
 	// copies arrive OUT of order here, one of them is the carry's copy of another (carried_from), and
 	// one note exists only in the ledger.
 	task := newTestTask(t)
-	written, err := task.AppendProgress(1, "first")
-	if err != nil {
-		t.Fatalf("AppendProgress: %v", err)
-	}
+	written := NewProgressEntry(1, "first", "2026-01-01T00:00:00Z")
 
 	liveEvent := &TaskEvent{
 		Kind: TaskEventKindProgress,

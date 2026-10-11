@@ -136,19 +136,18 @@ func (u *CreateTaskUseCase) Execute(ctx context.Context, request task.CreateTask
 
 	// Add initial progress if details provided. The note is RECORDED after the save below, inside the
 	// same transaction: the ledger entry cannot precede the task row it points at (task_events.task_id
-	// has an FK to tasks.id). Its number comes from the ledger, which for a row that does not exist
-	// yet answers 1 - the first note a task takes.
+	// has an FK to tasks.id). Its NUMBER is assigned there too, by the ledger, under its own lock while
+	// it writes - a number read here would be read outside that transaction and could race another
+	// writer into sharing it.
 	var progressNotes []LedgerProgress
 	if request.Details != "" {
-		number, err := u.ledger.NextProgressNumber(ctx, ledgerTaskID(taskEntity))
-		if err != nil {
+		if err := taskEntity.TouchForProgress(); err != nil {
 			return fail(err)
 		}
-		note, err := taskEntity.AppendProgress(number, request.Details)
-		if err != nil {
-			return fail(err)
-		}
-		progressNotes = append(progressNotes, LedgerProgress{Note: note})
+		progressNotes = append(progressNotes, LedgerProgress{
+			Content:   request.Details,
+			Timestamp: value_objects.IsoFormat(*taskEntity.UpdatedAt),
+		})
 	}
 
 	// Add dependencies if provided; invalid dependencies are skipped (Python logs

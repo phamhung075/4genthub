@@ -293,3 +293,87 @@ func TestProgressEventsByTaskIsOneReadForTheWholePage(t *testing.T) {
 		t.Fatalf("an empty page answered %#v, %v, want an empty map and no error", empty, err)
 	}
 }
+
+// TestNextProgressNumberInTxIsReadInsideTheCallersTransaction is the fix for the gate's MINOR: the note
+// number's MAX+1 is read INSIDE the caller's transaction and under the SAME advisory lock the append
+// takes, never before it. Two writers that each open their own transaction must therefore take
+// DIFFERENT numbers for their notes - the property that keeps a reader's merge identity (content plus
+// number together) from collapsing two live notes into one.
+func TestNextProgressNumberInTxIsReadInsideTheCallersTransaction(t *testing.T) {
+	sessions := newTestRepoEnv(t)
+	ctx := context.Background()
+	branchID := taskRepoTestBranch(t, sessions, taskRepoTestUserA)
+	repo := taskRepoTestNewRepo(t, sessions, taskRepoTestUserA, branchID, false)
+	events := NewTaskEventRepository(sessions, taskRepoTestUserA, branchID)
+
+	task, err := repo.CreateTask(ctx, "Numbering subject", "D", "high", nil, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Outside a transaction it REFUSES: the number is only safe to read while holding the lock the
+	// append takes, and a read that holds nothing is the defect this replaces.
+	if _, err := events.NextProgressNumberInTx(ctx, task.ID.Value); err == nil {
+		t.Fatal("the number was read outside a transaction: nothing holds the lock, so two writers could share it")
+	}
+
+	// A carried note's number is CONTINUED rather than restarted: this is a task whose notes reached 7
+	// while the column still held them.
+	if _, err := events.Append(ctx, entities.AppendTaskEvent{
+		TaskID:    task.ID.Value,
+		Kind:      entities.TaskEventKindProgress,
+		ActorKind: entities.TaskEventActorHuman,
+		ActorID:   "test",
+		Payload:   map[string]any{"content": "=== Progress 7 ===\ncarried", "progress_number": 7},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	var next int
+	if err := sessions.Transaction(ctx, func(ctx context.Context) error {
+		var err error
+		next, err = events.NextProgressNumberInTx(ctx, task.ID.Value)
+		return err
+	}); err != nil || next != 8 {
+		t.Fatalf("next number = %d, %v, want 8: the sequence continues from the carried tip", next, err)
+	}
+
+	// Two writers, each in its own transaction: read the tip, then append its note under it.
+	const writers = 2
+	numbers := make([]int, writers)
+	errs := make([]error, writers)
+	var wg sync.WaitGroup
+	start := make(chan struct{})
+	for i := 0; i < writers; i++ {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			<-start
+			errs[i] = sessions.Transaction(ctx, func(ctx context.Context) error {
+				n, err := events.NextProgressNumberInTx(ctx, task.ID.Value)
+				if err != nil {
+					return err
+				}
+				numbers[i] = n
+				_, err = events.AppendInTx(ctx, entities.AppendTaskEvent{
+					TaskID:    task.ID.Value,
+					Kind:      entities.TaskEventKindProgress,
+					ActorKind: entities.TaskEventActorHuman,
+					ActorID:   "test",
+					Payload:   map[string]any{"content": "=== Progress note ===\nconcurrent", "progress_number": n},
+				})
+				return err
+			})
+		}(i)
+	}
+	close(start)
+	wg.Wait()
+	for i, err := range errs {
+		if err != nil {
+			t.Fatalf("writer %d: %v", i, err)
+		}
+	}
+	seen := map[int]bool{numbers[0]: true, numbers[1]: true}
+	if !seen[8] || !seen[9] {
+		t.Fatalf("numbers = %v, want {8, 9}: each writer continues the task's ONE sequence", numbers)
+	}
+}

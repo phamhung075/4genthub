@@ -6,6 +6,7 @@ import (
 	"agenthub/fastmcp/server/routes"
 	"agenthub/fastmcp/task_management/application/factories"
 	"agenthub/fastmcp/task_management/application/services"
+	"agenthub/fastmcp/task_management/application/use_cases"
 	"agenthub/fastmcp/task_management/domain/entities"
 	"agenthub/fastmcp/task_management/domain/repositories"
 	"agenthub/fastmcp/task_management/infrastructure/database"
@@ -29,7 +30,28 @@ func (f subtaskFacadeFactory) CreateFacade(projectID, gitBranchID, userID, taskI
 	}
 	facade.ContextSync = subtaskCountSync{f.ctxFactory}
 	facade.WithProgressStore(infrarepos.NewTaskProgressStore(f.sessions))
+	facade.WithLedger(subtaskLedger(f.sessions, userID, gitBranchID))
 	return facade, nil
+}
+
+// subtaskLedger is the ledger a subtask's progress note is recorded in: the same construction the task
+// facade uses (server/httpapp/task_wiring.go) for the same user and branch, and the same repository the
+// events route reads. The note lands in the PARENT task's ledger with subtask_id naming the writer,
+// which is what lets a reader tell a subtask's notes from the task's own.
+func subtaskLedger(sessions *database.SessionManager, userID, gitBranchID *string) use_cases.StatusLedger {
+	ledgerUserID, ledgerBranchID := "", ""
+	if userID != nil {
+		ledgerUserID = *userID
+	}
+	if gitBranchID != nil {
+		ledgerBranchID = *gitBranchID
+	}
+	taskEvents := infrarepos.NewTaskEventRepository(sessions, ledgerUserID, ledgerBranchID)
+	return use_cases.StatusLedger{
+		Tx:     sessions,
+		Ledger: services.NewTaskEventRecorder(taskEvents, ledgerUserID),
+		Events: taskEvents,
+	}
 }
 
 // subtaskCountSync is TaskContextSyncService(...).sync_subtask_counts.

@@ -155,6 +155,41 @@ func (r *TaskEventRepository) AppendInTx(ctx context.Context, in entities.Append
 	return out, nil
 }
 
+// NextProgressNumberInTx reads the number a new progress note for the task takes: one past the highest
+// progress_number the task's `progress` events carry, INSIDE the caller's transaction and under the SAME
+// advisory lock the append path takes (one lock, keyed on the user, as AppendInTx's own comment
+// insists). Without it two writers could read one tip and both write it, and the number is not a label:
+// content plus progress_number is the identity a reader merges copies by, so a shared number is a LOST
+// note rather than a cosmetic clash.
+//
+// It is not the per-event `seq` read again. `seq` orders the EVENTS within a task; the number orders the
+// NOTES, and the carry copied the dropped column's numbers into the ledger intact - so the sequence
+// continues from the column's last number rather than from the ledger's row count.
+func (r *TaskEventRepository) NextProgressNumberInTx(ctx context.Context, taskID string) (int, error) {
+	if !r.sessions.InTransaction(ctx) {
+		return 0, ErrNotInTransaction
+	}
+	next := 1
+	err := r.sessions.WithSession(ctx, func(ctx context.Context, s database.DBTX) error {
+		if _, err := s.ExecContext(ctx, `SELECT pg_advisory_xact_lock(hashtext($1))`, r.userID); err != nil {
+			return err
+		}
+		var highest float64
+		if err := s.QueryRowContext(ctx, `
+			SELECT COALESCE(MAX((payload ->> 'progress_number')::double precision), 0)
+			FROM task_events WHERE "user_id" = $1 AND "task_id" = $2 AND "kind" = 'progress'`,
+			r.userID, taskID).Scan(&highest); err != nil {
+			return err
+		}
+		next = int(highest) + 1
+		return nil
+	})
+	if err != nil {
+		return 0, err
+	}
+	return next, nil
+}
+
 // StatusOf reads the task's status inside the caller's transaction. The ledger asks for it before
 // and after a status write, so an entry reports the transition the ROW made rather than a caller's
 // memory of it - which is what makes the parity check (the last status_changed.new against
