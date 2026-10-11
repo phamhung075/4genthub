@@ -2,6 +2,13 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-11 - the index guard: case is folded outside the literal only, and a statement is read whole
+
+- CHANGED `agenthub_go/fastmcp/task_management/infrastructure/database/schema_matches_definitions_test.go`: `goDefNormalizeStatement` folds case through the new `goDefFoldOutsideLiterals` (a single-quoted literal's case is its value, so `WHERE role = 'owner'` and `WHERE role = 'Owner'` are different indexes); `goDefStepIndexes` iterates the new `goDefStatements(step.SQL)` - whole statements, the same unit the runtime side is parsed in - instead of splitting the migration on newlines. `goDefStatements` respects single-quoted literals, parentheses and `--` line comments (the migration's prose apostrophes would otherwise open a bogus literal and swallow every later statement), keeps a final statement with no trailing semicolon, and anything index-shaped that still cannot be parsed remains a `goDefParseError`, never a skip.
+- MEASURED RED: with the baseline's `uq_team_members_one_owner` changed to `WHERE role = 'Owner'` the guard fails naming that table and printing `migrations: ... where role = 'Owner'` against `runtime: ... where role = 'owner'`. Reverted, green.
+- MEASURED: with `ix_modules_user_id` written across two lines (the statement still whole) the guard stays green - it compares the statement, not its first line. With the split statement's column list drifted instead (`(kind)`) it is RED naming `create index ix_modules_user_id on modules (kind)`, so the second line is read and compared, not dropped.
+- MEASURED: `go test -count=1 -run TestSchemaMatchesGoDefinitions ./fastmcp/task_management/infrastructure/database/` -> `ok 0.006s`; `gofmt -l` clean on the file.
+
 ## 2026-10-11 - the complete action's note: refused at the interface, passed by the router, written by the use case
 
 - ADDED, one case in `agenthub_go/fastmcp/task_management/interface/mcp_controllers/subtask_mcp_controller/handlers/progress_handler_test.go`: `TestCompleteSubtaskRequiresProgressNotes`. A 20+ character `completion_summary` with a 5-character note is refused as `complete_subtask` / `ErrorCodeValidation` with `Missing required field: progress_notes (minimum 10 characters). Completions must include progress description.` The case passes a **nil facade**, so a handler that skipped the check and reached the facade would panic rather than pass quietly.

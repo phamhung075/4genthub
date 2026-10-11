@@ -196,18 +196,67 @@ func goDefStepTableBodies(step taskdb.Migration) (map[string]string, error) {
 // statement is what the database executes.
 func goDefStepIndexes(step taskdb.Migration) (map[string][]string, error) {
 	indexes := map[string][]string{}
-	for _, raw := range strings.Split(step.SQL, "\n") {
-		line := strings.TrimSpace(raw)
-		if !goDefLooksLikeIndex(line) {
+	for _, statement := range goDefStatements(step.SQL) {
+		stmt := strings.TrimSpace(statement)
+		if !goDefLooksLikeIndex(stmt) {
 			continue
 		}
-		_, _, table, ok := goDefIndexParts(line)
+		_, _, table, ok := goDefIndexParts(stmt)
 		if !ok {
-			return nil, &goDefParseError{step: step.Name, text: line}
+			return nil, &goDefParseError{step: step.Name, text: stmt}
 		}
-		indexes[table] = append(indexes[table], goDefNormalizeStatement(line))
+		indexes[table] = append(indexes[table], goDefNormalizeStatement(stmt))
 	}
 	return indexes, nil
+}
+
+// goDefStatements splits one step's SQL into WHOLE statements, the same unit the runtime side is
+// parsed in. A statement ends at its terminating semicolon and carries every line it spans, so a
+// CREATE INDEX written across two lines is read with its column list instead of as a truncated first
+// line. Line comments, single-quoted literals and parentheses are all respected while scanning, so a
+// semicolon inside any of them does not end a statement. Comments matter twice over: the migration's
+// prose carries apostrophes ("registry's"), and a comment whose text were scanned as SQL would open a
+// bogus literal that swallows every statement after it - the migration's own header comment does
+// exactly that, so a comment's text is dropped, not scanned. A final statement with no trailing
+// semicolon is whatever text remains, returned even if it never balanced so a truncated statement
+// fails the guard rather than disappearing from it.
+func goDefStatements(sql string) []string {
+	var statements []string
+	var b strings.Builder
+	depth := 0
+	inQuote := false
+	inComment := false
+	for i := range len(sql) {
+		c := sql[i]
+		if inComment {
+			if c == '\n' {
+				inComment = false
+				b.WriteByte(c)
+			}
+			continue
+		}
+		if !inQuote && c == '-' && i+1 < len(sql) && sql[i+1] == '-' {
+			inComment = true
+			continue
+		}
+		switch {
+		case c == '\'':
+			inQuote = !inQuote
+		case !inQuote && c == '(':
+			depth++
+		case !inQuote && c == ')' && depth > 0:
+			depth--
+		case !inQuote && c == ';' && depth == 0:
+			statements = append(statements, b.String())
+			b.Reset()
+			continue
+		}
+		b.WriteByte(c)
+	}
+	if rest := strings.TrimSpace(b.String()); rest != "" {
+		statements = append(statements, rest)
+	}
+	return statements
 }
 
 // goDefIndexStatements returns the CREATE INDEX statements of one runtime table's DDL slice, which is
@@ -266,12 +315,41 @@ func goDefIndexParts(stmt string) (unique bool, name, table string, ok bool) {
 // goDefNormalizeStatement makes the two sources' text comparable. They write the same statement and
 // differ in exactly the ways they must: the runtime DDL carries no IF NOT EXISTS and no semicolon, and
 // the migration carries both, because createAll runs before the runner on this path and the step has to
-// be re-runnable. Whitespace and letter case are layout, so both are collapsed - the words, the column
-// list, the uniqueness and the WHERE clause that remain are the index.
+// be re-runnable. Whitespace is layout and letter case in the SQL WORDS is layout, so both are
+// collapsed - the words, the column list, the uniqueness and the WHERE clause that remain are the
+// index. The literal inside single quotes is NOT folded: for a partial index that text is the
+// invariant's scope, so `WHERE role = 'owner'` and `WHERE role = 'Owner'` are different indexes.
 func goDefNormalizeStatement(s string) string {
-	s = strings.ToLower(strings.Join(strings.Fields(s), " "))
+	s = goDefFoldOutsideLiterals(strings.Join(strings.Fields(s), " "))
 	s = strings.ReplaceAll(s, "if not exists ", "")
 	return strings.TrimSpace(strings.TrimSuffix(strings.TrimSpace(s), ";"))
+}
+
+// goDefFoldOutsideLiterals lower-cases a statement's letter case while leaving the text inside
+// single-quoted string literals exactly as written. SQL's words are case-insensitive layout, but a
+// string literal's case is its value, and folding it would let two behaviourally different indexes
+// normalise to the same text.
+func goDefFoldOutsideLiterals(s string) string {
+	var b strings.Builder
+	start := 0
+	for i := 0; i < len(s); i++ {
+		if s[i] != '\'' {
+			continue
+		}
+		b.WriteString(strings.ToLower(s[start:i]))
+		end := strings.IndexByte(s[i+1:], '\'')
+		if end < 0 {
+			// An unterminated literal: leave the remainder as written.
+			b.WriteString(s[i:])
+			return b.String()
+		}
+		end += i + 1 // the closing quote's index
+		b.WriteString(s[i : end+1])
+		i = end
+		start = i + 1
+	}
+	b.WriteString(strings.ToLower(s[start:]))
+	return b.String()
 }
 
 // goDefParseError is what an unparsable statement returns, so the test can name the step and the line.
