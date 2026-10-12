@@ -19,9 +19,13 @@ bump, with no version change. Both commits are on `origin/main`, so `(block slug
 two different byte sets depending on when a reader looks, and a store that already holds `1.4.2` and
 then meets the newer bytes hits exactly the conflict the version exists to prevent.
 
-This is the second occurrence. `a3eb0762` did the same to `shared-modules/guide-common.md` under
-`1.4.1`, and `fb65bd2a` - the commit that raised the version to `1.4.1` - says in its own message that
-it moved the version so the new guide text could be stored at all.
+This is the third occurrence, and the first to go unrepaired. `b9e9b06f` changed
+`shared-modules/guide-common.md` under `1.4.0` and was closed by `fb65bd2a` five minutes later, whose
+own message says it moved the version to `1.4.1` because the guide text had changed and not the version
+that names it; `a3eb0762` changed that same file again under `1.4.1` and was closed an hour later by
+`42de79c2`'s bump to `1.4.2`; `39105865` changed two blocks under `1.4.2` and was closed by nobody until
+this change. The rule was therefore already known, and already written down in a commit message, and it
+recurred twice anyway - the reason this change adds a test rather than another note.
 
 ## The guard: content cannot move under a version that already names a set
 `seedcontent.lock.json` records, APPEND-ONLY, which content set each `seedVersion` names: one record
@@ -30,7 +34,7 @@ from - `seat-types/*.yaml`, `shared-modules/*` and `blocks/*`, the same three so
 embeds. `seedcontent_lock_test.go` fails when the library differs from the set recorded for the version
 the seeder stamps, naming every file that moved, and fails when that version has no record at all.
 
-Three properties make the guard bite rather than decorate:
+Four properties make the guard bite rather than decorate:
 
 - **The version is not copied.** It is read through `seedmap.FromSpec`, so the guard cannot pass by
   comparing the record against a number nothing stamps.
@@ -40,17 +44,23 @@ Three properties make the guard bite rather than decorate:
 - **The generator refuses to re-stamp.** `-update-seedcontent-lock` will not re-record a version that
   already has a set, so a content change cannot be silenced by regenerating the record: the only way to
   green is to raise `seedVersion`.
+- **The record's own description is asserted, not trusted.** `_what` is the one string in this file that
+  exists twice - on disk, and as the generator's constant - so the test compares them, and an edit to one
+  without the other fails.
 
 `SeedVersion 1.4.2` deliberately has no record: it named two sets, and recording either one would write
 down a claim that is false.
 
-## Proof, rehearsed in a scratch worktree (never committed here)
+## Proof: three rehearsals in a scratch worktree, one in place (none of them committed)
 - The REAL pre-`39105865` bytes of `blocks/guide-reviewer.md`, under `1.4.3`: FAIL - "seedVersion 1.4.3
   already names a different content set ... blocks/guide-reviewer.md changed".
 - The generator on that same state: FAIL - "REFUSING to re-record seedVersion 1.4.3", with the lock
   left naming `1.4.3` alone.
 - `HEAD`'s own `seedmap.go` (const `1.4.2`) against a record naming `1.4.3`: FAIL - "seedVersion 1.4.2
   names no content set".
+- The record's description mutated on disk with the generator's constant untouched: FAIL - "`seedcontent.lock.json`
+  describes itself as ..., but the generator writes ...", naming both strings. Reverted immediately, and
+  the guard re-run green.
 
 ## What did NOT need changing
 `guides.lock.json` carries no version field: it records where each block was copied FROM and its sha256

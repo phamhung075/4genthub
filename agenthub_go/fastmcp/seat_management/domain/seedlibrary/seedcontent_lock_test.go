@@ -21,11 +21,13 @@ import (
 // module it builds, and a stored seat type version is immutable - so two different content sets
 // under one version is not a style question, it is the conflict the version exists to prevent.
 //
-// It has happened twice, under two labels: a3eb0762 changed guide-common.md under 1.4.1, and
-// 39105865 changed blocks/guide-fe-dev.md and blocks/guide-reviewer.md (and re-stamped
-// guides.lock.json) under 1.4.2, 3h16m after the bump. guides.lock.json cannot catch that: it
-// records where a block was copied FROM, and the same commit that moved the content re-stamps
-// it, so it stays green through precisely the drift it should notice.
+// It has happened three times: b9e9b06f changed shared-modules/guide-common.md under 1.4.0, a3eb0762
+// changed that same file again under 1.4.1, and 39105865 changed blocks/guide-fe-dev.md and
+// blocks/guide-reviewer.md (and re-stamped guides.lock.json) under 1.4.2, 3h16m after the bump. Each
+// was repaired only by the next bump - fb65bd2a five minutes after b9e9b06f, 42de79c2 an hour after
+// a3eb0762 - and 39105865 was repaired by nobody until this change. guides.lock.json cannot catch
+// any of it: it records where a block was copied FROM, and the same commit that moved the content
+// re-stamps it, so it stays green through precisely the drift it should notice.
 const seedContentLockPath = "seedcontent.lock.json"
 
 //go:embed seedcontent.lock.json
@@ -42,8 +44,9 @@ const seedContentLockWhat = "The content set each seedVersion names, APPEND-ONLY
 	"content set forever. Adding a record is the whole of an intentional content change: raise seedVersion in " +
 	"domain/seedmap/seedmap.go and run this package's tests with -update-seedcontent-lock. Editing a recorded " +
 	"set, or adding a record under a version that already has one, is the drift this file exists to refuse. " +
-	"SeedVersion 1.4.2 has no record here on purpose: it named TWO sets (a3eb0762's guide-common under 1.4.1's " +
-	"successor, then 39105865's blocks), and recording either one would write down a claim that is false."
+	"SeedVersion 1.4.2 has no record here on purpose: it named TWO sets - the library as it stood when " +
+	"42de79c2 raised the const to 1.4.2, and the same library after 39105865 changed two blocks under it - " +
+	"and recording either one would write down a claim that is false."
 
 type seedContentLock struct {
 	What     string              `json:"_what"`
@@ -163,6 +166,15 @@ func TestSeedVersionNamesOneContentSet(t *testing.T) {
 	digest := contentSetSHA256(current)
 
 	lock := parseSeedContentLock(t)
+
+	// The description is the one string this file has two copies of - the generator writes it from
+	// seedContentLockWhat - so the copy on disk is asserted against the constant rather than
+	// trusted: a hand-edited file must not be able to describe a different rule than the generator
+	// writes, and an edit to one without the other is caught here.
+	if lock.What != seedContentLockWhat {
+		t.Errorf("%s describes itself as %q, but the generator writes %q: the description and the rule it states "+
+			"have to be the same string", seedContentLockPath, lock.What, seedContentLockWhat)
+	}
 
 	// The record is append-only, and a version that appears twice with two content sets is the
 	// violation itself, so each record is checked against its own digest as well as the map.
