@@ -150,6 +150,9 @@ func (a *App) Handler() http.Handler {
 	mountSeatRigSpecRoutes(mux, a.Sessions)
 	mountSeatStatusRoutes(mux, a.Sessions)
 	mountSeatFeedbackRoutes(mux, a.Sessions)
+	// The room decision channel: the friction channel's two-way sibling (an ask mirrored up, a
+	// human's click coming down), under the room family's prefix.
+	mountRoomDecisionRoutes(mux, a.Sessions)
 	mountTeamRoutes(mux, a.Sessions)
 	// The ledger's own layer: the cross-task cursor and the intents route (P2, P3).
 	mountLedgerRoutes(mux, a.Sessions)

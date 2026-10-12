@@ -464,6 +464,25 @@ export const apiReference: ApiReference = {
     },
     {
       "method": "GET",
+      "path": "/api/v2/openrig/rooms/{room}/decisions",
+      "pathParams": [
+        "room"
+      ],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "POST",
+      "path": "/api/v2/openrig/rooms/{room}/decisions/{id}/answer",
+      "pathParams": [
+        "room",
+        "id"
+      ],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "GET",
       "path": "/api/v2/openrig/rooms/{room}/overlay",
       "pathParams": [
         "room"
