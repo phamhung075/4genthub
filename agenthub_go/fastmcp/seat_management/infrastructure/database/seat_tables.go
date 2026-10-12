@@ -382,6 +382,12 @@ var seatDatabaseTables = []taskdb.TableDef{
 		// No DEFAULT on id, like every other table's RUNTIME DDL: the INSERT supplies the UUID from Go
 		// (taskdb.DefaultUUIDv4), because createAll runs on databases where uuid-ossp has not been
 		// created and uuid_generate_v4() does not exist.
+		//
+		// THE DEDUPE TUPLE IS THE EPISODE, (user_id, qitem_id), and it is the ONLY unique constraint
+		// here. idempotency_key is stored and correlatable but NOT unique: it is derived from the
+		// routed item, so one item asked about by two tenants is two asks, while a GLOBALLY unique key
+		// makes the second tenant's insert no-op and its loser read - scoped to that tenant - find
+		// nothing, which is one tenant's ask swallowed by another tenant's key.
 		"CREATE TABLE room_decisions (\n" +
 			"\tid UUID NOT NULL,\n" +
 			"\tuser_id TEXT NOT NULL,\n" +
@@ -399,14 +405,17 @@ var seatDatabaseTables = []taskdb.TableDef{
 			"\tcreated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),\n" +
 			"\tanswered_at TIMESTAMP WITH TIME ZONE,\n" +
 			"\tresolved_at TIMESTAMP WITH TIME ZONE,\n" +
+			"\tacked_at TIMESTAMP WITH TIME ZONE,\n" +
 			"\tPRIMARY KEY (id),\n" +
 			"\tCONSTRAINT ck_room_decisions_state CHECK (state IN ('pending', 'answered', 'resolved', 'superseded')),\n" +
-			"\tCONSTRAINT uq_room_decisions_user_qitem UNIQUE (user_id, qitem_id),\n" +
-			"\tCONSTRAINT uq_room_decisions_idempotency_key UNIQUE (idempotency_key)\n" +
+			"\tCONSTRAINT uq_room_decisions_user_qitem UNIQUE (user_id, qitem_id)\n" +
 			")",
-		// ONE index serves both reads: the panel lists a room's rows by (user_id, room_id), and the
-		// state column is what its open/answered split filters on.
+		// TWO indexes, one per read: the panel lists a room's rows by (user_id, room_id) and filters
+		// on the state its open/answered split uses; the daemon's pull takes the state-'answered' rows
+		// of ONE MACHINE (rig_name) that carry no ack yet (acked_at), which the panel's index cannot
+		// serve - a pull is not a room's read.
 		"CREATE INDEX ix_room_decisions_user_room_state ON room_decisions (user_id, room_id, state)",
+		"CREATE INDEX ix_room_decisions_user_rig_state_acked ON room_decisions (user_id, rig_name, state, acked_at)",
 	}},
 	// Messages a window addressed to a seat, held until the client that holds that seat's terminal
 	// pulls them. IT IS THE FIRST SERVER-AUTHORED ROW A CLIENT CONSUMES on this axis: every other

@@ -2,7 +2,9 @@ package database
 
 // TestEnsureSeatColumnsExistOnOldSchema proves the migration path for an EXISTING database: a
 // rooms table created before the D5 wiring (no team_id) gains the column, the nullability and the
-// foreign key the fresh-schema path creates, and a second run changes nothing.
+// foreign key the fresh-schema path creates, and a room_decisions table created before the answer
+// leg (no acked_at) gains the delivery marker and its COMPOSITE index - then a second run changes
+// nothing.
 //
 // It creates its own throwaway database from SEAT_TEST_DATABASE_URL, because the premise is a
 // table WITHOUT the column and the shared test database may already have it.
@@ -13,6 +15,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"strings"
 	"testing"
 	"time"
 )
@@ -68,6 +71,27 @@ func TestEnsureSeatColumnsExistOnOldSchema(t *testing.T) {
 	)`); err != nil {
 		t.Fatal(err)
 	}
+	// The pre-answer-leg shape of the decisions table: the S1 columns, no delivery marker.
+	if _, err := db.ExecContext(ctx, `CREATE TABLE room_decisions (
+		id UUID PRIMARY KEY,
+		user_id TEXT NOT NULL,
+		room_id UUID NOT NULL REFERENCES rooms (id),
+		rig_name TEXT NOT NULL,
+		qitem_id TEXT NOT NULL,
+		author_seat_key TEXT NOT NULL,
+		destination TEXT NOT NULL,
+		summary TEXT,
+		detail TEXT,
+		questions JSONB NOT NULL,
+		answers JSONB NOT NULL DEFAULT '{}'::jsonb,
+		state TEXT NOT NULL,
+		idempotency_key TEXT NOT NULL,
+		created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+		answered_at TIMESTAMP WITH TIME ZONE,
+		resolved_at TIMESTAMP WITH TIME ZONE
+	)`); err != nil {
+		t.Fatal(err)
+	}
 
 	if err := EnsureSeatColumnsExist(ctx, db); err != nil {
 		t.Fatalf("EnsureSeatColumnsExist: %v", err)
@@ -113,5 +137,28 @@ func TestEnsureSeatColumnsExistOnOldSchema(t *testing.T) {
 	}
 	if indexes != 1 {
 		t.Fatalf("ix_rooms_team_id count = %d, want 1", indexes)
+	}
+
+	// The same two claims for the answer leg's delivery marker, and the index one is the sharper of
+	// them: the column alone would satisfy the pull's WHERE, but the index has to be the COMPOSITE one
+	// the fresh schema creates, so an index over acked_at by itself is a different object wearing the
+	// same name - which is what the entry's own column list is for.
+	var ackedType, ackedNullable string
+	if err := db.QueryRowContext(ctx, `SELECT data_type, is_nullable FROM information_schema.columns
+		WHERE table_name = 'room_decisions' AND column_name = 'acked_at'`).Scan(&ackedType, &ackedNullable); err != nil {
+		t.Fatalf("acked_at column: %v", err)
+	}
+	if ackedType != "timestamp with time zone" || ackedNullable != "YES" {
+		t.Fatalf("acked_at = %s null=%s, want timestamp with time zone and nullable", ackedType, ackedNullable)
+	}
+	var indexDef string
+	if err := db.QueryRowContext(ctx, `SELECT indexdef FROM pg_indexes
+		WHERE tablename = 'room_decisions' AND indexname = 'ix_room_decisions_user_rig_state_acked'`).Scan(&indexDef); err != nil {
+		t.Fatalf("the delivery index: %v", err)
+	}
+	for _, col := range []string{"user_id", "rig_name", "state", "acked_at"} {
+		if !strings.Contains(indexDef, col) {
+			t.Errorf("indexdef = %s, want the composite index to cover %s", indexDef, col)
+		}
 	}
 }

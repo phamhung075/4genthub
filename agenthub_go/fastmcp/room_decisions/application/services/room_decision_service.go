@@ -16,6 +16,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -50,15 +51,96 @@ const (
 	// CodeUnknownOption is an option id the named question does not carry. It is the refusal the
 	// acceptance turns on: the click's vocabulary is the STORED options, never the client's copy.
 	CodeUnknownOption = "unknown-option"
+	// CodeInvalidCursor is a pull whose cursor is not one this channel minted. It is a refusal
+	// rather than a silent first page: a daemon that resumed from a cursor it made up would be handed
+	// answers it has already applied, which costs an apply and a second ack.
+	CodeInvalidCursor = "invalid-cursor"
+	// CodeInvalidPull is a pull that does not name the machine identity it pulls for. The route
+	// resolves that identity from the caller, so this is the refusal for a credential the channel
+	// cannot place rather than for a malformed body.
+	CodeInvalidPull = "invalid-pull"
+	// CodeUnknownState is a state push naming a state the daemon may not write. The cloud records
+	// clicks and never concludes, so the only two states a push may carry are the two that mean the
+	// decision is over.
+	CodeUnknownState = "unknown-state"
+	// CodeInvalidAck is an ack whose outcome is neither of the two the contract names, or a dropped
+	// outcome whose reason is missing or outside the closed list. It is a 400 and not a conflict:
+	// nothing about the decision is wrong, the report itself is.
+	CodeInvalidAck = "invalid-ack"
+	// CodeNotAwaitingAck is an ack naming a decision that is not awaiting delivery: an id that is not
+	// there, one already acked, or one still being answered. All three are the same conflict,
+	// mirroring the shipped message ack, whose rule is that THE STATE, NOT THE ID, IS WHAT A CALLER CAN
+	// GET WRONG - a client retrying a dropped ack must not hear something that reads like a mistyped
+	// id.
+	CodeNotAwaitingAck = "not-awaiting-ack"
 )
 
-// RoomDecisionStore is the storage surface the channel needs: the domain repository's own four
-// methods, named here so the service's dependency is the shape it uses rather than the package.
+// The pull's size: how many unapplied answers one call hands over, and the ceiling a caller may ask
+// for. The default is the daemon's own working batch - a poll returns what has accumulated since the
+// last one, and a human answers a handful of decisions in an evening, not thousands.
+const (
+	RoomDecisionPullLimit    = 50
+	RoomDecisionMaxPullLimit = 200
+)
+
+// ClampDecisionAnswerLimit resolves the pull's page size in ONE place, so the route's tests page by
+// the numbers a client gets: a limit the caller did not give (zero or less) is the default, and one
+// above the ceiling is the ceiling. It is the sibling of ClampSeatMessageLimit, which the seat-message
+// pull resolves its own bounds with - one home per channel, and the route reads query parameters only.
+func ClampDecisionAnswerLimit(limit int) int {
+	if limit <= 0 {
+		return RoomDecisionPullLimit
+	}
+	if limit > RoomDecisionMaxPullLimit {
+		return RoomDecisionMaxPullLimit
+	}
+	return limit
+}
+
+// The ack's two outcomes. The tokens are the wire's own, so the route passes them through and only
+// the daemon names one.
+const (
+	// RoomDecisionOutcomeApplied is the daemon's report that it applied the answers to its own queue
+	// row. It is the only input anywhere that moves a cloud row to resolved.
+	RoomDecisionOutcomeApplied = "applied"
+	// RoomDecisionOutcomeDropped is the daemon's report that the answer does not apply. The row is
+	// acked - so it is never handed out again - and its state is not moved by the drop itself.
+	RoomDecisionOutcomeDropped = "dropped"
+)
+
+// DroppedAnswerReasons is the CLOSED list a dropped ack's reason must come from, in the contract's
+// order. It is one list and not a list plus a set: five strings are cheaper to walk than to keep in
+// step, and the membership check is the only reader. The reasons themselves are the daemon's to
+// produce and to show a human; the cloud checks membership and stores none of them, because no
+// column and no response field holds one.
+var DroppedAnswerReasons = []string{
+	"state-done",
+	"not-the-asked-human",
+	"unknown-qitem",
+	"already-applied",
+	"superseded",
+}
+
+func isDroppedAnswerReason(reason string) bool {
+	for _, known := range DroppedAnswerReasons {
+		if known == reason {
+			return true
+		}
+	}
+	return false
+}
+
+// RoomDecisionStore is the storage surface the channel needs: the domain repository's own methods,
+// named here so the service's dependency is the shape it uses rather than the package.
 type RoomDecisionStore interface {
-	Create(ctx context.Context, decision repositories.RoomDecision) (*repositories.RoomDecision, error)
+	Create(ctx context.Context, decision repositories.RoomDecision) (*repositories.RoomDecision, bool, error)
 	Get(ctx context.Context, userID, roomID, id string) (*repositories.RoomDecision, error)
+	GetByID(ctx context.Context, userID, id string) (*repositories.RoomDecision, error)
 	ListByRoom(ctx context.Context, userID, roomID string) ([]repositories.RoomDecision, error)
+	ListAnswers(ctx context.Context, userID, rigName string, after *repositories.AnswerCursor, limit int) ([]repositories.AnswerDelivery, error)
 	RecordAnswer(ctx context.Context, userID, roomID, id string, answers map[string]string, state decisions.State, answeredAt *time.Time) (*repositories.RoomDecision, error)
+	Acknowledge(ctx context.Context, userID, id string, applied bool, at time.Time) (*repositories.RoomDecision, bool, error)
+	SetState(ctx context.Context, userID, id string, state decisions.State, at time.Time) (*repositories.RoomDecision, error)
 }
 
 // RoomDecisionAsk is one authored ask, before it is a row. RoomID is the resolved room UUID, and
@@ -121,13 +203,21 @@ func NewRoomDecisionService(store RoomDecisionStore) *RoomDecisionService {
 // the ask's prose, because a decision's detail is text a seat wrote and a seat can paste a token
 // into anything.
 //
-// A row already carrying this ask's (user, idempotency key) is returned unchanged rather than
-// duplicated: the key is the daemon's decisionId, and the mirror is durable-first, so a redrive
-// after a lost answer must collapse onto the row it already made instead of authoring a second
-// decision the human would be asked twice.
-func (s *RoomDecisionService) Create(ctx context.Context, userID, roomID string, ask RoomDecisionAsk, createdAt time.Time) (*repositories.RoomDecision, error) {
+// A row already carrying this ask's (user, qitem_id) is returned unchanged rather than duplicated:
+// that pair is the episode - one routed item asked about by one human - and it is the tuple the
+// store's insert conflicts on, so a redrive after a lost answer collapses onto the row it already
+// made instead of authoring a second decision the human would be asked twice. The second return
+// value is the wire's `created`: true when THIS call stored the row, false when an earlier attempt
+// already had, which is how the daemon learns its redrive collapsed instead of authoring a second
+// ask.
+//
+// The idempotency key is DERIVED from the routed item rather than free: the daemon mints
+// `agenthub:decision:<qitemId>` for the ask it mirrors, so a body whose key names another item is
+// refused at this door, before anything is stored, rather than stored as a correlatable value that
+// lies about which item it is.
+func (s *RoomDecisionService) Create(ctx context.Context, userID, roomID string, ask RoomDecisionAsk, createdAt time.Time) (*repositories.RoomDecision, bool, error) {
 	if strings.TrimSpace(roomID) == "" {
-		return nil, &RoomDecisionAskRejection{Message: "room is required"}
+		return nil, false, &RoomDecisionAskRejection{Message: "room is required"}
 	}
 	for _, field := range []struct {
 		path  string
@@ -141,19 +231,27 @@ func (s *RoomDecisionService) Create(ctx context.Context, userID, roomID string,
 	} {
 		trimmed := strings.TrimSpace(field.value)
 		if trimmed == "" {
-			return nil, &RoomDecisionAskRejection{Message: field.path + " is required"}
+			return nil, false, &RoomDecisionAskRejection{Message: field.path + " is required"}
 		}
 		if utf8.RuneCountInString(trimmed) > RoomDecisionMaxField {
-			return nil, &RoomDecisionAskRejection{Message: fmt.Sprintf("%s cannot exceed %d characters", field.path, RoomDecisionMaxField)}
+			return nil, false, &RoomDecisionAskRejection{Message: fmt.Sprintf("%s cannot exceed %d characters", field.path, RoomDecisionMaxField)}
 		}
+	}
+	// The key is DERIVED from the routed item: the daemon mints agenthub:decision:<qitemId> for the
+	// ask it mirrors, so a body whose key names another item would store a row under a value that
+	// lies about which item it is, and a reader hunting that row by the derived key would miss it.
+	// The check rides this loop's trimming, and a divergence is a named refusal at the door rather
+	// than a silent one in the table - the same posture the ask's limits already take.
+	if expected := "agenthub:decision:" + strings.TrimSpace(ask.QitemID); strings.TrimSpace(ask.IdempotencyKey) != expected {
+		return nil, false, &RoomDecisionAskRejection{Message: "idempotency_key must be agenthub:decision:<qitem_id>"}
 	}
 	summary := strings.TrimSpace(ask.Summary)
 	if utf8.RuneCountInString(summary) > RoomDecisionMaxSummary {
-		return nil, &RoomDecisionAskRejection{Message: fmt.Sprintf("summary cannot exceed %d characters", RoomDecisionMaxSummary)}
+		return nil, false, &RoomDecisionAskRejection{Message: fmt.Sprintf("summary cannot exceed %d characters", RoomDecisionMaxSummary)}
 	}
 	detail := strings.TrimSpace(ask.Detail)
 	if utf8.RuneCountInString(detail) > RoomDecisionMaxDetail {
-		return nil, &RoomDecisionAskRejection{Message: fmt.Sprintf("detail cannot exceed %d characters", RoomDecisionMaxDetail)}
+		return nil, false, &RoomDecisionAskRejection{Message: fmt.Sprintf("detail cannot exceed %d characters", RoomDecisionMaxDetail)}
 	}
 	for _, field := range []struct {
 		path string
@@ -164,7 +262,7 @@ func (s *RoomDecisionService) Create(ctx context.Context, userID, roomID string,
 		{"destination", ask.Destination},
 	} {
 		if secretscan.Contains(field.text) {
-			return nil, &RoomDecisionAskRejection{
+			return nil, false, &RoomDecisionAskRejection{
 				Message:     "secret detected in field " + field.path,
 				SecretField: field.path,
 			}
@@ -175,12 +273,12 @@ func (s *RoomDecisionService) Create(ctx context.Context, userID, roomID string,
 	if err != nil {
 		var rejection *questions.Rejection
 		if ok := asRejection(err, &rejection); ok {
-			return nil, &RoomDecisionAskRejection{Message: rejection.Message}
+			return nil, false, &RoomDecisionAskRejection{Message: rejection.Message}
 		}
-		return nil, err
+		return nil, false, err
 	}
 
-	return s.store.Create(ctx, repositories.RoomDecision{
+	stored, created, err := s.store.Create(ctx, repositories.RoomDecision{
 		UserID:         userID,
 		RoomID:         roomID,
 		RigName:        ask.RigName,
@@ -195,6 +293,16 @@ func (s *RoomDecisionService) Create(ctx context.Context, userID, roomID string,
 		IdempotencyKey: ask.IdempotencyKey,
 		CreatedAt:      createdAt.UTC(),
 	})
+	if err != nil {
+		return nil, false, err
+	}
+	// A created:false ALWAYS carries the winner row: the store's loser path reads the episode back,
+	// the same tuple it conflicted on. A nil here means the store lost a row it declined to write, and
+	// the route must answer 500 rather than a success envelope with no decision in it.
+	if !created && stored == nil {
+		return nil, false, fmt.Errorf("room decision create: the row for %s/%s was neither written nor found", userID, ask.QitemID)
+	}
+	return stored, created, nil
 }
 
 // List returns the caller's decisions for one room, newest first (the store's order).
@@ -291,6 +399,206 @@ func (s *RoomDecisionService) Answer(ctx context.Context, userID, roomID, id str
 		}
 	}
 	return written, nil
+}
+
+// The answer leg: the daemon pulls what the human clicked, applies it to its own queue, and acks.
+//
+// THE CURSOR IS A KEYSET AND NOTHING ELSE: the position is `(answered_at, id)`, rendered as
+// `<RFC3339Nano>|<uuid>` and handed back verbatim. That format - and the separator, which occurs in
+// neither an instant nor a UUID - is the shipped message pull's, so one daemon-side parser serves both
+// pulls and there is no second encoding to keep in step. It is opaque BY CONTRACT: the caller echoes
+// it and never builds one. It carries no secret (the pull is already tenant scoped) and no delivery
+// state (the ack is the delivery record). The id is part of the position because two answers stored in
+// the same instant must still be told apart.
+const cursorSeparator = "|"
+
+// cursorUUIDPattern is the shape a cursor's id must have. The store treats a value that is not a
+// UUID as naming no row, and a pull that answered "nothing waiting" because its cursor was corrupt
+// is worse than a refusal: the daemon would stop asking for work that is waiting for it.
+var cursorUUIDPattern = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
+
+// encodeAnswerCursor renders the position the next pull resumes after. The empty cursor is the first
+// page, so an empty position encodes to the empty string rather than to a token that decodes to it.
+func encodeAnswerCursor(cursor *repositories.AnswerCursor) string {
+	if cursor == nil || cursor.ID == "" {
+		return ""
+	}
+	return cursor.AnsweredAt.UTC().Format(time.RFC3339Nano) + cursorSeparator + cursor.ID
+}
+
+// decodeAnswerCursor parses a cursor this channel minted, and refuses everything else with the one
+// sentence the contract pins - `after "<value>" must be a cursor this endpoint returned` - because a
+// caller cannot act on which part of a corrupt token failed, and the token is opaque to them anyway.
+func decodeAnswerCursor(raw string) (*repositories.AnswerCursor, error) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return nil, nil
+	}
+	refusal := fmt.Errorf("after %q must be a cursor this endpoint returned", raw)
+	rawTime, id, found := strings.Cut(raw, cursorSeparator)
+	if !found || !cursorUUIDPattern.MatchString(id) {
+		return nil, refusal
+	}
+	at, err := time.Parse(time.RFC3339Nano, rawTime)
+	if err != nil {
+		return nil, refusal
+	}
+	return &repositories.AnswerCursor{AnsweredAt: at.UTC(), ID: id}, nil
+}
+
+// Pull hands one daemon the answers it has not applied yet, and the cursor to resume from.
+//
+// THE PULL IS AT-LEAST-ONCE BY CONSTRUCTION: a row stays in the page until its ack lands, so a
+// daemon that died between applying an answer and acking it is handed the same answer again, and the
+// apply is idempotent - which is why the ack, not the pull, is what ends the loop. The next cursor
+// is the last row handed over, so a resumed pull never repeats one it already delivered.
+//
+// rigName is the machine identity the answers belong to: answers to another rig's asks are not this
+// daemon's work, and an ack is destructive, so pulling them would close decisions nobody applied. The
+// room each delivery names is resolved on the way out - the daemon has no room model at all, so the
+// pull is the only place it can learn which room one of its own asks was filed in.
+func (s *RoomDecisionService) Pull(ctx context.Context, userID, rigName, cursor string, limit int) ([]repositories.AnswerDelivery, string, error) {
+	rigName = strings.TrimSpace(rigName)
+	if rigName == "" {
+		return nil, "", &RoomDecisionAnswerRejection{
+			Code:    CodeInvalidPull,
+			Message: "rig is required to pull answers",
+		}
+	}
+	after, err := decodeAnswerCursor(cursor)
+	if err != nil {
+		return nil, "", &RoomDecisionAnswerRejection{Code: CodeInvalidCursor, Message: err.Error()}
+	}
+	list, err := s.store.ListAnswers(ctx, userID, rigName, after, ClampDecisionAnswerLimit(limit))
+	if err != nil {
+		return nil, "", err
+	}
+	next := ""
+	if len(list) > 0 {
+		last := list[len(list)-1]
+		if last.AnsweredAt != nil {
+			next = encodeAnswerCursor(&repositories.AnswerCursor{AnsweredAt: *last.AnsweredAt, ID: last.ID})
+		}
+	}
+	return list, next, nil
+}
+
+// Acknowledge records what the daemon did with one answer and ends its delivery.
+//
+// THE TWO OUTCOMES ARE BOTH DELIVERY REPORTS AND ONLY ONE OF THEM CLOSES THE ROW. `applied` says the
+// daemon applied the answers to its own queue row: it is the only input anywhere that moves a cloud
+// row to resolved, which is what makes the daemon's own report - never the cloud's reading of a click
+// - the thing that finishes a decision. `dropped` says the answer does not apply, with a reason from
+// the closed list (the daemon is where a human is shown it, and the cloud stores none of it): the row
+// is acked exactly the same way, so it is never handed out again and never retried, and its state is
+// left to whatever the daemon pushes separately. A reason sent with `applied` means nothing and is
+// ignored rather than refused - the field is shared by both outcomes, and a client that fills it in is
+// not wrong about a state.
+//
+// AN ID THAT IS UNKNOWN AND ONE ALREADY ACKED GET THE SAME REFUSAL, and it is a conflict rather than
+// a 404, mirroring the shipped message ack: neither redelivers, and a client retrying a dropped ack
+// must not hear something that reads like a mistyped id.
+func (s *RoomDecisionService) Acknowledge(ctx context.Context, userID, id, outcome, reason string, now time.Time) (*repositories.RoomDecision, error) {
+	outcome = strings.TrimSpace(outcome)
+	reason = strings.TrimSpace(reason)
+	applied := false
+	switch outcome {
+	case RoomDecisionOutcomeApplied:
+		applied = true
+	case RoomDecisionOutcomeDropped:
+		if reason == "" {
+			return nil, &RoomDecisionAnswerRejection{
+				Code:    CodeInvalidAck,
+				Message: "reason is required when outcome is dropped",
+			}
+		}
+		if !isDroppedAnswerReason(reason) {
+			return nil, &RoomDecisionAnswerRejection{
+				Code:    CodeInvalidAck,
+				Message: "reason " + reason + " is not one of " + strings.Join(DroppedAnswerReasons, ", "),
+			}
+		}
+	default:
+		return nil, &RoomDecisionAnswerRejection{
+			Code:    CodeInvalidAck,
+			Message: "outcome must be " + RoomDecisionOutcomeApplied + " or " + RoomDecisionOutcomeDropped,
+		}
+	}
+	written, acked, err := s.store.Acknowledge(ctx, userID, id, applied, now.UTC())
+	if err != nil {
+		return nil, err
+	}
+	if !acked {
+		if written == nil {
+			return nil, &RoomDecisionAnswerRejection{
+				Code:    CodeNotAwaitingAck,
+				Message: "no decision " + id + " awaiting an ack",
+			}
+		}
+		return nil, &RoomDecisionAnswerRejection{
+			Code:    CodeNotAwaitingAck,
+			Message: "this decision is " + string(written.State) + " and not awaiting an ack",
+		}
+	}
+	return written, nil
+}
+
+// SetState writes the daemon's own verdict about a decision that never became an apply - in
+// practice `superseded`, which is what a decision answered somewhere else first (Slack) is, and
+// what makes the panel refuse a stale click on it.
+//
+// ONLY THE TWO END STATES ARE ACCEPTED. `pending` and `answered` are the cloud's own, reached by
+// recording clicks, and a push that named one of them would re-open a decision the daemon has
+// already concluded - the one direction this channel must never move.
+//
+// THE ROW IS READ BEFORE THE WRITE so a push onto a decision that is already over is refused with the
+// token the contract names - `state-<state>`, naming the state the row is IN rather than the one the
+// caller asked for - instead of a silent no-op. The write is still guarded, so a second writer that
+// concluded the row between the read and the write is the one a lost write's refusal then names.
+func (s *RoomDecisionService) SetState(ctx context.Context, userID, id string, state decisions.State, now time.Time) (*repositories.RoomDecision, error) {
+	switch state {
+	case decisions.StateResolved, decisions.StateSuperseded:
+	default:
+		return nil, &RoomDecisionAnswerRejection{
+			Code:    CodeUnknownState,
+			Message: "the daemon may push resolved or superseded, not " + string(state),
+		}
+	}
+	stored, err := s.store.GetByID(ctx, userID, id)
+	if err != nil {
+		return nil, err
+	}
+	if stored == nil {
+		return nil, &RoomDecisionAnswerRejection{
+			Code:    CodeUnknownDecision,
+			Message: "no decision " + id,
+		}
+	}
+	if stored.State == decisions.StateResolved || stored.State == decisions.StateSuperseded {
+		return nil, closedDecision(stored.State)
+	}
+	written, err := s.store.SetState(ctx, userID, id, state, now.UTC())
+	if err != nil {
+		return nil, err
+	}
+	if written == nil {
+		return nil, &RoomDecisionAnswerRejection{
+			Code:    CodeUnknownDecision,
+			Message: "no decision " + id,
+		}
+	}
+	if written.State != state {
+		return nil, closedDecision(written.State)
+	}
+	return written, nil
+}
+
+// closedDecision is the refusal a push onto a decision that is already over gets. The token is alone
+// in both the code and the message, because the body the contract pins for it is
+// `{"detail":"state-<state>"}` and nothing else.
+func closedDecision(state decisions.State) *RoomDecisionAnswerRejection {
+	token := decisions.RefusalCode(state)
+	return &RoomDecisionAnswerRejection{Code: token, Message: token}
 }
 
 // asRejection is errors.As for the questions package's rejection type, kept local so this file's

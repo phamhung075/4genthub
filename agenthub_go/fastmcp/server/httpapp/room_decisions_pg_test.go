@@ -27,6 +27,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"agenthub/fastmcp/task_management/infrastructure/database"
 )
@@ -70,10 +71,18 @@ func newRoomDecisionPgEnv(t *testing.T) *roomDecisionPgEnv {
 	return &roomDecisionPgEnv{app: app, sm: sm, tokenA: tokenA, userA: userA, tokenB: tokenB, userB: userB}
 }
 
-// seed mirrors one ask into one room: the row S2's ask route will create, written straight into the
-// table because that route does not exist yet. qitemID is the routed item's own id, and two rows of
-// one owner may not share it: uq_room_decisions_user_qitem enforces that, so a fixture for a second
-// room of the same owner must carry a second qitem id.
+// seedRoom creates just the room, with no decision in it: the row is what the ingest route makes when
+// a case drives the crossing.
+func (e *roomDecisionPgEnv) seedRoom(t *testing.T, roomID, userID, slug string) {
+	t.Helper()
+	ledgerExec(t, e.sm, `INSERT INTO rooms (id, user_id, slug, name, created_at, updated_at)
+		VALUES ($1::uuid, $2, $3, $4, now(), now())`, roomID, userID, slug, slug)
+}
+
+// seed mirrors one ask into one room by writing the row straight into the table: the cases about the
+// ANSWER route need a row to click on without an ask route in the path. qitemID is the routed item's
+// own id, and two rows of one owner may not share it: uq_room_decisions_user_qitem enforces that, so a
+// fixture for a second room of the same owner must carry a second qitem id.
 func (e *roomDecisionPgEnv) seed(t *testing.T, roomID, decisionID, userID, slug, qitemID, idempotencyKey string) {
 	t.Helper()
 	ledgerExec(t, e.sm, `INSERT INTO rooms (id, user_id, slug, name, created_at, updated_at)
@@ -112,10 +121,10 @@ func (e *roomDecisionPgEnv) count(t *testing.T, userID string) int {
 	return n
 }
 
-func (e *roomDecisionPgEnv) postAnswer(t *testing.T, token, slug, id, body string) (int, string) {
+// postJSON drives one POST through the production handler, with a bearer when the case passes one.
+func (e *roomDecisionPgEnv) postJSON(t *testing.T, token, path, body string) (int, string) {
 	t.Helper()
-	req := httptest.NewRequest(http.MethodPost,
-		"/api/v2/openrig/rooms/"+slug+"/decisions/"+id+"/answer", strings.NewReader(body))
+	req := httptest.NewRequest(http.MethodPost, path, strings.NewReader(body))
 	if token != "" {
 		req.Header.Set("Authorization", "Bearer "+token)
 	}
@@ -125,15 +134,89 @@ func (e *roomDecisionPgEnv) postAnswer(t *testing.T, token, slug, id, body strin
 	return rec.Code, rec.Body.String()
 }
 
-func (e *roomDecisionPgEnv) getDecisions(t *testing.T, token, slug string) (int, string) {
+// getPath drives one GET the same way.
+func (e *roomDecisionPgEnv) getPath(t *testing.T, token, path string) (int, string) {
 	t.Helper()
-	req := httptest.NewRequest(http.MethodGet, "/api/v2/openrig/rooms/"+slug+"/decisions", nil)
+	req := httptest.NewRequest(http.MethodGet, path, nil)
 	if token != "" {
 		req.Header.Set("Authorization", "Bearer "+token)
 	}
 	rec := httptest.NewRecorder()
 	e.app.Handler().ServeHTTP(rec, req)
 	return rec.Code, rec.Body.String()
+}
+
+// ackedAt reads the delivery marker straight from the table: "the ack is the delivery record" is a
+// claim about this column, and only a row can settle it.
+func (e *roomDecisionPgEnv) ackedAt(t *testing.T, id string) *time.Time {
+	t.Helper()
+	var at *time.Time
+	if err := e.sm.WithSession(context.Background(), func(ctx context.Context, s database.DBTX) error {
+		return s.QueryRowContext(ctx,
+			`SELECT "acked_at" FROM "room_decisions" WHERE "id" = $1::uuid`, id).Scan(&at)
+	}); err != nil {
+		t.Fatalf("reading the delivery marker: %v", err)
+	}
+	return at
+}
+
+// answeredAt reads the column the pull's cursor is minted from. The cursor's instant half is a claim
+// about this value and not about the ask's created_at, so the acceptance compares them.
+func (e *roomDecisionPgEnv) answeredAt(t *testing.T, id string) *time.Time {
+	t.Helper()
+	var at *time.Time
+	if err := e.sm.WithSession(context.Background(), func(ctx context.Context, s database.DBTX) error {
+		return s.QueryRowContext(ctx,
+			`SELECT "answered_at" FROM "room_decisions" WHERE "id" = $1::uuid`, id).Scan(&at)
+	}); err != nil {
+		t.Fatalf("reading answered_at: %v", err)
+	}
+	return at
+}
+
+func (e *roomDecisionPgEnv) postAnswer(t *testing.T, token, slug, id, body string) (int, string) {
+	t.Helper()
+	return e.postJSON(t, token, "/api/v2/openrig/rooms/"+slug+"/decisions/"+id+"/answer", body)
+}
+
+func (e *roomDecisionPgEnv) getDecisions(t *testing.T, token, slug string) (int, string) {
+	t.Helper()
+	return e.getPath(t, token, "/api/v2/openrig/rooms/"+slug+"/decisions")
+}
+
+// roomDecisionPgIngest is the ask a case sends: the routed item's own id, and the idempotency key
+// DERIVED from it, which is the shape the daemon mints.
+func roomDecisionPgIngest(roomID, qitem string) string {
+	return `{"rig":"4genthub-min","room":"` + roomID + `","qitem_id":"` + qitem + `","author_seat_key":"go-dev",` +
+		`"destination":"human-operator@kernel","summary":"ship the cloud half first?",` +
+		`"detail":"the panel needs the answer","questions":` + roomDecisionPgQuestions + `,` +
+		`"idempotency_key":"agenthub:decision:` + qitem + `"}`
+}
+
+// postIngest drives the ask route and returns the stored row's id, the wire's `created`, and the row's
+// state. It FAILS when the answer is not a success carrying a row: a created:false with no decision is
+// the swallowed ask (or the nil dereference) this packet's ruling is about, never a success.
+func (e *roomDecisionPgEnv) postIngest(t *testing.T, token, body string) (string, bool, string) {
+	t.Helper()
+	code, res := e.postJSON(t, token, "/api/v2/openrig/decisions", body)
+	if code != http.StatusOK {
+		t.Fatalf("ingest = %d %s, want 200", code, res)
+	}
+	var out struct {
+		Success  bool `json:"success"`
+		Created  bool `json:"created"`
+		Decision struct {
+			ID    string `json:"id"`
+			State string `json:"state"`
+		} `json:"decision"`
+	}
+	if err := json.Unmarshal([]byte(res), &out); err != nil {
+		t.Fatalf("decoding the ingest response: %v (%s)", err, res)
+	}
+	if !out.Success || out.Decision.ID == "" {
+		t.Fatalf("ingest answered %s, want success with a stored row's id", res)
+	}
+	return out.Decision.ID, out.Created, out.Decision.State
 }
 
 // answerBody is the answer response, decoded with the contract's three keys.
@@ -349,5 +432,201 @@ func TestRoomDecisionPgReadNeverCrossesRoomOrTenant(t *testing.T) {
 		`{"question_id":"q1","option_id":"ship"}`)
 	if code != http.StatusOK {
 		t.Fatalf("B answering its own decision = %d %s, want 200", code, body)
+	}
+}
+
+// idempotencyKeyOf reads a row's stored key, the correlatable value the dedupe no longer rides on.
+func (e *roomDecisionPgEnv) idempotencyKeyOf(t *testing.T, id string) string {
+	t.Helper()
+	key := ""
+	if err := e.sm.WithSession(context.Background(), func(ctx context.Context, s database.DBTX) error {
+		return s.QueryRowContext(ctx,
+			`SELECT "idempotency_key" FROM "room_decisions" WHERE "id" = $1::uuid`, id).Scan(&key)
+	}); err != nil {
+		t.Fatalf("reading the stored key: %v", err)
+	}
+	return key
+}
+
+// TestRoomDecisionPgTheSameQitemInTwoTenantsIsTwoAsks is the ruling's own case: the dedupe tuple is the
+// EPISODE, (user_id, qitem_id), so one routed item asked about by two tenants is two asks. The
+// constraint it replaces was UNIQUE (idempotency_key) alone, which is GLOBAL: the second tenant's
+// insert no-opped, the loser path read that key back scoped to the SECOND tenant, found nothing, and
+// the route answered created:false with no decision - one tenant's ask swallowed by another tenant's
+// key, and the human never asked.
+func TestRoomDecisionPgTheSameQitemInTwoTenantsIsTwoAsks(t *testing.T) {
+	env := newRoomDecisionPgEnv(t)
+	env.seedRoom(t, roomDecisionPgRoomAlphaID, env.userA, "alpha")
+	env.seedRoom(t, roomDecisionPgRoomBetaID, env.userB, "beta")
+
+	const shared = "qitem-pg-shared-episode"
+	alphaID, created, state := env.postIngest(t, env.tokenA, roomDecisionPgIngest("alpha", shared))
+	if !created || state != "pending" {
+		t.Fatalf("A's ask created=%v state=%q, want its own new pending row", created, state)
+	}
+
+	// The other tenant asks about the SAME routed item: its own row, not A's, and not silence.
+	betaID, created, state := env.postIngest(t, env.tokenB, roomDecisionPgIngest("beta", shared))
+	if !created || state != "pending" {
+		t.Fatalf("B's ask created=%v state=%q, want its own new pending row", created, state)
+	}
+	if betaID == alphaID {
+		t.Fatalf("B's ask resolved to A's row %s, so the tenants share one dedupe key", alphaID)
+	}
+	// The key is stored and correlatable, and it IS the same string on both rows: what keeps them apart
+	// is the episode, not the key.
+	if a, b := env.idempotencyKeyOf(t, alphaID), env.idempotencyKeyOf(t, betaID); a != b {
+		t.Errorf("keys = %q and %q, want the derived key the same on both rows", a, b)
+	}
+	if n := env.count(t, env.userA); n != 1 {
+		t.Errorf("A holds %d rows, want one", n)
+	}
+	if n := env.count(t, env.userB); n != 1 {
+		t.Errorf("B holds %d rows, want one", n)
+	}
+	// A's redrive still collapses onto A's own row, and never onto B's.
+	if againID, againCreated, _ := env.postIngest(t, env.tokenA, roomDecisionPgIngest("alpha", shared)); againCreated || againID != alphaID {
+		t.Fatalf("A's redrive created=%v id=%s, want A's own row %s with created:false", againCreated, againID, alphaID)
+	}
+	// Each tenant reads its own room and finds its own ask.
+	if code, body := env.getDecisions(t, env.tokenA, "alpha"); code != http.StatusOK || !strings.Contains(body, alphaID) {
+		t.Errorf("A's room read = %d %s, want its own ask", code, body)
+	}
+	if code, body := env.getDecisions(t, env.tokenB, "beta"); code != http.StatusOK || !strings.Contains(body, betaID) {
+		t.Errorf("B's room read = %d %s, want its own ask", code, body)
+	}
+}
+
+// TestRoomDecisionPgCrossingRoundTrip is S2's acceptance at the route: the ask arrives through the
+// ingest route, the human answers it in the panel, the daemon pulls it - with the room's SLUG beside
+// it and a cursor minted from that row's answered_at - acks it as applied, and the same answer is
+// never handed out again. Every statement of the answer leg runs against real Postgres here: the
+// insert, the acked filter, the room-slug subquery and the guarded ack UPDATE. A second ask covers the
+// OTHER outcome: an answer the daemon drops is acked all the same and never retried, and its state is
+// what a separate push then moves.
+func TestRoomDecisionPgCrossingRoundTrip(t *testing.T) {
+	env := newRoomDecisionPgEnv(t)
+	env.seedRoom(t, roomDecisionPgRoomAlphaID, env.userA, "alpha")
+
+	ingest := func(qitem string) string { return roomDecisionPgIngest("alpha", qitem) }
+	type answersPage struct {
+		Success bool `json:"success"`
+		Answers []struct {
+			DecisionID string            `json:"decision_id"`
+			QitemID    string            `json:"qitem_id"`
+			Room       string            `json:"room"`
+			Answers    map[string]string `json:"answers"`
+			AnsweredAt string            `json:"answered_at"`
+		} `json:"answers"`
+		Cursor string `json:"cursor"`
+	}
+	pull := func(t *testing.T, token string) (int, answersPage) {
+		t.Helper()
+		code, res := env.getPath(t, token, "/api/v2/openrig/decisions/answers?rig=4genthub-min")
+		var got answersPage
+		if err := json.Unmarshal([]byte(res), &got); err != nil {
+			t.Fatalf("decoding the pull response: %v (%s)", err, res)
+		}
+		return code, got
+	}
+
+	decisionID, created, state := env.postIngest(t, env.tokenA, ingest("qitem-pg-crossing"))
+	if !created || state != "pending" {
+		t.Fatalf("first ingest created=%v state=%q, want a newly stored pending ask", created, state)
+	}
+	if n := env.count(t, env.userA); n != 1 {
+		t.Fatalf("rows = %d, want the one the ingest made", n)
+	}
+	// The redrive: the daemon's key again is the row the first attempt made, and the response says so.
+	if againID, againCreated, _ := env.postIngest(t, env.tokenA, ingest("qitem-pg-crossing")); againCreated || againID != decisionID {
+		t.Fatalf("redrive answered created=%v id=%s, want the same row with created:false", againCreated, againID)
+	}
+	if n := env.count(t, env.userA); n != 1 {
+		t.Fatalf("rows after the redrive = %d, want one", n)
+	}
+
+	// The human answers both questions in the panel: only the completing click moves the row.
+	for _, click := range []string{`{"question_id":"q1","option_id":"ship"}`, `{"question_id":"q2","option_id":"lead"}`} {
+		if code, body := env.postAnswer(t, env.tokenA, "alpha", decisionID, click); code != http.StatusOK {
+			t.Fatalf("answer %s = %d %s, want 200", click, code, body)
+		}
+	}
+
+	code, page := pull(t, env.tokenA)
+	if code != http.StatusOK || !page.Success || len(page.Answers) != 1 {
+		t.Fatalf("pull = %d %+v, want the one answered row", code, page)
+	}
+	if got := page.Answers[0]; got.DecisionID != decisionID || got.Room != "alpha" || got.Answers["q1"] != "ship" || got.AnsweredAt == "" {
+		t.Fatalf("answer = %+v, want the row with its room's SLUG and its answers", got)
+	}
+	// The cursor's instant half is the row's ANSWERED_AT and not the ask's created_at: a keyset over the
+	// wrong key loses or repeats rows, so the claim is settled against the column itself.
+	answered := env.answeredAt(t, decisionID)
+	if answered == nil {
+		t.Fatalf("answered_at = NULL on an answered row")
+	}
+	if want := answered.UTC().Format(time.RFC3339Nano) + "|" + decisionID; page.Cursor != want {
+		t.Fatalf("cursor = %q, want the answered_at keyset %q", page.Cursor, want)
+	}
+
+	// The ack IS the delivery record: `applied` resolves the row...
+	if code, body := env.postJSON(t, env.tokenA, "/api/v2/openrig/decisions/"+decisionID+"/ack",
+		`{"machine_id":"host-1","outcome":"applied"}`); code != http.StatusOK ||
+		!strings.Contains(body, `"delivered":true`) || !strings.Contains(body, `"state":"resolved"`) {
+		t.Fatalf("ack = %d %s, want 200 delivered with the resolved state", code, body)
+	}
+	if state, _ := env.row(t, decisionID); state != "resolved" {
+		t.Fatalf("state = %q, want resolved: applied is the only input that resolves", state)
+	}
+	if at := env.ackedAt(t, decisionID); at == nil {
+		t.Fatalf("acked_at = NULL, want the delivery recorded")
+	}
+	// ...and the row is never handed out again.
+	if code, page := pull(t, env.tokenA); code != http.StatusOK || len(page.Answers) != 0 || page.Cursor != "" {
+		t.Fatalf("pull after the ack = %d %+v, want a page with no answers", code, page)
+	}
+	// A second ack is the state, not the id.
+	if code, body := env.postJSON(t, env.tokenA, "/api/v2/openrig/decisions/"+decisionID+"/ack",
+		`{"machine_id":"host-1","outcome":"applied"}`); code != http.StatusConflict {
+		t.Fatalf("second ack = %d %s, want 409", code, body)
+	}
+	// The tenant fence: another tenant pulling this rig's name gets its own empty page, not A's row.
+	if code, page := pull(t, env.tokenB); code != http.StatusOK || len(page.Answers) != 0 {
+		t.Fatalf("pull as the other tenant = %d %+v, want nothing", code, page)
+	}
+
+	// The second ask covers the other outcome end to end through the routes: an answer the daemon DROPS
+	// is acked just the same, never retried, and keeps its state until the daemon reports one.
+	droppedID, created, _ := env.postIngest(t, env.tokenA, ingest("qitem-pg-dropped"))
+	if !created {
+		t.Fatalf("second ingest made no row")
+	}
+	for _, click := range []string{`{"question_id":"q1","option_id":"wait"}`, `{"question_id":"q2","option_id":"me"}`} {
+		if code, body := env.postAnswer(t, env.tokenA, "alpha", droppedID, click); code != http.StatusOK {
+			t.Fatalf("answer of the second ask = %d %s, want 200", code, body)
+		}
+	}
+	if code, body := env.postJSON(t, env.tokenA, "/api/v2/openrig/decisions/"+droppedID+"/ack",
+		`{"machine_id":"host-1","outcome":"dropped","reason":"state-done"}`); code != http.StatusOK ||
+		!strings.Contains(body, `"delivered":true`) || !strings.Contains(body, `"state":"answered"`) {
+		t.Fatalf("dropped ack = %d %s, want 200 delivered with the state kept", code, body)
+	}
+	if state, _ := env.row(t, droppedID); state != "answered" {
+		t.Fatalf("state = %q, want answered: a drop resolves nothing", state)
+	}
+	if at := env.ackedAt(t, droppedID); at == nil {
+		t.Fatalf("acked_at = NULL after a dropped ack, want the delivery recorded")
+	}
+	if code, page := pull(t, env.tokenA); code != http.StatusOK || len(page.Answers) != 0 {
+		t.Fatalf("pull after the drop = %d %+v, want no answers: a dropped answer is never retried", code, page)
+	}
+	// The state the daemon learned elsewhere is the separate route's job, and it lands on this row.
+	if code, body := env.postJSON(t, env.tokenA, "/api/v2/openrig/decisions/"+droppedID+"/state",
+		`{"machine_id":"host-1","state":"superseded","reason":"slack-first"}`); code != http.StatusOK ||
+		!strings.Contains(body, `"state":"superseded"`) {
+		t.Fatalf("state push = %d %s, want 200 superseded", code, body)
+	}
+	if state, _ := env.row(t, droppedID); state != "superseded" {
+		t.Fatalf("state = %q, want superseded", state)
 	}
 }

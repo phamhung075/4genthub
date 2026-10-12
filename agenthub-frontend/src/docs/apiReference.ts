@@ -378,6 +378,38 @@ export const apiReference: ApiReference = {
       "description": ""
     },
     {
+      "method": "POST",
+      "path": "/api/v2/openrig/decisions",
+      "pathParams": [],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v2/openrig/decisions/answers",
+      "pathParams": [],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "POST",
+      "path": "/api/v2/openrig/decisions/{id}/ack",
+      "pathParams": [
+        "id"
+      ],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "POST",
+      "path": "/api/v2/openrig/decisions/{id}/state",
+      "pathParams": [
+        "id"
+      ],
+      "handler": "",
+      "description": ""
+    },
+    {
       "method": "GET",
       "path": "/api/v2/openrig/feedback",
       "pathParams": [],

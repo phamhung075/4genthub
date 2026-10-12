@@ -794,12 +794,13 @@ CREATE TABLE room_decisions (
 	created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
 	answered_at TIMESTAMP WITH TIME ZONE,
 	resolved_at TIMESTAMP WITH TIME ZONE,
+	acked_at TIMESTAMP WITH TIME ZONE,
 	PRIMARY KEY (id),
 	CONSTRAINT ck_room_decisions_state CHECK (state IN ('pending', 'answered', 'resolved', 'superseded')),
-	CONSTRAINT uq_room_decisions_user_qitem UNIQUE (user_id, qitem_id),
-	CONSTRAINT uq_room_decisions_idempotency_key UNIQUE (idempotency_key)
+	CONSTRAINT uq_room_decisions_user_qitem UNIQUE (user_id, qitem_id)
 );
 CREATE INDEX ix_room_decisions_user_room_state ON room_decisions (user_id, room_id, state);
+CREATE INDEX ix_room_decisions_user_rig_state_acked ON room_decisions (user_id, rig_name, state, acked_at);
 
 -- Table: seat_messages
 CREATE TABLE seat_messages (

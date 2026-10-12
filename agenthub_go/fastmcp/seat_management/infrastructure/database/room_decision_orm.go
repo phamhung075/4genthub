@@ -33,4 +33,9 @@ type RoomDecisionORM struct {
 	CreatedAt      time.Time       `db:"created_at"`
 	AnsweredAt     *time.Time      `db:"answered_at"`
 	ResolvedAt     *time.Time      `db:"resolved_at"`
+	// AckedAt is the DELIVERY record, not a state: the daemon's ack that this answer no longer has to
+	// be handed out. It is separate from ResolvedAt because a dropped answer - one the daemon decided
+	// not to apply - is acked and never retried while the row's state says what the decision itself
+	// became. NULL means no ack has landed, which is exactly what the pull selects on.
+	AckedAt *time.Time `db:"acked_at"`
 }
