@@ -71,7 +71,9 @@ func TestEnsureSeatColumnsExistOnOldSchema(t *testing.T) {
 	)`); err != nil {
 		t.Fatal(err)
 	}
-	// The pre-answer-leg shape of the decisions table: the S1 columns, no delivery marker.
+	// The pre-answer-leg shape of the decisions table: the S1 columns, no delivery marker, and S1's
+	// OWN two uniques - the episode tuple and the superseded global key over idempotency_key, which
+	// is the pair the drop has to tell apart.
 	if _, err := db.ExecContext(ctx, `CREATE TABLE room_decisions (
 		id UUID PRIMARY KEY,
 		user_id TEXT NOT NULL,
@@ -88,7 +90,9 @@ func TestEnsureSeatColumnsExistOnOldSchema(t *testing.T) {
 		idempotency_key TEXT NOT NULL,
 		created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
 		answered_at TIMESTAMP WITH TIME ZONE,
-		resolved_at TIMESTAMP WITH TIME ZONE
+		resolved_at TIMESTAMP WITH TIME ZONE,
+		CONSTRAINT uq_room_decisions_user_qitem UNIQUE (user_id, qitem_id),
+		CONSTRAINT uq_room_decisions_idempotency_key UNIQUE (idempotency_key)
 	)`); err != nil {
 		t.Fatal(err)
 	}
@@ -159,6 +163,42 @@ func TestEnsureSeatColumnsExistOnOldSchema(t *testing.T) {
 	for _, col := range []string{"user_id", "rig_name", "state", "acked_at"} {
 		if !strings.Contains(indexDef, col) {
 			t.Errorf("indexdef = %s, want the composite index to cover %s", indexDef, col)
+		}
+	}
+
+	// The superseded global unique key and its replacement, asserted by DEFINITION rather than by
+	// name: a name-only check passes on an object that merely happens to be called right, while what
+	// matters is which key the database enforces. S1 declared both of them, so this is the pair the
+	// drop has to tell apart.
+	var legacyDef string
+	if err := db.QueryRowContext(ctx, `SELECT pg_get_constraintdef(oid) FROM pg_constraint
+		WHERE conrelid = 'room_decisions'::regclass AND conname = 'uq_room_decisions_idempotency_key'`).
+		Scan(&legacyDef); err != sql.ErrNoRows {
+		t.Fatalf("the superseded global unique key is still enforced: def=%q err=%v, want sql.ErrNoRows", legacyDef, err)
+	}
+	var episodeDef string
+	if err := db.QueryRowContext(ctx, `SELECT pg_get_constraintdef(oid) FROM pg_constraint
+		WHERE conrelid = 'room_decisions'::regclass AND conname = 'uq_room_decisions_user_qitem'`).
+		Scan(&episodeDef); err != nil {
+		t.Fatalf("the episode tuple: %v", err)
+	}
+	if !strings.Contains(episodeDef, "user_id") || !strings.Contains(episodeDef, "qitem_id") {
+		t.Fatalf("uq_room_decisions_user_qitem = %q, want the episode tuple over user_id and qitem_id", episodeDef)
+	}
+
+	// The behavioural half, which is what the ruling is about: the global key scoped the daemon's
+	// decisionId across tenants, so a second tenant's ask for the same local row raised 23505 and
+	// surfaced as a 500. With the drop in place the episode tuple is what is enforced and this lands.
+	if _, err := db.ExecContext(ctx, `INSERT INTO rooms (id, user_id, slug, name)
+		VALUES ('7f000000-0000-4000-8000-00000000a001', 'tenant-a', 'r', 'R')`); err != nil {
+		t.Fatal(err)
+	}
+	for _, tenant := range []string{"tenant-a", "tenant-b"} {
+		if _, err := db.ExecContext(ctx, `INSERT INTO room_decisions
+			(id, user_id, room_id, rig_name, qitem_id, author_seat_key, destination, questions, state, idempotency_key)
+			VALUES (gen_random_uuid(), $1, '7f000000-0000-4000-8000-00000000a001', 'rig-'||$1, 'qitem-1', 'seat', 'human@x',
+				'[]'::jsonb, 'pending', 'agenthub:decision:qitem-1')`, tenant); err != nil {
+			t.Fatalf("%s's ask for the same qitem under the same derived idempotency key was refused: %v", tenant, err)
 		}
 	}
 }

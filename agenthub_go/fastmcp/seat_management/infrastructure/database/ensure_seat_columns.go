@@ -59,8 +59,22 @@ var seatColumns = []seatColumn{
 	},
 }
 
-// EnsureSeatColumnsExist adds the missing columns and their indexes in one transaction. It is
-// registered into taskdb.ColumnEnsurers by init below. A second run is a no-op.
+// seatConstraintDrops are the constraints the seat system SUPERSEDES: dropped in the SAME
+// transaction as the columns above, so a database that already carries them reaches the ruled shape
+// on its next boot with no operator step, while a fresh database - which never had them - is a no-op.
+//
+// uq_room_decisions_idempotency_key is a PRE-CHANGE ARTEFACT of S1's room_decisions: it made the
+// daemon's decisionId globally unique, so a SECOND tenant's ask for the same local row raised 23505
+// and surfaced as a 500. Its ruled replacement is the episode tuple uq_room_decisions_user_qitem,
+// which scopes that key to the tenant. This statement is the only place in the code that names the
+// superseded key - nothing declares it any more - so it is not dead code and must not be deleted.
+var seatConstraintDrops = []string{
+	"ALTER TABLE room_decisions DROP CONSTRAINT IF EXISTS uq_room_decisions_idempotency_key",
+}
+
+// EnsureSeatColumnsExist adds the missing columns and their indexes, and drops the constraints this
+// packet supersedes, in one transaction. It is registered into taskdb.ColumnEnsurers by init below.
+// A second run is a no-op.
 func EnsureSeatColumnsExist(ctx context.Context, db *sql.DB) error {
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
@@ -77,6 +91,12 @@ func EnsureSeatColumnsExist(ctx context.Context, db *sql.DB) error {
 		}
 		if _, err := tx.ExecContext(ctx,
 			"CREATE INDEX IF NOT EXISTS "+c.index+" ON "+c.table+" ("+c.indexColumns()+")"); err != nil {
+			_ = tx.Rollback()
+			return err
+		}
+	}
+	for _, stmt := range seatConstraintDrops {
+		if _, err := tx.ExecContext(ctx, stmt); err != nil {
 			_ = tx.Rollback()
 			return err
 		}

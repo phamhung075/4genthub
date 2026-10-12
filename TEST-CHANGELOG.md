@@ -5438,3 +5438,25 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
   `AGENTHUB_TEST_PG_URL=postgresql://agenthub_user@127.0.0.1:55995/postgres go test -count=1 -run 'Ledger' -v ./fastmcp/server/httpapp/`
   -> **16 top-level cases PASS, 0 SKIP** (plus 7 subtests), `ok agenthub/fastmcp/server/httpapp 22.468s`. Not narrowed:
   the change adds a case to an existing file and edits no existing case.
+
+## 2026-10-12 — the forward path: the superseded global unique key is dropped at boot
+
+- IN THE EXISTING CASE, `agenthub_go/fastmcp/seat_management/infrastructure/database/ensure_seat_columns_test.go::TestEnsureSeatColumnsExistOnOldSchema`
+  (PostgreSQL; skips loudly without `SEAT_TEST_DATABASE_URL`, and that skip is not a pass). Its `room_decisions` fixture is
+  S1's OWN shape, so it now declares S1's two uniques — the episode tuple `uq_room_decisions_user_qitem UNIQUE (user_id, qitem_id)`
+  and the superseded `uq_room_decisions_idempotency_key UNIQUE (idempotency_key)` — and the case asserts, after
+  `EnsureSeatColumnsExist` ran, that the first is STILL enforced and the second is GONE. The assertion is
+  definition-level, through `pg_get_constraintdef(oid)`, because a name-only check passes on an object that merely happens
+  to be called right; the key is that the boot path drops the OBJECT, not the string.
+- THE BEHAVIOURAL HALF RIDES IN THE SAME CASE, because the definition is not the ruling's point: the global key scoped the
+  daemon's decisionId across tenants, so `tenant-a` and `tenant-b` inserting the same `qitem_id` under the same derived
+  `agenthub:decision:qitem-1` now BOTH land, where the global key refused the second with 23505 — the insert that
+  becomes a 500 when it reaches a route.
+- RED FIRST at the tip, the assertion quoted as it failed:
+  `ensure_seat_columns_test.go:177: the superseded global unique key is still enforced: def="UNIQUE (idempotency_key)" err=<nil>, want sql.ErrNoRows`
+  (`--- FAIL: TestEnsureSeatColumnsExistOnOldSchema (0.61s)`, `EXIT=1`). With the drop in the register's transaction:
+  `--- PASS: TestEnsureSeatColumnsExistOnOldSchema (0.68s)`, `ok agenthub/fastmcp/seat_management/infrastructure/database 0.685s`, `EXIT=0`.
+- Command, with `SEAT_TEST_DATABASE_URL` exported to the throwaway cluster's URL:
+  `go test -run TestEnsureSeatColumnsExistOnOldSchema -v ./fastmcp/seat_management/infrastructure/database/`.
+- No existing case was changed or weakened, and no case was removed: `gofmt -l` on both touched files prints nothing,
+  `go build ./...` exits 0, and `go vet ./fastmcp/seat_management/infrastructure/database/` exits 0.
