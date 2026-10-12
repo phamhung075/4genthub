@@ -127,3 +127,19 @@ it("shows why the room's list could not be read", async () => {
 
   expect(await screen.findByRole('alert')).toHaveTextContent('Request failed: HTTP 404');
 });
+
+it('allows sending request to room lead', async () => {
+  seatApi.sendSeatMessage = vi.fn().mockResolvedValue({ success: true } as any);
+  renderPanel();
+
+  const input = await screen.findByLabelText(/send request to lead/i);
+  fireEvent.change(input, { target: { value: 'Please prioritize S2 testing' } });
+
+  const sendBtn = screen.getByRole('button', { name: /^send$/i });
+  expect(sendBtn).toBeEnabled();
+  fireEvent.click(sendBtn);
+
+  await waitFor(() => {
+    expect(seatApi.sendSeatMessage).toHaveBeenCalledWith('dev', 'lead', { text: 'Please prioritize S2 testing' });
+  });
+});
