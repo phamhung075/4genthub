@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Removed
+- **`components/ui/sidebar.tsx` is gone, and with it the type import that alone kept it alive** - 2026-10-12
+  - WHY: measured dead before deleting, not assumed dead - its only referent in `agenthub-frontend/src` was a type-only import in `src/tests/types/componentTypes.test.ts` that no assertion in that file used, and no product component imported the `Sidebar` export. It could not have served the sidebar split anyway: it renders a second `<aside>` landmark with `h-screen`, which fights the drawer shell the sidebar already carries (the decision recorded in the entry below).
+  - The dangling type import is dropped with it, so no file imports a module that no longer exists.
+  - Verified: `grep -rn 'ui/sidebar' agenthub-frontend/src` (no match), `npx tsc --noEmit -p .` (exit 0), `npx vitest run` (exit 0), `npx vite build` (exit 0).
 ### Added
 - **The sidebar's lower half answers a room lead's decision requests** - 2026-10-12
   - WHY: the owner asked for two vertical sections - the Project & Branch hierarchy on top (unchanged) and, below it, the room's decision requests with select -> validate -> transfer back. The cloud row is a projection of the local queue row: the daemon mirrors the ask up and applies the owner's answer, so `answered` is NOT closure. The row stays visible as "awaiting the room" until the daemon's `resolved` (or `superseded`, if the same ask was answered somewhere else first) takes it out of the list, and a refusal is rendered rather than swallowed.

@@ -2,6 +2,15 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-12 - componentTypes.test.ts: the dangling import of a deleted component is dropped
+
+- `agenthub-frontend/src/tests/types/componentTypes.test.ts` loses one line: the type-only
+  `SidebarProps` import from `components/ui/sidebar`, which no assertion in the file referenced. That
+  unreferenced import is exactly why the component counted as dead, and it is removed in the same change
+  as `src/components/ui/sidebar.tsx` itself, so nothing imports a module that no longer exists.
+- No case is added, removed or re-pinned: the file's cases are unchanged, and the touched line is an
+  import that no test read.
+
 ## 2026-10-12 - RoomDecisionPanel: the stored questions are rendered verbatim, and the answer payload is pinned
 
 - `agenthub-frontend/src/tests/components/RoomDecisionPanel.test.tsx` (new, 5 cases) covers the frozen
