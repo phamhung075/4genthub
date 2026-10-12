@@ -10,9 +10,11 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { seatApi } from '../services/seatApi';
+import { decisionApi } from '../services/decisionApi';
 import { useSuccessToast } from '../components/ui/toast';
 import { parseMcpBlock, type McpBlockParse } from '../lib/mcpBlock';
 import type {
+  AnswerRoomDecisionRequest,
   CreateSeatTypeVersionRequest,
   ModuleSummary,
   CreateRoomRequest,
@@ -37,6 +39,7 @@ export type { SeatOverlays };
 
 export const seatKeys = {
   rooms: ['seatRooms'] as const,
+  roomDecisions: (room: string) => ['roomDecisions', room] as const,
   teams: ['seatTeams'] as const,
   seatTypes: ['seatTypes'] as const,
   settings: ['seatSettings'] as const,
@@ -64,6 +67,44 @@ export function useRooms() {
     },
   });
   return { rooms: query.data ?? [], isLoading: query.isLoading, error: query.error, refetch: query.refetch };
+}
+
+// ---------------------------------------------------------------------------
+// Decision requests
+// ---------------------------------------------------------------------------
+
+/**
+ * One room's open asks - `pending` and `answered`, as the route returns them.
+ *
+ * Callers must not treat their own POST as closure: `answered` means "the room has not applied it
+ * yet", and a row leaves the list only when the daemon's apply turns it `resolved`/`superseded`
+ * (frozen contract 2026-10-12, lane 1).
+ */
+export function useRoomDecisions(room: string, enabled = true) {
+  const query = useQuery({
+    queryKey: seatKeys.roomDecisions(room),
+    queryFn: async () => {
+      const response = await decisionApi.listRoomDecisions(room);
+      return response.decisions ?? [];
+    },
+    enabled: enabled && !!room,
+  });
+  return { decisions: query.data ?? [], isLoading: query.isLoading, error: query.error, refetch: query.refetch };
+}
+
+/**
+ * Record ONE click of one option. The server refuses an unknown option (422), a row that is not
+ * pending (409) and a caller that is not the asked human (403); the panel renders that reason.
+ */
+export function useAnswerRoomDecision(room: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ decisionId, answer }: { decisionId: string; answer: AnswerRoomDecisionRequest }) =>
+      decisionApi.answerRoomDecision(room, decisionId, answer),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: seatKeys.roomDecisions(room) });
+    },
+  });
 }
 
 export function useCreateRoom() {

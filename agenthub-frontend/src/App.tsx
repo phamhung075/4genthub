@@ -27,6 +27,7 @@ const BranchDetailsDialog = lazy(() => import('./components/BranchDetailsDialog'
 const GlobalContextDialog = lazy(() => import('./components/GlobalContextDialog'));
 const ProjectDetailsDialog = lazy(() => import('./components/ProjectDetailsDialog'));
 const ProjectList = lazy(() => import('./components/ProjectList'));
+const RoomDecisionPanel = lazy(() => import('./components/RoomDecisionPanel').then(m => ({ default: m.RoomDecisionPanel })));
 const WebSocketStatusBadge = lazy(() => import('./components/WebSocketStatusBadge').then(m => ({ default: m.WebSocketStatusBadge })));
 const LazyTaskList = lazy(() => import('./components/LazyTaskList'));
 
@@ -109,13 +110,16 @@ function Dashboard() {
         left-0
         w-full sm:w-80 md:w-1/3 md:min-w-[320px] md:max-w-[400px]
         h-full
-        border-r border-surface-border-hover p-3 md:p-4 overflow-y-auto
+        flex flex-col
+        border-r border-surface-border-hover p-3 md:p-4
         bg-surface/95 backdrop-blur-xl
         transition-transform duration-300 ease-in-out
         z-30
         md:translate-x-0
         shadow-xl md:shadow-none
       `}>
+        {/* Upper half: the Project & Branch hierarchy, unchanged, in its own scroll area. */}
+        <div className="min-h-0 flex-1 overflow-y-auto">
         <ProjectList
           onSelect={(projectId: string, branchId: string) => {
             navigate(`/dashboard/project/${projectId}/branch/${branchId}`);
@@ -129,6 +133,14 @@ function Dashboard() {
           onShowGlobalContext={() => setShowGlobalContext(true)}
           onShowProjectDetails={(project) => setShowProjectDetails(project)}
           onShowBranchDetails={(project, branch) => setShowBranchDetails({ project, branch })} />
+        </div>
+
+        {/* Lower half: this room's decision requests, from the cloud row the daemon mirrors up. */}
+        <div className="max-h-[45%] shrink-0 overflow-y-auto">
+          <Suspense fallback={null}>
+            <RoomDecisionPanel />
+          </Suspense>
+        </div>
       </aside>
 
       {/* Mobile overlay */}

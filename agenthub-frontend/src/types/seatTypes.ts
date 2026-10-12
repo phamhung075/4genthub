@@ -548,3 +548,73 @@ export interface MachinesResponse {
   success: boolean;
   machines: MachineStatus[];
 }
+
+// =============================================================================
+// Room decision requests
+// =============================================================================
+
+/**
+ * The four states the cloud row moves through (`room_decisions.state`, frozen 2026-10-12, lane 1).
+ * `pending` is open; `answered` means the owner has chosen and the room has NOT closed the question
+ * yet ("awaiting the room"); `resolved` and `superseded` are closed and leave the panel.
+ */
+export type DecisionState = "pending" | "answered" | "resolved" | "superseded";
+
+/**
+ * One clickable choice. Field names and limits mirror the daemon's `HumanQuestionOption` verbatim
+ * (ids `^[A-Za-z0-9_-]{1,40}$`, label <= 75) so the panel renders the stored value, never a
+ * re-spelled copy of it.
+ */
+export interface HumanQuestionOption {
+  id: string;
+  label: string;
+  recommended?: boolean;
+}
+
+/** One question of an ask, verbatim from the daemon's `HumanQuestion` (1-4 questions, 2-4 options). */
+export interface HumanQuestion {
+  id: string;
+  question: string;
+  options: HumanQuestionOption[];
+}
+
+/** A whole thread reply rather than a button choice (the daemon's `TypedHumanReply`). */
+export interface TypedHumanReply {
+  kind: "typed-reply";
+  text: string;
+}
+
+/** questionId -> chosen optionId, or a typed reply the panel shows as its own text. */
+export type HumanAnswers = Record<string, string | TypedHumanReply>;
+
+/** One mirrored ask. The local queue row (`qitem_id`) stays the authority; this is its projection. */
+export interface RoomDecision {
+  id: string;
+  qitem_id: string;
+  author_seat_key: string;
+  summary: string | null;
+  detail: string | null;
+  questions: HumanQuestion[];
+  answers: HumanAnswers;
+  state: DecisionState;
+  created_at: string;
+  answered_at: string | null;
+}
+
+export interface RoomDecisionsResponse {
+  decisions: RoomDecision[];
+}
+
+/** One click per call, as the Slack option button is. */
+export interface AnswerRoomDecisionRequest {
+  question_id: string;
+  option_id: string;
+  idempotency_key?: string;
+}
+
+/** Mirrors the recorded branch of the daemon's `RecordHumanAnswerResult`. */
+export interface AnswerRoomDecisionResponse {
+  state: DecisionState;
+  answers: HumanAnswers;
+  complete: boolean;
+}

@@ -2,6 +2,22 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-12 - RoomDecisionPanel: the stored questions are rendered verbatim, and the answer payload is pinned
+
+- `agenthub-frontend/src/tests/components/RoomDecisionPanel.test.tsx` (new, 5 cases) covers the frozen
+  lane-1 contract at the panel: the question text and every option label render from the stored
+  `questions` verbatim, with the author seat key; a click plus "Send answer" posts exactly one
+  `{question_id, option_id}` for `d1`/`q1` to the room named by the URL; a row that is only `answered`
+  stays in the list as "awaiting the room" with its send disabled, while a `resolved` row is not
+  rendered at all; a refused POST (`not-the-asked-human`) and an unreadable list (`404 page not found`)
+  both surface through `role="alert"` instead of disappearing.
+- The SERVICES are mocked and the real hooks run (query key, `enabled`, invalidation), so the file pins
+  behaviour and payload rather than a mock echo. On the pre-change tree the suite cannot even import the
+  panel, and one case caught a real defect while being written: the send button for an
+  already-recorded question was enabled and would have posted a `409`.
+- The route itself is verified against the running server when go-dev's S1 routes land (task `df2b8cd6`);
+  until then the panel's list error IS the honest state, and the suite asserts that it is rendered.
+
 ## 2026-10-11 - useBranchSummaries: the empty fallback's identity is pinned, and the /dashboard loop ends
 
 - `agenthub-frontend/src/tests/useBranchSummaries.test.tsx` gains one case: **the hook returns ONE
