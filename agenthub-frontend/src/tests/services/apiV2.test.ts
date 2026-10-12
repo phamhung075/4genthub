@@ -286,8 +286,10 @@ describe('apiV2.ts', () => {
           json: vi.fn().mockRejectedValue(new Error('Parse error'))
         });
 
-        // json() rejects, so the code falls back to the generic detail "Request failed"
-        await expect(taskApiV2.getTasks()).rejects.toThrow('Request failed');
+        // json() rejects, so the code falls back to a detail that NAMES THE STATUS: a non-JSON body
+        // (the Go mux's plain-text "404 page not found") cannot carry one of its own, and the bare
+        // "Request failed" this used to say hid which contract answer had arrived.
+        await expect(taskApiV2.getTasks()).rejects.toThrow('Request failed: HTTP 400');
       });
     });
 

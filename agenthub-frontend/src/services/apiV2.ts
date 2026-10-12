@@ -53,7 +53,12 @@ const handleResponse = async <T>(response: Response, originalUrl?: string, origi
   }
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ detail: 'Request failed' }));
+    // A BODY THAT IS NOT JSON CANNOT CARRY A DETAIL, and the Go mux answers a route it does not hold
+    // with the plain text "404 page not found" - so this fallback NAMES THE STATUS. Without it every
+    // such failure read as the same opaque "Request failed" and hid which answer had arrived, e.g. the
+    // contract's own 403 not-the-asked-human, 409 state-<state> and 422 unknown-option. The branches
+    // below are unchanged, and a body that DOES carry a detail still wins over this string.
+    const error = await response.json().catch(() => ({ detail: `Request failed: HTTP ${response.status}` }));
 
     if (response.status === 401) {
       logger.info('V2 API: Got 401, attempting token refresh...');

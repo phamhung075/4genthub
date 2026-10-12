@@ -120,8 +120,10 @@ it('shows a refused answer instead of a silent no-op', async () => {
 });
 
 it("shows why the room's list could not be read", async () => {
-  listRoomDecisions.mockRejectedValue(new Error('404 page not found'));
+  // The message the browser really produced on the OF4 local stack for the absent route: the status
+  // is part of it now, so the operator can tell a missing route from a refused answer.
+  listRoomDecisions.mockRejectedValue(new Error('Request failed: HTTP 404'));
   renderPanel();
 
-  expect(await screen.findByRole('alert')).toHaveTextContent('404 page not found');
+  expect(await screen.findByRole('alert')).toHaveTextContent('Request failed: HTTP 404');
 });

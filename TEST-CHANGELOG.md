@@ -2,6 +2,19 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-12 - apiV2's unparseable-body failure names the status, and the panel test stubs what the browser really showed
+
+- `agenthub-frontend/src/tests/services/apiV2.test.ts`: the "response without detail" case (status 400,
+  `json()` rejects) now asserts `Request failed: HTTP 400` rather than the bare `Request failed` - it pins the
+  status in the fallback, which is the point of the change.
+- `agenthub-frontend/src/tests/components/RoomDecisionPanel.test.tsx`: the unreadable-list case stubs
+  `Request failed: HTTP 404`, the message the browser produced on the OF4 stack, and asserts that text through
+  `role="alert"`. It previously stubbed `404 page not found`, which no live response ever produced - the mux's
+  404 is not JSON, so the client's fallback, not the body, is what reaches the panel.
+- No other case asserts that message: the grep over `agenthub-frontend/src` for `Request failed` returned only
+  these two files, a stubbed error in `FeedbackPage.test.tsx` (its own mock, unaffected by the change) and a
+  debug log line in `utils/requestDeduplication.ts`.
+
 ## 2026-10-12 - componentTypes.test.ts: the dangling import of a deleted component is dropped
 
 - `agenthub-frontend/src/tests/types/componentTypes.test.ts` loses one line: the type-only
