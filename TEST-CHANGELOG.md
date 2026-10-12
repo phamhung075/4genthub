@@ -17,12 +17,16 @@ Track test suite changes, fixes, and improvements for agenthub.
 
 ## 2026-10-12 - componentTypes.test.ts: the dangling import of a deleted component is dropped
 
-- `agenthub-frontend/src/tests/types/componentTypes.test.ts` loses one line: the type-only
-  `SidebarProps` import from `components/ui/sidebar`, which no assertion in the file referenced. That
-  unreferenced import is exactly why the component counted as dead, and it is removed in the same change
-  as `src/components/ui/sidebar.tsx` itself, so nothing imports a module that no longer exists.
-- No case is added, removed or re-pinned: the file's cases are unchanged, and the touched line is an
-  import that no test read.
+- `agenthub-frontend/src/tests/types/componentTypes.test.ts` loses the type-only `SidebarProps` import
+  from `components/ui/sidebar`, which no assertion in the file referenced. That unreferenced import is
+  exactly why the component counted as dead, and it is removed in the same change as
+  `src/components/ui/sidebar.tsx` itself, so nothing imports a module that no longer exists.
+- The same diff touches three more lines without changing a case: it trims trailing whitespace on two
+  lines (in the Toast-types and Progress-state cases) and adds the file's missing final newline. They are
+  named here because the reader checks a changelog line against the diff, and "loses one line" alone did
+  not match the file's four-line change.
+- No case is added, removed or re-pinned: the file's cases are unchanged, and the touched lines are the
+  import that no test read, two trailing-whitespace trims and the EOF newline.
 
 ## 2026-10-12 - RoomDecisionPanel: the stored questions are rendered verbatim, and the answer payload is pinned
 
