@@ -2,6 +2,12 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-13 - Sample env and documentation updates
+
+- UPDATED `agenthub_client/.env.sample`, `agenthub_client/README.md`, `docs/AGENT-SETUP.md`, `skills/client/install/SKILL.md`, and root `.env.sample` removing legacy OpenRig variables and adding TypeSafe AI / Jev gate and validation configuration.
+- PINNED: `agenthub_client` commit `94fa49e`. All client unit tests pass cleanly (`go test ./...` exit 0).
+- BUILT: `~/.local/bin/4genteam` from `./cmd/4genteam`.
+
 ## 2026-10-13 - TypeSafe AI / Jev HTTP client & Machine-Level Config Env tests
 
 - ADDED `agenthub_go/fastmcp/utilities/config_loader_test.go`: `TestLoadEnv` testing parsing of KEY=VALUE assignments, export prefixes, comments, quotes, and non-overriding of existing environment variables.
