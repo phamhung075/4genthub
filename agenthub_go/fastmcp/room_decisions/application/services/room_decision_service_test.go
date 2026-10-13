@@ -767,3 +767,86 @@ func asAskRejection(err error, target **RoomDecisionAskRejection) bool {
 	}
 	return ok
 }
+
+type fakeDecisionEvaluator struct {
+	selections map[string]DecisionChoiceSelection
+	err        error
+}
+
+func (f *fakeDecisionEvaluator) SelectDecisionChoices(ctx context.Context, model string, summary, detail string, qs []questions.HumanQuestion) (map[string]DecisionChoiceSelection, error) {
+	if f.err != nil {
+		return nil, f.err
+	}
+	return f.selections, nil
+}
+
+func TestRoomDecisionServiceEvaluatorAutoSelectAndPending(t *testing.T) {
+	ctx := context.Background()
+	qsJSON := json.RawMessage(`[
+		{
+			"id": "q1",
+			"question": "Which db?",
+			"options": [
+				{"id": "opt_pg", "label": "PostgreSQL"},
+				{"id": "opt_sqlite", "label": "SQLite"}
+			]
+		}
+	]`)
+
+	ask := RoomDecisionAsk{
+		RigName:        "rig-1",
+		QitemID:        "qitem-1",
+		AuthorSeatKey:  "seat-1",
+		Destination:    "human",
+		Summary:        "Database choice",
+		Detail:         "Need decision on primary db",
+		Questions:      qsJSON,
+		IdempotencyKey: "agenthub:decision:qitem-1",
+	}
+
+	t.Run("auto_selects_when_confidence_gte_threshold", func(t *testing.T) {
+		store := &fakeRoomDecisionStore{}
+		eval := &fakeDecisionEvaluator{
+			selections: map[string]DecisionChoiceSelection{
+				"q1": {SelectedOptionID: "opt_pg", Confidence: 0.85},
+			},
+		}
+
+		service := NewRoomDecisionService(store).WithEvaluator(eval, "jev-1.13.0", 0.8)
+		row, created, err := service.Create(ctx, "owner", "room-1", ask, serviceTestNow)
+		if err != nil || !created {
+			t.Fatalf("Create err = %v, created = %v", err, created)
+		}
+
+		// Since confidence 0.85 >= 0.8, q1 should be auto-answered, and row marked Answered
+		if row.State != decisions.StateAnswered {
+			t.Errorf("row.State = %s, want %s (auto-answered)", row.State, decisions.StateAnswered)
+		}
+		if row.Answers["q1"] != "opt_pg" {
+			t.Errorf("row.Answers[q1] = %s, want opt_pg", row.Answers["q1"])
+		}
+	})
+
+	t.Run("leaves_pending_when_confidence_lt_threshold", func(t *testing.T) {
+		store := &fakeRoomDecisionStore{}
+		eval := &fakeDecisionEvaluator{
+			selections: map[string]DecisionChoiceSelection{
+				"q1": {SelectedOptionID: "opt_pg", Confidence: 0.75},
+			},
+		}
+
+		service := NewRoomDecisionService(store).WithEvaluator(eval, "jev-1.13.0", 0.8)
+		row, created, err := service.Create(ctx, "owner", "room-1", ask, serviceTestNow)
+		if err != nil || !created {
+			t.Fatalf("Create err = %v, created = %v", err, created)
+		}
+
+		// Confidence 0.75 < 0.8 -> remains pending for human review
+		if row.State != decisions.StatePending {
+			t.Errorf("row.State = %s, want %s (pending for human)", row.State, decisions.StatePending)
+		}
+		if len(row.Answers) != 0 {
+			t.Errorf("row.Answers = %+v, want empty", row.Answers)
+		}
+	})
+}

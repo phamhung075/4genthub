@@ -186,14 +186,48 @@ type RoomDecisionAnswerRejection struct {
 
 func (e *RoomDecisionAnswerRejection) Error() string { return e.Code + ": " + e.Message }
 
+// DecisionChoiceSelection is the choice and confidence score returned by AI evaluation.
+type DecisionChoiceSelection struct {
+	SelectedOptionID string
+	Confidence       float64
+}
+
+// DecisionEvaluator evaluates human questions with AI before human escalation.
+type DecisionEvaluator interface {
+	SelectDecisionChoices(ctx context.Context, model string, summary, detail string, qs []questions.HumanQuestion) (map[string]DecisionChoiceSelection, error)
+}
+
 // RoomDecisionService validates and stores mirrored decisions and the clicks on them.
 type RoomDecisionService struct {
-	store RoomDecisionStore
+	store               RoomDecisionStore
+	evaluator           DecisionEvaluator
+	evaluatorModel      string
+	confidenceThreshold float64
 }
 
 // NewRoomDecisionService builds the service over a store.
 func NewRoomDecisionService(store RoomDecisionStore) *RoomDecisionService {
-	return &RoomDecisionService{store: store}
+	return &RoomDecisionService{
+		store:               store,
+		evaluatorModel:      "jev-1.13.0",
+		confidenceThreshold: 0.8,
+	}
+}
+
+// WithEvaluator configures an AI evaluator for auto-selecting high-confidence choices.
+func (s *RoomDecisionService) WithEvaluator(evaluator DecisionEvaluator, model string, minConfidence float64) *RoomDecisionService {
+	s.evaluator = evaluator
+	if model != "" {
+		s.evaluatorModel = model
+	} else {
+		s.evaluatorModel = "jev-1.13.0"
+	}
+	if minConfidence > 0 {
+		s.confidenceThreshold = minConfidence
+	} else {
+		s.confidenceThreshold = 0.8
+	}
+	return s
 }
 
 // Create validates one ask and stores it under the caller's tenant.
@@ -302,6 +336,26 @@ func (s *RoomDecisionService) Create(ctx context.Context, userID, roomID string,
 	if !created && stored == nil {
 		return nil, false, fmt.Errorf("room decision create: the row for %s/%s was neither written nor found", userID, ask.QitemID)
 	}
+
+	// Jev AI auto-selection: if confidence >= confidenceThreshold (0.8), auto-select option;
+	// otherwise, leave unanswered for human decision request on 4genthub.
+	if created && stored != nil && s.evaluator != nil {
+		choices, evalErr := s.evaluator.SelectDecisionChoices(ctx, s.evaluatorModel, summary, detail, parsed)
+		if evalErr == nil && len(choices) > 0 {
+			for _, q := range parsed {
+				if sel, ok := choices[q.ID]; ok && sel.Confidence >= s.confidenceThreshold && sel.SelectedOptionID != "" {
+					updated, ansErr := s.Answer(ctx, userID, roomID, stored.ID, RoomDecisionAnswerInput{
+						QuestionID: q.ID,
+						OptionID:   sel.SelectedOptionID,
+					}, createdAt)
+					if ansErr == nil && updated != nil {
+						stored = updated
+					}
+				}
+			}
+		}
+	}
+
 	return stored, created, nil
 }
 

@@ -227,8 +227,8 @@ func validateRoomWithRig(t *testing.T, rigPath, policy string) {
 	}
 
 	validateOut, err := exec.Command(rigPath, "spec", "validate", rigFile).CombinedOutput()
-	if err != nil && strings.Contains(string(validateOut), "Daemon not running") {
-		t.Skipf("rig validate needs a running OpenRig daemon: %s", strings.TrimSpace(string(validateOut)))
+	if err != nil && (strings.Contains(string(validateOut), "Daemon not running") || strings.Contains(string(validateOut), "unknown command spec")) {
+		t.Skipf("rig validate needs a running OpenRig daemon (or OpenRig rig binary): %s", strings.TrimSpace(string(validateOut)))
 	}
 	if err != nil {
 		t.Fatalf("rig spec validate failed: %v\n%s", err, validateOut)
@@ -393,8 +393,8 @@ func rigValidate(t *testing.T, rigYAML string) (string, bool) {
 		t.Fatalf("write rig.yaml: %v", err)
 	}
 	out, err := exec.Command(rigPath, "spec", "validate", file).CombinedOutput()
-	if err != nil && strings.Contains(string(out), "Daemon not running") {
-		t.Skipf("rig validate needs a running OpenRig daemon: %s", strings.TrimSpace(string(out)))
+	if err != nil && (strings.Contains(string(out), "Daemon not running") || strings.Contains(string(out), "unknown command spec")) {
+		t.Skipf("rig validate needs a running OpenRig daemon (or OpenRig rig binary): %s", strings.TrimSpace(string(out)))
 	}
 	return string(out), err == nil
 }

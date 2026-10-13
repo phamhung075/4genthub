@@ -378,6 +378,15 @@ export const apiReference: ApiReference = {
       "description": ""
     },
     {
+      "method": "GET",
+      "path": "/api/v2/machines/{machine}/work",
+      "pathParams": [
+        "machine"
+      ],
+      "handler": "",
+      "description": ""
+    },
+    {
       "method": "POST",
       "path": "/api/v2/openrig/decisions",
       "pathParams": [],
@@ -1001,6 +1010,15 @@ export const apiReference: ApiReference = {
     {
       "method": "POST",
       "path": "/api/v2/tasks/{id}/evidence",
+      "pathParams": [
+        "id"
+      ],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v2/tasks/{id}/resume",
       "pathParams": [
         "id"
       ],

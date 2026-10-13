@@ -38,6 +38,7 @@ import (
 	"agenthub/fastmcp/seat_management/domain/repositories"
 	seatorm "agenthub/fastmcp/seat_management/infrastructure/repositories/orm"
 	"agenthub/fastmcp/task_management/domain/entities"
+	"agenthub/fastmcp/task_management/infrastructure/ai_services"
 	"agenthub/fastmcp/task_management/infrastructure/database"
 )
 
@@ -69,7 +70,8 @@ var newRoomDecisionService = func(sessions *database.SessionManager) (*roomservi
 	if err != nil {
 		return nil, err
 	}
-	return roomservices.NewRoomDecisionService(repo), nil
+	jevClient := ai_services.NewTypeSafeJevClient(ai_services.TypeSafeJevClientConfig{})
+	return roomservices.NewRoomDecisionService(repo).WithEvaluator(jevClient, "jev-1.13.0", 0.8), nil
 }
 
 // roomDecisionNow is the server clock; tests substitute a fixed one.
