@@ -3,6 +3,8 @@ package httpapp
 import (
 	"context"
 
+	"os"
+
 	"agenthub/fastmcp/auth/middleware"
 	"agenthub/fastmcp/task_management/application/facades"
 	"agenthub/fastmcp/task_management/application/factories"
@@ -10,7 +12,9 @@ import (
 	"agenthub/fastmcp/task_management/application/services"
 	"agenthub/fastmcp/task_management/application/use_cases"
 	"agenthub/fastmcp/task_management/domain/entities"
+	domain_services "agenthub/fastmcp/task_management/domain/services"
 	"agenthub/fastmcp/task_management/domain/value_objects"
+	"agenthub/fastmcp/task_management/infrastructure/ai_services"
 	"agenthub/fastmcp/task_management/infrastructure/database"
 	infrarepos "agenthub/fastmcp/task_management/infrastructure/repositories"
 
@@ -142,6 +146,13 @@ func (p taskFacadeProvider) TaskFacade(ctx context.Context, userID, projectID, g
 		Events: taskEvents,
 	}
 
+	gateConfig := domain_services.DefaultValidationGateConfig()
+	if os.Getenv("VALIDATION_GATE_ENFORCEMENT") == "true" {
+		gateConfig.EnforcementEnabled = true
+	}
+	jevClient := ai_services.NewTypeSafeJevClient(ai_services.TypeSafeJevClientConfig{})
+	validationGate := domain_services.NewValidationGateService(gateConfig, jevClient)
+
 	deps := facades.TaskFacadeDeps{
 		GitBranchRepository: branchWithProject,
 		ContextService:      unified,
@@ -150,7 +161,7 @@ func (p taskFacadeProvider) TaskFacade(ctx context.Context, userID, projectID, g
 		UpdateTask:          use_cases.NewUpdateTaskUseCase(taskRepo, getter).WithHooks(taskHooks).WithLedger(ledger),
 		GetTask:             use_cases.NewGetTaskUseCase(taskRepo, contextReader{unified, userID}, getter, taskEvents),
 		DeleteTask:          use_cases.NewDeleteTaskUseCase(taskRepo, subtaskRepo, cascadeBranchRepo{branchRepo}, projectRepo, nil),
-		CompleteTask:        use_cases.NewCompleteTaskUseCase(taskRepo, subtaskRepo, legacyTaskContextRepo{taskContextRepo}, completeContextFactory{p.ctxFactory, userID}).WithHooks(taskHooks).WithLedger(ledger),
+		CompleteTask:        use_cases.NewCompleteTaskUseCase(taskRepo, subtaskRepo, legacyTaskContextRepo{taskContextRepo}, completeContextFactory{p.ctxFactory, userID}).WithHooks(taskHooks).WithLedger(ledger).WithGate(validationGate, nil),
 		SearchTasks:         use_cases.NewSearchTasksUseCase(taskRepo, taskEvents),
 		NextTask:            use_cases.NewNextTaskUseCase(taskRepo, nil),
 		DependencyResolver:  services.NewDependencyResolverService(taskRepo, userID),

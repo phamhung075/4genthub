@@ -2,6 +2,11 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-13 - TypeSafe AI / Jev HTTP client tests
+
+- ADDED `agenthub_go/fastmcp/task_management/infrastructure/ai_services/typesafe_jev_client_test.go`: 3 test cases (`TestTypeSafeJevClientMissingAPIKey`, `TestTypeSafeJevClientAccept`, `TestTypeSafeJevClientReject`). Verifies missing token handling (fail-safe uncertain with ErrMissingAPIKey), HTTP POST `/systemone` payload dispatch with Bearer token, and acceptance/rejection verdict parsing.
+- MEASURED: `go test -v ./fastmcp/task_management/infrastructure/ai_services/ -run TestTypeSafeJev` (exit 0).
+
 ## 2026-10-13 - Next-Gen validation gate, remote execution, and work routing tests (O5, O6, O7, P7, D4/F5)
 
 - ADDED `agenthub_go/fastmcp/task_management/domain/services/validation_gate_service_test.go`: 5 test cases (`TestValidationGateDeterministicFailures`, `TestValidationGateDeterministicPassNoCriteria`, `TestValidationGateJevBudgetExceededFailsSafe`, `TestValidationGateJevClientErrorFailsSafe`, `TestValidationGateJevAccepts`). Verifies deterministic checks D1–D5 (syntax, types, tests exit code/failed list, clean diff keep-out scan, numstat bounds), Jev model criteria evaluation, daily token budget cap enforcement ($0.042/Mtok), and fail-safe fallback to `uncertain` on budget exhaustion or error.
