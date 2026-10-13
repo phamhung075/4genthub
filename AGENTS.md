@@ -1,9 +1,7 @@
 <!-- 4genthub project agent instructions. Renamed from CLAUDE.md on 2026-10-05: Claude Code reads
      AGENTS.md natively and it is the cross-tool convention (Codex, Gemini, omp seats read it too).
-     HAZARD: OpenRig writes its OWN generated AGENTS.md into a rig's launch cwd. Launch rigs with
-     their spec cwd (the rig directory), never with --cwd pointing at this repo, or this file is
-     overwritten. The generated copy that used to live here is preserved at
-     ~/.openrig/agenthub-seats/4genthub-min/backup/AGENTS.md.openrig-generated-2026-10-05. -->
+     OpenRig is retired and kept only in its directory for review. Native 4genteam is the single
+     orchestrator. -->
 
 # 4genthub agent instructions
 
@@ -64,11 +62,10 @@ These are pointers; never copy their content into this file.
    `AGENTS.md`, which is tracked; see `agenthub_go/NEXT_GEN.md`.)
 5. **The owner approves every push.** Never push, deploy or touch production or another rig without
    the owner's explicit go-ahead.
-6. **Launch and resume teams with `4genteam`, NEVER bare `rig up`.** Always run `4genteam up <rig> [--allow-peak]`
-   or `4genteam continue <rig>`. Bare `rig up` restores raw tmux sessions without the client supervisor stack —
-   bypassing `rigd`, the auto-compaction supervisor (`compact-run`), the `watchdog`, the status `bridge`, and the
-   styled `watch` grid, causing seats to grow unchecked beyond context limits and fail with RPC frame errors.
-   When asked to show the live team, always run `4genteam watch --rig <rig>`, never manual tmux tiles.
+6. **Launch and resume teams with `4genteam`, NEVER legacy OpenRig.** Always run `4genteam up <rig> [--allow-peak]`
+   or `4genteam continue <rig>`. OpenRig daemon and runtime orchestration are retired; `4genteam` runs the full client
+   supervisor stack (`rigd`, the auto-compaction supervisor `compact-run`, `watchdog`, status `bridge`, and the styled
+   `watch` grid). When asked to show the live team, always run `4genteam watch --rig <rig>`.
 
 ## 4. Pointers
 

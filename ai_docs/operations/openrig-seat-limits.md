@@ -1,5 +1,8 @@
 # Seat limits and customising a seat
 
+> [!NOTE]
+> **OpenRig Decommissioning Notice:** OpenRig daemon and runtime orchestration have been retired in favor of native `4genteam` orchestration (`rigd`, `compact-run`, `watchdog`, `bridge`, `watch`). OpenRig legacy code is retained in its repository folder for review only. Policy and limits are managed directly via `4genteam policy`.
+
 Every omp seat runs in `yolo` (OpenRig offers nothing between yolo and "no tools at all"), so a seat's
 limits land in two files that have **two different writers** since 2026-10-07:
 

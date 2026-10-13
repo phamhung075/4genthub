@@ -1,4 +1,7 @@
-# Watching OpenRig seats
+# Watching team seats
+
+> [!NOTE]
+> **OpenRig Decommissioning Notice:** OpenRig daemon and runtime orchestration have been retired in favor of native `4genteam` orchestration (`4genteam watch`, `4genteam grid`, `4genteam feed`). OpenRig legacy code is retained in its folder for review only.
 
 How to see what each seat of a rig is doing: every tool call and its result, per seat, live.
 Read-only. It reads the seats' session logs and never talks to a seat.

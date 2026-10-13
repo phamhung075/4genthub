@@ -130,23 +130,27 @@ graph TD
 - 🌐 **Web Dashboard**: React-based interface optimized for human-AI collaboration
 - 🐳 **Docker Infrastructure**: Multi-mode containerized deployment with one-click setup
 
-### 🔌 **Rig and OpenRig workflow**
+### 🔌 **Rig and Team Orchestration Workflow**
 
-**OpenRig is the client and runtime; 4genthub is the cloud data for orchestration.** The installed `rig` CLI launches and supervises seats on your machine; this service stores the state they report and serves the configuration they pull. **The client initiates every exchange — the server never reaches into a user's machine.**
+**`4genteam` is the client orchestrator; 4genthub is the central data platform for orchestration.** The `4genteam` CLI launches and supervises seats on your machine (via the native supervisor stack: `rigd`, `compact-run`, `watchdog`, `bridge`, and `watch`); this service stores the state they report and serves the configuration they pull. **The client initiates every exchange — the server never reaches into a user's machine.**
 
-The **`4genteam` client** carries the traffic. It is the Go module in this repository (`agenthub_client/`), built as the `4genteam` command, whose dispatch table names one package per verb (`agenthub_client/cmd/4genteam/main.go:98-106`). **CORRECTED 2026-10-10 (writer seat, measured at `652895fc`): this sentence and the table below named the client's PYTHON package — `agenthub_client/pyproject.toml:13` and `agenthub_client/src/agenthub_client/cli.py:259-275`, plus `seat_sync.py`, `bridge.py` and `team_setup.py` as the modules. The Go port retired all of them: at the pinned client commit `80cc766` (it was `9666de68` when this was written) the client tree holds NO `.py` and no `pyproject.toml` at all (`git -C agenthub_client ls-tree -r --name-only 80cc766 | grep -E '\.py$|pyproject\.toml'` is empty), and the live homes are the packages `internal/clientsync`, `internal/clientbridge` and `internal/clientteam`.** Each package holds `AGENTHUB_TOKEN` (never a value in this repository) and talks to this API:
+> **Note on Client LLMs & OpenRig Decommissioning:**
+> - **Client-side LLMs:** Seats and user LLMs (Gemini, DeepSeek, Claude Code, omp) run locally on the user's PC. The server does not host, run, or proxy client LLM sessions.
+> - **OpenRig status:** OpenRig daemon and runtime orchestration are decommissioned in favor of native `4genteam`. OpenRig legacy code is retained strictly in its directory for review only.
+
+The **`4genteam` client** carries the traffic. It is the Go module in this repository (`agenthub_client/`), built as the `4genteam` command, whose dispatch table names one package per verb (`agenthub_client/cmd/4genteam/main.go:98-106`). Each package holds `AGENTHUB_TOKEN` (never a value in this repository) and talks to this API:
 
 | Command | Module | What it does |
 |---|---|---|
-| `4genteam sync` | `internal/clientsync` | **Pulls** a room's resolved seats and lays each one out on disk for OpenRig from an immutable snapshot — `<out>/<room>/<seat>/<hash>/…` plus `policy.json` and `pinned.json`. A pull is pinned by default; `--update` adopts a newer snapshot. |
-| `4genteam bridge` | `internal/clientbridge` | **Pushes observations up**: OpenRig seat status and herdr agent status, built from an allow-list, enums clamped to `unknown`, free text scrubbed. Status goes up only — it never receives commands and never reads terminal content. |
+| `4genteam sync` | `internal/clientsync` | **Pulls** a room's resolved seats and lays each one out on disk from an immutable snapshot — `<out>/<room>/<seat>/<hash>/…` plus `policy.json` and `pinned.json`. A pull is pinned by default; `--update` adopts a newer snapshot. |
+| `4genteam bridge` | `internal/clientbridge` | **Pushes observations up**: Seat status and supervisor agent status, built from an allow-list, enums clamped to `unknown`, free text scrubbed. Status goes up only — it never receives commands and never reads terminal content. |
 | `4genteam team` | `internal/clientteam` | **Applies** a team definition (modules, room, seats, links, overlays) through the same publish path the UI uses; `apply` is idempotent. |
 
-The client also carries `4genteam policy`, `seat`, `feedback`, `watch` and `compact`; `4genteam --help` prints the surface. **The scripts that used to carry this traffic were retired on 2026-10-09**: the eight `scripts/openrig_*.py` modules, `scripts/seat_feedback.sh`, the four `scripts/deployment` files, `.github/workflows/production-deployment.yml`, the ten `scripts/team/4genthub-min/guide-*.md` copies and the nine `scripts/tests/test_openrig_*.py` were deleted in `1c7b6631`, and `agenthub_client/` is their home.
+The client also carries `4genteam policy`, `seat`, `feedback`, `watch` and `compact`; `4genteam --help` prints the surface.
 
 The seat model itself — rooms, seats, seat types, modules, overlays, links — is documented **once**, in `agenthub_go/NEXT_GEN.md` under "How the project and its seats work together", with the HTTP and MCP surface in `ai_docs/api-integration/surface-inventory.md`. **It is not repeated here.**
 
-**Seats can also report friction back.** The same channel has three doors onto one writer: the MCP tool `submit_feedback`, the HTTP routes `POST`/`GET /api/v2/openrig/feedback`, and the `4genteam feedback` verb, which is `agenthub_client/internal/clientfeedback/feedback.go` (registered with the other verbs at `agenthub_client/cmd/4genteam/main.go:105`), for runtimes without MCP. A report carries the **layer** it belongs to (`runtime`, `openrig`, `cloud`, `seat-context`, `workspace`, `other`), the room and seat, and what happened; the credential scan runs before storage, and the dashboard groups reports by layer so a theme several seats hit reads as one theme rather than as several notes.
+**Seats can also report friction back.** The same channel has three doors onto one writer: the MCP tool `submit_feedback`, the HTTP routes `POST`/`GET /api/v2/openrig/feedback`, and the `4genteam feedback` verb, which is `agenthub_client/internal/clientfeedback/feedback.go` (registered with the other verbs at `agenthub_client/cmd/4genteam/main.go:105`), for runtimes without MCP. A report carries the **layer** it belongs to (`runtime`, `cloud`, `seat-context`, `workspace`, `other`), the room and seat, and what happened; the credential scan runs before storage, and the dashboard groups reports by layer so a theme several seats hit reads as one theme rather than as several notes.
 
 ## 🤖 **Agent Registry & Seat Model**
 
