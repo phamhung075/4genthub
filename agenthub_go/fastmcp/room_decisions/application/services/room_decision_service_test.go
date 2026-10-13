@@ -784,6 +784,9 @@ func (f *fakeDecisionEvaluator) SelectDecisionChoices(ctx context.Context, model
 
 func TestRoomDecisionServiceEvaluatorAutoSelectAndPending(t *testing.T) {
 	ctx := context.Background()
+	// Every subtest logs through the evaluator path; keep it out of the operator's real log.
+	SetJevDecisionLogPath(filepath.Join(t.TempDir(), "jev_decisions.log"))
+	defer SetJevDecisionLogPath("")
 	qsJSON := json.RawMessage(`[
 		{
 			"id": "q1",

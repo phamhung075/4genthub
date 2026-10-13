@@ -2,6 +2,11 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-13 - Jev evaluator tests isolate the decision log
+
+- FIXED `TestRoomDecisionServiceEvaluatorAutoSelectAndPending` (`agenthub_go/fastmcp/room_decisions/application/services/room_decision_service_test.go`): sets a temp `SetJevDecisionLogPath` for all subtests; two subtests previously appended fixture rows to `~/.config/4genthub/jev_decisions.log`.
+- MEASURED: `go test -count=1 ./fastmcp/room_decisions/... ./fastmcp/server/httpapp/... ./fastmcp/task_management/infrastructure/ai_services/...` (exit 0); real log size unchanged across the run.
+
 ## 2026-10-13 - Room Decisions Jev AI Auto-Selection, Benchmarking Log and Env Configuration
 
 - ADDED `TestTypeSafeJevClient_SelectDecisionChoices` (`agenthub_go/fastmcp/task_management/infrastructure/ai_services/typesafe_jev_client_test.go`): verifies `SelectDecisionChoices` endpoint call to `/v1/systemone` with choice question structures, Bearer authentication, and parsing of selection choices with confidence scores.
