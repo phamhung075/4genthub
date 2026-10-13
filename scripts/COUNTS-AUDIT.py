@@ -46,7 +46,7 @@ GO = f"{ROOT}/agenthub_go"
 # The numbers as the surface inventory states them. Each entry names the instrument that
 # re-derives it, because a number without its instrument is the failure this file exists for.
 EXPECTED = {
-    "httpapp route registrations": 128,     # grep -rn 'mux.HandleFunc(' fastmcp/server/httpapp, minus _test.go
+    "httpapp route registrations": 136,     # grep -rn 'mux.HandleFunc(' fastmcp/server/httpapp, minus _test.go
                                             #   125 -> 128: three registrations landed after the last recorded
                                             #     125, which was itself right at 42de79c2. Named from the tree
                                             #     rather than adjusted to a total: GET /api/v2/ledger and
@@ -81,6 +81,17 @@ EXPECTED = {
                                             #     registrations that STAY, so those move a wrapper and not a count.
                                             #     Re-derived, not adjusted: the same pattern returns 126 at 6cfd56ab and
                                             #     124 at a7990665. This is the first time this row moves DOWN.
+                                            #   124 -> 136 (2026-10-13, docs duty pass 10, T13 unit 1): the TREE moved
+                                            #     after the document's own dated reading, and this row is retuned to
+                                            #     the tree rather than the document retuned down to its memory.
+                                            #     Re-derived, not adjusted: this command returns 128 at 3e81e1e9 -
+                                            #     the revision the document's Reproduce line dated its 128 at, so
+                                            #     that figure was TRUE when it was written - and 150 at 2634db82,
+                                            #     154 at d50462e5, 155 at a2011dc2, 156 at c622ad4f and at HEAD.
+                                            #     Eight registrations from four commits, each counted at the commit
+                                            #     rather than attributed by subject. The document's Reproduce line
+                                            #     now heads with 156 (httpapp 136) and keeps 148 at 3e81e1e9 in its
+                                            #     own chain.
     "auth route registrations": 20,         # same pattern, fastmcp/auth/{interface,api}
     "published MCP tools": 9,               # five from ToolDefinitions() + four appended in mcp_routes.go
                                             #   10 -> 9 (2026-10-10, item 3): 76b800b9 "refactor(agents): retire the
@@ -98,7 +109,7 @@ EXPECTED = {
                                             #     from the registry literal. The document's §3.1 row was struck
                                             #     rather than re-pointed: there is no line left to cite.
     "auth tables": 3,                       # two in models_auth.go, one in email_token_repository.go
-    "seat tables": 15,                      # depth-1 entries of seatDatabaseTables
+    "seat tables": 16,                      # depth-1 entries of seatDatabaseTables
                                             #   14 -> 16: 7c81981b registered seat_messages and 02bfd416 registered
                                             #     machine_edges; the audit was red from 02bfd416 until this retune.
                                             #     Re-derived, not adjusted: the depth-1 {Name: ...} count is 14 at
@@ -108,10 +119,13 @@ EXPECTED = {
                                             #     went with the credential change. Re-derived, not adjusted: 16 at
                                             #     6cfd56ab, 15 at a7990665.
     "team tables": 2,                       # depth-1 entries of teamManagementDatabaseTables
-    "registered tables total": 39,          # 19 + 3 + 15 + 2 - follows "core tables"/"seat tables" above, not a count of its own
+    "registered tables total": 40,          # 19 + 3 + 16 + 2 - follows "core tables"/"seat tables" above, not a count of its own
+                                            #   39 -> 40 (2026-10-13, docs duty pass 10): follows the seat row above, whose
+                                            #     movement is 2634db82's room_decisions. Re-derived, not adjusted: core 19,
+                                            #     auth 3 and team 2 were each re-read at HEAD rather than carried.
                                             #   40 -> 39: the same 76b800b9 removal, counted once and not twice.
     "ProductionTables": 6,                  # declared, never appended
-    "SQL CREATE TABLE statements": 17,      # ^CREATE TABLE IF NOT EXISTS in seat_management_postgresql.sql
+    "SQL CREATE TABLE statements": 18,      # ^CREATE TABLE IF NOT EXISTS in seat_management_postgresql.sql
                                             #   16 -> 18: the same two commits added one statement each - seat_messages
                                             #     in 7c81981b and machine_edges in 02bfd416 - which is why this row and
                                             #     "seat tables" move together and neither can be retuned alone.
@@ -120,6 +134,12 @@ EXPECTED = {
                                             #     as it did on the additions above. Re-derived, not adjusted: the
                                             #     unanchored `grep -c` reads 18 - 17 statements plus the header comment
                                             #     at line 6 - and the anchored form 17.
+                                            #   17 -> 18 (2026-10-13, docs duty pass 10): the same commit as the
+                                            #     seat row above - 2634db82 registered room_decisions and declared
+                                            #     it in this file (`seat_management_postgresql.sql:311`).
+                                            #     Re-derived, not adjusted: `git show 2634db82^:<file>` counts 17
+                                            #     anchored statements and `2634db82:<file>` counts 18, unchanged
+                                            #     from there to HEAD; the unanchored pair is therefore 19 / 18.
 }
 
 
