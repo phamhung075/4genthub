@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+### Fixed
+- **The reduced-motion block stops the panel's pending-decision glow - the one animation it left running** - 2026-10-12
+  - WHY, measured in the served bytes rather than reasoned from the source: production's CSS carries `.animate-pulse-glow{animation:pulseGlow 2.5s infinite ease-in-out}` and none of its eight `@media (prefers-reduced-motion: reduce)` blocks names that class, so a user who asked for reduced motion still got the room-decision panel's pending rows pulsing forever.
+  - `src/styles/theme.css`: `.animate-pulse-glow` joins the neutralised selector list (`animation: none !important`) beside `.animate-shimmer`. It is this file's own keyframes rather than a Tailwind utility, which is why it belongs in that group and not with `.animate-spin`/`.animate-pulse`/`.animate-ping`/`.animate-bounce` below the comment.
+  - The attention signal survives the reduce request as a still cue: the panel already paints a pending row `border-accent/40 bg-accent/[0.03]`, and only the repeating loop goes.
+  - LIMIT: this patch is not deployed and is not built, so the check below is the stylesheet in a real engine rather than the production bundle; the served app is unchanged by it.
+  - Verified: `git apply --check` clean against a pristine checkout of the live commit `5532b7cb`; and in Chrome, a page linking only this stylesheet (and nothing else) computes `animation: none` on `.animate-pulse-glow` under an emulated reduce request, where the same page computes `pulseGlow 2.5s infinite` against the unpatched file.
 ### Removed
 - **`components/ui/sidebar.tsx` is gone, and with it the type import that alone kept it alive** - 2026-10-12
   - WHY: measured dead before deleting, not assumed dead - its only referent in `agenthub-frontend/src` was a type-only import in `src/tests/types/componentTypes.test.ts` that no assertion in that file used, and no product component imported the `Sidebar` export. It could not have served the sidebar split anyway: it renders a second `<aside>` landmark with `h-screen`, which fights the drawer shell the sidebar already carries (the decision recorded in the entry below).

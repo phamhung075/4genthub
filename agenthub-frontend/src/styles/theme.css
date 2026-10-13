@@ -707,6 +707,10 @@ body {
   .animate-slide-in-right,
   .animate-scale-in,
   .animate-shimmer,
+  /* This file's own attention loop, so it belongs with the classes above and
+     not with the utilities below: it is what a pending decision request pulses
+     on (RoomDecisionPanel), and a reduce request has to switch it off too. */
+  .animate-pulse-glow,
   /* Tailwind's own infinite utilities. They are emitted AFTER this file, so a
      plain declaration here loses the cascade and the !important is what makes
      the reduce request win (measured: a spin 1000ms infinite survived on /login
