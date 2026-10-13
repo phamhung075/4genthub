@@ -84,6 +84,10 @@ func (f *ledgerFakeRecorder) NextProgressNumberInTx(context.Context, string) (in
 	return 1, nil
 }
 
+func (f *ledgerFakeRecorder) RecordGateVerdict(_ context.Context, taskID string, payload map[string]any) (*entities.TaskEvent, error) {
+	return &entities.TaskEvent{TaskID: taskID, Kind: entities.TaskEventKindGateVerdict, Payload: payload}, nil
+}
+
 // ledgerFakeTx counts the transactions the use case opens, the one unit of work SaveStatus needs.
 type ledgerFakeTx struct {
 	begun  int

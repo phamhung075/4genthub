@@ -25,6 +25,7 @@ type LedgerRecorder interface {
 	// transaction and under the advisory lock the append takes. It is the writer's read rather than the
 	// caller's because a number read before the transaction could race another note's write.
 	NextProgressNumberInTx(ctx context.Context, taskID string) (int, error)
+	RecordGateVerdict(ctx context.Context, taskID string, payload map[string]any) (*entities.TaskEvent, error)
 }
 
 // LedgerProgress is one progress note a save carries into the ledger: the note's TEXT as the caller

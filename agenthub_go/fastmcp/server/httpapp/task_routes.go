@@ -196,4 +196,20 @@ func (a *App) registerTaskRoutes(mux *http.ServeMux) {
 		body, err := routes.CompleteUserTask(r.Context(), r.PathValue("id"), summary, queryOpt(r, "testing_notes"), u, c)
 		writeResult(w, body, err)
 	}))
+	mux.HandleFunc("GET /api/v2/machines/{machine}/work", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+		uid := userID(u)
+		facade, err := a.taskProvider.TaskFacade(r.Context(), &uid, nil, nil)
+		if err != nil {
+			writeDetail(w, http.StatusInternalServerError, "failed to build task facade: "+err.Error())
+			return
+		}
+		work, err := routes.GetMachineWork(r.Context(), r.PathValue("machine"), facade.TaskRepository())
+		if err != nil {
+			writeDetail(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(work)
+	}))
 }

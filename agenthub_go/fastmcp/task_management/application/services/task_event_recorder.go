@@ -120,6 +120,11 @@ func (r *TaskEventRecorder) RecordProgress(ctx context.Context, taskID, subtaskI
 	})
 }
 
+// RecordGateVerdict writes the entry for a validation gate verdict.
+func (r *TaskEventRecorder) RecordGateVerdict(ctx context.Context, taskID string, payload map[string]any) (*entities.TaskEvent, error) {
+	return r.Record(ctx, taskID, entities.TaskEventKindGateVerdict, entities.TaskEventActorGate, "gate-validation", payload)
+}
+
 // ErrNoActor is returned when a status write reaches the recorder with no actor anywhere: no seat
 // on the request and no user the recorder was built for.
 var ErrNoActor = errors.New("task_events: no actor to attribute this write to")

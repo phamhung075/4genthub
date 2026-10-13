@@ -45,6 +45,10 @@ func (l *subtaskNoteLedger) NextProgressNumberInTx(context.Context, string) (int
 	return 1, nil
 }
 
+func (l *subtaskNoteLedger) RecordGateVerdict(context.Context, string, map[string]any) (*entities.TaskEvent, error) {
+	return &entities.TaskEvent{Kind: entities.TaskEventKindGateVerdict}, nil
+}
+
 func (l *subtaskNoteLedger) Events(context.Context, string) ([]*entities.TaskEvent, error) {
 	return nil, nil
 }

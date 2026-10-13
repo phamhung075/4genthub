@@ -8,14 +8,26 @@ import (
 	"agenthub/fastmcp/task_management/domain/repositories"
 )
 
+// ContextEventWriter appends context events to the ledger.
+type ContextEventWriter interface {
+	Append(ctx context.Context, in entities.AppendTaskEvent) (*entities.TaskEvent, error)
+}
+
 // UpdateContextUseCase ports update_context.UpdateContextUseCase.
 type UpdateContextUseCase struct {
 	contextRepository repositories.ContextRepository
+	events            ContextEventWriter
 }
 
 // NewUpdateContextUseCase builds the use case.
 func NewUpdateContextUseCase(contextRepository repositories.ContextRepository) *UpdateContextUseCase {
 	return &UpdateContextUseCase{contextRepository: contextRepository}
+}
+
+// WithEvents wires the ledger event writer.
+func (uc *UpdateContextUseCase) WithEvents(events ContextEventWriter) *UpdateContextUseCase {
+	uc.events = events
+	return uc
 }
 
 // Execute ports execute(). Every failure is folded into an error response whose
@@ -59,6 +71,24 @@ func (uc *UpdateContextUseCase) Execute(ctx context.Context, request *ctxdto.Upd
 	result, err := uc.contextRepository.UpdateContext(ctx, taskContext)
 	if err != nil {
 		return ctxdto.NewContextResponseError("Failed to update context: "+err.Error(), nil), nil
+	}
+
+	if uc.events != nil {
+		var ver int
+		if taskContext.Metadata != nil && taskContext.Metadata.Version != nil {
+			ver = *taskContext.Metadata.Version
+		}
+		_, _ = uc.events.Append(ctx, entities.AppendTaskEvent{
+			TaskID:    request.TaskID,
+			Kind:      entities.TaskEventKindContextUpdated,
+			ActorKind: entities.TaskEventActorSeat,
+			ActorID:   "context",
+			Payload: map[string]any{
+				"level":   "task",
+				"id":      request.TaskID,
+				"version": ver,
+			},
+		})
 	}
 
 	message := "Context updated successfully"

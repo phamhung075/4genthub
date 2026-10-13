@@ -39,6 +39,9 @@ func NewApp(ctx context.Context, sessions *database.SessionManager) (*App, error
 	a := &App{Sessions: sessions}
 	factories.UnifiedContextRepositoryBuilder = unifiedContextRepositories
 	factories.UnifiedContextEntityLookup = contextEntityLookup{sessions}
+	if sessions != nil {
+		factories.UnifiedContextEventAppender = infrarepos.NewTaskEventRepository(sessions, "", "")
+	}
 	services.SetRepositoryProviderBackend(func() services.RepositoryProviderBackend { return repoBackend{sessions} })
 	facades.TokenFacadeRepositoryBackend = func(any) (repositories.ITokenRepository, error) {
 		return infrarepos.NewTokenRepository(sessions)

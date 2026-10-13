@@ -158,26 +158,29 @@ Legend:
   - **Check**: Resuming a rejected task returns the exact failure reasons as immediate action items; brief generation stays within token limits.
   - *Delivered & verified*: `task_resume_service.go` and schema validated.
 
-- [ ] **O5: Validation Gate (Shadow Mode)**
+- [x] **O5: Validation Gate (Shadow Mode)**
   - Implement validation gate service evaluating deterministic checks D1–D5 (syntax, types, tests, clean diff, numstat sanity) followed by Jev criterion verification.
   - Shadow mode records `gate_verdict` events (`accept`, `reject`, `uncertain`) without blocking task completion.
   - Pin Jev model to `jev-1.13.0`; implement token budget caps ($0.042/Mtok).
   - **Check**: Deterministic rejections trigger without calling Jev; Jev timeouts or budget limits default safely to `uncertain` (never `accept`).
+  - *Delivered & verified*: `ValidationGateService` in `agenthub_go/fastmcp/task_management/domain/services/validation_gate_service.go` implementing D1-D5, Jev evaluation, daily token caps, fail-safe uncertain, and shadow mode recording. Verified in `validation_gate_service_test.go` and `complete_task_validation_gate_test.go`.
 
-- [ ] **O6: Gate Enforcement**
+- [x] **O6: Gate Enforcement**
   - When enforcement is enabled, completing a task moves it to `review`.
   - Verdict handling:
     - `accept` → moves task to `done`, appends verified summary line to branch context.
     - `reject` → returns task to `in_progress` with recorded reasons.
     - `uncertain` → escalates to seat specified in `escalates_to` link or human operator.
   - **Check**: No task can reach `done` without an authentic `gate_verdict` event.
+  - *Delivered & verified*: Integrated into `CompleteTaskUseCase` (`complete_task.go`), wiring ledger `RecordGateVerdict` and verdict enforcement transitions (`done`, `in_progress`, `review`). Verified via `complete_task_validation_gate_test.go` (`TestCompleteTaskGateEnforcementRejection`, `TestCompleteTaskGateEnforcementUncertainEscalates`).
 
-- [ ] **O7: Routing & Wake-on-Open-Work**
+- [x] **O7: Routing & Wake-on-Open-Work**
   - Assignees become strict seat keys (`room/seat`), eliminating legacy role strings.
   - Support `manage_task action=claim` with `claimed_by`/`claimed_at`.
   - Expose `GET /api/v2/machines/{machine}/work` listing unclaimed or rejected tasks.
   - Supervisor wakes idle seats via `4genteam send` with a direct resumption brief.
   - **Check**: Unclaimed task wakes the designated idle seat; claiming suppresses duplicate wakeups.
+  - *Delivered & verified*: `Task.ClaimedBy`/`ClaimedAt` and `Task.Claim()` added in `agenthub_go/fastmcp/task_management/domain/entities/task.go`. `GET /api/v2/machines/{machine}/work` route added in `fastmcp/server/routes/machine_work_routes.go` and mounted in `task_routes.go`. Client work discovery and duplicate-suppressed seat waking implemented in `agenthub_client/internal/clientoutbox/manager.go` (`FetchWork`, `WakeSeatsForWork`) and `4genteam ledger work`.
 
 - [x] **O8: Task Timeline & Event Ledger UI**
   - Replace static progress tabs in `agenthub-frontend` with a live event ledger timeline driven by the WebSocket stream.
@@ -227,10 +230,11 @@ Legend:
   - **Check**: Compacted seats resume instantly from disk cache without waiting for cloud fetch roundtrips.
   - *Delivered & verified*: Backend `GET /api/v2/tasks/{id}/resume` added in `task_routes.go`. Client prefetch and local disk caching (`~/.config/4genthub/cache/resumes/`) delivered in `internal/clientoutbox/prefetch.go`, background prefetch hooked on event pull, and verified via `prefetch_test.go` and CLI `4genteam outbox prefetch/cached`.
 
-- [ ] **P7: Context Updates Unified on Ledger Cursor**
+- [x] **P7: Context Updates Unified on Ledger Cursor**
   - Context modifications emit `context_updated {level, id, version}` into `task_events`.
   - Clients pull full updated context packs upon seeing the event version bump (no fragile JSON diff patches).
   - **Check**: Updating a room context emits an event; clients one version behind download the full document.
+  - *Delivered & verified*: `ContextEventWriter` added to `update_context.go`, `ContextEventAppender` wired in `unified_context_service.go`, `unified_context_facade_factory.go` and `app.go`. Client `internal/clientoutbox/manager.go` extracts `context_updated` and triggers automatic background refresh/prefetch of resume contexts. Verified with tests in `fastmcp/` and `clientoutbox/`.
 
 ---
 
@@ -243,10 +247,11 @@ Legend:
   - **Check**: Agent escalations appear in the web dashboard notification bell; inter-seat messages land directly in peer terminals.
   - *Delivered & verified*: `agenthub_client/internal/clientbridge/notifications.go` (`TestNotify*` passing), `internal/clientruntime/ipc.go` (`SendTextToSeat`), and `agenthub-frontend/src/components/NotificationBell.tsx`.
 
-- [ ] **D4 & F5: Remote Execution via Connector (Opt-In)**
+- [x] **D4 & F5: Remote Execution via Connector (Opt-In)**
   - Support remote `send_to_seat`, `up`, and `down` commands over `/ws/connector` with capability `commands`.
   - Strict security guardrails: human-only issuer, token scope `sessions:command`, local whitelist of allowed rooms/commands, fail-closed audit log.
   - **Check**: Unauthorized command or unrecognized session is refused with structured refusal code.
+  - *Delivered & verified*: `agenthub_client/internal/clientsync/` updated with `CapabilityCommands`, `handleRemoteCommand` guardrails (human-only, scope `sessions:command`, action whitelist `send_to_seat`/`up`/`down`, room whitelist), and verified via `remote_commands_test.go` (`TestRemoteCommandsRefusalGuardrails`, `TestRemoteCommandsExecutionSuccess`, `TestRemoteCommandsExecutionFailureReportsError`).
 
 - [x] **F4: Native Ingest Streaming in `rigd`**
   - Point `4genteam rigd` to read session logs and events directly from native Rust runtime PTY outputs.

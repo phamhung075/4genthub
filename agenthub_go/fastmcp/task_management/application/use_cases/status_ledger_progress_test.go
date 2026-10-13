@@ -54,6 +54,10 @@ func (c *progressCapturingLedger) NextProgressNumberInTx(context.Context, string
 	return 1, nil
 }
 
+func (c *progressCapturingLedger) RecordGateVerdict(context.Context, string, map[string]any) (*entities.TaskEvent, error) {
+	return &entities.TaskEvent{Kind: entities.TaskEventKindGateVerdict}, nil
+}
+
 func (c *progressCapturingLedger) Events(context.Context, string) ([]*entities.TaskEvent, error) {
 	if c.event == nil {
 		return nil, nil

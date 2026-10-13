@@ -2,6 +2,15 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-13 - Next-Gen validation gate, remote execution, and work routing tests (O5, O6, O7, P7, D4/F5)
+
+- ADDED `agenthub_go/fastmcp/task_management/domain/services/validation_gate_service_test.go`: 5 test cases (`TestValidationGateDeterministicFailures`, `TestValidationGateDeterministicPassNoCriteria`, `TestValidationGateJevBudgetExceededFailsSafe`, `TestValidationGateJevClientErrorFailsSafe`, `TestValidationGateJevAccepts`). Verifies deterministic checks D1–D5 (syntax, types, tests exit code/failed list, clean diff keep-out scan, numstat bounds), Jev model criteria evaluation, daily token budget cap enforcement ($0.042/Mtok), and fail-safe fallback to `uncertain` on budget exhaustion or error.
+- ADDED `agenthub_go/fastmcp/task_management/application/use_cases/complete_task_validation_gate_test.go`: 3 test cases (`TestCompleteTaskGateShadowMode`, `TestCompleteTaskGateEnforcementRejection`, `TestCompleteTaskGateEnforcementUncertainEscalates`). Verifies that shadow mode records `gate_verdict` without blocking completion, while enforcement mode moves tasks to `review` and either completes to `done` on `accept`, reverts to `in_progress` with reasons on `reject`, or escalates on `uncertain`.
+- ADDED `agenthub_go/fastmcp/server/routes/machine_work_routes_test.go`: `TestGetMachineWorkFiltersCorrectly` verifying `GET /api/v2/machines/{machine}/work` discovery of open work assigned to room seats with criteria and scope filtering.
+- ADDED `agenthub_client/internal/clientsync/remote_commands_test.go`: 3 test cases (`TestRemoteCommandsRefusalGuardrails`, `TestRemoteCommandsExecutionSuccess`, `TestRemoteCommandsExecutionFailureReportsError`) verifying opt-in execution of `send_to_seat`, `up`, and `down` over `/ws/connector`, validating human-only issuer, `sessions:command` token scope, command whitelist, room whitelist, and structured refusal codes.
+- UPDATED `agenthub_client/internal/clientoutbox/manager_test.go` and `manager.go` testing wake extraction on `context_updated` and work seat wake loop.
+- MEASURED: `go test ./fastmcp/task_management/...` (exit 0), `go test ./fastmcp/server/...` (exit 0), `go test ./internal/...` in `agenthub_client` (exit 0).
+
 ## 2026-10-13 - the seat-message deliverer: the rig pass, the seat isolation, the watch loop, the refusals
 
 - ADDED `TestMessagesVerbRigPassDeliversEveryRunningSeat` (`agenthub_client/internal/clientsync/messagesverb_test.go`): a four-node `rig ps --nodes` fixture - one running lead, one stopped seat, one running-but-empty session, one other running seat - pinning the exact call sequence (`GET 4genthub-min/lead | SEND 4genthub-min-lead@4genthub-min hello lead | ACK m1 | GET 4genthub-min/other | SEND ... | ACK m2`), one ledger per seat, and the summary line. The stopped and session-less nodes are skipped WITHOUT a cloud read, which is the point of deriving seats from the live table rather than a static list.

@@ -87,6 +87,10 @@ func (unmovedLedgerRecorder) RecordStatusChange(context.Context, string, string,
 	return &entities.TaskEvent{}, nil
 }
 
+func (unmovedLedgerRecorder) RecordGateVerdict(context.Context, string, map[string]any) (*entities.TaskEvent, error) {
+	return &entities.TaskEvent{Kind: entities.TaskEventKindGateVerdict}, nil
+}
+
 type passThroughTx struct{}
 
 func (passThroughTx) Transaction(ctx context.Context, fn func(context.Context) error) error {

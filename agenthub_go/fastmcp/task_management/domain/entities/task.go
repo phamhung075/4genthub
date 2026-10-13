@@ -58,6 +58,9 @@ type Task struct {
 	// CompletionSummary is `_completion_summary`; TestingNotes is the dynamic `_testing_notes` attribute.
 	CompletionSummary *string
 	TestingNotes      *string
+
+	ClaimedBy *string
+	ClaimedAt *time.Time
 }
 
 // NewTask applies the Python defaults, initializes timestamps and validates.
@@ -750,6 +753,14 @@ func (t *Task) CompleteTask(completionSummary string, contextUpdatedAt *time.Tim
 	return nil
 }
 
+// Claim assigns the task to a seat and records the claim time.
+func (t *Task) Claim(seat string) error {
+	t.ClaimedBy = &seat
+	now := time.Now().UTC()
+	t.ClaimedAt = &now
+	return t.Touch("task_claimed")
+}
+
 // UpdateProgressState derives progress_state from the status and progress.
 func (t *Task) UpdateProgressState() {
 	status := strings.ToLower(t.Status.Value)
@@ -1127,6 +1138,16 @@ func (t *Task) ToDict() (map[string]any, error) {
 	}
 	if t.ProgressTimeline != nil {
 		result["progress_timeline"] = t.ProgressTimeline.ToDict()
+	}
+	if t.ClaimedBy != nil {
+		result["claimed_by"] = *t.ClaimedBy
+	} else {
+		result["claimed_by"] = nil
+	}
+	if t.ClaimedAt != nil {
+		result["claimed_at"] = value_objects.IsoFormat(*t.ClaimedAt)
+	} else {
+		result["claimed_at"] = nil
 	}
 	return result, nil
 }

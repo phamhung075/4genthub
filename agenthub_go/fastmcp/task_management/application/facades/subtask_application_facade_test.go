@@ -109,6 +109,10 @@ func (l *zpNoteLedger) RecordProgress(_ context.Context, taskID, subtaskID strin
 
 func (l *zpNoteLedger) NextProgressNumberInTx(context.Context, string) (int, error) { return 1, nil }
 
+func (l *zpNoteLedger) RecordGateVerdict(context.Context, string, map[string]any) (*entities.TaskEvent, error) {
+	return &entities.TaskEvent{Kind: entities.TaskEventKindGateVerdict}, nil
+}
+
 func (l *zpNoteLedger) Events(context.Context, string) ([]*entities.TaskEvent, error) {
 	return nil, nil
 }

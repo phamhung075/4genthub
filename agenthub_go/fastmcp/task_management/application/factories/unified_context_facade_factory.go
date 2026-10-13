@@ -35,6 +35,9 @@ var (
 // auto-detect ids in create_context (Python DomainServiceFactory repository factories).
 var UnifiedContextEntityLookup services.EntityIDLookup
 
+// UnifiedContextEventAppender writes context updates to the ledger.
+var UnifiedContextEventAppender services.ContextEventAppender
+
 // UnifiedContextRepositoryBuilder builds the four per-level repositories for a user.
 // userID nil = the base repositories; non-nil = user-scoped (Python .with_user).
 var UnifiedContextRepositoryBuilder func(sessions *database.SessionManager, userID *string) (
@@ -95,7 +98,7 @@ func NewUnifiedContextFacadeFactory(ctx context.Context, sessions *database.Sess
 	f.UnifiedService = services.NewUnifiedContextService(
 		global, project, branch, task,
 		f.cacheService, f.inheritanceService, nil, f.validationService, nil,
-	).WithEntityLookup(UnifiedContextEntityLookup)
+	).WithEntityLookup(UnifiedContextEntityLookup).WithEventAppender(UnifiedContextEventAppender)
 	f.hasRepositories = true
 	unifiedContextFacadeFactoryInitialized = true
 	unifiedContextFacadeFactoryInstance = f
@@ -121,7 +124,7 @@ func (f *UnifiedContextFacadeFactory) CreateFacade(ctx context.Context, userID, 
 		scoped = services.NewUnifiedContextService(
 			global, project, branch, task,
 			f.cacheService, userInheritance, nil, f.validationService, nil,
-		).WithEntityLookup(UnifiedContextEntityLookup).WithUser(*userID)
+		).WithEntityLookup(UnifiedContextEntityLookup).WithEventAppender(UnifiedContextEventAppender).WithUser(*userID)
 	}
 
 	svc, ok := scoped.(facades.UnifiedContextService)
