@@ -18,6 +18,7 @@ Supersedes `NEXT_GEN.md`. All completed/historical tasks from `NEXT_GEN.md` (`[x
    - **Hook System**: Typed async event pipeline (`tokio::sync::broadcast`) for pre/post-turn hooks, activity tracking, telemetry, and audit logging.
 4. **Native Multi-Room Isolation**: Rooms execute in complete parallel isolation under `~/.config/4genthub/rooms/<room>/` with dedicated namespaces (`agenthub--<room>--<seat>`), eliminating daemon locks and port contention.
 5. **Drop-in Compatibility**: A thin `rig` shim binary/symlink maps legacy commands (`rig whoami`, `rig send`, `rig queue`, `rig ps`) directly to `4genteam` / `agenthub-runtime`, ensuring existing seat prompts and skills work without modification.
+   - **MEASURED FALSE today for two of the four (2026-10-13):** `rig send` fails in all four argv shapes the client itself uses (exit 2 or 3, `4genteam send: RIG, SEAT and MESSAGE are required`, because the fallback re-execs the name `rig`, which the shim now owns) and `rig whoami --json` returns exit 3 with a prose sentence where `seatcheck` expects JSON; `rig queue` does answer. Until the eleven `rig`-exec fallbacks are gone, "works without modification" does not hold for `send` or for `whoami --json` — tracked as the live U0 row (architect, 2026-10-13), which carries the inventory and the fix ruling.
 
 ---
 
@@ -77,7 +78,9 @@ Legend:
 
 - [x] **R1: Terminal & PTY Session Engine** (`agenthub-runtime::pty`)
   - Headless PTY runner supporting `omp --mode rpc`, `claude-code`, `agy`, and `codex`.
+    - **MEASURED (2026-10-13, tree `78e7a58`):** the file this item points at, `rust/agenthub-runtime/src/pty/mod.rs`, is **tmux shell-outs** — `git grep -c tmux` on it = **26**, and it uses `portable_pty`/`nix::` **zero** times; crate-wide those two names appear only in `frame.rs` (2) and `runner/mod.rs` (1). "Headless PTY runner" is therefore not supported *by that file*; the marker on this item is not evidence about it.
   - Direct socketpair creation for RPC-mode agents (`omp`) with backpressure control.
+    - **TRUE ON THE INTEGRATION BRANCH, ABSENT ON THE CHECKOUT (measured 2026-10-13):** `git grep -c socketpair 78e7a58 -- rust/agenthub-runtime` = **3**, all in `src/runner/mod.rs`; the same grep at `f193f34` returns **0**. Cite the tree with this line.
   - Bracketed paste text delivery (`\x1b[200~` ... `\x1b[201~`) for reliable multi-line/markdown input without terminal mangling.
   - Optional tmux window bridge so human operators can attach or view live panes via `4genteam grid`.
   - **Check**: Agent processes boot into PTYs with correct env and cwd; bracketed paste delivers 10KB multi-line markdown without dropped characters.
@@ -85,6 +88,7 @@ Legend:
 
 - [x] **R2: High-Performance Context & Compaction Engine** (`agenthub-runtime::context`)
   - Sub-millisecond token counting per turn using `tiktoken-rs` / fast BPE tokenizers.
+    - **FALSE AS WRITTEN (measured 2026-10-13, client tree `f193f34`):** `rust/agenthub-runtime/Cargo.toml` requires tokio, portable-pty, nix, serde_yaml, regex and clap — **no tokenizer dependency of any kind**. Token counting may exist by other means; "using `tiktoken-rs`" does not.
   - 4-tier context hierarchy assembler (Account/Company Overlay → Room Guidelines → Seat Role → Task/Subtask Context).
   - Rolling window context monitor against thresholds: `COMPACT_LIMIT_TOKENS` (150k), `COMPACT_WARN_TOKENS` (250k), and `COMPACT_HARD_TOKENS` (300k).
   - Native integration of `forcecompact` (sending direct JSON-RPC `{"type":"compact"}` to `omp` socketpair) without external ptrace workarounds.
@@ -118,6 +122,7 @@ Legend:
 
 - [x] **R6: Multi-Room Process Supervisor & Local State**
   - Room directory layout: `~/.config/4genthub/rooms/<room>/` (holding `spec.json`, `seats/`, `logs/`, `queue.sqlite`).
+    - **SCOPED (measured 2026-10-13, this host, at that moment):** the only room under that path, `test-alpha`, holds **`spec.json` alone** — no `seats/`, no `logs/`, no `queue.sqlite` — and the IPC socket `/run/user/$UID/agenthub.sock` named with this item **does not exist**. A room that has actually run may populate the rest; the layout is simply not observable for the room that exists, and the socket path is not there at all.
   - Concurrent multi-room execution: allows running Room 1, Room 2, and Room 3 simultaneously without socket or database lock collisions.
   - Local IPC server over Unix domain socket (`/run/user/$UID/agenthub.sock`) allowing `4genteam` (Go) to control seat lifecycles.
   - **Check**: Starting 3 rooms with 5 seats each boots 15 independent processes with isolated working directories and zero state crosstalk.
@@ -218,6 +223,7 @@ Legend:
   - Acts as a wake nudge: the client still pulls via `GET /api/v2/ledger`, ensuring network hiccups never cause data loss.
   - **Check**: Client converges purely by pulling if WebSocket drops; socket frame triggers immediate cursor pull.
   - *Delivered & verified*: `fcc8a2fc` in `fastmcp/server/websocket/`.
+    - **PATH CORRECTED (measured 2026-10-13, monorepo working copy):** the commit resolves (`fcc8a2fc 2026-10-11 feat(ledger): the connector sends one ledger_tip nudge, gated by the capability its hello named`), but the directory `fastmcp/server/websocket/` **does not exist**; the websocket code lives at `fastmcp/infrastructure/websocket`, `fastmcp/websocket` and `fastmcp/server/routes/websocket_routes.go`. The delivery stands; only the path was wrong.
 
 - [x] **P5: Client Outbox & Ledger-Based Wakeup**
   - `agenthub-client` maintains local persistent `cursor` and `outbox`.
