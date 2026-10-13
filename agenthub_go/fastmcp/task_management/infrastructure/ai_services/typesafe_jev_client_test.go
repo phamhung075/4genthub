@@ -110,3 +110,51 @@ func TestTypeSafeJevClientResolvesFromEnv(t *testing.T) {
 	}
 }
 
+func TestTypeSafeJevClientNoulProbabilities(t *testing.T) {
+	var returnedAnswers map[string]SystemOneAnswer
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		resp := SystemOneResponse{
+			Model:   "jev-1.13.0",
+			Answers: returnedAnswers,
+			Usage:   &SystemOneUsage{InputTokens: 250, OutputTokens: 15},
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(resp)
+	}))
+	defer srv.Close()
+
+	client := NewTypeSafeJevClient(TypeSafeJevClientConfig{
+		APIKey:     "test-token",
+		BaseURL:    srv.URL,
+		HTTPClient: srv.Client(),
+	})
+
+	// Case 1: High confidence -> Accept
+	returnedAnswers = map[string]SystemOneAnswer{
+		"criterion_1": {Type: "noul", Noul: 0.95},
+	}
+	verdict, _, err := client.EvaluateCriteria(context.Background(), "jev-1.13.0", []string{"feature works"}, map[string]any{})
+	if err != nil || verdict != services.GateVerdictAccept {
+		t.Fatalf("expected accept for 0.95, got %s (err: %v)", verdict, err)
+	}
+
+	// Case 2: Low confidence -> Reject
+	returnedAnswers = map[string]SystemOneAnswer{
+		"criterion_1": {Type: "noul", Noul: 0.15},
+	}
+	verdict, _, err = client.EvaluateCriteria(context.Background(), "jev-1.13.0", []string{"feature works"}, map[string]any{})
+	if err != nil || verdict != services.GateVerdictReject {
+		t.Fatalf("expected reject for 0.15, got %s (err: %v)", verdict, err)
+	}
+
+	// Case 3: Marginal confidence -> Uncertain
+	returnedAnswers = map[string]SystemOneAnswer{
+		"criterion_1": {Type: "noul", Noul: 0.55},
+	}
+	verdict, _, err = client.EvaluateCriteria(context.Background(), "jev-1.13.0", []string{"feature works"}, map[string]any{})
+	if err != nil || verdict != services.GateVerdictUncertain {
+		t.Fatalf("expected uncertain for 0.55, got %s (err: %v)", verdict, err)
+	}
+}
+
+

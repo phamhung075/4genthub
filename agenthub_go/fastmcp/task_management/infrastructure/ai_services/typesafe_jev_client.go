@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"sort"
 	"strings"
 	"time"
 
@@ -60,19 +61,39 @@ func NewTypeSafeJevClient(cfg TypeSafeJevClientConfig) *TypeSafeJevClient {
 	}
 }
 
-// SystemOneRequest is the payload sent to TypeSafe AI System One.
-type SystemOneRequest struct {
-	Model     string         `json:"model"`
-	Questions []string       `json:"questions"`
-	State     map[string]any `json:"state"`
+// NoulQuestion represents a System One question evaluated for yes/true probability.
+type NoulQuestion struct {
+	Type         string `json:"type"`
+	Instructions string `json:"instructions"`
 }
 
-// SystemOneResponse represents the expected response structure from TypeSafe AI.
+// SystemOneRequest is the payload sent to TypeSafe AI System One.
+type SystemOneRequest struct {
+	Model     string                  `json:"model"`
+	Questions map[string]NoulQuestion `json:"questions"`
+	State     any                     `json:"state"`
+}
+
+// SystemOneAnswer is one criterion answer returned by TypeSafe AI.
+type SystemOneAnswer struct {
+	Type string  `json:"type"`
+	Noul float64 `json:"noul"`
+}
+
+// SystemOneUsage tracks tokens reported by TypeSafe AI.
+type SystemOneUsage struct {
+	InputTokens  int `json:"input_tokens"`
+	OutputTokens int `json:"output_tokens"`
+}
+
+// SystemOneResponse represents the response structure from TypeSafe AI.
 type SystemOneResponse struct {
-	Verdict         string   `json:"verdict"`
-	Reasons         string   `json:"reasons"`
-	Accepted        *bool    `json:"accepted,omitempty"`
-	CriteriaResults []string `json:"criteria_results,omitempty"`
+	Model    string                     `json:"model"`
+	Answers  map[string]SystemOneAnswer `json:"answers,omitempty"`
+	Usage    *SystemOneUsage            `json:"usage,omitempty"`
+	Verdict  string                     `json:"verdict,omitempty"`
+	Reasons  string                     `json:"reasons,omitempty"`
+	Accepted *bool                      `json:"accepted,omitempty"`
 }
 
 // EvaluateCriteria sends criteria and evidence to the TypeSafe AI System One API.
@@ -82,9 +103,18 @@ func (c *TypeSafeJevClient) EvaluateCriteria(ctx context.Context, model string, 
 	}
 
 	endpoint := fmt.Sprintf("%s/systemone", c.baseURL)
+	questions := make(map[string]NoulQuestion, len(criteria))
+	for i, cr := range criteria {
+		qKey := fmt.Sprintf("criterion_%d", i+1)
+		questions[qKey] = NoulQuestion{
+			Type:         "noul",
+			Instructions: cr,
+		}
+	}
+
 	payload := SystemOneRequest{
 		Model:     model,
-		Questions: criteria,
+		Questions: questions,
 		State:     evidence,
 	}
 
@@ -121,6 +151,32 @@ func (c *TypeSafeJevClient) EvaluateCriteria(ctx context.Context, model string, 
 		return services.GateVerdictUncertain, fmt.Sprintf("failed to parse response JSON: %v", err), err
 	}
 
+	// Evaluate Noul probability answers if present
+	if len(parsed.Answers) > 0 {
+		allHigh := true
+		anyLow := false
+		var reasonParts []string
+		for k, ans := range parsed.Answers {
+			reasonParts = append(reasonParts, fmt.Sprintf("%s: %.2f", k, ans.Noul))
+			if ans.Noul < 0.8 {
+				allHigh = false
+			}
+			if ans.Noul <= 0.3 {
+				anyLow = true
+			}
+		}
+		sort.Strings(reasonParts)
+		reasons := strings.Join(reasonParts, "; ")
+		if anyLow {
+			return services.GateVerdictReject, fmt.Sprintf("criteria rejected (%s)", reasons), nil
+		}
+		if allHigh {
+			return services.GateVerdictAccept, fmt.Sprintf("criteria verified (%s)", reasons), nil
+		}
+		return services.GateVerdictUncertain, fmt.Sprintf("marginal criteria confidence (%s)", reasons), nil
+	}
+
+	// Fallback evaluation for direct verdict strings
 	verdictStr := strings.ToLower(parsed.Verdict)
 	switch verdictStr {
 	case string(services.GateVerdictAccept):
@@ -130,7 +186,6 @@ func (c *TypeSafeJevClient) EvaluateCriteria(ctx context.Context, model string, 
 	case string(services.GateVerdictUncertain):
 		return services.GateVerdictUncertain, parsed.Reasons, nil
 	default:
-		// Fallback check on boolean Accepted field if verdict string is omitted
 		if parsed.Accepted != nil {
 			if *parsed.Accepted {
 				return services.GateVerdictAccept, parsed.Reasons, nil
