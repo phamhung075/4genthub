@@ -207,6 +207,26 @@ Legend:
 
 *D9 sync protocol: making the task event ledger the sole source of truth between cloud and client.*
 
+- [ ] **P1: The Client's Reaches Go Native (the client-runtime cutover unit)**
+  - Retire the exec of the installed CLI from the client's own paths: each reach becomes a native IPC call over
+    the runtime's socket. The unit closes only when **all three reaches** are native — the **read** (`55597e2`;
+    the message pass reads its seats from the runtime, via `GetRoomStatus`), the **delivery** (`9e392ae`; the
+    delivery goes to the daemon, and the envelope keeps the human's name), and the `firstRigSession` reach in
+    `agenthub_client/internal/clientsync/connectorverb.go:103`, whose behaviour is unchanged and which is ruled (i).
+  - *Measured 2026-10-13, `agenthub_client/internal/`, non-test:* **18** exec call sites remain — **15** as
+    `rig.Run(` and **5** as a `.Run(ctx` on another receiver, the two overlapping — across 9 files; the primitive
+    is `func (r *Rig) Run(ctx context.Context, args ...string)` at `internal/clientcmd/command.go:83`. An earlier
+    note in §1 said *eleven* and did not record its pattern, so re-run both counts above before quoting either
+    number. This remainder is also why `send` is a dead verb for a seat: `4genteam send` rejects every argv shape
+    with `4genteam send: RIG, SEAT and MESSAGE are required`.
+  - **Check**: every reach answers with no exec of the installed binary on the path, and `4genteam send` reaches
+    a seat over the socket alone.
+  - **The unit mapping, stated once so a next session cannot re-derive it:** **P1** = the client's reaches go
+    native (the client-runtime cutover unit the rig files on its U0 row); **U1** = room hosting and
+    materialisation — the `spec.json` leg, satisfied 2026-10-13 by the `cutover-lab` room; **U2** = the native
+    runner plus the room-lifecycle wiring for `up` (`agenthub-runtime runner`, the socketpair, the queue store).
+    This enumeration skipped P1 while the whole rig talked about it, which is the drift this row closes.
+
 - [x] **P2: Cross-Task Ledger Cursor Endpoint**
   - Expose `GET /api/v2/ledger?after=<user_seq>&limit=N` returning user-isolated events ordered by `user_seq`.
   - Allows the client to track global project activity across all tasks in a single stream.
