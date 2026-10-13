@@ -2,10 +2,11 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
-## 2026-10-13 - Room Decisions Jev AI Auto-Selection and Pending Human Routing
+## 2026-10-13 - Room Decisions Jev AI Auto-Selection, Benchmarking Log and Env Configuration
 
 - ADDED `TestTypeSafeJevClient_SelectDecisionChoices` (`agenthub_go/fastmcp/task_management/infrastructure/ai_services/typesafe_jev_client_test.go`): verifies `SelectDecisionChoices` endpoint call to `/v1/systemone` with choice question structures, Bearer authentication, and parsing of selection choices with confidence scores.
-- ADDED `TestRoomDecisionServiceEvaluatorAutoSelectAndPending` (`agenthub_go/fastmcp/room_decisions/application/services/room_decision_service_test.go`): verifies `RoomDecisionService` automated question answering when evaluator confidence >= 0.8 (auto-answers and transitions decision to `answered`), and fallback leaving decision in `pending` for human operators when confidence < 0.8.
+- ADDED `TestRoomDecisionServiceEvaluatorAutoSelectAndPending` (`agenthub_go/fastmcp/room_decisions/application/services/room_decision_service_test.go`): verifies `RoomDecisionService` automated question answering when evaluator confidence >= threshold (auto-answers and transitions decision to `answered`), fallback leaving decision in `pending` for human operators when confidence < threshold, and writing structured evaluation metrics to `jev_decisions.log` for offline benchmarking.
+- UPDATED `room_decisions_mount.go`: resolves `JEV_DECISION_THRESHOLD` (default 0.8) and `JEV_DECISION_MODEL` (default `jev-1.13.0`) dynamically from `~/.config/4genthub/.env` or process environment.
 - UPDATED `TestRenderRoomRigCLI` and `rigValidate` (`agenthub_go/fastmcp/seat_management/domain/rigspec/rigspec_test.go`): skip when `rig` on PATH points to client binary without `spec` command.
 - GENERATED `agenthub-frontend/src/docs/apiReference.ts` via `go run ./cmd/apirefgen` to reconcile with route surface.
 - MEASURED: `go test -v ./fastmcp/room_decisions/... ./fastmcp/task_management/infrastructure/ai_services/...` (exit 0), `go test ./internal/apiref` (exit 0), `go test ./...` in `agenthub_go` (exit 0).

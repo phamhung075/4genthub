@@ -40,6 +40,7 @@ import (
 	"agenthub/fastmcp/task_management/domain/entities"
 	"agenthub/fastmcp/task_management/infrastructure/ai_services"
 	"agenthub/fastmcp/task_management/infrastructure/database"
+	"agenthub/fastmcp/utilities"
 )
 
 // A click body is three tokens, never a payload.
@@ -70,8 +71,18 @@ var newRoomDecisionService = func(sessions *database.SessionManager) (*roomservi
 	if err != nil {
 		return nil, err
 	}
+	model := utilities.ResolveConfigVar("JEV_DECISION_MODEL")
+	if model == "" {
+		model = "jev-1.13.0"
+	}
+	threshold := 0.8
+	if tStr := utilities.ResolveConfigVar("JEV_DECISION_THRESHOLD"); tStr != "" {
+		if parsed, pErr := strconv.ParseFloat(strings.TrimSpace(tStr), 64); pErr == nil && parsed > 0 && parsed <= 1.0 {
+			threshold = parsed
+		}
+	}
 	jevClient := ai_services.NewTypeSafeJevClient(ai_services.TypeSafeJevClientConfig{})
-	return roomservices.NewRoomDecisionService(repo).WithEvaluator(jevClient, "jev-1.13.0", 0.8), nil
+	return roomservices.NewRoomDecisionService(repo).WithEvaluator(jevClient, model, threshold), nil
 }
 
 // roomDecisionNow is the server clock; tests substitute a fixed one.

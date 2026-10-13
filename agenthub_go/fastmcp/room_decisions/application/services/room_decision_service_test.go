@@ -11,6 +11,8 @@ package services
 import (
 	"context"
 	"encoding/json"
+	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 	"testing"
@@ -847,6 +849,34 @@ func TestRoomDecisionServiceEvaluatorAutoSelectAndPending(t *testing.T) {
 		}
 		if len(row.Answers) != 0 {
 			t.Errorf("row.Answers = %+v, want empty", row.Answers)
+		}
+	})
+
+	t.Run("writes_benchmark_log_file", func(t *testing.T) {
+		tempDir := t.TempDir()
+		logFile := filepath.Join(tempDir, "test_jev_decisions.log")
+		SetJevDecisionLogPath(logFile)
+		defer SetJevDecisionLogPath("")
+
+		store := &fakeRoomDecisionStore{}
+		eval := &fakeDecisionEvaluator{
+			selections: map[string]DecisionChoiceSelection{
+				"q1": {SelectedOptionID: "opt_pg", Confidence: 0.95},
+			},
+		}
+
+		service := NewRoomDecisionService(store).WithEvaluator(eval, "jev-1.13.0", 0.8)
+		_, _, err := service.Create(ctx, "owner", "room-1", ask, serviceTestNow)
+		if err != nil {
+			t.Fatalf("Create err = %v", err)
+		}
+
+		data, err := os.ReadFile(logFile)
+		if err != nil {
+			t.Fatalf("failed to read log file: %v", err)
+		}
+		if !strings.Contains(string(data), `"model":"jev-1.13.0"`) || !strings.Contains(string(data), `"confidence_threshold":0.8`) {
+			t.Errorf("log contents do not contain expected metrics: %s", string(data))
 		}
 	})
 }
