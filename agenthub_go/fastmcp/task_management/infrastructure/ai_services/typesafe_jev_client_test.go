@@ -11,10 +11,10 @@ import (
 )
 
 func TestTypeSafeJevClientMissingAPIKey(t *testing.T) {
-	client := NewTypeSafeJevClient(TypeSafeJevClientConfig{
-		APIKey:  "",
-		BaseURL: "http://localhost:1234",
-	})
+	client := &TypeSafeJevClient{
+		apiKey:  "",
+		baseURL: "http://localhost:1234",
+	}
 
 	verdict, _, err := client.EvaluateCriteria(context.Background(), "jev-1.13.0", []string{"test"}, map[string]any{})
 	if err != ErrMissingAPIKey {
@@ -96,3 +96,17 @@ func TestTypeSafeJevClientReject(t *testing.T) {
 		t.Fatalf("unexpected reasons: %s", reasons)
 	}
 }
+
+func TestTypeSafeJevClientResolvesFromEnv(t *testing.T) {
+	t.Setenv("TYPESAFE_API_KEY", "env-resolved-key")
+	t.Setenv("TYPESAFE_BASE_URL", "https://api.custom.ai/v1/")
+
+	client := NewTypeSafeJevClient(TypeSafeJevClientConfig{})
+	if client.apiKey != "env-resolved-key" {
+		t.Errorf("expected apiKey 'env-resolved-key', got '%s'", client.apiKey)
+	}
+	if client.baseURL != "https://api.custom.ai/v1" {
+		t.Errorf("expected baseURL 'https://api.custom.ai/v1', got '%s'", client.baseURL)
+	}
+}
+

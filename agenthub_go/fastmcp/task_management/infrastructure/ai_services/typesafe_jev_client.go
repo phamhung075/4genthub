@@ -8,15 +8,15 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
 	"agenthub/fastmcp/task_management/domain/services"
+	"agenthub/fastmcp/utilities"
 )
 
 // ErrMissingAPIKey indicates no TypeSafe / Jev API key was provided.
-var ErrMissingAPIKey = errors.New("typesafe/jev api key not configured (set TYPESAFE_API_KEY or JEV_API_KEY)")
+var ErrMissingAPIKey = errors.New("typesafe/jev api key not configured (set TYPESAFE_API_KEY or JEV_API_KEY in ~/.config/4genthub/.env or environment)")
 
 // TypeSafeJevClientConfig holds configuration for the TypeSafe AI System One client.
 type TypeSafeJevClientConfig struct {
@@ -32,22 +32,16 @@ type TypeSafeJevClient struct {
 	httpClient *http.Client
 }
 
-// NewTypeSafeJevClient initializes a TypeSafeJevClient using provided config or environment variables.
+// NewTypeSafeJevClient initializes a TypeSafeJevClient using provided config, environment variables, or ~/.config/4genthub/.env.
 func NewTypeSafeJevClient(cfg TypeSafeJevClientConfig) *TypeSafeJevClient {
 	apiKey := cfg.APIKey
 	if apiKey == "" {
-		if v := os.Getenv("TYPESAFE_API_KEY"); v != "" {
-			apiKey = v
-		} else if v := os.Getenv("JEV_API_KEY"); v != "" {
-			apiKey = v
-		} else if v := os.Getenv("JEV_TOKEN"); v != "" {
-			apiKey = v
-		}
+		apiKey = utilities.ResolveConfigVar("TYPESAFE_API_KEY", "JEV_API_KEY", "JEV_TOKEN")
 	}
 
 	baseURL := strings.TrimRight(cfg.BaseURL, "/")
 	if baseURL == "" {
-		if v := os.Getenv("TYPESAFE_BASE_URL"); v != "" {
+		if v := utilities.ResolveConfigVar("TYPESAFE_BASE_URL"); v != "" {
 			baseURL = strings.TrimRight(v, "/")
 		} else {
 			baseURL = "https://api.typesafe.ai/v1"

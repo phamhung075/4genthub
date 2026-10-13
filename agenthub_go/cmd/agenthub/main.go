@@ -14,9 +14,12 @@ import (
 
 	"agenthub/fastmcp/server/httpapp"
 	"agenthub/fastmcp/task_management/infrastructure/database"
+	"agenthub/fastmcp/utilities"
 )
 
 func main() {
+	utilities.LoadDefaultEnv()
+
 	healthcheckFlag := flag.Bool("healthcheck", false, "check the health endpoint and exit")
 	flag.Parse()
 

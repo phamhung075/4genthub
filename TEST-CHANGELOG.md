@@ -2,10 +2,11 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
-## 2026-10-13 - TypeSafe AI / Jev HTTP client tests
+## 2026-10-13 - TypeSafe AI / Jev HTTP client & Machine-Level Config Env tests
 
-- ADDED `agenthub_go/fastmcp/task_management/infrastructure/ai_services/typesafe_jev_client_test.go`: 3 test cases (`TestTypeSafeJevClientMissingAPIKey`, `TestTypeSafeJevClientAccept`, `TestTypeSafeJevClientReject`). Verifies missing token handling (fail-safe uncertain with ErrMissingAPIKey), HTTP POST `/systemone` payload dispatch with Bearer token, and acceptance/rejection verdict parsing.
-- MEASURED: `go test -v ./fastmcp/task_management/infrastructure/ai_services/ -run TestTypeSafeJev` (exit 0).
+- ADDED `agenthub_go/fastmcp/utilities/config_loader_test.go`: `TestLoadEnv` testing parsing of KEY=VALUE assignments, export prefixes, comments, quotes, and non-overriding of existing environment variables.
+- ADDED `agenthub_go/fastmcp/task_management/infrastructure/ai_services/typesafe_jev_client_test.go`: 4 test cases (`TestTypeSafeJevClientMissingAPIKey`, `TestTypeSafeJevClientAccept`, `TestTypeSafeJevClientReject`, `TestTypeSafeJevClientResolvesFromEnv`). Verifies missing token handling (fail-safe uncertain with ErrMissingAPIKey), HTTP POST `/systemone` payload dispatch with Bearer token, acceptance/rejection verdict parsing, and resolution of tokens from `~/.config/4genthub/.env`.
+- MEASURED: `go test -v ./fastmcp/utilities/...` (exit 0), `go test -v ./fastmcp/task_management/infrastructure/ai_services/` (exit 0).
 
 ## 2026-10-13 - Next-Gen validation gate, remote execution, and work routing tests (O5, O6, O7, P7, D4/F5)
 
