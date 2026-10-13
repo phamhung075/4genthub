@@ -222,9 +222,10 @@ Legend:
   - **Check**: Client killed mid-outbox reconnects and delivers queued intents without duplication.
   - *Delivered & verified*: `agenthub_client/internal/clientoutbox/` (`manager.go`, `store.go`, `commands.go`) with persistent state, facts-first drain ordering, and unit tests passing. Built into `4genteam outbox` / `4genteam ledger`.
 
-- [ ] **P6: Turn-End Context Prefetching**
+- [x] **P6: Turn-End Context Prefetching**
   - When the client detects turn activity on a task, it prefetches the task resumption brief and post-compaction context in the background.
   - **Check**: Compacted seats resume instantly from disk cache without waiting for cloud fetch roundtrips.
+  - *Delivered & verified*: Backend `GET /api/v2/tasks/{id}/resume` added in `task_routes.go`. Client prefetch and local disk caching (`~/.config/4genthub/cache/resumes/`) delivered in `internal/clientoutbox/prefetch.go`, background prefetch hooked on event pull, and verified via `prefetch_test.go` and CLI `4genteam outbox prefetch/cached`.
 
 - [ ] **P7: Context Updates Unified on Ledger Cursor**
   - Context modifications emit `context_updated {level, id, version}` into `task_events`.
@@ -235,30 +236,33 @@ Legend:
 
 ### Group D & F: Communication, Remote Commands & Ingest
 
-- [ ] **D1 & D3: Human Notification Producer & Direct Agent Messaging**
+- [x] **D1 & D3: Human Notification Producer & Direct Agent Messaging**
   - D1 confirmed: agent-to-agent AND agent-to-human.
   - Produce real-time `notification` frames for human dashboard bell (`NotificationBell.tsx`).
   - Native seat-to-seat delivery via `4genteam send` using local socket/PTY buffers.
   - **Check**: Agent escalations appear in the web dashboard notification bell; inter-seat messages land directly in peer terminals.
+  - *Delivered & verified*: `agenthub_client/internal/clientbridge/notifications.go` (`TestNotify*` passing), `internal/clientruntime/ipc.go` (`SendTextToSeat`), and `agenthub-frontend/src/components/NotificationBell.tsx`.
 
 - [ ] **D4 & F5: Remote Execution via Connector (Opt-In)**
   - Support remote `send_to_seat`, `up`, and `down` commands over `/ws/connector` with capability `commands`.
   - Strict security guardrails: human-only issuer, token scope `sessions:command`, local whitelist of allowed rooms/commands, fail-closed audit log.
   - **Check**: Unauthorized command or unrecognized session is refused with structured refusal code.
 
-- [ ] **F4: Native Ingest Streaming in `rigd`**
+- [x] **F4: Native Ingest Streaming in `rigd`**
   - Point `4genteam rigd` to read session logs and events directly from native Rust runtime PTY outputs.
   - Stream redacted events over `/ws/connector` to 4genthub Cloud with server-side client cursor tracking.
   - **Check**: Streaming survives network disconnection; reconnect resumes from exact byte cursor without duplicate events.
+  - *Delivered & verified*: `agenthub_client/internal/clientsync/rigd.go` and `connector.go` (`TestStopAndWaitCursorAndGap`, `TestHelloCarriesProtocolVersionAndCapabilities` passing).
 
 ---
 
 ### Group T: Database Schema & Technical Cleanups
 
-- [ ] **T12: Single Ordered Embedded Migrations Baseline**
+- [x] **T12: Single Ordered Embedded Migrations Baseline**
   - Unify all 7 `TableDef` schemas and `init_schema_postgresql.sql` into an ordered embedded migration suite (`0001_baseline.sql` via `go:embed`).
   - Replace ad-hoc column ensurers with a versioned migration table.
   - **Check**: Fresh database boots from zero to current schema using embedded migrations alone.
+  - *Delivered & verified*: `2c2b1af3` / `0aa23a75` (`0001_baseline.sql`, `0002_progress_notes_backfill.sql`, `0003_progress_history_carry_and_drop.sql`).
 
 - [ ] **T13: Repoint Integration Tests & Verification Guards**
   - Repoint all Python-era test fixtures (`scripts/tests/`) to native Go and Rust entrypoints.

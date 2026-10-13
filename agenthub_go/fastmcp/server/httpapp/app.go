@@ -27,9 +27,10 @@ type App struct {
 
 	projects routes.ProjectController
 	branches routes.BranchController
-	tasks    routes.UserTaskController
-	subtasks routes.SubtaskController
-	mcpTools *interfacelayer.DDDCompliantMCPTools
+	tasks        routes.UserTaskController
+	subtasks     routes.SubtaskController
+	mcpTools     *interfacelayer.DDDCompliantMCPTools
+	taskProvider taskFacadeProvider
 }
 
 // NewApp wires repositories, services, hooks and controllers over sessions.
@@ -59,6 +60,7 @@ func NewApp(ctx context.Context, sessions *database.SessionManager) (*App, error
 	a.projects = projectControllerAdapter{c: api_controllers.NewProjectAPIController(projectFacadeProvider{sessions: sessions, ctxFactory: ctxFactory})}
 	a.branches = branchControllerAdapter{c: api_controllers.NewBranchAPIController(branchFacadeProvider{sessions}, branchRepoProvider{sessions}), sessions: sessions}
 	taskProvider := taskFacadeProvider{sessions: sessions, ctxFactory: ctxFactory, notifier: newTaskNotifier(sessions)}
+	a.taskProvider = taskProvider
 	projectFactory, branchFactory, contextFactory, tokenFactory := buildMCPFacadeFactories(ctx, sessions, ctxFactory)
 	facadeService := services.NewFacadeService(taskFacadeFactory{taskProvider}, subtaskFacadeFactory{factory: factories.NewSubtaskFacadeFactory(services.RepositoryProviderService{}.GetInstance()), ctxFactory: ctxFactory, sessions: sessions}, projectFactory, branchFactory, contextFactory, tokenFactory)
 	services.SetInstance(facadeService)
