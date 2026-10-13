@@ -7,3 +7,9 @@
 # The ecdsa library is a transitive dependency but not used directly for security-critical operations
 # Risk Assessment: LOW - Not used in production cryptographic operations
 CVE-2024-23342
+
+# CVE-2026-93687: braces uncontrolled recursion in pattern walkers
+# Status: No fix available (affected <= 3.0.3, latest is 3.0.3)
+# Mitigation: Transitive dev-dependency only (tailwindcss -> chokidar/micromatch/fast-glob); zero occurrences in built/served assets
+# Risk Assessment: LOW - Dev/build-time only, revisit when braces >= 3.0.4 ships
+CVE-2026-93687
