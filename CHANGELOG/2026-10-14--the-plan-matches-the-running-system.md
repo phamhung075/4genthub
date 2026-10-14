@@ -1,0 +1,56 @@
+# The plan now matches the running system
+
+The owner's instruction to the architect seat was "review the ACTUAL system as it runs today and update
+`NEXT-GEN2.md` to match it — measure, do not trust the plan", with four named questions: which process
+hosts each of the five seats (and whether C1 is met), cloud versus `~/.config/4genthub/rooms` and the
+edges, which R/C/O/P items are really done, and the state of today's compact defect. Every correction
+below cites the measurement that forced it.
+
+## Changed
+
+- **New §3 sub-block, "The measured state, 2026-10-14 20:2xZ"** — the thirteen measurements with their
+  instruments (process table, `agenthub-runtime status`, tmux pane table, the cloud API, `git grep` at
+  the pinned sha, `find`, the live `.env`, the run-2 evidence directory). Each item carries the command
+  and the result, so a later reader can re-run rather than re-derive.
+- **New §5, "Next five, in order"** — the ordered next work with the measurement that puts each one there.
+- **§2 topology table:** `architect` was `claude-code / opus`; it is **`omp / deepseek/deepseek-flash`**
+  now (the owner replaced the seat's session at 20:21Z, and `status 4genthub-min` reports five `omp Running`).
+- **§2 edges paragraph:** "these edges exist in this plan only" is **disproved** — the cloud returns
+  exactly one room (`4genthub-min`) and its 12 links, kind-for-kind equal to the table; only the local
+  `spec.json` still has `"links": []`, which is why `whoami` reports empty `edges`.
+- **C1:** the check's own `architect = claude-code Running` is corrected to `omp Running`, with today's
+  ps/tmux/status evidence added beside it. C1 itself still holds.
+- **§1.5 and R7:** the `rig` shim is **gone** — `~/.local/bin/rig` does not exist, `4genteam rig-shim` is
+  an unknown command (removal pinned by `TestNoCompatibilityShimVerbIsRegistered`), and the `rig` on
+  `PATH` is the OpenRig npm CLI. The native `whoami` half is re-measured working.
+- **R1:** re-measured at the room's tip `4567c37` — `pty/mod.rs` is 36 tmux hits with 0 `portable_pty`,
+  and `socketpair` is 3 in `runner/mod.rs`, so the socketpair half holds at the tip and only the
+  "headless PTY" wording stays unsupported.
+- **R2:** the live `.env` carries `150000 / 200000 / 250000`, not the `150k / 250k / 300k` this item
+  stated; and "the architect seat stays blocked" is stale — the state files read `idle` today while the
+  defect itself is still unmerged and uninstalled (branch `fix/compact-reply-not-a-turn` is **two**
+  commits, pushed, not an ancestor of `feat/support-agy-watch`).
+- **R6:** the socket is `$XDG_RUNTIME_DIR/agenthub.sock` (**`/mnt/wslg/runtime-dir/agenthub.sock`** here,
+  and it answers), not `/run/user/$UID/agenthub.sock`; each room also has `run/<seat>.sock`. The room
+  layout is now fully observable, and two rooms are live at once.
+- **C3:** the "`~/.local/bin/rig` is a symlink to `4genteam`" explanation has no subject today, the
+  `rig`-exec remainder is **0** at the tip (0 `rig.Run(`, 0 `RequireRig`, 0 `LookPath("rig")`, none of
+  the 25 non-test `exec.Command` sites, no `Rig` primitive), and the check re-run gives `whoami`/`ps`/
+  `room queue list` rc 0 and `send` a client-usage dispatch.
+- **C4:** run 2 is recorded as **in flight and unverdicted** (pid 24724, evidence dir still growing).
+- **C7:** at the tip the client names `.openrig` **0** times and `OPENRIG_STATE_ROOT` **0** times, and
+  `~/.openrig` is already gone from disk — the 7-site list was measured on an earlier tree.
+- **P1:** the "18 exec call sites remain" reading is superseded by **0** at the room's tip, and the
+  "`send` is a dead verb" sentence is corrected (the shim's refusal is gone; dispatch is measured).
+- **O1c / T13 / O-P-D artifacts:** O1c's counts re-run unchanged (51 / 26 / 5), T13's `scripts/tests`
+  premise still holds, the cited commits all resolve, and the files those items name exist at those paths.
+
+## Evidence
+
+`ps -eo pid,ppid,cmd`; `agenthub-runtime --state-dir ~/.config/4genthub status 4genthub-min`;
+`TMUX_TMPDIR=~/.config/4genthub/tmux tmux list-panes -a`; `GET /api/v2/openrig/rooms`, `…/seats`,
+`…/seats/<seat>/links` (read-only, token from `~/.config/4genthub/.env`); `git grep` on `4567c37` and
+`git cat-file -t` for every cited sha; `ls`/`find` over `~/.config/4genthub/rooms` and `seats/`;
+`sha256sum` of both installed binaries; `PATH=/usr/bin:/bin 4genteam whoami|ps|room queue|send`; the
+live `.env`; `u3-run/evidence-run2-20261014T201426Z.stdout`. Nothing on the running room, the cloud or
+the lab was changed by this pass.
