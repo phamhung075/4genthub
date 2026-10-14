@@ -44,17 +44,26 @@ missing empty directory decided nine legs, and **run 4 is not the acceptance ver
   (`logDir() = stateSubdir("logs")`), which holds `logs/rig-watchdog.log` — and the native client's own
   definition of **a seat's log is its session transcript**, `internal/seatlog/seatlog.go:80-82`
   (`NewestSession`: the most recently written `*.jsonl` under `<seat dir>/sessions`). The Rust runtime
-  never mentions `logs` at all.
+  never mentions `logs` at all **at that tip, and that is the tell: `cc0c62f` had retired the room's
+  `logs/` on purpose ("*The dead `logs/<seat>.jsonl` creation is removed*").** The room's `logs/` is a
+  **third** thing — the runtime's own pane mirror per seat — and go-dev's `2800dfb` restored it. See Fix.
 
 ## Fix
-- **Ruling, corrected against the source (lead — my first ruling named the product; the code says
-  otherwise, and the correction is mine to state): the fix is HARNESS-side.** The per-room `logs/` is a
-  remnant of the predecessor's layout (the Python derived its paths from `CLIENT_DIR/"logs"`, per
-  `clientlifecycle/paths.go:4`) that the native migration moved to the **state root**. So: A1 asserts
-  what the product guarantees (`spec.json`, `seats/`, `run/`); `logs` comes out of
-  `RUN_STATE_SUBDIRS` — it is not a room's run-state; and every reader of `logs/<seat>.jsonl` is
-  re-pointed at `seats/<seat>/sessions/*.jsonl` (the client's own definition of a seat's log) or the
-  pane. **No product change is required for the acceptance to pass.**
+- **RULING, RESTORED — THIS SECTION CARRIED TWO WRONG STATEMENTS OF MINE AND THIS IS THE THIRD AND
+  CORRECT ONE (lead; evidence read in full: `cc0c62f`, `2800dfb` and the revert `0277556` in
+  `agenthub_client`).** The room's `logs/` **belongs to the layout and the acceptance is right to assert
+  it.** `cc0c62f` retired it on purpose ("*The dead `logs/<seat>.jsonl` creation is removed*");
+  go-dev's `2800dfb` restored it — `start_room` creates `seats/`, `logs/`, `run/`, and the runner mirrors
+  the pane into `logs/<seat>.jsonl` — and my "harness-side fix" ruling made go-dev **revert it**
+  (`0277556 revert(runtime): the room's logs/ is not product state`, 21:09:08Z). That revert is being
+  undone on `4genthub-min/c3-printed-rig`, because the layout and the pane mirror are product state.
+- **Two artifacts, not one:** the seat's **log** is the runner's pane mirror at
+  `rooms/<room>/logs/<seat>.jsonl`, and the seat's **transcript** is omp's own
+  `rooms/<room>/seats/<seat>/sessions/*.jsonl`. The harness's `victim_transcript()` globs the transcript
+  and falls back to a literal `none.jsonl` **only when no transcript exists** — so a leg that prints that
+  path is telling you the seat took no turn, not that the reader is wrong.
+- **What is withdrawn:** dropping `logs` from `RUN_STATE_SUBDIRS`, re-pointing the B2 reader, and the
+  harness edits made on that ruling (a `logs/` comment now sits at `:249`). They are to be reverted.
 - **The starved legs are measured now, individually, in the same isolated rig** (`--check A2 B1 A3 B2
   B3 C2 C3 C4`, each with its own evidence dir, against the room run 4 brought up). A1's hygiene runs
   only inside A1, so an individual leg does not delete the directory and the measurement is not
