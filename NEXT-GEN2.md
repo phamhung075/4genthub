@@ -240,6 +240,14 @@ Legend:
   - **Build:** the lead schedules it as its own unit with the reviewer gate, after C3 lands, so the cutover is not delayed.
   - **Check**: a seat-level question at 0.9 is answered without reaching the lead; one at 0.6 reaches the lead with a recommendation; a credential question at 0.95 still reaches the owner.
 
+- [ ] **C7: One home for the client's state, `~/.config/4genthub/` (owner ruling 2026-10-14)**
+  - When OpenRig is gone, `~/.openrig/agenthub-seats/` and the config the client keeps beside it move to `~/.config/4genthub/`. One directory, so a reader finds the cloud config, the seats, the rooms and the logs in one place.
+  - **Target layout** under `~/.config/4genthub/` (it already holds `audit/`, `rooms/`, `jev_decisions.log`): `seats/` (was `~/.openrig/agenthub-seats`), `state/omp/` (was `~/.openrig/state/omp`), `briefs/`, `logs/`, `transcripts/`, `bin/` (the continue and watchdog scripts, until `4genteam` replaces them).
+  - **Measured 2026-10-14 (`4genthub-min/u2-native-runner` at `0683c10`): the client names the old root in 7 code sites.** `clientenv/env.go:64` (state root) and `:131` (seat store), `clientrestore/paths.go:42` (briefs, logs, state), `clientps/ps.go:212` and `clientwatch/seatlog.go:72` (transcripts), `clientsync/offlineinstallverb.go:105` (seat store), `clientruntime/openrigdaemon.go:241` (the daemon home, which goes with C3/C5, not with this move). `OPENRIG_STATE_ROOT` is read in `clientenv/env.go:24` and `clientwatch/watch.go:62`. The Rust runtime names `~/.openrig` only in comments and in its absence predicate (`main.rs:54`, `runner/mod.rs:832`).
+  - **Order:** after C4 passes and C5's snapshot exists. Until OpenRig is retired it still reads and writes `~/.openrig`, so moving the client first would split the two. The path code changes in one place (`clientenv`) and the data is moved once, by one command, in the same step.
+  - **No compatibility layer:** no fallback that reads the old path, no symlink left behind, and `OPENRIG_STATE_ROOT` is removed rather than aliased. A seat's skills, `policy.json` and ledger move with the store; `sync rig` rebuilds the store at the new path and `seat reseat` carries it into the live agent dirs.
+  - **Check**: with `~/.openrig` renamed away, `4genteam up`, `ps`, `watch`, `continue` and `sync rig` all work and write only under `~/.config/4genthub/`; `grep -rn '\.openrig' internal cmd` returns no code site.
+
 ---
 
 ### Group O: Orchestration Layer (Adapted from NEXT_GEN)
