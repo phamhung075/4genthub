@@ -157,10 +157,14 @@ Legend:
 
 - [ ] **C2: Parity the OpenRig host provides today**
   - **Auto-resume** of a turn that ends on a provider stream error (`The socket connection was closed unexpectedly`) — `omp` does not retry, and OpenRig then refuses nudges to that pane.
+    - **IMPLEMENTED in `rust/agenthub-runtime/src/runner/mod.rs`, with tests** (measured 2026-10-14, client `u2-native-runner`): `decide_resume`, `resume_delay`, `MAX_RESUME_ATTEMPTS`; a mid-turn error never starts a resume. What remains is the live check below.
   - **Large RPC responses**: chunking and reassembly (`RPC response exceeded the transport limit` ends turns today).
+    - **Handled by resume, not chunking** (same file): `RPC response exceeded the transport limit` and `rpc chunk payload exceeds the transport limit` are in the retryable-error table, so the turn is resumed. Whether that satisfies "chunking and reassembly" is the owner's judgment; no reassembly code exists.
   - **`send`**: sender identity in the envelope and confirmation that the text was submitted, not left staged in the input box; no dependency on `OPENRIG_STATE_ROOT` (`clientruntime.OpenRigSend`).
+    - **Sender envelope: implemented** (`RuntimeSendText`, From/To/Sent). **Submission confirmation: implemented at `041c18b`** — the runtime captures the pane around Enter, retries Enter once, and answers `outcome` `submitted` or `unconfirmed`; `send` prints `Pasted to …, submission unconfirmed` for the latter. **Not measured against a live pane** (no tmux server was up); U3 is where it is measured. `submitted` means the pane changed, not that the agent acknowledged. `OPENRIG_STATE_ROOT` is still read (`clientenv/env.go:24`, `clientwatch`, `clientlifecycle`, `clientsync/rigverb.go`); that is C7.
     - **MEASURED 2026-10-14 (lead, tree B at `a456656`): this name is CORRECT AS WRITTEN.** `OpenRigSend` is the function at `internal/clientruntime/openrigdaemon.go:123`, and **`OpenRigSendMessage` exists nowhere in the tree**; the architect's proposed correction to it is **disproved**, its only witness being the historical changelog line `CHANGELOG.md:1388`, written **before** the rename the same file records at `:459`, `:875`, `:880`, `:1307`. **Do not "fix" this name.**
   - **Idle-seat watchdog**: nudge a seat that has an unclaimed pending queue row (measured 2026-10-13: one row unclaimed ~4.5 h while the pane looked idle).
+    - **IMPLEMENTED**: `nudge_loop` / `nudge_seat` in `rust/agenthub-runtime/src/ipc/mod.rs`, logging to `<state dir>/rooms/<room>/run/<seat>.nudge.jsonl`.
   - **Check**: a forced stream error is recovered with no human action.
 
 - [ ] **C3: No exec of `rig` from the client (P1, U0)**
