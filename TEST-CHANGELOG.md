@@ -2,6 +2,11 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-14 - Decision ladder tests
+
+- ADDED `TestEvaluateLadder` and `TestOwnerOnlyCategoriesAreConfigurableNotFixed` (`agenthub_go/fastmcp/room_decisions/application/services/room_decision_ladder_test.go`): a seat at 0.9 decides, at 0.6 escalates to the lead with the recommended option, a lead below 0.8 reaches the owner, a `credentials` question at 0.95 reaches the owner without a Jev call, an evaluator error escalates, the owner tier is refused, and `omp_cap` is owner-only only when configured.
+- ADDED `TestRoomDecisionEvaluateIsTheLadderStep` (`agenthub_go/fastmcp/server/httpapp/room_decisions_ladder_test.go`): the same three outcomes over HTTP, plus 400 for tier owner and 403 without a bearer. Each test points the decision log at a temp path.
+
 ## 2026-10-13 - Jev evaluator tests isolate the decision log
 
 - FIXED `TestRoomDecisionServiceEvaluatorAutoSelectAndPending` (`agenthub_go/fastmcp/room_decisions/application/services/room_decision_service_test.go`): sets a temp `SetJevDecisionLogPath` for all subtests; two subtests previously appended fixture rows to `~/.config/4genthub/jev_decisions.log`.

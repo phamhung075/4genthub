@@ -82,7 +82,11 @@ var newRoomDecisionService = func(sessions *database.SessionManager) (*roomservi
 		}
 	}
 	jevClient := ai_services.NewTypeSafeJevClient(ai_services.TypeSafeJevClientConfig{})
-	return roomservices.NewRoomDecisionService(repo).WithEvaluator(jevClient, model, threshold), nil
+	ownerOnly, err := roomdecisions.ParseOwnerOnly(utilities.ResolveConfigVar("DECISION_OWNER_ONLY_CATEGORIES"))
+	if err != nil {
+		return nil, err
+	}
+	return roomservices.NewRoomDecisionService(repo).WithEvaluator(jevClient, model, threshold).WithOwnerOnly(ownerOnly), nil
 }
 
 // roomDecisionNow is the server clock; tests substitute a fixed one.
@@ -109,6 +113,10 @@ func mountRoomDecisionRoutes(mux *http.ServeMux, sessions *database.SessionManag
 	// decision id the cloud handed it, and the cloud, not the daemon, holds the room.
 	mux.HandleFunc("POST /api/v2/openrig/decisions", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleIngestRoomDecision(w, r, u, sessions)
+	}))
+	// The two lower tiers of the decision ladder: stateless, no room and no row.
+	mux.HandleFunc("POST /api/v2/openrig/decisions/evaluate", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+		handleEvaluateRoomDecision(w, r, sessions)
 	}))
 	mux.HandleFunc("GET /api/v2/openrig/decisions/answers", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handlePullRoomDecisionAnswers(w, r, u, sessions)
@@ -424,6 +432,78 @@ func handleIngestRoomDecision(w http.ResponseWriter, r *http.Request, u *authdom
 	response.Set("success", true)
 	response.Set("decision", roomDecisionRow(*stored))
 	response.Set("created", created)
+	writeJSON(w, http.StatusOK, response)
+}
+
+// roomDecisionEvaluateRequest is one ladder step asked by a seat or a lead.
+type roomDecisionEvaluateRequest struct {
+	Tier      string          `json:"tier"`
+	Category  string          `json:"category"`
+	Summary   string          `json:"summary"`
+	Detail    string          `json:"detail"`
+	Questions json.RawMessage `json:"questions"`
+}
+
+// handleEvaluateRoomDecision answers one ladder step: the tier decides at Jev confidence at or above
+// the threshold, otherwise the response names the next tier. Nothing is stored; the outcome is
+// appended to the Jev decision log by the service.
+func handleEvaluateRoomDecision(w http.ResponseWriter, r *http.Request, sessions *database.SessionManager) {
+	service, err := newRoomDecisionService(sessions)
+	if err != nil {
+		writeDetail(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	var body roomDecisionEvaluateRequest
+	if !decodeRoomDecisionBody(w, r, &body, roomDecisionMaxAskBody) {
+		return
+	}
+	tier, err := roomdecisions.ParseTier(body.Tier)
+	if err != nil {
+		writeDetail(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	category, err := roomdecisions.ParseCategory(body.Category)
+	if err != nil {
+		writeDetail(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	outcome, err := service.Evaluate(r.Context(), tier, category, body.Summary, body.Detail, body.Questions, roomDecisionNow().UTC())
+	if err != nil {
+		var rejection *roomservices.RoomDecisionAskRejection
+		if errors.As(err, &rejection) {
+			if rejection.SecretField != "" {
+				writeSeatStatusError(w, http.StatusUnprocessableEntity, rejection.Message)
+				return
+			}
+			writeDetail(w, http.StatusBadRequest, rejection.Message)
+			return
+		}
+		writeDetail(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	response := entities.NewOrderedMap[any]()
+	response.Set("tier", string(outcome.Tier))
+	response.Set("decided", outcome.Decided)
+	if outcome.Decided {
+		answers := entities.NewOrderedMap[any]()
+		for _, q := range outcome.Questions {
+			answers.Set(q.QuestionID, outcome.Answers[q.QuestionID])
+		}
+		response.Set("answers", answers)
+	} else {
+		response.Set("escalate_to", string(outcome.EscalateTo))
+		response.Set("reason", outcome.Reason)
+	}
+	questionRows := make([]any, 0, len(outcome.Questions))
+	for _, q := range outcome.Questions {
+		row := entities.NewOrderedMap[any]()
+		row.Set("question_id", q.QuestionID)
+		row.Set("option_id", q.OptionID)
+		row.Set("confidence", q.Confidence)
+		row.Set("recommended", q.Recommended)
+		questionRows = append(questionRows, row)
+	}
+	response.Set("questions", questionRows)
 	writeJSON(w, http.StatusOK, response)
 }
 

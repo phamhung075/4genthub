@@ -215,6 +215,9 @@ type JevDecisionLogEntry struct {
 	Detail              string                             `json:"detail"`
 	Choices             map[string]DecisionChoiceSelection `json:"choices"`
 	AutoAnswered        bool                               `json:"auto_answered"`
+	Tier                decisions.Tier                     `json:"tier"`
+	Category            decisions.Category                 `json:"category,omitempty"`
+	Outcome             string                             `json:"outcome,omitempty"`
 	Error               string                             `json:"error,omitempty"`
 }
 
@@ -275,6 +278,7 @@ type RoomDecisionService struct {
 	evaluator           DecisionEvaluator
 	evaluatorModel      string
 	confidenceThreshold float64
+	ownerOnly           decisions.OwnerOnlySet
 }
 
 // NewRoomDecisionService builds the service over a store.
@@ -283,7 +287,14 @@ func NewRoomDecisionService(store RoomDecisionStore) *RoomDecisionService {
 		store:               store,
 		evaluatorModel:      "jev-1.13.0",
 		confidenceThreshold: 0.8,
+		ownerOnly:           decisions.OwnerOnlySet{"credentials": {}, "spend": {}},
 	}
+}
+
+// WithOwnerOnly sets the categories that always reach the owner, whatever Jev's confidence.
+func (s *RoomDecisionService) WithOwnerOnly(set decisions.OwnerOnlySet) *RoomDecisionService {
+	s.ownerOnly = set
+	return s
 }
 
 // WithEvaluator configures an AI evaluator for auto-selecting high-confidence choices.
@@ -426,6 +437,7 @@ func (s *RoomDecisionService) Create(ctx context.Context, userID, roomID string,
 			Summary:             summary,
 			Detail:              detail,
 			Choices:             choices,
+			Tier:                decisions.TierOwner,
 		}
 		if evalErr != nil {
 			logEntry.Error = evalErr.Error()
