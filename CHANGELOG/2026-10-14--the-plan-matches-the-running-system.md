@@ -37,7 +37,11 @@ below cites the measurement that forced it.
   `rig`-exec remainder is **0** at the tip (0 `rig.Run(`, 0 `RequireRig`, 0 `LookPath("rig")`, none of
   the 25 non-test `exec.Command` sites, no `Rig` primitive), and the check re-run gives `whoami`/`ps`/
   `room queue list` rc 0 and `send` a client-usage dispatch.
-- **C4:** run 2 is recorded as **in flight and unverdicted** (pid 24724, evidence dir still growing).
+- **C4:** run 2 is recorded as **killed as INVALID at ~20:36Z**, not as a verdict — the room its live legs
+  needed had been deleted before it started, so its 22 failures measured a missing room, not the branch
+  (`CHANGELOG/2026-10-14--u3-run-2-was-invalid-its-hygiene-ate-the-lab-room.md`); the in-flight reading
+  this pass took at 20:2xZ is kept as provenance and marked superseded, and **run 3** (`--all`, pid 1704,
+  started 20:37:56Z, evidence `u3-run/evidence-run3-20261014T2040Z`) is the run whose verdict is owed.
 - **C7:** at the tip the client names `.openrig` **0** times and `OPENRIG_STATE_ROOT` **0** times, and
   `~/.openrig` is already gone from disk — the 7-site list was measured on an earlier tree.
 - **P1:** the "18 exec call sites remain" reading is superseded by **0** at the room's tip, and the
@@ -50,6 +54,20 @@ below cites the measurement that forced it.
   on the rail.
 - **O1c / T13 / O-P-D artifacts:** O1c's counts re-run unchanged (51 / 26 / 5), T13's `scripts/tests`
   premise still holds, the cited commits all resolve, and the files those items name exist at those paths.
+
+## Corrected with the first pass in hand (2026-10-14 20:4xZ)
+
+- **The branch was rebased onto main's tip** so the plan delta no longer carries main's newer text as
+  reversions: this file's entry and the §3/§5 corrections are now the branch's only delta over main,
+  and the code main gained after this branch's base (the env-loader fix and its test) is untouched.
+- **Item 10's owed measurement is done, not owed.** The reviewer's gate on `666978b` ran the tip's
+  `cargo test --offline`: **88 passed / 0 failed**, with a falsification that reproduces the recorded
+  defect's own words, verdict `APPROVE` (`agenthub_client/GATE-666978b-compact-refusal-noop-2026-10-14.md`).
+  What the fix still waits on is the install window.
+- **Item 11 and the C4 provenance bullet carry run 2 as INVALID with run 3 executing**, and §5's item 5
+  reads run 3's verdict as what opens C5. The lead's C4 row keeps the run-2 verdict, the rebuilt fixture
+  and the rule it produced ("clean run-state, never fixtures"); this pass only corrected its own stale
+  readings and did not restate them.
 
 ## Evidence
 
