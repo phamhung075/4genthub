@@ -2,6 +2,12 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-14 - Jev moves to the client
+
+- REMOVED the server-side Jev tests with the code they covered: `room_decision_ladder_test.go`, `httpapp/room_decisions_ladder_test.go`, `validation_gate_service_test.go`, `complete_task_validation_gate_test.go`, `typesafe_jev_client_test.go`, and `TestRoomDecisionServiceEvaluatorAutoSelectAndPending` with its fake evaluator in `room_decision_service_test.go`.
+- ADDED in the client repo: `internal/clientjev/jev_test.go` (config defaults, owner-only set, bad threshold, question limits), `internal/clientcomplete/complete_test.go` (deterministic rejections without a Jev call, criteria verdicts, accepted flow order evidence-then-complete, enforced refusal before any write, shadow mode, usage refusals) and a rewritten `internal/clientdecide/decide_test.go` (local ladder, escalation, owner-only with no Jev call, evaluator error, log lines).
+- MEASURED: `go vet ./... && go test ./...` in `agenthub_go` and in `agenthub_client` (exit 0).
+
 ## 2026-10-14 - The env loader fills an empty variable
 
 - ADDED `TestLoadEnvFillsEmptyAndKeepsNonEmpty` (`agenthub_go/fastmcp/utilities/config_loader_test.go`): a variable exported empty takes the file's value; a non-empty one keeps its own.

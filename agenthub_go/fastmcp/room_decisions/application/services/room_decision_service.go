@@ -16,12 +16,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log/slog"
-	"os"
-	"path/filepath"
 	"regexp"
 	"strings"
-	"sync"
 	"time"
 	"unicode/utf8"
 
@@ -190,127 +186,14 @@ type RoomDecisionAnswerRejection struct {
 
 func (e *RoomDecisionAnswerRejection) Error() string { return e.Code + ": " + e.Message }
 
-// DecisionChoiceSelection is the choice and confidence score returned by AI evaluation.
-type DecisionChoiceSelection struct {
-	SelectedOptionID string
-	Confidence       float64
-}
-
-// DecisionEvaluator evaluates human questions with AI before human escalation.
-type DecisionEvaluator interface {
-	SelectDecisionChoices(ctx context.Context, model string, summary, detail string, qs []questions.HumanQuestion) (map[string]DecisionChoiceSelection, error)
-}
-
-// JevDecisionLogEntry records evaluation metrics for benchmarking Jev AI decisions.
-type JevDecisionLogEntry struct {
-	Timestamp           time.Time                          `json:"timestamp"`
-	DecisionID          string                             `json:"decision_id"`
-	UserID              string                             `json:"user_id"`
-	RoomID              string                             `json:"room_id"`
-	RigName             string                             `json:"rig_name"`
-	AuthorSeatKey       string                             `json:"author_seat_key"`
-	Model               string                             `json:"model"`
-	ConfidenceThreshold float64                            `json:"confidence_threshold"`
-	Summary             string                             `json:"summary"`
-	Detail              string                             `json:"detail"`
-	Choices             map[string]DecisionChoiceSelection `json:"choices"`
-	AutoAnswered        bool                               `json:"auto_answered"`
-	Tier                decisions.Tier                     `json:"tier"`
-	Category            decisions.Category                 `json:"category,omitempty"`
-	Outcome             string                             `json:"outcome,omitempty"`
-	Error               string                             `json:"error,omitempty"`
-}
-
-var (
-	jevLogMutex sync.Mutex
-	jevLogPath  string
-)
-
-func SetJevDecisionLogPath(path string) {
-	jevLogMutex.Lock()
-	defer jevLogMutex.Unlock()
-	jevLogPath = path
-}
-
-func getJevDecisionLogPath() string {
-	jevLogMutex.Lock()
-	defer jevLogMutex.Unlock()
-	if jevLogPath != "" {
-		return jevLogPath
-	}
-	if p := os.Getenv("JEV_DECISION_LOG_PATH"); p != "" {
-		return p
-	}
-	home, _ := os.UserHomeDir()
-	if home != "" {
-		return filepath.Join(home, ".config", "4genthub", "jev_decisions.log")
-	}
-	return "jev_decisions.log"
-}
-
-func appendJevDecisionLog(entry JevDecisionLogEntry) {
-	path := getJevDecisionLogPath()
-	if dir := filepath.Dir(path); dir != "" && dir != "." {
-		_ = os.MkdirAll(dir, 0o755)
-	}
-
-	bytes, err := json.Marshal(entry)
-	if err != nil {
-		return
-	}
-
-	jevLogMutex.Lock()
-	defer jevLogMutex.Unlock()
-
-	f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
-	if err != nil {
-		slog.Warn("failed to open jev decision log file", "path", path, "err", err)
-		return
-	}
-	defer f.Close()
-
-	_, _ = f.Write(append(bytes, '\n'))
-}
-
 // RoomDecisionService validates and stores mirrored decisions and the clicks on them.
 type RoomDecisionService struct {
-	store               RoomDecisionStore
-	evaluator           DecisionEvaluator
-	evaluatorModel      string
-	confidenceThreshold float64
-	ownerOnly           decisions.OwnerOnlySet
+	store RoomDecisionStore
 }
 
 // NewRoomDecisionService builds the service over a store.
 func NewRoomDecisionService(store RoomDecisionStore) *RoomDecisionService {
-	return &RoomDecisionService{
-		store:               store,
-		evaluatorModel:      "jev-1.13.0",
-		confidenceThreshold: 0.8,
-		ownerOnly:           decisions.OwnerOnlySet{"credentials": {}, "spend": {}},
-	}
-}
-
-// WithOwnerOnly sets the categories that always reach the owner, whatever Jev's confidence.
-func (s *RoomDecisionService) WithOwnerOnly(set decisions.OwnerOnlySet) *RoomDecisionService {
-	s.ownerOnly = set
-	return s
-}
-
-// WithEvaluator configures an AI evaluator for auto-selecting high-confidence choices.
-func (s *RoomDecisionService) WithEvaluator(evaluator DecisionEvaluator, model string, minConfidence float64) *RoomDecisionService {
-	s.evaluator = evaluator
-	if model != "" {
-		s.evaluatorModel = model
-	} else {
-		s.evaluatorModel = "jev-1.13.0"
-	}
-	if minConfidence > 0 {
-		s.confidenceThreshold = minConfidence
-	} else {
-		s.confidenceThreshold = 0.8
-	}
-	return s
+	return &RoomDecisionService{store: store}
 }
 
 // Create validates one ask and stores it under the caller's tenant.
@@ -418,52 +301,6 @@ func (s *RoomDecisionService) Create(ctx context.Context, userID, roomID string,
 	// the route must answer 500 rather than a success envelope with no decision in it.
 	if !created && stored == nil {
 		return nil, false, fmt.Errorf("room decision create: the row for %s/%s was neither written nor found", userID, ask.QitemID)
-	}
-
-	// Jev AI auto-selection: if confidence >= confidenceThreshold (default 0.8), auto-select option;
-	// otherwise, leave unanswered for human decision request on 4genthub.
-	// Log evaluation metrics to jev_decisions.log for benchmarking.
-	if created && stored != nil && s.evaluator != nil {
-		choices, evalErr := s.evaluator.SelectDecisionChoices(ctx, s.evaluatorModel, summary, detail, parsed)
-		logEntry := JevDecisionLogEntry{
-			Timestamp:           createdAt.UTC(),
-			DecisionID:          stored.ID,
-			UserID:              userID,
-			RoomID:              roomID,
-			RigName:             ask.RigName,
-			AuthorSeatKey:       ask.AuthorSeatKey,
-			Model:               s.evaluatorModel,
-			ConfidenceThreshold: s.confidenceThreshold,
-			Summary:             summary,
-			Detail:              detail,
-			Choices:             choices,
-			Tier:                decisions.TierOwner,
-		}
-		if evalErr != nil {
-			logEntry.Error = evalErr.Error()
-		}
-
-		if evalErr == nil && len(choices) > 0 {
-			allAutoAnswered := len(parsed) > 0
-			for _, q := range parsed {
-				sel, ok := choices[q.ID]
-				if ok && sel.Confidence >= s.confidenceThreshold && sel.SelectedOptionID != "" {
-					updated, ansErr := s.Answer(ctx, userID, roomID, stored.ID, RoomDecisionAnswerInput{
-						QuestionID: q.ID,
-						OptionID:   sel.SelectedOptionID,
-					}, createdAt)
-					if ansErr == nil && updated != nil {
-						stored = updated
-					} else {
-						allAutoAnswered = false
-					}
-				} else {
-					allAutoAnswered = false
-				}
-			}
-			logEntry.AutoAnswered = allAutoAnswered
-		}
-		appendJevDecisionLog(logEntry)
 	}
 
 	return stored, created, nil

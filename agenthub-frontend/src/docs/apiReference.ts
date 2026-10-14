@@ -402,13 +402,6 @@ export const apiReference: ApiReference = {
     },
     {
       "method": "POST",
-      "path": "/api/v2/openrig/decisions/evaluate",
-      "pathParams": [],
-      "handler": "",
-      "description": ""
-    },
-    {
-      "method": "POST",
       "path": "/api/v2/openrig/decisions/{id}/ack",
       "pathParams": [
         "id"

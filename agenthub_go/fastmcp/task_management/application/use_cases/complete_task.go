@@ -47,17 +47,6 @@ type CompleteTaskHooks interface {
 	SyncTaskMetadata(ctx context.Context, taskID string, task *entities.Task, userID string) error
 }
 
-// GateEvaluator provides evaluation of validation gates.
-type GateEvaluator interface {
-	Evaluate(ctx context.Context, task *entities.Task, evidence map[string]any) services.ValidationResult
-	EnforcementEnabled() bool
-}
-
-// EvidenceFetcher retrieves the latest evidence for a task.
-type EvidenceFetcher interface {
-	LatestEvidence(ctx context.Context, taskID string) (map[string]any, error)
-}
-
 // CompleteTaskUseCase ports CompleteTaskUseCase: it marks a task done, requiring
 // a completion summary and all subtasks complete.
 type CompleteTaskUseCase struct {
@@ -71,9 +60,6 @@ type CompleteTaskUseCase struct {
 	// ledger writes each status move and its status_changed entry in one transaction. Unset leaves
 	// the save exactly as it was.
 	ledger StatusLedger
-
-	gate     GateEvaluator
-	evidence EvidenceFetcher
 }
 
 // WithHooks sets the status/metadata sync hooks (nil disables them).
@@ -85,13 +71,6 @@ func (uc *CompleteTaskUseCase) WithHooks(h CompleteTaskHooks) *CompleteTaskUseCa
 // WithLedger wires the status ledger (unset leaves the status writes as they were).
 func (uc *CompleteTaskUseCase) WithLedger(l StatusLedger) *CompleteTaskUseCase {
 	uc.ledger = l
-	return uc
-}
-
-// WithGate wires validation gate evaluation and evidence retrieval.
-func (uc *CompleteTaskUseCase) WithGate(gate GateEvaluator, evidence EvidenceFetcher) *CompleteTaskUseCase {
-	uc.gate = gate
-	uc.evidence = evidence
 	return uc
 }
 
@@ -415,59 +394,6 @@ func (uc *CompleteTaskUseCase) executeCore(
 			return err
 		}, taskIDStr, nil); err != nil {
 			return nil, false, err
-		}
-	}
-
-	// Validation gate evaluation (O5 & O6)
-	if uc.gate != nil {
-		var evidencePayload map[string]any
-		if uc.evidence != nil {
-			evidencePayload, _ = uc.evidence.LatestEvidence(ctx, taskIDStr)
-		}
-		verdict := uc.gate.Evaluate(ctx, task, evidencePayload)
-
-		// Record gate_verdict event into the ledger
-		if uc.ledger.Enabled() {
-			_ = uc.ledger.Save(ctx, func(ctx context.Context) error {
-				_, err := uc.ledger.Ledger.RecordGateVerdict(ctx, taskIDStr, map[string]any{
-					"verdict": string(verdict.Verdict),
-					"reasons": verdict.Reasons,
-					"deterministic_checks": map[string]any{
-						"d1_syntax":          verdict.DeterministicChecks.D1Syntax,
-						"d2_types":           verdict.DeterministicChecks.D2Types,
-						"d3_tests":           verdict.DeterministicChecks.D3Tests,
-						"d4_clean_diff":      verdict.DeterministicChecks.D4CleanDiff,
-						"d5_numstat_sanity":  verdict.DeterministicChecks.D5Numstat,
-					},
-					"evaluator": verdict.Evaluator,
-				})
-				return err
-			}, taskIDStr, nil)
-		}
-
-		if uc.gate.EnforcementEnabled() {
-			if verdict.Verdict == services.GateVerdictReject {
-				inProgress, _ := value_objects.NewTaskStatus("in_progress")
-				task.Status = &inProgress
-				_, _ = uc.taskRepository.Save(ctx, task)
-				resp := entities.NewOrderedMap[any]()
-				resp.Set("success", false)
-				resp.Set("task_id", taskIDStr)
-				resp.Set("message", fmt.Sprintf("Validation gate rejected task: %s", verdict.Reasons))
-				resp.Set("status", task.Status.String())
-				return resp, true, nil
-			}
-			if verdict.Verdict == services.GateVerdictUncertain {
-				review, _ := value_objects.NewTaskStatus("review")
-				task.Status = &review
-				_, _ = uc.taskRepository.Save(ctx, task)
-				resp := entities.NewOrderedMap[any]()
-				resp.Set("success", false)
-				resp.Set("task_id", taskIDStr)
-				resp.Set("message", fmt.Sprintf("Validation gate uncertain: %s. Escalated for review.", verdict.Reasons))
-				resp.Set("status", task.Status.String())
-				return resp, true, nil
-			}
 		}
 	}
 
