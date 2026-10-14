@@ -19,8 +19,9 @@ restore, before concluding anything about where you are.
 
 - **Your seat's role** — `agents/<seat>/agent.yaml` and `guidance/role.md`, written into the launch
   directory by the launch.
-- **The work queue** — `rig queue` (owned work, handoffs, block/wake state).
-- **The board and decisions** — `agenthub_go/NEXT_GEN.md`.
+- **The work queue** — `4genteam room queue` (`list` / `show` / `create` / `update` / `claim` / `close`;
+  owned work, handoffs, block/wake state).
+- **The board and decisions** — `NEXT-GEN2.md` (repo root).
 - **Project skills** — one source: `agenthub_client/skills/` (`share/` and `rooms/<room>/` are delivered to seats
   by `4genteam sync rig`; `client/` is for the LLM running the client, e.g. `install`, `rig-runtime-switch`,
   `seat-runtime-switch`, `spawn-team`, `watch-team`). Ruling: `ai_docs/core-architecture/seat-skills.md`.

@@ -6,7 +6,7 @@
 
 ## Identity first
 
-Run `rig whoami --json`. It returns your rig, pod, member, peers, edges and transcript path, and it
+Run `4genteam whoami --json`. It returns your rig, seat, peers, edges and transcript path, and it
 is the ground truth for where you are. A startup overlay can be stale; re-run it after any
 compaction, restart or restore.
 
@@ -24,7 +24,7 @@ model — the surface that works today:
   rendered context files.
 
 There is no per-agent template lookup: the 32-agent template library was removed (Request 14, T6).
-Identity comes from `rig whoami --json`; a seat's resolved config comes from `manage_seat` /
+Identity comes from `4genteam whoami --json`; a seat's resolved config comes from `manage_seat` /
 `call_seat`.
 
 ## Tool scope by seat
@@ -36,7 +36,7 @@ per seat by the Go seat service.
 
 Rules:
 
-- Know your seat first: `rig whoami --json`.
+- Know your seat first: `4genteam whoami --json`.
 - Never assume you have a tool another seat type has; read the seat's rendered files before relying
   on a capability.
 - If you need a tool your seat lacks, route the work to a seat that has it.
