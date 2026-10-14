@@ -195,11 +195,18 @@ state — the C4 bullet list and §5's item 5 — and independent of the three c
 - **The two units after `a58e684` are gated and neither is landed:** `0a968fc` (a seat is told its daemon's
   socket) → APPROVE; `ad03a16` (the retired-verb class pin) → NOT as is, one required edit — its `Allowed[4]`
   entry names the retired command's own form rather than a negation while coverage is a substring match, so the
-  one entry covering the pin's target verb is a licence for that verb's exact shape. Scope: go-dev.
-- **The instrument revision the next run needs is staged, tested and not applied:** the harness revision
-  `8d7be24c…` (+76/−3 on the live `65d36d1d`) plus the guard family (run-private socket resolved and asserted
-  before `up`, room-live check, seat-idle check, the harness's own sha256 in every `EVID` dir, the `:456`/`:537`
-  inversion). A run that cannot prove its socket, its state root and its instrument's identity is not a run.
+  one entry covering the pin's target verb is a licence for that verb's exact shape. Scope: go-dev — and the
+  lead's ruling on that scope is narrow-the-`Match` first (reword-and-drop only if an un-negated `rig up`
+  mention survives), with the acceptance count split so the pin's own constants are not counted as delivered
+  spans.
+- **The instrument revision is APPLIED, not staged (the lead applied it at 22:10:25Z after verifying the target,
+  `qitem-20261014221131-075dfa5fbf2f`):** `8d7be24c…`, 136414 B, `bash -n` clean, +76/−3 against `65d36d1d`
+  (131295 B), written atomically with the pre-patch bytes kept and logged — so the live harness IS that revision:
+  run-private socket resolved and asserted before `up`, room-live check, seat-idle check, the harness's own
+  sha256 in every `EVID` dir, and the `:456`/`:537` inversion. **The inversion itself is a separate later write
+  and stays routed to go-dev** (an instrument may not author the fact it measures), with the locators the patch
+  moved (injection `:463`, rebuild ~`:600`) and the sequencing fixed: build `u3bin/agenthub-runtime` from the tip
+  carrying `0a968fc` and stamp commit + sha256 in the EVID's PROVENANCE, then drop the injection.
 
 Folded into item 10 as well, from the reviewer's own row (`qitem-20261014220539-8176fe41e33a`): the held R2
 offline run is MEASURED — 88 passed / 0 failed under `CARGO_NET_OFFLINE=true cargo test --offline`, cargo 1.91.1 —
