@@ -1,7 +1,3 @@
-[submodule ".claude"]
-	path = .claude
-	url = git@github.com:phamhung075/4genthub-hooks.git
-	branch = main
 [submodule "claude-automation"]
 	path = claude-automation
 	url = git@github.com:phamhung075/claude-automation.git
