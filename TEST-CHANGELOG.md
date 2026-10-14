@@ -2,6 +2,10 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-14 - A room needs its links
+
+- ADDED `TestLoadTeamRefusesARoomOfSeveralSeatsWithNoLinks` (`agenthub_client/internal/clientteam/links_required_test.go`): two seats with no links is refused naming the links; two seats with one link and a single seat with none load.
+
 ## 2026-10-14 - Decision ladder tests
 
 - ADDED `TestEvaluateLadder` and `TestOwnerOnlyCategoriesAreConfigurableNotFixed` (`agenthub_go/fastmcp/room_decisions/application/services/room_decision_ladder_test.go`): a seat at 0.9 decides, at 0.6 escalates to the lead with the recommended option, a lead below 0.8 reaches the owner, a `credentials` question at 0.95 reaches the owner without a Jev call, an evaluator error escalates, the owner tier is refused, and `omp_cap` is owner-only only when configured.

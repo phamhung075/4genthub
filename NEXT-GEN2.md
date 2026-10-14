@@ -24,43 +24,55 @@ Supersedes `NEXT_GEN.md`. All completed/historical tasks from `NEXT_GEN.md` (`[x
 
 ## 2. System Topology
 
+Only the **4genthub minimum team** (room `4genthub-min`): five seats, all hosted by `agenthub-runtime`.
+
+| Seat | Type | Runtime / model |
+|---|---|---|
+| `lead` | lead | omp / `deepseek/deepseek-flash` |
+| `architect` | architect | claude-code / `opus` |
+| `go-dev` | developer | omp / `deepseek/deepseek-flash` |
+| `fe-dev` | developer | omp / `deepseek/deepseek-flash` |
+| `reviewer` | reviewer | omp / `deepseek/deepseek-flash` |
+
 ```
-                  ┌──────────────────────────────────────────────┐
-                  │           4genthub Cloud Backend             │
-                  │   - REST API (/api/v2/...)                   │
-                  │   - FastMCP Server (/mcp, 10 tools)          │
-                  │   - Connector Endpoint (/ws/connector)       │
-                  │   - Task Event Ledger (task_events)          │
-                  └───────────────────────▲──────────────────────┘
-                                          │ WSS (/ws/connector)
-                  ┌───────────────────────▼──────────────────────┐
-                  │        4genthub Client (`4genteam` in Go)     │
-                  │   - Cloud Sync & Spec Materialization        │
-                  │   - Offpeak Schedule Gate (DeepSeek)         │
-                  │   - Bridge & Safeguard Supervision           │
-                  │   - TUI / Watch Grid (herdr / tmux)          │
-                  └───────────────────────▲──────────────────────┘
-                                          │ Unix Domain Socket IPC
-                  ┌───────────────────────▼──────────────────────┐
-                  │    4genthub Native Core (`agenthub-runtime` in Rust)
-                  │                                              │
-                  │  ┌──────────────────┐  ┌──────────────────┐  │
-                  │  │  PTY / Sessions  │  │  Context Engine  │  │
-                  │  │  - Headless PTY  │  │  - Token Counter │  │
-                  │  │  - Socketpair RPC│  │  - 4-Tier Tree   │  │
-                  │  │  - Tmux Bridge   │  │  - Compaction    │  │
-                  │  └──────────────────┘  └──────────────────┘  │
-                  │  ┌──────────────────┐  ┌──────────────────┐  │
-                  │  │   Rules Engine   │  │   Skill Engine   │  │
-                  │  │  - RegexSet Rails│  │  - Frontmatter   │  │
-                  │  │  - Tool Denials  │  │  - Tier Resolver │  │
-                  │  └──────────────────┘  └──────────────────┘  │
-                  │  ┌──────────────────────────────────────┐  │
-                  │  │            Hook & Event Bus          │  │
-                  │  │ Pre/Post Turn • Audit • Telemetry    │  │
-                  │  └──────────────────────────────────────┘  │
-                  └──────────────────────────────────────────────┘
+                         owner
+                           ▲
+                           │ escalates_to (C6, only the very important)
+                         ┌─┴────┐  delegates_to   ┌───────────┐
+              ┌─────────►│ lead │────────────────►│ architect │
+              │          └─┬──┬─┘                 └─────┬─────┘
+              │            │  │ delegates_to            │ can_observe
+   escalates_to            │  └──────────┐              ▼
+   (from every seat)       ▼             ▼        go-dev, fe-dev
+                      ┌─────────┐   ┌─────────┐
+                      │ go-dev  │◄─►│ fe-dev  │   collaborates_with
+                      └────┬────┘   └────┬────┘
+                           │ delegates_to│
+                           └──────┬──────┘
+                                  ▼
+                            ┌──────────┐
+                            │ reviewer │
+                            └──────────┘
 ```
+
+**Edges** (directed `from -> to`, kinds are the five the server's `commpolicy.ValidKind` accepts):
+
+| From | Kind | To | Meaning |
+|---|---|---|---|
+| `lead` | `delegates_to` | `architect` | design and ruling requests |
+| `lead` | `delegates_to` | `go-dev` | Go and Rust work |
+| `lead` | `delegates_to` | `fe-dev` | frontend work |
+| `go-dev` | `delegates_to` | `reviewer` | finished work goes to the gate |
+| `fe-dev` | `delegates_to` | `reviewer` | finished work goes to the gate |
+| `go-dev` | `collaborates_with` | `fe-dev` | shared API shapes |
+| `architect` | `can_observe` | `go-dev` | read-only watch |
+| `architect` | `can_observe` | `fe-dev` | read-only watch |
+| `architect` | `escalates_to` | `lead` | seat tier of the C6 ladder |
+| `go-dev` | `escalates_to` | `lead` | seat tier of the C6 ladder |
+| `fe-dev` | `escalates_to` | `lead` | seat tier of the C6 ladder |
+| `reviewer` | `escalates_to` | `lead` | seat tier of the C6 ladder |
+
+The lead is the only seat that reaches the owner (C6). **Not yet applied:** `rooms/4genthub-min/spec.json` has `"links": []` today (measured 2026-10-14), so these edges exist in this plan only; `whoami` returns `edges` from that list.
 
 ---
 
@@ -92,6 +104,7 @@ Legend:
   - 4-tier context hierarchy assembler (Account/Company Overlay → Room Guidelines → Seat Role → Task/Subtask Context).
   - Rolling window context monitor against thresholds: `COMPACT_LIMIT_TOKENS` (150k), `COMPACT_WARN_TOKENS` (250k), and `COMPACT_HARD_TOKENS` (300k).
   - Native integration of `forcecompact` (sending direct JSON-RPC `{"type":"compact"}` to `omp` socketpair) without external ptrace workarounds.
+    - **DEFECT, MEASURED (2026-10-14, client tree `4567c37`, live room `4genthub-min`):** a compact sent to a seat with no turns yet is answered by omp with `Nothing to compact (session too small)`; `classify_failure` (`runner/mod.rs:1007`) matches none of its retryable signatures and returns `Terminal("the agent refused the turn")`, so the seat goes `state: blocked` (`run/<seat>.state.json`). On first start go-dev, fe-dev and reviewer were blocked this way, wrote no session log (empty `seats/<seat>/sessions/`), and so showed no events in `4genteam watch`; only the lead, which resumed an older session, did. **Fixed on client branch `fix/compact-reply-not-a-turn`** (one commit on `4567c37`, `cargo test --offline` 87 passed; not merged, not installed): a failed reply carrying the compact frame's id never enters the resume ladder.
   - **Check**: An agent hitting 300k tokens is force-compacted in-flight; token counts match OpenAI/Anthropic tokenizers within ±0.5%.
   - *Delivered & verified*: `agenthub_client/rust/agenthub-runtime/src/context/mod.rs` compiled and tested (`cargo test`).
 
