@@ -70,7 +70,7 @@ below cites the measurement that forced it.
   and the rule it produced ("clean run-state, never fixtures"); this pass only corrected its own stale
   readings and did not restate them.
 
-## The `logs/` ruling, and the runs it corrects (2026-10-14 21:1xZ)
+## The `logs/` ruling, and the runs it corrects (2026-10-14 21:1xZ — the ruling half of this section is REVERSED at 21:2xZ; read the next section first)
 
 - **`rooms/<room>/logs/` is OUT of the room layout, and the concept was RETIRED rather than merely
   unimplemented.** The runtime holds exactly one definition of a seat's transcript and it is not
@@ -100,6 +100,41 @@ below cites the measurement that forced it.
   B3, C2, C3 and C4, so nine legs were starved by one assertion, and **the verdict is owed from a run
   on the corrected A1**.
 
+## The reversal, measured: `rooms/<room>/logs/` IS the runtime's own (2026-10-14 21:2xZ)
+
+- **The section above is wrong, and this one supersedes it.** `logs/` is not a retired concept and the
+  fix is not instrument-side: the runtime created that directory, the commit the ruling cited deleted
+  the **writer**, and go-dev's delivery restores it. Read at the source: `agenthub_client@cc0c62f`'s own
+  diff, a writer survey of `rust/agenthub-runtime/src`, the acceptance harness's `mkdir` sites, and
+  go-dev's `2800dfb`.
+- **`cc0c62f`'s diff deletes the creation of `logs/` itself**, and that is what "the dead
+  `logs/<seat>.jsonl` creation is removed" means: the removed lines are
+  `let logs_dir = room_dir.join("logs"); let _ = fs::create_dir_all(&logs_dir); let transcript_path =
+  logs_dir.join(format!("{}.jsonl", seat.seat_key));` — so the directory was the native runtime's
+  room-start layout, and the file stopped being read as the transcript when `transcript_path` moved to
+  `seats/<seat>/sessions`. The plan's "created by a harness path, not the product" is therefore
+  falsified: the harness creates no room directory at all (its `mkdir` sites are the evidence dir, the
+  shims, `q1root`/`q1pin` and the team roots), and the two empty `logs/` dirs on this box (`p2default`,
+  `q1probe-ok`, 12:11-12:12 — before `cc0c62f` at 17:58Z) are that deleted line's fossils.
+- **The layout stands as `spec.json`, `seats/`, `logs/`, `run/`, `queue.sqlite`, with two artifacts
+  that must not merge:** `logs/<seat>.jsonl` is the **runner's** log (the pane mirror: the
+  retry/backoff ladder, the cap error, the refusals) and `seats/<seat>/sessions/*.jsonl` is the
+  **agent's** session, the one definition of the transcript (`supervisor/mod.rs:1230` reads it;
+  `runner/mod.rs:101` only points the agent at that directory; the crate's only appenders are the audit
+  hook, the run-state writer, the queue and `spec.json`).
+- **All four items of the change list are withdrawn.** A1's assertion, `RUN_STATE_SUBDIRS`, the
+  `logs/$VICTIM.jsonl` labels and the client's `room stop` prose are correct as written; go-dev's
+  `2800dfb` (`4genthub-min/c3-printed-rig`) makes `start_room` create the layout and the runner's
+  `mirror` append to `logs/<seat>.jsonl`, with two tests pinning it and `cargo test --offline` at 88
+  passed / 0 failed. **One instrument line remains:** B2's cap-string reader must read the runner's log
+  instead of `$(victim_transcript)`, because the runtime never appends a record to a transcript — on the
+  transcript that check cannot fail, while its own label already names the runner's file; the
+  retry/backoff count at `:695` has the same reader and becomes real the same way, and that call is the
+  gate's, not this entry's.
+- **And the verdict run needs `2800dfb` to land:** with it A1 passes on the layout and the nine legs its
+  single assertion starved become measurable. What the reversal costs is one evening's belief, recorded
+  here rather than quietly dropped.
+
 ## Evidence
 
 `ps -eo pid,ppid,cmd`; `agenthub-runtime --state-dir ~/.config/4genthub status 4genthub-min`;
@@ -115,3 +150,12 @@ For the `logs/` ruling: `rust/agenthub-runtime/src/supervisor/mod.rs:1233-1243` 
 `internal/clientroom/room.go:107-108,324,342`; and the acceptance harness read — not run — at
 `wt/4genthub-min/u3-run/ACCEPTANCE-cutover-lab-U3.sh:245,360-361,519,618-619,696,792`. Nothing in the
 lab was edited, and no run was started, stopped or read past its evidence directory.
+
+For the reversal: `agenthub_client@cc0c62f` read through `git show` (the deleted
+`create_dir_all(room_dir.join("logs"))` and the re-pointed `transcript_path`); `git show 2800dfb --stat`
+and its own changelog entry; a writer survey of the crate (`grep -n 'create_dir_all\|fs::write\|append('
+rust/agenthub-runtime/src/`); the harness's own `mkdir` sites (`grep -n mkdir …` → evidence dir, shims,
+`q1root`/`q1pin`, team roots, and no room directory); `ls -la ~/.config/4genthub/rooms/*/logs` for the
+two empty fossils; and `git branch -a --contains 2800dfb` → `4genthub-min/c3-printed-rig`, i.e. **not
+yet reachable from main's submodule pointer**, which is why the verdict run waits on it. Nothing was
+built, merged or run in this pass.
