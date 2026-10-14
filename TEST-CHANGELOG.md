@@ -5525,3 +5525,6 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
   `go test -run TestEnsureSeatColumnsExistOnOldSchema -v ./fastmcp/seat_management/infrastructure/database/`.
 - No existing case was changed or weakened, and no case was removed: `gofmt -l` on both touched files prints nothing,
   `go build ./...` exits 0, and `go vet ./fastmcp/seat_management/infrastructure/database/` exits 0.
+
+## 2026-10-14
+- `agenthub_client/internal/clientwatch/render_test.go`: added `TestEditShowsRemovedAndAddedLinesApart`.
