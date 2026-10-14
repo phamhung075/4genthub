@@ -156,7 +156,7 @@ GLOBAL (per-user) → PROJECT → BRANCH → TASK
 | **Database** | PostgreSQL (dev), SQLite fallback | Path: `/data/agenthub.db` (Docker volume) |
 | **Auth** | Keycloak + JWT tokens | Source of truth for user identity |
 | **Container** | Docker + docker-compose | PostgreSQL Local (recommended for dev) |
-| **MCP** | 15+ tool categories | project agents registered, assigned and rebalanced via `manage_agent` |
+| **MCP** | 9 published tools | tasks, subtasks, context, projects and branches, plus seats (`manage_seat`, `call_seat`), `submit_feedback` and `manage_connection`; the agent registry (`manage_agent`) was retired 2026-10-10 |
 
 ### Local URLs & Paths
 - **Backend**: http://localhost:8000

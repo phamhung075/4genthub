@@ -74,7 +74,7 @@ These are pointers; never copy their content into this file.
   test-fixing priority and the source-of-truth hierarchy, changelog and keep-out detail, docs
   conventions.
 - `ai_docs/agent-system/seat-model-and-mcp-surface.md` — the seat model, tool scope by seat, and
-  the ten published MCP tools.
+  the nine published MCP tools.
 - `ai_docs/agent-system/task-workflow-and-reporting.md` — MCP task/subtask tracking and reporting
   guidance (product usage).
 
@@ -86,9 +86,11 @@ These are pointers; never copy their content into this file.
 - **How to call them.** Write the JSON argument object to the device path `xd://mcp__agenthub_http_<toolname>`
   — `manage_task` for work items, `manage_context` for the context a later reader needs to understand one.
   **Reading the same path returns that tool's schema**, which is where the argument names come from; the
-  server's surface is the **ten** `agenthub_http` tools (`call_seat`, `manage_agent`, `manage_connection`,
+  server's surface is the **nine** `agenthub_http` tools (`call_seat`, `manage_connection`,
   `manage_context`, `manage_git_branch`, `manage_project`, `manage_seat`, `manage_subtask`, `manage_task`,
-  `submit_feedback`).
+  `submit_feedback`). `manage_agent` is not one of them: it was retired 2026-10-10 with the `agents` table
+  and the 32-role registry, and `fastmcp/server/httpapp/manage_agent_absent_test.go` fails the build if it
+  is published again. `manage_seat` is how a seat is read, and `@<seat_key>` is the only assignee identity.
 - **Record as you go rather than at the end.** A task carries a state and an owner, and a row written after
   the work is a row nobody acted on.
 - **IF THE TOOL IS NOT THERE, SAY SO RATHER THAN CONCLUDING IT DOES NOT EXIST.** A call that answers

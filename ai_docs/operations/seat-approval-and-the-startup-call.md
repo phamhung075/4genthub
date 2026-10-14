@@ -71,6 +71,15 @@ tools:
     mcp__agenthub_http_manage_agent: deny
 ```
 
+**One entry above is inert, and it is kept deliberately rather than dropped.** The
+`mcp__agenthub_http_manage_agent` deny names a tool that no longer exists — `manage_agent` was retired
+2026-10-10 with the `agents` table and the 32-role registry — and it survives here because the render this
+section documents still emits it: the client's `RenderConfig`
+(`agenthub_client/internal/clientpolicy/policy.go:175` at the pinned `b1a553eb` — the `:174` above is the
+same function at `eaa6ba7`, the pin that correction was taken at) writes that deny from the list at `:88`. It denies
+nothing, since no such tool can be called; removing the line is a client change, not a docs one, and until
+it lands this block stays an accurate picture of the render.
+
 omp's schema says the other dispositions exist and that a per-command entry wins over the mode:
 
 - `omp config get bash.patterns` → *"Ordered bash command approval rules. Each item has match and approval
