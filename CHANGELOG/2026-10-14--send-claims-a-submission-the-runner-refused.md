@@ -69,11 +69,38 @@ unpredictable rather than merely unreported: **the state file never publishes mi
 predicted this for the seat's own probes, and it is re-measured here on the live room (`run/reviewer.state.json`
 `idle` since 19:50:32Z while its pane has a turn in flight).
 
+## What landed, and which half closes the live room (go-dev, 20:10Z)
+go-dev's half is in **`623d29a`** on `4genthub-min/c3-printed-rig` (with `f14d4a4`, `d04813f`, `c35b562`, on
+`4567c37`), awaiting the reviewer's gate. In the client's own terms the old `RuntimeSendLine` read every
+answer except `unconfirmed` as a delivery, and the *default* line claimed the most where nothing was known:
+a missing outcome **and** non-JSON text both printed `Sent to`. Now only `submitted` earns `Sent to`;
+`unconfirmed` keeps its wording; `relayed` prints `Relayed to X, submission unconfirmed`; missing, unknown
+and unreadable answers each take an unconfirmed line. The old test that pinned the defect as the contract was
+falsified and replaced (`TestOnlyASubmissionEarnsTheSentLine`), and go-dev restored `transport.go`
+byte-identically after showing the new test fails on the old verdict.
+
+The measurement that decides who closes the live room, **verified here rather than taken on report**: the
+installed `~/.local/bin/agenthub-runtime` is **`c1272c6c…`, built 21:09:11 +0200**, and `strings` carries
+**no** `send-{}-{}` — the id format that exists only from `11438a5` (`fix(runtime): deliver send as one text
+frame to a runner seat`, 21:11:16 +0200, `rust/agenthub-runtime/src/supervisor/mod.rs` +71). **So the daemon
+serving the room today predates the runner-relayed path by 65 seconds and answers the PANE path for every
+seat**, which is why the lab log carries `{"outcome":"submitted"}` beside a runner printing `gave up: the
+agent refused the turn` — the pane changed, so by the old rule it was a submission. go-dev's client change
+closes the receipt on any runtime at or after `11438a5`; **on the installed older daemon the same case still
+reads `Sent to`, and the runtime half is what closes the live room.**
+
+## A third path in the same family, routed and not yet fixed
+`4genteam sync messages` acks a pulled message to the cloud as soon as `RuntimeSendText` returns no error
+(`clientsync/messagesverb.go:90`, via `sendToSession`), while its own usage text promises the ack only after
+the text landed. A relayed-and-refused message is therefore acked — and an ack suppresses re-delivery — so
+that path loses the message *and* records it as delivered. go-dev deliberately left it: the honest rule needs
+the runner's verdict back first, or every message to a runner seat stays unacked forever, which is a loop
+rather than a fix. Queued with go-dev as `qitem`-shaped work in the plan, blocked on the runtime half.
+
 ## Assignments
-The client's `send` verdict must not claim more than the runtime knows: it already has a second branch
-(`Pasted to <session>, submission unconfirmed`) and this is the case that must take it — **go-dev**.
-Queueing rather than dropping, reporting the refusal back to the daemon, and publishing mid-turn activity —
-**the reviewer**.
+**go-dev — landed** (`623d29a`, awaiting gate): the client's verdict now claims only what the runtime proved.
+**The reviewer — still open**, and it is the half that closes the live room: report the refusal back so the
+daemon cannot answer `submitted` for it, queue rather than drop, and publish mid-turn activity.
 
 ## Verification
 Every command above is reproduced in this session; the panes, transcripts, state file and harness log are
