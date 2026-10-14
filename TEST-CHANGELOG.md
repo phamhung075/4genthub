@@ -5528,3 +5528,5 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
 
 ## 2026-10-14
 - `agenthub_client/internal/clientwatch/render_test.go`: added `TestEditShowsRemovedAndAddedLinesApart`.
+- `agenthub_client/internal/clientwatch/view_test.go`: added line diff, result folding, `--only` filter, minute stamp, working/quiet status and unknown-kind cases.
+- `agenthub_client/internal/clientwatch/render_test.go`: the two line-cap cases now pass `expand: true`, since results fold by default.
