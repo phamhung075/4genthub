@@ -158,15 +158,18 @@ Legend:
 
 *R1–R7 above are delivered as components. They are not the cutover: on 2026-10-14 the five seats of `4genthub-min` (lead, architect, go-dev, fe-dev, reviewer; `omp` / `deepseek/deepseek-flash`) are still hosted by the OpenRig daemon (node) and one `pi-runner.js` per seat. `agenthub-runtime` daemons run beside them and host no seat. This group is the gate that decides when OpenRig may stop.*
 
+**CORRECTED 2026-10-14 19:47Z (lead): the paragraph above stopped being true that day — the room cut over to the native runner, and C1's row carries the measurement. The standing decision is unchanged: OpenRig's processes stay up until C5, so "up" no longer means "hosting".**
+
 **Owner decisions (standing):**
 - Retire the live OpenRig rig only after **U3 passes**, and only with a snapshot taken first.
 - omp concurrency cap: unchanged.
 - Until then OpenRig stays up; nothing in this group may stop it.
 
-- [ ] **C1: Seats hosted natively (U0, U1, U2)**
+- [x] **C1: Seats hosted natively (U0, U1, U2)** — **MET, measured 2026-10-14 19:47Z (lead)**
   - `4genteam up <rig>` starts every seat on `agenthub-runtime runner` (socketpair RPC, queue store, room lifecycle) with no `pi-runner.js` and no OpenRig daemon.
-  - Work sits on client branch `4genthub-min/u2-native-runner`. At `dbda423` (pushed 2026-10-13, verified: `go vet`, `go test ./...` 24 packages ok, `cargo test` 65 passed) it is **not** merged into `feat/support-agy-watch` (`f193f34`), the parent pin is not bumped, and the build is not installed on the running seats.
-  - **Check**: `ps` shows no `openrig` or `pi-runner.js` process while all five seats are `ready`.
+  - **Check measured and HOLDS**: no `openrig` process and no `pi-runner.js` at all; `agenthub-runtime --state-dir ~/.config/4genthub status 4genthub-min` lists `lead`, `go-dev`, `fe-dev`, `reviewer` (= `omp Running`) and `architect` (= `claude-code Running`); every seat's pane is `agenthub-runtime --state-dir …` in the runtime's own tmux root (`TMUX_TMPDIR=~/.config/4genthub/tmux`, `dead=0` for all five), and each agent is that runner's child (`omp --mode rpc --session-dir …/rooms/4genthub-min/seats/<seat>/sessions --approval-mode yolo --model deepseek/deepseek-flash`).
+  - **The merge/install line that stood here is superseded** (kept only so a reader recognizes it): "Work sits on client branch `4genthub-min/u2-native-runner`. At `dbda423` … it is **not** merged … not installed." The branch is merged as `a118585` ("merge: 4genthub-min/u2-native-runner into feat/support-agy-watch"), the room runs tip `4567c37`, and the install is real: `~/.local/bin/4genteam` `747d761b…` (21:23) and `~/.local/bin/agenthub-runtime` `c1272c6c…` (21:09).
+  - **RESIDUAL DEFECT, outside this check's words (found 2026-10-14; `CHANGELOG/2026-10-14--the-native-room-never-applies-the-seat-overlays.md`)**: the room's `spec.json` has `purpose`/`persona`/`agent_ref` null and `agent_dir: null` for every seat, and the live argv confirms it, so the spec's `guide-*` overlays are never materialised and the seats run without their role growth content. Wants an owner ruling.
 
 - [ ] **C2: Parity the OpenRig host provides today**
   - **Auto-resume** of a turn that ends on a provider stream error (`The socket connection was closed unexpectedly`) — `omp` does not retry, and OpenRig then refuses nudges to that pane.
@@ -241,7 +244,7 @@ Legend:
   - Brings up a throwaway room on `4genteam` alone. Passes only if: all five seats `ready` via `4genteam`; one queue item flows lead → worker → reviewer and closes; a forced provider stream error recovers (C2).
   - **Check**: the run's evidence is recorded in a `CHANGELOG/` entry; a failing run blocks C5.
   - **THE C4 INSTRUMENT'S GUARD WAS WEAKER THAN ITS HEADER, AND IT IS FIXED (reviewer, 05:20Z).** The harness refused only the literal name `4genthub-min`, so `ROOM=definitely-not-a-room --check A1` **ran and left an evidence directory in the rig root** while its header claimed it refuses any other room. Corrected in the artifact: **the scope is `cutover-lab` and nothing else**, with `U3_ALLOW_ROOM=1` as the deliberate override for a second scratch room. Verified by exit codes measured directly: `ROOM=4genthub-min` exit 3 refusing; `ROOM=definitely-not-a-room` exit 3 refusing **and creating nothing**; `ROOM=cutover-lab --plan` exit 0 planning; the override plans a scratch room; `bash -n` clean; the stray directory moved out of the rig root; **the live rig untouched** (5 tmux sessions, room running, 5 seats).
-  - **TWO PRECONDITIONS FOR THE C4 RUN — nobody should be surprised by either.** (1) **`CUTOVER_STATE_DIR` must be set to this seat's runtime state dir** (`~/.openrig/state/omp/4genthub-min-reviewer@4genthub-min/.config/4genthub`), because the script's default `$HOME/.config/4genthub` is **OpenRig's own** and two readings that do not name their daemon are not comparable. (2) **C4 cannot pass before C1/C3 land**, since its A4 predicate is that **no OpenRig process serves the room**.
+  - **TWO PRECONDITIONS FOR THE C4 RUN — nobody should be surprised by either.** (1) **`CUTOVER_STATE_DIR` must be set explicitly, and with OpenRig gone its value is the native state root `$HOME/.config/4genthub`** — the OpenRig seat dir this row used to name (`~/.openrig/state/omp/4genthub-min-reviewer@4genthub-min/.config/4genthub`) no longer exists (measured 2026-10-14 19:5xZ), so the old *value* is void while the old *rule* still binds: **two readings that do not name their daemon are not comparable**, so the run's provenance must carry the socket and both binaries' sha256. (2) **C4 cannot pass before C1/C3 land**, since its A4 predicate is that **no OpenRig process serves the room**.
   - **NAMING WARNING FOR THE RECORD:** the harness's own check ids name its internal parity-5 presence test and its rollback test — **neither is the plan's C3 unit nor the plan's C4 gate.** Cite harness ids **only** as `--check <id>` on `cutover-lab`.
 
 - [ ] **C5: Snapshot, then retire the live OpenRig rig**
