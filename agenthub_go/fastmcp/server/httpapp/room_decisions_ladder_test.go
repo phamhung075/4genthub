@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	roomservices "agenthub/fastmcp/room_decisions/application/services"
+	roomdecisions "agenthub/fastmcp/room_decisions/domain/decisions"
 	roomquestions "agenthub/fastmcp/room_decisions/domain/questions"
 	"agenthub/fastmcp/task_management/infrastructure/database"
 )
@@ -79,4 +80,35 @@ func mustJSON(t *testing.T, v any) []byte {
 		t.Fatal(err)
 	}
 	return raw
+}
+
+// TestRoomDecisionServiceReadsOwnerOnlyCategoriesFromTheEnvironment pins the wiring the stubbed tests
+// above skip: the real factory reads DECISION_OWNER_ONLY_CATEGORIES, so a category the project names
+// goes to the owner without a Jev call (the factory's Jev client is never reached here), and a
+// malformed list is refused when the service is built rather than silently ignored.
+func TestRoomDecisionServiceReadsOwnerOnlyCategoriesFromTheEnvironment(t *testing.T) {
+	roomservices.SetJevDecisionLogPath(filepath.Join(t.TempDir(), "jev_decisions.log"))
+	t.Cleanup(func() { roomservices.SetJevDecisionLogPath("") })
+	sessions := database.NewSessionManager(&database.DatabaseConfig{})
+	questions := json.RawMessage(`[{"id":"q1","question":"Cap?","options":[{"id":"a","label":"A","recommended":true},{"id":"b","label":"B"}]}]`)
+
+	t.Setenv("DECISION_OWNER_ONLY_CATEGORIES", "omp_cap")
+	service, err := newRoomDecisionService(sessions)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, category := range []roomdecisions.Category{"omp_cap", "credentials"} {
+		outcome, err := service.Evaluate(context.Background(), roomdecisions.TierSeat, category, "cap", "detail", questions, roomDecisionNow())
+		if err != nil {
+			t.Fatal(err)
+		}
+		if outcome.Decided || outcome.EscalateTo != roomdecisions.TierOwner || outcome.Questions[0].Recommended != "a" {
+			t.Errorf("%s = %+v, want owner escalation carrying the recommendation", category, outcome)
+		}
+	}
+
+	t.Setenv("DECISION_OWNER_ONLY_CATEGORIES", "has space")
+	if _, err := newRoomDecisionService(sessions); err == nil {
+		t.Error("a malformed DECISION_OWNER_ONLY_CATEGORIES built a service")
+	}
 }
