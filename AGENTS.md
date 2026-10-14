@@ -11,7 +11,7 @@ where context lives, the hard rules every seat shares, and pointers; the rest li
 
 ## 1. Identity first
 
-Run `rig whoami --json`. It returns your rig, pod, member, peers, edges and transcript path, and it
+Run `4genteam whoami --json`. It returns your rig, seat, peers, edges and transcript path, and it
 is ground truth — a startup overlay can be stale. Re-run it after any compaction, restart or
 restore, before concluding anything about where you are.
 
