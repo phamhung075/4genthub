@@ -93,7 +93,9 @@ These are pointers; never copy their content into this file.
   the work is a row nobody acted on.
 - **IF THE TOOL IS NOT THERE, SAY SO RATHER THAN CONCLUDING IT DOES NOT EXIST.** A call that answers
   `No such tool xd://mcp__agenthub_http_…` while the device list holds only the `deepseek` tools means the
-  server is **not mounted into THIS session** — not that it is missing. **The mount is per session:** `omp`'s
-  MCP discovery has a **250 ms startup budget** that the HTTPS `agenthub_http` server misses, so the seat's
-  agent dir carries `mcp.startupTimeoutMs 0`, and **a session gets the tools only after that config plus a
-  start or a relaunch.** Report that state to the lead rather than working around it silently.
+  server is **not mounted into THIS session** — not that it is missing. **The mount is per session:** a
+  session gets the tools only at its start, so a fix applies only after a relaunch. Measured 2026-10-14: the
+  cause was not a startup budget. `omp` also reads the project's `.gemini/settings.json`, and a stale
+  `agenthub_http` entry there (a stdio `mcp-proxy` to `localhost:8000`) overrode the `.mcp.json` entry and failed
+  with `MCP subprocess closed stdout before responding`; with the entry removed the same fresh `omp` mounts the
+  nine tools. Report a missing mount to the lead rather than working around it silently.
