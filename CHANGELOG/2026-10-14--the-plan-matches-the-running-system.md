@@ -65,9 +65,40 @@ below cites the measurement that forced it.
   defect's own words, verdict `APPROVE` (`agenthub_client/GATE-666978b-compact-refusal-noop-2026-10-14.md`).
   What the fix still waits on is the install window.
 - **Item 11 and the C4 provenance bullet carry run 2 as INVALID with run 3 executing**, and §5's item 5
-  reads run 3's verdict as what opens C5. The lead's C4 row keeps the run-2 verdict, the rebuilt fixture
+  reads run 3's verdict as what opens C5 — **both superseded by the section below** (run 3 ran against
+  the live daemon and cannot open C5; run 4, isolated, is the acceptance run). The lead's C4 row keeps the run-2 verdict, the rebuilt fixture
   and the rule it produced ("clean run-state, never fixtures"); this pass only corrected its own stale
   readings and did not restate them.
+
+## The `logs/` ruling, and the runs it corrects (2026-10-14 21:1xZ)
+
+- **`rooms/<room>/logs/` is OUT of the room layout, and the concept was RETIRED rather than merely
+  unimplemented.** The runtime holds exactly one definition of a seat's transcript and it is not
+  `logs/`: `supervisor::transcript_path` resolves the newest `*.jsonl` under
+  `<room>/seats/<seat>/sessions/` (`rust/agenthub-runtime/src/supervisor/mod.rs:1233-1243`, its own
+  test writing that path at `:1687-1697`), and the change that made it so says the removal in the
+  client's own changelog — **"The dead `logs/<seat>.jsonl` creation is removed"**
+  (`agenthub_client/CHANGELOG/2026-10-14--runtime-reads-the-agent-session-transcript.md`). So "make
+  `up` create it" is refused: it would restore a concept deleted the day before and add product code
+  to pass an assertion. The change list is harness-side and four items long — A1 drops `logs` from its
+  loop and label (`ACCEPTANCE-cutover-lab-U3.sh:618-619`), `RUN_STATE_SUBDIRS` drops it (`:245`,
+  tidy-up: removing a directory that never exists is a no-op), the three stale labels that still say
+  `logs/$VICTIM.jsonl` (`:519`, `:696`, `:792`) are re-pointed at the transcript they already read,
+  and the client's shipped `room stop` prose — a false claim in user-facing text — drops the word
+  (`internal/clientroom/room.go:107-108`, `:324`, `:342`, and the stale comment in
+  `room_test.go:382`; that file is go-dev's).
+- **One correction to the finding this plan carries: B2 is NOT vacuous.** Its cap-string leg reads
+  `$(victim_transcript)`, a helper defined at `ACCEPTANCE-cutover-lab-U3.sh:360-361` as "the file omp
+  really writes: the newest session jsonl of the victim seat", so it measures a real file; only the
+  *label* names `logs/$VICTIM.jsonl`. The finding inferred vacuity from the label, and that inference
+  is withdrawn in the R6 row.
+- **The run rows are corrected, not merely re-dated.** Run 3 ran against the **live** daemon
+  (`CUTOVER_STATE_DIR=$HOME/.config/4genthub`), so 7 of its 10 failures are that daemon's stale rail
+  and it cannot open C5; **run 4** — isolated on its own state dir and socket (`/tmp/u3run4/{state,rt}`,
+  a fresh daemon with 0 queue fds) — is the acceptance run at `69 pass / 1 fail / 9 skip`, whose single
+  failure is A1's `logs/` assertion that this ruling resolves. Its rule 2 then skipped A2, B1, A3, B2,
+  B3, C2, C3 and C4, so nine legs were starved by one assertion, and **the verdict is owed from a run
+  on the corrected A1**.
 
 ## Evidence
 
@@ -78,3 +109,9 @@ below cites the measurement that forced it.
 `sha256sum` of both installed binaries; `PATH=/usr/bin:/bin 4genteam whoami|ps|room queue|send`; the
 live `.env`; `u3-run/evidence-run2-20261014T201426Z.stdout`. Nothing on the running room, the cloud or
 the lab was changed by this pass.
+
+For the `logs/` ruling: `rust/agenthub-runtime/src/supervisor/mod.rs:1233-1243` and its own test at
+`:1687-1697`; `agenthub_client/CHANGELOG/2026-10-14--runtime-reads-the-agent-session-transcript.md`;
+`internal/clientroom/room.go:107-108,324,342`; and the acceptance harness read — not run — at
+`wt/4genthub-min/u3-run/ACCEPTANCE-cutover-lab-U3.sh:245,360-361,519,618-619,696,792`. Nothing in the
+lab was edited, and no run was started, stopped or read past its evidence directory.
