@@ -141,6 +141,43 @@ Legend:
 
 ---
 
+### Group C: OpenRig-Free Cutover Gate (owner decisions 2026-10-13/14)
+
+*R1–R7 above are delivered as components. They are not the cutover: on 2026-10-14 the five seats of `4genthub-min` (lead, architect, go-dev, fe-dev, reviewer; `omp` / `deepseek/deepseek-flash`) are still hosted by the OpenRig daemon (node) and one `pi-runner.js` per seat. `agenthub-runtime` daemons run beside them and host no seat. This group is the gate that decides when OpenRig may stop.*
+
+**Owner decisions (standing):**
+- Retire the live OpenRig rig only after **U3 passes**, and only with a snapshot taken first.
+- omp concurrency cap: unchanged.
+- Until then OpenRig stays up; nothing in this group may stop it.
+
+- [ ] **C1: Seats hosted natively (U0, U1, U2)**
+  - `4genteam up <rig>` starts every seat on `agenthub-runtime runner` (socketpair RPC, queue store, room lifecycle) with no `pi-runner.js` and no OpenRig daemon.
+  - Work sits on client branch `4genthub-min/u2-native-runner`. At `dbda423` (pushed 2026-10-13, verified: `go vet`, `go test ./...` 24 packages ok, `cargo test` 65 passed) it is **not** merged into `feat/support-agy-watch` (`f193f34`), the parent pin is not bumped, and the build is not installed on the running seats.
+  - **Check**: `ps` shows no `openrig` or `pi-runner.js` process while all five seats are `ready`.
+
+- [ ] **C2: Parity the OpenRig host provides today**
+  - **Auto-resume** of a turn that ends on a provider stream error (`The socket connection was closed unexpectedly`) — `omp` does not retry, and OpenRig then refuses nudges to that pane.
+  - **Large RPC responses**: chunking and reassembly (`RPC response exceeded the transport limit` ends turns today).
+  - **`send`**: sender identity in the envelope and confirmation that the text was submitted, not left staged in the input box; no dependency on `OPENRIG_STATE_ROOT` (`clientruntime.OpenRigSend`).
+  - **Idle-seat watchdog**: nudge a seat that has an unclaimed pending queue row (measured 2026-10-13: one row unclaimed ~4.5 h while the pane looked idle).
+  - **Check**: a forced stream error is recovered with no human action.
+
+- [ ] **C3: No exec of `rig` from the client (P1, U0)**
+  - The `rig` shim maps `send` back to `send`, so `4genteam send` fails with `RIG, SEAT and MESSAGE are required`. Remove every `rig`-exec fallback (P1 holds the count; re-measure before quoting it).
+  - `rig transcript` and `rig capture` calls (U5) are dead on the native path and need native replacements.
+  - **Check**: `rig` can be removed from `PATH` and `4genteam send`, `whoami --json`, `queue`, `ps` still work.
+
+- [ ] **C4: U3 acceptance run on `cutover-lab`** — the gate
+  - Brings up a throwaway room on `4genteam` alone. Passes only if: all five seats `ready` via `4genteam`; one queue item flows lead → worker → reviewer and closes; a forced provider stream error recovers (C2).
+  - **Check**: the run's evidence is recorded in a `CHANGELOG/` entry; a failing run blocks C5.
+
+- [ ] **C5: Snapshot, then retire the live OpenRig rig**
+  - Snapshot the live rig, then `4genteam` takes over the five seats, then stop the OpenRig daemon and remove the `rig`-exec paths and `openrig.sqlite` dependencies.
+  - Requires C1–C4 closed and the reviewer's gate on the stack passed. Merge, pin bump and install are the lead's call.
+  - **Check**: the team keeps working a queue item end to end with the OpenRig daemon stopped.
+
+---
+
 ### Group O: Orchestration Layer (Adapted from NEXT_GEN)
 
 *The owner vision of 2026-10-08: AI software orchestration layer where goals become tasks executed by brain and worker seats, verified by gates against evidence.*
