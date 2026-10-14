@@ -35,7 +35,7 @@ below cites the measurement that forced it.
   layout is now fully observable, and two rooms are live at once.
 - **C3:** the "`~/.local/bin/rig` is a symlink to `4genteam`" explanation has no subject today, the
   `rig`-exec remainder is **0** at the tip (0 `rig.Run(`, 0 `RequireRig`, 0 `LookPath("rig")`, none of
-  the 25 non-test `exec.Command` sites, no `Rig` primitive), and the check re-run gives `whoami`/`ps`/
+  the **21** non-test `exec.Command`/`exec.CommandContext` code sites — `25` is the string count, = 21 code + 3 comment lines + 1 seam assignment (`internal/clientrestore/paths.go:66`), re-measured at `4567c37` under `internal/`+`cmd/`, and none of them can spell `rig` — 4 pass `argv[0]`, a 5th through the `execCommand` seam, 2 resolve `os.Executable()`, 1 is self-derived `args[0]`, 2 are the toolchain `command[0]`, the rest literals or runtime/`pgrep` paths — no `Rig` primitive), and the check re-run gives `whoami`/`ps`/
   `room queue list` rc 0 and `send` a client-usage dispatch.
 - **C4:** run 2 is recorded as **killed as INVALID at ~20:36Z**, not as a verdict — the room its live legs
   needed had been deleted before it started, so its 22 failures measured a missing room, not the branch
@@ -61,7 +61,9 @@ below cites the measurement that forced it.
   reversions: this file's entry and the §3/§5 corrections are now the branch's only delta over main,
   and the code main gained after this branch's base (the env-loader fix and its test) is untouched.
 - **Item 10's owed measurement is done, not owed.** The reviewer's gate on `666978b` ran the tip's
-  `cargo test --offline`: **88 passed / 0 failed**, with a falsification that reproduces the recorded
+  `cargo test --offline` in its own dated addenda, twice — 20:55:09–11Z, and again 21:47Z headed *the gate is
+  CLOSED*, in the lead's named clone (raw logs `/tmp/offline-666978b.log`, `/tmp/r2-offline-reviewer.log`) —
+  **88 passed / 0 failed, `EXIT=0`** each time, with a falsification that reproduces the recorded
   defect's own words, verdict `APPROVE` (`agenthub_client/GATE-666978b-compact-refusal-noop-2026-10-14.md`).
   What the fix still waits on is the install window.
 - **Item 11 and the C4 provenance bullet carry run 2 as INVALID with run 3 executing**, and §5's item 5
@@ -69,6 +71,24 @@ below cites the measurement that forced it.
   the live daemon and cannot open C5; run 4, isolated, is the acceptance run). The lead's C4 row keeps the run-2 verdict, the rebuilt fixture
   and the rule it produced ("clean run-state, never fixtures"); this pass only corrected its own stale
   readings and did not restate them.
+
+## The reviewer's three plan corrections, applied pre-merge (2026-10-14 22:0xZ)
+
+The reviewer's row (`qitem-20261014214322-8ba7b263ebe8`) named three text corrections and the lead's landing
+order (`qitem-20261014215945-a6d88f4fad3e`) made them a pre-merge condition. All three are in the two bullets
+above and in item 10 of the plan.
+
+- **The R2 line stops attributing `--offline` to the gate's plain run.** That run is `cargo +stable test` with
+  no flag; the offline form is in the same file's own addenda (20:55:09–11Z, and 21:47Z, the second headed
+  *the gate is CLOSED*), and item 10 cites those. `GATE-c3`'s "the R2 `cargo test --offline` … stays held"
+  (20:41Z) is superseded by them, not by this branch.
+- **The `exec.Command` count carries its scope and its instrument:** 21 non-test code sites at client
+  `4567c37` (`exec.Command(` 15 + `exec.CommandContext(` 6, `internal/`+`cmd/`); the `25` a string grep
+  returns is 21 code + 3 comment lines + 1 seam assignment (`internal/clientrestore/paths.go:66`).
+- **The argv[0] class replaces the symlink premise:** `~/.local/bin/rig` does not exist on this box, so the
+  gate's "symlink to `4genteam`" sentence is deleted rather than annotated, and no site can spell `rig` —
+  4 of the 21 pass `argv[0]`, a 5th through the `execCommand` seam, 2 resolve `os.Executable()`, 1 is
+  self-derived `args[0]`, 2 are the toolchain `command[0]`, the rest literals or a runtime/`pgrep` path.
 
 ## The `logs/` ruling, and the runs it corrects (2026-10-14 21:1xZ — the ruling half of this section is REVERSED at 21:2xZ; read the next section first)
 
