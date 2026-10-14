@@ -51,6 +51,6 @@ tool"), `agenthub_client/docs/AGENT-SETUP.md:422` ("mounts ten tools"), and
 struck through, the count sentence is not).
 
 ## Evidence
-`git show --numstat` on this commit: eight files, seven documents and this record. The generator run
+`git show --numstat` on this commit: nine files, eight documents and this record. The generator run
 above; `sed -n`/`read` of every cited line; `git show eaa6ba7:internal/clientpolicy/policy.go` for the
 pinned-versus-old reading.
