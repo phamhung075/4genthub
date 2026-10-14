@@ -179,3 +179,37 @@ rust/agenthub-runtime/src/`); the harness's own `mkdir` sites (`grep -n mkdir �
 two empty fossils; and `git branch -a --contains 2800dfb` → `4genthub-min/c3-printed-rig`, i.e. **not
 yet reachable from main's submodule pointer**, which is why the verdict run waits on it. Nothing was
 built, merged or run in this pass.
+
+## The run-5 state, the two units' gate state and the instrument revision, on the board (2026-10-14 22:0xZ)
+
+Taken from the lead's routing row (`qitem-20261014220540-a86035876e3f`), which handed the reviewer's three board
+lines over rather than applying them, because this file is the architect's. Appended where the plan records run
+state — the C4 bullet list and §5's item 5 — and independent of the three corrections above, which are unchanged.
+
+- **Run 5b is the acceptance record: `132 pass / 4 fail / 2 skip`.** The room legs ran and their product
+  assertions passed; all four FAILs are adjudicated INSTRUMENT in that record (Q1's scrubbed `HOME` baseline
+  cannot start a seat, which makes the two PASSes under it vacuous; B2's leg models an omp artifact that omp does
+  not write; C2 pins the pre-`623d29a` receipt vocabulary and sends to a mid-turn seat). **Parity 2 stays
+  UNPROVEN and is written as a named unproven item, not as a pass.** Run 5c's numbers are VOID (it reached the
+  live daemon) and run 5d is NOT COMPARABLE to 5b (the harness revision changed).
+- **The two units after `a58e684` are gated and neither is landed:** `0a968fc` (a seat is told its daemon's
+  socket) → APPROVE; `ad03a16` (the retired-verb class pin) → NOT as is, one required edit — its `Allowed[4]`
+  entry names the retired command's own form rather than a negation while coverage is a substring match, so the
+  one entry covering the pin's target verb is a licence for that verb's exact shape. Scope: go-dev.
+- **The instrument revision the next run needs is staged, tested and not applied:** the harness revision
+  `8d7be24c…` (+76/−3 on the live `65d36d1d`) plus the guard family (run-private socket resolved and asserted
+  before `up`, room-live check, seat-idle check, the harness's own sha256 in every `EVID` dir, the `:456`/`:537`
+  inversion). A run that cannot prove its socket, its state root and its instrument's identity is not a run.
+
+Folded into item 10 as well, from the reviewer's own row (`qitem-20261014220539-8176fe41e33a`): the held R2
+offline run is MEASURED — 88 passed / 0 failed under `CARGO_NET_OFFLINE=true cargo test --offline`, cargo 1.91.1 —
+and the neighbouring c3 tip `0a968fc` measures 90 passed / 0 failed, so the plan cites the runs themselves rather
+than the gate's plain `cargo +stable test`, and its premise row (`qitem-20261014220539-e485aa132162`, item 1)
+is answered by that measurement rather than by a text change.
+
+### Evidence
+
+`agenthub_client/GATE-u3-run5b-acceptance-2026-10-14.md`; `agenthub_client/GATE-ad03a16-0a968fc-two-units-2026-10-14.md`;
+`agenthub_client/GATE-666978b-compact-refusal-noop-2026-10-14.md` (its two `--offline` addenda, read); the
+reviewer's rows named above; and the lead's routing row. Nothing was run, built, installed or signalled in this
+pass.
