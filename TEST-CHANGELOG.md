@@ -2,6 +2,10 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-14 - The env loader fills an empty variable
+
+- ADDED `TestLoadEnvFillsEmptyAndKeepsNonEmpty` (`agenthub_go/fastmcp/utilities/config_loader_test.go`): a variable exported empty takes the file's value; a non-empty one keeps its own.
+
 ## 2026-10-14 - A room needs its links
 
 - ADDED `TestLoadTeamRefusesARoomOfSeveralSeatsWithNoLinks` (`agenthub_client/internal/clientteam/links_required_test.go`): two seats with no links is refused naming the links; two seats with one link and a single seat with none load.

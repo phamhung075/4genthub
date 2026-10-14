@@ -17,7 +17,8 @@ func DefaultEnvPath() (string, error) {
 }
 
 // LoadEnv reads KEY=VALUE lines from the specified file and sets each variable
-// that is NOT already in the environment. An existing value in os.Environ() wins.
+// that is NOT already set to a non-empty value. A non-empty value in os.Environ() wins;
+// a variable exported empty does not hide the file's value.
 // If the file does not exist, it silently succeeds without error.
 func LoadEnv(path string) error {
 	file, err := os.Open(path)
@@ -44,7 +45,7 @@ func LoadEnv(path string) error {
 		if name == "" {
 			continue
 		}
-		if _, exists := os.LookupEnv(name); exists {
+		if os.Getenv(name) != "" {
 			continue
 		}
 		_ = os.Setenv(name, value)
