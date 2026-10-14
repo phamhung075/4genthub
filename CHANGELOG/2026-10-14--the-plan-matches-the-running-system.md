@@ -42,6 +42,12 @@ below cites the measurement that forced it.
   `~/.openrig` is already gone from disk — the 7-site list was measured on an earlier tree.
 - **P1:** the "18 exec call sites remain" reading is superseded by **0** at the room's tip, and the
   "`send` is a dead verb" sentence is corrected (the shim's refusal is gone; dispatch is measured).
+- **The delivery path itself was measured, because this pass had to deliver its own summary.** `4genteam send`
+  to the lead printed `Sent to …` (rc 0) and landed in neither the transcript nor the pane; the rail
+  (`room queue create`) answered and its two rows are `pending`; and `4genteam send owner-session …` is
+  **refused by name** (no seat named `owner-session` in any room the daemon hosts), so no local `send`
+  reaches the owner-session. Recorded in C2's row and in next-item 1: until the install, a handoff goes
+  on the rail.
 - **O1c / T13 / O-P-D artifacts:** O1c's counts re-run unchanged (51 / 26 / 5), T13's `scripts/tests`
   premise still holds, the cited commits all resolve, and the files those items name exist at those paths.
 
