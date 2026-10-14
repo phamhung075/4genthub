@@ -43,13 +43,37 @@ artifact was replaced when it rebuilt the lab at 20:02Z; the 58-byte prompt abov
 ## Why it matters beyond the two failures
 A brief sent to a mid-turn seat is silently dropped, receipts notwithstanding. Every lead handoff in this
 pod is exposed — including the gate units queued to the reviewer, which is mid-turn for long stretches.
+Two drops were measured by the lead in ten minutes: the fourth gate unit to the reviewer at **20:01Z** (not
+in its transcript, `grep -c '3acf84bd'` = 0, and the reviewer's transcript still holds only its 19:36Z,
+19:43Z and 19:59Z messages) and the C2 send-verdict brief to **go-dev** at **20:04Z** (`Sent to
+agenthub--4genthub-min--go-dev`, exit 0, while go-dev's transcript held 4 user messages and none carried the
+text, re-read three times over six seconds, its pane showing the same `already processing` refusal). Note
+go-dev's state file read `idle` a minute earlier, so neither the receipt nor the state file predicts it.
 Until this is fixed, delivery must be verified against the *target's transcript*, never the receipt.
 
-## Whose it is
+## Whose it is, in the installed code's own terms
+The runner is the only party that learns the truth. The mailbox is a per-seat socket (`rooms/<room>/run/<seat>.sock`,
+`rust/agenthub-runtime/src/runner/mod.rs:8,72-73`), the daemon writes the frame into it, and the *daemon* is
+therefore free to answer `submitted` the moment the write succeeds. The runner then relays the frame to the
+child as a prompt RPC, omp answers `success:false` with `Agent is already processing. Use steer() or
+followUp() …`, and the runner asks its own ladder —
+`decide_resume(is_our_prompt, turn_active || agent_retrying, has_pending, &err, attempts)` — which returns
+`Resume::Nothing("the turn is still running")` because the turn is live. All it does with that is
+`mirror("rpc error, nothing to resume: …")` at **`runner/mod.rs:381`**: no steer, no followUp, no queue, no
+retry, and the frame is gone from the socket. The remedy is named in omp's own error text and unused.
+
+So the fix has a precise shape: the runner must *report the refusal back* (it already constructs the reason)
+and the daemon must answer something other than `submitted` for it; the client's verdict then takes its
+existing `Pasted to …` / `unconfirmed` branch. A third defect in the same family makes the refusal
+unpredictable rather than merely unreported: **the state file never publishes mid-turn activity** — the plan
+predicted this for the seat's own probes, and it is re-measured here on the live room (`run/reviewer.state.json`
+`idle` since 19:50:32Z while its pane has a turn in flight).
+
+## Assignments
 The client's `send` verdict must not claim more than the runtime knows: it already has a second branch
-(`Pasted to <session>, submission unconfirmed`) and this is the case that must take it — go-dev.
-The runner must queue rather than drop (omp names `steer()` / `followUp()`), and the state file must
-publish mid-turn activity so the refusal is at least observable — the reviewer.
+(`Pasted to <session>, submission unconfirmed`) and this is the case that must take it — **go-dev**.
+Queueing rather than dropping, reporting the refusal back to the daemon, and publishing mid-turn activity —
+**the reviewer**.
 
 ## Verification
 Every command above is reproduced in this session; the panes, transcripts, state file and harness log are
