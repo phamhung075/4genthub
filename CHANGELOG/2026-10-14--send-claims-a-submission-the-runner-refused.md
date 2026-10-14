@@ -51,6 +51,12 @@ text, re-read three times over six seconds, its pane showing the same `already p
 go-dev's state file read `idle` a minute earlier, so neither the receipt nor the state file predicts it.
 Until this is fixed, delivery must be verified against the *target's transcript*, never the receipt.
 
+**And the drop rate is not marginal.** The consolidated brief to the reviewer took **five attempts**: four
+were refused and dropped, each one printing `Sent to agenthub--4genthub-min--reviewer` and exiting **0**, and
+the fifth — sent 124 s later, once its turn had ended — landed and is verified in that seat's transcript.
+So half an hour of lead-to-reviewer handoffs in this pod were silently lost, and the only reason the loss is
+visible at all is that every attempt was checked against the target's transcript.
+
 ## Whose it is, in the installed code's own terms
 The runner is the only party that learns the truth. The mailbox is a per-seat socket (`rooms/<room>/run/<seat>.sock`,
 `rust/agenthub-runtime/src/runner/mod.rs:8,72-73`), the daemon writes the frame into it, and the *daemon* is
