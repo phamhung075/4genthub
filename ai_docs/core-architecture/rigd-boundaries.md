@@ -6,8 +6,10 @@
 > cite it by that path - 55 occurrences (`git grep -l` gives the file count and `git grep -o` the
 > occurrences, at main `04fcd5d7`), 24 of the occurrences in 19 code files - and no instrument reads a
 > prose path, which is board T14's class. Renaming the file is a file-by-file prose sweep, worth doing
-> only if this doc becomes consumer-facing. Two clauses that record the rename itself still read `rigd` -
+> only if this doc becomes consumer-facing. **The two clauses of the pre-rename text** still read `rigd` -
 > 7.2's sentence on the six names, and 7.9's ruled peak clause - because they are history, not instruction.
+> A THIRD occurrence is a quotation rather than a clause: 7.1's dated bullet records that the verb landed 37
+> minutes later as `rigd` (`9182f13`), so that token belongs to the date it names, not to this rule.
 
 Decision note by the architect, 2026-10-11. It answers the lead's request `qitem-20261010222721-557596c2630798bc` (owner priority: build NEXT_GEN F4 in two phases). It binds go-dev and fe-dev for phase 1. Phase 2 is designed here and NOT implemented.
 
@@ -49,7 +51,7 @@ Client → server:
 | type | fields | notes |
 |---|---|---|
 | `hello` | `connector_id`; **NEW** `protocol` (int, `1`), `client_version` (string), `capabilities` (array of strings; phase 1 sends `["ingest"]`) | Must be the first frame. A missing `protocol` means 1. |
-| `session` | `session_key`, `name`, `project?`, `room?`, `seat?`; **NEW** `state` (`running` \| `stopped`), `source` (`transcript` \| `capture`) | This is registration. It is re-sent on every reconnect, and whenever `rig ps --json` shows a state change. A seat that leaves `rig ps` is sent once with `state: stopped`. |
+| `session` | `session_key`, `name`, `project?`, `room?`, `seat?`; **NEW** `state` (`running` \| `stopped`), `source` (`transcript` \| `capture`) | This is registration. It is re-sent on every reconnect, and whenever `4genteam ps --json` shows a state change. A seat that leaves `4genteam ps` is sent once with `state: stopped`. |
 | `events` | `session_key`, `events: [{type, payload, ts?}]` (at most 200); **NEW** `cursor` (string, at most 512 bytes, opaque to the server) | Send exactly ONE `events` frame per session and wait for its `events_ack` before sending the next for that session (stop-and-wait). That ordering is what makes the cursor exact. |
 | **NEW** `ping` | `t` (client unix ms) | Sent every `heartbeat_s` seconds. |
 
@@ -204,7 +206,7 @@ In order, each step with its own check:
 
    Check: a PG test that sends a batch, drops the socket before reading the ack, reconnects, and receives `session_ack.cursor` equal to that batch's cursor, with the event count stored exactly once.
 2. **Client, go-dev:**
-   - `4genteam agent`: the long-running loop over `rig ps --json`, a per-session tail of `rig transcript`, stop-and-wait `events`, reconnect with backoff, and no retry on 1008 or 4401;
+   - `4genteam agent`: the long-running loop over `4genteam ps --json`, a per-session tail (`4genteam capture <session> --lines <n>` - there is no `transcript` verb, and `feed` is the room-wide merged stream rather than one session's), stop-and-wait `events`, reconnect with backoff, and no retry on 1008 or 4401;
    - redaction per 4.3 and 4.4, with withheld placeholders;
    - `agent status`.
 
@@ -534,7 +536,7 @@ The clock and `4genteam send` must be seams, so the tests never read wall time.
 
 **7.9a Two inputs from the same row, folded in late. Both were on the row before it closed, at 23:01:50Z and 23:02:22Z.**
 - **A park arms a wake timer only when its blocker can plausibly clear inside the interval.** Otherwise the row's own record and the idle nudge are enough. This is fe-dev's rule, which the lead measured. It is why the 12-hour timer on a missing endpoint was stopped.
-- **`the task queue block --wake-after` arms a RECURRING reminder.** N parked rows therefore show as N reminders, one per row, and none of them are duplicates. Whether a park should be one-shot is the 4genteam owner's surface question, so it joins the 7.7 friction report. The client parks no rows of its own, so 7.9 itself needs no change.
+- **`4genteam room queue update <room> <qitem> --wake-after <seconds>` arms a RECURRING reminder.** N parked rows therefore show as N reminders, one per row, and none of them are duplicates. Whether a park should be one-shot is the 4genteam owner's surface question, so it joins the 7.7 friction report. The client parks no rows of its own, so 7.9 itself needs no change.
 
 ### 7.10 Addendum: the auto-fix (the owner's requirement; the lead's note on `qitem-20261010230121-aba9ffb6153fb3fa`, 23:03Z; board row `411f5351`)
 
@@ -605,13 +607,15 @@ Deleting data, pushing, editing code, changing credentials and every other unsup
 
 ### 7.11 Addendum: a handoff target must be live at closure time (the reviewer's GATE `f541f2f5`; the lead's `qitem-20261010233502-641a56880b826f98`)
 
-**The rule (every seat):** a `handed_off_to` closure takes its destination only from the **live set at closure time**: `rig ps --nodes --rig <rig>` (`sessionStatus: running`) or `4genteam whoami --json`. A commit trailer (`Seat: ...`), the startup identity hint and memory are not evidence that a seat can accept. They can name seats that `team.json` no longer has, such as `@writer` and `@web-dev`. If the destination is not live, re-route the work with `the task queue fallback <qitem>` to a live seat, then close the orphan with the reason recorded.
+**The rule (every seat):** a `handed_off_to` closure takes its destination only from the **live set at closure time**: `4genteam ps <rig> --nodes` (its `--json` rows carry `sessionStatus: running`) or `4genteam whoami --json`. A commit trailer (`Seat: ...`), the startup identity hint and memory are not evidence that a seat can accept. They can name seats that `team.json` no longer has, such as `@writer` and `@web-dev`. If the destination is not live, re-route the work by creating a row for a live seat (`4genteam room queue create <room> --to <live-seat> --summary <text> --reply-to <orphan-qitem>`), then close the orphan `handed_off_to` with that seat as `--target` and the new row named in the note.
 
 **The guard.** There are two options:
 
 | | A: `seatcheck send` refuses a destination that is not live | B: a new verb, `4genteam queue close`, that resolves the live set and refuses |
 |---|---|---|
-| Where the orphan is stopped | at creation: every `the task queue create` and `4genteam send` already passes `seatcheck send`, and `commpolicy.BypassSuspected` flags a direct `the task queue` | at closure only, and only for seats that remember to use the new verb |
-| New surface | one reason, `not_live`, beside `commpolicy.Decide` | a new verb that duplicates `the task queue update` |
+| Where the orphan is stopped | at creation: every `4genteam room queue create` and `4genteam send` already passes `seatcheck send`, and `commpolicy.BypassSuspected` flags a direct `4genteam room queue create` | at closure only, and only for seats that remember to use the new verb |
+| New surface | one reason, `not_live`, beside `commpolicy.Decide` | a new verb that duplicates `4genteam room queue update` |
 
 **Ruling: A.** In addition, `doctor` adds a row, `orphan_handoffs`, which names each pending qitem whose destination is not live. This is the same predicate as `up`'s room/team mismatch check, so both belong to the team-prune item `00f2e9cf`. Neither guard moves a seat.
+
+**DATED NOTE, 2026-10-15 (go-dev): the checker's send verb is GONE, so option A's row above is the record of which choice was made rather than a live description - the two option rows and the ruling itself are kept as they were written, and this sentence is what a reader takes as today's state.** The owner ruled the verb out (it refused every send, and the policy it checked was written by nothing), and `cmd/seatcheck` in the client now carries only the read-only `audit-scan`; **the audited send path is the client's own `4genteam send`**, which builds the room's declared links into a policy at send time, decides, writes the decision line, delivers and writes the outcome line in ONE process (`internal/clientseat`) - which is why the audit is no longer split across two processes' lifetimes. **What 7.11's rule requires of a closure does not change, and it is exactly what the rows closed today did:** the destination is read from `4genteam ps <rig> --nodes`, and the closure carries `--reason handed_off_to --target <session>` with the new row named in the note.

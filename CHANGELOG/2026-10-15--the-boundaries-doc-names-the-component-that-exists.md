@@ -35,11 +35,11 @@ pin.
 - **The file name is unchanged: `rigd-boundaries.md`** (D2). 40 tracked files cite that path and no
   instrument reads prose, so a rename today is a hand sweep whose mistakes nothing catches - board T14's
   class. It becomes worth doing if the doc is ever published consumer-facing.
-- **Two clauses keep the old token because they are the record:** 7.2's sentence on the six safeguard
+- **The two clauses of the pre-rename text keep the old token because they are the record:** 7.2's sentence on the six safeguard
   names, which is where the rename itself is stated, and 7.9's ruled peak clause. Both are dated rulings,
   not instructions.
-- **Nothing here is implemented by the new names.** `agent-consent.json`, `agent-audit.jsonl` and
-  `agent-withheld/` have no reader until phase 2 (`CapabilityCommands = "commands"`,
+- **One of the three new names IS implemented, and this entry said otherwise until the reviewer caught it.** `agent-withheld/` is what the SHIPPED redaction path writes (`agenthub_client/internal/clientsync/agent.go:503`, `:511`, and `internal/clientlifecycle/agent.go:755`), so 4.4's name matches code that runs. **The other two are phase 2 and have no reader:** `agent-consent.json` and
+  `agent-audit.jsonl` (`CapabilityCommands = "commands"`,
   `agenthub_client/internal/clientsync/connector.go:57`, is the capability flag only); D3's naming is the
   design a phase-2 implementer follows, stated now because the doc is what that implementer reads.
 - **7.1's clause about the verb is renamed AND dated, per the architect's ruling.** There was no `agent`
