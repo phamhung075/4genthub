@@ -54,4 +54,4 @@ writes `{"type":"compact"}` straight to omp, which reads it whatever the seat is
 - The 300k abort path has not fired in production yet; the 250k RPC path has (`reviewer`, 279k).
 - The supervisor is a Python process: restart it (`4genteam compact <rig>`) after editing `compact.py` or
   the limits. The uv install of `agenthub_client` is editable, so no reinstall is needed.
-- Seats are discovered from OpenRig at run time; a seat whose session log cannot be found is skipped.
+- Seats are discovered from 4genteam at run time; a seat whose session log cannot be found is skipped.

@@ -149,7 +149,7 @@ with pytest.raises(ValueError, match="cannot exceed 1000"):
 
 **Like any employee starting their shift, you MUST clock in:**
 ```typescript
-// In an OpenRig session, rig whoami --json is the ground truth for your seat.
+// In an 4genteam session, 4genteam whoami --json is the ground truth for your seat.
 // Then read the seat's resolved config (runtime, policy, rendered files):
 mcp__agenthub_http__call_seat(room="<room>", seat="<seat>")
 ```
@@ -338,7 +338,7 @@ mcp__agenthub_http__manage_task(
 4. **ANCHORS** you to the durable position — the seat is the role; the occupant is the brain
 
 **Critical Details:**
-- **FIRST, KNOW WHERE YOU ARE**: `rig whoami --json` is the ground truth for your seat in an OpenRig session
+- **FIRST, KNOW WHERE YOU ARE**: `4genteam whoami --json` is the ground truth for your seat in an 4genteam session
 - **SEAT VS OCCUPANT**: the seat never changes; the occupant (runtime + model) can be switched
 - **TOOL SCOPE**: comes from the seat type and its runtime — read the seat's rendered files before relying on a capability
 - **NO TEMPLATE LOOKUP**: the 32-agent `call_agent` template library was removed; there is no per-agent blueprint to fetch
@@ -347,19 +347,19 @@ mcp__agenthub_http__manage_task(
 **IMMEDIATE ACTION REQUIRED**:
 ```typescript
 // FIRST ACTIONS - NO EXCEPTIONS:
-rig whoami --json                                  // know your seat
+4genteam whoami --json                                  // know your seat
 mcp__agenthub_http__call_seat("<room>", "<seat>")  // read its resolved config
 ```
 **AFTER THIS**: you know your seat, its scope and its rendered context files
 **PURPOSE**: coordinate work, route it to the seats that own it, run the team
 
 ### 2️⃣ TEAM SEAT SESSION (Running inside a rig)
-**YOUR ROLE COMES FROM YOUR SEAT**: the runner delivers your role files at startup; `rig whoami` confirms the seat.
+**YOUR ROLE COMES FROM YOUR SEAT**: the runner delivers your role files at startup; `4genteam whoami` confirms the seat.
 **NO MCP ACCESS**: team seats run in separate sessions without MCP tools — the lead injects what they need.
 **PURPOSE**: execute the work your seat owns, report through the team's channel.
 
 ### ❌ COMMON MISTAKES TO AVOID:
-- **WRONG**: Assuming a role without checking your seat (`rig whoami --json`)
+- **WRONG**: Assuming a role without checking your seat (`4genteam whoami --json`)
 - **WRONG**: Guessing a teammate's capabilities instead of reading the seat's rendered files
 - **WRONG**: Expecting the removed `call_agent` template lookup to answer
 - **WRONG**: Acting outside the seat's permission policy and tool scope
@@ -396,7 +396,7 @@ planner, researcher, reviewer, tester, writer — are resolved per seat by the G
 **SEE THEM**: `mcp__agenthub_http__manage_seat` action="list", room="<room>" (or action="get" for one exact seat).
 
 ### Best Practices for Tool Usage:
-1. **KNOW** your seat before acting (`rig whoami --json`)
+1. **KNOW** your seat before acting (`4genteam whoami --json`)
 2. **READ** the seat's rendered files for the real scope
 3. **ROUTE** work your seat cannot do to a seat that can
 4. **RESPECT** the permission policy stored on the seat
@@ -406,7 +406,7 @@ planner, researcher, reviewer, tester, writer — are resolved per seat by the G
 ```
 1. Session Start (Principal)
     ↓
-2. Establish the seat: rig whoami --json, then call_seat("<room>", "<seat>")
+2. Establish the seat: 4genteam whoami --json, then call_seat("<room>", "<seat>")
     ↓
 2a. Read the seat's rendered files (they are your instructions)
     ↓
@@ -814,12 +814,12 @@ Task(subagent_type="@test-orchestrator-agent", prompt=f"task_id: {test_task['id'
 ### 4. Session Awareness
 - **Principal Session**: You are master-orchestrator
 - **Sub-agent Session**: You are the specialized agent
-- **Always Initialize**: Know your seat first (`rig whoami --json`)
+- **Always Initialize**: Know your seat first (`4genteam whoami --json`)
 
 ## 🎯 QUICK REFERENCE CHECKLIST
 
 Before starting any session:
-- [ ] Established your seat (rig whoami --json, call_seat)?
+- [ ] Established your seat (4genteam whoami --json, call_seat)?
 - [ ] Checked the `tools` array to know your permissions?
 - [ ] Understand what you CAN and CANNOT do?
 
@@ -842,7 +842,7 @@ When receiving agent results:
 ### CALL_AGENT Questions:
 
 **Q: When should I establish my seat?**
-A: IMMEDIATELY upon session start — `rig whoami --json` before ANY other action
+A: IMMEDIATELY upon session start — `4genteam whoami --json` before ANY other action
 
 **Q: How many times should I call it?**
 A: ONCE per session only - at the very beginning
@@ -883,7 +883,7 @@ A: They're obsolete. Tool scope now comes ONLY from the seat type and its render
 A: NO! The system enforces restrictions at the infrastructure level. Violations are automatically blocked
 
 **Q: How do I check what tools I have without trying to use them?**
-A: The seat's rendered files show your scope; `rig whoami --json` shows which seat you are
+A: The seat's rendered files show your scope; `4genteam whoami --json` shows which seat you are
 
 ### MCP TASKS Questions:
 
@@ -928,7 +928,7 @@ A: VERY SPECIFIC - include exact file paths with line numbers, function names, a
 4. **PROFESSIONAL COMMUNICATION**: Keep your manager informed, not surprised
 
 ### Your Professional Performance Standards:
-- **PUNCTUALITY**: Establish your seat immediately when starting work (`rig whoami --json`)
+- **PUNCTUALITY**: Establish your seat immediately when starting work (`4genteam whoami --json`)
 - **TOOL DISCIPLINE**: Use only tools granted to your agent role - respect boundaries
 - **ACCOUNTABILITY**: All work logged in MCP tasks before, during, and after
 - **COMMUNICATION**: Regular updates like any professional employee

@@ -1,6 +1,6 @@
 package contextpacks
 
-// Cases mirrored from the source's own suite — openrig 1a05af1b,
+// Cases mirrored from the source's own suite — the reference implementation,
 // `packages/daemon/test/context-pack-ref-safety.test.ts`
 // (44c78c466956fbfd174fa3bab0952acf1605ca27), plus the store-recursion matrix that consumes the same
 // predicate (`context-pack-store-recursion.test.ts`, "the matrix asserts the per-segment/traversal

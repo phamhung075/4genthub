@@ -176,12 +176,12 @@ func (e *roomDecisionPgEnv) answeredAt(t *testing.T, id string) *time.Time {
 
 func (e *roomDecisionPgEnv) postAnswer(t *testing.T, token, slug, id, body string) (int, string) {
 	t.Helper()
-	return e.postJSON(t, token, "/api/v2/openrig/rooms/"+slug+"/decisions/"+id+"/answer", body)
+	return e.postJSON(t, token, "/api/v2/rooms/"+slug+"/decisions/"+id+"/answer", body)
 }
 
 func (e *roomDecisionPgEnv) getDecisions(t *testing.T, token, slug string) (int, string) {
 	t.Helper()
-	return e.getPath(t, token, "/api/v2/openrig/rooms/"+slug+"/decisions")
+	return e.getPath(t, token, "/api/v2/rooms/"+slug+"/decisions")
 }
 
 // roomDecisionPgIngest is the ask a case sends: the routed item's own id, and the idempotency key
@@ -198,7 +198,7 @@ func roomDecisionPgIngest(roomID, qitem string) string {
 // the swallowed ask (or the nil dereference) this packet's ruling is about, never a success.
 func (e *roomDecisionPgEnv) postIngest(t *testing.T, token, body string) (string, bool, string) {
 	t.Helper()
-	code, res := e.postJSON(t, token, "/api/v2/openrig/decisions", body)
+	code, res := e.postJSON(t, token, "/api/v2/decisions", body)
 	if code != http.StatusOK {
 		t.Fatalf("ingest = %d %s, want 200", code, res)
 	}
@@ -522,7 +522,7 @@ func TestRoomDecisionPgCrossingRoundTrip(t *testing.T) {
 	}
 	pull := func(t *testing.T, token string) (int, answersPage) {
 		t.Helper()
-		code, res := env.getPath(t, token, "/api/v2/openrig/decisions/answers?rig=4genthub-min")
+		code, res := env.getPath(t, token, "/api/v2/decisions/answers?rig=4genthub-min")
 		var got answersPage
 		if err := json.Unmarshal([]byte(res), &got); err != nil {
 			t.Fatalf("decoding the pull response: %v (%s)", err, res)
@@ -570,7 +570,7 @@ func TestRoomDecisionPgCrossingRoundTrip(t *testing.T) {
 	}
 
 	// The ack IS the delivery record: `applied` resolves the row...
-	if code, body := env.postJSON(t, env.tokenA, "/api/v2/openrig/decisions/"+decisionID+"/ack",
+	if code, body := env.postJSON(t, env.tokenA, "/api/v2/decisions/"+decisionID+"/ack",
 		`{"machine_id":"host-1","outcome":"applied"}`); code != http.StatusOK ||
 		!strings.Contains(body, `"delivered":true`) || !strings.Contains(body, `"state":"resolved"`) {
 		t.Fatalf("ack = %d %s, want 200 delivered with the resolved state", code, body)
@@ -586,7 +586,7 @@ func TestRoomDecisionPgCrossingRoundTrip(t *testing.T) {
 		t.Fatalf("pull after the ack = %d %+v, want a page with no answers", code, page)
 	}
 	// A second ack is the state, not the id.
-	if code, body := env.postJSON(t, env.tokenA, "/api/v2/openrig/decisions/"+decisionID+"/ack",
+	if code, body := env.postJSON(t, env.tokenA, "/api/v2/decisions/"+decisionID+"/ack",
 		`{"machine_id":"host-1","outcome":"applied"}`); code != http.StatusConflict {
 		t.Fatalf("second ack = %d %s, want 409", code, body)
 	}
@@ -606,7 +606,7 @@ func TestRoomDecisionPgCrossingRoundTrip(t *testing.T) {
 			t.Fatalf("answer of the second ask = %d %s, want 200", code, body)
 		}
 	}
-	if code, body := env.postJSON(t, env.tokenA, "/api/v2/openrig/decisions/"+droppedID+"/ack",
+	if code, body := env.postJSON(t, env.tokenA, "/api/v2/decisions/"+droppedID+"/ack",
 		`{"machine_id":"host-1","outcome":"dropped","reason":"state-done"}`); code != http.StatusOK ||
 		!strings.Contains(body, `"delivered":true`) || !strings.Contains(body, `"state":"answered"`) {
 		t.Fatalf("dropped ack = %d %s, want 200 delivered with the state kept", code, body)
@@ -621,7 +621,7 @@ func TestRoomDecisionPgCrossingRoundTrip(t *testing.T) {
 		t.Fatalf("pull after the drop = %d %+v, want no answers: a dropped answer is never retried", code, page)
 	}
 	// The state the daemon learned elsewhere is the separate route's job, and it lands on this row.
-	if code, body := env.postJSON(t, env.tokenA, "/api/v2/openrig/decisions/"+droppedID+"/state",
+	if code, body := env.postJSON(t, env.tokenA, "/api/v2/decisions/"+droppedID+"/state",
 		`{"machine_id":"host-1","state":"superseded","reason":"slack-first"}`); code != http.StatusOK ||
 		!strings.Contains(body, `"state":"superseded"`) {
 		t.Fatalf("state push = %d %s, want 200 superseded", code, body)

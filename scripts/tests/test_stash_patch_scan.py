@@ -182,8 +182,8 @@ def test_the_seat_stores_are_found_and_a_store_with_no_patch_is_not(tmp_path: Pa
     module = _module()
     human = tmp_path / "human"  # what the passwd database says, NOT what $HOME says in a seat
     legacy = human / ".cache" / "pre-commit"
-    seat_store = human / ".openrig" / "state" / "omp" / "seat-a@rig" / ".cache" / "pre-commit"
-    empty_store = human / ".openrig" / "state" / "omp" / "seat-b@rig" / ".cache" / "pre-commit"
+    seat_store = human / "config/4genthub" / "state" / "omp" / "seat-a@rig" / ".cache" / "pre-commit"
+    empty_store = human / "config/4genthub" / "state" / "omp" / "seat-b@rig" / ".cache" / "pre-commit"
     for directory in (legacy, seat_store, empty_store):
         directory.mkdir(parents=True)
     (legacy / f"patch{OLD}-1").write_bytes(b"a real patch")

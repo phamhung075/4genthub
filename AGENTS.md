@@ -1,6 +1,6 @@
 <!-- 4genthub project agent instructions. Renamed from CLAUDE.md on 2026-10-05: Claude Code reads
      AGENTS.md natively and it is the cross-tool convention (Codex, Gemini, omp seats read it too).
-     OpenRig is retired and kept only in its directory for review. Native 4genteam is the single
+     4genteam is retired and kept only in its directory for review. Native 4genteam is the single
      orchestrator. -->
 
 # 4genthub agent instructions
@@ -65,8 +65,8 @@ These are pointers; never copy their content into this file.
    the owner's explicit go-ahead. **The remote carries only `main` and `frontend`.** A seat works in a
    local branch or worktree, merges into `main`, and pushes `main` (`frontend` for the frontend line);
    pushing any other remote branch or tag is refused by the `pre-push` hook (`scripts/git-hooks/pre-push-branches`).
-6. **Launch and resume teams with `4genteam`, NEVER legacy OpenRig.** Always run `4genteam up <rig> [--allow-peak]`
-   or `4genteam continue <rig>`. OpenRig daemon and runtime orchestration are retired; `4genteam` runs the full client
+6. **Launch and resume teams with `4genteam`, NEVER legacy 4genteam.** Always run `4genteam up <rig> [--allow-peak]`
+   or `4genteam continue <rig>`. 4genteam daemon and runtime orchestration are retired; `4genteam` runs the full client
    supervisor stack (`agent`, the auto-compaction supervisor `compact-run`, `watchdog`, status `bridge`, and the styled
    `watch` grid). When asked to show the live team, always run `4genteam watch --room <rig>`.
 

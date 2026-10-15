@@ -1,7 +1,7 @@
 ## A seat is told to resume as soon as its compaction is witnessed
 
 ### Fixed
-- `scripts/openrig_compact_supervisor.py`: the witness check sat below the "under the limit" guard, so after a real compaction (context ~42k) it was skipped and `WITNESSED` could never be logged. It now runs first.
+- `scripts/compact_supervisor.py`: the witness check sat below the "under the limit" guard, so after a real compaction (context ~42k) it was skipped and `WITNESSED` could never be logged. It now runs first.
 
 ### Added
 - On a witnessed compaction the supervisor sends the seat `RESUME` (re-read the role file and board item, check the working tree, carry on), once, so a compacted seat keeps working without the owner typing continue. A send with no witness sends nothing.

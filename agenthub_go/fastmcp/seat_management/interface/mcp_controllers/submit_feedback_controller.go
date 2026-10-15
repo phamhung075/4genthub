@@ -18,7 +18,7 @@ import (
 const SubmitFeedbackToolName = "submit_feedback"
 
 // SubmitFeedbackToolDescription is read by LLM seats.
-const SubmitFeedbackToolDescription = "Report friction you hit while working: the layer it is in (runtime, openrig, cloud, seat-context, workspace, other), the room and seat you are, and what happened. The owner reads these grouped by layer."
+const SubmitFeedbackToolDescription = "Report friction you hit while working: the layer it is in (runtime, client, cloud, seat-context, workspace, other), the room and seat you are, and what happened. The owner reads these grouped by layer."
 
 // SubmitFeedbackController is the submit_feedback MCP tool over SeatFeedbackService.
 type SubmitFeedbackController struct {

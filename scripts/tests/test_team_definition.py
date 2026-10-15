@@ -13,7 +13,7 @@ HERE. The eight data cases the split keeps are the whole file: seven about the r
 curation, and none of them reads the client or any other tree.
 
 WHAT LEFT THIS FILE, so it is not quietly missing: the case that digested each recorded `sha256`
-against the OpenRig revision the inventory's `generated_from` names. The rule it checked is
+against the 4genteam revision the inventory's `generated_from` names. The rule it checked is
 implemented by the live Go `team publish-skills` verb, so the case belongs where that verb is,
 driven through it, rather than as a second copy of the rule in Python. It is port row 25 in
 DISPOSITION-retired-python-client-tests-2026-10-10.md, and until that port lands this repository has
@@ -292,7 +292,7 @@ def test_the_inventory_curation_accounts_for_every_skill():
     """Every row has exactly one home, and every curated and unused name resolves to a row.
 
     No checkout is needed - the inventory documents its own curation - so this case runs wherever
-    the suite runs, including on a machine that has never cloned OpenRig.
+    the suite runs, including on a machine that has never cloned 4genteam.
     """
     inventory = json.loads(INVENTORY.read_text(encoding="utf-8"))
 

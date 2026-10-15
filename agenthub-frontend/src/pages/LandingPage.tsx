@@ -34,7 +34,7 @@ import { useTheme } from '../contexts/ThemeContext';
 // step by hand.
 export const PAGE_TITLE = '4genthub - rooms, seats and modules for AI development teams';
 export const PAGE_DESCRIPTION =
-  '4genthub keeps the state of your AI development work in the cloud: rooms, seats and modules. OpenRig runs the seats on your machine with Claude Code, codex, agy or omp.';
+  '4genthub keeps the state of your AI development work in the cloud: rooms, seats and modules. The 4genteam client runs the seats on your machine with Claude Code, codex, agy or omp.';
 
 export const LandingPage: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
@@ -181,7 +181,7 @@ export const LandingPage: React.FC = () => {
     {
       icon: <Globe className="h-8 w-8 text-blue-500" />,
       title: 'Cloud state, local runtime',
-      description: '4genthub keeps the state in the cloud. OpenRig launches and supervises the seats on your machine, and pulls its configuration from here.'
+      description: '4genthub keeps the state in the cloud. The 4genteam client launches and supervises the seats on your machine, and pulls its configuration from here.'
     },
     {
       icon: <Server className="h-8 w-8 text-orange-500" />,
@@ -205,8 +205,8 @@ export const LandingPage: React.FC = () => {
     },
     {
       step: '3',
-      title: 'Launch the seats with OpenRig',
-      description: 'Pull the rig and start the seats on your machine with OpenRig, the client that runs them.',
+      title: 'Launch the seats with 4genteam',
+      description: 'Pull the rig and start the seats on your machine with 4genteam, the client that runs them.',
       icon: <Server className="h-6 w-6" />
     },
     {
@@ -326,7 +326,7 @@ export const LandingPage: React.FC = () => {
               🤖 The seats run on your machine
             </h2>
             <p className="text-lg text-purple-100 mb-8 max-w-3xl mx-auto">
-              4genthub keeps the seat model in the cloud. OpenRig is the client that launches and supervises each seat on your machine; the runtime a seat runs on is one of the four occupant runtimes.
+              4genthub keeps the seat model in the cloud. 4genteam is the client that launches and supervises each seat on your machine; the runtime a seat runs on is one of the four occupant runtimes.
             </p>
 
             <div className="grid md:grid-cols-3 gap-6 mb-8">
@@ -346,7 +346,7 @@ export const LandingPage: React.FC = () => {
                   <h3 className="text-xl font-bold text-white">What runs locally</h3>
                 </div>
                 <p className="text-sm text-purple-100">
-                  OpenRig launches each seat in its own terminal on your machine and reports its state back.
+                  The 4genteam client launches each seat in its own terminal on your machine and reports its state back.
                 </p>
               </Card>
 
@@ -807,7 +807,7 @@ export const LandingPage: React.FC = () => {
             Ready to Transform Your Development Workflow?
           </h2>
           <p className="text-xl mb-8 opacity-90">
-            Create a room, staff the seats, and launch them with OpenRig.
+            Create a room, staff the seats, and launch them with 4genteam.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link to="/register">

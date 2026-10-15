@@ -1,5 +1,5 @@
 // Package seatrenderer renders a resolved seat snapshot into a deterministic
-// OpenRig AgentSpec directory.
+// AgentSpec directory.
 package seatrenderer
 
 import (
@@ -107,10 +107,10 @@ type startupFileYAML struct {
 	Required     bool   `yaml:"required"`
 }
 
-// RenderSeat renders a resolved seat as an OpenRig AgentSpec: agent.yaml, the
+// RenderSeat renders a resolved seat as an AgentSpec: agent.yaml, the
 // seat guidance, one SKILL.md per skill module, and the runtime fragments the
 // seat's runtime supports.
-func RenderSeat(seat resolver.ResolvedSeat, mcpURL string) (*OpenRigSpec, error) {
+func RenderSeat(seat resolver.ResolvedSeat, mcpURL string) (*SeatSpec, error) {
 	if err := resolver.CheckRuntime(seat.Runtime); err != nil {
 		return nil, err
 	}
@@ -126,7 +126,7 @@ func RenderSeat(seat resolver.ResolvedSeat, mcpURL string) (*OpenRigSpec, error)
 	var mcpFragment, settingsFragment string
 	// ONE MCP DOCUMENT, TWO DESTINATIONS. claude-code takes it as a runtime resource; omp takes it as
 	// a plain file the client installs, for the same reason the codex seat gets a rules file below:
-	// OpenRig has no omp MCP fragment type. omp DOES read an MCP document — measured 2026-10-06 on the
+	// the client has no omp MCP fragment type. omp DOES read an MCP document — measured 2026-10-06 on the
 	// real runtime: it reads a project `.mcp.json` at startup, expands ${VAR} in a header and in a
 	// stdio server's `env`, and reads `$PI_CODING_AGENT_DIR/.mcp.json` for the agent itself, which is
 	// where the client installs this file so each seat carries its own server set without a per-seat
@@ -157,7 +157,7 @@ func RenderSeat(seat resolver.ResolvedSeat, mcpURL string) (*OpenRigSpec, error)
 		})
 	}
 
-	// A codex seat gets the seat's Bash deny list as a codex execpolicy rules file. OpenRig has no
+	// A codex seat gets the seat's Bash deny list as a codex execpolicy rules file. the client has no
 	// codex rules runtime-resource type to install it (its only codex fragment type merges a TOML
 	// fragment into ~/.codex/config.toml, and config.toml cannot express a per-command deny), so
 	// the file travels with the render and the client installs it into a rules/ folder of an
@@ -182,7 +182,7 @@ func RenderSeat(seat resolver.ResolvedSeat, mcpURL string) (*OpenRigSpec, error)
 		return nil, err
 	}
 
-	files := []OpenRigSpecFile{
+	files := []SeatSpecFile{
 		{Path: agentYAMLPath, Content: agentYAML},
 		{Path: guidancePath, Content: renderGuidance(seat)},
 	}
@@ -194,7 +194,7 @@ func RenderSeat(seat resolver.ResolvedSeat, mcpURL string) (*OpenRigSpec, error)
 		if err != nil {
 			return nil, fmt.Errorf("skill %q: %w", m.Slug, err)
 		}
-		files = append(files, OpenRigSpecFile{
+		files = append(files, SeatSpecFile{
 			Path:    "skills/" + m.Slug + "/" + skillFileName,
 			Content: block.Content,
 		})
@@ -203,28 +203,28 @@ func RenderSeat(seat resolver.ResolvedSeat, mcpURL string) (*OpenRigSpec, error)
 		// The guides AND the limits text, in the one document omp loads into a session. A seat with
 		// limits but no guide gets it too: the limits are words the seat must read, not a decoration
 		// on the guides. A seat with neither still gets NO file, which is the absence rule.
-		files = append(files, OpenRigSpecFile{Path: agentsMDPath, Content: renderAgentsMD(seat, policySet)})
+		files = append(files, SeatSpecFile{Path: agentsMDPath, Content: renderAgentsMD(seat, policySet)})
 	}
 	if receivesClaudeFragments(seat.Runtime) {
 		if mcpFragment != "" {
-			files = append(files, OpenRigSpecFile{Path: mcpFragmentPath, Content: mcpFragment})
+			files = append(files, SeatSpecFile{Path: mcpFragmentPath, Content: mcpFragment})
 		}
 		if settingsFragment != "" {
-			files = append(files, OpenRigSpecFile{Path: settingsFragmentPath, Content: settingsFragment})
+			files = append(files, SeatSpecFile{Path: settingsFragmentPath, Content: settingsFragment})
 		}
 	}
 	if codexRules != "" {
-		// Deliberately a plain file and NOT a runtime resource: OpenRig has no codex resource type
+		// Deliberately a plain file and NOT a runtime resource: the client has no codex resource type
 		// that installs rules, and declaring an invented type would be a format the platform does
 		// not understand. The client installs this file; see the G3 note.
-		files = append(files, OpenRigSpecFile{Path: codexRulesPath, Content: codexRules})
+		files = append(files, SeatSpecFile{Path: codexRulesPath, Content: codexRules})
 	}
 	if seat.Runtime == resolver.RuntimeOmp && (mcpFragment != "" || policySet.Role != "") {
 		// Same shape as the codex rules file and for the same reason. The client installs it as
 		// `<seat agent dir>/.mcp.json`; a seat with no mcp block gets NO file, which is the
 		// acceptance's "a seat with no mcp block gets none".
 		if mcpFragment != "" {
-			files = append(files, OpenRigSpecFile{Path: ompMCPPath, Content: mcpFragment})
+			files = append(files, SeatSpecFile{Path: ompMCPPath, Content: mcpFragment})
 		}
 		// AND THE SETTING THAT MAKES THE ENTRY MOUNT, in the same delivery because either half
 		// alone fails the seat: see ompMCPStartupTimeoutConfig for the measured root cause.
@@ -239,10 +239,10 @@ func RenderSeat(seat resolver.ResolvedSeat, mcpURL string) (*OpenRigSpec, error)
 				return nil, err
 			}
 		}
-		files = append(files, OpenRigSpecFile{Path: ompConfigPath, Content: configDoc})
+		files = append(files, SeatSpecFile{Path: ompConfigPath, Content: configDoc})
 	}
 
-	return &OpenRigSpec{
+	return &SeatSpec{
 		Slug:    seat.SeatType,
 		Name:    seat.SeatType,
 		Version: seat.SeatTypeVersion,
@@ -382,7 +382,7 @@ var permissionListKeys = []string{"deny", "allow", "ask"}
 func renderCodexRules(merged map[string]any) string {
 	patterns, skipped := codexBashDenyPatterns(merged)
 	var b strings.Builder
-	b.WriteString("# OpenRig comm-guard for codex (execpolicy). Generated from the seat's tool modules.\n")
+	b.WriteString("# Comm-guard for codex (execpolicy). Generated from the seat's tool modules.\n")
 	b.WriteString("# Codex loads this file only when it sits in `rules/` inside an active config layer, for\n")
 	b.WriteString("# example ~/.codex/rules/ or a trusted project's .codex/rules/. Rules are experimental.\n")
 	b.WriteString("# The most restrictive decision wins: forbidden > prompt > allow.\n")
@@ -425,7 +425,7 @@ func codexBashDenyPatterns(merged map[string]any) (patterns [][]string, skipped 
 	return patterns, skipped
 }
 
-// codexPatternFromBashEntry converts `Bash(rig send:*)` to ["rig", "send"]. The `:*` suffix means
+// codexPatternFromBashEntry converts `Bash(4genteam send:*)` to ["4genteam", "send"]. The `:*` suffix means
 // "any arguments", which is what a codex prefix rule matches.
 func codexPatternFromBashEntry(entry string) ([]string, bool) {
 	const prefix = "Bash("

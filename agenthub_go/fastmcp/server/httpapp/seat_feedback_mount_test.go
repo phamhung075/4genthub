@@ -105,7 +105,7 @@ func (f *feedbackFixture) do(method, path, bearer, body string) *httptest.Respon
 
 func (f *feedbackFixture) submit(bearer, body string) *httptest.ResponseRecorder {
 	f.t.Helper()
-	return f.do(http.MethodPost, "/api/v2/openrig/feedback", bearer, body)
+	return f.do(http.MethodPost, "/api/v2/feedback", bearer, body)
 }
 
 type feedbackReadBody struct {
@@ -158,7 +158,7 @@ func TestSeatFeedbackReadIsGroupedByLayerInVocabularyOrder(t *testing.T) {
 		submitted = append(submitted, created.ID)
 	}
 
-	body := readFeedback(t, f.do(http.MethodGet, "/api/v2/openrig/feedback", "user-jwt", ""))
+	body := readFeedback(t, f.do(http.MethodGet, "/api/v2/feedback", "user-jwt", ""))
 	if !body.Success || body.Total != 3 {
 		t.Fatalf("success=%v total=%d, want true and 3", body.Success, body.Total)
 	}
@@ -200,7 +200,7 @@ func TestSeatFeedbackReadIsGroupedByLayerInVocabularyOrder(t *testing.T) {
 }
 
 func TestSeatFeedbackRefusesMalformedAndUnknownLayers(t *testing.T) {
-	const vocabulary = "runtime, openrig, cloud, seat-context, workspace, other"
+	const vocabulary = "runtime, client, cloud, seat-context, workspace, other"
 	cases := []struct {
 		name   string
 		body   string
@@ -261,7 +261,7 @@ func TestSeatFeedbackReadIsTenantScopedAndEmptyIsAnEmptyEnvelope(t *testing.T) {
 		t.Fatalf("submit: %d %s", rec.Code, rec.Body.String())
 	}
 
-	body := readFeedback(t, f.do(http.MethodGet, "/api/v2/openrig/feedback", "user-jwt", ""))
+	body := readFeedback(t, f.do(http.MethodGet, "/api/v2/feedback", "user-jwt", ""))
 	if body.Total != 1 || len(body.Layers) != 1 || body.Layers[0].Layer != "workspace" {
 		t.Fatalf("user A read = %+v, want the one workspace report", body)
 	}
@@ -270,7 +270,7 @@ func TestSeatFeedbackReadIsTenantScopedAndEmptyIsAnEmptyEnvelope(t *testing.T) {
 	}
 
 	f.user = tokenTestUserB
-	rec := f.do(http.MethodGet, "/api/v2/openrig/feedback", "user-jwt", "")
+	rec := f.do(http.MethodGet, "/api/v2/feedback", "user-jwt", "")
 	if rec.Code != http.StatusOK {
 		t.Fatalf("status = %d want 200: %s", rec.Code, rec.Body.String())
 	}
@@ -294,7 +294,7 @@ func TestSeatFeedbackUnauthenticatedIsForbidden(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			for _, method := range []string{http.MethodGet, http.MethodPost} {
-				req := httptest.NewRequest(method, "/api/v2/openrig/feedback", strings.NewReader(`{}`))
+				req := httptest.NewRequest(method, "/api/v2/feedback", strings.NewReader(`{}`))
 				if tc.header != "" {
 					req.Header.Set("Authorization", tc.header)
 				}

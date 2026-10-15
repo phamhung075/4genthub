@@ -52,7 +52,7 @@ MANIFEST_NAME = "MANIFEST.txt"
 DEFAULT_KEEP_DAYS = 7.0
 #: The seam a test replaces to stage the death without killing a real process.
 COMMIT_COMMAND: list[str] = ["git", "commit"]
-SEAT_ENV = "OPENRIG_SEAT"
+SEAT_ENV = "AGENTHUB_SEAT"
 
 
 def git(*args: str, repo: Path | None = None) -> subprocess.CompletedProcess:

@@ -22,7 +22,7 @@ below cites the measurement that forced it.
   ps/tmux/status evidence added beside it. C1 itself still holds.
 - **§1.5 and R7:** the `rig` shim is **gone** — `~/.local/bin/rig` does not exist, `4genteam rig-shim` is
   an unknown command (removal pinned by `TestNoCompatibilityShimVerbIsRegistered`), and the `rig` on
-  `PATH` is the OpenRig npm CLI. The native `whoami` half is re-measured working.
+  `PATH` is the 4genteam npm CLI. The native `whoami` half is re-measured working.
 - **R1:** re-measured at the room's tip `4567c37` — `pty/mod.rs` is 36 tmux hits with 0 `portable_pty`,
   and `socketpair` is 3 in `runner/mod.rs`, so the socketpair half holds at the tip and only the
   "headless PTY" wording stays unsupported.
@@ -42,8 +42,8 @@ below cites the measurement that forced it.
   (`CHANGELOG/2026-10-14--u3-run-2-was-invalid-its-hygiene-ate-the-lab-room.md`); the in-flight reading
   this pass took at 20:2xZ is kept as provenance and marked superseded, and **run 3** (`--all`, pid 1704,
   started 20:37:56Z, evidence `u3-run/evidence-run3-20261014T2040Z`) is the run whose verdict is owed.
-- **C7:** at the tip the client names `.openrig` **0** times and `OPENRIG_STATE_ROOT` **0** times, and
-  `~/.openrig` is already gone from disk — the 7-site list was measured on an earlier tree.
+- **C7:** at the tip the client names `config/4genthub` **0** times and `AGENTHUB_STATE_ROOT` **0** times, and
+  `~/config/4genthub` is already gone from disk — the 7-site list was measured on an earlier tree.
 - **P1:** the "18 exec call sites remain" reading is superseded by **0** at the room's tip, and the
   "`send` is a dead verb" sentence is corrected (the shim's refusal is gone; dispatch is measured).
 - **The delivery path itself was measured, because this pass had to deliver its own summary.** `4genteam send`
@@ -158,7 +158,7 @@ above and in item 10 of the plan.
 ## Evidence
 
 `ps -eo pid,ppid,cmd`; `agenthub-runtime --state-dir ~/.config/4genthub status 4genthub-min`;
-`TMUX_TMPDIR=~/.config/4genthub/tmux tmux list-panes -a`; `GET /api/v2/openrig/rooms`, `…/seats`,
+`TMUX_TMPDIR=~/.config/4genthub/tmux tmux list-panes -a`; `GET /api/v2/rooms`, `…/seats`,
 `…/seats/<seat>/links` (read-only, token from `~/.config/4genthub/.env`); `git grep` on `4567c37` and
 `git cat-file -t` for every cited sha; `ls`/`find` over `~/.config/4genthub/rooms` and `seats/`;
 `sha256sum` of both installed binaries; `PATH=/usr/bin:/bin 4genteam whoami|ps|room queue|send`; the

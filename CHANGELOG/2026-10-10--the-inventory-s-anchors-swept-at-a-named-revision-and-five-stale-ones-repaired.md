@@ -33,7 +33,7 @@
 
 ### The instrument that was reading the wrong tree
 
-- **`~/.openrig/agenthub-seats/4genthub-min/COUNTS-AUDIT.py` was a pre-migration fork** whose `ROOT` was
+- **`~/.config/4genthub/agenthub-seats/4genthub-min/COUNTS-AUDIT.py` was a pre-migration fork** whose `ROOT` was
   hardcoded to the primary checkout. Running it answered with whatever another seat had in flight: it
   reported published tools **9**, core tables **19** and registered tables **39** — go-dev's then-uncommitted
   item-3 retirement — while a clean copy of the same audit at HEAD reports **10 / 20 / 40** and exits 0 with

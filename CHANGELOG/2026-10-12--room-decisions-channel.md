@@ -6,8 +6,8 @@ Scope: `agenthub_go/fastmcp/room_decisions` (new), `agenthub_go/fastmcp/server/h
 ## Summary
 Two routes under the room family's own prefix:
 
-- `GET /api/v2/openrig/rooms/{room}/decisions` - the asks mirrored up for the CALLER in that room, in the shape the panel renders.
-- `POST /api/v2/openrig/rooms/{room}/decisions/{id}/answer` - one click per call, answered as `{state, answers, complete}`.
+- `GET /api/v2/rooms/{room}/decisions` - the asks mirrored up for the CALLER in that room, in the shape the panel renders.
+- `POST /api/v2/rooms/{room}/decisions/{id}/answer` - one click per call, answered as `{state, answers, complete}`.
 
 `{room}` is the SLUG, and the caller is the tenant. The read resolves the room through the room family's visible read (so a shared room is readable) and then scopes the rows to the CALLER's own id, never the room owner's: a viewer of a shared room reads an empty list rather than somebody else's asks. The write resolves the room through the strict owner-scoped read, so a caller who merely shares the room is refused `not-the-asked-human` (403) instead of answering for another human, and a caller with no relationship to the room gets the same 404 an unknown room gets.
 
@@ -34,7 +34,7 @@ From `agenthub_go`, with `AGENTHUB_TEST_PG_URL` set to a throwaway cluster's URL
 See `TEST-CHANGELOG.md` for what each case proves and for the two defects the first DB-backed run exposed.
 
 ## Not run / limits
-- Pushing, deploying, `POST /api/v2/openrig/seat-types/seed` and the re-pin stay the owner's.
+- Pushing, deploying, `POST /api/v2/seat-types/seed` and the re-pin stay the owner's.
 - The ask's route (`POST .../decisions`) does not exist yet, so `RoomDecisionService.Create` is reachable only from tests; a redrive is proven at the SQL level and by the service test, not through a route.
 - The DB-backed cases SKIP without `AGENTHUB_TEST_PG_URL`, loudly: they are not proof unless they run.
 - `resolved`/`superseded` and `answered_at` on the daemon's report-back are not written by this channel, which only records clicks.

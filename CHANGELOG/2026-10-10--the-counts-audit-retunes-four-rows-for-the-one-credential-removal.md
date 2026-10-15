@@ -5,13 +5,13 @@
 
 | row | was | is | what moved it, named |
 |---|---|---|---|
-| `httpapp route registrations` | 126 | **124** | `e5ecff63` deleted `machine_token_mount.go`, which carried `POST /api/v2/openrig/machines` and `DELETE /api/v2/openrig/machines/{machine}/token` |
+| `httpapp route registrations` | 126 | **124** | `e5ecff63` deleted `machine_token_mount.go`, which carried `POST /api/v2/machines` and `DELETE /api/v2/machines/{machine}/token` |
 | `seat tables` | 16 | **15** | the same commit removed the `machine_tokens` depth-1 entry from `seat_tables.go` (the table, its ORM, its repository and its service went with the credential change) |
 | `registered tables total` | 41 | **40** | follows seat tables — 20 + 3 + 15 + 2, counted once and not twice |
 | `SQL CREATE TABLE statements` | 18 | **17** | the same commit deleted the `machine_tokens` statement, 16 lines out of `seat_management_postgresql.sql` |
 
 - **The other httpapp edits in that commit move a wrapper, not a count.** `seat_mount.go`, `seat_status_mount.go`, `seat_feedback_mount.go` and `routes_mount.go` swap `machineAuthed` for `authed` on registrations that STAY, which is why the count falls by exactly the two deletions rather than by seven.
-- **`CITATION-AUDIT.py` is not beside this file.** The docstring said it was and the output named it bare; the tool lives in the seat area (`~/.openrig/agenthub-seats/<seat>/CITATION-AUDIT.py`). Both now say so — a tool named at a path a reader cannot follow is the class this audit exists to catch.
+- **`CITATION-AUDIT.py` is not beside this file.** The docstring said it was and the output named it bare; the tool lives in the seat area (`~/.config/4genthub/agenthub-seats/<seat>/CITATION-AUDIT.py`). Both now say so — a tool named at a path a reader cannot follow is the class this audit exists to catch.
 
 ### Verified
 - **Re-derived at both ends of the move, not adjusted:** the audit's own patterns return `httpapp` **126** at `6cfd56ab` and **124** at `a7990665`; the depth-1 `{Name: ...}` parse **16** at `6cfd56ab` and **15** at `a7990665`; `grep -cE '^CREATE TABLE IF NOT EXISTS'` **18** at `6cfd56ab` and **17** now — while the unanchored `grep -c` reads **18** because it also counts the file's line-6 header comment, which is why the pair is quoted as 15/17/18 and not as 15/17/17.

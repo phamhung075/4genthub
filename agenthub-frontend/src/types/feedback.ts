@@ -14,7 +14,7 @@
 /** The layers a report can name, in the canonical order the backend sends and the page shows. */
 export const FEEDBACK_LAYERS = [
   'runtime',
-  'openrig',
+  'client',
   'cloud',
   'seat-context',
   'workspace',
@@ -26,7 +26,7 @@ export type FeedbackLayer = (typeof FEEDBACK_LAYERS)[number];
 /** What each layer covers, as the directive that fixed the set words it. */
 export const FEEDBACK_LAYER_MEANING: Record<FeedbackLayer, string> = {
   runtime: 'The agent runtime and harness: permissions, prompts, tool availability.',
-  openrig: 'The rig CLI, the daemon, the seat lifecycle, tmux.',
+  client: 'The 4genteam CLI, the daemon, the seat lifecycle, tmux.',
   cloud: 'The platform API and the MCP surface: routes, auth, sync.',
   'seat-context': 'The rendered seat: role text, skills, overlays, blocks.',
   workspace: 'The repository and its tooling: tests, builds, editors.',

@@ -90,11 +90,11 @@ def production_shape() -> dict[str, str]:
             '"/assets/SeatsPage-DRldE7DQ.js":1};\n'
         ),
         "assets/SeatDetailPage-BpUArPYK.js": (
-            'const c="openrig_seat_sync.py switch <room> <seat> --model <id>";\n'
-            'const d="scripts/openrig_seat_sync.py pull ${room} ${seat}";\n'
+            'const c="scripts/seat_sync.py switch <room> <seat> --model <id>";\n'
+            'const d="scripts/seat_sync.py pull ${room} ${seat}";\n'
         ),
         "assets/SeatsPage-DRldE7DQ.js": (
-            'const e="No bridge connected. Run scripts/openrig_bridge.py on your PC.";\n'
+            'const e="No bridge connected. Run scripts/bridge.py on your PC.";\n'
         ),
     }
 
@@ -127,7 +127,7 @@ def test_the_production_shape_reads_stale(tmp_path, capsys):
         assert run(base) == 1
     out = capsys.readouterr().out
     assert "STALE" in out
-    assert "openrig_seat_sync.py" in out and "openrig_bridge.py" in out
+    assert "scripts/seat_sync.py" in out and "scripts/bridge.py" in out
     assert "live verb 'sync pull': ABSENT" in out
 
 
@@ -147,22 +147,22 @@ def test_stale_page_is_found_behind_a_ref_inside_another_chunk(tmp_path, capsys)
         'const pages={"a":"/assets/SeatDetailPage-FRESH0001.js",'
         '"/assets/LegacyPage-FRESH0009.js":1};\n'
     )
-    files["assets/LegacyPage-FRESH0009.js"] = 'const g="scripts/openrig_scrub.py";\n'
+    files["assets/LegacyPage-FRESH0009.js"] = 'const g="scripts/scrub.py";\n'
     with serve(write_tree(tmp_path, files)) as base:
         assert run(base) == 1
     out = capsys.readouterr().out
-    assert "openrig_scrub.py" in out
+    assert "scripts/scrub.py" in out
     assert "LegacyPage-FRESH0009.js" in out  # the report names WHERE, not just that
 
 
 def test_needle_boundary_is_the_discriminator(tmp_path):
-    """Why the census keys on `4genteam` and `openrig_*.py`, and never on `sync pull`.
+    """Why the census keys on `4genteam` and `scripts/*.py`, and never on `sync pull`.
 
-    The old string is `openrig_seat_sync.py pull` - it contains `sync.py pull`, NOT `sync pull`. So a
+    The old string is `scripts/seat_sync.py pull` - it contains `sync.py pull`, NOT `sync pull`. So a
     census that used `sync pull` as the OLD-name needle finds NOTHING on the bundle that still has
     the old string, and reads as "the old string is gone" - a false pass on the exact artifact this
     exists to catch. Pinned here so a later simplification to that needle fails in the suite."""
-    stale = "scripts/openrig_seat_sync.py pull ${room} ${seat}"
+    stale = "scripts/seat_sync.py pull ${room} ${seat}"
     fresh = "4genteam sync pull ${room} ${seat}"
     assert "sync pull" not in stale, "the naive needle cannot see the stale string - that is the trap"
     assert census.DELETED_NAME.search(stale), "the pattern DOES see it"
@@ -174,10 +174,10 @@ def test_needle_boundary_is_the_discriminator(tmp_path):
 def test_a_deleted_name_that_is_not_one_of_the_four_is_still_a_fossil(tmp_path, capsys):
     """The pattern, not a closed list: a future retirement is covered without editing the census."""
     files = fresh_shape()
-    files["assets/SeatDetailPage-FRESH0001.js"] += 'const h="scripts/openrig_summon.py";\n'
+    files["assets/SeatDetailPage-FRESH0001.js"] += 'const h="scripts/summon.py";\n'
     with serve(write_tree(tmp_path, files)) as base:
         assert run(base) == 1
-    assert "openrig_summon.py" in capsys.readouterr().out
+    assert "scripts/summon.py" in capsys.readouterr().out
 
 
 # --- identity --------------------------------------------------------------------------------
@@ -252,7 +252,7 @@ def test_json_report_carries_the_counts_and_the_date(tmp_path, capsys):
     payload = census.json.loads(capsys.readouterr().out)
     assert payload["verdict"] == "STALE"
     assert payload["served_entry"] == "index-BMd9UnWH.js"
-    assert payload["deleted_names"]["openrig_seat_sync.py"]["occurrences"] == 2
+    assert payload["deleted_names"]["scripts/seat_sync.py"]["occurrences"] == 2
     assert payload["last_modified"]["index"]
     assert payload["verbs"]["sync pull"]["files"] == 0
 

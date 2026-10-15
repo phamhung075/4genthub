@@ -4,8 +4,8 @@ package httpapp
 // reporting for its seats submits friction, and the owner reads it grouped by the layer the
 // friction is in.
 //
-//	POST /api/v2/openrig/feedback   user token, tenant-scoped by the caller
-//	GET  /api/v2/openrig/feedback   user token, tenant-scoped by the caller
+//	POST /api/v2/feedback   user token, tenant-scoped by the caller
+//	GET  /api/v2/feedback   user token, tenant-scoped by the caller
 //
 // This file owns the transport only. The writer contract — the layer vocabulary, the bounds, and
 // the credential scan — is SeatFeedbackService, because the channel's other submission path (the
@@ -57,10 +57,10 @@ type seatFeedbackSubmission struct {
 }
 
 func mountSeatFeedbackRoutes(mux *http.ServeMux, sessions *database.SessionManager) {
-	mux.HandleFunc("POST /api/v2/openrig/feedback", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+	mux.HandleFunc("POST /api/v2/feedback", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleSubmitSeatFeedback(w, r, services.SeatFeedbackPoster{UserID: userID(u)}, sessions)
 	}))
-	mux.HandleFunc("GET /api/v2/openrig/feedback", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+	mux.HandleFunc("GET /api/v2/feedback", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleListSeatFeedback(w, r, u, sessions)
 	}))
 }

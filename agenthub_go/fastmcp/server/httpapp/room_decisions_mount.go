@@ -3,10 +3,10 @@ package httpapp
 // room_decisions_mount.go is the room decision channel over HTTP: a human answers, from the panel,
 // the structured questions a rig's daemon mirrored up for their room.
 //
-//	GET  /api/v2/openrig/rooms/{room}/decisions             user token, tenant-scoped by the caller
-//	POST /api/v2/openrig/rooms/{room}/decisions/{id}/answer user token, one click per call
+//	GET  /api/v2/rooms/{room}/decisions             user token, tenant-scoped by the caller
+//	POST /api/v2/rooms/{room}/decisions/{id}/answer user token, one click per call
 //
-// The prefix is the room family's own (`/api/v2/openrig/rooms`, where `{room}` is the SLUG), the
+// The prefix is the room family's own (`/api/v2/rooms`, where `{room}` is the SLUG), the
 // same root rigspec and the seat routes serve: a second prefix for one entity would be a second way
 // to name a room.
 //
@@ -85,25 +85,25 @@ type roomDecisionAnswerRequest struct {
 }
 
 func mountRoomDecisionRoutes(mux *http.ServeMux, sessions *database.SessionManager) {
-	mux.HandleFunc("GET /api/v2/openrig/rooms/{room}/decisions", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+	mux.HandleFunc("GET /api/v2/rooms/{room}/decisions", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleRoomDecisions(w, r, u, sessions)
 	}))
-	mux.HandleFunc("POST /api/v2/openrig/rooms/{room}/decisions/{id}/answer", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+	mux.HandleFunc("POST /api/v2/rooms/{room}/decisions/{id}/answer", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleRoomDecisionAnswer(w, r, u, sessions)
 	}))
 	// The crossing: the four routes a rig's daemon drives. They are RIG-scoped rather than
 	// room-scoped because the daemon has no room model at all - it knows the rig it runs on and the
 	// decision id the cloud handed it, and the cloud, not the daemon, holds the room.
-	mux.HandleFunc("POST /api/v2/openrig/decisions", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+	mux.HandleFunc("POST /api/v2/decisions", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleIngestRoomDecision(w, r, u, sessions)
 	}))
-	mux.HandleFunc("GET /api/v2/openrig/decisions/answers", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+	mux.HandleFunc("GET /api/v2/decisions/answers", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handlePullRoomDecisionAnswers(w, r, u, sessions)
 	}))
-	mux.HandleFunc("POST /api/v2/openrig/decisions/{id}/ack", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+	mux.HandleFunc("POST /api/v2/decisions/{id}/ack", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleAckRoomDecision(w, r, u, sessions)
 	}))
-	mux.HandleFunc("POST /api/v2/openrig/decisions/{id}/state", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+	mux.HandleFunc("POST /api/v2/decisions/{id}/state", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handlePushRoomDecisionState(w, r, u, sessions)
 	}))
 }
@@ -325,10 +325,10 @@ func decodeRoomDecisionBody(w http.ResponseWriter, r *http.Request, out any, max
 
 // The crossing: the daemon's half of the channel, four routes, one per leg of an ask's round trip.
 //
-//	POST /api/v2/openrig/decisions           ingest one mirrored ask
-//	GET  /api/v2/openrig/decisions/answers   pull the answers this rig has not acked
-//	POST /api/v2/openrig/decisions/{id}/ack  record what the daemon did with one answer
-//	POST /api/v2/openrig/decisions/{id}/state push a state it learned without an answer
+//	POST /api/v2/decisions           ingest one mirrored ask
+//	GET  /api/v2/decisions/answers   pull the answers this rig has not acked
+//	POST /api/v2/decisions/{id}/ack  record what the daemon did with one answer
+//	POST /api/v2/decisions/{id}/state push a state it learned without an answer
 //
 // The vocabulary is deliberately the shipped message pull's - query parameter `after`, response field
 // `cursor`, the `success` envelope, `machine_id` on the write bodies - so one daemon-side parser

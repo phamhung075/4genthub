@@ -11,7 +11,7 @@
   minutes before the POST. A message could be sent, answered `ok`, and never read.
 - The stranded row was delivered by hand as part of the same work: `sync messages --rig 4genthub-min
   --dry-run` showed the full text, one pass printed `4genthub-min/lead: 1 delivered, 0 re-acked,
-  0 failed` (exit 0), the ledger `~/.openrig/agenthub-seats/delivered/4genthub-min-lead.ids` holds the
+  0 failed` (exit 0), the ledger `~/.config/4genthub/agenthub-seats/delivered/4genthub-min-lead.ids` holds the
   row id, a re-peek is empty (the cloud was acked), and the lead's pane shows the full text with its
   `From: human@kernel` envelope.
 - SURFACED, NOT FIXED — the one-word `status` the lead's pane showed is NOT a truncated rendering of the
@@ -26,7 +26,7 @@
   derives each seat's session from `rig ps --nodes --rig R --json` (running seats only, by canonical
   session name, room = the rig), and `--watch` runs one pass every 10 s until cancelled — a pass that
   fails is logged and the loop goes on, because a deliverer that exits is how the message reached the
-  cloud and stopped there. Sends are stamped `OPENRIG_SESSION_NAME=human@kernel`, so the receiving seat
+  cloud and stopped there. Sends are stamped `AGENTHUB_SESSION_NAME=human@kernel`, so the receiving seat
   sees the human as the sender (the envelope — From/To/Sent — stays on).
 - `MessagesLogPath` (`agenthub_client/internal/clientlifecycle/paths.go`): `messages-<rig>.log`, what
   every pass printed, so a message that would not land stays readable after the fact.
@@ -42,7 +42,7 @@
   argv `sync messages --rig R --watch`), beside compact-run and the watchdog, so delivery restarts with
   the machine's other safeguards rather than by hand. `doctor` and `lifecycle`'s summaries name it
   (`doctor.go`, `lifecycle.go`).
-- `~/.openrig/agenthub-seats/rigd.json` was found carrying a junk `RIG` entry plus stale safeguard rows
+- `~/.config/4genthub/agenthub-seats/rigd.json` was found carrying a junk `RIG` entry plus stale safeguard rows
   beating 21:56:48–21:57:39Z; it was rewritten clean (`{"rigs":["4genthub-min"],"safeguards":[]}`) and
   rigd now repopulates it each pass. This is operational state, named because a frozen `safeguards` list
   is part of why the outage was not visible in the report.

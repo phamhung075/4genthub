@@ -82,7 +82,7 @@ func seatStatusTestMux(t *testing.T, source seatStatusSource) *http.ServeMux {
 }
 
 func postSeatStatus(mux *http.ServeMux, body string) *httptest.ResponseRecorder {
-	req := httptest.NewRequest(http.MethodPost, "/api/v2/openrig/seat-status", strings.NewReader(body))
+	req := httptest.NewRequest(http.MethodPost, "/api/v2/seat-status", strings.NewReader(body))
 	req.Header.Set("Authorization", "Bearer test-token")
 	rec := httptest.NewRecorder()
 	mux.ServeHTTP(rec, req)
@@ -90,7 +90,7 @@ func postSeatStatus(mux *http.ServeMux, body string) *httptest.ResponseRecorder 
 }
 
 func getMachines(mux *http.ServeMux) *httptest.ResponseRecorder {
-	req := httptest.NewRequest(http.MethodGet, "/api/v2/openrig/machines", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/v2/machines", nil)
 	req.Header.Set("Authorization", "Bearer test-token")
 	rec := httptest.NewRecorder()
 	mux.ServeHTTP(rec, req)

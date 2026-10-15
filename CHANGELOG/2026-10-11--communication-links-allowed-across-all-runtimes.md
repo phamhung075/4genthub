@@ -7,9 +7,9 @@
 2. **Updated test suite**:
    `TestSeatAdminLinkRestrictedToClaudeCodeSeats` in `agenthub_go/fastmcp/server/httpapp/seat_admin_mount_test.go` was updated to assert that allowing links to/from `codex` and `omp` are permitted and return HTTP 200.
 3. **Topology edges reported for `4genthub-min`**:
-   The topology edges representing delegations, collaborations, and escalations between `lead`, `go-dev`, `reviewer`, `fe-dev`, and `architect` are now reported to `/api/v2/openrig/seat-status` and visible in `GET /api/v2/openrig/machines`.
+   The topology edges representing delegations, collaborations, and escalations between `lead`, `go-dev`, `reviewer`, `fe-dev`, and `architect` are now reported to `/api/v2/seat-status` and visible in `GET /api/v2/machines`.
 
 ### Verified
 - `go test ./fastmcp/server/httpapp/...` passed cleanly (1.75s).
 - Changes committed and pushed to `origin/main` (`bcfbb1fa`).
-- Verified edge resolution on cloud endpoints (`https://api.4genthub.com/api/v2/openrig/machines`): 13 directed links for `4genthub-min` resolved.
+- Verified edge resolution on cloud endpoints (`https://api.4genthub.com/api/v2/machines`): 13 directed links for `4genthub-min` resolved.

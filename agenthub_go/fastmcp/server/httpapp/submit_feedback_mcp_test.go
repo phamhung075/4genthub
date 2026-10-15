@@ -207,7 +207,7 @@ func TestMCPSubmitFeedbackAndTheRouteAreOneWriter(t *testing.T) {
 	assertSameRowShape(t, toolRow, routeRow)
 
 	// And the read side renders both through the same grouping.
-	body := readFeedback(t, f.do(http.MethodGet, "/api/v2/openrig/feedback", "user-jwt", ""))
+	body := readFeedback(t, f.do(http.MethodGet, "/api/v2/feedback", "user-jwt", ""))
 	if body.Total != 2 || len(body.Layers) != 1 || body.Layers[0].Count != 2 {
 		t.Fatalf("read = %+v, want one runtime group holding both rows", body)
 	}
@@ -225,7 +225,7 @@ func TestMCPSubmitFeedbackRefusesAnUnknownLayer(t *testing.T) {
 		t.Fatalf("answer = %v, want a refusal", answer)
 	}
 	message, _ := answer["error"].(string)
-	if !strings.Contains(message, "is not one of runtime, openrig, cloud, seat-context, workspace, other") {
+	if !strings.Contains(message, "is not one of runtime, client, cloud, seat-context, workspace, other") {
 		t.Fatalf("refusal = %q, want the vocabulary named", message)
 	}
 	if len(store.reports) != 0 {

@@ -3,13 +3,13 @@
 ### Changed
 
 - `agenthub_go/fastmcp/server/httpapp/seat_mount.go` — the seat chat window's route moves from
-  `POST /api/v2/openrig/seats/{seat}/messages` to
-  `POST /api/v2/openrig/rooms/{room}/seats/{seat}/messages`, the shape every other seat
+  `POST /api/v2/seats/{seat}/messages` to
+  `POST /api/v2/rooms/{room}/seats/{seat}/messages`, the shape every other seat
   sub-resource already uses (`/overlay`, `/links`, `/occupant`). A bare seat key cannot name a
   seat: the schema's `uq_seats_room_seat_key` makes a seat unique per `(room_id, seat_key)`, so a
   key-only path could name one only by guessing its room, and the guess is silently wrong for every
   user with two rooms carrying the same seat key. The route therefore no longer shares a path with
-  the resolution `GET /api/v2/openrig/seats/{room}/{seat}`, which keeps both its path and its verb.
+  the resolution `GET /api/v2/seats/{room}/{seat}`, which keeps both its path and its verb.
 
 ### Added
 
@@ -28,7 +28,7 @@
   client-side until the delivery store exists (row (c)); this route is that row's prerequisite.
 - The body is still decoded BEFORE the seat is resolved, so a malformed request is refused for
   being malformed rather than for the seat's absence.
-- The resolution `GET /api/v2/openrig/seats/{room}/{seat}` does not move: its path is a live client
+- The resolution `GET /api/v2/seats/{room}/{seat}` does not move: its path is a live client
   contract and nothing here needs it changed.
 
 ### Testing
@@ -48,7 +48,7 @@
 
 - `agenthub-frontend/src/docs/apiReference.ts` is generated from this route table and is now one
   entry behind: `go run ./cmd/apirefgen -out /tmp/apiReference.ts` adds exactly one route
-  (`POST /api/v2/openrig/rooms/{room}/seats/{seat}/messages`, 10 lines, 144 routes total), and
+  (`POST /api/v2/rooms/{room}/seats/{seat}/messages`, 10 lines, 144 routes total), and
   `agenthub_go/internal/apiref TestTheCommittedArtefactMatchesTheProducer` stays red until that
   file is regenerated. **That gate was already red at HEAD**, for the key-only route it never
   listed, and it is red for the moved route here. The artefact is a frontend file, so it is left to

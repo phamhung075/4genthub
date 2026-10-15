@@ -11,7 +11,7 @@ func TestCheckRuntime(t *testing.T) {
 			t.Errorf("CheckRuntime(%q) = %v", runtime, err)
 		}
 	}
-	// "pi" stays here deliberately: OpenRig supports it, but the renderer and this list do not
+	// "pi" stays here deliberately: the client supports it, but the renderer and this list do not
 	// until an omp-style decision is made for it.
 	for _, runtime := range []string{"pi", "gemini", "", "Codex"} {
 		err := CheckRuntime(runtime)

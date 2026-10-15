@@ -544,7 +544,7 @@ func TestSeatAdminMutationsBroadcastOneSeatFrame(t *testing.T) {
 	// Each scope adds a distinct module: the same slug in two scopes would be a duplicate add
 	// on every shared seat, which the overlay fold now refuses.
 	for _, slug := range []string{"instr-room", "instr-company", "instr-seat"} {
-		if rec := doTestRequest(t, mux, http.MethodPut, "/api/v2/openrig/modules/"+slug+"/versions/1.0.0", `{"kind":"instruction","content":"c"}`); rec.Code != http.StatusOK {
+		if rec := doTestRequest(t, mux, http.MethodPut, "/api/v2/modules/"+slug+"/versions/1.0.0", `{"kind":"instruction","content":"c"}`); rec.Code != http.StatusOK {
 			t.Fatalf("seed module %s: %d %s", slug, rec.Code, rec.Body.String())
 		}
 	}
@@ -553,19 +553,19 @@ func TestSeatAdminMutationsBroadcastOneSeatFrame(t *testing.T) {
 	steps := []struct {
 		name, method, path, body, entity, action, id string
 	}{
-		{"room create", http.MethodPost, "/api/v2/openrig/rooms", `{"slug":"team","name":"Team"}`, "room", "created", "team"},
-		{"seat create", http.MethodPost, "/api/v2/openrig/rooms/dev/seats", `{"seat_key":"alice","seat_type":"coder","runtime":"claude-code"}`, "seat", "created", "dev/alice"},
-		{"permission policy", http.MethodPut, "/api/v2/openrig/rooms/dev/seats/alice/permission-policy", `{"permission_policy":"yolo"}`, "seat", "updated", "dev/alice"},
-		{"room overlay", http.MethodPut, "/api/v2/openrig/rooms/dev/overlay", overlay("instr-room"), "room", "updated", "dev"},
-		{"company overlay", http.MethodPut, "/api/v2/openrig/overlay", overlay("instr-company"), "room", "updated", "company"},
-		{"seat overlay", http.MethodPut, "/api/v2/openrig/rooms/dev/seats/alice/overlay", overlay("instr-seat"), "seat", "updated", "dev/alice"},
-		{"seat create bob", http.MethodPost, "/api/v2/openrig/rooms/dev/seats", `{"seat_key":"bob","seat_type":"coder","runtime":"claude-code"}`, "seat", "created", "dev/bob"},
-		{"link upsert", http.MethodPut, "/api/v2/openrig/rooms/dev/seats/alice/links", `{"to_seat":"bob","kind":"delegates_to"}`, "seat", "updated", "dev/alice"},
-		{"occupant", http.MethodPut, "/api/v2/openrig/rooms/dev/seats/alice/occupant", `{"runtime":"omp","model":"deepseek/deepseek-flash"}`, "seat", "updated", "dev/alice"},
-		{"settings", http.MethodPut, "/api/v2/openrig/settings", `{"follow_latest":true}`, "room", "updated", "company"},
-		{"seat delete", http.MethodDelete, "/api/v2/openrig/rooms/dev/seats/alice", "", "seat", "deleted", "dev/alice"},
-		{"seat delete bob", http.MethodDelete, "/api/v2/openrig/rooms/dev/seats/bob", "", "seat", "deleted", "dev/bob"},
-		{"room delete", http.MethodDelete, "/api/v2/openrig/rooms/dev", "", "room", "deleted", "dev"},
+		{"room create", http.MethodPost, "/api/v2/rooms", `{"slug":"team","name":"Team"}`, "room", "created", "team"},
+		{"seat create", http.MethodPost, "/api/v2/rooms/dev/seats", `{"seat_key":"alice","seat_type":"coder","runtime":"claude-code"}`, "seat", "created", "dev/alice"},
+		{"permission policy", http.MethodPut, "/api/v2/rooms/dev/seats/alice/permission-policy", `{"permission_policy":"yolo"}`, "seat", "updated", "dev/alice"},
+		{"room overlay", http.MethodPut, "/api/v2/rooms/dev/overlay", overlay("instr-room"), "room", "updated", "dev"},
+		{"company overlay", http.MethodPut, "/api/v2/overlay", overlay("instr-company"), "room", "updated", "company"},
+		{"seat overlay", http.MethodPut, "/api/v2/rooms/dev/seats/alice/overlay", overlay("instr-seat"), "seat", "updated", "dev/alice"},
+		{"seat create bob", http.MethodPost, "/api/v2/rooms/dev/seats", `{"seat_key":"bob","seat_type":"coder","runtime":"claude-code"}`, "seat", "created", "dev/bob"},
+		{"link upsert", http.MethodPut, "/api/v2/rooms/dev/seats/alice/links", `{"to_seat":"bob","kind":"delegates_to"}`, "seat", "updated", "dev/alice"},
+		{"occupant", http.MethodPut, "/api/v2/rooms/dev/seats/alice/occupant", `{"runtime":"omp","model":"deepseek/deepseek-flash"}`, "seat", "updated", "dev/alice"},
+		{"settings", http.MethodPut, "/api/v2/settings", `{"follow_latest":true}`, "room", "updated", "company"},
+		{"seat delete", http.MethodDelete, "/api/v2/rooms/dev/seats/alice", "", "seat", "deleted", "dev/alice"},
+		{"seat delete bob", http.MethodDelete, "/api/v2/rooms/dev/seats/bob", "", "seat", "deleted", "dev/bob"},
+		{"room delete", http.MethodDelete, "/api/v2/rooms/dev", "", "room", "deleted", "dev"},
 	}
 	for _, step := range steps {
 		before := len(frames)
@@ -590,7 +590,7 @@ func TestSeatAdminMutationsBroadcastOneSeatFrame(t *testing.T) {
 
 	// A rejected mutation must not announce anything.
 	before := len(frames)
-	if rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/rooms", `{"slug":"team","name":"Again"}`); rec.Code != http.StatusConflict {
+	if rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/rooms", `{"slug":"team","name":"Again"}`); rec.Code != http.StatusConflict {
 		t.Fatalf("duplicate room: status = %d, want 409", rec.Code)
 	}
 	if len(frames) != before {
@@ -607,7 +607,7 @@ func TestSeatAdminLinkRestrictedToClaudeCodeSeats(t *testing.T) {
 	create := func(seatKey, runtime string) {
 		t.Helper()
 		body := `{"seat_key":"` + seatKey + `","seat_type":"coder","runtime":"` + runtime + `"}`
-		if rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/rooms/dev/seats", body); rec.Code != http.StatusOK {
+		if rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/rooms/dev/seats", body); rec.Code != http.StatusOK {
 			t.Fatalf("create %s/%s: %d %s", seatKey, runtime, rec.Code, rec.Body.String())
 		}
 	}
@@ -615,7 +615,7 @@ func TestSeatAdminLinkRestrictedToClaudeCodeSeats(t *testing.T) {
 	create("coderx", "codex")
 	create("gamma", "claude-code")
 
-	link := "/api/v2/openrig/rooms/dev/seats/alpha/links"
+	link := "/api/v2/rooms/dev/seats/alpha/links"
 	// An allowing link into a codex/omp seat is now permitted.
 	rec := doTestRequest(t, mux, http.MethodPut, link, `{"to_seat":"coderx","kind":"delegates_to"}`)
 	if rec.Code != http.StatusOK {
@@ -635,7 +635,7 @@ func TestSeatAdminLinkRestrictedToClaudeCodeSeats(t *testing.T) {
 
 func TestSeatAdminRooms(t *testing.T) {
 	mux := seatAdminTestMux(t, newFakeSeatAdmin())
-	rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/rooms", `{"slug":"dev","name":"Development"}`)
+	rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/rooms", `{"slug":"dev","name":"Development"}`)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("create room: status = %d: %s", rec.Code, rec.Body.String())
 	}
@@ -644,17 +644,17 @@ func TestSeatAdminRooms(t *testing.T) {
 			t.Errorf("create room body missing %s: %s", want, rec.Body.String())
 		}
 	}
-	rec = doTestRequest(t, mux, http.MethodGet, "/api/v2/openrig/rooms", "")
+	rec = doTestRequest(t, mux, http.MethodGet, "/api/v2/rooms", "")
 	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"name":"Development"`) {
 		t.Errorf("list rooms: %d %s", rec.Code, rec.Body.String())
 	}
 
 	// A second create of the same slug is a conflict that keeps the stored name.
-	rec = doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/rooms", `{"slug":"dev","name":"Renamed"}`)
+	rec = doTestRequest(t, mux, http.MethodPost, "/api/v2/rooms", `{"slug":"dev","name":"Renamed"}`)
 	if rec.Code != http.StatusConflict || !strings.Contains(rec.Body.String(), "already exists") {
 		t.Errorf("duplicate room: status = %d, want 409 already exists: %s", rec.Code, rec.Body.String())
 	}
-	rec = doTestRequest(t, mux, http.MethodGet, "/api/v2/openrig/rooms", "")
+	rec = doTestRequest(t, mux, http.MethodGet, "/api/v2/rooms", "")
 	if !strings.Contains(rec.Body.String(), `"name":"Development"`) || strings.Contains(rec.Body.String(), "Renamed") {
 		t.Errorf("duplicate create changed the room: %s", rec.Body.String())
 	}
@@ -664,7 +664,7 @@ func TestSeatAdminCreateRoomRejectsLongName(t *testing.T) {
 	mux := seatAdminTestMux(t, newFakeSeatAdmin())
 	for name, want := range map[string]int{strings.Repeat("n", 200): http.StatusOK, strings.Repeat("n", 201): http.StatusBadRequest} {
 		slug := "r" + strconv.Itoa(len(name))
-		rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/rooms", `{"slug":"`+slug+`","name":"`+name+`"}`)
+		rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/rooms", `{"slug":"`+slug+`","name":"`+name+`"}`)
 		if rec.Code != want {
 			t.Errorf("name of %d chars: status = %d, want %d: %s", len(name), rec.Code, want, rec.Body.String())
 		}
@@ -676,7 +676,7 @@ func TestSeatAdminCreateSeatPinsByDefault(t *testing.T) {
 	fake.seedRoom("dev")
 	fake.seedSeatType("coder", "1.0.0")
 	mux := seatAdminTestMux(t, fake)
-	rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/rooms/dev/seats",
+	rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/rooms/dev/seats",
 		`{"seat_key":"alice","seat_type":"coder","runtime":"claude-code","model":"sonnet"}`)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("create seat: status = %d: %s", rec.Code, rec.Body.String())
@@ -693,7 +693,7 @@ func TestSeatAdminCreateSeatFollowLatest(t *testing.T) {
 	fake.seedRoom("dev")
 	fake.seedSeatType("coder", "1.0.0")
 	mux := seatAdminTestMux(t, fake)
-	rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/rooms/dev/seats",
+	rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/rooms/dev/seats",
 		`{"seat_key":"bob","seat_type":"coder","runtime":"codex","model":"gpt","follow_latest":true}`)
 	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"pinned_version":null`) {
 		t.Errorf("follow_latest: %d %s", rec.Code, rec.Body.String())
@@ -705,12 +705,12 @@ func TestSeatAdminCreateSeatExplicitPin(t *testing.T) {
 	fake.seedRoom("dev")
 	fake.seedSeatType("coder", "1.0.0", "0.9.0")
 	mux := seatAdminTestMux(t, fake)
-	rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/rooms/dev/seats",
+	rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/rooms/dev/seats",
 		`{"seat_key":"alice","seat_type":"coder","pinned_version":"0.9.0","runtime":"claude-code","model":"sonnet"}`)
 	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"pinned_version":"0.9.0"`) {
 		t.Errorf("explicit pin: %d %s", rec.Code, rec.Body.String())
 	}
-	rec = doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/rooms/dev/seats",
+	rec = doTestRequest(t, mux, http.MethodPost, "/api/v2/rooms/dev/seats",
 		`{"seat_key":"carol","seat_type":"coder","pinned_version":"9.9.9","runtime":"claude-code","model":"sonnet"}`)
 	if rec.Code != http.StatusBadRequest {
 		t.Errorf("missing pinned version: status = %d, want 400", rec.Code)
@@ -725,7 +725,7 @@ func TestSeatAdminListSeatTypes(t *testing.T) {
 		ID: "st-empty", Slug: "empty", Name: "Empty", Description: "desc-empty",
 	})
 	mux := seatAdminTestMux(t, fake)
-	rec := doTestRequest(t, mux, http.MethodGet, "/api/v2/openrig/seat-types", "")
+	rec := doTestRequest(t, mux, http.MethodGet, "/api/v2/seat-types", "")
 	if rec.Code != http.StatusOK {
 		t.Fatalf("list seat types: status = %d: %s", rec.Code, rec.Body.String())
 	}
@@ -744,7 +744,7 @@ func TestSeatAdminListSeatTypes(t *testing.T) {
 func TestSeatAdminPutModuleVersion(t *testing.T) {
 	fake := newFakeSeatAdmin()
 	mux := seatAdminTestMux(t, fake)
-	const path = "/api/v2/openrig/modules/my-skill/versions/1.0.0"
+	const path = "/api/v2/modules/my-skill/versions/1.0.0"
 	block := testSkillBlock(t, "# A skill\n")
 	sum := sha256.Sum256([]byte(block))
 	sha := hex.EncodeToString(sum[:])
@@ -776,14 +776,14 @@ func TestSeatAdminPutModuleVersionRejectsInvalidInput(t *testing.T) {
 		name, path, body string
 		status           int
 	}{
-		{"bad slug", "/api/v2/openrig/modules/Bad_Slug/versions/1.0.0", `{"kind":"skill","content":"x"}`, http.StatusBadRequest},
-		{"latest version", "/api/v2/openrig/modules/m/versions/latest", `{"kind":"skill","content":"x"}`, http.StatusBadRequest},
-		{"partial version", "/api/v2/openrig/modules/m/versions/1.0", `{"kind":"skill","content":"x"}`, http.StatusBadRequest},
-		{"bad kind", "/api/v2/openrig/modules/m/versions/1.0.0", `{"kind":"widget","content":"x"}`, http.StatusBadRequest},
-		{"empty content", "/api/v2/openrig/modules/m/versions/1.0.0", `{"kind":"skill","content":""}`, http.StatusBadRequest},
-		{"oversize content", "/api/v2/openrig/modules/m/versions/1.0.0", `{"kind":"skill","content":"` + strings.Repeat("a", 65537) + `"}`, http.StatusBadRequest},
-		{"unknown field", "/api/v2/openrig/modules/m/versions/1.0.0", `{"kind":"skill","content":"x","extra":1}`, http.StatusBadRequest},
-		{"secret", "/api/v2/openrig/modules/m/versions/1.0.0", `{"kind":"skill","content":"key AKIAABCDEFGHIJKLMNOP"}`, http.StatusUnprocessableEntity},
+		{"bad slug", "/api/v2/modules/Bad_Slug/versions/1.0.0", `{"kind":"skill","content":"x"}`, http.StatusBadRequest},
+		{"latest version", "/api/v2/modules/m/versions/latest", `{"kind":"skill","content":"x"}`, http.StatusBadRequest},
+		{"partial version", "/api/v2/modules/m/versions/1.0", `{"kind":"skill","content":"x"}`, http.StatusBadRequest},
+		{"bad kind", "/api/v2/modules/m/versions/1.0.0", `{"kind":"widget","content":"x"}`, http.StatusBadRequest},
+		{"empty content", "/api/v2/modules/m/versions/1.0.0", `{"kind":"skill","content":""}`, http.StatusBadRequest},
+		{"oversize content", "/api/v2/modules/m/versions/1.0.0", `{"kind":"skill","content":"` + strings.Repeat("a", 65537) + `"}`, http.StatusBadRequest},
+		{"unknown field", "/api/v2/modules/m/versions/1.0.0", `{"kind":"skill","content":"x","extra":1}`, http.StatusBadRequest},
+		{"secret", "/api/v2/modules/m/versions/1.0.0", `{"kind":"skill","content":"key AKIAABCDEFGHIJKLMNOP"}`, http.StatusUnprocessableEntity},
 	}
 	for _, c := range cases {
 		rec := doTestRequest(t, mux, http.MethodPut, c.path, c.body)
@@ -799,17 +799,17 @@ func TestSeatAdminPutModuleVersionRejectsInvalidInput(t *testing.T) {
 func TestSeatAdminListModules(t *testing.T) {
 	fake := newFakeSeatAdmin()
 	mux := seatAdminTestMux(t, fake)
-	rec := doTestRequest(t, mux, http.MethodGet, "/api/v2/openrig/modules", "")
+	rec := doTestRequest(t, mux, http.MethodGet, "/api/v2/modules", "")
 	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"modules":[]`) {
 		t.Fatalf("empty list: %d %s", rec.Code, rec.Body.String())
 	}
-	if rec = doTestRequest(t, mux, http.MethodPut, "/api/v2/openrig/modules/zeta/versions/1.0.0", testModuleBody(t, "skill", testSkillBlock(t, "# zeta\n"))); rec.Code != http.StatusOK {
+	if rec = doTestRequest(t, mux, http.MethodPut, "/api/v2/modules/zeta/versions/1.0.0", testModuleBody(t, "skill", testSkillBlock(t, "# zeta\n"))); rec.Code != http.StatusOK {
 		t.Fatalf("put module: %d %s", rec.Code, rec.Body.String())
 	}
-	if rec = doTestRequest(t, mux, http.MethodPut, "/api/v2/openrig/modules/alpha/versions/1.2.0", `{"kind":"instruction","content":"a"}`); rec.Code != http.StatusOK {
+	if rec = doTestRequest(t, mux, http.MethodPut, "/api/v2/modules/alpha/versions/1.2.0", `{"kind":"instruction","content":"a"}`); rec.Code != http.StatusOK {
 		t.Fatalf("put module: %d %s", rec.Code, rec.Body.String())
 	}
-	rec = doTestRequest(t, mux, http.MethodGet, "/api/v2/openrig/modules", "")
+	rec = doTestRequest(t, mux, http.MethodGet, "/api/v2/modules", "")
 	body := rec.Body.String()
 	alpha := strings.Index(body, `"slug":"alpha","kind":"instruction","version":"1.2.0","sha256":"`)
 	zeta := strings.Index(body, `"slug":"zeta","kind":"skill","version":"1.0.0","sha256":"`)
@@ -827,11 +827,11 @@ func TestSeatAdminCreateSeatTypeVersion(t *testing.T) {
 		if strings.HasPrefix(put, "skill") {
 			kind, content = "skill", testSkillBlock(t, "# skill-x\n")
 		}
-		if rec := doTestRequest(t, mux, http.MethodPut, "/api/v2/openrig/modules/"+put, testModuleBody(t, kind, content)); rec.Code != http.StatusOK {
+		if rec := doTestRequest(t, mux, http.MethodPut, "/api/v2/modules/"+put, testModuleBody(t, kind, content)); rec.Code != http.StatusOK {
 			t.Fatalf("put module %s: %d %s", put, rec.Code, rec.Body.String())
 		}
 	}
-	rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/seat-types/coder/versions",
+	rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/seat-types/coder/versions",
 		`{"module_refs":["instr@1.0.0","skill-x@2.1.0"],"default_runtime":"codex"}`)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("create version: %d %s", rec.Code, rec.Body.String())
@@ -842,7 +842,7 @@ func TestSeatAdminCreateSeatTypeVersion(t *testing.T) {
 			t.Errorf("body missing %s: %s", want, rec.Body.String())
 		}
 	}
-	rec = doTestRequest(t, mux, http.MethodGet, "/api/v2/openrig/seat-types", "")
+	rec = doTestRequest(t, mux, http.MethodGet, "/api/v2/seat-types", "")
 	if !strings.Contains(rec.Body.String(), `"default_runtime":"codex","latest_version":"1.0.1"`) {
 		t.Errorf("seat type listing does not show the new version's runtime: %s", rec.Body.String())
 	}
@@ -855,21 +855,21 @@ func TestSeatAdminCreateSeatTypeVersionRejects(t *testing.T) {
 	fake := newFakeSeatAdmin()
 	fake.seedSeatType("coder", "1.0.0")
 	mux := seatAdminTestMux(t, fake)
-	if rec := doTestRequest(t, mux, http.MethodPut, "/api/v2/openrig/modules/instr/versions/1.0.0", `{"kind":"instruction","content":"c"}`); rec.Code != http.StatusOK {
+	if rec := doTestRequest(t, mux, http.MethodPut, "/api/v2/modules/instr/versions/1.0.0", `{"kind":"instruction","content":"c"}`); rec.Code != http.StatusOK {
 		t.Fatalf("put module: %d", rec.Code)
 	}
 	cases := []struct {
 		name, path, body string
 		want             int
 	}{
-		{"unknown seat type", "/api/v2/openrig/seat-types/ghost/versions", `{"module_refs":[],"default_runtime":"codex"}`, http.StatusNotFound},
-		{"unknown module", "/api/v2/openrig/seat-types/coder/versions", `{"module_refs":["ghost@1.0.0"],"default_runtime":"codex"}`, http.StatusBadRequest},
-		{"unknown module version", "/api/v2/openrig/seat-types/coder/versions", `{"module_refs":["instr@9.9.9"],"default_runtime":"codex"}`, http.StatusBadRequest},
-		{"no at sign", "/api/v2/openrig/seat-types/coder/versions", `{"module_refs":["instr"],"default_runtime":"codex"}`, http.StatusBadRequest},
-		{"latest alias", "/api/v2/openrig/seat-types/coder/versions", `{"module_refs":["instr@latest"],"default_runtime":"codex"}`, http.StatusBadRequest},
-		{"duplicate slug", "/api/v2/openrig/seat-types/coder/versions", `{"module_refs":["instr@1.0.0","instr@1.0.0"],"default_runtime":"codex"}`, http.StatusBadRequest},
-		{"bad runtime", "/api/v2/openrig/seat-types/coder/versions", `{"module_refs":[],"default_runtime":"gemini"}`, http.StatusBadRequest},
-		{"unknown field", "/api/v2/openrig/seat-types/coder/versions", `{"module_refs":[],"default_runtime":"codex","x":1}`, http.StatusBadRequest},
+		{"unknown seat type", "/api/v2/seat-types/ghost/versions", `{"module_refs":[],"default_runtime":"codex"}`, http.StatusNotFound},
+		{"unknown module", "/api/v2/seat-types/coder/versions", `{"module_refs":["ghost@1.0.0"],"default_runtime":"codex"}`, http.StatusBadRequest},
+		{"unknown module version", "/api/v2/seat-types/coder/versions", `{"module_refs":["instr@9.9.9"],"default_runtime":"codex"}`, http.StatusBadRequest},
+		{"no at sign", "/api/v2/seat-types/coder/versions", `{"module_refs":["instr"],"default_runtime":"codex"}`, http.StatusBadRequest},
+		{"latest alias", "/api/v2/seat-types/coder/versions", `{"module_refs":["instr@latest"],"default_runtime":"codex"}`, http.StatusBadRequest},
+		{"duplicate slug", "/api/v2/seat-types/coder/versions", `{"module_refs":["instr@1.0.0","instr@1.0.0"],"default_runtime":"codex"}`, http.StatusBadRequest},
+		{"bad runtime", "/api/v2/seat-types/coder/versions", `{"module_refs":[],"default_runtime":"gemini"}`, http.StatusBadRequest},
+		{"unknown field", "/api/v2/seat-types/coder/versions", `{"module_refs":[],"default_runtime":"codex","x":1}`, http.StatusBadRequest},
 	}
 	for _, c := range cases {
 		if rec := doTestRequest(t, mux, http.MethodPost, c.path, c.body); rec.Code != c.want {
@@ -895,7 +895,7 @@ func TestSeatAdminCreateSeatTypeVersionMapsStoreErrors(t *testing.T) {
 	}
 	for _, c := range cases {
 		fake.addVersionErr = c.err
-		rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/seat-types/coder/versions", `{"module_refs":[],"default_runtime":"codex"}`)
+		rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/seat-types/coder/versions", `{"module_refs":[],"default_runtime":"codex"}`)
 		if rec.Code != c.want {
 			t.Errorf("%s: status = %d, want %d: %s", c.name, rec.Code, c.want, rec.Body.String())
 		}
@@ -909,7 +909,7 @@ func TestSeatAdminGetModuleVersion(t *testing.T) {
 		Content: "hello", Checksum: "abc",
 	}
 	mux := seatAdminTestMux(t, fake)
-	rec := doTestRequest(t, mux, http.MethodGet, "/api/v2/openrig/modules/instr/versions/1.0.0", "")
+	rec := doTestRequest(t, mux, http.MethodGet, "/api/v2/modules/instr/versions/1.0.0", "")
 	if rec.Code != http.StatusOK {
 		t.Fatalf("get module version: status = %d: %s", rec.Code, rec.Body.String())
 	}
@@ -920,7 +920,7 @@ func TestSeatAdminGetModuleVersion(t *testing.T) {
 			t.Errorf("get module version missing %s: %s", want, rec.Body.String())
 		}
 	}
-	if rec = doTestRequest(t, mux, http.MethodGet, "/api/v2/openrig/modules/instr/versions/9.9.9", ""); rec.Code != http.StatusNotFound {
+	if rec = doTestRequest(t, mux, http.MethodGet, "/api/v2/modules/instr/versions/9.9.9", ""); rec.Code != http.StatusNotFound {
 		t.Errorf("missing module version: status = %d, want 404", rec.Code)
 	}
 }
@@ -934,9 +934,9 @@ func TestSeatAdminGetOverlays(t *testing.T) {
 	mux := seatAdminTestMux(t, fake)
 
 	for _, path := range []string{
-		"/api/v2/openrig/overlay",
-		"/api/v2/openrig/rooms/dev/overlay",
-		"/api/v2/openrig/rooms/dev/seats/alice/overlay",
+		"/api/v2/overlay",
+		"/api/v2/rooms/dev/overlay",
+		"/api/v2/rooms/dev/seats/alice/overlay",
 	} {
 		rec := doTestRequest(t, mux, http.MethodGet, path, "")
 		if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"ops":[]`) {
@@ -944,19 +944,19 @@ func TestSeatAdminGetOverlays(t *testing.T) {
 		}
 	}
 
-	if rec := doTestRequest(t, mux, http.MethodPut, "/api/v2/openrig/overlay",
+	if rec := doTestRequest(t, mux, http.MethodPut, "/api/v2/overlay",
 		`{"ops":[{"kind":"add","slug":"instr","version":"1"}]}`); rec.Code != http.StatusOK {
 		t.Fatalf("PUT company overlay: %d %s", rec.Code, rec.Body.String())
 	}
-	rec := doTestRequest(t, mux, http.MethodGet, "/api/v2/openrig/overlay", "")
+	rec := doTestRequest(t, mux, http.MethodGet, "/api/v2/overlay", "")
 	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"scope":"company"`) || !strings.Contains(rec.Body.String(), `"slug":"instr"`) {
 		t.Errorf("GET company overlay: %d %s", rec.Code, rec.Body.String())
 	}
 
-	if rec = doTestRequest(t, mux, http.MethodGet, "/api/v2/openrig/rooms/ghost/overlay", ""); rec.Code != http.StatusNotFound {
+	if rec = doTestRequest(t, mux, http.MethodGet, "/api/v2/rooms/ghost/overlay", ""); rec.Code != http.StatusNotFound {
 		t.Errorf("GET absent room overlay: status = %d, want 404", rec.Code)
 	}
-	if rec = doTestRequest(t, mux, http.MethodGet, "/api/v2/openrig/rooms/dev/seats/ghost/overlay", ""); rec.Code != http.StatusNotFound {
+	if rec = doTestRequest(t, mux, http.MethodGet, "/api/v2/rooms/dev/seats/ghost/overlay", ""); rec.Code != http.StatusNotFound {
 		t.Errorf("GET absent seat overlay: status = %d, want 404", rec.Code)
 	}
 }
@@ -965,22 +965,22 @@ func TestSeatAdminSettings(t *testing.T) {
 	fake := newFakeSeatAdmin()
 	mux := seatAdminTestMux(t, fake)
 
-	rec := doTestRequest(t, mux, http.MethodGet, "/api/v2/openrig/settings", "")
+	rec := doTestRequest(t, mux, http.MethodGet, "/api/v2/settings", "")
 	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"settings":{"follow_latest":false}`) {
 		t.Fatalf("default settings: %d %s", rec.Code, rec.Body.String())
 	}
-	rec = doTestRequest(t, mux, http.MethodPut, "/api/v2/openrig/settings", `{"follow_latest":true}`)
+	rec = doTestRequest(t, mux, http.MethodPut, "/api/v2/settings", `{"follow_latest":true}`)
 	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"settings":{"follow_latest":true}`) {
 		t.Fatalf("set settings: %d %s", rec.Code, rec.Body.String())
 	}
-	rec = doTestRequest(t, mux, http.MethodGet, "/api/v2/openrig/settings", "")
+	rec = doTestRequest(t, mux, http.MethodGet, "/api/v2/settings", "")
 	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"settings":{"follow_latest":true}`) {
 		t.Fatalf("get settings after set: %d %s", rec.Code, rec.Body.String())
 	}
-	if rec = doTestRequest(t, mux, http.MethodPut, "/api/v2/openrig/settings", `{}`); rec.Code != http.StatusBadRequest {
+	if rec = doTestRequest(t, mux, http.MethodPut, "/api/v2/settings", `{}`); rec.Code != http.StatusBadRequest {
 		t.Errorf("missing follow_latest: status = %d, want 400", rec.Code)
 	}
-	if rec = doTestRequest(t, mux, http.MethodPut, "/api/v2/openrig/settings", `{"follow_latest":true,"bogus":1}`); rec.Code != http.StatusBadRequest {
+	if rec = doTestRequest(t, mux, http.MethodPut, "/api/v2/settings", `{"follow_latest":true,"bogus":1}`); rec.Code != http.StatusBadRequest {
 		t.Errorf("unknown settings field: status = %d, want 400", rec.Code)
 	}
 }
@@ -994,19 +994,19 @@ func TestSeatAdminCreateSeatHonorsSetting(t *testing.T) {
 	}
 	mux := seatAdminTestMux(t, fake)
 
-	rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/rooms/dev/seats",
+	rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/rooms/dev/seats",
 		`{"seat_key":"alice","seat_type":"coder","runtime":"claude-code"}`)
 	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"pinned_version":null`) {
 		t.Fatalf("company follow_latest=true: %d %s", rec.Code, rec.Body.String())
 	}
 
-	rec = doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/rooms/dev/seats",
+	rec = doTestRequest(t, mux, http.MethodPost, "/api/v2/rooms/dev/seats",
 		`{"seat_key":"bob","seat_type":"coder","runtime":"claude-code","follow_latest":false}`)
 	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"pinned_version":"1.0.0"`) {
 		t.Errorf("explicit follow_latest=false over setting: %d %s", rec.Code, rec.Body.String())
 	}
 
-	rec = doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/rooms/dev/seats",
+	rec = doTestRequest(t, mux, http.MethodPost, "/api/v2/rooms/dev/seats",
 		`{"seat_key":"carol","seat_type":"coder","runtime":"claude-code","pinned_version":"0.9.0"}`)
 	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"pinned_version":"0.9.0"`) {
 		t.Errorf("explicit pinned_version over setting: %d %s", rec.Code, rec.Body.String())
@@ -1022,7 +1022,7 @@ func TestSeatAdminListSeats(t *testing.T) {
 		&repositories.Seat{ID: "seat-a", RoomID: room.ID, SeatKey: "alice", SeatTypeID: "st-coder"},
 	)
 	mux := seatAdminTestMux(t, fake)
-	rec := doTestRequest(t, mux, http.MethodGet, "/api/v2/openrig/rooms/dev/seats", "")
+	rec := doTestRequest(t, mux, http.MethodGet, "/api/v2/rooms/dev/seats", "")
 	if rec.Code != http.StatusOK {
 		t.Fatalf("list seats: status = %d: %s", rec.Code, rec.Body.String())
 	}
@@ -1048,8 +1048,7 @@ func TestSeatAdminRemoveSeatIsAHardDelete(t *testing.T) {
 		t.Fatal(err)
 	}
 	mux := seatAdminTestMux(t, fake)
-	rigMux := seatRigSpecTestMux(t, rigSpecOverAdminFake{fake})
-	seatPath := "/api/v2/openrig/rooms/dev/seats/alice"
+	seatPath := "/api/v2/rooms/dev/seats/alice"
 
 	room.UserID = "another-user"
 	if rec := doTestRequest(t, mux, http.MethodDelete, seatPath, ""); rec.Code != http.StatusNotFound {
@@ -1080,13 +1079,7 @@ func TestSeatAdminRemoveSeatIsAHardDelete(t *testing.T) {
 	if rec := doTestRequest(t, mux, http.MethodDelete, seatPath, ""); rec.Code != http.StatusNotFound {
 		t.Errorf("second delete: status = %d, want 404", rec.Code)
 	}
-	rec := doTestRequest(t, rigMux, http.MethodGet, "/api/v2/openrig/rooms/dev/rigspec", "")
-	doc := decodeRigSpec(t, rec)
-	if strings.Contains(doc.RigSpec.YAML, "alice") || strings.Contains(doc.RigSpec.YAML, "delegates_to") || strings.Contains(doc.RigSpec.YAML, "can_observe") {
-		t.Errorf("rigspec after delete still mentions the seat or its edges: %s", doc.RigSpec.YAML)
-	}
-
-	rec = doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/rooms/dev/seats", `{"seat_key":"alice","seat_type":"coder","runtime":"claude-code"}`)
+	rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/rooms/dev/seats", `{"seat_key":"alice","seat_type":"coder","runtime":"claude-code"}`)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("re-add the same seat key: status = %d: %s", rec.Code, rec.Body.String())
 	}
@@ -1099,31 +1092,6 @@ func TestSeatAdminRemoveSeatIsAHardDelete(t *testing.T) {
 	}
 }
 
-// rigSpecOverAdminFake serves the rigspec route from the admin fake's rows so a test can
-// change links through the admin API and render the result.
-type rigSpecOverAdminFake struct{ *fakeSeatAdmin }
-
-func (f rigSpecOverAdminFake) ListSeatsByRoom(ctx context.Context, userID, roomID string) ([]repositories.Seat, error) {
-	return f.ListSeats(ctx, userID, roomID)
-}
-
-func (f rigSpecOverAdminFake) ResolveSeat(_ context.Context, _, _, seatKey string) (*repositories.ResolvedSeat, error) {
-	return &repositories.ResolvedSeat{Hash: "h-" + seatKey, Runtime: "claude-code"}, nil
-}
-
-func (f rigSpecOverAdminFake) ListSeatLinksFrom(ctx context.Context, userID, seatID string) ([]repositories.SeatLink, error) {
-	return f.ListSeatLinks(ctx, userID, seatID)
-}
-
-func (f rigSpecOverAdminFake) GetSeatByID(_ context.Context, _, seatID string) (*repositories.Seat, error) {
-	for _, seat := range f.seats {
-		if seat.ID == seatID {
-			return seat, nil
-		}
-	}
-	return nil, nil
-}
-
 func TestSeatAdminDeleteLink(t *testing.T) {
 	t.Setenv(publicURLEnv, "https://api.example.test")
 	fake := newFakeSeatAdmin()
@@ -1133,30 +1101,23 @@ func TestSeatAdminDeleteLink(t *testing.T) {
 		&repositories.Seat{ID: "seat-b", RoomID: room.ID, SeatKey: "bob", PermissionPolicy: "standard"},
 	)
 	mux := seatAdminTestMux(t, fake)
-	rigMux := seatRigSpecTestMux(t, rigSpecOverAdminFake{fake})
-	linkPath := "/api/v2/openrig/rooms/dev/seats/alice/links"
+	linkPath := "/api/v2/rooms/dev/seats/alice/links"
 	if rec := doTestRequest(t, mux, http.MethodPut, linkPath, `{"to_seat":"bob","kind":"delegates_to"}`); rec.Code != http.StatusOK {
 		t.Fatalf("upsert link: %d %s", rec.Code, rec.Body.String())
 	}
 	if rec := doTestRequest(t, mux, http.MethodPut, linkPath, `{"to_seat":"bob","kind":"can_observe"}`); rec.Code != http.StatusOK {
 		t.Fatalf("upsert second link: %d %s", rec.Code, rec.Body.String())
 	}
-	rec := doTestRequest(t, rigMux, http.MethodGet, "/api/v2/openrig/rooms/dev/rigspec", "")
-	if !strings.Contains(rec.Body.String(), "delegates_to") {
-		t.Fatalf("rigspec before delete lacks the link: %d %s", rec.Code, rec.Body.String())
+	if len(fake.links) != 2 {
+		t.Fatalf("links before delete = %+v, want both kinds", fake.links)
 	}
 
-	if rec = doTestRequest(t, mux, http.MethodDelete, linkPath+"/bob/delegates_to", ""); rec.Code != http.StatusOK {
+	if rec := doTestRequest(t, mux, http.MethodDelete, linkPath+"/bob/delegates_to", ""); rec.Code != http.StatusOK {
 		t.Fatalf("delete link: %d %s", rec.Code, rec.Body.String())
 	}
-	rec = doTestRequest(t, mux, http.MethodGet, linkPath, "")
+	rec := doTestRequest(t, mux, http.MethodGet, linkPath, "")
 	if strings.Contains(rec.Body.String(), "delegates_to") || !strings.Contains(rec.Body.String(), "can_observe") {
 		t.Errorf("list after delete should keep only the other kind: %s", rec.Body.String())
-	}
-	rec = doTestRequest(t, rigMux, http.MethodGet, "/api/v2/openrig/rooms/dev/rigspec", "")
-	var doc rigSpecHTTPResponse = decodeRigSpec(t, rec)
-	if strings.Contains(doc.RigSpec.YAML, "delegates_to") || !strings.Contains(doc.RigSpec.YAML, "can_observe") {
-		t.Errorf("rigspec after delete: %s", doc.RigSpec.YAML)
 	}
 
 	cases := []struct {
@@ -1165,8 +1126,8 @@ func TestSeatAdminDeleteLink(t *testing.T) {
 	}{
 		{"already deleted", linkPath + "/bob/delegates_to", http.StatusNotFound},
 		{"unknown target", linkPath + "/ghost/can_observe", http.StatusNotFound},
-		{"unknown source", "/api/v2/openrig/rooms/dev/seats/ghost/links/bob/can_observe", http.StatusNotFound},
-		{"unknown room", "/api/v2/openrig/rooms/ghost/seats/alice/links/bob/can_observe", http.StatusNotFound},
+		{"unknown source", "/api/v2/rooms/dev/seats/ghost/links/bob/can_observe", http.StatusNotFound},
+		{"unknown room", "/api/v2/rooms/ghost/seats/alice/links/bob/can_observe", http.StatusNotFound},
 		{"bad kind", linkPath + "/bob/hates", http.StatusBadRequest},
 	}
 	for _, c := range cases {
@@ -1211,7 +1172,7 @@ func TestSeatAdminDeleteLinkRemovesItFromTheResolvedPolicy(t *testing.T) {
 		return string(encoded)
 	}
 
-	linkPath := "/api/v2/openrig/rooms/dev/seats/alice/links"
+	linkPath := "/api/v2/rooms/dev/seats/alice/links"
 	if rec := doTestRequest(t, mux, http.MethodPut, linkPath, `{"to_seat":"bob","kind":"delegates_to"}`); rec.Code != http.StatusOK {
 		t.Fatalf("upsert link: %d %s", rec.Code, rec.Body.String())
 	}
@@ -1253,7 +1214,7 @@ func TestSeatAdminDeleteRoom(t *testing.T) {
 	}
 
 	dev.UserID = "another-user"
-	if rec := doTestRequest(t, mux, http.MethodDelete, "/api/v2/openrig/rooms/dev", ""); rec.Code != http.StatusNotFound {
+	if rec := doTestRequest(t, mux, http.MethodDelete, "/api/v2/rooms/dev", ""); rec.Code != http.StatusNotFound {
 		t.Fatalf("other user's room: status = %d, want 404", rec.Code)
 	}
 	if len(fake.rooms) != 2 || len(fake.seats) != 3 || len(fake.links) != 2 {
@@ -1263,7 +1224,7 @@ func TestSeatAdminDeleteRoom(t *testing.T) {
 
 	// A room that still holds seats is refused, naming the count, and nothing is deleted: the
 	// seats are never cascaded away.
-	rec := doTestRequest(t, mux, http.MethodDelete, "/api/v2/openrig/rooms/dev", "")
+	rec := doTestRequest(t, mux, http.MethodDelete, "/api/v2/rooms/dev", "")
 	if rec.Code != http.StatusConflict {
 		t.Fatalf("delete room with seats: %d %s, want 409", rec.Code, rec.Body.String())
 	}
@@ -1277,11 +1238,11 @@ func TestSeatAdminDeleteRoom(t *testing.T) {
 
 	// Removing the seats first empties the room, and then the room itself deletes.
 	for _, seat := range []string{"alice", "bob"} {
-		if rec := doTestRequest(t, mux, http.MethodDelete, "/api/v2/openrig/rooms/dev/seats/"+seat, ""); rec.Code != http.StatusOK {
+		if rec := doTestRequest(t, mux, http.MethodDelete, "/api/v2/rooms/dev/seats/"+seat, ""); rec.Code != http.StatusOK {
 			t.Fatalf("remove seat %s: %d %s", seat, rec.Code, rec.Body.String())
 		}
 	}
-	if rec := doTestRequest(t, mux, http.MethodDelete, "/api/v2/openrig/rooms/dev", ""); rec.Code != http.StatusOK {
+	if rec := doTestRequest(t, mux, http.MethodDelete, "/api/v2/rooms/dev", ""); rec.Code != http.StatusOK {
 		t.Fatalf("delete empty room: %d %s", rec.Code, rec.Body.String())
 	}
 	if len(fake.rooms) != 1 || fake.rooms[0].Slug != "other" {
@@ -1308,7 +1269,7 @@ func TestSeatAdminDeleteRoom(t *testing.T) {
 	if strings.Join(fake.deletedMessageRooms, ",") != "dev" {
 		t.Errorf("seat messages deleted for rooms %v, want only dev", fake.deletedMessageRooms)
 	}
-	if rec := doTestRequest(t, mux, http.MethodDelete, "/api/v2/openrig/rooms/dev", ""); rec.Code != http.StatusNotFound {
+	if rec := doTestRequest(t, mux, http.MethodDelete, "/api/v2/rooms/dev", ""); rec.Code != http.StatusNotFound {
 		t.Errorf("delete again: status = %d, want 404", rec.Code)
 	}
 }
@@ -1328,9 +1289,9 @@ func TestSeatAdminOverlays(t *testing.T) {
 		body string
 		want string
 	}{
-		{"/api/v2/openrig/rooms/dev/overlay", `{"ops":[{"kind":"add","slug":"n","version":"1"}]}`, `"scope":"room"`},
-		{"/api/v2/openrig/overlay", `{"ops":[{"kind":"pin","slug":"m","version":"2"}]}`, `"scope":"company"`},
-		{"/api/v2/openrig/rooms/dev/seats/alice/overlay", `{"ops":[{"kind":"override","slug":"m","content":"x"}]}`, `"scope":"seat"`},
+		{"/api/v2/rooms/dev/overlay", `{"ops":[{"kind":"add","slug":"n","version":"1"}]}`, `"scope":"room"`},
+		{"/api/v2/overlay", `{"ops":[{"kind":"pin","slug":"m","version":"2"}]}`, `"scope":"company"`},
+		{"/api/v2/rooms/dev/seats/alice/overlay", `{"ops":[{"kind":"override","slug":"m","content":"x"}]}`, `"scope":"seat"`},
 	}
 	for _, c := range cases {
 		rec := doTestRequest(t, mux, http.MethodPut, c.path, c.body)
@@ -1351,7 +1312,7 @@ func TestSeatAdminOverlayPutRefusesUnresolvableStack(t *testing.T) {
 	fake.seats = append(fake.seats, &repositories.Seat{ID: "seat-a", RoomID: room.ID, SeatKey: "alice", SeatTypeID: "st-coder"})
 	mux := seatAdminTestMux(t, fake)
 
-	rec := doTestRequest(t, mux, http.MethodPut, "/api/v2/openrig/rooms/dev/overlay", `{"ops":[{"kind":"add","slug":"m","version":"1"}]}`)
+	rec := doTestRequest(t, mux, http.MethodPut, "/api/v2/rooms/dev/overlay", `{"ops":[{"kind":"add","slug":"m","version":"1"}]}`)
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("status = %d, want 400: %s", rec.Code, rec.Body.String())
 	}
@@ -1374,7 +1335,7 @@ func TestSeatAdminOverlayPutStoresResolvingStack(t *testing.T) {
 	fake.seats = append(fake.seats, &repositories.Seat{ID: "seat-a", RoomID: room.ID, SeatKey: "alice", SeatTypeID: "st-coder"})
 	mux := seatAdminTestMux(t, fake)
 
-	rec := doTestRequest(t, mux, http.MethodPut, "/api/v2/openrig/overlay", `{"ops":[{"kind":"add","slug":"n","version":"1"}]}`)
+	rec := doTestRequest(t, mux, http.MethodPut, "/api/v2/overlay", `{"ops":[{"kind":"add","slug":"n","version":"1"}]}`)
 	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"scope":"company"`) {
 		t.Fatalf("legal overlay PUT: %d %s", rec.Code, rec.Body.String())
 	}
@@ -1399,7 +1360,7 @@ func TestSeatAdminOverlayRejectsUnknownModules(t *testing.T) {
 			fake := newFakeSeatAdmin()
 			fake.moduleVersions["m@2"] = &repositories.ModuleVersion{Slug: "m", Version: "2"}
 			mux := seatAdminTestMux(t, fake)
-			rec := doTestRequest(t, mux, http.MethodPut, "/api/v2/openrig/overlay", c.body)
+			rec := doTestRequest(t, mux, http.MethodPut, "/api/v2/overlay", c.body)
 			if rec.Code != c.code {
 				t.Fatalf("status = %d, body %s, want %d", rec.Code, rec.Body.String(), c.code)
 			}
@@ -1427,7 +1388,7 @@ func TestSeatAdminOverlayValidation(t *testing.T) {
 		`{"ops":[{"kind":"add","slug":"m","bogus":true}]}`,
 	}
 	for _, body := range cases {
-		rec := doTestRequest(t, mux, http.MethodPut, "/api/v2/openrig/overlay", body)
+		rec := doTestRequest(t, mux, http.MethodPut, "/api/v2/overlay", body)
 		if rec.Code != http.StatusBadRequest {
 			t.Errorf("body %s: status = %d, want 400", body, rec.Code)
 		}
@@ -1442,21 +1403,21 @@ func TestSeatAdminLinks(t *testing.T) {
 		&repositories.Seat{ID: "seat-b", RoomID: room.ID, SeatKey: "bob", PermissionPolicy: "standard"},
 	)
 	mux := seatAdminTestMux(t, fake)
-	rec := doTestRequest(t, mux, http.MethodPut, "/api/v2/openrig/rooms/dev/seats/alice/links", `{"to_seat":"bob","kind":"delegates_to"}`)
+	rec := doTestRequest(t, mux, http.MethodPut, "/api/v2/rooms/dev/seats/alice/links", `{"to_seat":"bob","kind":"delegates_to"}`)
 	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"allow":true`) {
 		t.Fatalf("upsert link: %d %s", rec.Code, rec.Body.String())
 	}
-	rec = doTestRequest(t, mux, http.MethodGet, "/api/v2/openrig/rooms/dev/seats/alice/links", "")
+	rec = doTestRequest(t, mux, http.MethodGet, "/api/v2/rooms/dev/seats/alice/links", "")
 	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"to_seat_id":"seat-b"`) {
 		t.Errorf("list links: %d %s", rec.Code, rec.Body.String())
 	}
-	if rec = doTestRequest(t, mux, http.MethodPut, "/api/v2/openrig/rooms/dev/seats/alice/links", `{"to_seat":"alice","kind":"collaborates_with"}`); rec.Code != http.StatusBadRequest {
+	if rec = doTestRequest(t, mux, http.MethodPut, "/api/v2/rooms/dev/seats/alice/links", `{"to_seat":"alice","kind":"collaborates_with"}`); rec.Code != http.StatusBadRequest {
 		t.Errorf("self link: status = %d, want 400", rec.Code)
 	}
-	if rec = doTestRequest(t, mux, http.MethodPut, "/api/v2/openrig/rooms/dev/seats/alice/links", `{"to_seat":"ghost","kind":"collaborates_with"}`); rec.Code != http.StatusNotFound {
+	if rec = doTestRequest(t, mux, http.MethodPut, "/api/v2/rooms/dev/seats/alice/links", `{"to_seat":"ghost","kind":"collaborates_with"}`); rec.Code != http.StatusNotFound {
 		t.Errorf("unknown target: status = %d, want 404", rec.Code)
 	}
-	if rec = doTestRequest(t, mux, http.MethodPut, "/api/v2/openrig/rooms/dev/seats/alice/links", `{"to_seat":"bob","kind":"hates"}`); rec.Code != http.StatusBadRequest {
+	if rec = doTestRequest(t, mux, http.MethodPut, "/api/v2/rooms/dev/seats/alice/links", `{"to_seat":"bob","kind":"hates"}`); rec.Code != http.StatusBadRequest {
 		t.Errorf("bad link kind: status = %d, want 400", rec.Code)
 	}
 }
@@ -1477,14 +1438,14 @@ func TestSeatAdminLinkKinds(t *testing.T) {
 			target = "carol"
 		}
 		body := `{"to_seat":"` + target + `","kind":"` + kind + `"}`
-		rec := doTestRequest(t, mux, http.MethodPut, "/api/v2/openrig/rooms/dev/seats/alice/links", body)
+		rec := doTestRequest(t, mux, http.MethodPut, "/api/v2/rooms/dev/seats/alice/links", body)
 		if rec.Code != http.StatusOK {
 			t.Errorf("kind %q: status = %d, want 200: %s", kind, rec.Code, rec.Body.String())
 		}
 	}
 	for _, kind := range []string{"reports_to", "consults", "notifies", "hates"} {
 		body := `{"to_seat":"bob","kind":"` + kind + `"}`
-		rec := doTestRequest(t, mux, http.MethodPut, "/api/v2/openrig/rooms/dev/seats/alice/links", body)
+		rec := doTestRequest(t, mux, http.MethodPut, "/api/v2/rooms/dev/seats/alice/links", body)
 		if rec.Code != http.StatusBadRequest {
 			t.Errorf("kind %q: status = %d, want 400: %s", kind, rec.Code, rec.Body.String())
 		}
@@ -1502,7 +1463,7 @@ func TestSeatAdminNameValidation(t *testing.T) {
 		`{"slug":"bad slug","name":"Bad"}`,
 		`{"slug":"-bad","name":"Bad"}`,
 	} {
-		rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/rooms", body)
+		rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/rooms", body)
 		if rec.Code != http.StatusBadRequest {
 			t.Errorf("create room %s: status = %d, want 400: %s", body, rec.Code, rec.Body.String())
 		}
@@ -1512,7 +1473,7 @@ func TestSeatAdminNameValidation(t *testing.T) {
 		`{"seat_key":"bad key","seat_type":"coder","runtime":"claude-code"}`,
 		`{"seat_key":"-bad","seat_type":"coder","runtime":"claude-code"}`,
 	} {
-		rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/rooms/dev/seats", body)
+		rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/rooms/dev/seats", body)
 		if rec.Code != http.StatusBadRequest {
 			t.Errorf("create seat %s: status = %d, want 400: %s", body, rec.Code, rec.Body.String())
 		}
@@ -1529,7 +1490,7 @@ func TestSeatAdminSetOccupant(t *testing.T) {
 		Runtime: "claude-code", Model: "sonnet",
 	})
 	mux := seatAdminTestMux(t, fake)
-	const path = "/api/v2/openrig/rooms/dev/seats/alice/occupant"
+	const path = "/api/v2/rooms/dev/seats/alice/occupant"
 
 	rec := doTestRequest(t, mux, http.MethodPut, path, `{"runtime":"codex","model":"gpt-5.1:high"}`)
 	if rec.Code != http.StatusOK {
@@ -1558,7 +1519,7 @@ func TestSeatAdminSetOccupantRejectsInvalidInput(t *testing.T) {
 	room := fake.seedRoom("dev")
 	fake.seats = append(fake.seats, &repositories.Seat{ID: "seat-a", RoomID: room.ID, SeatKey: "alice", Runtime: "claude-code", PermissionPolicy: "standard"})
 	mux := seatAdminTestMux(t, fake)
-	const path = "/api/v2/openrig/rooms/dev/seats/alice/occupant"
+	const path = "/api/v2/rooms/dev/seats/alice/occupant"
 	// `{"runtime":""}` and `{"model":"sonnet"}` are deliberately NOT rejected any more: a blank or
 	// omitted runtime keeps the seat's current runtime (owner ruling, 2026-10-05), so both are
 	// accepted and covered by seat_occupant_runtime_test.go.
@@ -1589,13 +1550,13 @@ func TestSeatAdminSetOccupantRuntimeNamesSupportedRuntimes(t *testing.T) {
 
 	// omp is supported: it is the runtime that carries a non-Anthropic provider (DeepSeek via
 	// "provider/id" model ids), so an occupant switch to it is accepted.
-	rec := doTestRequest(t, mux, http.MethodPut, "/api/v2/openrig/rooms/dev/seats/alice/occupant", `{"runtime":"omp"}`)
+	rec := doTestRequest(t, mux, http.MethodPut, "/api/v2/rooms/dev/seats/alice/occupant", `{"runtime":"omp"}`)
 	if rec.Code != http.StatusOK {
 		t.Errorf("runtime omp: status = %d, body %s, want 200", rec.Code, rec.Body.String())
 	}
 
 	// pi is still not renderable, so it stays a 400 that names every supported runtime.
-	rec = doTestRequest(t, mux, http.MethodPut, "/api/v2/openrig/rooms/dev/seats/alice/occupant", `{"runtime":"pi"}`)
+	rec = doTestRequest(t, mux, http.MethodPut, "/api/v2/rooms/dev/seats/alice/occupant", `{"runtime":"pi"}`)
 	if rec.Code != http.StatusBadRequest || !strings.Contains(rec.Body.String(), `claude-code, codex, agy, omp`) {
 		t.Errorf("runtime pi: status = %d, body %s, want 400 naming the supported runtimes", rec.Code, rec.Body.String())
 	}
@@ -1608,8 +1569,8 @@ func TestSeatAdminSetOccupantNotFound(t *testing.T) {
 	mux := seatAdminTestMux(t, fake)
 	body := `{"runtime":"codex","model":""}`
 	for path, want := range map[string]int{
-		"/api/v2/openrig/rooms/ghost/seats/bob/occupant": http.StatusNotFound,
-		"/api/v2/openrig/rooms/dev/seats/ghost/occupant": http.StatusNotFound,
+		"/api/v2/rooms/ghost/seats/bob/occupant": http.StatusNotFound,
+		"/api/v2/rooms/dev/seats/ghost/occupant": http.StatusNotFound,
 	} {
 		if rec := doTestRequest(t, mux, http.MethodPut, path, body); rec.Code != want {
 			t.Errorf("PUT %s: status = %d, want %d: %s", path, rec.Code, want, rec.Body.String())
@@ -1622,17 +1583,17 @@ func TestSeatAdminNotFound(t *testing.T) {
 	fake.seedRoom("dev")
 	mux := seatAdminTestMux(t, fake)
 	cases := []struct{ method, path, body string }{
-		{http.MethodPost, "/api/v2/openrig/rooms/ghost/seats", `{"seat_key":"a","seat_type":"coder","runtime":"claude-code"}`},
-		{http.MethodPost, "/api/v2/openrig/rooms/dev/seats", `{"seat_key":"a","seat_type":"ghost","runtime":"claude-code"}`},
-		{http.MethodGet, "/api/v2/openrig/rooms/ghost/seats", ""},
-		{http.MethodDelete, "/api/v2/openrig/rooms/dev/seats/ghost", ""},
-		{http.MethodPut, "/api/v2/openrig/rooms/ghost/overlay", `{"ops":[{"kind":"add","slug":"m","version":"1"}]}`},
-		{http.MethodPut, "/api/v2/openrig/rooms/dev/seats/ghost/overlay", `{"ops":[{"kind":"add","slug":"m","version":"1"}]}`},
-		{http.MethodGet, "/api/v2/openrig/rooms/ghost/overlay", ""},
-		{http.MethodGet, "/api/v2/openrig/rooms/dev/seats/ghost/overlay", ""},
-		{http.MethodGet, "/api/v2/openrig/modules/ghost/versions/1.0.0", ""},
-		{http.MethodGet, "/api/v2/openrig/rooms/dev/seats/ghost/links", ""},
-		{http.MethodDelete, "/api/v2/openrig/rooms/ghost", ""},
+		{http.MethodPost, "/api/v2/rooms/ghost/seats", `{"seat_key":"a","seat_type":"coder","runtime":"claude-code"}`},
+		{http.MethodPost, "/api/v2/rooms/dev/seats", `{"seat_key":"a","seat_type":"ghost","runtime":"claude-code"}`},
+		{http.MethodGet, "/api/v2/rooms/ghost/seats", ""},
+		{http.MethodDelete, "/api/v2/rooms/dev/seats/ghost", ""},
+		{http.MethodPut, "/api/v2/rooms/ghost/overlay", `{"ops":[{"kind":"add","slug":"m","version":"1"}]}`},
+		{http.MethodPut, "/api/v2/rooms/dev/seats/ghost/overlay", `{"ops":[{"kind":"add","slug":"m","version":"1"}]}`},
+		{http.MethodGet, "/api/v2/rooms/ghost/overlay", ""},
+		{http.MethodGet, "/api/v2/rooms/dev/seats/ghost/overlay", ""},
+		{http.MethodGet, "/api/v2/modules/ghost/versions/1.0.0", ""},
+		{http.MethodGet, "/api/v2/rooms/dev/seats/ghost/links", ""},
+		{http.MethodDelete, "/api/v2/rooms/ghost", ""},
 	}
 	for _, c := range cases {
 		rec := doTestRequest(t, mux, c.method, c.path, c.body)
@@ -1647,30 +1608,30 @@ func TestSeatAdminRoutesNeedAuth(t *testing.T) {
 	mux := http.NewServeMux()
 	mountSeatAdminRoutes(mux, nil)
 	probes := []struct{ method, path string }{
-		{http.MethodPost, "/api/v2/openrig/rooms"},
-		{http.MethodGet, "/api/v2/openrig/rooms"},
-		{http.MethodGet, "/api/v2/openrig/seat-types"},
-		{http.MethodGet, "/api/v2/openrig/modules/instr/versions/1.0.0"},
-		{http.MethodPut, "/api/v2/openrig/modules/instr/versions/1.0.0"},
-		{http.MethodGet, "/api/v2/openrig/modules"},
-		{http.MethodPost, "/api/v2/openrig/seat-types/coder/versions"},
-		{http.MethodPost, "/api/v2/openrig/rooms/dev/seats"},
-		{http.MethodGet, "/api/v2/openrig/rooms/dev/seats"},
-		{http.MethodDelete, "/api/v2/openrig/rooms/dev/seats/alice"},
-		{http.MethodPut, "/api/v2/openrig/rooms/dev/seats/alice/occupant"},
-		{http.MethodPut, "/api/v2/openrig/rooms/dev/seats/alice/permission-policy"},
-		{http.MethodGet, "/api/v2/openrig/overlay"},
-		{http.MethodPut, "/api/v2/openrig/rooms/dev/overlay"},
-		{http.MethodGet, "/api/v2/openrig/rooms/dev/overlay"},
-		{http.MethodPut, "/api/v2/openrig/overlay"},
-		{http.MethodPut, "/api/v2/openrig/rooms/dev/seats/alice/overlay"},
-		{http.MethodGet, "/api/v2/openrig/rooms/dev/seats/alice/overlay"},
-		{http.MethodPut, "/api/v2/openrig/rooms/dev/seats/alice/links"},
-		{http.MethodGet, "/api/v2/openrig/rooms/dev/seats/alice/links"},
-		{http.MethodDelete, "/api/v2/openrig/rooms/dev/seats/alice/links/bob/delegates_to"},
-		{http.MethodDelete, "/api/v2/openrig/rooms/dev"},
-		{http.MethodGet, "/api/v2/openrig/settings"},
-		{http.MethodPut, "/api/v2/openrig/settings"},
+		{http.MethodPost, "/api/v2/rooms"},
+		{http.MethodGet, "/api/v2/rooms"},
+		{http.MethodGet, "/api/v2/seat-types"},
+		{http.MethodGet, "/api/v2/modules/instr/versions/1.0.0"},
+		{http.MethodPut, "/api/v2/modules/instr/versions/1.0.0"},
+		{http.MethodGet, "/api/v2/modules"},
+		{http.MethodPost, "/api/v2/seat-types/coder/versions"},
+		{http.MethodPost, "/api/v2/rooms/dev/seats"},
+		{http.MethodGet, "/api/v2/rooms/dev/seats"},
+		{http.MethodDelete, "/api/v2/rooms/dev/seats/alice"},
+		{http.MethodPut, "/api/v2/rooms/dev/seats/alice/occupant"},
+		{http.MethodPut, "/api/v2/rooms/dev/seats/alice/permission-policy"},
+		{http.MethodGet, "/api/v2/overlay"},
+		{http.MethodPut, "/api/v2/rooms/dev/overlay"},
+		{http.MethodGet, "/api/v2/rooms/dev/overlay"},
+		{http.MethodPut, "/api/v2/overlay"},
+		{http.MethodPut, "/api/v2/rooms/dev/seats/alice/overlay"},
+		{http.MethodGet, "/api/v2/rooms/dev/seats/alice/overlay"},
+		{http.MethodPut, "/api/v2/rooms/dev/seats/alice/links"},
+		{http.MethodGet, "/api/v2/rooms/dev/seats/alice/links"},
+		{http.MethodDelete, "/api/v2/rooms/dev/seats/alice/links/bob/delegates_to"},
+		{http.MethodDelete, "/api/v2/rooms/dev"},
+		{http.MethodGet, "/api/v2/settings"},
+		{http.MethodPut, "/api/v2/settings"},
 	}
 	for _, p := range probes {
 		rec := httptest.NewRecorder()
@@ -1691,7 +1652,7 @@ func TestSeatAdminLinkRejectsLaunchCycles(t *testing.T) {
 		return fake, seatAdminTestMux(t, fake)
 	}
 	put := func(mux *http.ServeMux, from, to, kind, extra string) *httptest.ResponseRecorder {
-		return doTestRequest(t, mux, http.MethodPut, "/api/v2/openrig/rooms/dev/seats/"+from+"/links",
+		return doTestRequest(t, mux, http.MethodPut, "/api/v2/rooms/dev/seats/"+from+"/links",
 			`{"to_seat":"`+to+`","kind":"`+kind+`"`+extra+`}`)
 	}
 
@@ -1754,7 +1715,7 @@ func TestSeatAdminLinkRejectsLaunchCycles(t *testing.T) {
 		if rec := put(mux, "c", "a", "delegates_to", ""); rec.Code != http.StatusBadRequest {
 			t.Fatalf("c -> a while a -> b -> c exists: %d %s, want 400", rec.Code, rec.Body.String())
 		}
-		if rec := doTestRequest(t, mux, http.MethodDelete, "/api/v2/openrig/rooms/dev/seats/b", ""); rec.Code != http.StatusOK {
+		if rec := doTestRequest(t, mux, http.MethodDelete, "/api/v2/rooms/dev/seats/b", ""); rec.Code != http.StatusOK {
 			t.Fatalf("delete seat b: %d %s", rec.Code, rec.Body.String())
 		}
 		if rec := put(mux, "c", "a", "delegates_to", ""); rec.Code != http.StatusOK {
@@ -1783,9 +1744,9 @@ func TestSeatAdminOverlayRoutesRejectSecretContent(t *testing.T) {
 		`{"ops":[{"kind":"pin","slug":"m","version":"` + secret + `"}]}`,
 	}
 	for _, path := range []string{
-		"/api/v2/openrig/overlay",
-		"/api/v2/openrig/rooms/dev/overlay",
-		"/api/v2/openrig/rooms/dev/seats/alice/overlay",
+		"/api/v2/overlay",
+		"/api/v2/rooms/dev/overlay",
+		"/api/v2/rooms/dev/seats/alice/overlay",
 	} {
 		t.Run(path, func(t *testing.T) {
 			fake := newFakeSeatAdmin()
@@ -1820,7 +1781,7 @@ func TestSeatAdminSetPermissionPolicy(t *testing.T) {
 	room := fake.seedRoom("dev")
 	fake.seats = append(fake.seats, &repositories.Seat{ID: "seat-a", RoomID: room.ID, SeatKey: "alice", Runtime: "claude-code", PermissionPolicy: "standard"})
 	mux := seatAdminTestMux(t, fake)
-	const path = "/api/v2/openrig/rooms/dev/seats/alice/permission-policy"
+	const path = "/api/v2/rooms/dev/seats/alice/permission-policy"
 
 	rec := doTestRequest(t, mux, http.MethodPut, path, `{"permission_policy":"yolo"}`)
 	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"permission_policy":"yolo"`) || fake.seats[0].PermissionPolicy != "yolo" {
@@ -1834,7 +1795,7 @@ func TestSeatAdminSetPermissionPolicy(t *testing.T) {
 	if fake.seats[0].PermissionPolicy != "yolo" {
 		t.Errorf("a rejected request changed the seat: %+v", fake.seats[0])
 	}
-	for _, p := range []string{"/api/v2/openrig/rooms/ghost/seats/alice/permission-policy", "/api/v2/openrig/rooms/dev/seats/ghost/permission-policy"} {
+	for _, p := range []string{"/api/v2/rooms/ghost/seats/alice/permission-policy", "/api/v2/rooms/dev/seats/ghost/permission-policy"} {
 		if rec := doTestRequest(t, mux, http.MethodPut, p, `{"permission_policy":"open"}`); rec.Code != http.StatusNotFound {
 			t.Errorf("PUT %s: status = %d, want 404", p, rec.Code)
 		}
@@ -1847,7 +1808,7 @@ func TestSeatAdminCreateSeatPermissionPolicy(t *testing.T) {
 	fake.seedRoom("dev")
 	fake.seedSeatType("coder", "1.0.0")
 	mux := seatAdminTestMux(t, fake)
-	const path = "/api/v2/openrig/rooms/dev/seats"
+	const path = "/api/v2/rooms/dev/seats"
 
 	rec := doTestRequest(t, mux, http.MethodPost, path, `{"seat_key":"alice","seat_type":"coder","runtime":"claude-code"}`)
 	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"permission_policy":"standard"`) {
@@ -1866,7 +1827,7 @@ func TestSeatAdminCreateSeatPermissionPolicy(t *testing.T) {
 	}
 }
 
-// The policy chosen through the PUT route is what the rigspec renders for that member, and
+// The policy chosen through the PUT route is the one the seat keeps, and
 // another user's request neither changes nor reveals the seat.
 func TestSeatAdminPermissionPolicyIsRenderedAndTenantScoped(t *testing.T) {
 	t.Setenv(publicURLEnv, "https://api.example.test")
@@ -1874,18 +1835,10 @@ func TestSeatAdminPermissionPolicyIsRenderedAndTenantScoped(t *testing.T) {
 	room := fake.seedRoom("dev")
 	fake.seats = append(fake.seats, &repositories.Seat{ID: "seat-a", RoomID: room.ID, SeatKey: "alice", Runtime: "claude-code", PermissionPolicy: "standard"})
 	mux := seatAdminTestMux(t, fake)
-	rigMux := seatRigSpecTestMux(t, rigSpecOverAdminFake{fake})
-	const path = "/api/v2/openrig/rooms/dev/seats/alice/permission-policy"
-	render := func() string {
-		t.Helper()
-		rec := doTestRequest(t, rigMux, http.MethodGet, "/api/v2/openrig/rooms/dev/rigspec", "")
-		if rec.Code != http.StatusOK {
-			t.Fatalf("rigspec: %d %s", rec.Code, rec.Body.String())
-		}
-		return decodeRigSpec(t, rec).RigSpec.YAML
-	}
-	if yaml := render(); !strings.Contains(yaml, "permission_policy: builtin:standard") || strings.Contains(yaml, "builtin:yolo") {
-		t.Fatalf("before the change the member renders standard: %s", yaml)
+	const path = "/api/v2/rooms/dev/seats/alice/permission-policy"
+	policy := func() string { return fake.seats[0].PermissionPolicy }
+	if got := policy(); got != "standard" {
+		t.Fatalf("before the change the seat policy = %q, want standard", got)
 	}
 
 	room.UserID = "another-user"
@@ -1900,14 +1853,14 @@ func TestSeatAdminPermissionPolicyIsRenderedAndTenantScoped(t *testing.T) {
 	if rec := doTestRequest(t, mux, http.MethodPut, path, `{"permission_policy":"strict"}`); rec.Code != http.StatusBadRequest {
 		t.Fatalf("invalid value: status = %d, want 400", rec.Code)
 	}
-	if yaml := render(); strings.Contains(yaml, "builtin:strict") || !strings.Contains(yaml, "builtin:standard") {
-		t.Errorf("a rejected value reached the render: %s", yaml)
+	if got := policy(); got != "standard" {
+		t.Errorf("a rejected value reached the seat: policy = %q", got)
 	}
 	if rec := doTestRequest(t, mux, http.MethodPut, path, `{"permission_policy":"yolo"}`); rec.Code != http.StatusOK {
 		t.Fatalf("valid value: %d %s", rec.Code, rec.Body.String())
 	}
-	if yaml := render(); !strings.Contains(yaml, "permission_policy: builtin:yolo") || strings.Contains(yaml, "builtin:standard") {
-		t.Errorf("after the change the member renders yolo: %s", yaml)
+	if got := policy(); got != "yolo" {
+		t.Errorf("after the change the seat policy = %q, want yolo", got)
 	}
 }
 
@@ -1918,7 +1871,7 @@ func TestSeatAdminCreateSeatValidatesOccupant(t *testing.T) {
 	fake.seedRoom("dev")
 	fake.seedSeatType("coder", "1.0.0")
 	mux := seatAdminTestMux(t, fake)
-	const path = "/api/v2/openrig/rooms/dev/seats"
+	const path = "/api/v2/rooms/dev/seats"
 	for _, body := range []string{
 		`{"seat_key":"a","seat_type":"coder","runtime":"codex","model":"claude-sonnet-5-5"}`,
 		`{"seat_key":"b","seat_type":"coder","runtime":"codex","model":"a b; rm -rf"}`,
@@ -1946,7 +1899,7 @@ func TestSeatAdminCreateSeatType(t *testing.T) {
 	fake := newFakeSeatAdmin()
 	mux := seatAdminTestMux(t, fake)
 
-	rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/seat-types",
+	rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/seat-types",
 		`{"slug":"custom-coder","name":"Custom Coder","description":"A user seat type"}`)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("create: %d %s", rec.Code, rec.Body.String())
@@ -1956,7 +1909,7 @@ func TestSeatAdminCreateSeatType(t *testing.T) {
 		t.Errorf("create body = %s, want %s", rec.Body.String(), want)
 	}
 	// The created type is listed, with no version yet (the version route adds the first one).
-	rec = doTestRequest(t, mux, http.MethodGet, "/api/v2/openrig/seat-types", "")
+	rec = doTestRequest(t, mux, http.MethodGet, "/api/v2/seat-types", "")
 	if rec.Code != http.StatusOK {
 		t.Fatalf("list: %d %s", rec.Code, rec.Body.String())
 	}
@@ -1966,7 +1919,7 @@ func TestSeatAdminCreateSeatType(t *testing.T) {
 
 	// A duplicate slug is a conflict: the store's Save is a get-or-create, so the service
 	// refuses the duplicate rather than silently return the existing type with a 200.
-	rec = doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/seat-types", `{"slug":"custom-coder","name":"Again"}`)
+	rec = doTestRequest(t, mux, http.MethodPost, "/api/v2/seat-types", `{"slug":"custom-coder","name":"Again"}`)
 	if rec.Code != http.StatusConflict || !strings.Contains(rec.Body.String(), "already exists") {
 		t.Fatalf("duplicate: %d %s, want 409", rec.Code, rec.Body.String())
 	}
@@ -1992,7 +1945,7 @@ func TestSeatAdminCreateSeatTypeRejectsInput(t *testing.T) {
 		{"unknown field", `{"slug":"custom","name":"N","x":1}`, http.StatusBadRequest},
 	}
 	for _, c := range cases {
-		rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/seat-types", c.body)
+		rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/seat-types", c.body)
 		if rec.Code != c.status {
 			t.Errorf("%s: status = %d, want %d: %s", c.name, rec.Code, c.status, rec.Body.String())
 		}
@@ -2005,13 +1958,13 @@ func TestSeatAdminCreateSeatTypeRejectsInput(t *testing.T) {
 func TestSeatAdminCreatedSeatTypeVersionRouteAcceptsTheSlug(t *testing.T) {
 	fake := newFakeSeatAdmin()
 	mux := seatAdminTestMux(t, fake)
-	if rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/seat-types", `{"slug":"custom-coder","name":"Custom Coder"}`); rec.Code != http.StatusOK {
+	if rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/seat-types", `{"slug":"custom-coder","name":"Custom Coder"}`); rec.Code != http.StatusOK {
 		t.Fatalf("create type: %d %s", rec.Code, rec.Body.String())
 	}
-	if rec := doTestRequest(t, mux, http.MethodPut, "/api/v2/openrig/modules/custom-role/versions/1.0.0", `{"kind":"instruction","content":"c"}`); rec.Code != http.StatusOK {
+	if rec := doTestRequest(t, mux, http.MethodPut, "/api/v2/modules/custom-role/versions/1.0.0", `{"kind":"instruction","content":"c"}`); rec.Code != http.StatusOK {
 		t.Fatalf("put module: %d %s", rec.Code, rec.Body.String())
 	}
-	rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/seat-types/custom-coder/versions",
+	rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/seat-types/custom-coder/versions",
 		`{"module_refs":["custom-role@1.0.0"],"default_runtime":"claude-code"}`)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("first version of a created type: %d %s", rec.Code, rec.Body.String())
@@ -2021,7 +1974,7 @@ func TestSeatAdminCreatedSeatTypeVersionRouteAcceptsTheSlug(t *testing.T) {
 			t.Errorf("version body missing %s: %s", want, rec.Body.String())
 		}
 	}
-	rec = doTestRequest(t, mux, http.MethodGet, "/api/v2/openrig/seat-types", "")
+	rec = doTestRequest(t, mux, http.MethodGet, "/api/v2/seat-types", "")
 	if !strings.Contains(rec.Body.String(), `"slug":"custom-coder","name":"Custom Coder","description":"","default_runtime":"claude-code","latest_version":"1.0.0"`) {
 		t.Errorf("listing does not show the created type's first version: %s", rec.Body.String())
 	}
@@ -2044,20 +1997,20 @@ func TestSeatAdminCreatedSeatTypeResolvesAndRenders(t *testing.T) {
 	}
 	t.Cleanup(func() { newSeatSource = previousSource })
 
-	if rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/seat-types", `{"slug":"custom-coder","name":"Custom Coder","description":"Made by a user"}`); rec.Code != http.StatusOK {
+	if rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/seat-types", `{"slug":"custom-coder","name":"Custom Coder","description":"Made by a user"}`); rec.Code != http.StatusOK {
 		t.Fatalf("create type: %d %s", rec.Code, rec.Body.String())
 	}
-	if rec := doTestRequest(t, mux, http.MethodPut, "/api/v2/openrig/modules/custom-role/versions/1.0.0", `{"kind":"instruction","content":"`+roleText+`"}`); rec.Code != http.StatusOK {
+	if rec := doTestRequest(t, mux, http.MethodPut, "/api/v2/modules/custom-role/versions/1.0.0", `{"kind":"instruction","content":"`+roleText+`"}`); rec.Code != http.StatusOK {
 		t.Fatalf("author role module: %d %s", rec.Code, rec.Body.String())
 	}
-	if rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/seat-types/custom-coder/versions", `{"module_refs":["custom-role@1.0.0"],"default_runtime":"claude-code"}`); rec.Code != http.StatusOK {
+	if rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/seat-types/custom-coder/versions", `{"module_refs":["custom-role@1.0.0"],"default_runtime":"claude-code"}`); rec.Code != http.StatusOK {
 		t.Fatalf("add version: %d %s", rec.Code, rec.Body.String())
 	}
-	if rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/rooms/dev/seats", `{"seat_key":"alice","seat_type":"custom-coder","runtime":"claude-code"}`); rec.Code != http.StatusOK {
+	if rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/rooms/dev/seats", `{"seat_key":"alice","seat_type":"custom-coder","runtime":"claude-code"}`); rec.Code != http.StatusOK {
 		t.Fatalf("create seat on the created type: %d %s", rec.Code, rec.Body.String())
 	}
 
-	rec := doTestRequest(t, mux, http.MethodGet, "/api/v2/openrig/seats/dev/alice", "")
+	rec := doTestRequest(t, mux, http.MethodGet, "/api/v2/seats/dev/alice", "")
 	if rec.Code != http.StatusOK {
 		t.Fatalf("resolve seat: %d %s", rec.Code, rec.Body.String())
 	}

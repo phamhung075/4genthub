@@ -11,19 +11,19 @@
 
 **The seatcheck PATH check reads the PATH seats inherit** (2026-10-04)
 
-- `scripts/openrig_seat_sync.py`: `resolve_checker` and `describe_found` now resolve `seatcheck` against `tmux show-environment -g PATH` (new `tmux_global_path`, `seat_path`) when a tmux server answers, instead of this shell's PATH. With no tmux server (no seat exists yet) they check the shell PATH and print `note: checked seatcheck on the shell PATH (no tmux server is running, ...)` to stderr; failure messages name the PATH that was checked, and `PATH_LIMIT` now describes the cold-start case (the first seat inherits the daemon's PATH) and says that only the default tmux socket is queried. The tmux call has a 5 second timeout; a hung server counts as no server. Not verified: the cold start case, and a non-default tmux socket.
+- `scripts/seat_sync.py`: `resolve_checker` and `describe_found` now resolve `seatcheck` against `tmux show-environment -g PATH` (new `tmux_global_path`, `seat_path`) when a tmux server answers, instead of this shell's PATH. With no tmux server (no seat exists yet) they check the shell PATH and print `note: checked seatcheck on the shell PATH (no tmux server is running, ...)` to stderr; failure messages name the PATH that was checked, and `PATH_LIMIT` now describes the cold-start case (the first seat inherits the daemon's PATH) and says that only the default tmux socket is queried. The tmux call has a 5 second timeout; a hung server counts as no server. Not verified: the cold start case, and a non-default tmux socket.
 
-**`openrig_seat_sync.py switch` accepts the agy runtime** (2026-10-04)
+**`seat_sync.py switch` accepts the agy runtime** (2026-10-04)
 
-- `scripts/openrig_seat_sync.py`: `RUNTIMES` now includes `agy`, so `switch ROOM SEAT --runtime agy --model <model>` is no longer rejected with exit 2 by the client before the server sees it. The Python lists in `openrig_bridge.py` and this script are still separate from Go's `resolver.CheckRuntime`; the single-source claim of the status-report entry above holds for Go only.
+- `scripts/seat_sync.py`: `RUNTIMES` now includes `agy`, so `switch ROOM SEAT --runtime agy --model <model>` is no longer rejected with exit 2 by the client before the server sees it. The Python lists in `bridge.py` and this script are still separate from Go's `resolver.CheckRuntime`; the single-source claim of the status-report entry above holds for Go only.
 
 **Seat status reports accept the agy runtime** (2026-10-03)
 
 - `agenthub_go/fastmcp/server/httpapp/seat_status_mount.go`: `validSeatRuntime` replaces the hard-coded `seatRuntimes` map; it accepts every runtime `resolver.CheckRuntime` accepts (claude-code, codex, agy) plus `terminal` and `unknown`, so the runtime list has one source.
-- `scripts/openrig_bridge.py`: `RUNTIMES` includes `agy`, so an agy seat reports `agy` instead of `unknown`.
+- `scripts/bridge.py`: `RUNTIMES` includes `agy`, so an agy seat reports `agy` instead of `unknown`.
 - Tests: `TestSeatStatusPostAcceptsEverySeatRuntime`, `test_runtime_mapping_keeps_every_supported_runtime`.
 
 **Decouple seat types seed from AGENTHUB_PUBLIC_URL requirement** (2026-10-03)
 
-- `agenthub_go/fastmcp/server/httpapp/seat_mount.go`: `handleSeedSeatTypes` was coupled to `AGENTHUB_PUBLIC_URL` validation through `seatSourceFor`, causing `POST /api/v2/openrig/seat-types/seed` to return 500 when `AGENTHUB_PUBLIC_URL` was unset. Seeding only inserts seed modules and seat type definitions and does not render specs. `seatSourceFor` now decouples the public URL check from source creation, allowing seeding without `AGENTHUB_PUBLIC_URL`, while `handleResolveSeat` preserves the requirement.
+- `agenthub_go/fastmcp/server/httpapp/seat_mount.go`: `handleSeedSeatTypes` was coupled to `AGENTHUB_PUBLIC_URL` validation through `seatSourceFor`, causing `POST /api/v2/seat-types/seed` to return 500 when `AGENTHUB_PUBLIC_URL` was unset. Seeding only inserts seed modules and seat type definitions and does not render specs. `seatSourceFor` now decouples the public URL check from source creation, allowing seeding without `AGENTHUB_PUBLIC_URL`, while `handleResolveSeat` preserves the requirement.
 - Tests: `TestSeedSeatTypesWorksWithoutPublicURL` and `TestSeedSeatTypesErrorMapping` in `seat_mount_test.go`.

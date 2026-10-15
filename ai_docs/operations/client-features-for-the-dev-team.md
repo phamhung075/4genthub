@@ -70,11 +70,11 @@ This works only when each seat edits inside its own worktree. Today the seats ru
 
 ## 3. Sender identity for `4genteam send` (open problem)
 
-`rig send` takes the sender from the session the daemon stamps (`X-OpenRig-Session`) and ignores any name passed by the caller. The owner session is not a managed seat, so its messages arrive unsigned and the architect refuses to treat them as the owner.
+`4genteam send` takes the sender from the session the daemon stamps (`X-4genteam-Session`) and ignores any name passed by the caller. The owner session is not a managed seat, so its messages arrive unsigned and the architect refuses to treat them as the owner.
 
-Proposal: `4genteam up` adds one `owner` node to the room (a plain shell seat, no model). `4genteam send` runs `rig send` inside that node's session, so the daemon stamps `owner@<rig>` and seats can verify it. The client must not set `OPENRIG_SESSION_NAME` to another name, because that is forging.
+Proposal: `4genteam up` adds one `owner` node to the room (a plain shell seat, no model). `4genteam send` runs `4genteam send` inside that node's session, so the daemon stamps `owner@<rig>` and seats can verify it. The client must not set `AGENTHUB_SESSION_NAME` to another name, because that is forging.
 
-Not yet verified: that rig accepts a node with no agent runtime, that the stamp survives `tmux send-keys` into that pane, and how seat policies rank owner against lead. Anything running as the owner's Linux user could send as `owner`, which is already true today with `rig send` and `tmux`.
+Not yet verified: that rig accepts a node with no agent runtime, that the stamp survives `tmux send-keys` into that pane, and how seat policies rank owner against lead. Anything running as the owner's Linux user could send as `owner`, which is already true today with `4genteam send` and `tmux`.
 
 ## 4. Architect analysis
 
@@ -89,7 +89,7 @@ Words used below:
   copy at `/home/daihu/__projects__/4genthub`, which is on `main`.
 - **rigd**: the client's background helper for a room. It already runs the watchdog, the compaction
   supervisor and the bridge.
-- **Daemon**: OpenRig's own background service, which delivers messages between seats.
+- **Daemon**: the client's own background service, which delivers messages between seats.
 - **Hook**: a small check that runs automatically before an action. A **blocking** hook can refuse the
   action; a **warning** only reports.
 - **Board**: the 4genthub task board (`manage_task`).
@@ -233,15 +233,15 @@ lead orders the merges.
 
 ### 4.6 The owner node (section 3) - the answer to board task `e2948011-6ea7-42bf-8ee9-c4725124e60b`
 
-**What was measured in OpenRig's code** (the files under `/home/daihu/__projects__/openrig/packages`):
+**What was measured in the client's code** (the files under `/home/daihu/__projects__/reference/packages`):
 - The `From:` name on a message comes from a setting in the sending program's environment
-  (`OPENRIG_SESSION_NAME`). The `rig` command copies it into the request (`cli/src/sender-identity.ts:11`),
+  (`AGENTHUB_SESSION_NAME`). The `rig` command copies it into the request (`cli/src/sender-identity.ts:11`),
   and the daemon writes it down as the sender, labelled `transport:v1`, without checking which program sent
   it (`daemon/src/routes/require-sender-identity.ts`).
 - When the daemon starts any node, it sets that environment setting on the node's terminal session
   (`daemon/src/domain/node-launcher.ts:141-151`). That is why a command typed in a seat's terminal is
   signed with that seat's name.
-- OpenRig already supports a node with no agent: `runtime: terminal`, `agent_ref: builtin:terminal`,
+- 4genteam already supports a node with no agent: `runtime: terminal`, `agent_ref: builtin:terminal`,
   `profile: none`, and such a node may not carry a role or a permission policy
   (`daemon/src/domain/rigspec-schema.ts:505-550`).
 
@@ -259,7 +259,7 @@ terminal. No seat may ever treat the owner's name on a message as proof against 
 - An owner-signed message may set priorities, scope and the next task, and it outranks the lead on those.
   If a forged one ever arrives, the worst result is wasted work that can be undone.
 - To make forging visible, the per-seat deny lists (omp and claude-code) refuse a command that sets
-  `OPENRIG_SESSION_NAME` or types into another seat's terminal. Codex and agy have no deny list; for them
+  `AGENTHUB_SESSION_NAME` or types into another seat's terminal. Codex and agy have no deny list; for them
   the send audit (`seatcheck`) records the sending seat.
 
 **2. The node design.**
@@ -281,7 +281,7 @@ terminal. No seat may ever treat the owner's name on a message as proof against 
     as if from the keyboard). It works, but the message text passes through the shell's command line (quoting
     and length problems, and it lands in the shell history), and `4genteam send` cannot read the result,
     such as the message ID or an error.
-  - **B. Run `rig send` directly with the owner name put in its environment.** Rejected. The daemon cannot
+  - **B. Run `4genteam send` directly with the owner name put in its environment.** Rejected. The daemon cannot
     tell it apart from the forging the owner forbade, and if the client does it, there is no clean rule left
     to deny the same command to the seats.
   - **C, recommended: write the message to a private file, then type one short command into the node's
@@ -297,17 +297,17 @@ terminal. No seat may ever treat the owner's name on a message as proof against 
 
 | Piece | Half |
 |---|---|
-| Signing the sender from the terminal's environment | OpenRig's daemon and `rig` command. Exists; nothing to change. |
-| A node with no agent (`runtime: terminal`) | OpenRig. Exists. |
-| Making the signature real proof (checking which program sent a request, not just what it claims) | OpenRig's daemon, and **not built**. It is the only change that would turn attribution into authentication against the seats. Out of scope for this client work. |
+| Signing the sender from the terminal's environment | the client's daemon and `rig` command. Exists; nothing to change. |
+| A node with no agent (`runtime: terminal`) | 4genteam. Exists. |
+| Making the signature real proof (checking which program sent a request, not just what it claims) | the client's daemon, and **not built**. It is the only change that would turn attribution into authentication against the seats. Out of scope for this client work. |
 | Adding the owner node in `4genteam up`, protecting it from `--prune`, skipping it in compaction and idle checks | Client (agenthub_client), go-dev. |
 | `4genteam send` method C | Client, go-dev. |
-| Deny-list lines for `OPENRIG_SESSION_NAME` and typing into another terminal | Client (`internal/clientpolicy`), go-dev. |
+| Deny-list lines for `AGENTHUB_SESSION_NAME` and typing into another terminal | Client (`internal/clientpolicy`), go-dev. |
 
 **4. The three open questions, settled or tested.**
 - (a) Does rig accept a node with no agent? **Known now: yes** (the code above).
 - (b) Does the signature survive a message sent by typing into that terminal? **Known from code, needs one
-  test.** The signature comes from the environment of the program running `rig send`, and the daemon sets
+  test.** The signature comes from the environment of the program running `4genteam send`, and the daemon sets
   that environment on the node's terminal at start. Typing only starts a program in that terminal, which
   inherits it. One test confirms that the shell the node starts really keeps the setting.
 - (c) How do seats rank the owner against the lead? **A decision, not a test:** see the trust rule above.
@@ -369,7 +369,7 @@ Read a verb before trusting a row: `4genteam <verb> --help` prints what it does 
 
 Section 4 decided what to build and in what order. This section says which codebase each piece is built in, and names the decisions still owed to the owner. It is a plan; no code is written from it until the owner approves.
 
-Words used: the **board** is the 4genthub task board; the **queue** is OpenRig's coordination queue; **rigd** is the client's supervision loop (`agenthub_client/internal/clientlifecycle`).
+Words used: the **board** is the 4genthub task board; the **queue** is the client's coordination queue; **rigd** is the client's supervision loop (`agenthub_client/internal/clientlifecycle`).
 
 ### 5.1 The products
 
@@ -377,7 +377,7 @@ Words used: the **board** is the 4genthub task board; the **queue** is OpenRig's
 - **4genteam** - the client's operational surface: the `4genteam` command (`agenthub_client/cmd/4genteam`), the rigd loops (`agenthub_client/internal/clientlifecycle`), and the git hooks (`4genthub/scripts/git-hooks`). `4genteam` is the one binary the client repository builds.
 - **4gent-client** - the same client repository (`agenthub_client`, `github.com/phamhung075/4genthub-client`) read as its library surface: the policy, session-log and secret-scan packages (`internal/clientpolicy`, `internal/seatlog`, `internal/secretscan`), the seat-side checker (`cmd/seatcheck`) and the seat state (`internal/clientservices`).
 
-**One repository, two names.** Measured: `4genteam` and `4gent-client` are one repository. `agenthub_client` is the only client checkout (`.gitmodules` names `git@github.com:phamhung075/4genthub-client.git`), and it ships the `4genteam` binary, rigd and the library packages together; the retired Python `openrig_*.py` scripts are no longer in the tree. So the last two columns below are that repository's two surfaces - what it runs and what it links - not two products. If two repositories were intended, that is open decision (d).
+**One repository, two names.** Measured: `4genteam` and `4gent-client` are one repository. `agenthub_client` is the only client checkout (`.gitmodules` names `git@github.com:phamhung075/4genthub-client.git`), and it ships the `4genteam` binary, rigd and the library packages together; the retired Python `*.py` scripts are no longer in the tree. So the last two columns below are that repository's two surfaces - what it runs and what it links - not two products. If two repositories were intended, that is open decision (d).
 
 ### 5.2 The split
 

@@ -9,7 +9,7 @@
  *   - `remove` of a block not in effect fails ("module not present").
  *
  * `origin` is the source label: the scope that first put the block into effect
- * (OpenRig's "every assembled piece names its source", profile-composer.ts).
+ * (every assembled piece names its source).
  *
  * @module lib/blockComposition
  * @version 1.0.0

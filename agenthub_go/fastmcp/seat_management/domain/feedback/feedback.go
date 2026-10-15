@@ -19,9 +19,9 @@ const (
 	// LayerRuntime is the agent runtime and its harness running the seat: permission rules,
 	// prompts, tool availability, the runtime CLI itself.
 	LayerRuntime Layer = "runtime"
-	// LayerOpenRig is the rig client and supervisor: rig CLI verbs, the daemon, seat
+	// LayerClient is the 4genteam client and supervisor: its CLI verbs, the daemon, seat
 	// lifecycle, terminals.
-	LayerOpenRig Layer = "openrig"
+	LayerClient Layer = "client"
 	// LayerCloud is the platform API and MCP surface: routes, auth, snapshots, sync.
 	LayerCloud Layer = "cloud"
 	// LayerSeatContext is what a seat was launched with: role text, skills, overlays, blocks.
@@ -39,7 +39,7 @@ const (
 // order the API answer renders, so it is part of the contract, not a display detail.
 var Layers = []Layer{
 	LayerRuntime,
-	LayerOpenRig,
+	LayerClient,
 	LayerCloud,
 	LayerSeatContext,
 	LayerWorkspace,

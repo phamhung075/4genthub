@@ -2,7 +2,7 @@
  * Seat API - Company-workplace seats, modules and overlays.
  *
  * Every call goes through the shared authenticated V2 client (`apiRequest`);
- * this module only encodes the /api/v2/openrig routes.
+ * this module only encodes the /api/v2 routes.
  *
  * @module services/seatApi
  * @version 1.0.0
@@ -41,7 +41,7 @@ import type {
   TeamsResponse,
 } from '../types/seatTypes';
 
-const OPENRIG = '/api/v2/openrig';
+const API_V2 = '/api/v2';
 
 const segment = (value: string) => encodeURIComponent(value);
 
@@ -62,23 +62,23 @@ const jsonPut = (body: unknown): RequestInit => ({
 function overlayPath(scope: SeatOverlayScope, room: string, seat: string): string {
   switch (scope) {
     case 'company':
-      return `${OPENRIG}/overlay`;
+      return `${API_V2}/overlay`;
     case 'room':
-      return `${OPENRIG}/rooms/${segment(room)}/overlay`;
+      return `${API_V2}/rooms/${segment(room)}/overlay`;
     case 'seat':
-      return `${OPENRIG}/rooms/${segment(room)}/seats/${segment(seat)}/overlay`;
+      return `${API_V2}/rooms/${segment(room)}/seats/${segment(seat)}/overlay`;
   }
 }
 
 export const seatApi = {
   // Rooms
-  listRooms: () => apiRequest<RoomsResponse>(`${OPENRIG}/rooms`),
+  listRooms: () => apiRequest<RoomsResponse>(`${API_V2}/rooms`),
 
   createRoom: (data: CreateRoomRequest) =>
-    apiRequest<RoomResponse>(`${OPENRIG}/rooms`, jsonBody(data)),
+    apiRequest<RoomResponse>(`${API_V2}/rooms`, jsonBody(data)),
 
   deleteRoom: (room: string) =>
-    apiRequest<DeletedResponse>(`${OPENRIG}/rooms/${segment(room)}`, { method: 'DELETE' }),
+    apiRequest<DeletedResponse>(`${API_V2}/rooms/${segment(room)}`, { method: 'DELETE' }),
 
   /**
    * Share one room with one team, or make it private again with an empty team.
@@ -89,49 +89,49 @@ export const seatApi = {
    * `role: 'owner'` before this is offered - the page does not probe the refusal.
    */
   setRoomTeam: (room: string, team: string) =>
-    apiRequest<RoomResponse>(`${OPENRIG}/rooms/${segment(room)}/team`, jsonPut({ team })),
+    apiRequest<RoomResponse>(`${API_V2}/rooms/${segment(room)}/team`, jsonPut({ team })),
 
   /** The teams the caller belongs to; the picker's options, and the only slugs the route accepts. */
-  listTeams: () => apiRequest<TeamsResponse>(`${OPENRIG}/teams`),
+  listTeams: () => apiRequest<TeamsResponse>(`${API_V2}/teams`),
 
   // Seat types and modules
-  listSeatTypes: () => apiRequest<SeatTypesResponse>(`${OPENRIG}/seat-types`),
+  listSeatTypes: () => apiRequest<SeatTypesResponse>(`${API_V2}/seat-types`),
 
   createSeatTypeVersion: (slug: string, data: CreateSeatTypeVersionRequest) =>
     apiRequest<SeatTypeVersionResponse>(
-      `${OPENRIG}/seat-types/${segment(slug)}/versions`,
+      `${API_V2}/seat-types/${segment(slug)}/versions`,
       jsonBody(data)
     ),
 
-  listModules: () => apiRequest<ModulesResponse>(`${OPENRIG}/modules`),
+  listModules: () => apiRequest<ModulesResponse>(`${API_V2}/modules`),
 
   getModuleVersion: (slug: string, version: string) =>
     apiRequest<ModuleVersionResponse>(
-      `${OPENRIG}/modules/${segment(slug)}/versions/${segment(version)}`
+      `${API_V2}/modules/${segment(slug)}/versions/${segment(version)}`
     ),
 
   putModuleVersion: (slug: string, version: string, data: PutModuleVersionRequest) =>
     apiRequest<PutModuleVersionResponse>(
-      `${OPENRIG}/modules/${segment(slug)}/versions/${segment(version)}`,
+      `${API_V2}/modules/${segment(slug)}/versions/${segment(version)}`,
       jsonPut(data)
     ),
 
   // Seats
   listSeats: (room: string) =>
-    apiRequest<SeatsResponse>(`${OPENRIG}/rooms/${segment(room)}/seats`),
+    apiRequest<SeatsResponse>(`${API_V2}/rooms/${segment(room)}/seats`),
 
   createSeat: (room: string, data: CreateSeatRequest) =>
-    apiRequest<SeatResponse>(`${OPENRIG}/rooms/${segment(room)}/seats`, jsonBody(data)),
+    apiRequest<SeatResponse>(`${API_V2}/rooms/${segment(room)}/seats`, jsonBody(data)),
 
   removeSeat: (room: string, seat: string) =>
     apiRequest<DeletedResponse>(
-      `${OPENRIG}/rooms/${segment(room)}/seats/${segment(seat)}`,
+      `${API_V2}/rooms/${segment(room)}/seats/${segment(seat)}`,
       { method: 'DELETE' }
     ),
 
   updateSeatOccupant: (room: string, seat: string, data: OccupantUpdate) =>
     apiRequest<SeatResponse>(
-      `${OPENRIG}/rooms/${segment(room)}/seats/${segment(seat)}/occupant`,
+      `${API_V2}/rooms/${segment(room)}/seats/${segment(seat)}/occupant`,
       jsonPut(data)
     ),
 
@@ -149,24 +149,24 @@ export const seatApi = {
   // Links
   listLinks: (room: string, seat: string) =>
     apiRequest<SeatLinksResponse>(
-      `${OPENRIG}/rooms/${segment(room)}/seats/${segment(seat)}/links`
+      `${API_V2}/rooms/${segment(room)}/seats/${segment(seat)}/links`
     ),
 
   putLink: (room: string, seat: string, data: SeatLinkRequest) =>
     apiRequest<SeatLinkResponse>(
-      `${OPENRIG}/rooms/${segment(room)}/seats/${segment(seat)}/links`,
+      `${API_V2}/rooms/${segment(room)}/seats/${segment(seat)}/links`,
       jsonPut(data)
     ),
 
   putPermissionPolicy: (room: string, seat: string, permissionPolicy: SeatPermissionPolicy) =>
     apiRequest<SeatResponse>(
-      `${OPENRIG}/rooms/${segment(room)}/seats/${segment(seat)}/permission-policy`,
+      `${API_V2}/rooms/${segment(room)}/seats/${segment(seat)}/permission-policy`,
       jsonPut({ permission_policy: permissionPolicy })
     ),
 
   deleteLink: (room: string, seat: string, to: string, kind: SeatLinkKind) =>
     apiRequest<DeletedResponse>(
-      `${OPENRIG}/rooms/${segment(room)}/seats/${segment(seat)}/links/${segment(to)}/${segment(kind)}`,
+      `${API_V2}/rooms/${segment(room)}/seats/${segment(seat)}/links/${segment(to)}/${segment(kind)}`,
       { method: 'DELETE' }
     ),
 
@@ -174,22 +174,22 @@ export const seatApi = {
   // so the key alone names a seat only by guessing its room.
   sendSeatMessage: (room: string, seat: string, data: SeatMessageRequest) =>
     apiRequest<SeatMessageResponse>(
-      `${OPENRIG}/rooms/${segment(room)}/seats/${segment(seat)}/messages`,
+      `${API_V2}/rooms/${segment(room)}/seats/${segment(seat)}/messages`,
       jsonBody(data)
     ),
 
   // Bridge machines
-  fetchMachines: () => apiRequest<MachinesResponse>(`${OPENRIG}/machines`),
+  fetchMachines: () => apiRequest<MachinesResponse>(`${API_V2}/machines`),
 
   // Settings
-  getSettings: () => apiRequest<SeatSettingsResponse>(`${OPENRIG}/settings`),
+  getSettings: () => apiRequest<SeatSettingsResponse>(`${API_V2}/settings`),
 
   putSettings: (followLatest: boolean) =>
-    apiRequest<SeatSettingsResponse>(`${OPENRIG}/settings`, jsonPut({ follow_latest: followLatest })),
+    apiRequest<SeatSettingsResponse>(`${API_V2}/settings`, jsonPut({ follow_latest: followLatest })),
 
   // Resolved preview
   getResolvedSeat: (room: string, seat: string) =>
     apiRequest<ResolvedSeatResponse>(
-      `${OPENRIG}/seats/${segment(room)}/${segment(seat)}`
+      `${API_V2}/seats/${segment(room)}/${segment(seat)}`
     ),
 };

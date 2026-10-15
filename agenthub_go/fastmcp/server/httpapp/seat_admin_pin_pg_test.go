@@ -53,14 +53,14 @@ func TestSeatAdminPinReachesTheRowOnARealDatabase(t *testing.T) {
 
 	// Two module versions, because a pin needs two versions of the seat's type to move between.
 	for _, version := range []string{"1.0.0", "2.0.0"} {
-		rec := doTestRequest(t, mux, http.MethodPut, "/api/v2/openrig/modules/pgpinmod/versions/"+version,
+		rec := doTestRequest(t, mux, http.MethodPut, "/api/v2/modules/pgpinmod/versions/"+version,
 			`{"kind":"instruction","content":"c"}`)
 		if rec.Code != http.StatusOK {
 			t.Fatalf("seeding module version %s: %d %s", version, rec.Code, rec.Body.String())
 		}
 	}
 
-	rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/seat-types", `{"slug":"pgpin","name":"PgPin"}`)
+	rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/seat-types", `{"slug":"pgpin","name":"PgPin"}`)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("creating the seat type: %d %s", rec.Code, rec.Body.String())
 	}
@@ -73,11 +73,11 @@ func TestSeatAdminPinReachesTheRowOnARealDatabase(t *testing.T) {
 		t.Fatalf("the two versions are both %q; this case cannot pin between them", firstVersion)
 	}
 
-	rec = doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/rooms", `{"slug":"pgpinroom","name":"PgPin room"}`)
+	rec = doTestRequest(t, mux, http.MethodPost, "/api/v2/rooms", `{"slug":"pgpinroom","name":"PgPin room"}`)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("creating the room: %d %s", rec.Code, rec.Body.String())
 	}
-	rec = doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/rooms/pgpinroom/seats",
+	rec = doTestRequest(t, mux, http.MethodPost, "/api/v2/rooms/pgpinroom/seats",
 		`{"seat_key":"alice","seat_type":"pgpin","pinned_version":"`+firstVersion+`","runtime":"claude-code"}`)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("creating the seat pinned to %s: %d %s", firstVersion, rec.Code, rec.Body.String())
@@ -112,7 +112,7 @@ func TestSeatAdminPinReachesTheRowOnARealDatabase(t *testing.T) {
 		t.Fatalf("the seat was created pinned to %q, want %q", got, firstVersion)
 	}
 
-	rec = doTestRequest(t, mux, http.MethodPut, "/api/v2/openrig/rooms/pgpinroom/seats/alice/pin",
+	rec = doTestRequest(t, mux, http.MethodPut, "/api/v2/rooms/pgpinroom/seats/alice/pin",
 		`{"pinned_version":"`+secondVersion+`"}`)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("pinning to %s: %d %s", secondVersion, rec.Code, rec.Body.String())
@@ -131,7 +131,7 @@ func TestSeatAdminPinReachesTheRowOnARealDatabase(t *testing.T) {
 		{"a version the seat type does not have", `{"pinned_version":"9.9.9"}`, http.StatusBadRequest},
 		{"an omitted version", `{}`, http.StatusBadRequest},
 	} {
-		rec := doTestRequest(t, mux, http.MethodPut, "/api/v2/openrig/rooms/pgpinroom/seats/alice/pin", refusal.body)
+		rec := doTestRequest(t, mux, http.MethodPut, "/api/v2/rooms/pgpinroom/seats/alice/pin", refusal.body)
 		if rec.Code != refusal.want {
 			t.Errorf("pin with %s: status = %d, want %d: %s", refusal.name, rec.Code, refusal.want, rec.Body.String())
 		}
@@ -139,7 +139,7 @@ func TestSeatAdminPinReachesTheRowOnARealDatabase(t *testing.T) {
 			t.Fatalf("%s moved the row to %q, want it unchanged at %q", refusal.name, got, secondVersion)
 		}
 	}
-	if rec := doTestRequest(t, mux, http.MethodPut, "/api/v2/openrig/rooms/pgpinroom/seats/nobody/pin",
+	if rec := doTestRequest(t, mux, http.MethodPut, "/api/v2/rooms/pgpinroom/seats/nobody/pin",
 		`{"pinned_version":"`+secondVersion+`"}`); rec.Code != http.StatusNotFound {
 		t.Errorf("pin on an absent seat: status = %d, want 404: %s", rec.Code, rec.Body.String())
 	}
@@ -154,13 +154,13 @@ func TestSeatAdminPinReachesTheRowOnARealDatabase(t *testing.T) {
 		id := otherUser
 		return &authdomain.User{ID: &id, Email: "other@example.com", Username: "other"}, nil
 	}
-	rec = doTestRequest(t, mux, http.MethodGet, "/api/v2/openrig/rooms/pgpinroom/seats", "")
+	rec = doTestRequest(t, mux, http.MethodGet, "/api/v2/rooms/pgpinroom/seats", "")
 	listCode := rec.Code
 	if body := rec.Body.String(); strings.Contains(body, "alice") || listCode >= http.StatusInternalServerError {
 		t.Errorf("another tenant's seat list: status %d, body %s - want the owner's seat absent and no server error",
 			listCode, body)
 	}
-	rec = doTestRequest(t, mux, http.MethodPut, "/api/v2/openrig/rooms/pgpinroom/seats/alice/pin",
+	rec = doTestRequest(t, mux, http.MethodPut, "/api/v2/rooms/pgpinroom/seats/alice/pin",
 		`{"pinned_version":"`+firstVersion+`"}`)
 	if rec.Code == http.StatusOK {
 		t.Errorf("another tenant pinned the owner's seat: status %d, body %s", rec.Code, rec.Body.String())
@@ -177,7 +177,7 @@ func TestSeatAdminPinReachesTheRowOnARealDatabase(t *testing.T) {
 // assigned, taken from the response body rather than from this file.
 func createSeatTypeVersion(t *testing.T, mux *http.ServeMux, moduleRef string) string {
 	t.Helper()
-	rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/seat-types/pgpin/versions",
+	rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/seat-types/pgpin/versions",
 		`{"module_refs":["`+moduleRef+`"],"default_runtime":"claude-code"}`)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("adding version from %s: %d %s", moduleRef, rec.Code, rec.Body.String())

@@ -15,7 +15,7 @@ import (
 	"agenthub/fastmcp/seat_management/domain/repositories"
 )
 
-const occupantPath = "/api/v2/openrig/rooms/dev/seats/alice/occupant"
+const occupantPath = "/api/v2/rooms/dev/seats/alice/occupant"
 
 func occupantFixture(t *testing.T, runtime string) (*fakeSeatAdmin, *http.ServeMux) {
 	t.Helper()

@@ -10,7 +10,7 @@ import (
 	"agenthub/fastmcp/seat_management/domain/resolver"
 )
 
-// namePattern is OpenRig's pod/member id rule. Room slugs (pod ids) and seat keys
+// namePattern is the pod/member id rule. Room slugs (pod ids) and seat keys
 // (member ids) are written together in a qualified edge reference as "pod.member",
 // so a dot or any other punctuation outside the pattern is invalid.
 var namePattern = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_-]*$`)
@@ -86,7 +86,7 @@ func ValidateConcreteVersion(version string) error {
 	return nil
 }
 
-// ValidateName checks value against the OpenRig name rule; kind ("room slug" or
+// ValidateName checks value against the name rule; kind ("room slug" or
 // "seat key") names the field in the error.
 func ValidateName(kind, value string) error {
 	if !namePattern.MatchString(value) {

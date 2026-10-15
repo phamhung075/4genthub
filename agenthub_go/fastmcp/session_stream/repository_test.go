@@ -99,7 +99,7 @@ func TestSeatIdentityRefusesHalfAPairAndDropsAnUnaddressableOne(t *testing.T) {
 	if err != nil || dropped || room == nil || key == nil || *room != "dev" || *key != "alice" {
 		t.Errorf("a whole pair must pass through: %v, %v, dropped=%v, %v", room, key, dropped, err)
 	}
-	// namePattern is OpenRig's POD OR MEMBER ID rule, and room_slug carries a RIG name - a rig the
+	// namePattern is the POD OR MEMBER ID rule, and room_slug carries a RIG name - a rig the
 	// server did not render may be named anything, so the annotation goes and nothing else does.
 	for _, c := range []struct {
 		name       string

@@ -3,7 +3,7 @@
 ## What happened
 The acceptance harness finished its run with a rollback whose stated intent was to "stop the room, leave
 nothing behind, touch nothing global" and whose closing footer read "Nothing global was touched: the live
-room, `~/.openrig` and the OpenRig daemon were never addressed." It performed this:
+room, `~/config/4genthub` and the 4genteam daemon were never addressed." It performed this:
 
 ```
 for d in /proc/[0-9]*; do if tr '\0' ' ' < $d/cmdline 2>/dev/null | grep -Eq '[/]agenthub-runtime .*daemon'; then kill -TERM ${d#/proc/} && echo SIGTERM ${d#/proc/}; fi; done

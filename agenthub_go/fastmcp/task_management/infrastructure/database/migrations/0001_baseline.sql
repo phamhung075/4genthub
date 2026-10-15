@@ -771,7 +771,7 @@ CREATE TABLE seat_feedback (
 	text TEXT NOT NULL,
 	machine_id TEXT NOT NULL DEFAULT '',
 	created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-	CONSTRAINT ck_seat_feedback_layer CHECK (layer IN ('runtime', 'openrig', 'cloud', 'seat-context', 'workspace', 'other')),
+	CONSTRAINT ck_seat_feedback_layer CHECK (layer IN ('runtime', 'client', 'cloud', 'seat-context', 'workspace', 'other')),
 	PRIMARY KEY (id)
 );
 CREATE INDEX ix_seat_feedback_user_id ON seat_feedback (user_id);

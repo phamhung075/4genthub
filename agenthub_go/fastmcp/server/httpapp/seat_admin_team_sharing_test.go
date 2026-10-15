@@ -220,7 +220,7 @@ func TestSeatAdminViewerReadsSharedRoom(t *testing.T) {
 	mux := sharingTestMux(t, fake)
 
 	fake.scopes = nil
-	rec := doTestRequest(t, mux, http.MethodGet, "/api/v2/openrig/rooms/dev/seats", "")
+	rec := doTestRequest(t, mux, http.MethodGet, "/api/v2/rooms/dev/seats", "")
 	if rec.Code != http.StatusOK {
 		t.Fatalf("viewer list seats: %d %s", rec.Code, rec.Body.String())
 	}
@@ -238,7 +238,7 @@ func TestSeatAdminViewerReadsSharedRoom(t *testing.T) {
 	assertScopeIsOwner(t, fake, "owner-user")
 
 	fake.scopes = nil
-	rec = doTestRequest(t, mux, http.MethodGet, "/api/v2/openrig/rooms/dev/overlay", "")
+	rec = doTestRequest(t, mux, http.MethodGet, "/api/v2/rooms/dev/overlay", "")
 	if rec.Code != http.StatusOK {
 		t.Fatalf("viewer room overlay: %d %s", rec.Code, rec.Body.String())
 	}
@@ -248,7 +248,7 @@ func TestSeatAdminViewerReadsSharedRoom(t *testing.T) {
 	assertScopeIsOwner(t, fake, "owner-user")
 
 	fake.scopes = nil
-	rec = doTestRequest(t, mux, http.MethodGet, "/api/v2/openrig/rooms/dev/seats/alice/links", "")
+	rec = doTestRequest(t, mux, http.MethodGet, "/api/v2/rooms/dev/seats/alice/links", "")
 	if rec.Code != http.StatusOK {
 		t.Fatalf("viewer seat links: %d %s", rec.Code, rec.Body.String())
 	}
@@ -266,7 +266,7 @@ func TestSeatAdminRoomRole(t *testing.T) {
 	fake.sharedRoom("mine", mountTestUser, "team-eng") // "mine": owned by the caller, shared too
 	mux := sharingTestMux(t, fake)
 
-	rec := doTestRequest(t, mux, http.MethodGet, "/api/v2/openrig/rooms", "")
+	rec := doTestRequest(t, mux, http.MethodGet, "/api/v2/rooms", "")
 	if rec.Code != http.StatusOK {
 		t.Fatalf("list rooms: %d %s", rec.Code, rec.Body.String())
 	}
@@ -294,14 +294,14 @@ func TestSeatAdminRoomRole(t *testing.T) {
 	}
 
 	// The other two call sites carry the caller as well: the share echo, and the create echo.
-	rec = doTestRequest(t, mux, http.MethodPut, "/api/v2/openrig/rooms/mine/team", `{"team":"eng"}`)
+	rec = doTestRequest(t, mux, http.MethodPut, "/api/v2/rooms/mine/team", `{"team":"eng"}`)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("share the caller's own room: %d %s", rec.Code, rec.Body.String())
 	}
 	if role := sharingTestField(t, rec.Body.Bytes(), "room", "role"); role != teamrepositories.RoleOwner {
 		t.Fatalf("the share echo read role %v, want %q", role, teamrepositories.RoleOwner)
 	}
-	rec = doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/rooms", `{"slug":"fresh","name":"Fresh"}`)
+	rec = doTestRequest(t, mux, http.MethodPost, "/api/v2/rooms", `{"slug":"fresh","name":"Fresh"}`)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("create room: %d %s", rec.Code, rec.Body.String())
 	}
@@ -319,12 +319,12 @@ func TestSeatAdminNonMemberGetsNotFound(t *testing.T) {
 	mux := sharingTestMux(t, fake)
 
 	for _, tc := range []struct{ method, path, body string }{
-		{http.MethodGet, "/api/v2/openrig/rooms/dev/seats", ""},
-		{http.MethodGet, "/api/v2/openrig/rooms/dev/overlay", ""},
-		{http.MethodGet, "/api/v2/openrig/rooms/dev/seats/alice/overlay", ""},
-		{http.MethodGet, "/api/v2/openrig/rooms/dev/seats/alice/links", ""},
-		{http.MethodDelete, "/api/v2/openrig/rooms/dev", ""},
-		{http.MethodPut, "/api/v2/openrig/rooms/dev/seats/alice/occupant", `{"runtime":"omp","model":"deepseek/deepseek-flash"}`},
+		{http.MethodGet, "/api/v2/rooms/dev/seats", ""},
+		{http.MethodGet, "/api/v2/rooms/dev/overlay", ""},
+		{http.MethodGet, "/api/v2/rooms/dev/seats/alice/overlay", ""},
+		{http.MethodGet, "/api/v2/rooms/dev/seats/alice/links", ""},
+		{http.MethodDelete, "/api/v2/rooms/dev", ""},
+		{http.MethodPut, "/api/v2/rooms/dev/seats/alice/occupant", `{"runtime":"omp","model":"deepseek/deepseek-flash"}`},
 	} {
 		rec := doTestRequest(t, mux, tc.method, tc.path, tc.body)
 		if rec.Code != http.StatusNotFound {
@@ -332,7 +332,7 @@ func TestSeatAdminNonMemberGetsNotFound(t *testing.T) {
 		}
 	}
 	// The owner's room list is empty for the stranger: the shared room is not theirs.
-	rec := doTestRequest(t, mux, http.MethodGet, "/api/v2/openrig/rooms", "")
+	rec := doTestRequest(t, mux, http.MethodGet, "/api/v2/rooms", "")
 	if rec.Code != http.StatusOK {
 		t.Fatalf("list rooms: %d %s", rec.Code, rec.Body.String())
 	}
@@ -344,15 +344,15 @@ func TestSeatAdminViewerCannotMutate(t *testing.T) {
 	mux := sharingTestMux(t, fake)
 
 	for _, tc := range []struct{ method, path, body string }{
-		{http.MethodPut, "/api/v2/openrig/rooms/dev/seats/alice/occupant", `{"runtime":"omp","model":"deepseek/deepseek-flash"}`},
-		{http.MethodPut, "/api/v2/openrig/rooms/dev/seats/alice/permission-policy", `{"permission_policy":"yolo"}`},
-		{http.MethodPut, "/api/v2/openrig/rooms/dev/overlay", `{"ops":[{"kind":"add","slug":"instr","version":"1.0.0"}]}`},
-		{http.MethodPut, "/api/v2/openrig/rooms/dev/seats/alice/overlay", `{"ops":[{"kind":"add","slug":"instr","version":"1.0.0"}]}`},
-		{http.MethodPut, "/api/v2/openrig/rooms/dev/seats/alice/links", `{"to_seat":"bob","kind":"collaborates_with"}`},
-		{http.MethodDelete, "/api/v2/openrig/rooms/dev/seats/alice/links/bob/collaborates_with", ""},
-		{http.MethodDelete, "/api/v2/openrig/rooms/dev/seats/alice", ""},
-		{http.MethodDelete, "/api/v2/openrig/rooms/dev", ""},
-		{http.MethodPost, "/api/v2/openrig/rooms/dev/seats", `{"seat_key":"carol","seat_type":"coder","runtime":"omp","model":"deepseek/deepseek-flash"}`},
+		{http.MethodPut, "/api/v2/rooms/dev/seats/alice/occupant", `{"runtime":"omp","model":"deepseek/deepseek-flash"}`},
+		{http.MethodPut, "/api/v2/rooms/dev/seats/alice/permission-policy", `{"permission_policy":"yolo"}`},
+		{http.MethodPut, "/api/v2/rooms/dev/overlay", `{"ops":[{"kind":"add","slug":"instr","version":"1.0.0"}]}`},
+		{http.MethodPut, "/api/v2/rooms/dev/seats/alice/overlay", `{"ops":[{"kind":"add","slug":"instr","version":"1.0.0"}]}`},
+		{http.MethodPut, "/api/v2/rooms/dev/seats/alice/links", `{"to_seat":"bob","kind":"collaborates_with"}`},
+		{http.MethodDelete, "/api/v2/rooms/dev/seats/alice/links/bob/collaborates_with", ""},
+		{http.MethodDelete, "/api/v2/rooms/dev/seats/alice", ""},
+		{http.MethodDelete, "/api/v2/rooms/dev", ""},
+		{http.MethodPost, "/api/v2/rooms/dev/seats", `{"seat_key":"carol","seat_type":"coder","runtime":"omp","model":"deepseek/deepseek-flash"}`},
 	} {
 		rec := doTestRequest(t, mux, tc.method, tc.path, tc.body)
 		if rec.Code != http.StatusNotFound {
@@ -377,13 +377,13 @@ func TestSeatAdminOwnerPathUnchanged(t *testing.T) {
 	mux := sharingTestMux(t, fake)
 
 	fake.scopes = nil
-	rec := doTestRequest(t, mux, http.MethodGet, "/api/v2/openrig/rooms/dev/seats", "")
+	rec := doTestRequest(t, mux, http.MethodGet, "/api/v2/rooms/dev/seats", "")
 	if rec.Code != http.StatusOK {
 		t.Fatalf("owner list seats: %d %s", rec.Code, rec.Body.String())
 	}
 	assertScopeIsOwner(t, fake, mountTestUser)
 
-	rec = doTestRequest(t, mux, http.MethodGet, "/api/v2/openrig/rooms", "")
+	rec = doTestRequest(t, mux, http.MethodGet, "/api/v2/rooms", "")
 	if rec.Code != http.StatusOK {
 		t.Fatalf("owner list rooms: %d %s", rec.Code, rec.Body.String())
 	}
@@ -392,7 +392,7 @@ func TestSeatAdminOwnerPathUnchanged(t *testing.T) {
 	}
 
 	// The owner mutates their own room through the unchanged path.
-	rec = doTestRequest(t, mux, http.MethodPut, "/api/v2/openrig/rooms/dev/seats/alice/occupant",
+	rec = doTestRequest(t, mux, http.MethodPut, "/api/v2/rooms/dev/seats/alice/occupant",
 		`{"runtime":"omp","model":"deepseek/deepseek-flash"}`)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("owner set occupant: %d %s", rec.Code, rec.Body.String())
@@ -406,7 +406,7 @@ func TestSeatAdminShareRoute(t *testing.T) {
 	room := fake.seedRoom("dev") // the caller owns it
 	mux := sharingTestMux(t, fake)
 
-	rec := doTestRequest(t, mux, http.MethodPut, "/api/v2/openrig/rooms/dev/team", `{"team":"eng"}`)
+	rec := doTestRequest(t, mux, http.MethodPut, "/api/v2/rooms/dev/team", `{"team":"eng"}`)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("share: %d %s", rec.Code, rec.Body.String())
 	}
@@ -418,11 +418,11 @@ func TestSeatAdminShareRoute(t *testing.T) {
 	}
 
 	// A team the caller is not a member of cannot be used, and an unknown slug is a 404.
-	if rec := doTestRequest(t, mux, http.MethodPut, "/api/v2/openrig/rooms/dev/team", `{"team":"other"}`); rec.Code != http.StatusNotFound {
+	if rec := doTestRequest(t, mux, http.MethodPut, "/api/v2/rooms/dev/team", `{"team":"other"}`); rec.Code != http.StatusNotFound {
 		t.Fatalf("share with a foreign team = %d, want 404: %s", rec.Code, rec.Body.String())
 	}
 	// Clearing makes the room private again.
-	if rec := doTestRequest(t, mux, http.MethodPut, "/api/v2/openrig/rooms/dev/team", `{"team":""}`); rec.Code != http.StatusOK {
+	if rec := doTestRequest(t, mux, http.MethodPut, "/api/v2/rooms/dev/team", `{"team":""}`); rec.Code != http.StatusOK {
 		t.Fatalf("unshare: %d %s", rec.Code, rec.Body.String())
 	}
 	if room.TeamID != "" {
@@ -435,7 +435,7 @@ func TestSeatAdminShareRouteRefusesNonOwner(t *testing.T) {
 	seedSharedRoom(fake) // owned by owner-user; the caller is only a viewer
 	mux := sharingTestMux(t, fake)
 
-	if rec := doTestRequest(t, mux, http.MethodPut, "/api/v2/openrig/rooms/dev/team", `{"team":"eng"}`); rec.Code != http.StatusNotFound {
+	if rec := doTestRequest(t, mux, http.MethodPut, "/api/v2/rooms/dev/team", `{"team":"eng"}`); rec.Code != http.StatusNotFound {
 		t.Fatalf("viewer share = %d, want 404: %s", rec.Code, rec.Body.String())
 	}
 	if fake.rooms[0].TeamID != "team-eng" {

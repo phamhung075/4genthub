@@ -6,4 +6,4 @@
 
 **The seat checker PATH limit is stated** (2026-10-03)
 
-- Seats inherit the PATH the OpenRig daemon had when it started (visible only as the daemon's tmux `-e PATH=` environment); `rig` 0.6.3 exposes it nowhere (`rig daemon status` has no `--json`, `rig whoami --json` carries no environment), so `openrig_seat_sync.py` cannot check it cheaply. The `install-checker` and `pull`/`rig` messages, and the script docstring, now say that the check reads the PATH of the current shell and tell the operator to restart the daemon (`rig daemon stop`, `rig daemon start`) from a shell where `seatcheck` resolves.
+- Seats inherit the PATH the 4genteam daemon had when it started (visible only as the daemon's tmux `-e PATH=` environment); `rig` 0.6.3 exposes it nowhere (`rig daemon status` has no `--json`, `4genteam whoami --json` carries no environment), so `seat_sync.py` cannot check it cheaply. The `install-checker` and `pull`/`rig` messages, and the script docstring, now say that the check reads the PATH of the current shell and tell the operator to restart the daemon (`rig daemon stop`, `rig daemon start`) from a shell where `seatcheck` resolves.

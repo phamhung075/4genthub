@@ -18,7 +18,7 @@ Rules
 - agy-check verifies via `go build ./...`, `go vet ./...`, and `go test ./...`.
 
 # Culture (shared by all four seats)
-Mirrors ~/.openrig/specs/4genthub-go/CULTURE.md. Repository: /home/daihu/__projects__/4genthub. Goal: port the Python server (agenthub_main/src/fastmcp) to Go in agenthub_go/ with the same DDD layout, file names, HTTP/MCP API and DB schema. Behavior must not change. Never revert uncommitted user changes; never delete the Python server.
+Mirrors the team's CULTURE.md. Repository: /home/daihu/__projects__/4genthub. Goal: port the Python server (agenthub_main/src/fastmcp) to Go in agenthub_go/ with the same DDD layout, file names, HTTP/MCP API and DB schema. Behavior must not change. Never revert uncommitted user changes; never delete the Python server.
 
 ## Teams and standing mission (4 seats)
 
@@ -72,7 +72,7 @@ to all four seats. Read .agents/skills/deepseek-offload/SKILL.md once before the
 ## End-to-end test (only after BOTH teams have no `todo` rows)
 
 Only dev-owner runs it. Test only the Go server (login, then the main API/MCP/WebSocket flows)
-with the account in ~/.openrig/specs/4genthub-go/e2e-account.env (E2E_EMAIL / E2E_PASSWORD, read
+with the account in the e2e account file kept outside the repository (E2E_EMAIL / E2E_PASSWORD, read
 at test time; never copy credentials into the repo, logs, commits or queue items). Fix failures
 and re-run until green. Replacing the production backend is NOT authorized by this file: ask the
 user first.

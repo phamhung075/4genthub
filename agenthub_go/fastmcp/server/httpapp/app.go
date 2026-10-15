@@ -161,7 +161,6 @@ func (a *App) Handler() http.Handler {
 	mountWebSockets(mux, a.Sessions)
 	mountSeatRoutes(mux, a.Sessions)
 	mountSeatAdminRoutes(mux, a.Sessions)
-	mountSeatRigSpecRoutes(mux, a.Sessions)
 	mountSeatStatusRoutes(mux, a.Sessions)
 	mountSeatFeedbackRoutes(mux, a.Sessions)
 	// The room decision channel: the friction channel's two-way sibling (an ask mirrored up, a

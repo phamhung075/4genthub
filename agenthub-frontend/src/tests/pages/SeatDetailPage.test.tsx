@@ -422,7 +422,7 @@ describe('SeatDetailPage', () => {
     });
   });
 
-  it('offers the five OpenRig link kinds with labels and message rules', async () => {
+  it('offers the five 4genteam link kinds with labels and message rules', async () => {
     renderDetail();
     await screen.findByText('rules');
 

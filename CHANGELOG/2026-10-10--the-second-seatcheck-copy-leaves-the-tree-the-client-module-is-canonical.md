@@ -14,8 +14,8 @@
   `agenthub/fastmcp/seat_management/domain/commpolicy` and `os/user`;
   `agenthub_client/cmd/seatcheck/main.go:25-26` imports this module's `internal/commpolicy` and
   `internal/clientenv`), and the pin-store resolution (`main.go:51-55` + `:83-105` against `:78-91`). The
-  deleted copy joined `defaultPinsDir = ".openrig/agenthub-seats"` to `realHome()`, the passwd entry — "the
-  same resolution as `real_home()` in `scripts/openrig_seat_sync.py`, one language over" — a script this
+  deleted copy joined `defaultPinsDir = ".config/4genthub/agenthub-seats"` to `realHome()`, the passwd entry — "the
+  same resolution as `real_home()` in `scripts/seat_sync.py`, one language over" — a script this
   repository no longer has; the kept copy calls `clientenv.ResolveSeatStore("")`, **this tree's one
   implementation of that store**, whose own comment records that de-duplication. That is the drift the
   finding predicted, measured: the copy that stayed is the copy that was maintained.

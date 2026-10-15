@@ -190,7 +190,7 @@ export interface SeatModuleChange {
 // Links
 // =============================================================================
 
-/** The five edge kinds OpenRig accepts. */
+/** The five edge kinds 4genteam accepts. */
 export type SeatLinkKind =
   | 'delegates_to'
   | 'spawned_by'
@@ -284,8 +284,8 @@ export interface MachineAgentStatus {
  *
  * The report names its endpoints by seat KEY (`from`/`to`), not by seat id, and carries no `allow`
  * flag: it says what the rig is RUNNING, not what the cloud denies. It arrives on
- * `POST /api/v2/openrig/seat-status` under `edges` (replaced whole on every report) and comes back
- * on each machine from `GET /api/v2/openrig/machines`. It is OPTIONAL on the read because the
+ * `POST /api/v2/seat-status` under `edges` (replaced whole on every report) and comes back
+ * on each machine from `GET /api/v2/machines`. It is OPTIONAL on the read because the
  * machines route did not carry it before the server half shipped; absent and empty mean the same
  * thing to every consumer here.
  */
@@ -343,7 +343,7 @@ export interface SeatLinkRequest {
 }
 
 /**
- * Body of POST /api/v2/openrig/rooms/{room}/seats/{seat}/messages - one message to a seat's session.
+ * Body of POST /api/v2/rooms/{room}/seats/{seat}/messages - one message to a seat's session.
  *
  * THIS SHAPE IS THE INTERFACE THE CHAT INPUT IS BUILT AGAINST, pinned in one place
  * (`seatApi.sendSeatMessage`) so the route's author aligns it in a single edit. `text` is the

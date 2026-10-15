@@ -299,7 +299,7 @@ export const SeatsPage: React.FC = () => {
         <h2 className="text-lg font-semibold flex items-center gap-2">
           <DoorOpen className="h-5 w-5 text-primary" /> Rooms
         </h2>
-        <p className="text-xs text-muted-foreground">A room is an OpenRig pod.</p>
+        <p className="text-xs text-muted-foreground">A room is a pod of seats.</p>
         {roomsLoading && (
           <div className="flex items-center gap-2 text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" /> Loading rooms...
@@ -378,7 +378,7 @@ export const SeatsPage: React.FC = () => {
             </p>
           )}
           <p className="text-xs text-muted-foreground">
-            A seat is an OpenRig member (a fixed role slot).
+            A seat is a room member (a fixed role slot).
           </p>
 
           {seatsLoading && (
