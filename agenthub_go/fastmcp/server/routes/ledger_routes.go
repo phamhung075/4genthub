@@ -6,7 +6,8 @@
 //
 // IT IS NOT O1a's READ. `GET /api/v2/tasks/{id}/events` is per TASK; `GET /api/v2/ledger` is the
 // cursor across ALL of a user's tasks, which is the whole difference between them and the reason
-// both exist (architecture agenthub-system-architecture.md :615).
+// both exist (architecture agenthub-system-architecture.md, D9's option A: a client reads
+// "everything after N" across all its tasks).
 package routes
 
 import (

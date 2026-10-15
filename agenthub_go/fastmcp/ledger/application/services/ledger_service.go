@@ -3,9 +3,11 @@
 //
 // IT IS NEITHER O1a NOR O1b. O1a's reader is per TASK and its writer is the platform acting on its
 // own; this service is the client PUSHING its offline work and PULLING everything since a cursor,
-// which is D9's part 1 (architecture agenthub-system-architecture.md :597-:617).
+// which is D9's part 1 (architecture agenthub-system-architecture.md, its "#### Part 1: the sync and
+// event model" heading).
 //
-// THE RULE IT IMPLEMENTS IS ONE SENTENCE (`:601`, `:608`): facts sync, decisions sequence. A fact is
+// THE RULE IT IMPLEMENTS IS ONE SENTENCE, the D9 decision's own (architecture
+// agenthub-system-architecture.md): facts sync, decisions sequence. A fact is
 // append-only and is never refused for being late. A decision carries the task seq the client had
 // seen and is refused when something that is NOT a fact happened after it - the client's claim,
 // transition or verdict was formed against a history that has since moved, and claims and verdicts

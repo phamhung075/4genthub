@@ -4,13 +4,15 @@
 // IT IS THE LEDGER'S LAYER AND NOT PART OF O1a/O1b. O1a owns the table, the ORM struct, the
 // repository and the PER-TASK read; O1b owns the transactional write a status change makes. Neither
 // speaks about a CLIENT pushing its offline work, which is what D9's part 1 adds (architecture
-// agenthub-system-architecture.md :597-:617, committed 4f753d2d) and what P2/P3 build.
+// agenthub-system-architecture.md, its "#### Part 1: the sync and event model" heading) and what
+// P2/P3 build.
 //
 // THE VOCABULARY IS THE ARCHITECTURE'S, RE-STATED HERE FOR THE ROLE IT PLAYS IN THE DECISION rather
 // than copied for convenience: the DB CHECK constraint (task_event_tables.go) is the authority for
 // which strings may LAND, and a test beside this file pins that every kind below is one of those
-// strings, so the two cannot drift. What is added here is the CLASSIFICATION, which is the rule
-// `:599` turns on and which no table can hold.
+// strings, so the two cannot drift. What is added here is the CLASSIFICATION, which is the rule the
+// architecture's Decisions bullet turns on - "unless every event since then is a fact"
+// (ai_docs/core-architecture/agenthub-system-architecture.md) - and which no table can hold.
 package entities
 
 // IntentKind is one kind a client may push through the outbox. It is the same string the ledger
@@ -34,7 +36,8 @@ const (
 	IntentKindContextLoaded     IntentKind = "context_loaded"
 )
 
-// DecisionKinds is D9's decision list (`:606`): the intents that claim, transition or judge, and so
+// DecisionKinds is D9's decision list (architecture agenthub-system-architecture.md, the
+// "*Decisions* are ..." bullet): the intents that claim, transition or judge, and so
 // cannot commute and cannot be applied out of order.
 var DecisionKinds = []IntentKind{
 	IntentKindClaimed,
@@ -44,7 +47,8 @@ var DecisionKinds = []IntentKind{
 	IntentKindHumanDecision,
 }
 
-// FactKinds is D9's fact list (`:604`): append-only observations a client may record offline, which
+// FactKinds is D9's fact list (architecture agenthub-system-architecture.md, the "*Facts* are ..."
+// bullet): append-only observations a client may record offline, which
 // the server accepts in arrival order and NEVER refuses for being late.
 var FactKinds = []IntentKind{
 	IntentKindProgress,
@@ -67,8 +71,10 @@ var IntentKinds = []IntentKind{
 }
 
 // FactKindStrings is FactKinds as the plain tokens the table stores, for the one query that asks
-// "is anything after this seq NOT a fact" (`:599`). The classification stays here; the query takes
-// the list as an argument, so the repository has no opinion about which kinds are facts.
+// "is anything after this seq NOT a fact" (the Decisions bullet's "unless every event since then is
+// a fact", ai_docs/core-architecture/agenthub-system-architecture.md). The classification stays
+// here; the query takes the list as an argument, so the repository has no opinion about which kinds
+// are facts.
 func FactKindStrings() []string {
 	out := make([]string, 0, len(FactKinds))
 	for _, k := range FactKinds {
