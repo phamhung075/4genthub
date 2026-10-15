@@ -625,6 +625,9 @@ func TestTaskLifecycleSweepSkipsWhenTheLockIsHeldAtRunTime(t *testing.T) {
 		sweeper.Run(ctx)
 		close(done)
 	}()
+	// This select is a GUARD, not a wait on the clock: Run returns as soon as it sees the cancelled
+	// context, and the bound only turns a Run that never returns into a failure instead of a hung
+	// test. No age in this file is measured against wall time.
 	select {
 	case <-done:
 	case <-time.After(5 * time.Second):
@@ -635,7 +638,7 @@ func TestTaskLifecycleSweepSkipsWhenTheLockIsHeldAtRunTime(t *testing.T) {
 	}
 }
 
-// TestTaskLifecycleSweepRetriesNothingAndKeepsGoing: one task the application layer refuses must not
+// TestTaskLifecycleSweepKeepsGoingAfterAFailure: one task the application layer cannot act on must not
 // stop the others, and the failure is reported rather than swallowed.
 func TestTaskLifecycleSweepKeepsGoingAfterAFailure(t *testing.T) {
 	fixture := &sweepFixture{tasks: []*SweepTask{
