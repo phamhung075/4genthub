@@ -2,6 +2,11 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-15 - The seat audit listener survives a lagged burst
+
+- ADDED `an_event_is_appended_to_its_seats_audit_file` and `a_burst_that_laps_the_receiver_does_not_end_the_audit` (`agenthub_client/rust/agenthub-runtime/src/hooks/mod.rs`): the hook bus had no test. The second one FAILS when the lagged arm breaks (the old behaviour) and passes with the fix.
+- MEASURED: `cargo test --offline` -> 101 passed.
+
 ## 2026-10-15 - Jev: the idle guard asks an unchanged rail once, and a task with no criteria is uncertain
 
 - ADDED `TestTheSameOpenRailIsNotAskedAgainWhenTheLeadsOwnReplyMakesANewQuiet` (`agenthub_client/internal/clientlifecycle/idleguard_test.go`): a second quiet over the SAME open rail is not asked, a changed rail is. It models the overnight loop (32 asks at confidence 0.4-0.64).
