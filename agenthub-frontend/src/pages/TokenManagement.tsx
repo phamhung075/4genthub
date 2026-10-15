@@ -16,6 +16,7 @@ import { useAuth } from '../hooks/useAuth';
 import logger from '../utils/logger';
 import { tokenService } from '../services/tokenService';
 import { API_BASE_URL } from '../config/environment';
+import { CONNECTOR_SCOPE, ConnectorTokenGuide, isConnectorToken, McpTokenGuide } from '../components/tokens/ClientTokenGuides';
 
 interface UsageStats {
   task_create?: number;
@@ -133,10 +134,8 @@ function ScopeCard({ scope, isSelected, onToggle }: ScopeCardProps) {
   );
 }
 
-// The connector scope can open the connector socket and publish terminal sessions, so "Client MCP"
-// leaves it out and "Client connector" selects only it: the agent daemon's upload token and the
-// MCP key are two separate tokens.
-const CONNECTOR_SCOPE = 'sessions:write';
+// "Client MCP" leaves the connector scope out and "Client connector" selects only it: the agent
+// daemon's upload token and the MCP key are two separate tokens.
 
 const AVAILABLE_SCOPES = [
   // OpenID Connect Core Scopes
@@ -203,6 +202,10 @@ export function TokenManagement() {
   const [rateLimit, setRateLimit] = useState(1000);
   const [generatedToken, setGeneratedToken] = useState<string | null>(null);
   const [showTokenDialog, setShowTokenDialog] = useState(false);
+  // What the generated token was made with: the form is reset right after generation, so the popup reads this.
+  const [generatedSettings, setGeneratedSettings] = useState<{ scopes: string[]; expiryDays: number; rateLimit: number }>({
+    scopes: [], expiryDays: 30, rateLimit: 1000
+  });
 
   // Delete dialog state - using token ID as key for multiple dialogs
   const [deleteDialogOpen, setDeleteDialogOpen] = useState<{[key: string]: boolean}>({});
@@ -272,6 +275,7 @@ export function TokenManagement() {
       });
 
       setGeneratedToken(response.data.token || null);
+      setGeneratedSettings({ scopes: selectedScopes, expiryDays, rateLimit });
       setShowTokenDialog(true);
       setSuccess('Token generated successfully');
 
@@ -790,8 +794,35 @@ export function TokenManagement() {
           </TabsContent>
         </Tabs>
 
-        {/* Generated Token Dialog */}
-        <Dialog open={showTokenDialog} onOpenChange={setShowTokenDialog}>
+        {/* Generated Token Dialog: a Client connector token and a Client MCP token each get their own guide */}
+        <Dialog open={showTokenDialog && isConnectorToken(generatedSettings.scopes)} onOpenChange={setShowTokenDialog}>
+          <DialogContent className="max-w-3xl max-h-[95vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center space-x-2">
+                <CheckCircle className="h-5 w-5 text-green-500" />
+                <span>Client Connector Token Generated</span>
+              </DialogTitle>
+              <DialogDescription>
+                This token lets the 4genteam agent on your machine publish your sessions. Follow the steps below.
+              </DialogDescription>
+            </DialogHeader>
+            <Alert className="border-l-4 border-orange-500 bg-orange-50 dark:bg-orange-950">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                <strong>Important:</strong> This token will only be shown once. Store it before you close this window.
+              </AlertDescription>
+            </Alert>
+            <ConnectorTokenGuide token={generatedToken} />
+            <p className="text-xs text-muted-foreground">
+              Expires in {generatedSettings.expiryDays} days. Rate limit: {generatedSettings.rateLimit} requests/hour.
+            </p>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowTokenDialog(false)}>Close</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={showTokenDialog && !isConnectorToken(generatedSettings.scopes)} onOpenChange={setShowTokenDialog}>
           <DialogContent className="max-w-5xl max-h-[95vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center space-x-2">
@@ -820,9 +851,9 @@ export function TokenManagement() {
                   host: API_BASE_URL.replace(/^https?:\/\//, '').replace(/:\d+.*$/, ''),
                   port: parseInt(API_BASE_URL.match(/:(\d+)/)?.[1] || '80'),
                   authentication: "JWT Bearer",
-                  capabilities: selectedScopes,
+                  capabilities: generatedSettings.scopes,
                   token: generatedToken || undefined,
-                  expiresAt: new Date(Date.now() + expiryDays * 24 * 60 * 60 * 1000).toISOString()
+                  expiresAt: new Date(Date.now() + generatedSettings.expiryDays * 24 * 60 * 60 * 1000).toISOString()
                 }}
                 showToken={true}
               />
@@ -882,29 +913,18 @@ export function TokenManagement() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                  <Card className="p-4">
-                    <h5 className="font-medium mb-2 flex items-center">
-                      <Settings className="h-4 w-4 mr-2" />
-                      Setup Instructions
-                    </h5>
-                    <div className="space-y-2 text-xs text-muted-foreground">
-                      <p>1. Copy the MCP configuration above</p>
-                      <p>2. Add it to your Claude Code settings</p>
-                      <p>3. Restart Claude Code to activate</p>
-                      <p>4. Test connection with the health endpoint</p>
-                    </div>
-                  </Card>
+                <McpTokenGuide token={generatedToken} />
 
+                <div className="grid grid-cols-1 gap-4 text-sm">
                   <Card className="p-4">
                     <h5 className="font-medium mb-2 flex items-center">
                       <Shield className="h-4 w-4 mr-2" />
                       Security Notes
                     </h5>
                     <div className="space-y-2 text-xs text-muted-foreground">
-                      <p>• Token expires in {expiryDays} days</p>
-                      <p>• Rate limit: {rateLimit} requests/hour</p>
-                      <p>• Scopes: {selectedScopes.join(', ')}</p>
+                      <p>• Token expires in {generatedSettings.expiryDays} days</p>
+                      <p>• Rate limit: {generatedSettings.rateLimit} requests/hour</p>
+                      <p>• Scopes: {generatedSettings.scopes.join(', ')}</p>
                       <p>• Store token securely (password manager)</p>
                     </div>
                   </Card>

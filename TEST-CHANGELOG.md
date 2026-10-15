@@ -2,6 +2,12 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-15 - token guides
+
+- CHANGED `agenthub-frontend/src/tests/pages/HelpSetup.test.tsx`: the connect command string and two assertions for the two guides.
+- CHANGED `agenthub-frontend/src/tests/pages/TokenManagement.test.tsx`: `mintWith` returns a known token; the Client MCP and Client connector presets assert their own popup and env line, and that the other popup is absent.
+- NOT RUN: no local vitest run; `tsc --noEmit` clean.
+
 ## 2026-10-15 - token usage counters
 
 - ADDED `agenthub_go/fastmcp/server/routes/token_router_test.go`: `usage_count` and `rate_limit` survive as `int64`.

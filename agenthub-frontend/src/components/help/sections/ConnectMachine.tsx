@@ -2,6 +2,7 @@ import React from 'react';
 import { Card } from '../../ui/card';
 import { Cable } from 'lucide-react';
 import CommandBox from '../shared/CommandBox';
+import { ConnectorTokenGuide, McpTokenGuide } from '../../tokens/ClientTokenGuides';
 import type { HelpSectionData } from './WhatIs4genthub';
 
 interface ConnectMachineProps {
@@ -27,31 +28,30 @@ const ConnectMachine = ({ expandedSections, toggleSection }: ConnectMachineProps
 
         <div className="space-y-4">
           <Card className="p-4 border-l-4 border-blue-500 bg-blue-50 dark:bg-blue-950">
-            <h5 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">Step 1: Create a token with the connector scope</h5>
+            <h5 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">Step 1: Create two tokens</h5>
             <ol className="list-decimal list-inside text-sm text-blue-800 dark:text-blue-200 space-y-1 ml-4">
               <li>Open <a href="/tokens" className="underline font-semibold">API Tokens</a></li>
-              <li>Create a token and tick <code className="bg-blue-100 dark:bg-blue-900 px-1 rounded">sessions:write</code> by hand</li>
-              <li>Copy the token once; it is not shown again</li>
+              <li>Press <strong>Client connector</strong>, name the token and generate it: it holds only <code className="bg-blue-100 dark:bg-blue-900 px-1 rounded">sessions:write</code></li>
+              <li>Press <strong>Client MCP</strong>, name the token and generate it: it holds every scope except <code className="bg-blue-100 dark:bg-blue-900 px-1 rounded">sessions:write</code></li>
+              <li>Copy each token once; it is not shown again. A popup after each one shows the steps below with your token filled in</li>
             </ol>
             <p className="text-xs text-blue-800 dark:text-blue-200 mt-3">
-              The scope is left out of "Full Access" on purpose: it lets a client publish terminal sessions.
-              Without it the server accepts the connection and closes it with code 1008.
+              They are two tokens on purpose: the connector token can publish terminal sessions and nothing else,
+              and the MCP key cannot. Without the connector scope the server accepts the connection and closes it
+              with code 1008.
             </p>
           </Card>
 
           <Card className="p-4 border-l-4 border-green-500 bg-green-50 dark:bg-green-950">
-            <h5 className="font-semibold text-green-900 dark:text-green-100 mb-2">Step 2: Install the client and store the token</h5>
-            <div className="space-y-3">
+            <h5 className="font-semibold text-green-900 dark:text-green-100 mb-2">Step 2: Install the client and store the tokens</h5>
+            <div className="space-y-6">
               <CommandBox
                 command="4genteam --help"
                 title="Check the client is on PATH"
-                description="Needs the OpenRig daemon answering on 127.0.0.1:7433 (rig ps)"
+                description="Needs the 4genteam client built and installed (agenthub_client/scripts/build.sh)"
               />
-              <CommandBox
-                command="mkdir -p ~/.config/4genthub && printf 'AGENTHUB_URL=https://www.4genthub.com\nAGENTHUB_TOKEN=<your token>\n' > ~/.config/4genthub/.env && chmod 600 ~/.config/4genthub/.env"
-                title="Keep the token in the one env file"
-                description="Never put the token in a command line, a message or a committed file"
-              />
+              <ConnectorTokenGuide />
+              <McpTokenGuide />
             </div>
           </Card>
 
@@ -59,8 +59,8 @@ const ConnectMachine = ({ expandedSections, toggleSection }: ConnectMachineProps
             <h5 className="font-semibold text-purple-900 dark:text-purple-100 mb-2">Step 3: Send a session</h5>
             <div className="space-y-3">
               <CommandBox
-                command="4genteam sync connector --session <rig-session-name>"
-                title="Send one local session"
+                command="4genteam sync connector --session <session-name>"
+                title="Send one local session once"
                 description="Redacts secrets locally first, then sends the newest 50 transcript lines. Add --lines to change that"
               />
               <p className="text-sm text-purple-800 dark:text-purple-200">
@@ -74,8 +74,8 @@ const ConnectMachine = ({ expandedSections, toggleSection }: ConnectMachineProps
         <Card className="p-4 border-l-4 border-yellow-500 bg-yellow-50 dark:bg-yellow-950">
           <h5 className="font-semibold text-yellow-900 dark:text-yellow-100 mb-2">What it does not do yet</h5>
           <ul className="list-disc list-inside text-sm text-yellow-800 dark:text-yellow-200 space-y-1 ml-4">
-            <li>The command sends one session once and exits. A background client that keeps every local session
-              live and reconnects on its own is not available yet.</li>
+            <li>The <code>sync connector</code> command sends one session once and exits. To keep every local session
+              live, start the room with <code>4genteam up</code>: its agent daemon reconnects on its own.</li>
             <li>Messages from the browser to a seat are not available yet.</li>
           </ul>
         </Card>

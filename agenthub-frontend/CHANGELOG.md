@@ -3,6 +3,10 @@
 ## [Unreleased]
 
 ### Added
+- **A generated token opens its own setup guide, and /help-setup teaches both tokens** - 2026-10-15
+  - NEW `src/components/tokens/ClientTokenGuides.tsx`: `ConnectorTokenGuide` (env line, `4genteam up`, `heal --check`, Sessions page) and `McpTokenGuide` (`AGENTHUB_URL`, `AGENTHUB_TOKEN`, `room reseat`). `src/pages/TokenManagement.tsx` shows the connector popup for a token holding only `sessions:write` and the MCP popup otherwise; the generated settings are kept in state, so the popup no longer shows empty scopes after the form resets.
+  - `src/components/help/sections/ConnectMachine.tsx` (/help-setup): step 1 mints both tokens, step 2 embeds both guides.
+  - Tests changed: `HelpSetup.test.tsx`, `TokenManagement.test.tsx`. NOT run (no local test run); `tsc --noEmit` is clean.
 - **Token permissions are Client connector, Client MCP and Clear All** - 2026-10-15
   - `src/pages/TokenManagement.tsx`: the quick actions Read Only, Essential and Execute Only are gone. Full Access is removed (it selected the same set as Client MCP). Client MCP selects every scope except `sessions:write`; Client connector selects only `sessions:write`. The agent daemon uploads with its own connector token and the MCP key carries no upload scope, so each is one click.
   - `src/tests/pages/TokenManagement.test.tsx`: two literal-set tests (Client MCP, Client connector) replace the old Full Access one. Measured: the file passes (17 tests) and `tsc --noEmit` is clean.

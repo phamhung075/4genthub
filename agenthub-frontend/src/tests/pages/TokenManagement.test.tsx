@@ -192,6 +192,7 @@ describe('TokenManagement', () => {
       ];
 
     const mintWith = async (button: RegExp, name: string) => {
+      mockTokenService.generateToken.mockResolvedValue({ data: { token: 'minted-token-value' } });
       renderWithProviders(<TokenManagement />);
       fireEvent.change(screen.getByPlaceholderText(/Production API/), { target: { value: name } });
       fireEvent.click(screen.getByRole('button', { name: button }));
@@ -205,6 +206,11 @@ describe('TokenManagement', () => {
           expect.objectContaining({ scopes: CLIENT_MCP_SCOPES })
         );
       });
+      // Its popup is the MCP guide, not the connector one.
+      expect(await screen.findByText(/MCP Configuration Generated/i)).toBeInTheDocument();
+      expect(screen.getByText('Client MCP token')).toBeInTheDocument();
+      expect(screen.getByText('AGENTHUB_TOKEN=minted-token-value')).toBeInTheDocument();
+      expect(screen.queryByText('Client Connector Token Generated')).not.toBeInTheDocument();
     });
 
     it('Client connector selects only the connector scope', async () => {
@@ -214,6 +220,10 @@ describe('TokenManagement', () => {
           expect.objectContaining({ scopes: ['sessions:write'] })
         );
       });
+      // Its popup is the connector guide, not the MCP one.
+      expect(await screen.findByText('Client Connector Token Generated')).toBeInTheDocument();
+      expect(screen.getByText('AGENTHUB_CONNECTOR_TOKEN=minted-token-value')).toBeInTheDocument();
+      expect(screen.queryByText(/MCP Configuration Generated/i)).not.toBeInTheDocument();
     });
   });
 
