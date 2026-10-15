@@ -2,6 +2,11 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-15 - the help page shows the connector command twice on purpose
+
+- CHANGED `agenthub-frontend/src/tests/pages/HelpSetup.test.tsx`: the connector-command assertion takes every occurrence (`getAllByText`, as the neighboring scope assertion already did) instead of demanding a unique match - the expanded section teaches that command twice, in the copyable "Step 3: Send a session" box and in the connector guide's own one-shot line, and the two strings became identical when `a98c5f41` moved the box to `<session-name>`.
+- MEASURED: RED before the edit (`getMultipleElementsFoundError` at `:21`, the two matching `<code>` elements being `ClientTokenGuides.tsx:51` and `CommandBox.tsx` inside `ConnectMachine.tsx:62`), green after; at that tip the whole frontend suite is 122 files / 1893 tests, 0 failed, and `tsc --noEmit` is clean.
+
 ## 2026-10-15 - the six-safeguards step is a no-op without its table
 
 - ADDED `TestTheSixSafeguardsStepIsANoOpWithoutItsTable` in `agenthub_go/fastmcp/task_management/infrastructure/database/rig_safeguards_migration_integration_test.go` (PostgreSQL): the `0004` step applies on a database that has no `rig_safeguards` table, leaves the relation absent, and the case refuses to run against a fixture that already holds it.

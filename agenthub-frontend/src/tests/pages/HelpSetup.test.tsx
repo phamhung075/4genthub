@@ -18,7 +18,10 @@ describe('HelpSetup', () => {
 
     fireEvent.click(screen.getByText('Connect your machine'));
 
-    expect(screen.getByText('4genteam sync connector --session <session-name>')).toBeInTheDocument();
+    // The section teaches the command twice on purpose - the copyable box under "Step 3: Send a session"
+    // and the connector guide's own one-shot line - so the query takes every occurrence, as the scope
+    // assertion below does.
+    expect(screen.getAllByText('4genteam sync connector --session <session-name>').length).toBeGreaterThan(0);
     expect(screen.getAllByText(/sessions:write/).length).toBeGreaterThan(0);
     expect(screen.getByText('AGENTHUB_CONNECTOR_TOKEN=<your connector token>')).toBeInTheDocument();
     expect(screen.getByText('AGENTHUB_TOKEN=<your MCP token>')).toBeInTheDocument();
