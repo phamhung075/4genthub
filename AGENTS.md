@@ -62,7 +62,9 @@ These are pointers; never copy their content into this file.
    (The old "`CLAUDE.md` stays out of every commit" rule is superseded — that file was renamed to
    `AGENTS.md`, which is tracked; see `agenthub_go/NEXT_GEN.md`.)
 5. **The owner approves every push.** Never push, deploy or touch production or another rig without
-   the owner's explicit go-ahead.
+   the owner's explicit go-ahead. **The remote carries only `main` and `frontend`.** A seat works in a
+   local branch or worktree, merges into `main`, and pushes `main` (`frontend` for the frontend line);
+   pushing any other remote branch or tag is refused by the `pre-push` hook (`scripts/git-hooks/pre-push-branches`).
 6. **Launch and resume teams with `4genteam`, NEVER legacy OpenRig.** Always run `4genteam up <rig> [--allow-peak]`
    or `4genteam continue <rig>`. OpenRig daemon and runtime orchestration are retired; `4genteam` runs the full client
    supervisor stack (`agent`, the auto-compaction supervisor `compact-run`, `watchdog`, status `bridge`, and the styled
