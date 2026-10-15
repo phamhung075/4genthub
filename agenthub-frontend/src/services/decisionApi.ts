@@ -22,10 +22,15 @@ import type {
   RoomDecisionsResponse,
 } from '../types/seatTypes';
 
-const OPENRIG = '/api/v2/openrig';
-
-/** The frozen room-prefix route: `/api/v2/openrig/rooms/{room}/decisions`. */
-const decisionsPath = (room: string) => `${OPENRIG}/rooms/${encodeURIComponent(room)}/decisions`;
+/**
+ * The room's decision rows: `/api/v2/rooms/{room}/decisions`, the route
+ * `agenthub_go/fastmcp/server/httpapp/room_decisions_mount.go` mounts. The prefix was
+ * `/api/v2/openrig` while the legacy rig client owned the routes; `cbc51bae` ("purge
+ * the legacy rig client; client routes move to /api/v2") moved them and deleted the old
+ * mount, so the openrig spelling answered 404 and the panel could only ever render a
+ * failed read.
+ */
+const decisionsPath = (room: string) => `/api/v2/rooms/${encodeURIComponent(room)}/decisions`;
 
 export const decisionApi = {
   /** The room's open asks - `pending` and `answered`, tenant- and room-scoped server-side. */
