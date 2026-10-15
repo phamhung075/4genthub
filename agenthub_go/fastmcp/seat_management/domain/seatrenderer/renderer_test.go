@@ -492,7 +492,7 @@ func TestMergeToolModulesPermissions(t *testing.T) {
 }
 
 // The seeded comm-guard keeps its deny rules when another tool module also sets permissions,
-// and the seat carries the skill that names seatcheck as the only send path.
+// and the seat carries the skill that names `4genteam send` as the only send path.
 func TestRenderSeatKeepsCommGuardNextToAnotherToolModule(t *testing.T) {
 	seeds, err := seedlibrary.Load()
 	if err != nil {
@@ -520,11 +520,11 @@ func TestRenderSeatKeepsCommGuardNextToAnotherToolModule(t *testing.T) {
 		t.Fatal(err)
 	}
 	wantDeny := "Bash(4genteam send:*)|Bash(4genteam input:*)|Bash(tmux send-keys:*)|Bash(tmux paste-buffer:*)|Bash(rm:*)"
-	if strings.Join(settings.Permissions.Deny, "|") != wantDeny || strings.Join(settings.Permissions.Allow, "|") != "Bash(seatcheck send:*)|Bash(4genteam whoami:*)|Read" {
+	if strings.Join(settings.Permissions.Deny, "|") != wantDeny || strings.Join(settings.Permissions.Allow, "|") != "Bash(4genteam whoami:*)|Read" {
 		t.Fatalf("permissions = %+v", settings.Permissions)
 	}
-	if skill := fileContent(t, spec, "skills/comm-guard-skill/SKILL.md"); !strings.Contains(skill, "seatcheck send") {
-		t.Fatalf("skill does not name seatcheck send:\n%s", skill)
+	if skill := fileContent(t, spec, "skills/comm-guard-skill/SKILL.md"); !strings.Contains(skill, "4genteam send") {
+		t.Fatalf("skill does not name 4genteam send:\n%s", skill)
 	}
 }
 
@@ -554,8 +554,8 @@ func TestRenderSeatSameModulesOnBothRuntimes(t *testing.T) {
 	if err != nil {
 		t.Fatalf("claude-code: %v", err)
 	}
-	if settings := fileContent(t, claude, settingsFragmentPath); strings.Count(settings, "Bash(") != 6 {
-		t.Fatalf("claude-code settings fragment should carry the 4 denies and the 2 allows:\n%s", settings)
+	if settings := fileContent(t, claude, settingsFragmentPath); strings.Count(settings, "Bash(") != 5 {
+		t.Fatalf("claude-code settings fragment should carry the 4 denies and the 1 allow:\n%s", settings)
 	}
 
 	codex, err := RenderSeat(withModules(seatFixture("codex"), modules), testMCPURL)
@@ -579,8 +579,8 @@ func TestRenderSeatSameModulesOnBothRuntimes(t *testing.T) {
 	if strings.Contains(rules, "claude") {
 		t.Fatalf("codex rules mention claude:\n%s", rules)
 	}
-	if skill := fileContent(t, codex, "skills/comm-guard-skill/SKILL.md"); !strings.Contains(skill, "seatcheck send") {
-		t.Fatalf("codex skill does not name seatcheck send:\n%s", skill)
+	if skill := fileContent(t, codex, "skills/comm-guard-skill/SKILL.md"); !strings.Contains(skill, "4genteam send") {
+		t.Fatalf("codex skill does not name 4genteam send:\n%s", skill)
 	}
 
 	// agy has neither a fragment type nor an MCP mechanism: guidance and skills only, no runtime file.
@@ -593,8 +593,8 @@ func TestRenderSeatSameModulesOnBothRuntimes(t *testing.T) {
 			t.Errorf("agy seat has a runtime file %q", path)
 		}
 	}
-	if skill := fileContent(t, agy, "skills/comm-guard-skill/SKILL.md"); !strings.Contains(skill, "seatcheck send") {
-		t.Fatalf("agy skill does not name seatcheck send:\n%s", skill)
+	if skill := fileContent(t, agy, "skills/comm-guard-skill/SKILL.md"); !strings.Contains(skill, "4genteam send") {
+		t.Fatalf("agy skill does not name 4genteam send:\n%s", skill)
 	}
 
 	// omp gets the seat's MCP servers as TWO files in the render — the server document and the
@@ -614,8 +614,8 @@ func TestRenderSeatSameModulesOnBothRuntimes(t *testing.T) {
 	if len(found) != 2 || !found[ompMCPPath] || !found[ompConfigPath] {
 		t.Errorf("omp runtime files = %v, want exactly %q and %q", filePaths(omp), ompMCPPath, ompConfigPath)
 	}
-	if skill := fileContent(t, omp, "skills/comm-guard-skill/SKILL.md"); !strings.Contains(skill, "seatcheck send") {
-		t.Fatalf("omp skill does not name seatcheck send:\n%s", skill)
+	if skill := fileContent(t, omp, "skills/comm-guard-skill/SKILL.md"); !strings.Contains(skill, "4genteam send") {
+		t.Fatalf("omp skill does not name 4genteam send:\n%s", skill)
 	}
 }
 
@@ -835,7 +835,7 @@ func TestRenderSeatOmpWaitsForMCPConnections(t *testing.T) {
 func TestRenderSeatCodexRulesDenyTheDirectSendSurface(t *testing.T) {
 	guard := resolver.ResolvedModule{
 		Slug: "comm-guard", Version: "1.1.1", Kind: resolver.KindTool,
-		Content: `{"permissions":{"deny":["Bash(4genteam send:*)","Bash(4genteam input:*)","Bash(tmux send-keys:*)","Bash(tmux paste-buffer:*)"],"allow":["Bash(seatcheck send:*)","Bash(4genteam whoami:*)"]}}`,
+		Content: `{"permissions":{"deny":["Bash(4genteam send:*)","Bash(4genteam input:*)","Bash(tmux send-keys:*)","Bash(tmux paste-buffer:*)"],"allow":["Bash(4genteam whoami:*)"]}}`,
 	}
 
 	codex, err := RenderSeat(withModules(seatFixture("codex"), []resolver.ResolvedModule{guard}), testMCPURL)
@@ -851,7 +851,7 @@ func TestRenderSeatCodexRulesDenyTheDirectSendSurface(t *testing.T) {
 	// Deny-only on purpose: an `allow` prefix rule would widen what runs outside the sandbox
 	// without prompting, which is not what this artefact is for. The justification may still
 	// *recommend* the audited path; what must not appear is an allow rule for it.
-	if strings.Contains(rules, `decision = "allow"`) || strings.Contains(rules, `pattern = ["seatcheck", "send"]`) {
+	if strings.Contains(rules, `decision = "allow"`) || strings.Contains(rules, `pattern = ["4genteam", "whoami"]`) {
 		t.Fatalf("codex rules widen execution instead of only denying:\n%s", rules)
 	}
 	for _, path := range filePaths(codex) {
@@ -1011,7 +1011,7 @@ func TestRenderSeatSkillBlockInvalidError(t *testing.T) {
 func TestRenderSeatPermissionNarrowsWithinMountedServerOnly(t *testing.T) {
 	guard := resolver.ResolvedModule{
 		Slug: "comm-guard", Version: "1.1.1", Kind: resolver.KindTool,
-		Content: `{"permissions":{"deny":["Bash(rig send:*)"],"allow":["Bash(seatcheck send:*)"]},"mcpServers":{"filesystem":{"type":"stdio","command":"npx"}}}`,
+		Content: `{"permissions":{"deny":["Bash(rig send:*)"],"allow":["Bash(4genteam whoami:*)"]},"mcpServers":{"filesystem":{"type":"stdio","command":"npx"}}}`,
 	}
 
 	mounted := withMCP(seatFixture("claude-code"), mcpPlatformModule(), guard)
@@ -1027,7 +1027,7 @@ func TestRenderSeatPermissionNarrowsWithinMountedServerOnly(t *testing.T) {
 		t.Fatalf("a tool module mounted a server: %+v", servers)
 	}
 	settings := fileContent(t, spec, settingsFragmentPath)
-	if !strings.Contains(settings, "Bash(rig send:*)") || !strings.Contains(settings, "Bash(seatcheck send:*)") {
+	if !strings.Contains(settings, "Bash(rig send:*)") || !strings.Contains(settings, "Bash(4genteam whoami:*)") {
 		t.Fatalf("permission narrowing missing from the settings fragment:\n%s", settings)
 	}
 

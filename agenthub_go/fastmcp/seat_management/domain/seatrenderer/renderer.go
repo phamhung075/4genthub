@@ -390,7 +390,7 @@ func renderCodexRules(merged map[string]any) string {
 		b.WriteString("\nprefix_rule(\n")
 		b.WriteString("    pattern = [" + quotedPattern(pattern) + "],\n")
 		b.WriteString("    decision = \"forbidden\",\n")
-		b.WriteString("    justification = \"Use `seatcheck send`, the audited send path, instead of a direct command.\",\n")
+		b.WriteString("    justification = \"Use `4genteam send`, the audited send path, instead of a direct command.\",\n")
 		b.WriteString(")\n")
 	}
 	if len(skipped) > 0 {

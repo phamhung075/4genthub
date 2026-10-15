@@ -142,7 +142,7 @@ func TestLoadFSMissingSharedModuleFails(t *testing.T) {
 }
 
 // Every embedded seat type carries the communication guard: the settings fragment that denies
-// direct messaging and the skill that names seatcheck as the only send path.
+// direct messaging and the skill that names `4genteam send` as the only send path.
 func TestLoadEmbeddedSeedsCarryCommGuard(t *testing.T) {
 	seeds, err := Load()
 	if err != nil {
@@ -180,16 +180,19 @@ func TestLoadEmbeddedSeedsCarryCommGuard(t *testing.T) {
 			t.Fatalf("%s: comm-guard is not valid JSON: %v", seed.SeatTypeSlug, err)
 		}
 		wantDeny := []string{"Bash(4genteam send:*)", "Bash(4genteam input:*)", "Bash(tmux send-keys:*)", "Bash(tmux paste-buffer:*)"}
-		if strings.Join(settings.Permissions.Deny, "|") != strings.Join(wantDeny, "|") || strings.Join(settings.Permissions.Allow, "|") != "Bash(seatcheck send:*)|Bash(4genteam whoami:*)" {
+		if strings.Join(settings.Permissions.Deny, "|") != strings.Join(wantDeny, "|") || strings.Join(settings.Permissions.Allow, "|") != "Bash(4genteam whoami:*)" {
 			t.Fatalf("%s: permissions = %+v", seed.SeatTypeSlug, settings.Permissions)
 		}
-		for _, code := range []string{"Exit code 2", "Exit code 3", "Exit code 5"} {
+		// The codes are the client's own: a policy denial and a usage error are 2, an unreadable
+		// link source or audit log is 3, and a runtime delivery refusal is 1
+		// (cmd/4genteam/main.go, internal/clientseat/reseat.go and sendpolicy.go).
+		for _, code := range []string{"(exit 2)", "(exit 3)", "(exit 1)"} {
 			if !strings.Contains(skillContent.Content, code) {
 				t.Fatalf("%s: skill does not explain %q:\n%s", seed.SeatTypeSlug, code, skillContent.Content)
 			}
 		}
-		if !strings.Contains(skillContent.Content, "seatcheck send --to <seat> --intent") {
-			t.Fatalf("%s: skill does not name seatcheck send:\n%s", seed.SeatTypeSlug, skillContent.Content)
+		if !strings.Contains(skillContent.Content, "4genteam send <rig> <seat>") {
+			t.Fatalf("%s: skill does not name the audited send route:\n%s", seed.SeatTypeSlug, skillContent.Content)
 		}
 		for _, ref := range seed.ModuleRefs {
 			if ref.Slug == "comm-guard" && ref.Version != seed.Version {

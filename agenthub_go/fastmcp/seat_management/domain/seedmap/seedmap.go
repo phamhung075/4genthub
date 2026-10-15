@@ -10,8 +10,10 @@ import (
 )
 
 // seedVersion is bumped whenever a seed's module set changes: a stored seat type version is
-// immutable, so a changed module set needs a new version.
-const seedVersion = "1.4.4"
+// immutable, so a changed module set needs a new version. 1.4.5 is the retirement of the checker's
+// send verb: the comm-guard allow list drops its entry for it and the guard skill now names
+// `4genteam send`. The deny list and `Bash(4genteam whoami:*)` are unchanged.
+const seedVersion = "1.4.5"
 
 type SeedModule struct {
 	Slug    string
