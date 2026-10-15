@@ -35,6 +35,9 @@ for dir in "$state"/rooms/*/; do
     room=$(basename "$dir")
     case "$room" in *.obsolete*) continue ;; esac
     timeout 10 4genteam room status "$room" 2>/dev/null | awk '$3 == "running" { print $1, $4 }' | while read -r seat session; do
+        # The committing seat is not told about its own commit: the send is refused as a self message
+        # ("4genteam send <me> ..." over no link), and a refusal per commit per room is pure audit noise.
+        [ "$session" = "${AGENTHUB_SESSION_NAME:-}" ] && continue
         timeout 10 4genteam send --from git-hook --intent notice "$room" "$seat" "$message$(behind_note "$session")" >/dev/null 2>&1 || true
     done
 done

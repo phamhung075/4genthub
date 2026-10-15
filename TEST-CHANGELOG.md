@@ -2,6 +2,11 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-15 - the commit notice skips the committer
+
+- ADDED two cases to `scripts/tests/test_notify_seats_behind_note.py`: the committing seat is skipped while the other running seat is still told, and an identity from outside the room skips nobody (the control - without it, a hook that skipped every seat would pass).
+- MEASURED: `python3 -m pytest scripts/tests -q` -> 97 passed, 3 warnings (95 before, 2 added), and the real script run three ways by hand (identity unset / the committer's own / another room's) sends, skips, sends.
+
 ## 2026-10-15 - the behind-note reads the seat's own tree
 
 - ADDED `scripts/tests/test_notify_seats_behind_note.py`: four cases over the real `scripts/git-hooks/notify-seats`, with `tmux` (the pane path) and `4genteam` (one running seat, the message captured) stubbed and `GIT_DIR` exported as a post-commit hook receives it - a seat one commit behind ITS OWN `main` is warned with its own revision, the committer's own tree and a path that is not a repository stay silent while the plain notice is still sent, and the `GIT_DIR` leak that made the old reading possible is pinned, so the leading case cannot pass by reading the wrong repository.
