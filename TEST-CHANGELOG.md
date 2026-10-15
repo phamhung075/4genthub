@@ -2,6 +2,13 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-15 - The retired-verb pin's soft allowlist entry
+
+- CHANGED `Allowed[4]` (`agenthub_client/internal/retiredverbs/retiredverbs.go`): its `Match` was the retired command's own `rig up <spec>.yaml` form, which made the entry a licence for that verb's exact shape - the reviewer's measured hole (a `rig up <spec>.yaml --room demo` line was GREEN). It is now the negating words `and no`, and its `Reason` says so. Re-measured after the change: that line FAILS naming `rig up`, while the delivered sentence that negates it stays GREEN.
+- CHANGED the pin's log line (`internal/retiredverbs/retiredverbs_test.go`): the headline counted the pin's own data as delivered text (its table row and `Allowed[0]`'s own `Program`/`Match` literals, three spans). The count is now split - `8 command span(s) name a retired program: 5 in the delivered text, 5 of them allowlisted with a reason; 3 in this pin's own data under internal/retiredverbs/` - so the delivered corpus is visible on its own.
+- ADDED the read-set boundary to the package doc (non-test `*.go`, `docs/`, `skills/`; the root `README.md` and the runtime crate's usage strings are outside it), where a reader meets it rather than only in a changelog.
+- MEASURED: `go test ./internal/retiredverbs/ -v` (3 tests pass), `gofmt -l` on the two touched files prints nothing, `go build ./...` 0, `go vet ./internal/retiredverbs/` 0.
+
 ## 2026-10-15 - Seat env and MCP config, watch rule
 
 - ADDED in the client repo: `a_seats_env_carries_the_state_roots_env_file` and `the_seat_mcp_config_names_variables_and_no_secret` (`rust/agenthub-runtime/src/supervisor/mod.rs`): the state root's `.env` reaches the seat, the spec wins over the file and the runtime over both, and the seat's `mcp.json` holds variable names only.
