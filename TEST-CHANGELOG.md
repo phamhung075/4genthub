@@ -2,6 +2,13 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-15 - The shadow-gate test states the env it asks for, and the held text queues
+
+- FIXED `TestFailingTestRunInShadowCompletesWithExitFive` (`agenthub_client/internal/clientcomplete/complete_test.go`): it omitted the `t.Setenv(enforcementEnv, "")` its sibling at `:220` already had, so with the state root's `.env` (`VALIDATION_GATE_ENFORCEMENT=true`) inherited by every seat's shell it exited 6 (`ExitGateRefused`) where the shadow path's 5 is the whole point - the suite read the machine it ran on. Falsified with the same instrument: HEAD's file FAILS with `exit 6 err "4genteam complete: the gate says reject (D3: the test run failed)…"`, the fixed file PASSES `-run TestFailingTestRunInShadowCompletesWithExitFive`, and `go test ./...` leaves all 28 packages ok with `VALIDATION_GATE_ENFORCEMENT=true` in the environment.
+- ADDED `runner::tests::two_refusals_in_one_turn_keep_both_texts_in_order` (`agenthub_client/rust/agenthub-runtime/src/runner/mod.rs`): two refusals inside one turn are both held (2 queued, where the single slot held 1) and come back in the order they were refused, one per turn end - the required edit on `GATE-c0ffbe8-refused-send`.
+- UPDATED `runner::tests::a_refused_prompt_is_held_and_delivered_when_the_turn_ends` to the queue API (it still pins the delivery, the emptied queue and the bound that publishes `blocked`).
+- MEASURED: client `go test ./...` (28 packages ok) and `CARGO_NET_OFFLINE=true cargo test --offline` in `rust/agenthub-runtime` (98 passed, 0 failed; 97 with the hold fix reverted, which is the merged tree without the new test).
+
 ## 2026-10-15 - The retired-verb pin's soft allowlist entry
 
 - CHANGED `Allowed[4]` (`agenthub_client/internal/retiredverbs/retiredverbs.go`): its `Match` was the retired command's own `rig up <spec>.yaml` form, which made the entry a licence for that verb's exact shape - the reviewer's measured hole (a `rig up <spec>.yaml --room demo` line was GREEN). It is now the negating words `and no`, and its `Reason` says so. Re-measured after the change: that line FAILS naming `rig up`, while the delivered sentence that negates it stays GREEN.
