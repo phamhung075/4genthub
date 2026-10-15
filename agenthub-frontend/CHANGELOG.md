@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+### Changed
+- **Client routes move to `/api/v2/*` and the feedback layer is `client`** - 2026-10-15
+  - Every API call, the generated `src/` route reference and the tests use `/api/v2/...` without the old client sub-prefix; the server and client change in the same release, so deploy the frontend with the backend.
+  - `src/types/feedback.ts`, `src/pages/FeedbackPage.tsx` (label "Client") and its test: the layer value is `client`.
+  - Page copy (`index.html`, `manifest.json`, landing, seats, connect-machine, prose) names the 4genteam client. NOT run (no local test run); `tsc --noEmit` is the check.
+
 ### Fixed
 - **A long token in a setup command wraps instead of running off the box** - 2026-10-15
   - `src/components/help/shared/CommandBox.tsx`: the command text uses `break-all whitespace-pre-wrap` and the copy button stays top-aligned. The Copy button still copies the whole command on one line.

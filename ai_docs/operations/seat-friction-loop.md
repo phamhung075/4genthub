@@ -58,7 +58,7 @@ existing feedback channel and the oversight governance loops.
 **Collision (name it):** the friction channel already exists — CLIENT `internal/clientfeedback/feedback.go` (the ONE
 writer; `:1-7` "ONE WRITER CONTRACT WITH THE MCP TOOL … the same five fields"; `:57-62` `4genteam feedback --layer
 <layer> --text <text> [--room R] [--seat S] [--session X]`; "The owner reads the reports grouped by layer"). Its
-`layer` vocabulary is closed: `runtime | the reference client | cloud | seat-context | workspace | other`
+`layer` vocabulary is closed: `runtime | client | cloud | seat-context | workspace | other`
 (`ai_docs/api-integration/surface-inventory.md:339-350`). The **transport rules** are owned by `comm-guard-skill`
 (`--intent <task|escalation|report|question|notice>`); the **durable-item vocabulary** by `queue-handoff`.
 
@@ -70,7 +70,7 @@ writer; `:1-7` "ONE WRITER CONTRACT WITH THE MCP TOOL … the same five fields";
 - The owner's "**plus a board item tagged `friction`**" is the genuinely new half: a queue row / board item tagged
   `friction` carrying the same text, so the item is *trackable* where work is tracked while the report itself is
   *read* by the owner in the channel. Keep them one report with two views, never two reports.
-- The `layer` values are reused as-is; the owner's `tool` tag maps onto `runtime`/`the reference client`/`cloud` — do not add a
+- The `layer` values are reused as-is; the owner's `tool` tag maps onto `runtime`/`client`/`cloud` — do not add a
   parallel vocabulary.
 
 ### 2.2 `share/self-check-while-working` — **MERGE INTO the existing checks** (thin checklist, no restatement)
