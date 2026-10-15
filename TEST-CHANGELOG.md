@@ -4,7 +4,7 @@ Track test suite changes, fixes, and improvements for agenthub.
 
 ## 2026-10-15 - token permission presets
 
-- CHANGED `agenthub-frontend/src/tests/pages/TokenManagement.test.tsx`: the Full Access test (every scope except the connector) is replaced by three literal-set tests - Full Access (all but `sessions:write`), Client MCP (all but `sessions:write`) and Client connector (only `sessions:write`).
+- CHANGED `agenthub-frontend/src/tests/pages/TokenManagement.test.tsx`: the Full Access test (every scope except the connector) is replaced by two literal-set tests - Client MCP (all but `sessions:write`) and Client connector (only `sessions:write`).
 - MEASURED: `npx vitest run src/tests/pages/TokenManagement.test.tsx` 18 passed; `tsc --noEmit` clean.
 
 ## 2026-10-15 - the connector token is its own credential

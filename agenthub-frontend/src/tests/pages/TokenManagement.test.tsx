@@ -180,7 +180,7 @@ describe('TokenManagement', () => {
     });
 
     // Literal, never derived from AVAILABLE_SCOPES: adding any scope must turn these red so the decision is
-    // deliberate. The connector scope is the one scope Full Access and Client MCP leave out.
+    // deliberate. The connector scope is the one scope Client MCP leaves out.
       const CLIENT_MCP_SCOPES = [
         'openid', 'profile', 'email', 'offline_access', 'mcp-api', 'mcp-roles', 'mcp-profile',
         'projects:create', 'projects:read', 'projects:update', 'projects:delete',
@@ -197,15 +197,6 @@ describe('TokenManagement', () => {
       fireEvent.click(screen.getByRole('button', { name: button }));
       fireEvent.click(screen.getByRole('button', { name: /Generate API Token/i }));
     };
-
-    it('Full Access selects every scope except the connector scope', async () => {
-      await mintWith(/^Full Access$/i, 'Full Access Token');
-      await waitFor(() => {
-        expect(mockTokenService.generateToken).toHaveBeenCalledWith(
-          expect.objectContaining({ scopes: CLIENT_MCP_SCOPES })
-        );
-      });
-    });
 
     it('Client MCP selects every scope except the connector scope', async () => {
       await mintWith(/^Client MCP$/i, 'Client MCP');
