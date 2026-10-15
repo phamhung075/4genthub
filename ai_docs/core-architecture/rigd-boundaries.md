@@ -245,9 +245,15 @@ The incident: the compaction supervisor and the rig watchdog were not running, a
 
 **New:** every child writes a heartbeat file on every pass, `<LogDir>/heartbeat/<safeguard>-<rig>.json` holding `{pid, at}`. The supervisor writes it per `Step`, the watchdog per poll, the bridge per `Cycle`. rigd writes its own, `rigd.json` in the same directory.
 
-**One row per safeguard per rig:**
+**One row per safeguard, in the scope the safeguard runs in:**
 
-`{rig, safeguard: compact|watchdog|bridge|rigd, state: running|stopped|silent|failing, pid, started_at, restarts, last_beat_at, age_s}`
+`{rig, safeguard: compact|watchdog|messages|roomguard|bridge|agent, state: running|stopped|silent|failing, pid, started_at, restarts, last_beat_at, age_s}`
+
+The four rig-scoped names carry the rig the row is about; `bridge` and `agent` run once per machine and
+carry an EMPTY rig, which is the pair the server's `validate()` and the table's CHECK state. These six
+are the vocabulary the client reports (`internal/clientservices/services.go:79-83`), and the server
+accepts exactly them: `rigd` is deleted rather than aliased, because `bc725e6` (2026-10-15) renamed the
+machine-level supervisor to `agent`.
 
 **Which source wins:**
 
@@ -283,7 +289,7 @@ The precedence is `stopped` (dead and not failing), then `failing`, then `silent
 - **Reuses:**
   - the browser push `routes.BroadcastDataChange` with **new** entity `rig_safeguard`, the 2.3a pattern;
   - the server's notification store behind `/api/v2/broadcast/notify` (the D3 consumer), with **new** `event_type: safeguard_alert`. That store keeps a notification for an offline user and replays it on their next connect (`websocket_routes.go:580-616`, `ws_mount.go:220-240`).
-- **New dead-man alert for rigd itself.** When a connector that advertised `safeguards` stays offline past its heartbeat close (3 × `heartbeat_s`, 2.2), the server raises `safeguard_alert` for `rigd`. This is the only observer of a dead rigd on a machine with no systemd.
+- **New dead-man alert for agent itself.** When a connector that advertised `safeguards` stays offline past its heartbeat close (3 × `heartbeat_s`, 2.2), the server raises `safeguard_alert` for `agent`. This is the only observer of a dead agent on a machine with no systemd.
 
 **The local surface, stated plainly: NONE exists yet** that reaches the owner without the cloud.
 
@@ -300,8 +306,10 @@ The precedence is `stopped` (dead and not failing), then `failing`, then `silent
 |---|---|---|
 | compact | `--every`, 10 s | 30 s |
 | watchdog | the watch interval, 60 s | 180 s |
+| messages | the pass interval, 10 s | 30 s |
+| roomguard | the pass interval, 30 s | 90 s |
 | bridge | the 120 s backoff cap | 360 s |
-| rigd | the 25 s heartbeat | 75 s |
+| agent | the 25 s heartbeat | 75 s |
 
 - **Owner:** rigd computes each threshold from the flags it launched that child with. `doctor`, which has no launch flags, uses the defaults above.
 - **Not the server's job.** The server never judges silence of a child; it stores the state rigd sends. It judges only rigd's own socket.
@@ -336,7 +344,7 @@ The precedence is `stopped` (dead and not failing), then `failing`, then `silent
 | Table | `rig_safeguards` |
 | `event_type` | `safeguard_alert` |
 | States | `running`, `stopped`, `silent`, `failing` |
-| Safeguards | `compact`, `watchdog`, `bridge`, `rigd` |
+| Safeguards | `compact`, `watchdog`, `messages`, `roomguard`, `bridge`, `agent` |
 | Exit | `doctor` → 3 |
 
 The suggested first test is client-only and needs no server: a live child whose heartbeat is 31 s old reads `silent`, not `running`, for `compact`.
@@ -382,19 +390,19 @@ Both read the absence of a signal as the absence of work, which is the same fail
 
 | Row | Scope | Start | Check (alive means) | RestartBy |
 |---|---|---|---|---|
-| `daemon` | machine | `rig daemon start` | `rig daemon status` succeeds | rigd |
+| `daemon` | machine | `rig daemon start` | `rig daemon status` succeeds | agent |
 | `gate` | rig | none | the schedule and the room's models are readable. A peak refusal is the gate WORKING; see 3. | none |
 | `seats` | rig | the restorer (gate first) | every node is `running` AND the tmux live count equals the expected count (the watchdog's `verdict`) | watchdog |
-| `rigd` | machine | spawn plus `awaitStart` | heartbeat 7.2 | none locally; the server's dead-man (7.3) |
-| `bridge` | machine | rigd child | heartbeat | rigd |
-| `compact` | rig | rigd child | heartbeat | rigd |
-| `watchdog` | rig | rigd child | heartbeat | rigd |
+| `agent` | machine | spawn plus `awaitStart` | heartbeat 7.2 | none locally; the server's dead-man (7.3) |
+| `bridge` | machine | agent child | heartbeat | agent |
+| `compact` | rig | agent child | heartbeat | agent |
+| `watchdog` | rig | agent child | heartbeat | agent |
 
 **2. No start cycle.**
 
-- `up` is a short-lived foreground root. It starts the daemon, evaluates the gate, starts the seats, then rigd, in that order. Then it verifies (5).
-- rigd starts its three children. It restarts the daemon when the daemon's check fails, because `rig daemon start` detaches on its own and is not a child.
-- **Nothing starts `up`, and nothing but `up` starts rigd.** Seats are restored only by the watchdog (plus `up`). rigd restarts the watchdog and never restores a seat itself, so there is one mechanism per thing.
+- `up` is a short-lived foreground root. It starts the daemon, evaluates the gate, starts the seats, then agent, in that order. Then it verifies (5).
+- agent starts its three children. It restarts the daemon when the daemon's check fails, because `rig daemon start` detaches on its own and is not a child.
+- **Nothing starts `up`, and nothing but `up` starts agent.** Seats are restored only by the watchdog (plus `up`). agent restarts the watchdog and never restores a seat itself, so there is one mechanism per thing.
 
 **3. A gate is not a process.**
 
@@ -405,7 +413,7 @@ Both read the absence of a signal as the absence of work, which is the same fail
 **4. Clean cutover.**
 
 - **Deleted:** the `continue` verb (`clientrestore/continue.go`). `up` is the entry point, and its seat restore is the same restorer, so its brief step moves into the `seats` row's `Start`.
-- **Not deletable here:** `rig up` is the OpenRig CLI. It is not this repository's code, and the client keeps calling it internally. A room started by hand with `rig up` has no rigd row, and `doctor` names it.
+- **Not deletable here:** `rig up` is the OpenRig CLI. It is not this repository's code, and the client keeps calling it internally. A room started by hand with `rig up` has no agent row, and `doctor` names it.
 - **Owner action, not done by a seat:** `~/.openrig/bin/rig-continue.sh` and `rig-watchdog.sh` are the owner's own copies outside this repository (`clientrestore/paths.go:7`). The ruling is that they go, and the owner deletes them; no seat touches the owner's home.
 
 **5. Verify-before-success composes with `doctor`.**
@@ -420,7 +428,7 @@ Both read the absence of a signal as the absence of work, which is the same fail
 | Kind | Names |
 |---|---|
 | Package and variable | `clientservices.Obligatory` |
-| Row names | `daemon`, `gate`, `seats`, `rigd`, `bridge`, `compact`, `watchdog` |
+| Row names | `daemon`, `gate`, `seats`, `agent`, `bridge`, `compact`, `watchdog` |
 | Heartbeat field | `in_flight` |
 | Detail prefix | `busy` |
 
