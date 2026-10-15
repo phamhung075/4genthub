@@ -133,6 +133,12 @@ the model → yes: fix the test to match the model.
 - Project documentation lives in `ai_docs/` (kebab-case folders, one topic per folder).
 - `ai_docs/index.json` is machine-generated — never hand-edit it.
 - Search existing docs before creating new ones.
+- **Seat reports live in `ai_docs/reports-status/`.** Findings, gate docs, verdicts and status reports
+  go there, one file per report (`<KIND>-<subject>-<date>.md`) — not in a repo root. The 4genthub root
+  keeps only `README`, `TEST-CHANGELOG`, `AGENTS` and `CLAUDE.local` (plus the standing board
+  `NEXT-GEN2.md` and the `CHANGELOG/` directory), and the same applies to every seat worktree root.
+  Reports about the client submodule live in that submodule's own `ai_docs/reports-status/` — the same
+  rule read in that tree. Owner instruction, 2026-10-15.
 
 ## Push approval
 
