@@ -2,6 +2,12 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-15 - Jev threshold from the config, SessionTerminated
+
+- ADDED `TestEvaluateCriteriaFollowsTheConfiguredThreshold` (`agenthub_client/internal/clientjev/jev_test.go`): a 0.77 answer accepts at threshold 0.75 and stays uncertain at 0.9; it would fail with the old fixed 0.8.
+- ADDED `stopping_a_room_announces_each_seat_it_stopped` (`agenthub_client/rust/agenthub-runtime/src/supervisor/mod.rs`).
+- MEASURED: `go test` for clientjev, clientdecide and clientcomplete ok; `cargo test --offline` -> 102 passed.
+
 ## 2026-10-15 - The seat audit listener survives a lagged burst
 
 - ADDED `an_event_is_appended_to_its_seats_audit_file` and `a_burst_that_laps_the_receiver_does_not_end_the_audit` (`agenthub_client/rust/agenthub-runtime/src/hooks/mod.rs`): the hook bus had no test. The second one FAILS when the lagged arm breaks (the old behaviour) and passes with the fix.
