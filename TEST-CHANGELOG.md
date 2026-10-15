@@ -2,6 +2,12 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-15 - the client pin carries the agy seat guard and the watch fix
+
+- `agenthub_client/internal/clientwatch/watch_test.go`: added `TestSeatLogFollowsTheAgyTranscriptOnceItIsNewer` (a seat with an omp log and a newer agy transcript resolves to the agy one, and back to omp when the omp log is newer).
+- `agenthub_client/rust/agenthub-runtime/src/supervisor/mod.rs`: added `the_agy_guard_hook_joins_the_global_file_and_leaves_the_rest` (another tool's hook survives, a second install changes nothing, a file that is not a JSON object is refused and left as it was).
+- go-dev's `seatcheck send` removal changed or deleted the seatcheck send cases in the client; that lane records its own cases.
+
 ## 2026-10-15 - the comm-guard's expectations follow the audited send path (server half of the ruling that deletes `seatcheck send`)
 
 - `agenthub_go/fastmcp/seat_management/domain/seedlibrary/seedlibrary_test.go`: `TestLoadEmbeddedSeedsCarryCommGuard` requires the guard skill's surviving command spelling `4genteam send <rig> <seat>` (was `seatcheck send --to <seat> --intent`), and its exit-code expectation is now `(exit 2)`, `(exit 3)`, `(exit 1)` — the client's own codes for a policy refusal, an unreadable link source or audit log, and a runtime delivery refusal — where it required the retired text's `Exit code 2` / `3` / `5`. The code list is read from `internal/clientcmd/command.go` (2 usage, 3 unavailable, 1 remote) and `internal/clientseat/seat.go:34` (`ExitFailed = 3`).
