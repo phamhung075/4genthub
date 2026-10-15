@@ -15,8 +15,12 @@ them touches code, tests or a pin.
   ("test(client): the retired-verb pin allows a negation, not a licence", parent `0a968fc`):
   `Allowed[4].Match` became **`"and no"`**, the negating words of the sentence that names the retired
   form, with the negation pinned in `retiredverbs_test.go` (three files, +93/−7). `400e568` is on
-  `4genthub-min/seat-runtime-socket` and is **not yet an ancestor of `feat/support-agy-watch`**, so it
-  stays delivered-and-awaiting-gate rather than landed.
+  `4genthub-min/seat-runtime-socket` and **IS an ancestor of `feat/support-agy-watch` as of 2026-10-15
+  07:01:39 local — CORRECTED 2026-10-15 05:0xZ: this entry read "not yet an ancestor …, so it stays
+  delivered-and-awaiting-gate rather than landed" until the reviewer measured the fast-forward
+  (`agenthub_client/GATE-board-lane-8ecd7110-and-plan-identity-2026-10-15.md` §5:
+  `git merge-base --is-ancestor 400e568 feat/support-agy-watch` → rc 0 and
+  `git log --oneline feat/support-agy-watch | grep -c 400e568` → 1)**.
 - **§3, C4's instrument revision: the live harness is `5b2e15b3`, and the history of the line is now
   written down.** `8d7be24c` (136414 B) was live from 22:10:25Z until 22:13:45Z (bytes kept as
   `u3-run/reviewer-stage3.sh`); `28302b7b…` (151731 B) was live from 22:13:45Z until **2026-10-15
@@ -37,6 +41,15 @@ them touches code, tests or a pin.
   in, in, **not in**; `git show 400e568:internal/retiredverbs/retiredverbs.go | grep -n 'Match:'` → the
   entry reads `"and no"`; `git show --stat 400e568` → three files, +93/−7; `git branch --contains
   400e568` → `4genthub-min/seat-runtime-socket` only.
+  **THE THIRD READING WAS TRUE WHEN IT WAS TAKEN AND IS FALSE NOW — CORRECTED 2026-10-15 05:0xZ.**
+  `feat/support-agy-watch` fast-forwarded onto `4genthub-min/seat-runtime-socket` at 2026-10-15
+  07:01:39 local (its own reflog: `merge 4genthub-min/seat-runtime-socket: Fast-forward`), so
+  `400e568` and `892f867` are both ancestors of it now; measured by the reviewer,
+  `agenthub_client/GATE-board-lane-8ecd7110-and-plan-identity-2026-10-15.md` §5:
+  `--is-ancestor 400e568 feat/support-agy-watch` → rc 0, `--is-ancestor 892f867 feat/support-agy-watch`
+  → rc 0, and the integration tip IS `892f867` with `main` at `b1a553e`. **A branch name is not a
+  measurement: it was measured to hold these commits on 2026-10-15 05:0xZ and it holds them, and more,
+  today.**
 - `sha256sum u3-run/ACCEPTANCE-cutover-lab-U3.sh u3-run/fe-stage6.sh` → both **`5b2e15b3…`, 157965 B**
   (`ls -la` mtimes 2026-10-15T06:54:52Z and 06:54:50Z local); `sha256sum u3-run/reviewer-stage5.sh` →
   `28302b7b…`, 151731 B (mtime 06:15:42Z local, the previous live revision); `sha256sum
