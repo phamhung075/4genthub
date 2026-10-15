@@ -20,6 +20,9 @@
   - `src/services/apiV2.ts`: the non-JSON fallback detail is now `Request failed: HTTP <status>`. The status branches, the 401 refresh flow and the JSON-detail path are untouched, so a body that carries a detail still wins and only the unparseable-body case changes.
   - LIMIT: the status is named, not interpreted - an absent route (`404`) and a failed read of an existing route still read alike, and the panel still shows no rows in that state.
   - Verified: `npx tsc --noEmit -p .` (exit 0, no `error TS`), full `npx vitest run` (exit 0, 123 files / 1884 tests), `npx vite build` (exit 0); and in the browser on the local stack the panel's line reads `Could not read fe-dev-proof's decision requests: Request failed: HTTP 404`.
+- **A long token in a setup command wraps instead of running off the box** - 2026-10-15
+  - `src/components/help/shared/CommandBox.tsx`: the command text uses `break-all whitespace-pre-wrap` and the copy button stays top-aligned. The Copy button still copies the whole command on one line.
+
 ### Added
 - **The sidebar's lower half answers a room lead's decision requests** - 2026-10-12
   - WHY: the owner asked for two vertical sections - the Project & Branch hierarchy on top (unchanged) and, below it, the room's decision requests with select -> validate -> transfer back. The cloud row is a projection of the local queue row: the daemon mirrors the ask up and applies the owner's answer, so `answered` is NOT closure. The row stays visible as "awaiting the room" until the daemon's `resolved` (or `superseded`, if the same ask was answered somewhere else first) takes it out of the list, and a refusal is rendered rather than swallowed.

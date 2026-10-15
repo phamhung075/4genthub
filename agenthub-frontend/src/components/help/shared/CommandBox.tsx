@@ -25,8 +25,8 @@ const CommandBox: React.FC<CommandBoxProps> = ({ command, title, description }) 
       {description && (
         <div className="text-gray-400 mb-3 font-sans text-xs">{description}</div>
       )}
-      <div className="flex items-center justify-between">
-        <code className="flex-1">{command}</code>
+      <div className="flex items-start justify-between">
+        <code className="flex-1 min-w-0 break-all whitespace-pre-wrap">{command}</code>
         <Button
           size="sm"
           variant="ghost"
