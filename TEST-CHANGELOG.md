@@ -30,6 +30,13 @@ Track test suite changes, fixes, and improvements for agenthub.
 - ADDED `TestEventKeepsPathsAndIdsButWithholdsSecrets` in `agenthub_client/internal/clientsync/redaction_test.go`: paths, queue-item ids and tool-call ids stay uploadable; random secrets of the same alphabet are still withheld as `unsure`.
 - `go test ./internal/clientsync` passes.
 
+## 2026-10-15 - task lifecycle sweeper
+
+- ADDED `agenthub_go/fastmcp/task_management/application/services/task_lifecycle_sweeper_test.go`: table-driven sweep over a FAKE CLOCK (every row of the guide's table plus `done 6d old is kept`, `blocked is untouched`, `critical stays critical until the block age`, `a pruned task has exactly one audit record carrying its summary`); one-level-per-interval climb; the pruned task's evidence; the held lock skipping a run; a failed task not stopping the others; and the `TASK_*` env contract (defaults when unset, every variable read, eight malformed spellings rejected by name). Fakes for all four ports; no test sleeps on wall time.
+- ADDED `agenthub_go/fastmcp/task_management/infrastructure/database/task_audit_tables_test.go`: the audit table is registered, declares NO foreign key on `task_id`, and its kind CHECK matches the Go vocabulary (no database needed).
+- ADDED `agenthub_go/fastmcp/server/httpapp/task_sweeper_pg_test.go` (PostgreSQL, loud skip without `AGENTHUB_TEST_PG_URL`): `TestTaskLifecycleSweepOnPostgres` - the prune cascades (task and ledger rows gone) while the audit record survives with its summary, evidence and timestamps, and the escalation moves one level with its note in the task's own ledger; `TestSweepAdvisoryLockIsExclusiveOnPostgres` - a held sweep refuses a second attempt and the lock is free again after it returns.
+- MEASURED: `go build ./...` clean; `go test ./fastmcp/task_management/application/services/... ./fastmcp/task_management/infrastructure/database/... ./fastmcp/task_management/infrastructure/repositories/... ./fastmcp/server/... ./cmd/...` passes without a database; the two PG cases pass against `tools/testpg` (`AGENTHUB_TEST_PG_URL=postgresql://agenthub_user@127.0.0.1:55432/postgres`).
+
 ## 2026-10-15 - token guides
 
 - CHANGED `agenthub-frontend/src/tests/pages/HelpSetup.test.tsx`: the connect command string and two assertions for the two guides.

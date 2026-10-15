@@ -461,6 +461,29 @@ CREATE TABLE task_events (
 );
 CREATE INDEX idx_task_event_task_seq ON task_events (task_id, seq);
 
+-- Table: task_audit_records
+-- NO FOREIGN KEY ON task_id, unlike every other task-owned table here: the record a prune writes
+-- must outlive the task row the delete cascade removes.
+CREATE TABLE task_audit_records (
+	id UUID NOT NULL,
+	task_id UUID NOT NULL,
+	user_id VARCHAR(64) NOT NULL,
+	kind VARCHAR(32) NOT NULL,
+	title VARCHAR NOT NULL,
+	status VARCHAR(32) NOT NULL,
+	priority VARCHAR(32) NOT NULL,
+	completion_summary TEXT,
+	evidence JSONB,
+	detail TEXT NOT NULL,
+	created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT now() NOT NULL,
+	task_created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+	task_updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+	task_completed_at TIMESTAMP WITHOUT TIME ZONE,
+	PRIMARY KEY (id),
+	CONSTRAINT ck_task_audit_record_kind CHECK (kind IN ('escalated', 'blocked', 'pruned'))
+);
+CREATE INDEX idx_task_audit_record_task ON task_audit_records (task_id, created_at);
+
 -- Table: users
 CREATE TABLE users (
 	id UUID NOT NULL,
