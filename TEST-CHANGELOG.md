@@ -2,6 +2,13 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-15 - token usage counters
+
+- ADDED `agenthub_go/fastmcp/server/routes/token_router_test.go`: `usage_count` and `rate_limit` survive as `int64`.
+- ADDED `agenthub_go/fastmcp/server/httpapp/mcp_tool_usage_test.go`: a tool call is keyed `<tool>.<action>`, a call with no token id records nothing.
+- ADDED `TestTokenRepoRecordOperationCountsPerOperation` in `token_repository_test.go` (PostgreSQL).
+- MEASURED: `go test ./server/...` passes; the token repository tests pass on `tools/testpg`.
+
 ## 2026-10-15 - token permission presets
 
 - CHANGED `agenthub-frontend/src/tests/pages/TokenManagement.test.tsx`: the Full Access test (every scope except the connector) is replaced by two literal-set tests - Client MCP (all but `sessions:write`) and Client connector (only `sessions:write`).
@@ -5608,3 +5615,4 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
 - `agenthub_client/internal/clientwatch/render_test.go`: the two line-cap cases now pass `expand: true`, since results fold by default.
 - `agenthub_client/internal/clientlifecycle/idleguard_test.go`: added idle-room Jev decision, low-confidence, working-seat and stuck-seat cases; `doctor_test.go`, `rigd_test.go` and `clientservices/services_test.go` list the new `roomguard` safeguard.
 - `agenthub_client/internal/clientwatch/view_test.go`: added `TestAChangeOfToolKindGetsALabelledRule`.
+- `agenthub_client/internal/clientsync/connector_test.go`: added `TestSetDeadlineBoundsReadsOnlyAndLeavesWritesOpen`.

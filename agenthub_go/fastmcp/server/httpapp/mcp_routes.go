@@ -360,6 +360,7 @@ func (a *App) dispatchMCPTool(ctx context.Context, r *http.Request, name string,
 		if result := auth.ValidateTokenUniversal(ctx, token, nil); result.Valid && result.UserID != nil {
 			userID = result.UserID
 			ctx = mcpAuthContext(ctx, result)
+			a.recordToolCall(ctx, result.TokenID, name, args)
 		}
 	}
 	if userID == nil {
@@ -559,4 +560,17 @@ func mcpAuthContext(ctx context.Context, result auth.UnifiedAuthResult) context.
 	ctx = middleware.WithRequestAuthContext(ctx, middleware.CaptureAuthContextFromState(state))
 	ctx = context.WithValue(ctx, authperm.UserContextKey, mcpTokenUser{payload})
 	return context.WithValue(ctx, authperm.PermissionsContextKey, authperm.NewPermissionChecker(payload))
+}
+
+// recordToolCall counts one MCP tool call in the usage_stats of the API token that made it, keyed
+// "<tool>.<action>" (or the bare tool name when the call has no action). It never fails the call.
+func (a *App) recordToolCall(ctx context.Context, tokenID *string, tool string, args map[string]any) {
+	if a.tokenOperations == nil || tokenID == nil || *tokenID == "" {
+		return
+	}
+	operation := tool
+	if action, ok := args["action"].(string); ok && action != "" {
+		operation = tool + "." + action
+	}
+	a.tokenOperations(ctx, *tokenID, operation)
 }

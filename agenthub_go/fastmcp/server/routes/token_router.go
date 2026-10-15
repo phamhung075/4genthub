@@ -141,14 +141,10 @@ func tokenResponseFromMap(m *taskdomain.OrderedMap[any]) TokenResponse {
 	resp.ExpiresAt = trOmGet(m, "expires_at")
 	resp.LastUsedAt = trOmGet(m, "last_used_at")
 	if v, ok := m.Get("usage_count"); ok {
-		if n, ok := v.(int); ok {
-			resp.UsageCount = &n
-		}
+		resp.UsageCount = trIntPtr(v)
 	}
 	if v, ok := m.Get("rate_limit"); ok {
-		if n, ok := v.(int); ok {
-			resp.RateLimit = &n
-		}
+		resp.RateLimit = trIntPtr(v)
 	}
 	if v, ok := m.Get("usage_stats"); ok {
 		if om, ok := v.(*taskdomain.OrderedMap[any]); ok {
@@ -352,4 +348,17 @@ func TokenServiceHealth() *taskdomain.OrderedMap[any] {
 	out.Set("service", "token_management")
 	out.Set("ddd_compliant", true)
 	return out
+}
+
+// trIntPtr reads an integer column value. The api_tokens columns are INTEGER and arrive as int64, so a
+// plain v.(int) assertion drops them and the page shows a usage_count of 0 whatever was recorded.
+func trIntPtr(v any) *int {
+	switch n := v.(type) {
+	case int:
+		return &n
+	case int64:
+		i := int(n)
+		return &i
+	}
+	return nil
 }

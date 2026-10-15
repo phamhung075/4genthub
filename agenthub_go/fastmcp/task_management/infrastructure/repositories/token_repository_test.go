@@ -4,6 +4,7 @@ package repositories
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 	"time"
 
@@ -176,5 +177,35 @@ func TestTokenRepoCleanupExpired(t *testing.T) {
 	}
 	if kept, _ := repo.GetTokenByID(ctx, future["id"].(string)); kept == nil {
 		t.Fatal("future token should remain")
+	}
+}
+
+func TestTokenRepoRecordOperationCountsPerOperation(t *testing.T) {
+	sessions := newTestRepoEnv(t)
+	ctx := context.Background()
+	repo := tokenRepoTestNew(t, sessions)
+
+	data := tokenRepoTestData(tmvo.NewUUIDv4())
+	if _, err := repo.CreateToken(ctx, data); err != nil {
+		t.Fatalf("CreateToken: %v", err)
+	}
+	id := data["id"].(string)
+
+	for _, op := range []string{"manage_task.create", "manage_task.create", "manage_subtask.list"} {
+		if err := repo.RecordOperation(ctx, id, op); err != nil {
+			t.Fatalf("RecordOperation(%s): %v", op, err)
+		}
+	}
+
+	row, err := repo.FindOneBy(ctx, NewKwargs("id", id))
+	if err != nil || row == nil {
+		t.Fatalf("FindOneBy: %v %v", row, err)
+	}
+	var stats map[string]int
+	if err := json.Unmarshal(row.UsageStats, &stats); err != nil {
+		t.Fatalf("usage_stats %s: %v", row.UsageStats, err)
+	}
+	if stats["manage_task.create"] != 2 || stats["manage_subtask.list"] != 1 {
+		t.Fatalf("usage_stats = %v", stats)
 	}
 }
