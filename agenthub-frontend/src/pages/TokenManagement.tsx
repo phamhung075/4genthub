@@ -133,9 +133,9 @@ function ScopeCard({ scope, isSelected, onToggle }: ScopeCardProps) {
   );
 }
 
-// The connector scope can open the connector socket and publish terminal sessions. "Client connector"
-// selects only it and "Client MCP" selects everything else, so the agent daemon's upload token and the
-// MCP key are minted as two separate tokens.
+// The connector scope can open the connector socket and publish terminal sessions, so "Full Access" and
+// "Client MCP" leave it out and "Client connector" selects only it: the agent daemon's upload token and the
+// MCP key are two separate tokens.
 const CONNECTOR_SCOPE = 'sessions:write';
 
 const AVAILABLE_SCOPES = [
@@ -438,7 +438,7 @@ export function TokenManagement() {
                     <Button
                       variant="default"
                       size="sm"
-                      onClick={() => setSelectedScopes(AVAILABLE_SCOPES.map(s => s.value))}
+                      onClick={() => setSelectedScopes(AVAILABLE_SCOPES.filter(s => s.value !== CONNECTOR_SCOPE).map(s => s.value))}
                       className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white"
                     >
                       <Shield className="h-4 w-4 mr-1" />
@@ -469,8 +469,8 @@ export function TokenManagement() {
                   </div>
 
                   <p className="text-xs text-muted-foreground">
-                    Mint "Client connector" (Publish Sessions only) for the agent daemon and "Client MCP" (everything else)
-                    for the MCP key as two tokens; "Full Access" puts both in one token.
+                    Publish Sessions is not included in Full Access or Client MCP. Mint "Client connector" (Publish Sessions
+                    only) as a separate token for the agent daemon.
                   </p>
 
                   {/* Improved Grid Layout for Scopes */}
