@@ -2,6 +2,11 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-15 - redactor unsure rule
+
+- ADDED `TestEventKeepsPathsAndIdsButWithholdsSecrets` in `agenthub_client/internal/clientsync/redaction_test.go`: paths, queue-item ids and tool-call ids stay uploadable; random secrets of the same alphabet are still withheld as `unsure`.
+- `go test ./internal/clientsync` passes.
+
 ## 2026-10-15 - token guides
 
 - CHANGED `agenthub-frontend/src/tests/pages/HelpSetup.test.tsx`: the connect command string and two assertions for the two guides.
