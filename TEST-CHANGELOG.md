@@ -2,6 +2,11 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-15 - the seat pane starts without the tmux variables
+
+- ADDED `pty::launch_env_tests::the_pane_command_unsets_the_tmux_pane_variables_and_the_denied_keys` in `agenthub_client/rust/agenthub-runtime/src/pty/mod.rs`: the pane command is `env -u <denied> -u TMUX -u TMUX_PANE <runner>`, with and without denied keys.
+- MEASURED: `cargo test --offline` in the runtime -> 104 passed; on the live room after a reseat, the five seats' omp processes carry no `TMUX` or `TMUX_PANE` in `/proc/<pid>/environ`.
+
 ## 2026-10-15 - the safeguard alert reaches the dashboard
 
 - ADDED `agenthub-frontend/src/tests/hooks/test_useRealtimeSync_rigSafeguard.test.tsx`: six cases over the exact frame `routes.BroadcastDataChange` shapes for 7.3's producers - the row with its counters lands in the inbox and toasts once; the dead-man frame (no `state`) reads as unreachable; a replayed frame stays one row and one toast; a second alert about the same row is a second row, which is the `metadata.entity_id` trap (the row key repeats); a frame naming no safeguard is dropped with a warning; and the rendered `NotificationBell` shows the line and the unread badge.
