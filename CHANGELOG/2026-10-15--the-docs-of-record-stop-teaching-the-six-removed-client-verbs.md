@@ -1,12 +1,18 @@
-# The docs of record stop teaching the five removed client verbs
+# The docs of record stop teaching the six removed client verbs
 
-The client's `sync room`, `sync rig`, `sync status`, `seat sync`, `seat status` and `seat watch` went
-with the rigspec route the server deleted. Three documents here still taught them as commands.
+The client's `sync room`, `sync rig`, `sync status`, `seat sync`, `seat status` and `seat watch` (six
+names) went with the rigspec route the server deleted. Three documents here still taught them as
+commands.
 
 ### Changed
 - `AGENTS.md` §2: the skills line said `share/` and `rooms/<room>/` "are delivered to seats by
-  `4genteam sync room`". The delivery is a seat's own restart (`4genteam seat reseat`), which is what
-  copies them into the seat directory and declares them in its `agent.yaml`.
+  `4genteam sync room`". Replaced with the mechanism as measured in the client:
+  `clientseat/deliverSkills` (called from the relaunch path, `clientseat/quiet.go:184`, which
+  `4genteam seat reseat` drives) replaces the seat's own skill directory
+  `<state-root>/rooms/<room>/seats/<seat>/skills` with a copy of the store's
+  `<store>/<room>/rig/agents/<seat>/skills`. It writes no `agent.yaml`: the declaration half was the
+  deleted `rigverb.go:441`, and where the seat's `agent.yaml` comes from now is a model question the
+  architect holds (the lead's row `qitem-20261015202242-2e217a0d6372`).
 - `ai_docs/operations/syncing-seats-with-the-cloud.md`: the header, the diagram, the `## Commands`
   block and the surrounding prose now name what survives (`sync pull ROOM SEAT`, `sync bundle ROOM
   SEAT`, `sync offline-install TARGET`, `seat reseat ROOM --seat NAME`, `send`, `ps`) and state that
