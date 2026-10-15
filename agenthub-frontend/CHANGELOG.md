@@ -5,7 +5,7 @@
 ### Added
 - **Token permissions are Client connector, Client MCP and Clear All** - 2026-10-15
   - `src/pages/TokenManagement.tsx`: the quick actions Read Only, Essential and Execute Only are gone. Full Access is removed (it selected the same set as Client MCP). Client MCP selects every scope except `sessions:write`; Client connector selects only `sessions:write`. The agent daemon uploads with its own connector token and the MCP key carries no upload scope, so each is one click.
-  - `src/tests/pages/TokenManagement.test.tsx`: two literal-set tests (Client MCP, Client connector) replace the old Full Access one. Measured: the file passes (18 tests) and `tsc --noEmit` is clean.
+  - `src/tests/pages/TokenManagement.test.tsx`: two literal-set tests (Client MCP, Client connector) replace the old Full Access one. Measured: the file passes (17 tests) and `tsc --noEmit` is clean.
 - **The frontend has a Playwright harness, and the deployed app passes its first browser check** - 2026-10-11
   - NEW `playwright.config.ts` and `e2e/` (`account.ts`, `smoke.spec.ts`). `baseURL` comes from `E2E_BASE_URL`, defaulting to the deployed app; a rigd check points it at the vite dev server (`http://localhost:3800`, which proxies `/api` and `/ws` to `:8000` per `vite.config.ts`). One worker, no retries, trace and screenshot on failure only, into the gitignored `test-results/`.
   - The account is read INSIDE the test process from the gitignored `e2e-test-account`. Nothing logs, titles or attaches a value from it, and a failure says only which file was unreadable or malformed.
