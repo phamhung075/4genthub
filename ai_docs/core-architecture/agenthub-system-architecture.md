@@ -123,16 +123,18 @@ Every step above is written to the execution ledger (task_events)
 - **`manage_rule` is not registered.** A facade exists (`rule_application_facade.go`). Rules are delivered as seat modules (`instruction`, `policy`), so rules stay there and no `manage_rule` tool is added; with both, a rule would have two homes.
 - **Calls carry no seat identity.** Only the user is known (bearer token). The ledger needs the acting seat, so item O2 adds a header `X-Agenthub-Seat: <room>/<seat>` to each rendered MCP block. It is used for attribution, not authorization.
 
-**Task graph: BUILT; routing PARTIAL.** Project, git branch, task, subtask, with `task_dependencies` and cycle checks (`Task.HasCircularDependency`). Statuses and transitions (`value_objects/task_status.go:12-37`):
+**Task graph: BUILT; routing PARTIAL.** Project, git branch, task, subtask, with `task_dependencies` and cycle checks (`Task.HasCircularDependency`). Statuses and transitions (`value_objects/task_status.go:42-51`):
 
 ```
-todo -> in_progress | cancelled | done
+todo -> in_progress | blocked | cancelled | done
 in_progress -> blocked | review | testing | cancelled | done
 blocked -> in_progress | cancelled
-review -> in_progress | testing | done | cancelled
-testing -> in_progress | review | done | cancelled
+review -> in_progress | blocked | testing | done | cancelled
+testing -> in_progress | blocked | review | done | cancelled
 done -> in_progress        cancelled -> todo        archived: final
 ```
+
+**CORRECTED 2026-10-15 (architect) — this block is the transition rule of `task_status.go` at main `2b75d092`, and the three `| blocked` edges are the ruling of that day: every open state can reach `blocked`, so the lifecycle sweep can end a stale critical task through `Task.UpdateStatus` and never around it. The block printed the pre-ruling table because that commit changed the table it copies and the doc carried no instrument that would notice.** **The two encodings of this rule are NOT identical, and neither may be read as the other:** the entity also allows `todo -> done`, `review -> cancelled`, `testing -> cancelled` and `cancelled -> todo`; the service's own table (`domain/services/task_state_transition_service.go`) also allows `in_progress -> todo` and `blocked -> todo`, and carries no `archived`. The ruling closed the `blocked` column and nothing else.
 
 Gaps:
 

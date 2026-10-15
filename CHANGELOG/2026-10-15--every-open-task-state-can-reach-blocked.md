@@ -23,11 +23,17 @@ the sweep sweeps.
 service's wrapper around the entity's refusal (`TransitionTo` → `Task.UpdateStatus`), so the service
 allowed the move and the entity refused it. Two tables in the same domain, disagreeing.
 
-**Consequence for the sweeper lane.** `4genthub-min/task-sweeper` (tip `4662fe65`, at the gate) pins
-that refusal: three cases in `task_lifecycle_sweeper_test.go` carry `wantRefused`, and its `Refused`
-counter and comments state that `todo`, `review` and `testing` may not reach blocked. Those pins
-describe the state this removes, so they flip to blocks in the same window — otherwise that branch
-goes red the moment this lands.
+**Consequence for the sweeper lane.** `4genthub-min/task-sweeper` (tip `e66c9543` when this was
+corrected; the branch was rebased after this was written, so read the tip from the ref, not from
+here) pins that refusal: three cases in `task_lifecycle_sweeper_test.go` carry `wantRefused`, and its
+`Refused` counter and comments state that `todo`, `review` and `testing` may not reach blocked. Those
+pins describe the state this removes, so they flip to blocks in the same window — otherwise that
+branch goes red the moment this lands. **CORRECTED 2026-10-15, on the reviewer's gate of `2b75d092`:**
+this lane **does** share a file with that one — `TEST-CHANGELOG.md`, one entry each, mechanically
+harmless because each entry is its own line, but "no file that lane touches" was false and a landing
+script would have acted on it. A sequence that lands both takes that file with both entries.
 
 **Not in this change.** No sweeper, no guide, no instrument: the table and its comment, three fixture
-expectations, the two test pins, and this entry.
+expectations, the two test pins, and this entry. **The doc this makes stale is repointed separately:**
+`ai_docs/core-architecture/agenthub-system-architecture.md` printed this rule's pre-ruling block, and
+`4genthub-min/blocked-edges-doc-repoint` carries that repoint and the narrowed comment above.

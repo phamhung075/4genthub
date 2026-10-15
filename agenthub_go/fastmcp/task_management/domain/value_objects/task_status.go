@@ -33,8 +33,11 @@ var TaskStatusValues = []TaskStatusEnum{
 // at critical priority longer than TASK_BLOCK_AFTER. It blocks THROUGH THIS RULE (Task.UpdateStatus),
 // so a state with no blocked edge cannot be blocked at all: a stale `todo`, `review` or `testing`
 // task would stay critical forever and the sweep would report a refusal every interval. The
-// TaskStateTransitionService's own rules table already carried all three edges; this table was the one
-// that did not, which is the inconsistency this closes. `done` and `archived` are deliberately NOT
+// TaskStateTransitionService's own rules table already carried all three BLOCKED edges; this table
+// was the one that did not, and that column is all this closes. The two encodings still differ
+// elsewhere - the entity also allows todo->done, review->cancelled, testing->cancelled and
+// cancelled->todo; the service also allows in_progress->todo and blocked->todo, and carries no
+// archived - so neither table may be read as the other. `done` and `archived` are deliberately NOT
 // blockable: a finished task is pruned rather than parked, and `archived` is final.
 var taskStatusTransitions = map[TaskStatusEnum][]TaskStatusEnum{
 	TaskStatusTodo:       {TaskStatusInProgress, TaskStatusBlocked, TaskStatusCancelled, TaskStatusDone},

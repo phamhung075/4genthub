@@ -4,7 +4,7 @@
 // IT IS THE LEDGER'S LAYER AND NOT PART OF O1a/O1b. O1a owns the table, the ORM struct, the
 // repository and the PER-TASK read; O1b owns the transactional write a status change makes. Neither
 // speaks about a CLIENT pushing its offline work, which is what D9's part 1 adds (architecture
-// agenthub-system-architecture.md :595-:615, committed 4f753d2d) and what P2/P3 build.
+// agenthub-system-architecture.md :597-:617, committed 4f753d2d) and what P2/P3 build.
 //
 // THE VOCABULARY IS THE ARCHITECTURE'S, RE-STATED HERE FOR THE ROLE IT PLAYS IN THE DECISION rather
 // than copied for convenience: the DB CHECK constraint (task_event_tables.go) is the authority for
