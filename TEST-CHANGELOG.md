@@ -2,6 +2,12 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-15 - seat tool hook and activity timeline
+
+- ADDED `agenthub_client/internal/clientactivity/activity_test.go`: the timeline merges the tool log, the send audit and the Jev log oldest first, skips lifecycle lines, and `--problems` keeps only blocked, failed and refused events.
+- ADDED Rust test `the_seat_tool_hook_guards_and_logs` in `agenthub_client/rust/agenthub-runtime/src/supervisor/mod.rs`: `start_seat` writes `hooks/pre/seat-guard.ts` next to `mcp.json`.
+- `go test ./internal/clientactivity ./cmd/...` and `cargo test --offline the_seat_` pass.
+
 ## 2026-10-15 - redactor unsure rule
 
 - ADDED `TestEventKeepsPathsAndIdsButWithholdsSecrets` in `agenthub_client/internal/clientsync/redaction_test.go`: paths, queue-item ids and tool-call ids stay uploadable; random secrets of the same alphabet are still withheld as `unsure`.
