@@ -20,16 +20,23 @@ Three landings on the board, all of them answers the room is already acting on, 
   **(v)** the unit's ordering is approved — code on the branch, install waits for the links, and the four
   gate cases measured through the existing `--socket` seam against a lab room that declares **exactly one
   link** so case (b) is a real refusal.
-- **The live-fault bullet now names TWO faults, and the second is `manage_task`.** It was "THE ONE LIVE
-  FAULT REMAINS: THE CONNECTOR `400`" and is now two measured faults: the connector `400` as recorded,
-  and `manage_task` mutations for a task created 2026-10-15. The second half carries the repro
-  (`duplicate key value violates unique constraint "uq_task_event_seq"`, SQLSTATE **23505**, three
-  attempts 05:02:33Z/35Z/43Z), what is **not** broken (`create` 05:02:29Z, `get` unchanged, update on a
-  different task 05:02:45Z), the reading (per-task event-ledger state, the row created 04:41:51.738959Z
-  with `updated_at` 26 ms later), the consequence (task `81c907dc` cannot carry its own state, and its
-  record lives on the rail), the fix's shape (a deployed-server change; the owner approves every deploy,
-  routed to the lead's rail row `e4265ca09e2d`), and the filing (go-dev, task `bce0edd7-…`, with
-  acceptance).
+- **The live-fault bullet now names TWO faults, and the second is `manage_task` — for EVERY task whose
+  create poisons it.** It was "THE ONE LIVE FAULT REMAINS: THE CONNECTOR `400`" and is now two measured
+  faults: the connector `400` as recorded, and `manage_task` mutations for a class of tasks. The second
+  half carries the repro (`duplicate key value violates unique constraint "uq_task_event_seq"`, SQLSTATE
+  **23505**, three attempts 05:02:33Z/35Z/43Z), what is **not** broken (`create` 05:02:29Z, `get`
+  unchanged, and `delete`), the reading (per-task event-ledger state, the row created 04:41:51.738959Z
+  with `updated_at` 26 ms later), **the scope — three tasks today (`81c907dc`; `b9eddb8e` at 05:17:41Z;
+  `e5524d13`, where `complete` fails too) against the control `059eece4`, which has accepted updates at
+  05:02:45Z, 05:03:18Z and 05:17:57Z, so the outcome is decided per task at create time and not by the
+  clock, the seat or the tool** — the consequence (such a task cannot carry state and cannot even be
+  closed, so the only repair a seat has is delete-and-recreate; the room's own unit tasks `b9eddb8e` and
+  `bce0edd7` are of that class, so their record lives on the rail), the fix's shape (a deployed-server
+  change; the owner approves every deploy, routed to the lead's rail row `e4265ca09e2d`), and the filing
+  (go-dev, task `bce0edd7-…`, with acceptance). **Correction recorded in the same landing: the first
+  version of this line said ONE TASK, which the second and third failures falsified — the datapoint was
+  true and its scope was too narrow, so the scope is what changed; the per-task reading survived, because
+  the control still writes.**
 - **P1's third-reach sentence is corrected: the symbol it names does not exist.** The plan line cites
   "the `firstRigSession` reach in `agenthub_client/internal/clientsync/connectorverb.go:103`". At
   `892f867`, `firstRigSession` has **0 hits** in the client's Go; its only survivor is the CHANGELOG line
@@ -50,6 +57,12 @@ Three landings on the board, all of them answers the room is already acting on, 
 - All 171 rail rows, grouped by source→destination seat (the counts are quoted in the bullet).
 - `manage_task` repro at 05:02:2x–4xZ, four calls with their outputs (the row text in
   `qitem-20261015050323-fd10cb71d524`).
+- **The scope probes, and the control that keeps the reading honest:** `update` on `81c907dc` (fail),
+  `update` on `b9eddb8e` at 05:17:41Z (fail), `complete` on `e5524d13` (fail), and `update` on
+  **`059eece4` at 05:17:57Z (SUCCESS, its ninth progress block written)** — the same call shape that
+  fails elsewhere, so the difference is the task, not the caller. `create`, `get` and `delete` succeed in
+  the same minutes. **The successful write is itself in the record: `059eece4`'s Progress 9 names the
+  re-probe and its purpose, so nothing was written anywhere as a throwaway.**
 - `grep -rni 'firstrigsession'` over the client's `*.go` at `892f867` → **0**; the single survivor is
   `CHANGELOG.md:1015`; `wc -l internal/clientsync/connectorverb.go` → **315**; `grep -n '^func '` in it →
   `RunConnectorVerb:35`, `answersTo:180`, `rigSessionCandidates:196`, `candidatesFrom:216`,
