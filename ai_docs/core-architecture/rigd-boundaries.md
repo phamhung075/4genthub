@@ -1,8 +1,19 @@
-# rigd boundaries: socket frames, command authorization, redaction
+# agent boundaries: socket frames, command authorization, redaction
+
+> **Naming note, 2026-10-15.** The component this file is about was renamed: `rigd` → `agent`, the
+> always-on verb of the client binary (`4genteam agent`; client `bc725e6`, 2026-10-15). Everything below
+> reads `agent`. This file keeps its historical name `rigd-boundaries.md` deliberately: 40 tracked files
+> cite it by that path - 55 occurrences (`git grep -l` gives the file count and `git grep -o` the
+> occurrences, at main `04fcd5d7`), 24 of the occurrences in 19 code files - and no instrument reads a
+> prose path, which is board T14's class. Renaming the file is a file-by-file prose sweep, worth doing
+> only if this doc becomes consumer-facing. **The two clauses of the pre-rename text** still read `rigd` -
+> 7.2's sentence on the six names, and 7.9's ruled peak clause - because they are history, not instruction.
+> A THIRD occurrence is a quotation rather than a clause: 7.1's dated bullet records that the verb landed 37
+> minutes later as `rigd` (`9182f13`), so that token belongs to the date it names, not to this rule.
 
 Decision note by the architect, 2026-10-11. It answers the lead's request `qitem-20261010222721-557596c2630798bc` (owner priority: build NEXT_GEN F4 in two phases). It binds go-dev and fe-dev for phase 1. Phase 2 is designed here and NOT implemented.
 
-rigd is the always-on local client. It holds one outbound WebSocket to `/ws/connector` under the user's token, registers every local rig session, uploads redacted events (phase 1), and later receives commands that it runs locally as `4genteam send` (phase 2). The cloud never connects to the user's machine.
+agent is the always-on local client. It holds one outbound WebSocket to `/ws/connector` under the user's token, registers every local rig session, uploads redacted events (phase 1), and later receives commands that it runs locally as `4genteam send` (phase 2). The cloud never connects to the user's machine.
 
 ## 0. What exists today (measured at HEAD, 2026-10-11)
 
@@ -11,12 +22,12 @@ rigd is the always-on local client. It holds one outbound WebSocket to `/ws/conn
 - Client: `internal/clientsync/connector.go` and `connectorverb.go` send ONE session ONE time (`sync connector`). Redaction is a fixed regex list (`Redact`, `redactionPatterns`) with no failure path. The same files exist in BOTH `agenthub_client` (pin `80cc766d`) and `agenthub_go/internal/clientsync`. The duplication is the seatcheck case again.
 - `agent_sessions` has `status`, `last_seq`, `last_seen` and the seat pair, and no client cursor column.
 
-## 1. Where rigd lives
+## 1. Where agent lives
 
-**Ruling: rigd is built in `agenthub_client`, as a long-running verb of the client binary (`4genteam rigd`).** It extends `internal/clientsync/connector.go`; it is not a new program.
+**Ruling: agent is built in `agenthub_client`, as a long-running verb of the client binary (`4genteam agent`).** It extends `internal/clientsync/connector.go`; it is not a new program.
 
 - Reason: the client module is the one that ships to operators and the one the seat is pulled from. That is the same rule that made the client's `cmd/seatcheck` canonical (CHANGELOG `2026-10-10--the-second-seatcheck-copy-leaves-the-tree-the-client-module-is-canonical.md`).
-- Follow-on, not phase-1 work: retire `agenthub_go/internal/clientsync/connector*.go` the way the server's seatcheck copy was retired. Until then, NO rigd change goes into the `agenthub_go` copy.
+- Follow-on, not phase-1 work: retire `agenthub_go/internal/clientsync/connector*.go` the way the server's seatcheck copy was retired. Until then, NO agent change goes into the `agenthub_go` copy.
 
 ## 2. Boundary 1: the socket frames
 
@@ -40,7 +51,7 @@ Client → server:
 | type | fields | notes |
 |---|---|---|
 | `hello` | `connector_id`; **NEW** `protocol` (int, `1`), `client_version` (string), `capabilities` (array of strings; phase 1 sends `["ingest"]`) | Must be the first frame. A missing `protocol` means 1. |
-| `session` | `session_key`, `name`, `project?`, `room?`, `seat?`; **NEW** `state` (`running` \| `stopped`), `source` (`transcript` \| `capture`) | This is registration. It is re-sent on every reconnect, and whenever `rig ps --json` shows a state change. A seat that leaves `rig ps` is sent once with `state: stopped`. |
+| `session` | `session_key`, `name`, `project?`, `room?`, `seat?`; **NEW** `state` (`running` \| `stopped`), `source` (`transcript` \| `capture`) | This is registration. It is re-sent on every reconnect, and whenever `4genteam ps --json` shows a state change. A seat that leaves `4genteam ps` is sent once with `state: stopped`. |
 | `events` | `session_key`, `events: [{type, payload, ts?}]` (at most 200); **NEW** `cursor` (string, at most 512 bytes, opaque to the server) | Send exactly ONE `events` frame per session and wait for its `events_ack` before sending the next for that session (stop-and-wait). That ordering is what makes the cursor exact. |
 | **NEW** `ping` | `t` (client unix ms) | Sent every `heartbeat_s` seconds. |
 
@@ -56,7 +67,7 @@ Server → client:
 
 Heartbeat: the client closes and reconnects after 3 heartbeats without a `pong`, or with no frame at all. The server closes a socket after 3 × `heartbeat_s` seconds with no frame. Both sides stay under the production proxy's `proxy_read_timeout` (C5).
 
-Reconnect: exponential backoff from 1 s, doubling, capped at 60 s, with ±20 % jitter, reset after 60 s connected. A close with 1008 (scope missing) or 4401 (authentication) is NOT retried. rigd reports it locally and exits non-zero, because retrying a refused credential is load, not recovery.
+Reconnect: exponential backoff from 1 s, doubling, capped at 60 s, with ±20 % jitter, reset after 60 s connected. A close with 1008 (scope missing) or 4401 (authentication) is NOT retried. agent reports it locally and exits non-zero, because retrying a refused credential is load, not recovery.
 
 ### 2.3 The forward-compatibility rule
 
@@ -68,9 +79,9 @@ Reconnect: exponential backoff from 1 s, doubling, capped at 60 s, with ±20 % j
 
 ### 2.3a The browser surface (ruled 2026-10-11, answering fe-dev's question on section 5 step 3)
 
-The frames above run between rigd and the server. The browser never sees them. Here is what the browser gets:
+The frames above run between agent and the server. The browser never sees them. Here is what the browser gets:
 
-- **Read:** the `GET /api/v2/sessions` row gains **`seat_state`** (`"running"` | `"stopped"` | `null`), stored in a NEW column, `agent_sessions.seat_state TEXT NULL`. The server writes it from `session.state` on every `session` frame. `null` means no rigd has reported a state, for example an old one-shot `sync connector` upload.
+- **Read:** the `GET /api/v2/sessions` row gains **`seat_state`** (`"running"` | `"stopped"` | `null`), stored in a NEW column, `agent_sessions.seat_state TEXT NULL`. The server writes it from `session.state` on every `session` frame. `null` means no agent has reported a state, for example an old one-shot `sync connector` upload.
   - It is NOT `status`. `status` (`active` | `offline`) stays the connection fact: `MarkOffline` sets it when the socket closes.
   - The two are independent. A seat can be `running` while its connector is `offline`; that is the last reported state, and it may be stale.
   - Rendering precedence: `status: offline` shows as offline, with the last `seat_state` as secondary text. Otherwise `seat_state` decides: `stopped` shows as stopped, and `running` or `null` shows as live.
@@ -79,6 +90,7 @@ The frames above run between rigd and the server. The browser never sees them. H
   - `updated`: a `seat_state` change, or a `status` change, including `MarkOffline`, which emits one frame per session it marks.
 - **No push per `events` batch:** live events stay on `/ws/sessions/{id}`.
 - **The browser** handles `agent_session` by invalidating `['sessions']` (`sessionKeys.list`) in each branch, the same placing as `handleSeatUpdate`. It does not parse the row out of the frame: the GET stays the single read path.
+- **The browser** handles the safeguard alert of 7.3 (entity `rig_safeguard`, action/event_type `safeguard_alert`) by putting it in the dashboard inbox (`useNotificationStore`) with a warning toast, live and replayed alike. The frame carries the ROW rather than a message, so the line is composed from the row's own fields (`safeguard`, `rig`, `connector_id`, `state`, `restarts`, `age_s`), and a frame with no `state` is the dead-man alert and says the connector stayed offline past its heartbeat close. **The dedupe key is the FRAME id, not `metadata.entity_id`**: `entity_id` here is the row key, which repeats across the row's life, so keying on it would collapse a genuine second alert into the first while a replay of one frame keeps its id. Recorded 2026-10-15, when the consumer landed (`agenthub-frontend/src/hooks/useRealtimeSync.ts`); before it, this entity fell to the dispatcher's default branch and the alert reached no surface at all.
 
 ### 2.4 Phase-2 frames (designed now, NOT implemented)
 
@@ -107,7 +119,7 @@ This is remote execution by design. The question is who may cause a `4genteam se
 | | A. A distinct scope on the socket | B. A distinct scope, a human-only issuer, and local consent |
 |---|---|---|
 | Who may create a command | Any credential with `sessions:command` | Only an interactive Keycloak browser session (the Sessions page). An API or MCP token is refused, with or without any scope. |
-| Who may deliver | A socket whose token has `sessions:command` | The same, AND the machine's local rigd config has commands enabled for that target |
+| Who may deliver | A socket whose token has `sessions:command` | The same, AND the machine's local agent config has commands enabled for that target |
 | A leaked API token | Can type into the user's terminals | Cannot create a command |
 | A compromised cloud | Can type anything into any connected machine | Limited to the targets the machine's owner allowlisted locally |
 
@@ -115,16 +127,16 @@ This is remote execution by design. The question is who may cause a `4genteam se
 
 1. **Issuer:** `POST /api/v2/sessions/{id}/commands` accepts only a Keycloak user token (a human in a browser). API and MCP tokens are refused with 403 `human_session_required`. The command's `user_id` must own the target session.
 2. **Delivery scope:** the server offers commands only on a socket whose token grants the NEW scope `sessions:command`, and only when that socket's `hello` advertised `commands`. `sessions:write` alone gets ingest only.
-3. **Local consent, which the cloud cannot widen:** rigd delivers commands only when its LOCAL config (`<seat store>/rigd.json`, mode 0600, written by the user on that machine) has `commands.enabled: true` and lists the target `session_key`s, or `room/seat` pairs, in `commands.allow`. The default is off. The server never writes this file, so cloud-side compromise cannot enable a machine that the user did not enable.
-4. **Execution shape:** the only action is `send_to_seat`, executed as `exec("rig", "send", <target>, <text>)` with an argv list and NO shell, so the text is data and never a command line. The `<text>` is sent as-is. rigd does not interpret it.
+3. **Local consent, which the cloud cannot widen:** agent delivers commands only when its LOCAL config (`<seat store>/agent-consent.json`, mode 0600, written by the user on that machine) has `commands.enabled: true` and lists the target `session_key`s, or `room/seat` pairs, in `commands.allow`. The default is off. The server never writes this file, so cloud-side compromise cannot enable a machine that the user did not enable.
+4. **Execution shape:** the only action is `send_to_seat`, executed as `exec("rig", "send", <target>, <text>)` with an argv list and NO shell, so the text is data and never a command line. The `<text>` is sent as-is. agent does not interpret it.
 5. **What the user sees first:**
-   - On the machine, enabling commands is a deliberate local edit, and `4genteam rigd status` lists the allowed targets.
+   - On the machine, enabling commands is a deliberate local edit, and `4genteam agent status` lists the allowed targets.
    - On the Sessions page, the chat input is shown only for a session whose connector is online with `commands` enabled for that target. It names the machine (`connector_id`) that will deliver.
    - The delivered text then appears in that session's event stream, attributed `human:<user>`.
    - A per-command confirmation on the machine is NOT required: it would defeat the purpose, because the user is not at the machine. Consent is per machine and per target.
 6. **Audit, two records that must agree:**
    - Server: a `session_commands` row (`id`, `user_id`, `session_id`, `created_by`, `text_sha256`, `text`, `created_at`, `expires_at`, `state` from offered to accepted or refused to delivered or failed, `reason`, `updated_at`).
-   - Client: one JSON line per received command in `<seat store>/rigd-audit.jsonl` (`command_id`, decision, reason, outcome, exit code, ts), with the same append-before-act discipline as `seatcheck` (G3 C4).
+   - Client: one JSON line per received command in `<seat store>/agent-audit.jsonl` (`command_id`, decision, reason, outcome, exit code, ts), with the same append-before-act discipline as `seatcheck` (G3 C4).
    - A server row with no matching client line, or the reverse, is a finding.
 7. **Expiry:** a command not accepted within 5 minutes expires, and the client refuses an expired one. Nothing queues indefinitely and then fires hours later.
 
@@ -134,7 +146,7 @@ Open for the owner before phase 2 starts, NOT for dev seats: whether a delivered
 
 ### 4.1 Where it runs
 
-The cloud must never receive an unredacted byte, so redaction is a **precondition of building the `events` frame**, inside rigd. The server's `MaxPayloadChars` truncation is a size guard, not redaction, and it must not be counted as redaction.
+The cloud must never receive an unredacted byte, so redaction is a **precondition of building the `events` frame**, inside agent. The server's `MaxPayloadChars` truncation is a size guard, not redaction, and it must not be counted as redaction.
 
 ### 4.2 Where the rule set lives
 
@@ -176,9 +188,9 @@ I agree with the lead's fail-closed preference, and make one granularity choice 
 
 A withheld event is uploaded ONLY as a placeholder, `{type: "redaction_withheld", payload: {reason, bytes}}`. `reason` is one of `redactor_error`, `not_utf8`, `bad_shape`, `too_large`, `env_file` or `unsure`. The placeholder carries no content and no hash of the content.
 
-The raw event is surfaced locally: it is written to `<seat store>/rigd-withheld/<session>/<ts>.json` (mode 0600, kept 7 days), and `4genteam rigd status` shows a per-session withheld count. The upload continues past it, and the cursor advances past it, because the placeholder records the gap.
+The raw event is surfaced locally: it is written to `<seat store>/agent-withheld/<session>/<ts>.json` (mode 0600, kept 7 days), and `4genteam agent status` shows a per-session withheld count. The upload continues past it, and the cursor advances past it, because the placeholder records the gap.
 
-If the redactor fails on EVERY event of a session for 5 minutes, rigd stops that session's upload (A, as a backstop) and reports it locally. That case means a broken redactor, not one bad line.
+If the redactor fails on EVERY event of a session for 5 minutes, agent stops that session's upload (A, as a backstop) and reports it locally. That case means a broken redactor, not one bad line.
 
 ## 5. Phase 1: what to build first (one shippable slice)
 
@@ -194,9 +206,9 @@ In order, each step with its own check:
 
    Check: a PG test that sends a batch, drops the socket before reading the ack, reconnects, and receives `session_ack.cursor` equal to that batch's cursor, with the event count stored exactly once.
 2. **Client, go-dev:**
-   - `4genteam rigd`: the long-running loop over `rig ps --json`, a per-session tail of `rig transcript`, stop-and-wait `events`, reconnect with backoff, and no retry on 1008 or 4401;
+   - `4genteam agent`: the long-running loop over `4genteam ps --json`, a per-session tail (`4genteam capture <session> --lines <n>` - there is no `transcript` verb, and `feed` is the room-wide merged stream rather than one session's), stop-and-wait `events`, reconnect with backoff, and no retry on 1008 or 4401;
    - redaction per 4.3 and 4.4, with withheld placeholders;
-   - `rigd status`.
+   - `agent status`.
 
    Check: on a throwaway rig with 2 seats, kill the network for 60 s mid-stream; after recovery the cloud holds each event exactly once. A seeded `.env` read and a seeded 40-character high-entropy string each arrive as `redaction_withheld`, and the raw file exists locally.
 3. **Frontend, fe-dev:**
@@ -207,7 +219,7 @@ In order, each step with its own check:
 
    Check: vitest on the event renderer plus one browser look at the Sessions page against a stack that ingested step 2's rig.
 
-Phase 1 ships when steps 1–3 pass. Phase 2 (the `sessions:command` scope, `session_commands`, the human-only issuer, `rigd.json` consent, and the command frames in 2.4) starts only after that.
+Phase 1 ships when steps 1–3 pass. Phase 2 (the `sessions:command` scope, `session_commands`, the human-only issuer, `agent.json` consent, and the command frames in 2.4) starts only after that.
 
 ## 6. Anything a dev seat finds unruled
 
@@ -222,28 +234,28 @@ The incident: the compaction supervisor and the rig watchdog were not running, a
 - The supervisor logs **only when it acts** (`Step`, `supervisor.go:98`). On a quiet rig a healthy supervisor writes nothing, so its log age cannot tell dead from idle. The 12:41 last-log age proved nothing by itself.
 - The watchdog logs a heartbeat line every 15 polls of 60 s (`clientrestore/watchdog.go:282`). The bridge retries with doubling backoff up to 120 s (`clientbridge/bridge.go:338`).
 - No OS supervisor exists on this machine: PID 1 is `init`, and `systemctl --user` reports `offline` (architect ran both, 2026-10-11).
-- There is no rigd verb yet. "The skeleton's bridge reconnect/reuse" therefore names the bridge's backoff and `spawnChild`/`awaitStart`; this section reuses both.
+- There was no `agent` verb yet when this ruling was written (it landed 37 minutes later, as `rigd`, commit `9182f13`; `bc725e6` renamed it `agent`). "The skeleton's bridge reconnect/reuse" therefore names the bridge's backoff and `spawnChild`/`awaitStart`; this section reuses both.
 
 ### 7.1 (a) Where supervision lives
 
-| | A: inside rigd, as its child manager | B: a separate `4genteam keeper` process |
+| | A: inside agent, as its child manager | B: a separate `4genteam keeper` process |
 |---|---|---|
-| Who restarts rigd itself | Nobody locally (no systemd). The server notices through the socket (7.3). | Nobody: the keeper is a second always-on process that needs supervising. |
-| Upstream path | rigd's own `/ws/connector` socket | A second connection, or IPC into rigd |
+| Who restarts agent itself | Nobody locally (no systemd). The server notices through the socket (7.3). | Nobody: the keeper is a second always-on process that needs supervising. |
+| Upstream path | agent's own `/ws/connector` socket | A second connection, or IPC into agent |
 | Supervision mechanisms | One | Two, the thing the owner ruled out |
 
-**Ruling: A.** rigd is the single restart authority.
+**Ruling: A.** agent is the single restart authority.
 
 - **Reuses:**
   - `spawnChild` and `awaitStart` start each child. The children are the existing verbs, `compact-run --rig R`, `watchdog R --watch` and `bridge run`, as separate processes.
   - The bridge's backoff stays inside the bridge. It is I/O retry, not supervision.
-- **New:** a restart loop with backoff from 1 s, doubling to 120 s. A child that dies 3 times inside 10 minutes is `failing`; rigd keeps retrying at 120 s.
-- **Changed:** `up` starts rigd (one detached child, checked with `awaitStart`) instead of the bridge and the supervisor. It records the rig in the local `rigd.json` `rigs` list, and rigd supervises a supervisor and a watchdog per listed rig and one bridge per machine.
-- **Removed:** `compact` and `stop` no longer spawn or kill safeguards directly. Two restart paths would be two mechanisms. `stop` stops rigd, which stops its children.
+- **New:** a restart loop with backoff from 1 s, doubling to 120 s. A child that dies 3 times inside 10 minutes is `failing`; agent keeps retrying at 120 s.
+- **Changed:** `up` starts agent (one detached child, checked with `awaitStart`) instead of the bridge and the supervisor. It records the rig in the local `agent.json` `rigs` list, and agent supervises a supervisor and a watchdog per listed rig and one bridge per machine.
+- **Removed:** `compact` and `stop` no longer spawn or kill safeguards directly. Two restart paths would be two mechanisms. `stop` stops agent, which stops its children.
 
 ### 7.2 (b) The health report and the authoritative source
 
-**New:** every child writes a heartbeat file on every pass, `<LogDir>/heartbeat/<safeguard>-<rig>.json` holding `{pid, at}`. The supervisor writes it per `Step`, the watchdog per poll, the bridge per `Cycle`. rigd writes its own, `rigd.json` in the same directory.
+**New:** every child writes a heartbeat file on every pass, `<LogDir>/heartbeat/<safeguard>-<rig>.json` holding `{pid, at}`. The supervisor writes it per `Step`, the watchdog per poll, the bridge per `Cycle`. agent writes its own, `agent.json` in the same directory.
 
 **One row per safeguard, in the scope the safeguard runs in:**
 
@@ -257,19 +269,19 @@ machine-level supervisor to `agent`.
 
 **Which source wins:**
 
-1. **Process.** rigd's `Wait` on its child, or `pgrep` when rigd is not running, decides `running` against `stopped`. A dead process is `stopped` whatever its heartbeat says.
+1. **Process.** agent's `Wait` on its child, or `pgrep` when agent is not running, decides `running` against `stopped`. A dead process is `stopped` whatever its heartbeat says.
 2. **Heartbeat.** A live process whose heartbeat is older than the threshold (7.4), or whose heartbeat `pid` is not the live pid, is `silent`. This is the hung case, the silence the owner named.
 3. **Log timestamps are never authoritative.** They are shown for reading only, because of the supervisor fact above.
 
-**`failing` beats a live process** (ruled 2026-10-11 on minor m1 of `GATE-39e51529`; the lead's `qitem-20261010234255-72dac9f9fb10cae8`). The process decides only `running` against `stopped`; it cannot count deaths. A row that rigd records as `failing` (3 deaths inside the window, 7.1) is `failing` whether its process is alive right now or not. It is therefore not `running` for the health report, `doctor`'s exit or `up` (7.5).
+**`failing` beats a live process** (ruled 2026-10-11 on minor m1 of `GATE-39e51529`; the lead's `qitem-20261010234255-72dac9f9fb10cae8`). The process decides only `running` against `stopped`; it cannot count deaths. A row that agent records as `failing` (3 deaths inside the window, 7.1) is `failing` whether its process is alive right now or not. It is therefore not `running` for the health report, `doctor`'s exit or `up` (7.5).
 
 The rejected reading is "a live process is `running`, and `restarts` is the only signal." Under it, the same crash loop exits 0 or 3 depending on the second `doctor` is run, and nothing acts on the counter.
 
-The precedence is `stopped` (dead and not failing), then `failing`, then `silent`, then `running`. The state clears when rigd's `prune` drops the deaths out of the window.
+The precedence is `stopped` (dead and not failing), then `failing`, then `silent`, then `running`. The state clears when agent's `prune` drops the deaths out of the window.
 
-**Code:** move `verifyRow`'s recorded-`failing` check (`clientservices/services.go:342`) ahead of the liveness switch. That owner is go-dev, the rigd phase 1 implementer (`e59f4162`). The test is a live child with a fresh beat whose recorded state is `failing`; it must read `failing`.
+**Code:** move `verifyRow`'s recorded-`failing` check (`clientservices/services.go:342`) ahead of the liveness switch. That owner is go-dev, the agent phase 1 implementer (`e59f4162`). The test is a live child with a fresh beat whose recorded state is `failing`; it must read `failing`.
 
-`status --json` and `doctor` compute these rows themselves from the heartbeat files and `pgrep`. They do NOT read a report from rigd, because a dead rigd must still be reported.
+`status --json` and `doctor` compute these rows themselves from the heartbeat files and `pgrep`. They do NOT read a report from agent, because a dead agent must still be reported.
 
 ### 7.3 (c) The alert
 
@@ -294,7 +306,7 @@ The precedence is `stopped` (dead and not failing), then `failing`, then `silent
 **The local surface, stated plainly: NONE exists yet** that reaches the owner without the cloud.
 
 - The surface that reaches the owner is the dashboard notification store above. It is real, it keeps notices for an offline user, and it needs the cloud.
-- When the cloud is unreachable, rigd appends each transition to `<LogDir>/alerts.log`, and `doctor` prints it. That file reaches nobody until someone runs `doctor`. The alert itself still arrives late, through the re-send after the next `ready`.
+- When the cloud is unreachable, agent appends each transition to `<LogDir>/alerts.log`, and `doctor` prints it. That file reaches nobody until someone runs `doctor`. The alert itself still arrives late, through the re-send after the next `ready`.
 - A human-addressed 4genteam row is NOT used, because it is unroutable here.
 - A cloud-independent channel to the owner (desktop, phone or mail) is a new product requirement for the owner. It is not ruled here.
 
@@ -311,8 +323,8 @@ The precedence is `stopped` (dead and not failing), then `failing`, then `silent
 | bridge | the 120 s backoff cap | 360 s |
 | agent | the 25 s heartbeat | 75 s |
 
-- **Owner:** rigd computes each threshold from the flags it launched that child with. `doctor`, which has no launch flags, uses the defaults above.
-- **Not the server's job.** The server never judges silence of a child; it stores the state rigd sends. It judges only rigd's own socket.
+- **Owner:** agent computes each threshold from the flags it launched that child with. `doctor`, which has no launch flags, uses the defaults above.
+- **Not the server's job.** The server never judges silence of a child; it stores the state agent sends. It judges only agent's own socket.
 - **No environment knob.** A threshold nobody owns is how silence went unnoticed.
 
 ### 7.5 (e) `doctor` and `up`
@@ -321,17 +333,17 @@ The precedence is `stopped` (dead and not failing), then `failing`, then `silent
   - Exit `ExitOK` (0) only when every row is `running`.
   - Exit `ExitUnavailable` (3) otherwise. Every safeguard that is not `running` is named on stderr as `<rig> <safeguard>: <state>, age <n>s`.
   - `--json` prints the rows.
-- **`up` fails loudly.** After rigd's own start grace, it runs the same check as `doctor`. If any row is not `running`, it exits `ExitUnavailable` with the same stderr lines, BEFORE the watch view, the UI and herdr.
+- **`up` fails loudly.** After agent's own start grace, it runs the same check as `doctor`. If any row is not `running`, it exits `ExitUnavailable` with the same stderr lines, BEFORE the watch view, the UI and herdr.
   - The "continuing without" line (`lifecycle.go:183`) is deleted. This is clean code with no fallback.
   - A bridge refused for a missing `AGENTHUB_URL` or `AGENTHUB_TOKEN` is a failed `up`. The message names the variable and never prints its value.
-- **The repair verb is `up`**, which is idempotent: it starts rigd when absent and leaves a running rigd alone.
+- **The repair verb is `up`**, which is idempotent: it starts agent when absent and leaves a running agent alone.
 
 ### 7.6 (f) Composition with the ruled frames
 
 - **`hello.capabilities`** gains `safeguards`. The client sends `safeguard` frames only after `ready.capabilities` echoes it. A server without it would answer `unknown_type` and keep the socket open (2.3).
 - **`session.state`** is unchanged. Safeguards are not sessions.
 - **`events.cursor`** and stop-and-wait are unchanged. `safeguard` carries no `seq` and no cursor, and never shares a batch with `events`.
-- **`ping`/`pong`** are unchanged. Their timeout is now also the rigd dead-man (7.3).
+- **`ping`/`pong`** are unchanged. Their timeout is now also the agent dead-man (7.3).
 - **Commands** stay phase 2 and human-only. A remote "restart safeguard" is NOT a phase-1 frame, and `doctor` never restarts.
 
 **Names a failing test may assert:**
@@ -365,17 +377,17 @@ Both read the absence of a signal as the absence of work, which is the same fail
   - The state is `running` with detail `busy <op> since <t>` while `now < deadline`.
   - It is `silent` when the heartbeat is past the threshold and either nothing is in flight or the deadline has passed.
   - A child with no deadline on a blocking call is a defect, not an exemption.
-- **Seats (new; rigd already tails the transcript, section 5).** A seat's last activity is its last transcript write, OR an open tool call: a `tool_use` with no matching `tool_result` yet.
+- **Seats (new; agent already tails the transcript, section 5).** A seat's last activity is its last transcript write, OR an open tool call: a `tool_use` with no matching `tool_result` yet.
   - A seat is idle at the prompt only when its last entry ends the turn and no tool call is open.
   - A seat waiting on a delegated worker therefore reads `working` for as long as its tool call is open.
-  - rigd sends this in `session.state` as `running`. The ruled two values do not change, and idle is not a stopped seat.
+  - agent sends this in `session.state` as `running`. The ruled two values do not change, and idle is not a stopped seat.
 - **the client's own sweep and oracle are NOT this repository's code**, and no seat edits under `rig/`. The two false signals go to the 4genteam owner as a friction report carrying the rule above. Until it is fixed, a `stalled-after-claim` raised on a row whose owner shows an open tool call is a known false positive, and closing it is not evidence of a stall.
 
 ### 7.8 Addendum: `4genteam up RIG` is the only room entry point (owner refinement 2026-10-11, folded in)
 
 **1. One list, compiled.**
 
-| | A: a compiled Go table | B: a data list in `rigd.json` |
+| | A: a compiled Go table | B: a data list in `agent.json` |
 |---|---|---|
 | A row's liveness check | Code beside the row | Would need a mini-language |
 | Can an operator drop an obligatory service? | No | Yes, contradicting "obligatory" |
@@ -383,8 +395,8 @@ Both read the absence of a signal as the absence of work, which is the same fail
 **Ruling: A.**
 
 - **New:** package `internal/clientservices`, file `services.go`, `var Obligatory = []Service{...}` in start order.
-- **The type:** `Service {Name; Scope machine|rig; Start func(ctx, Env) error; Check func(ctx, Env) Health; RestartBy rigd|watchdog|none}`.
-- Each row declares its own `Check`, which returns the 7.2 row. `up`, `doctor`, `status --json` and rigd iterate this ONE list, so a new service is one new row.
+- **The type:** `Service {Name; Scope machine|rig; Start func(ctx, Env) error; Check func(ctx, Env) Health; RestartBy agent|watchdog|none}`.
+- Each row declares its own `Check`, which returns the 7.2 row. `up`, `doctor`, `status --json` and agent iterate this ONE list, so a new service is one new row.
 - The duplicate daemon start, `lifecycle.go:193` and `clientrestore/restore.go:189`, becomes the `daemon` row's `Start`.
 - The two restore paths, `up`'s `ensureRig` (`lifecycle.go:203`) and `clientrestore`'s restorer, become the `seats` row's `Start`. The kept path is the restorer, which runs the peak gate.
 
@@ -413,7 +425,7 @@ Both read the absence of a signal as the absence of work, which is the same fail
 **4. Clean cutover.**
 
 - **Deleted:** the `continue` verb (`clientrestore/continue.go`). `up` is the entry point, and its seat restore is the same restorer, so its brief step moves into the `seats` row's `Start`.
-- **Not deletable here:** `rig up` is the 4genteam CLI. It is not this repository's code, and the client keeps calling it internally. A room started by hand with `rig up` has no rigd row, and `doctor` names it.
+- **Not deletable here:** `rig up` is the 4genteam CLI. It is not this repository's code, and the client keeps calling it internally. A room started by hand with `rig up` has no agent row, and `doctor` names it.
 - **Owner action, not done by a seat:** `~/.config/4genthub/bin/rig-continue.sh` and `rig-watchdog.sh` are the owner's own copies outside this repository (`clientrestore/paths.go:7`). The ruling is that they go, and the owner deletes them; no seat touches the owner's home.
 
 **5. Verify-before-success composes with `doctor`.**
@@ -445,7 +457,7 @@ The owner's requirement:
 
 **1. Where it lives, and the activity source: it reuses 7.7 and adds no second source.**
 
-The nudge is a loop inside rigd. It reads the same per-seat activity that rigd already derives from the transcript tail for 7.7: the last transcript write, plus whether a tool call is open.
+The nudge is a loop inside agent. It reads the same per-seat activity that agent already derives from the transcript tail for 7.7: the last transcript write, plus whether a tool call is open.
 
 - A seat is **idle** when no tool call is open, its last entry ends the turn, and its last write is older than the setting.
 - A room is idle when EVERY seat is `running` (7.8 `seats` row) AND idle. A stopped seat is not idle; the watchdog owns it.
@@ -468,15 +480,15 @@ The nudge is a loop inside rigd. It reads the same per-seat activity that rigd a
 | watchdog restore | yes (`restore.go:204`) | unchanged |
 | **idle nudge** | new | `PeakGate` before every send |
 | **supervisor's post-compaction "resume" message** (`supervisor.go`, `Step`, `resumeText`) | **NO: zero gate references in `supervisor.go` (architect grep, 2026-10-11). Today it can wake a DeepSeek seat at peak.** **SUPERSEDED 2026-10-11 (architect): the gate is IN - `supervisor.go:174`, `clientoffpeak.Check(false, ...)` with a literal `allowPeak=false`, client `834dbaa`. The "NO" above is the pre-`834dbaa` state, kept for the record.** | **RULED 14:5xZ — the two clauses below are settled and are not to be re-opened** (`ARCH-RULING-peak-held-resume-2026-10-11.md`). The gate is in, at `supervisor.go:174` with `allowPeak=false` literal, and a refusal defers rather than drops (the witness stays). **"when the seat is still idle" is a description of the scene, NOT a second condition:** the idle deferral is the transport's (`4genteam send … --wait-for-idle 120`), and rigd must not duplicate it with `rig ps`'s cached `agentActivity` — the source 7.9 itself refuses for idleness. **But that wait is not a guarantee** — a *failed* wait returns without sending, and the supervisor's send is fire-and-forget, so a resume that misses the window is currently LOST while the log says "told to resume"; the witness must not be cleared on an unobserved send (filed as a minor with (m1)). **The pre-compaction `notice()` / `warningText()` sends stay UNGATED:** the rule covers work that *starts or resumes* a seat, and those two start nothing — they are the pre-notice of the compaction safety action on a seat that is already running, which is the flow exempted in the cell above. **Defect against this rule.** At peak the message is held, and it is sent at the first open minute when the seat is still idle. The compaction itself is NOT held: compacting a seat past its limit is a safety action on a seat that is already running, not a wake. |
-| rigd restarting `compact`, `watchdog`, `bridge` | — | Not a wake: those processes start no seat. The watchdog they restart gates its own restores. |
+| agent restarting `compact`, `watchdog`, `bridge` | — | Not a wake: those processes start no seat. The watchdog they restart gates its own restores. |
 
-**The override never reaches an automatic path.** `--allow-peak` applies to the one foreground run that was given it. rigd and the children it launches never pass it, and it is not persisted. For automatic wakes, the only way to open the gate is `OFFPEAK_ONLY=off`. One setting and one flag; no second copy.
+**The override never reaches an automatic path.** `--allow-peak` applies to the one foreground run that was given it. agent and the children it launches never pass it, and it is not persisted. For automatic wakes, the only way to open the gate is `OFFPEAK_ONLY=off`. One setting and one flag; no second copy.
 
 **3. The latch, and how it composes with the deferral: one rule, keyed on the idle period.**
 
 - **The idle period's identity** is `T` = the newest last-activity time across the room's seats. Any seat working moves `T`, which starts a new period.
-- **The latch is new:** `nudged_for` per room, holding the `T` it fired for, persisted in rigd's local state so a rigd restart does not fire again.
-- On each tick, rigd sends ONE nudge iff all of these hold:
+- **The latch is new:** `nudged_for` per room, holding the `T` it fired for, persisted in agent's local state so an agent restart does not fire again.
+- On each tick, agent sends ONE nudge iff all of these hold:
   - the room is idle (1);
   - `now − T ≥ IDLE_NUDGE_MINUTES`;
   - `nudged_for ≠ T`;
@@ -487,13 +499,13 @@ The nudge is a loop inside rigd. It reads the same per-seat activity that rigd a
 - If a seat worked in between, `T` moved. The old period is gone and never fires. The new period fires only once it has itself been idle for the full setting.
 - The owner's case therefore holds by construction, and the test is a property of `T`, not a timer.
 
-**4. "Stopped on purpose" is decidable: a room's membership in rigd's room list.**
+**4. "Stopped on purpose" is decidable: a room's membership in agent's room list.**
 
-- `up RIG` adds the room to the `rigs` list in the local `rigd.json` (7.1).
+- `up RIG` adds the room to the `rigs` list in the local `agent.json` (7.1).
 - **New** verb `4genteam down RIG` removes it, then stops the room's seats through `rig down`.
 - A room NOT in the list is stopped on purpose: no nudge, no watchdog restore and no supervisor for it. A room in the list is meant to run.
 - `rig down` run by hand leaves the room listed. The watchdog then restores it, which is the existing behaviour and matches "up is the only entry" (7.8). The decidable intent is `4genteam down`, and nothing else.
-- The existing `stop` verb (rigd and its children, machine-wide) is not room intent and does not change the list.
+- The existing `stop` verb (agent and its children, machine-wide) is not room intent and does not change the list.
 
 **5. The message and the event.**
 
@@ -518,13 +530,13 @@ The nudge is a loop inside rigd. It reads the same per-seat activity that rigd a
 
 Add two more for the latch:
 - Idle from 02:00, a seat works at 03:58, then idle again from 03:58: at 04:00 it sends NOTHING (the old period is gone and the new one is 2 minutes old), and at 04:03 it sends ONE.
-- A room not in `rigd.json` `rigs` never sends.
+- A room not in `agent.json` `rigs` never sends.
 
 The clock and `4genteam send` must be seams, so the tests never read wall time.
 
 **7.9a Two inputs from the same row, folded in late. Both were on the row before it closed, at 23:01:50Z and 23:02:22Z.**
 - **A park arms a wake timer only when its blocker can plausibly clear inside the interval.** Otherwise the row's own record and the idle nudge are enough. This is fe-dev's rule, which the lead measured. It is why the 12-hour timer on a missing endpoint was stopped.
-- **`the task queue block --wake-after` arms a RECURRING reminder.** N parked rows therefore show as N reminders, one per row, and none of them are duplicates. Whether a park should be one-shot is the 4genteam owner's surface question, so it joins the 7.7 friction report. The client parks no rows of its own, so 7.9 itself needs no change.
+- **`4genteam room queue update <room> <qitem> --wake-after <seconds>` arms a RECURRING reminder.** N parked rows therefore show as N reminders, one per row, and none of them are duplicates. Whether a park should be one-shot is the 4genteam owner's surface question, so it joins the 7.7 friction report. The client parks no rows of its own, so 7.9 itself needs no change.
 
 ### 7.10 Addendum: the auto-fix (the owner's requirement; the lead's note on `qitem-20261010230121-aba9ffb6153fb3fa`, 23:03Z; board row `411f5351`)
 
@@ -558,9 +570,9 @@ It runs from the empty directory `<LogDir>/autofix/<rig>/work`, so no repository
 Deleting data, pushing, editing code, changing credentials and every other unsupported state change are impossible because **no tool performs them**. The prompt still names them, but the prompt is no longer the control. **Asserted, not assumed:** the client reads the `system`/`init` event from stream-json. If that event lists any tool other than these four, or any other MCP server, the client kills the run and logs it as `refused_tools`.
 
 **The guardrails and the open points, each ruled:**
-1. **The setting:** `AUTO_FIX`, off by default; only `on` enables it. The per-run override is `4genteam up RIG --auto-fix`, which lasts for that rigd's lifetime and is never persisted.
+1. **The setting:** `AUTO_FIX`, off by default; only `on` enables it. The per-run override is `4genteam up RIG --auto-fix`, which lasts for that agent's lifetime and is never persisted.
 2. **The anomaly list is closed, and every item comes from a source that is already ruled.** There is no second source.
-   - An obligatory row is `failing` (7.1: rigd gave up) or `silent` past its 7.4 threshold. `stopped` is not on the list, because rigd restarts that itself.
+   - An obligatory row is `failing` (7.1: agent gave up) or `silent` past its 7.4 threshold. `stopped` is not on the list, because agent restarts that itself.
    - Seats are gone: `Verify()`'s seats row still fails after the watchdog's own restore pass.
    - A seat is past its context wall. This is read from the 7.7 transcript tail against the wall the compact safeguard already uses, and counts only when compact has not cleared it within compact's 7.4 threshold.
    - The room is stuck: 7.9 nudged for `T`, and `T` has not moved for a further `IDLE_NUDGE_MINUTES`.
@@ -595,13 +607,15 @@ Deleting data, pushing, editing code, changing credentials and every other unsup
 
 ### 7.11 Addendum: a handoff target must be live at closure time (the reviewer's GATE `f541f2f5`; the lead's `qitem-20261010233502-641a56880b826f98`)
 
-**The rule (every seat):** a `handed_off_to` closure takes its destination only from the **live set at closure time**: `rig ps --nodes --rig <rig>` (`sessionStatus: running`) or `4genteam whoami --json`. A commit trailer (`Seat: ...`), the startup identity hint and memory are not evidence that a seat can accept. They can name seats that `team.json` no longer has, such as `@writer` and `@web-dev`. If the destination is not live, re-route the work with `the task queue fallback <qitem>` to a live seat, then close the orphan with the reason recorded.
+**The rule (every seat):** a `handed_off_to` closure takes its destination only from the **live set at closure time**: `4genteam ps <rig> --nodes` (its `--json` rows carry `sessionStatus: running`) or `4genteam whoami --json`. A commit trailer (`Seat: ...`), the startup identity hint and memory are not evidence that a seat can accept. They can name seats that `team.json` no longer has, such as `@writer` and `@web-dev`. If the destination is not live, re-route the work by creating a row for a live seat (`4genteam room queue create <room> --to <live-seat> --summary <text> --reply-to <orphan-qitem>`), then close the orphan `handed_off_to` with that seat as `--target` and the new row named in the note.
 
 **The guard.** There are two options:
 
 | | A: `seatcheck send` refuses a destination that is not live | B: a new verb, `4genteam queue close`, that resolves the live set and refuses |
 |---|---|---|
-| Where the orphan is stopped | at creation: every `the task queue create` and `4genteam send` already passes `seatcheck send`, and `commpolicy.BypassSuspected` flags a direct `the task queue` | at closure only, and only for seats that remember to use the new verb |
-| New surface | one reason, `not_live`, beside `commpolicy.Decide` | a new verb that duplicates `the task queue update` |
+| Where the orphan is stopped | at creation: every `4genteam room queue create` and `4genteam send` already passes `seatcheck send`, and `commpolicy.BypassSuspected` flags a direct `4genteam room queue create` | at closure only, and only for seats that remember to use the new verb |
+| New surface | one reason, `not_live`, beside `commpolicy.Decide` | a new verb that duplicates `4genteam room queue update` |
 
 **Ruling: A.** In addition, `doctor` adds a row, `orphan_handoffs`, which names each pending qitem whose destination is not live. This is the same predicate as `up`'s room/team mismatch check, so both belong to the team-prune item `00f2e9cf`. Neither guard moves a seat.
+
+**DATED NOTE, 2026-10-15 (go-dev): the checker's send verb is GONE, so option A's row above is the record of which choice was made rather than a live description - the two option rows and the ruling itself are kept as they were written, and this sentence is what a reader takes as today's state.** The owner ruled the verb out (it refused every send, and the policy it checked was written by nothing), and `cmd/seatcheck` in the client now carries only the read-only `audit-scan`; **the audited send path is the client's own `4genteam send`**, which builds the room's declared links into a policy at send time, decides, writes the decision line, delivers and writes the outcome line in ONE process (`internal/clientseat`) - which is why the audit is no longer split across two processes' lifetimes. **What 7.11's rule requires of a closure does not change, and it is exactly what the rows closed today did:** the destination is read from `4genteam ps <rig> --nodes`, and the closure carries `--reason handed_off_to --target <session>` with the new row named in the note.
