@@ -168,3 +168,41 @@ func TestTheSixSafeguardsStepMovesTheStoredVocabulary(t *testing.T) {
 		t.Errorf("stored rows for the six names = %d, want 6", got)
 	}
 }
+
+// The table's ABSENCE is the ordinary state before the engine's registry creates it, and an ALTER
+// against it is SQLSTATE 42P01 - which takes the whole boot down. That is not hypothetical: it is what
+// `TestDatabaseInitializerCreateDefaultProject`'s second boot did until this case existed, on a database
+// whose catalogue is populated (so `0001_baseline` is skipped) while `rig_safeguards` has no creator
+// yet. `TestDatabaseInitializerCreateDefaultProject` proves the boot end to end; this case pins the step
+// itself, so the guard is held by a case that names it.
+func TestTheSixSafeguardsStepIsANoOpWithoutItsTable(t *testing.T) {
+	sessions, _ := newBareRunnerEnv(t)
+	ctx := context.Background()
+
+	relation := func() string {
+		t.Helper()
+		var name string
+		if err := sessions.WithSession(ctx, func(ctx context.Context, s database.DBTX) error {
+			return s.QueryRowContext(ctx, `SELECT coalesce(to_regclass('rig_safeguards')::text, '')`).Scan(&name)
+		}); err != nil {
+			t.Fatal(err)
+		}
+		return name
+	}
+
+	if before := relation(); before != "" {
+		t.Fatalf("the fixture database already holds %s; this case needs a database without it", before)
+	}
+
+	runner := &database.Runner{Sessions: sessions, Set: []database.Migration{embeddedStep(t, sixSafeguardsStep)}}
+	applied, err := runner.Apply(ctx)
+	if err != nil {
+		t.Fatalf("the step failed on a database without its table: %v", err)
+	}
+	if len(applied) != 1 || applied[0] != sixSafeguardsStep {
+		t.Fatalf("the run applied %v, want just %s", applied, sixSafeguardsStep)
+	}
+	if after := relation(); after != "" {
+		t.Errorf("the step created %s; it migrates the stored vocabulary, and the registry creates the table", after)
+	}
+}

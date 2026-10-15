@@ -2,6 +2,13 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-15 - the six-safeguards step is a no-op without its table
+
+- ADDED `TestTheSixSafeguardsStepIsANoOpWithoutItsTable` in `agenthub_go/fastmcp/task_management/infrastructure/database/rig_safeguards_migration_integration_test.go` (PostgreSQL): the `0004` step applies on a database that has no `rig_safeguards` table, leaves the relation absent, and the case refuses to run against a fixture that already holds it.
+- CHANGED `.../migrations/0004_six_safeguards_and_machine_scope.sql`: its statements moved inside one `DO` block behind a `to_regclass('rig_safeguards') IS NULL` guard.
+- FALSIFIED: with the guard removed the new case and `TestDatabaseInitializerCreateDefaultProject` both fail with `SQLSTATE 42P01`, `relation "rig_safeguards" does not exist`; the file was restored byte-identically (sha256 `567928e7…22b0da`).
+- MEASURED: `go test -count=1 -run 'TestTheSixSafeguards' ./fastmcp/task_management/infrastructure/database/` and `-run 'TestDatabaseInitializer' ./fastmcp/` ok with `tools/testpg`.
+
 ## 2026-10-15 - the commit notice skips the committer
 
 - ADDED two cases to `scripts/tests/test_notify_seats_behind_note.py`: the committing seat is skipped while the other running seat is still told, and an identity from outside the room skips nobody (the control - without it, a hook that skipped every seat would pass).
@@ -26,7 +33,7 @@ Track test suite changes, fixes, and improvements for agenthub.
 - CHANGED `agenthub_go/fastmcp/server/httpapp/ws_rigd_test.go`: six connector-frame assertions move from `error` to `message`, the dead-man alert asserts `safeguard == "agent"`, and the refusal case gains the scope rule (a machine-scoped row carrying a rig is refused; an `agent` row with the empty rig is stored).
 - CHANGED `agenthub_go/fastmcp/server/httpapp/ws_connector_test.go`: four assembled-frame assertions move from `error` to `message`.
 - ADDED `agenthub_go/fastmcp/task_management/infrastructure/database/rig_safeguards_migration_integration_test.go` (PostgreSQL): the `0004` step run through the runner over a table built as the pre-step baseline created it.
-- MEASURED: `go test ./...` rc 0 with no database; with `tools/testpg` - `./fastmcp/rig_safeguard/...` ok, the httpapp socket subset (`-run 'Safeguard|Deadman|Rigd|Connector'`) ok in 44.7 s, the new migration case ok in 0.8 s. The three guards were FALSIFIED: each goes red with the change reverted, and the two edited files were restored byte-identically afterwards.
+- MEASURED: `go test ./...` rc 0 with no database; with `tools/testpg` - `./fastmcp/rig_safeguard/...` ok, the httpapp socket subset (`-run 'Safeguard|Deadman|Rigd|Connector'`) ok in 44.7 s, the new migration case ok in 0.8 s. The three guards were FALSIFIED: each goes red with the change reverted, and the two edited files were restored byte-identically afterwards. **The FULL PostgreSQL tree was NOT run in that pass**, and that is the gap the `42P01` boot failure lived in: no run reached the step on a database without `rig_safeguards`. Found by `go test ./...` with `tools/testpg` and fixed in the block above.
 
 ## 2026-10-15 - seat tool hook and activity timeline
 
