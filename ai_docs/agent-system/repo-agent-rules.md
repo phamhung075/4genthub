@@ -138,7 +138,10 @@ the model → yes: fix the test to match the model.
   keeps only `README`, `TEST-CHANGELOG`, `AGENTS` and `CLAUDE.local` (plus the standing board
   `NEXT-GEN2.md` and the `CHANGELOG/` directory), and the same applies to every seat worktree root.
   Reports about the client submodule live in that submodule's own `ai_docs/reports-status/` — the same
-  rule read in that tree. Owner instruction, 2026-10-15.
+  rule read in that tree. **The u3 lab tree (`wt/<rig>/u3-run/`) is the instrument's directory, not a
+  seat worktree:** its install, calibration, smoke and gate records stay next to the harness they
+  document, and moving them is a post-run sweep, never something done in the window before a run.
+  Owner instruction, 2026-10-15.
 
 ## Push approval
 
