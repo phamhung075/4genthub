@@ -132,7 +132,7 @@ graph TD
 
 ### 🔌 **Rig and Team Orchestration Workflow**
 
-**`4genteam` is the client orchestrator; 4genthub is the central data platform for orchestration.** The `4genteam` CLI launches and supervises seats on your machine (via the native supervisor stack: `rigd`, `compact-run`, `watchdog`, `bridge`, and `watch`); this service stores the state they report and serves the configuration they pull. **The client initiates every exchange — the server never reaches into a user's machine.**
+**`4genteam` is the client orchestrator; 4genthub is the central data platform for orchestration.** The `4genteam` CLI launches and supervises seats on your machine (via the native supervisor stack: `agent` (the always-on local client), `compact-run`, `watchdog`, `bridge`, and `watch`); this service stores the state they report and serves the configuration they pull. **The client initiates every exchange — the server never reaches into a user's machine.**
 
 > **Note on Client LLMs & OpenRig Decommissioning:**
 > - **Client-side LLMs:** Seats and user LLMs (Gemini, DeepSeek, Claude Code, omp) run locally on the user's PC. The server does not host, run, or proxy client LLM sessions.

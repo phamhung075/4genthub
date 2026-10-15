@@ -23,7 +23,7 @@ restore, before concluding anything about where you are.
   owned work, handoffs, block/wake state).
 - **The board and decisions** — `NEXT-GEN2.md` (repo root).
 - **Project skills** — one source: `agenthub_client/skills/` (`share/` and `rooms/<room>/` are delivered to seats
-  by `4genteam sync rig`; `client/` is for the LLM running the client, e.g. `install`, `rig-runtime-switch`,
+  by `4genteam sync room`; `client/` is for the LLM running the client, e.g. `install`, `rig-runtime-switch`,
   `seat-runtime-switch`, `spawn-team`, `watch-team`). Ruling: `ai_docs/core-architecture/seat-skills.md`.
   `.agents/skills` is being retired; do not add skills there.
 - **4genthub's own records** — tasks and context go into 4genthub itself through the `agenthub_http` MCP
@@ -65,8 +65,8 @@ These are pointers; never copy their content into this file.
    the owner's explicit go-ahead.
 6. **Launch and resume teams with `4genteam`, NEVER legacy OpenRig.** Always run `4genteam up <rig> [--allow-peak]`
    or `4genteam continue <rig>`. OpenRig daemon and runtime orchestration are retired; `4genteam` runs the full client
-   supervisor stack (`rigd`, the auto-compaction supervisor `compact-run`, `watchdog`, status `bridge`, and the styled
-   `watch` grid). When asked to show the live team, always run `4genteam watch --rig <rig>`.
+   supervisor stack (`agent`, the auto-compaction supervisor `compact-run`, `watchdog`, status `bridge`, and the styled
+   `watch` grid). When asked to show the live team, always run `4genteam watch --room <rig>`.
 
 ## 4. Pointers
 

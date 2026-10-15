@@ -2,6 +2,12 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-15 - rigd is agent; --rig is --room
+
+- RENAMED `internal/clientlifecycle/rigd_test.go` and `internal/clientsync/rigd_test.go` to `agent_test.go` (`agenthub_client`), with `Rigd*`/`RigDaemon*` identifiers following the code.
+- CHANGED the `sync` verb cases in `internal/clientsync/sync_test.go` to the verb `room`, and `internal/clientseat/seat_test.go` to expect `sync room`; flag spellings in the watch, policy and lifecycle tests are `--room`.
+- MEASURED: `go test ./...` clean.
+
 ## 2026-10-15 - Jev threshold from the config, SessionTerminated
 
 - ADDED `TestEvaluateCriteriaFollowsTheConfiguredThreshold` (`agenthub_client/internal/clientjev/jev_test.go`): a 0.77 answer accepts at threshold 0.75 and stays uncertain at 0.9; it would fail with the old fixed 0.8.
