@@ -12,19 +12,29 @@ finding belongs to is not built either. The board now says what C5 actually has 
   in either repo, so the closure is **by measurement**, not by citing a filename.
 - **C5 gains the precondition it was silently carrying**: the comm-guard unit
   (`qitem-20261014061206-c11b63fab7d63680`, parked `blocked`) must land **before** C5, and its acceptance
-  is a measurement of the send path. The unit is measured **not built**: in `agenthub_client`,
-  `git log --all --oneline -- internal/commpolicy/policy.go` returns three commits (`39c229b`, `bdc5405`,
-  `13ccbdc`), the file's only `rig`-like spelling is `case "rig":` at `:258`, no native `4genteam`
-  spelling exists in the deny list or the allow list, and `39c229b` is an ancestor of every branch — so
-  nothing there has moved since the guard was written.
+  is a measurement of the send path. The unit's fix **exists and is not in the integration branch**:
+  `892f867` "fix(client): the comm guard binds the native 4genteam spellings, deny and allow"
+  (parent `8785915`, 2026-10-15 04:58:17Z) changes `internal/commpolicy/policy.go` (+26/−3) and
+  `policy_test.go` (+50) plus one changelog, and it is on **`4genthub-min/seat-runtime-socket` only** —
+  not an ancestor of `feat/support-agy-watch`, not in the pin `5bb6d9c`; on that branch `policy.go:270`
+  reads `case "4genteam":`. So the reviewer's reading that the unit was **not built** was exact for the
+  integration tip at 04:57Z (there `policy.go` still carries `case "rig":` at `:258` and its whole
+  history across refs is three commits) and the fix appeared **76 seconds later** on the run tree's own
+  branch: the unit is delivered, ungated and unmerged.
 
 ## Instruments
 
 - `find /home/daihu -maxdepth 6 -name 'FINDING-*'` → nothing; `git log --all --name-only` grepped for
   `finding` in `agenthub_client` → no such path, and in this repo only unrelated older docs
   (`ai_docs/testing-qa/subtask-tdd-findings-2025-09-09.md` and four others).
-- `git log --all --oneline -- internal/commpolicy/policy.go` and `grep -n '4genteam\|"rig"' internal/commpolicy/policy.go`
-  in `agenthub_client`, plus `git merge-base --is-ancestor 39c229b <branch>` on every ref.
+- `git log --all --oneline -- internal/commpolicy/` in `agenthub_client` → `892f867`, `39c229b`, `bdc5405`,
+  `13ccbdc` (the directory history), while the same command scoped to `policy.go` alone lists three,
+  which is how the fix was missed on the first reading; `git log -1 --format='%h %ad %s%nparent %p'
+  892f867` → 04:58:17Z, parent `8785915`; `git show --numstat 892f867` → `policy.go` +26/−3,
+  `policy_test.go` +50, one changelog; `git branch -a --contains 892f867` →
+  `4genthub-min/seat-runtime-socket` only; `git merge-base --is-ancestor 892f867 feat/support-agy-watch`
+  → no, and the same against `5bb6d9c` → no; `git show 4genthub-min/seat-runtime-socket:internal/commpolicy/policy.go | grep -n 4genteam`
+  → the `:242` comment and `case "4genteam":` at `:270`.
 - The two rail rows quoted were read with `4genteam room queue show`; the finding text itself is only
   there, which is the reason the board may quote them but must not cite a file.
 
