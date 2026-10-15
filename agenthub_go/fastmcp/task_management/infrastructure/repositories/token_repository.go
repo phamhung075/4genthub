@@ -159,6 +159,18 @@ func (r *TokenRepository) UpdateTokenUsage(ctx context.Context, tokenID string) 
 	return true, nil
 }
 
+// RecordOperation adds one to usage_stats[operation] of the token, atomically in SQL so concurrent
+// calls cannot lose a count. usage_stats is a JSON column, so it round-trips through jsonb.
+func (r *TokenRepository) RecordOperation(ctx context.Context, tokenID, operation string) error {
+	return r.GetDBSession(ctx, func(ctx context.Context, s database.DBTX) error {
+		_, err := s.ExecContext(ctx,
+			"UPDATE "+quoteIdent(r.Table.Name)+" SET usage_stats = jsonb_set(COALESCE(usage_stats::jsonb, '{}'::jsonb), ARRAY[$1::text], "+
+				"to_jsonb(COALESCE((usage_stats::jsonb ->> $1::text)::int, 0) + 1))::json WHERE id = $2",
+			operation, tokenID)
+		return err
+	})
+}
+
 // CleanupExpiredTokens deletes tokens that expired before expiryDate and returns the count.
 func (r *TokenRepository) CleanupExpiredTokens(ctx context.Context, expiryDate time.Time) (int, error) {
 	count := 0

@@ -31,6 +31,9 @@ type App struct {
 	subtasks     routes.SubtaskController
 	mcpTools     *interfacelayer.DDDCompliantMCPTools
 	taskProvider taskFacadeProvider
+
+	// tokenOperations counts one MCP tool call on the API token that made it (usage_stats).
+	tokenOperations func(ctx context.Context, tokenID, operation string)
 }
 
 // NewApp wires repositories, services, hooks and controllers over sessions.
@@ -60,6 +63,9 @@ func NewApp(ctx context.Context, sessions *database.SessionManager) (*App, error
 			// A usage counter must never refuse a request that has already been authenticated, so a
 			// failure here is swallowed exactly as the ported Python did.
 			_, _ = tokenRepo.UpdateTokenUsage(ctx, tokenID)
+		}
+		a.tokenOperations = func(ctx context.Context, tokenID, operation string) {
+			_ = tokenRepo.RecordOperation(ctx, tokenID, operation)
 		}
 	}
 	ctxFactory := factories.NewUnifiedContextFacadeFactory(ctx, sessions)

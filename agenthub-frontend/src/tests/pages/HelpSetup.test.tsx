@@ -18,7 +18,9 @@ describe('HelpSetup', () => {
 
     fireEvent.click(screen.getByText('Connect your machine'));
 
-    expect(screen.getByText('4genteam sync connector --session <rig-session-name>')).toBeInTheDocument();
+    expect(screen.getByText('4genteam sync connector --session <session-name>')).toBeInTheDocument();
     expect(screen.getAllByText(/sessions:write/).length).toBeGreaterThan(0);
+    expect(screen.getByText('AGENTHUB_CONNECTOR_TOKEN=<your connector token>')).toBeInTheDocument();
+    expect(screen.getByText('AGENTHUB_TOKEN=<your MCP token>')).toBeInTheDocument();
   });
 });

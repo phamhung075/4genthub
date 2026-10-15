@@ -188,6 +188,18 @@ Track test suite changes, fixes, and improvements for agenthub.
   tested. The touched suites green at the change: `npx vitest run
   src/tests/theme/themeConfig.test.ts src/tests/contexts/ThemeContext.test.tsx` -> 2 files / 26 tests
   passed.
+## 2026-10-15 - token guides
+
+- CHANGED `agenthub-frontend/src/tests/pages/HelpSetup.test.tsx`: the connect command string and two assertions for the two guides.
+- CHANGED `agenthub-frontend/src/tests/pages/TokenManagement.test.tsx`: `mintWith` returns a known token; the Client MCP and Client connector presets assert their own popup and env line, and that the other popup is absent.
+- NOT RUN: no local vitest run; `tsc --noEmit` clean.
+
+## 2026-10-15 - token usage counters
+
+- ADDED `agenthub_go/fastmcp/server/routes/token_router_test.go`: `usage_count` and `rate_limit` survive as `int64`.
+- ADDED `agenthub_go/fastmcp/server/httpapp/mcp_tool_usage_test.go`: a tool call is keyed `<tool>.<action>`, a call with no token id records nothing.
+- ADDED `TestTokenRepoRecordOperationCountsPerOperation` in `token_repository_test.go` (PostgreSQL).
+- MEASURED: `go test ./server/...` passes; the token repository tests pass on `tools/testpg`.
 
 ## 2026-10-15 - token permission presets
 
@@ -5795,3 +5807,4 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
 - `agenthub_client/internal/clientwatch/render_test.go`: the two line-cap cases now pass `expand: true`, since results fold by default.
 - `agenthub_client/internal/clientlifecycle/idleguard_test.go`: added idle-room Jev decision, low-confidence, working-seat and stuck-seat cases; `doctor_test.go`, `rigd_test.go` and `clientservices/services_test.go` list the new `roomguard` safeguard.
 - `agenthub_client/internal/clientwatch/view_test.go`: added `TestAChangeOfToolKindGetsALabelledRule`.
+- `agenthub_client/internal/clientsync/connector_test.go`: added `TestSetDeadlineBoundsReadsOnlyAndLeavesWritesOpen`.
