@@ -2,6 +2,12 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-15 - Jev: the idle guard asks an unchanged rail once, and a task with no criteria is uncertain
+
+- ADDED `TestTheSameOpenRailIsNotAskedAgainWhenTheLeadsOwnReplyMakesANewQuiet` (`agenthub_client/internal/clientlifecycle/idleguard_test.go`): a second quiet over the SAME open rail is not asked, a changed rail is. It models the overnight loop (32 asks at confidence 0.4-0.64).
+- CHANGED the no-criteria case in `agenthub_client/internal/clientcomplete/complete_test.go`: `Accept` -> `Uncertain`. Eight of nine logged accepts were this case, so Jev judged nothing.
+- MEASURED: `go vet ./...` and `go test ./...` in `agenthub_client` pass.
+
 ## 2026-10-15 - The room definition names the runtime the rig runs, and the string-pinning case goes
 
 - CHANGED `scripts/team/4genthub-min/team.json` (architect seat, `:106-107`): `"runtime": "claude-code"` / `"model": "opus"` -> `"omp"` / `"deepseek/deepseek-flash"`, the values the room's own `spec.json`, `4genteam ps --nodes --json` and the cloud have reported since the owner replaced that seat on 2026-10-14 20:21Z. The definition was the stale artifact, and FOUR committed files carried the claim, not two: the definition, the roster test, the runtime table in `test_team_definition.py` and `NOTES.md`.
