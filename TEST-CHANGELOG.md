@@ -2,6 +2,11 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-15 - the behind-note reads the seat's own tree
+
+- ADDED `scripts/tests/test_notify_seats_behind_note.py`: four cases over the real `scripts/git-hooks/notify-seats`, with `tmux` (the pane path) and `4genteam` (one running seat, the message captured) stubbed and `GIT_DIR` exported as a post-commit hook receives it - a seat one commit behind ITS OWN `main` is warned with its own revision, the committer's own tree and a path that is not a repository stay silent while the plain notice is still sent, and the `GIT_DIR` leak that made the old reading possible is pinned, so the leading case cannot pass by reading the wrong repository.
+- MEASURED: `python3 -m pytest scripts/tests -q` -> 95 passed, 3 warnings (91 before, 4 added); the warning case is RED against the pre-fix script and green after.
+
 ## 2026-10-15 - every open task state can be blocked
 
 - CHANGED `agenthub_go/fastmcp/task_management/domain/services/testdata/task_state_transition_cases.json`: `todo`/`review`/`testing` -> `blocked` are legal now, so the three cases assert `true` with `Status changed from '<state>' to 'blocked'` where they asserted `Transition failed: ...` (the service allowed the move and the entity refused it).

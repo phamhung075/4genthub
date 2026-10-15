@@ -11,15 +11,25 @@ message="New commit $sha on $(git rev-parse --abbrev-ref HEAD): $subject
 Files ($total): $(echo "$files" | tr '\n' ' ')
 Re-read any of these files before you edit them; a client change is only live after a build and a reseat."
 # main is the only reference. A seat whose tree lacks main's commits is told so, with the count.
+# The three reads INSIDE behind_note must not inherit the hook's git environment: a post-commit hook
+# in a linked worktree receives GIT_DIR=<main>/.git/worktrees/<wt>, and `git -C <path>` does NOT
+# override an exported GIT_DIR, so both the "is this a tree" guard and the count would answer for the
+# COMMITTER's checkout. Measured 2026-10-15 (qitem-20261015175221): every seat was told the
+# committer's revision and distance instead of its own. The sha is computed into a variable for the
+# same reason - a $( ) inside printf inherits the environment too.
+# The path is the seat's PANE cwd, which is the room's launch directory, so in a room whose seats edit
+# in worktrees of their own this note stays silent unless a seat is launched INTO its worktree. That is
+# deliberate: naming the seat's worktree needs a seat -> worktree map, and there is more than one.
 tmux_root="$state/tmux"
 behind_note() {
-    local session="$1" path behind
+    local session="$1" path behind head
     path=$(env -u TMUX TMUX_TMPDIR="$tmux_root" tmux display-message -p -t "$session" '#{pane_current_path}' 2>/dev/null) || return 0
-    [ -n "$path" ] && git -C "$path" rev-parse --git-dir >/dev/null 2>&1 || return 0
-    behind=$(git -C "$path" rev-list --count HEAD..main 2>/dev/null) || return 0
+    [ -n "$path" ] && env -u GIT_DIR -u GIT_WORK_TREE -u GIT_COMMON_DIR git -C "$path" rev-parse --git-dir >/dev/null 2>&1 || return 0
+    head=$(env -u GIT_DIR -u GIT_WORK_TREE -u GIT_COMMON_DIR git -C "$path" rev-parse --short HEAD 2>/dev/null) || return 0
+    behind=$(env -u GIT_DIR -u GIT_WORK_TREE -u GIT_COMMON_DIR git -C "$path" rev-list --count HEAD..main 2>/dev/null) || return 0
     [ "${behind:-0}" -gt 0 ] || return 0
     printf '\nWARNING: your tree (%s at %s) is %s commit(s) behind main. Only main is the reference: update it (git merge main or rebase onto main) before you continue, and re-read the files above.' \
-        "$path" "$(git -C "$path" rev-parse --short HEAD)" "$behind"
+        "$path" "$head" "$behind"
 }
 for dir in "$state"/rooms/*/; do
     room=$(basename "$dir")
