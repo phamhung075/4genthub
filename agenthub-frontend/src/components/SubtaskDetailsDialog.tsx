@@ -11,7 +11,6 @@ import RawJSONDisplay from "./ui/RawJSONDisplay";
 import { HolographicStatusBadge, HolographicPriorityBadge } from "./ui/holographic-badges";
 import { CopyableId } from "./ui/CopyableId";
 import { ParentTaskReference } from "./ui/ParentTaskReference";
-import { ProgressHistoryTimeline } from "./ProgressHistoryTimeline";
 
 interface SubtaskDetailsDialogProps {
   open: boolean;
@@ -330,24 +329,11 @@ export const SubtaskDetailsDialog: React.FC<SubtaskDetailsDialogProps> = ({
                         </p>
                       </div>
                     )}
-                    {/* 4a0a8c7a dropped the RAW progress_history and progress_count from the
-                        payloads, and neither is coming back - the ledger carry replaces them
-                        (ruling O1c-carry). What this block renders is the JOINED string, `details`,
-                        and that re-expose has landed behind gate APPROVE (`8e4786dd`, on go-dev's
-                        branch; the merge is the lead's at the freeze), so this read stays
-                        presence-guarded: the block renders once the field reaches the deployed API,
-                        and stays hidden until then rather than reading a field that will never
-                        arrive again. */}
-                    {fullSubtask.details && (
-                      <div>
-                        <span className="text-sm font-medium block mb-2">Progress History:</span>
-                        <ProgressHistoryTimeline
-                          progressHistory={fullSubtask.details}
-                          variant="compact"
-                          className="mt-1"
-                        />
-                      </div>
-                    )}
+                    {/* O1c replaced the progress-history timeline with the ledger timeline, and the
+                        ruling is explicit that the two never coexist: this dialog shows no progress
+                        section until the subtask's own `details` are served (06410692, the separate
+                        subtask-details item). The task dialog mounts the ledger timeline; that is the
+                        one progress surface. */}
                   </div>
                 )}
               </div>

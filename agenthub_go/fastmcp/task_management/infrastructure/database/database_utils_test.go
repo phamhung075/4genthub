@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"agenthub/fastmcp/session_stream/testdb"
 	"agenthub/fastmcp/task_management/infrastructure/database"
 )
 
@@ -17,9 +18,7 @@ func TestDatabaseUtilsRealPostgres(t *testing.T) {
 	defer db.Close()
 	ctx := context.Background()
 	cfg := &database.DatabaseConfig{Engine: &database.Engine{DB: db, URL: dsn}}
-	if err := cfg.CreateTables(ctx); err != nil {
-		t.Fatal(err)
-	}
+	testdb.CreateSchema(t, cfg)
 	utils := database.NewDatabaseUtils(ctx, cfg)
 	health := utils.CheckDatabaseHealth()
 	if status, _ := health.Get("status"); status != "healthy" {

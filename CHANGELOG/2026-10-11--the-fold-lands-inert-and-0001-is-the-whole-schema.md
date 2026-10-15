@@ -51,6 +51,11 @@ on a database that already has the schema, and nothing here marks anything.
   excluded, so the header's prose cannot hide one). It lives in the EXTERNAL test package with the
   appending packages' blank imports, because `taskdb.Tables` is completed by `init()` in the seat, rig
   and auth packages — an internal test file would see 20 tables and hold the file to the wrong set.
+
+  > **NAME SUPERSEDED (2026-10-11).** `10b27cdb` renamed this guard to `TestSchemaMatchesGoDefinitions`;
+  > `92d3e825` restored `TestBaselineMatchesEveryRegisteredTableDef` when the fold's own guard file
+  > collided with it in the same external test package. At HEAD that name belongs to the fold's
+  > `schema_matches_definitions_test.go`; this file's guard is `TestBaselineMatchesEveryRegisteredTableDef`.
 - **`migration_baseline_gate_test.go`** — four cases through the existing fake driver: a populated
   catalogue skips it (no SQL, no ledger), an empty one applies and records it, the other steps are
   unaffected (and a second run applies nothing), and an unreadable catalogue is refused rather than

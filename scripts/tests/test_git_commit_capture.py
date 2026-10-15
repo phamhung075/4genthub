@@ -20,11 +20,57 @@ import sys
 import time
 from pathlib import Path
 
+import pytest
+
+import gitfixture
+
 # <repo>/scripts/tests/<this file>: two levels up is where scripts/git-hooks/ lives.
 REPO_ROOT = Path(__file__).resolve().parents[2]
 WRAPPER = REPO_ROOT / "scripts" / "git-hooks" / "git_commit_capture.py"
 
 THE_PARKED_WORK = "one\ntwo\n"
+
+
+@pytest.fixture
+def ambient_git_config(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Path:
+    """An ambient `GIT_CONFIG_GLOBAL`/`GIT_CONFIG_SYSTEM` that demands a signed commit: the environment the
+    gate measured at `e0e75084`, where it reached a wrapper child that inherits this process and turned the
+    suite red with no local cause.
+
+    Every case in this module runs WITH it, because the scrub below requests this fixture. The variable is
+    therefore present while the fixtures run and gone by the time a case body does, which is what makes a
+    scrub that stops covering the family fail here rather than only in a hostile run.
+    """
+    evil = tmp_path / "ambient-gitconfig"
+    evil.write_text("[commit]\n\tgpgsign = true\n", encoding="utf-8")
+    monkeypatch.setenv("GIT_CONFIG_GLOBAL", str(evil))
+    monkeypatch.setenv("GIT_CONFIG_SYSTEM", str(evil))
+    return evil
+
+
+@pytest.fixture(autouse=True)
+def _no_ambient_git_location(ambient_git_config: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """The wrapper's OWN child processes inherit this process's environment, so `env=` on the test's git
+    calls cannot reach them: the relocating variables have to be gone from the process itself too. Two
+    cases here hand the wrapper `COMMIT_COMMAND = ["git", "commit"]` and one runs a generated script that
+    shells out to git. See gitfixture.py for the incident this prevents.
+
+    It scrubs through `gitfixture.without_relocating` rather than over a list of its own, so the process
+    half and `environment()` cannot drift: the gate at `e0e75084` found the drift, in the shape of an
+    exported `GIT_CONFIG_GLOBAL` reaching the child while `environment()` already dropped it."""
+    gitfixture.without_relocating(monkeypatch)
+
+
+def test_the_scrub_removes_the_ambient_git_config_this_module_runs_with() -> None:
+    """What the fixture pair above must have done before any case body runs.
+
+    `ambient_git_config` exported a config that demands a signature; the scrub runs after it and before
+    this body, so nothing here can reach a wrapper child that inherits the process. A scrub that loops over
+    `RELOCATING` only - the MAJOR the gate measured - leaves `GIT_CONFIG_GLOBAL` in place and this goes red.
+    """
+    assert "GIT_CONFIG_GLOBAL" not in os.environ
+    assert "GIT_CONFIG_SYSTEM" not in os.environ
+    assert [name for name in os.environ if gitfixture.relocates(name)] == []
 
 
 def _module():
@@ -37,9 +83,7 @@ def _module():
 
 
 def _git(repo: Path, *args: str) -> str:
-    return subprocess.run(
-        ["git", *args], cwd=repo, check=True, capture_output=True, text=True
-    ).stdout
+    return gitfixture.git(repo, *args).stdout
 
 
 def _repo(tmp_path: Path) -> Path:
@@ -84,9 +128,16 @@ def test_a_kill_inside_the_window_is_reported_and_the_patch_recovers_the_work(
     repo = _repo(tmp_path)
     killer = tmp_path / "killer.py"
     killer.write_text(
-        "import subprocess, sys\n"
+        "import os, subprocess, sys\n"
         "# the framework's window: the tree is rewound to the index and the process then dies\n"
-        "subprocess.run(['git', '--no-optional-locks', 'checkout', '--', 'f.txt'], cwd=sys.argv[1], check=True)\n"
+        "# This child is a fixture's git call too, so it must not inherit a caller's GIT_DIR - without\n"
+        "# the scrub it would rewind the CALLER's tree instead of the fixture's (see gitfixture.py).\n"
+        "LOCATION = ('GIT_DIR', 'GIT_WORK_TREE', 'GIT_INDEX_FILE', 'GIT_COMMON_DIR',\n"
+        "            'GIT_OBJECT_DIRECTORY', 'GIT_ALTERNATE_OBJECT_DIRECTORIES')\n"
+        "env = {k: v for k, v in os.environ.items()\n"
+        "       if k not in LOCATION and not k.startswith('GIT_CONFIG')}\n"
+        "subprocess.run(['git', '--no-optional-locks', 'checkout', '--', 'f.txt'],\n"
+        "               cwd=sys.argv[1], check=True, env=env)\n"
         "sys.exit(137)\n",
         encoding="utf-8",
     )
@@ -101,7 +152,7 @@ def test_a_kill_inside_the_window_is_reported_and_the_patch_recovers_the_work(
     assert f"git apply {patch}" in err, "the wrapper must name the exact command, not the hazard"
     assert "at-risk" in next(_parked(repo).glob("*/MANIFEST.txt")).read_text(encoding="utf-8")
 
-    subprocess.run(["git", "apply", str(patch)], cwd=repo, check=True)
+    gitfixture.git(repo, "apply", str(patch))
 
     assert (repo / "f.txt").read_text(encoding="utf-8") == THE_PARKED_WORK, "one git apply recovers it"
 

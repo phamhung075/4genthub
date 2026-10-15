@@ -193,61 +193,6 @@ func repoDecodeStringList(raw []byte) ([]string, error) {
 	return out, nil
 }
 
-// repoPlainValue replaces the *entities.OrderedMap[any] objects DecodeJSON yields for JSON objects
-// with the map[string]any shape the entity fields, and their own writers, use - recursively, so a
-// decoded value is the same container type a freshly written one is.
-//
-// The depth matters. A JSON column decoded into a map[string]any FIELD must not carry an OrderedMap
-// one level down, because every reader of that field type-asserts map[string]any: an entry that
-// stayed an OrderedMap was silently skipped (GetProgressHistoryText read `m["content"].(string)` off
-// a nil map, so a task's details came back as the join of empty strings - "\n\n" for two notes -
-// while the write had stored both, row 87c58552).
-func repoPlainValue(v any) any {
-	switch x := v.(type) {
-	case *entities.OrderedMap[any]:
-		out := map[string]any{}
-		for _, key := range x.Keys() {
-			value, _ := x.Get(key)
-			out[key] = repoPlainValue(value)
-		}
-		return out
-	case map[string]any:
-		out := map[string]any{}
-		for key, value := range x {
-			out[key] = repoPlainValue(value)
-		}
-		return out
-	case []any:
-		out := make([]any, len(x))
-		for i, item := range x {
-			out[i] = repoPlainValue(item)
-		}
-		return out
-	}
-	return v
-}
-
-// taskRepoDecodeHistory decodes a JSON progress_history column to map[string]any.
-func taskRepoDecodeHistory(raw []byte) map[string]any {
-	if len(raw) == 0 {
-		return map[string]any{}
-	}
-	decoded, err := entities.DecodeJSON(raw)
-	if err != nil {
-		return map[string]any{}
-	}
-	ordered, ok := decoded.(*entities.OrderedMap[any])
-	if !ok || ordered.Len() == 0 {
-		return map[string]any{}
-	}
-	out := map[string]any{}
-	for _, key := range ordered.Keys() {
-		value, _ := ordered.Get(key)
-		out[key] = repoPlainValue(value)
-	}
-	return out
-}
-
 // taskRepoUserCondition appends the apply_user_filter condition for the current scope.
 func (r *ORMTaskRepository) taskRepoUserCondition(args *[]any, conds *[]string) {
 	r.taskRepoUserConditionOn(`"user_id"`, args, conds)
@@ -396,8 +341,6 @@ func (r *ORMTaskRepository) taskRepoModelToEntity(ctx context.Context, s databas
 		GitBranchID:         &row.GitBranchID,
 		Status:              status,
 		Priority:            priority,
-		ProgressHistory:     taskRepoDecodeHistory(row.ProgressHistory),
-		ProgressCount:       int(row.ProgressCount),
 		EstimatedEffort:     row.EstimatedEffort,
 		DueDate:             row.DueDate,
 		Assignees:           assigneeIDs,
@@ -446,8 +389,6 @@ func (r *ORMTaskRepository) taskRepoEntityToModelDict(task *entities.Task) Kwarg
 	if task.Priority != nil {
 		m.Set("priority", task.Priority.Value)
 	}
-	m.Set("progress_history", task.ProgressHistory)
-	m.Set("progress_count", task.ProgressCount)
 	m.Set("acceptance_criteria", append([]string{}, task.AcceptanceCriteria...))
 	m.Set("scope", append([]string{}, task.Scope...))
 	m.Set("estimated_effort", taskRepoEnsureEstimatedEffort(task.EstimatedEffort))
@@ -507,8 +448,8 @@ func (r *ORMTaskRepository) taskRepoExistingAssigneeIDs(ctx context.Context, s d
 
 // ---- create_task ---------------------------------------------------------------
 
-// CreateTask is create_task. kwargs carry id, status, progress_history, progress_count,
-// estimated_effort, due_date, context_id and assignee_role.
+// CreateTask is create_task. kwargs carry id, status, estimated_effort, due_date, context_id and
+// assignee_role.
 func (r *ORMTaskRepository) CreateTask(ctx context.Context, title, description, priority string, assigneeIDs, labelNames []string, kwargs Kwargs) (*entities.Task, error) {
 	var out *entities.Task
 	err := r.Transaction(ctx, func(ctx context.Context) error {
@@ -526,18 +467,6 @@ func (r *ORMTaskRepository) CreateTask(ctx context.Context, title, description, 
 			if kwargs != nil {
 				if v, ok := kwargs.Get("status"); ok && v != nil {
 					status = value_objects.PyStr(v)
-				}
-			}
-			progressHistory := any(map[string]any{})
-			if kwargs != nil {
-				if v, ok := kwargs.Get("progress_history"); ok && v != nil {
-					progressHistory = v
-				}
-			}
-			progressCount := int64(0)
-			if kwargs != nil {
-				if v, ok := kwargs.Get("progress_count"); ok && v != nil {
-					progressCount = taskRepoInt64(v)
 				}
 			}
 			var estimatedRaw any
@@ -559,8 +488,6 @@ func (r *ORMTaskRepository) CreateTask(ctx context.Context, title, description, 
 				"git_branch_id", r.GitBranchID,
 				"priority", priority,
 				"status", status,
-				"progress_history", progressHistory,
-				"progress_count", progressCount,
 				"estimated_effort", taskRepoEnsureEstimatedEffort(estimatedRaw),
 				"due_date", dueDate,
 				"context_id", contextID,
@@ -1370,8 +1297,6 @@ func (r *ORMTaskRepository) taskRepoSave(ctx context.Context, task *entities.Tas
 				"git_branch_id", task.GitBranchID,
 				"status", taskStatus,
 				"priority", taskPriority,
-				"progress_history", task.ProgressHistory,
-				"progress_count", task.ProgressCount,
 				"acceptance_criteria", append([]string{}, task.AcceptanceCriteria...),
 				"scope", append([]string{}, task.Scope...),
 				"estimated_effort", taskRepoEnsureEstimatedEffort(task.EstimatedEffort),
@@ -2040,8 +1965,6 @@ func taskRepoEntityFieldsMap(task *entities.Task) *entities.OrderedMap[any] {
 	}
 	out.Set("assignees", task.Assignees)
 	out.Set("labels", task.Labels)
-	out.Set("progress_history", task.ProgressHistory)
-	out.Set("progress_count", task.ProgressCount)
 	out.Set("estimated_effort", task.EstimatedEffort)
 	out.Set("due_date", task.DueDate)
 	out.Set("created_at", task.CreatedAt)
@@ -2075,10 +1998,6 @@ func taskRepoFieldValue(task *entities.Task, field string) (any, bool) {
 		return task.Assignees, true
 	case "labels":
 		return task.Labels, true
-	case "progress_history":
-		return task.ProgressHistory, true
-	case "progress_count":
-		return task.ProgressCount, true
 	case "estimated_effort":
 		return task.EstimatedEffort, true
 	case "due_date":

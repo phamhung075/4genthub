@@ -15,3 +15,6 @@
 
 ### Found by
 - The architect's item-3 gate on `76b800b9` (row `qitem-20261010220240-69974fc71f4e86d5`), findings a-c. They are the three items this seat had recorded as "found and deliberately left alone" in the retirement's own changelog, now fixed by instruction rather than left to a follow-up.
+
+### A fourth place, found after this entry was written, so "the last three" was one short
+- The reviewer's post-gate correction on `5bf8b8ad` found `list_agents` still occurring once, at `agenthub_go/fastmcp/task_management/application/services/response_optimizer.go:31`, inside `zpRespHighFrequencyOps`. It is inert - the slice is matched against live operation names and no such operation exists - and it is now REMOVED, so the seven retired operation names (`register_agent`, `get_agent`, `list_agents`, `update_agent`, `unregister_agent`, `assign_agent_branch`, `unassign_agent_branch`) read zero occurrences outside this changelog and the other dated records. The three names this entry's (b) also covers are a different set and were already handled: `assign_agent` and `unassign_agent` survive as the LIVE branch-assignment operations, and `rebalance_agents` occurs in the retired-path markers the census tracks. The title above is left as written, because a dated entry is a record of what its author knew; this section is the correction.

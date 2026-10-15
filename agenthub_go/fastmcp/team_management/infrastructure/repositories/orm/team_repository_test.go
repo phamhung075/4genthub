@@ -10,13 +10,20 @@ import (
 	"testing"
 	"time"
 
+	"agenthub/fastmcp/session_stream/testdb"
 	"agenthub/fastmcp/task_management/infrastructure/database"
 	domainrepo "agenthub/fastmcp/team_management/domain/repositories"
 )
 
 // newTeamTestEnv creates a throwaway database (AGENTHUB_TEST_PG_URL, see tools/testpg),
-// creates every registered table through the runtime path (cfg.CreateTables, which runs the
-// TableDef DDL - the same path production uses), and returns a session manager over it.
+// creates every registered table through the runtime path (the TableDef DDL - the same path
+// production uses), and returns a session manager over it.
+//
+// The bring-up is testdb.CreateSchema, not a bare cfg.CreateTables: the gated carry step
+// 0003_progress_history_carry_and_drop refuses on a database whose ledger holds no 0001_baseline
+// row, and createAll populates the catalogue before the runner runs, so a fresh fixture database
+// skips the frozen baseline without recording it and the bare boot refuses with P0001.
+// CreateSchema performs the operator's mark and boots again.
 func newTeamTestEnv(t *testing.T) *database.SessionManager {
 	t.Helper()
 	admin := os.Getenv("AGENTHUB_TEST_PG_URL")
@@ -48,9 +55,7 @@ func newTeamTestEnv(t *testing.T) *database.SessionManager {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := cfg.CreateTables(context.Background()); err != nil {
-		t.Fatal(err)
-	}
+	testdb.CreateSchema(t, cfg)
 	database.SetupTimestampEvents()
 	t.Cleanup(func() {
 		database.ResetInstance()

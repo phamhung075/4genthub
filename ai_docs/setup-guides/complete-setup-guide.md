@@ -341,20 +341,31 @@ curl -X POST http://localhost:8000/api/v2/branches/ \
   }'
 ```
 
-### 5.3 Assign Agents to Branch
+### 5.3 Assign Work to a Seat (there is no agent registry)
+
+There is no agent to register: `manage_agent`, the `agents` table and the 32-role registry were retired
+2026-10-10 (`76b800b9`), and identity is the seat. A seat is created and read through `manage_seat`
+(`list`, `get`, `set_occupant`); work is assigned by naming the seat on the task, through `manage_task`:
 
 ```python
-# Register agent (if not exists)
-manage_agent(action="register", project_id="<project-uuid>", name="coding-agent")
-
-# Assign to branch
-manage_agent(
-    action="assign",
+manage_task(
+    action="create",
     project_id="<project-uuid>",
-    agent_id="<agent-uuid>",
-    git_branch_id="<branch-uuid>"
+    git_branch_id="<branch-uuid>",
+    title="Fix the redirect after login",
+    assignees="@go-dev",
 )
 ```
+
+`@<seat_key>` is the only accepted assignee form — a bare name is refused with
+`Invalid assignees: [...]. An assignee is '@<seat_key>'.` (`agenthub_go/fastmcp/task_management/domain/entities/task.go:425`).
+
+**Branch-level `assign_agent` is not wired.** `manage_git_branch` still lists `assign_agent` and
+`unassign_agent` among its actions (`manage_git_branch_description.go:14`), and both refuse because the
+facade is built with a nil agent facade (`agenthub_go/fastmcp/server/httpapp/branch_wiring.go:83`): the
+first answers `ASSIGNMENT_FAILED: Failed to assign agent: Agent facade not configured`
+(`git_branch_application_facade.go:422`), the second `UNASSIGNMENT_FAILED: Failed to unassign agent: Agent
+facade not configured` (`:441`). Do not use them; assign on the task, as above.
 
 ---
 

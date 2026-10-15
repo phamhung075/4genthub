@@ -28,6 +28,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"agenthub/fastmcp/task_management/domain/value_objects"
 	"agenthub/fastmcp/task_management/infrastructure/database"
@@ -660,15 +661,19 @@ func TestLedgerIntentsRefusesAnUnusableCredentialLikeTheLedgerRead(t *testing.T)
 // ledgerPgSubtask inserts one subtask of taskID owned by userID and returns its id. Written straight
 // into the table for the reason ledgerPgSeedEvent is: these cases are about the ledger's check, and a
 // fixture written through the subtask routes would make them cases about those routes too.
+//
+// The two progress columns this row used to name (progress_history, progress_count) are gone from the
+// table by the time these cases run - the ledger line's carry step drops them - so naming them here
+// makes the fixture a case about the schema rather than about the check.
 func ledgerPgSubtask(t *testing.T, sm *database.SessionManager, userID, taskID, title string) string {
 	t.Helper()
 	id := value_objects.NewUUIDv4()
 	ledgerExec(t, sm, `INSERT INTO subtasks
 		(id, task_id, title, description, status, priority, assignees, progress_percentage, progress_state,
 		 progress_notes, blockers, completion_summary, impact_on_parent, insights_found, user_id,
-		 created_at, updated_at, progress_history, progress_count)
+		 created_at, updated_at)
 		VALUES ($1::uuid, $2::uuid, $3, '', 'todo', 'medium', '[]'::json, 0, 'INITIAL',
-		        '', '', '', '', '[]'::json, $4::varchar, now(), now(), '{}'::json, 0)`,
+		        '', '', '', '', '[]'::json, $4::varchar, now(), now())`,
 		id, taskID, title, userID)
 	return id
 }
@@ -815,4 +820,203 @@ func TestLedgerIntentsRefusesABodyThatIsNotAList(t *testing.T) {
 			t.Logf("OBSERVED body %s -> %d %s", c.body, code, strings.TrimSpace(body))
 		})
 	}
+}
+
+// --- P4: the nudge ---
+
+// TestLedgerTipArrivesAfterADecisionCommitsAndTheNextPullAdvancesTheCursor is P4's middle check: with
+// the socket open the frame arrives after a decision commits, and the pull that follows it is what
+// moves the client's cursor. The frame is addressed per user, so the socket is opened for the subject
+// the request authenticates as - the one the ledger's writer is handed.
+func TestLedgerTipArrivesAfterADecisionCommitsAndTheNextPullAdvancesTheCursor(t *testing.T) {
+	app, sm := evidenceApp(t)
+	token, user := evidenceUser(t, ledgerPgSubjectA)
+	task := ledgerPgTask(t, app, sm, token, user, "ledger P4 tip task")
+
+	env := newStreamEnv(t, sm)
+	c := env.connector(t, user)
+	c.rigdHello(t, "rigd-p4", connectorCapabilityIngest, connectorCapabilityLedger)
+
+	// The cursor the client holds, read the way a client reads it.
+	code, body := ledgerPgGet(t, app, token, "")
+	if code != http.StatusOK {
+		t.Fatalf("the read before the decision = %d: %s", code, body)
+	}
+	cursor := ledgerPgDecodePage(t, body).Tip
+	if cursor == nil {
+		t.Fatalf("a read must carry a tip, got %s", body)
+	}
+
+	// Nothing is pushed on a timer: before the commit this socket hears nothing at all.
+	_ = c.conn.SetReadDeadline(time.Now().Add(700 * time.Millisecond))
+	if opcode, payload, err := wsTryReadFrame(c.br); err == nil {
+		t.Fatalf("the socket received opcode=%d payload=%q before any commit, want nothing", opcode, payload)
+	}
+	_ = c.conn.SetReadDeadline(time.Now().Add(5 * time.Second))
+
+	// A DECISION, formed against the task's current seq.
+	base := ledgerPgTaskSeq(t, sm, user, task)
+	code, body = ledgerPgPostOne(t, app, token, value_objects.NewUUIDv4(), task, "status_changed", new(base))
+	if code != http.StatusOK {
+		t.Fatalf("the decision = %d: %s", code, body)
+	}
+	answer := ledgerPgDecodeAnswers(t, body)[0]
+	if answer.Accepted == nil || !*answer.Accepted || answer.UserSeq == nil {
+		t.Fatalf("the decision must be accepted and name the user_seq it took, got %s", body)
+	}
+
+	// The frame, and WHICH number it carries: the tip the commit took.
+	tip := c.recv()
+	if tip["type"] != connectorLedgerTipFrame {
+		t.Fatalf("the entitled socket received %v, want %s", tip, connectorLedgerTipFrame)
+	}
+	if tip["user_seq"] != float64(*answer.UserSeq) {
+		t.Errorf("ledger_tip.user_seq = %v, want the user_seq the commit took (%d)", tip["user_seq"], *answer.UserSeq)
+	}
+
+	// And the pull the nudge is FOR: from the cursor the client held, the committed entry comes back
+	// and the tip has moved past that cursor. The frame was a reason to pull, never the cursor.
+	code, body = ledgerPgGet(t, app, token, "?after="+strconv.FormatInt(*cursor, 10))
+	if code != http.StatusOK {
+		t.Fatalf("the pull after the nudge = %d: %s", code, body)
+	}
+	page := ledgerPgDecodePage(t, body)
+	if page.Count == 0 {
+		t.Fatalf("the pull from cursor %d returned nothing, so the nudge pointed at an entry the pull cannot see: %s", *cursor, body)
+	}
+	if page.Tip == nil || *page.Tip < *answer.UserSeq {
+		t.Fatalf("the pull's tip %s must have moved to at least the committed user_seq %d: %s",
+			ledgerPgNum(page.Tip), *answer.UserSeq, body)
+	}
+	found := false
+	for _, e := range page.Events {
+		if seq, ok := e["user_seq"].(float64); ok && int64(seq) == *answer.UserSeq {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("the entry the decision wrote (user_seq %d) is not in the pull: %s", *answer.UserSeq, body)
+	}
+	t.Logf("OBSERVED cursor %d -> ledger_tip user_seq=%v -> pull count=%d tip=%s",
+		*cursor, tip["user_seq"], page.Count, ledgerPgNum(page.Tip))
+}
+
+// TestAClientWithNoSocketStillConvergesByPulling is P4's first check, and it is the one the frame is
+// subordinate to: NO connector socket exists in this case at all, and the ledger still converges
+// because the client's own GET from its cursor is the whole mechanism.
+func TestAClientWithNoSocketStillConvergesByPulling(t *testing.T) {
+	app, sm := evidenceApp(t)
+	token, user := evidenceUser(t, ledgerPgSubjectA)
+	task := ledgerPgTask(t, app, sm, token, user, "ledger P4 pull-only task")
+
+	code, body := ledgerPgGet(t, app, token, "")
+	if code != http.StatusOK {
+		t.Fatalf("the read before the decision = %d: %s", code, body)
+	}
+	cursor := ledgerPgDecodePage(t, body).Tip
+	if cursor == nil {
+		t.Fatalf("a read must carry a tip, got %s", body)
+	}
+
+	base := ledgerPgTaskSeq(t, sm, user, task)
+	code, body = ledgerPgPostOne(t, app, token, value_objects.NewUUIDv4(), task, "status_changed", new(base))
+	if code != http.StatusOK {
+		t.Fatalf("the decision = %d: %s", code, body)
+	}
+	answer := ledgerPgDecodeAnswers(t, body)[0]
+	if answer.Accepted == nil || !*answer.Accepted || answer.UserSeq == nil {
+		t.Fatalf("the decision must be accepted and name the user_seq it took, got %s", body)
+	}
+
+	// No socket was opened and nothing was notified. The pull alone has to carry the client.
+	code, body = ledgerPgGet(t, app, token, "?after="+strconv.FormatInt(*cursor, 10))
+	if code != http.StatusOK {
+		t.Fatalf("the pull = %d: %s", code, body)
+	}
+	page := ledgerPgDecodePage(t, body)
+	if page.Count != 1 {
+		t.Fatalf("the pull from cursor %d must return exactly the committed entry, got %d: %s", *cursor, page.Count, body)
+	}
+	if seq, ok := page.Events[0]["user_seq"].(float64); !ok || int64(seq) != *answer.UserSeq {
+		t.Fatalf("the pulled entry must be the one the commit wrote (user_seq %d): %s", *answer.UserSeq, body)
+	}
+	if page.Tip == nil || *page.Tip != *answer.UserSeq {
+		t.Fatalf("the tip after the pull = %s, want the committed user_seq %d: %s",
+			ledgerPgNum(page.Tip), *answer.UserSeq, body)
+	}
+	t.Logf("OBSERVED pull-only: cursor %d -> committed user_seq %d -> pull count=%d tip=%s",
+		*cursor, *answer.UserSeq, page.Count, ledgerPgNum(page.Tip))
+}
+
+// TestALedgerBatchThatAcceptedNothingNudgesNobody is the guard on the nudge ITSELF, and it is the one
+// branch a mutation can otherwise delete without a red: `ledgerAcceptedTip` answering `return tip,
+// true` - the reviewer's M2 - leaves every other case in this file GREEN, because all of them commit
+// at least one accepted item. The property is asserted as an OUTCOME, not as an expression: an
+// entitled socket receives NOTHING when the batch accepted nothing, and the very next batch that DOES
+// commit is nudged on that same socket, so the silence is the guard's doing rather than a socket that
+// cannot hear.
+//
+// The all-refused batch is a decision on a STALE base_seq: the request still answers 200, the item is
+// refused, no row and no user_seq are written, and the tip does not move. A nudge here would send a
+// client to pull a ledger that has nothing new in it.
+func TestALedgerBatchThatAcceptedNothingNudgesNobody(t *testing.T) {
+	app, sm := evidenceApp(t)
+	token, user := evidenceUser(t, ledgerPgSubjectA)
+	task := ledgerPgTask(t, app, sm, token, user, "ledger P4 all-refused batch task")
+
+	// A first decision so the task has a seq the second one can be stale against. It COMMITS, so it
+	// nudges, and it is posted BEFORE the socket opens: a frame left in the buffer would otherwise be
+	// read below as the refused batch's own.
+	if code, body := ledgerPgPostOne(t, app, token, value_objects.NewUUIDv4(), task, "claimed", new(0)); code != http.StatusOK {
+		t.Fatalf("staging a decision = %d: %s", code, body)
+	}
+	seq := ledgerPgTaskSeq(t, sm, user, task)
+	rows := ledgerPgRowCount(t, sm, user)
+	tip := ledgerPgTip(t, sm, user)
+
+	env := newStreamEnv(t, sm)
+	c := env.connector(t, user)
+	c.rigdHello(t, "rigd-p4-noop", connectorCapabilityIngest, connectorCapabilityLedger)
+
+	// The batch that accepts nothing: refused on its base_seq, and the request still answers 200.
+	code, body := ledgerPgPostOne(t, app, token, value_objects.NewUUIDv4(), task, "status_changed", new(seq-1))
+	if code != http.StatusOK {
+		t.Fatalf("the stale decision = %d: %s", code, body)
+	}
+	refused := ledgerPgDecodeAnswers(t, body)[0]
+	if refused.Rejected == nil || !*refused.Rejected {
+		t.Fatalf("this case needs a batch that accepted nothing, got %s", body)
+	}
+	if got := ledgerPgTip(t, sm, user); got != tip {
+		t.Fatalf("a refused batch must not move the tip: %d -> %d", tip, got)
+	}
+	if got := ledgerPgRowCount(t, sm, user); got != rows {
+		t.Fatalf("a refused batch must not write a row: %d -> %d", rows, got)
+	}
+
+	// The OUTCOME: no frame at all on a socket that is entitled to them.
+	_ = c.conn.SetReadDeadline(time.Now().Add(700 * time.Millisecond))
+	if opcode, payload, err := wsTryReadFrame(c.br); err == nil {
+		t.Fatalf("an entitled socket received opcode=%d payload=%q when the batch accepted nothing, want nothing", opcode, payload)
+	}
+	_ = c.conn.SetReadDeadline(time.Now().Add(5 * time.Second))
+
+	// And it is not merely deaf: the next batch that commits is nudged here, with its own user_seq.
+	code, body = ledgerPgPostOne(t, app, token, value_objects.NewUUIDv4(), task, "status_changed", new(seq))
+	if code != http.StatusOK {
+		t.Fatalf("the accepted decision = %d: %s", code, body)
+	}
+	accepted := ledgerPgDecodeAnswers(t, body)[0]
+	if accepted.Accepted == nil || !*accepted.Accepted || accepted.UserSeq == nil {
+		t.Fatalf("a decision on the base the task is at must be accepted, got %s", body)
+	}
+	nudge := c.recv()
+	if nudge["type"] != connectorLedgerTipFrame {
+		t.Fatalf("after a committing batch the entitled socket received %v, want %s", nudge, connectorLedgerTipFrame)
+	}
+	if nudge["user_seq"] != float64(*accepted.UserSeq) {
+		t.Errorf("ledger_tip.user_seq = %v, want the user_seq that commit took (%d)", nudge["user_seq"], *accepted.UserSeq)
+	}
+	t.Logf("OBSERVED refused batch: rows %d tip %d unchanged and no frame -> then the commit's user_seq=%d arrived as %v",
+		rows, tip, *accepted.UserSeq, nudge["user_seq"])
 }

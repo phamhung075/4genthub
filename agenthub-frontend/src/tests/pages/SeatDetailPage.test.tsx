@@ -381,7 +381,7 @@ describe('SeatDetailPage', () => {
   // against a page that rendered nothing at all.
   describe('the rooms list that decides the standing', () => {
     it('does not render an owner as a viewer while the rooms list has not answered', async () => {
-      const { promise: neverSettles } = Promise.withResolvers<never>();
+      const neverSettles = new Promise<never>(() => {});
       mockApi.listRooms.mockReturnValue(neverSettles);
 
       renderDetail();

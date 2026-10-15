@@ -58,6 +58,18 @@ type ledgerPathRecorder struct {
 	entries []ledgerPathEntry
 }
 
+func (r *ledgerPathRecorder) RecordProgress(context.Context, string, string, entities.ProgressEntry) (*entities.TaskEvent, error) {
+	return &entities.TaskEvent{Kind: entities.TaskEventKindProgress}, nil
+}
+
+func (r *ledgerPathRecorder) NextProgressNumberInTx(context.Context, string) (int, error) {
+	return 1, nil
+}
+
+func (r *ledgerPathRecorder) RecordGateVerdict(context.Context, string, map[string]any) (*entities.TaskEvent, error) {
+	return &entities.TaskEvent{Kind: entities.TaskEventKindGateVerdict}, nil
+}
+
 type ledgerPathEntry struct {
 	taskID string
 	old    string

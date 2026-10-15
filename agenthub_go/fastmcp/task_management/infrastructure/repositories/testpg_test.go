@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"agenthub/fastmcp/session_stream/testdb"
 	"agenthub/fastmcp/task_management/infrastructure/database"
 )
 
@@ -45,9 +46,7 @@ func newTestRepoEnv(t *testing.T) *database.SessionManager {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := cfg.CreateTables(context.Background()); err != nil {
-		t.Fatal(err)
-	}
+	testdb.CreateSchema(t, cfg)
 	database.SetupTimestampEvents()
 	t.Cleanup(func() {
 		database.ResetInstance()

@@ -19,6 +19,7 @@
 // below is what the timeline shows instead of letting a status move read as a passing test.
 
 import type { TaskEvent, TaskEventActorKind, TaskEventKind, TaskStatus } from '../types/taskTypes';
+import { cleanProgressText } from '../utils/progressHistoryUtils';
 
 /** The phases a viewer can see, all derived. `unopened` is not `todo`: an empty ledger is silent. */
 export type LedgerPhase = 'unopened' | TaskStatus;
@@ -130,6 +131,14 @@ export function describeEvent(event: TaskEvent): string {
     const to = event.payload?.['new'];
     if (typeof to === 'string' && typeof from === 'string') return `Status: ${labelOf(from)} to ${labelOf(to)}`;
     if (typeof to === 'string') return `Status: ${labelOf(to)}`;
+  }
+  // O1c's progress note carries the note's own text, so its row shows what was WRITTEN rather than a
+  // bare kind label - a timeline whose progress rows all read "Progress" would hide the thing the
+  // note exists for. The numbered header is stripped the same way the progress summaries strip it:
+  // the timeline already shows the order that header was counting, so repeating it is noise.
+  if (event.kind === 'progress') {
+    const content = event.payload?.['content'];
+    if (typeof content === 'string' && content.trim() !== '') return cleanProgressText(content);
   }
   return labelForKind(event.kind);
 }

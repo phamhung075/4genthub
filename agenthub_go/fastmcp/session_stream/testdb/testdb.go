@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -57,9 +58,7 @@ func NewSessions(t *testing.T) *database.SessionManager {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := cfg.CreateTables(context.Background()); err != nil {
-		t.Fatal(err)
-	}
+	CreateSchema(t, cfg)
 	database.SetupTimestampEvents()
 	t.Cleanup(func() {
 		database.ResetInstance()
@@ -70,4 +69,38 @@ func NewSessions(t *testing.T) *database.SessionManager {
 		}
 	})
 	return database.NewSessionManager(cfg)
+}
+
+// CreateSchema creates the application schema in the database cfg points at, performing the boot the
+// merged runner now requires.
+//
+// THE FIRST BOOT IS EXPECTED TO REFUSE, AND THAT IS THE RUNNER'S BEHAVIOUR, NOT A BROKEN FIXTURE:
+// createAll populates the catalogue BEFORE the runner runs, so the runner skips the frozen 0001
+// baseline WITHOUT recording it, and the gated carry step (0003_progress_history_carry_and_drop)
+// then refuses on a database whose ledger holds no 0001_baseline row. Recording that mark is the
+// OWNER's action, so this helper records it the way an operator does - Runner.MarkBaseline - and
+// boots again. The refusal is asserted rather than swallowed, so a runner that let the destructive
+// step through would fail every case that uses this helper instead of quietly handing them a
+// carried database.
+func CreateSchema(t *testing.T, cfg *database.DatabaseConfig) {
+	t.Helper()
+	ctx := context.Background()
+	err := cfg.CreateTables(ctx)
+	if err == nil {
+		t.Fatal("the boot built the schema without refusing: the gated carry step ran with no 0001_baseline row")
+	}
+	if !strings.Contains(err.Error(), "0001_baseline") {
+		t.Fatalf("the first boot refused, but not for the missing baseline mark: %v", err)
+	}
+	set, err := database.LoadMigrations()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := (&database.Runner{Sessions: database.NewSessionManager(cfg), Set: set}).
+		MarkBaseline(ctx, "0001_baseline"); err != nil {
+		t.Fatalf("recording the owner's baseline mark failed: %v", err)
+	}
+	if err := cfg.CreateTables(ctx); err != nil {
+		t.Fatalf("the boot after the owner's mark failed: %v", err)
+	}
 }

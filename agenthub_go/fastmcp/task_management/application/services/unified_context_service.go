@@ -5,6 +5,7 @@ import (
 	"crypto/sha1"
 	"encoding/hex"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -31,6 +32,11 @@ type UnifiedContextRepository interface {
 // mirroring a47ae7b9-1d4b-4e5f-8b5a-9c3e5d2f8a1c.
 const zpUCSNamespace = "a47ae7b9-1d4b-4e5f-8b5a-9c3e5d2f8a1c"
 
+// ContextEventAppender appends context events to the ledger.
+type ContextEventAppender interface {
+	Append(ctx context.Context, in entities.AppendTaskEvent) (*entities.TaskEvent, error)
+}
+
 // UnifiedContextService mirrors UnifiedContextService: a single service for all
 // context operations (application/services/unified_context_service.py).
 type UnifiedContextService struct {
@@ -42,7 +48,8 @@ type UnifiedContextService struct {
 	ValidationService  *ContextValidationService
 	// EntityLookup resolves ids that create_context auto-detects from the branch and
 	// task entities. Nil mirrors Python's "repository factory not available" skip.
-	EntityLookup EntityIDLookup
+	EntityLookup  EntityIDLookup
+	EventAppender ContextEventAppender
 }
 
 // EntityIDLookup is the git branch / task repository access this service needs: the ids
@@ -133,7 +140,13 @@ func (s *UnifiedContextService) WithUser(userID string) *UnifiedContextService {
 		s.repositories[value_objects.ContextLevelBranch],
 		s.repositories[value_objects.ContextLevelTask],
 		s.CacheService, s.InheritanceService, s.DelegationService, s.ValidationService, &userID,
-	).WithEntityLookup(s.EntityLookup)
+	).WithEntityLookup(s.EntityLookup).WithEventAppender(s.EventAppender)
+}
+
+// WithEventAppender wires the ledger event writer.
+func (s *UnifiedContextService) WithEventAppender(appender ContextEventAppender) *UnifiedContextService {
+	s.EventAppender = appender
+	return s
 }
 
 // _get_user_scoped_repository_for_user mirrors the Python duck-typed with_user lookup.
@@ -440,6 +453,37 @@ func (s *UnifiedContextService) UpdateContext(ctx context.Context, level, contex
 	if uerr != nil {
 		return zpUCSError(uerr.Error()), nil
 	}
+
+	if s.EventAppender != nil && contextLevel == value_objects.ContextLevelTask {
+		var ver int
+		if ent, ok := savedContext.(*entities.TaskContextUnified); ok && ent.Metadata != nil {
+			if v, ok := ent.Metadata["version"].(int); ok {
+				ver = v
+			}
+		}
+		// A FAILED APPEND IS LOGGED, NOT DROPPED, and it is not returned: the context row write above
+		// has already landed, so failing here would report a saved context as a refusal, and the
+		// caller's best-effort contract (parity with the ported Python, which logs and continues) is
+		// what the surrounding code keeps. What it may not do is vanish: the ledger's other writer is
+		// this same task's own status event under the same user id, and an event that silently did
+		// not land is a history the reader cannot tell apart from one that never happened - which is
+		// exactly how the 23505 of 2026-10-15 stayed hidden on the tasks whose status rows were
+		// already there (the loser of the collision was this append, and nothing said so).
+		if _, err := s.EventAppender.Append(ctx, entities.AppendTaskEvent{
+			TaskID:    contextID,
+			Kind:      entities.TaskEventKindContextUpdated,
+			ActorKind: entities.TaskEventActorSeat,
+			ActorID:   "context",
+			Payload: map[string]any{
+				"level":   level,
+				"id":      contextID,
+				"version": ver,
+			},
+		}); err != nil {
+			log.Printf("task context event NOT recorded for task %s (level %s): %v", contextID, level, err)
+		}
+	}
+
 	resp := entities.NewOrderedMap[any]()
 	resp.Set("success", true)
 	resp.Set("context", s.entityToDict(savedContext))

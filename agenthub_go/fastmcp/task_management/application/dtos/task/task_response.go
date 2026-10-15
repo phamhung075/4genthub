@@ -66,6 +66,7 @@ func (r *TaskResponse) SubtaskCount() int {
 
 // TaskResponseFromDomain mirrors TaskResponse.from_domain.
 func TaskResponseFromDomain(ctx context.Context, task *entities.Task, gitBranchRepository GitBranchGetter,
+	progressEvents []*entities.TaskEvent,
 	contextData *entities.OrderedMap[any], dependencyRelationships *DependencyRelationships,
 	projectID *string, completedSubtasks *int) (*TaskResponse, error) {
 
@@ -100,7 +101,9 @@ func TaskResponseFromDomain(ctx context.Context, task *entities.Task, gitBranchR
 
 	details := ""
 	if task != nil {
-		details = task.GetProgressHistoryText()
+		// The ledger is the only progress surface: details render the task's `progress` events, and
+		// ProgressTextWith is the one place that rendering is written down.
+		details = task.ProgressTextWith(progressEvents)
 	}
 
 	// THE ENTITY IS THE SOURCE OF TRUTH for what an assignee is: normalizeAssignee stores '@<seat_key>'

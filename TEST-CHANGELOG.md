@@ -189,6 +189,662 @@ Track test suite changes, fixes, and improvements for agenthub.
   src/tests/theme/themeConfig.test.ts src/tests/contexts/ThemeContext.test.tsx` -> 2 files / 26 tests
   passed.
 
+## 2026-10-15 - token permission presets
+
+- CHANGED `agenthub-frontend/src/tests/pages/TokenManagement.test.tsx`: the Full Access test (every scope except the connector) is replaced by two literal-set tests - Client MCP (all but `sessions:write`) and Client connector (only `sessions:write`).
+- MEASURED: `npx vitest run src/tests/pages/TokenManagement.test.tsx` 17 passed; `tsc --noEmit` clean.
+
+## 2026-10-15 - the connector token is its own credential
+
+- CHANGED `internal/clientlifecycle/{agent,offpeak_gate,lifecycle}_test.go` and `internal/clientsync/connectorverb_test.go` (`agenthub_client`) to set `AGENTHUB_CONNECTOR_TOKEN` where the code under test now reads it.
+- ADDED `TestMissingCloudEnvNamesTheConnectorTokenSeparately` in `internal/clientlifecycle/agent_test.go`.
+- MEASURED: `go test ./...` clean.
+
+## 2026-10-15 - rigd is agent; --rig is --room
+
+- RENAMED `internal/clientlifecycle/rigd_test.go` and `internal/clientsync/rigd_test.go` to `agent_test.go` (`agenthub_client`), with `Rigd*`/`RigDaemon*` identifiers following the code.
+- CHANGED the `sync` verb cases in `internal/clientsync/sync_test.go` to the verb `room`, and `internal/clientseat/seat_test.go` to expect `sync room`; flag spellings in the watch, policy and lifecycle tests are `--room`.
+- MEASURED: `go test ./...` clean.
+
+## 2026-10-15 - Jev threshold from the config, SessionTerminated
+
+- ADDED `TestEvaluateCriteriaFollowsTheConfiguredThreshold` (`agenthub_client/internal/clientjev/jev_test.go`): a 0.77 answer accepts at threshold 0.75 and stays uncertain at 0.9; it would fail with the old fixed 0.8.
+- ADDED `stopping_a_room_announces_each_seat_it_stopped` (`agenthub_client/rust/agenthub-runtime/src/supervisor/mod.rs`).
+- MEASURED: `go test` for clientjev, clientdecide and clientcomplete ok; `cargo test --offline` -> 102 passed.
+
+## 2026-10-15 - The seat audit listener survives a lagged burst
+
+- ADDED `an_event_is_appended_to_its_seats_audit_file` and `a_burst_that_laps_the_receiver_does_not_end_the_audit` (`agenthub_client/rust/agenthub-runtime/src/hooks/mod.rs`): the hook bus had no test. The second one FAILS when the lagged arm breaks (the old behaviour) and passes with the fix.
+- MEASURED: `cargo test --offline` -> 101 passed.
+
+## 2026-10-15 - Jev: the idle guard asks an unchanged rail once, and a task with no criteria is uncertain
+
+- ADDED `TestTheSameOpenRailIsNotAskedAgainWhenTheLeadsOwnReplyMakesANewQuiet` (`agenthub_client/internal/clientlifecycle/idleguard_test.go`): a second quiet over the SAME open rail is not asked, a changed rail is. It models the overnight loop (32 asks at confidence 0.4-0.64).
+- CHANGED the no-criteria case in `agenthub_client/internal/clientcomplete/complete_test.go`: `Accept` -> `Uncertain`. Eight of nine logged accepts were this case, so Jev judged nothing.
+- MEASURED: `go vet ./...` and `go test ./...` in `agenthub_client` pass.
+
+## 2026-10-15 - The room definition names the runtime the rig runs, and the string-pinning case goes
+
+- CHANGED `scripts/team/4genthub-min/team.json` (architect seat, `:106-107`): `"runtime": "claude-code"` / `"model": "opus"` -> `"omp"` / `"deepseek/deepseek-flash"`, the values the room's own `spec.json`, `4genteam ps --nodes --json` and the cloud have reported since the owner replaced that seat on 2026-10-14 20:21Z. The definition was the stale artifact, and FOUR committed files carried the claim, not two: the definition, the roster test, the runtime table in `test_team_definition.py` and `NOTES.md`.
+- REMOVED `test_the_architect_runs_claude_code` (`scripts/tests/test_team_roster.py`): it asserted ONE seat's runtime string from memory, and a hard-coded string is how the definition drifted for two days. Its stated intent is carried by `test_the_rooms_omp_seats_are_the_rigs_omp_seats`, which compares the room's omp set with the measured `OMP_SEATS` in BOTH directions and names both sides on failure; that case's docstring now says so, so the old case reads as the property rather than as a deleted assertion.
+- CHANGED `OMP_SEATS` (`scripts/tests/test_team_roster.py`) to all five seats, and restated the two measurement comments above `LIVE_SEATS`/`OMP_SEATS`, which recorded the 2026-10-11 reading (one `claude-code`, four `omp`).
+- CHANGED `ROOM_RUNTIMES["4genthub-min"]` (`scripts/tests/test_team_definition.py:134`): `{"claude-code", "omp"}` -> `{"omp"}`. This table, with `test_every_room_seat_is_a_known_type_on_the_declared_runtimes`, is what turns a definition that names a runtime nobody runs into a red suite.
+- CHANGED `scripts/team/4genthub-min/NOTES.md`: the paragraph reading "nine seats … plus an architect on `claude-code`" now reads FIVE seats, all `omp`, with the correction and its date.
+- MEASURED: `python3 -m pytest --noconftest -p no:cacheprovider scripts/tests -q` (the canonical command, quoted in `scripts/tests/pytest.ini`) -> **92 passed** before, **91 passed** after (one case deleted), and **FALSIFIED, not asserted**: with `team.json` alone drifted back to `claude-code`/`opus` the suite gives **2 failed / 89 passed**, and the two are the guard working in both directions - `test_team_definition.py::test_every_room_seat_is_a_known_type_on_the_declared_runtimes[4genthub-min]` with *"4genthub-min ships ['claude-code', 'omp'], the expectation says ['omp']"* and `test_team_roster.py::test_the_rooms_omp_seats_are_the_rigs_omp_seats` with *"the rig runs ['architect'] on omp but the room does not declare them that way"* - then back to **91 passed** with the definition restored.
+- NOTE FOR THE ROOM, because the ruling that prompted this named it: **`scripts/team/4genthub-min/rig.yaml` DOES NOT EXIST and never has in this repository** (`gitignore`d at `.gitignore:561`; the rendered artifact `4genteam sync rig` produces is written outside the repo, under a state root that is absent on this box). The runtime and model values live in `team.json`, and live in `~/.config/4genthub/rooms/4genthub-min/spec.json`.
+
+## 2026-10-15 - The ledger's second writer identity, and the seq it collided on
+
+- ADDED `TestTaskEventAppendTakesTheNextTaskSeqAcrossTwoWriterIdentities` (`agenthub_go/fastmcp/task_management/infrastructure/repositories/task_event_repository_test.go`, PostgreSQL-gated): two identities append to ONE task, the second must take the next seq rather than collide, and the caller's own scoped read holds exactly its entry. FALSIFIED, not asserted: with `task_event_repository.go` reverted to HEAD the case FAILS with `ERROR: duplicate key value violates unique constraint "uq_task_event_seq" (SQLSTATE 23505)` - the deployed server's error, reproduced against `tools/testpg/start.sh`.
+- ADDED `TestContextLedgerAppenderRefusesWithoutAResolvedCaller` (`agenthub_go/fastmcp/server/httpapp/context_ledger_appender_test.go`): a context event with no caller in the request context is refused instead of written under an empty id, which is what the appender's `user_id` was for every caller before the fix.
+- MEASURED: `AGENTHUB_TEST_PG_URL=... go test -count=1 -run TestTaskEventAppend ./fastmcp/task_management/infrastructure/repositories/` - the four `TestTaskEventAppend*` cases PASS against the throwaway cluster (7.1 s); with the URL absent both touched packages print `ok` and the PostgreSQL-gated cases skip.
+
+## 2026-10-15 - The comm guard's native spellings, pinned before and after
+
+- ADDED 20 native cases to `TestBypassSuspected` and the new `TestBypassSuspectedKnownShapeIsNotALicence` (`agenthub_client/internal/commpolicy/policy_test.go`): `4genteam send` (both arities, absolute path, after an env assignment, collapsed spaces), `4genteam input`, `4genteam room queue create` are bypasses; `4genteam seatcheck send`, `audit-scan`, `queue list`, `queue claim`, `room stop`, `ps`, bare `4genteam` and a truncated `room queue` are not; a `prog sub-verb` known entry allows that shape and no other. `TestBypassSuspectedNilKnown` extended to the native send.
+- FALSIFIED, not asserted: the same observed file (`4genteam send …` twice, `4genteam room queue create …`, `4genteam seatcheck send …`, `4genteam ps …`, `tmux send-keys …`) through `seatcheck audit-scan --known seatcheck --file` at HEAD's predicate flags ONLY the `tmux` line — every native send is silently GREEN — and at the fixed predicate flags the two sends, the rail's create and the `tmux` line, leaving the checked send and the read alone.
+- MEASURED: `go test ./internal/commpolicy/ ./cmd/seatcheck/ -count=1` ok; client `go test ./...` all 28 packages ok.
+
+## 2026-10-15 - The shadow-gate test states the env it asks for, and the held text queues
+
+- FIXED `TestFailingTestRunInShadowCompletesWithExitFive` (`agenthub_client/internal/clientcomplete/complete_test.go`): it omitted the `t.Setenv(enforcementEnv, "")` its sibling at `:220` already had, so with the state root's `.env` (`VALIDATION_GATE_ENFORCEMENT=true`) inherited by every seat's shell it exited 6 (`ExitGateRefused`) where the shadow path's 5 is the whole point - the suite read the machine it ran on. Falsified with the same instrument: HEAD's file FAILS with `exit 6 err "4genteam complete: the gate says reject (D3: the test run failed)…"`, the fixed file PASSES `-run TestFailingTestRunInShadowCompletesWithExitFive`, and `go test ./...` leaves all 28 packages ok with `VALIDATION_GATE_ENFORCEMENT=true` in the environment.
+- ADDED `runner::tests::two_refusals_in_one_turn_keep_both_texts_in_order` (`agenthub_client/rust/agenthub-runtime/src/runner/mod.rs`): two refusals inside one turn are both held (2 queued, where the single slot held 1) and come back in the order they were refused, one per turn end - the required edit on `GATE-c0ffbe8-refused-send`.
+- UPDATED `runner::tests::a_refused_prompt_is_held_and_delivered_when_the_turn_ends` to the queue API (it still pins the delivery, the emptied queue and the bound that publishes `blocked`).
+- MEASURED: client `go test ./...` (28 packages ok) and `CARGO_NET_OFFLINE=true cargo test --offline` in `rust/agenthub-runtime` (98 passed, 0 failed; 97 with the hold fix reverted, which is the merged tree without the new test).
+
+## 2026-10-15 - The retired-verb pin's soft allowlist entry
+
+- CHANGED `Allowed[4]` (`agenthub_client/internal/retiredverbs/retiredverbs.go`): its `Match` was the retired command's own `rig up <spec>.yaml` form, which made the entry a licence for that verb's exact shape - the reviewer's measured hole (a `rig up <spec>.yaml --room demo` line was GREEN). It is now the negating words `and no`, and its `Reason` says so. Re-measured after the change: that line FAILS naming `rig up`, while the delivered sentence that negates it stays GREEN.
+- CHANGED the pin's log line (`internal/retiredverbs/retiredverbs_test.go`): the headline counted the pin's own data as delivered text (its table row and `Allowed[0]`'s own `Program`/`Match` literals, three spans). The count is now split - `8 command span(s) name a retired program: 5 in the delivered text, 5 of them allowlisted with a reason; 3 in this pin's own data under internal/retiredverbs/` - so the delivered corpus is visible on its own.
+- ADDED the read-set boundary to the package doc (non-test `*.go`, `docs/`, `skills/`; the root `README.md` and the runtime crate's usage strings are outside it), where a reader meets it rather than only in a changelog.
+- MEASURED: `go test ./internal/retiredverbs/ -v` (3 tests pass), `gofmt -l` on the two touched files prints nothing, `go build ./...` 0, `go vet ./internal/retiredverbs/` 0.
+
+## 2026-10-15 - Seat env and MCP config, watch rule
+
+- ADDED in the client repo: `a_seats_env_carries_the_state_roots_env_file` and `the_seat_mcp_config_names_variables_and_no_secret` (`rust/agenthub-runtime/src/supervisor/mod.rs`): the state root's `.env` reaches the seat, the spec wins over the file and the runtime over both, and the seat's `mcp.json` holds variable names only.
+- ADDED `TestRuleWeightJoiningAndFailure` and `TestRuleCarriesTheClockAndMeter` (`internal/clientwatch/view_test.go`): the rule weights, the joined call, the red rule after a failure, and the clock and meter on the rule in a one-seat pane.
+- MEASURED: client `go vet ./... && go test ./...` and `cargo test --offline` (92 passed).
+
+## 2026-10-14 - Jev moves to the client
+
+- REMOVED the server-side Jev tests with the code they covered: `room_decision_ladder_test.go`, `httpapp/room_decisions_ladder_test.go`, `validation_gate_service_test.go`, `complete_task_validation_gate_test.go`, `typesafe_jev_client_test.go`, and `TestRoomDecisionServiceEvaluatorAutoSelectAndPending` with its fake evaluator in `room_decision_service_test.go`.
+- ADDED in the client repo: `internal/clientjev/jev_test.go` (config defaults, owner-only set, bad threshold, question limits), `internal/clientcomplete/complete_test.go` (deterministic rejections without a Jev call, criteria verdicts, accepted flow order evidence-then-complete, enforced refusal before any write, shadow mode, usage refusals) and a rewritten `internal/clientdecide/decide_test.go` (local ladder, escalation, owner-only with no Jev call, evaluator error, log lines).
+- MEASURED: `go vet ./... && go test ./...` in `agenthub_go` and in `agenthub_client` (exit 0).
+
+## 2026-10-14 - The env loader fills an empty variable
+
+- ADDED `TestLoadEnvFillsEmptyAndKeepsNonEmpty` (`agenthub_go/fastmcp/utilities/config_loader_test.go`): a variable exported empty takes the file's value; a non-empty one keeps its own.
+
+## 2026-10-14 - A room needs its links
+
+- ADDED `TestLoadTeamRefusesARoomOfSeveralSeatsWithNoLinks` (`agenthub_client/internal/clientteam/links_required_test.go`): two seats with no links is refused naming the links; two seats with one link and a single seat with none load.
+
+## 2026-10-14 - Decision ladder tests
+
+- ADDED `TestEvaluateLadder` and `TestOwnerOnlyCategoriesAreConfigurableNotFixed` (`agenthub_go/fastmcp/room_decisions/application/services/room_decision_ladder_test.go`): a seat at 0.9 decides, at 0.6 escalates to the lead with the recommended option, a lead below 0.8 reaches the owner, a `credentials` question at 0.95 reaches the owner without a Jev call, an evaluator error escalates, the owner tier is refused, and `omp_cap` is owner-only only when configured.
+- ADDED `TestRoomDecisionEvaluateIsTheLadderStep` (`agenthub_go/fastmcp/server/httpapp/room_decisions_ladder_test.go`): the same three outcomes over HTTP, plus 400 for tier owner and 403 without a bearer. Each test points the decision log at a temp path.
+
+## 2026-10-13 - Jev evaluator tests isolate the decision log
+
+- FIXED `TestRoomDecisionServiceEvaluatorAutoSelectAndPending` (`agenthub_go/fastmcp/room_decisions/application/services/room_decision_service_test.go`): sets a temp `SetJevDecisionLogPath` for all subtests; two subtests previously appended fixture rows to `~/.config/4genthub/jev_decisions.log`.
+- MEASURED: `go test -count=1 ./fastmcp/room_decisions/... ./fastmcp/server/httpapp/... ./fastmcp/task_management/infrastructure/ai_services/...` (exit 0); real log size unchanged across the run.
+
+## 2026-10-13 - Room Decisions Jev AI Auto-Selection, Benchmarking Log and Env Configuration
+
+- ADDED `TestTypeSafeJevClient_SelectDecisionChoices` (`agenthub_go/fastmcp/task_management/infrastructure/ai_services/typesafe_jev_client_test.go`): verifies `SelectDecisionChoices` endpoint call to `/v1/systemone` with choice question structures, Bearer authentication, and parsing of selection choices with confidence scores.
+- ADDED `TestRoomDecisionServiceEvaluatorAutoSelectAndPending` (`agenthub_go/fastmcp/room_decisions/application/services/room_decision_service_test.go`): verifies `RoomDecisionService` automated question answering when evaluator confidence >= threshold (auto-answers and transitions decision to `answered`), fallback leaving decision in `pending` for human operators when confidence < threshold, and writing structured evaluation metrics to `jev_decisions.log` for offline benchmarking.
+- UPDATED `room_decisions_mount.go`: resolves `JEV_DECISION_THRESHOLD` (default 0.8) and `JEV_DECISION_MODEL` (default `jev-1.13.0`) dynamically from `~/.config/4genthub/.env` or process environment.
+- UPDATED `TestRenderRoomRigCLI` and `rigValidate` (`agenthub_go/fastmcp/seat_management/domain/rigspec/rigspec_test.go`): skip when `rig` on PATH points to client binary without `spec` command.
+- GENERATED `agenthub-frontend/src/docs/apiReference.ts` via `go run ./cmd/apirefgen` to reconcile with route surface.
+- MEASURED: `go test -v ./fastmcp/room_decisions/... ./fastmcp/task_management/infrastructure/ai_services/...` (exit 0), `go test ./internal/apiref` (exit 0), `go test ./...` in `agenthub_go` (exit 0).
+
+## 2026-10-13 - Sample env and documentation updates
+
+- UPDATED `agenthub_client/.env.sample`, `agenthub_client/README.md`, `docs/AGENT-SETUP.md`, `skills/client/install/SKILL.md`, and root `.env.sample` removing legacy OpenRig variables and adding TypeSafe AI / Jev gate and validation configuration.
+- PINNED: `agenthub_client` commit `94fa49e`. All client unit tests pass cleanly (`go test ./...` exit 0).
+- BUILT: `~/.local/bin/4genteam` from `./cmd/4genteam`.
+
+## 2026-10-13 - TypeSafe AI / Jev HTTP client & Machine-Level Config Env tests
+
+- ADDED `agenthub_go/fastmcp/utilities/config_loader_test.go`: `TestLoadEnv` testing parsing of KEY=VALUE assignments, export prefixes, comments, quotes, and non-overriding of existing environment variables.
+- ADDED `agenthub_go/fastmcp/task_management/infrastructure/ai_services/typesafe_jev_client_test.go`: 5 test cases (`TestTypeSafeJevClientMissingAPIKey`, `TestTypeSafeJevClientAccept`, `TestTypeSafeJevClientReject`, `TestTypeSafeJevClientResolvesFromEnv`, `TestTypeSafeJevClientNoulProbabilities`). Verifies missing token handling (fail-safe uncertain with ErrMissingAPIKey), HTTP POST `/systemone` payload dispatch with Bearer token, acceptance/rejection verdict parsing, resolution of tokens from `~/.config/4genthub/.env`, and Noul confidence probability evaluation (high -> accept, low -> reject, marginal -> uncertain).
+- MEASURED: `go test -v ./fastmcp/utilities/...` (exit 0), `go test -v ./fastmcp/task_management/infrastructure/ai_services/` (exit 0).
+
+## 2026-10-13 - Next-Gen validation gate, remote execution, and work routing tests (O5, O6, O7, P7, D4/F5)
+
+- ADDED `agenthub_go/fastmcp/task_management/domain/services/validation_gate_service_test.go`: 5 test cases (`TestValidationGateDeterministicFailures`, `TestValidationGateDeterministicPassNoCriteria`, `TestValidationGateJevBudgetExceededFailsSafe`, `TestValidationGateJevClientErrorFailsSafe`, `TestValidationGateJevAccepts`). Verifies deterministic checks D1–D5 (syntax, types, tests exit code/failed list, clean diff keep-out scan, numstat bounds), Jev model criteria evaluation, daily token budget cap enforcement ($0.042/Mtok), and fail-safe fallback to `uncertain` on budget exhaustion or error.
+- ADDED `agenthub_go/fastmcp/task_management/application/use_cases/complete_task_validation_gate_test.go`: 3 test cases (`TestCompleteTaskGateShadowMode`, `TestCompleteTaskGateEnforcementRejection`, `TestCompleteTaskGateEnforcementUncertainEscalates`). Verifies that shadow mode records `gate_verdict` without blocking completion, while enforcement mode moves tasks to `review` and either completes to `done` on `accept`, reverts to `in_progress` with reasons on `reject`, or escalates on `uncertain`.
+- ADDED `agenthub_go/fastmcp/server/routes/machine_work_routes_test.go`: `TestGetMachineWorkFiltersCorrectly` verifying `GET /api/v2/machines/{machine}/work` discovery of open work assigned to room seats with criteria and scope filtering.
+- ADDED `agenthub_client/internal/clientsync/remote_commands_test.go`: 3 test cases (`TestRemoteCommandsRefusalGuardrails`, `TestRemoteCommandsExecutionSuccess`, `TestRemoteCommandsExecutionFailureReportsError`) verifying opt-in execution of `send_to_seat`, `up`, and `down` over `/ws/connector`, validating human-only issuer, `sessions:command` token scope, command whitelist, room whitelist, and structured refusal codes.
+- UPDATED `agenthub_client/internal/clientoutbox/manager_test.go` and `manager.go` testing wake extraction on `context_updated` and work seat wake loop.
+- MEASURED: `go test ./fastmcp/task_management/...` (exit 0), `go test ./fastmcp/server/...` (exit 0), `go test ./internal/...` in `agenthub_client` (exit 0).
+
+## 2026-10-13 - the seat-message deliverer: the rig pass, the seat isolation, the watch loop, the refusals
+
+- ADDED `TestMessagesVerbRigPassDeliversEveryRunningSeat` (`agenthub_client/internal/clientsync/messagesverb_test.go`): a four-node `rig ps --nodes` fixture - one running lead, one stopped seat, one running-but-empty session, one other running seat - pinning the exact call sequence (`GET 4genthub-min/lead | SEND 4genthub-min-lead@4genthub-min hello lead | ACK m1 | GET 4genthub-min/other | SEND ... | ACK m2`), one ledger per seat, and the summary line. The stopped and session-less nodes are skipped WITHOUT a cloud read, which is the point of deriving seats from the live table rather than a static list.
+- ADDED `TestMessagesVerbRigPassIsolatesOneSeatFailure`: `sendToSession` fails only for lead; the other seat still gets its `GET` and `ACK`, lead's ledger stays empty, and the pass exits ExitRemote rather than swallowing the seat.
+- ADDED `TestMessagesVerbWatchBeatsEachPassAndExitsOnCancel`: replaces the `clientservices.WriteHeartbeat` seam with a recorder and cancels after the first pass - exactly one `messages 4genthub-min` beat, exit 0, the banner names the 10 s cadence, and the text was delivered by the first pass before the cancel.
+- ADDED `TestMessagesVerbRigShapeRefusals`: the five grammar refusals (both shapes; `--rig` with `--session`; `--watch` without `--rig`; `--watch` with `--dry-run`; neither) all answer ExitUsage, and "a rig with no running seat" is ExitRemote naming it on stderr with the cloud untouched.
+- CHANGED the fixtures the new safeguard moved: `services_test.go`'s threshold table gains `Messages: 30 * time.Second` and the report-order case gains `<rig> messages` between watchdog and the machine rows; `rigd_test.go`'s child-list case goes from 5 to 7 entries (`sync messages --rig demo --watch` per rig at 30 s); `doctor_test.go`'s everythingRunning gains a `messages` beat row per rig.
+- MEASURED, from `agenthub_client/`: `gofmt -l` clean, `go vet ./...` clean, the WHOLE module `go test ./...` -> no package fails (the deliverer's package runs the four new cases). `scripts/build.sh` ran the same gate and installed `~/.local/bin/4genteam`.
+- PINNED: the client commit is `7cefd9b` on branch `human/messages-safeguard`, bumped from gitlink `9f84728` by owner decision `33e0b340` (Option A).
+- PROCESS NOTE, because the guard blocked and was left exactly as configured: the client's Go tests are colocated (`internal/**/*_test.go`), and the Write/Edit guard's valid-test-path list (`.claude/hooks/config/__claude_hook__valid_test_paths`) carries `agenthub_go` but not `agenthub_client`, so Edit refused the four test files and the edits were applied by script instead. The guard is unchanged; a one-line `agenthub_client` addition (mirroring `agenthub_go`) is the user's call.
+
+## 2026-10-12 - the ask ingest and the answer pull: the crossing, the cursor key, the episode tuple, the enforced key
+
+- ADDED `TestRoomDecisionPgCrossingRoundTrip` (`agenthub_go/fastmcp/server/httpapp/room_decisions_pg_test.go`): the machine half's round trip against a REAL PostgreSQL, driven through `app.Handler()` - ingest (the redrive collapses onto the same row and says `created:false`), the human's two clicks, the pull (the row with its room's SLUG), ack `applied` (the row resolves) and `dropped` (the state is kept), the second ack's 409, the tenant fence, and the daemon's state push. It is also the case that settles the CURSOR KEY against the column itself: the cursor must equal `<the row's stored answered_at>|<id>`, so a pull that minted from `created_at` fails here.
+- ADDED `TestRoomDecisionPgTheSameQitemInTwoTenantsIsTwoAsks` - RED-FIRST against the shape this packet first shipped: two tenants, one routed item, one derived idempotency key. The ingest conflicted on the GLOBAL `idempotency_key` and its loser path read that key back scoped to the tenant, so B's ask was swallowed - measured before the fix as a PANIC at `room_decisions_mount.go:411` (a nil dereference on the `created:false` path), which is what the first run of this case reported. Green now: B gets its own row, the stored keys are equal on both rows (the episode, not the key, is the dedupe), each tenant holds one row, A's redrive still lands on A's, and each room read shows its own ask.
+- ADDED the mount cases (`room_decisions_mount_test.go`, fake store) and the service cases (`room_decision_service_test.go`, a counting fake): the ingest's contract and its refusal matrix, the pull's paging and its acked-answer exclusion, the ack matrix, the state push, the answer legs, and `TestCreateRefusesARowTheStoreNeitherWroteNorFound`, which pins the guard on the one state that must never reach the wire (the service answers an error, so the route answers 500 rather than a success with no decision).
+- ADDED the ingest key's derivation to both matrices, per the architect's 19:52Z ruling: a body whose `idempotency_key` is not `agenthub:decision:<qitem_id>` is refused. The service case pins the message and the counting fake proves nothing was stored; the route case pins 400 with that detail and an empty store - the same message is asserted at both layers on purpose, because the mount owns the status and only the service can show the refusal wrote nothing. The route case compares the message AFTER DECODING, because the wire body escapes `<` and `>` and this contract's message is written with them: a raw substring match would pin `encoding/json`'s escaping rather than the message a client reads. The seven pre-existing door fixtures now carry a deriving key, because the check sits inside the loop that validates the key and therefore runs before the summary, detail and question checks.
+- THE ENVELOPES ARE PINNED BOTH WAYS at the route: the refusal loop asserts the body carries NO `success` key (the detail envelope), and the secret-in-field case asserts it carries `success:false` and no `detail` key. The distinction is the point: a 422 elsewhere in the tree is a detail body (`branch_routes.go`, `ledger_mount.go`, `app.go`), and only the credential scan answers with the status envelope.
+- THE CURSOR KEY IS PINNED TWICE, because a fake cannot see the SQL and the SQL cannot see the fake: the service test sets `created_at` a day and two days away from `answered_at`, so a cursor minted from the wrong column renders a different string; the DB case compares the returned cursor against the row's stored `answered_at`.
+- EXTENDED `TestEnsureSeatColumnsExistOnOldSchema` (`ensure_seat_columns_test.go`): the throwaway database also gets a `room_decisions` table in its PRE-ANSWER-LEG shape, and the case now asserts that `EnsureSeatColumnsExist` adds `acked_at` with its COMPOSITE index - the index DEFINITION is checked, because an index over the column alone would satisfy a name-only assertion while being a different object. This matters for the reason the register exists: `CREATE TABLE IF NOT EXISTS` never adds a column to a table that already exists.
+- MEASURED, with the cluster URL exported as both `AGENTHUB_TEST_PG_URL` and `SEAT_TEST_DATABASE_URL`: `go test -count=1 -run TestRoomDecision -v ./fastmcp/server/httpapp/` -> exit 0, 15 root cases PASS, the five DB-backed ones at 5.97-6.47s, and the run reports no SKIP. `go test -count=1 ./fastmcp/room_decisions/... ./fastmcp/server/httpapp/` -> ok. `go test -count=2 -run TestCreateRefusesAMalformedAskAtTheDoor ./fastmcp/room_decisions/application/services/` -> 9 sub-cases PASS. `go test -count=1 ./fastmcp/seat_management/... ./fastmcp/task_management/infrastructure/database/` -> ok, including the DDL parity guards, the baseline-versus-registry guard and the old-schema upgrade case.
+- TEST-ENVIRONMENT REPAIR, named because it is not a source change: the shared throwaway cluster's `postgres` database held a `room_decisions` created by S1's schema file, so the seat integration fixtures - which apply that file with `CREATE TABLE IF NOT EXISTS` - failed on the new composite index with `column "acked_at" does not exist (SQLSTATE 42703)`. The database was brought forward with the ensure path's own statements (`ALTER TABLE ... ADD COLUMN IF NOT EXISTS acked_at`, `CREATE INDEX IF NOT EXISTS ix_room_decisions_user_rig_state_acked`), and the stale `uq_room_decisions_idempotency_key` this packet drops was dropped there too. A fresh database, and any database that boots the new code, has both already.
+- NOT COVERED: the daemon half that drives these routes is its own task; the DB-backed cases need a PostgreSQL, and the checked-in workflow provides none.
+
+## 2026-10-12 - the room decision channel's three acceptance cases, DB-backed at the route
+
+- ADDED `agenthub_go/fastmcp/server/httpapp/room_decisions_pg_test.go`: the S1 lane's three acceptance cases against a REAL PostgreSQL, driven through `app.Handler()` so the path under test is the production one (auth, router, mount, service, tenant-scoped repository and the DDL's own constraints). (1) `TestRoomDecisionPgUnknownOptionIs422AndWritesNothing` - an option outside the stored list answers 422 `unknown-option`, the row's `state` and `answers` are unchanged, and the room holds exactly one row. (2) `TestRoomDecisionPgDuplicateKeyIsOneRowAndTheFirstAnswer` - the same `idempotency_key` twice answers 200 with the FIRST answer and the row count stays 1; the click that completes the ask moves it to `answered`; that click's replay then answers 200 from the stored row instead of `state-answered`; and a change of mind after completion is refused `state-answered` with the row unchanged. (3) `TestRoomDecisionPgReadNeverCrossesRoomOrTenant` - the read answers the caller's own room and nothing else: a second room of the SAME owner reads `[]`, another tenant's room is 404, that tenant's slug under the caller's token is 404, and a decision answered through the wrong room is 404 `unknown-decision`.
+- ADDED `agenthub_go/fastmcp/server/httpapp/room_decisions_mount_test.go` (fake store, no database) and `agenthub_go/fastmcp/room_decisions/application/services/room_decision_service_test.go` (a counting fake: the service's refusal ORDER, and the ask door's bounds, credential scan and ported question limits). The order is pinned at both levels because the mount owns status-to-token mapping and only the service can show a refusal wrote nothing; the ask path (`Create`) has no route yet, so the service test is the only place that reaches it.
+- RED-FIRST, and both defects the first DB-backed run exposed are recorded because each had a green-looking sibling: (a) the read answered `500 {"detail":"Internal Server Error"}` - `PyJSONDumpsCompact` walks strings, numbers, bools, slices, maps and OrderedMaps and refuses a struct outright, so the row's stored `[]questions.HumanQuestion` failed serialization; the row now renders the stored list into ordered maps, with `recommended` present only when the ask carried it (the field's own `omitempty`). (b) case 3 failed on its own fixture - two rows of ONE owner shared a `qitem_id`, which `uq_room_decisions_user_qitem` refuses (SQLSTATE 23505) - so the seed takes the routed item's id as its own argument, which is also that constraint's meaning.
+- NAMED LIMIT: all three cases SKIP without `AGENTHUB_TEST_PG_URL` and the skip is loud; a skip is not a pass. Measured with the cluster URL (`tools/testpg/start.sh`, and the same value as `SEAT_TEST_DATABASE_URL`): `go test -count=1 -v ./fastmcp/server/httpapp/ -run TestRoomDecision` -> exit 0, 8 cases PASS, the three DB-backed ones at 2.46-2.78s (they ran; the run reports no SKIP).
+- NOT MINE, NOT FIXED, found by this packet's gate: `./fastmcp/seat_management/infrastructure/repositories/orm/` holds a case that fails about a third of the time by construction - `TestSeatMessageRepositoryIntegration` asserts that a same-instant pair sorts `first` before `tie` (its `order =` check), while the id it sorts by is a random v4 (`value_objects.NewUUIDv4()` in `seat_message_repository.go`), so the assertion holds only when the coin lands that way. Measured on this tree: `go test -count=6 -v -run TestSeatMessageRepositoryIntegration ./fastmcp/seat_management/infrastructure/repositories/orm/` -> 4 PASS, 2 FAIL, on the same tree that reported that package `ok` earlier the same day. A red on that line in a later run is this flake; the room decision change touches nothing it asserts.
+- NOT COVERED: the ask's own route does not exist yet (S2), so a redrive of the same ask is proven at the SQL level (`ON CONFLICT ("idempotency_key") DO NOTHING` plus the read-back in the ORM's `Create`) and by the counting fake, never through a route.
+
+## 2026-10-12 - a permanent guard: the library cannot drift under a seedVersion that already names it
+
+- ADDED `agenthub_go/fastmcp/seat_management/domain/seedlibrary/seedcontent_lock_test.go` and the record it owns, `seedcontent.lock.json`: APPEND-ONLY, one `{seed_version, content_sha256, files}` per version, `files` holding a sha256 for each of the 26 files a seed is built from (`seat-types/*.yaml`, `shared-modules/*`, `blocks/*` - the three sources the package embeds).
+- WHAT IT CATCHES: the drift that has now happened three times - `b9e9b06f` under `1.4.0`, `a3eb0762` under `1.4.1`, `39105865` under `1.4.2` - a library content change without a `seedVersion` move. Each earlier one was repaired only by the next bump (`fb65bd2a` five minutes later, whose message names exactly this; `42de79c2` an hour later) and the third by nobody until this change. `guides.lock.json` structurally cannot see it: the same commit that moves a block's bytes re-stamps the lock, so the lock stays green through exactly the drift it should notice.
+- THE VERSION IS NOT COPIED: the guard reads it through `seedmap.FromSpec`, so it cannot pass by comparing the record against a number nothing stamps. A version recorded TWICE with two content sets is itself a failure (the record is the immutability evidence, not a cache), and each record's `content_sha256` is checked against its own files map so a hand-edited record is reported as internally inconsistent rather than believed.
+- THE GENERATOR REFUSES: `-update-seedcontent-lock` will not re-record a version that already has a set, so a content change cannot be silenced by regenerating the record - greening it requires raising `seedVersion`.
+- THE DESCRIPTION IS ASSERTED, NOT TRUSTED: `_what` is the only string this file holds two copies of - the generator writes it from `seedContentLockWhat` - so the copy on disk is compared against the constant, and an edit to one without the other fails. Found while correcting this very entry: the constant was written by the generator but asserted by nothing.
+- RED-FIRST, BY REHEARSAL IN A SCRATCH WORKTREE (`git worktree` at HEAD, my three files copied in, nothing committed from it, worktree removed afterwards): (a) the REAL pre-`39105865` bytes of `blocks/guide-reviewer.md` under `1.4.3` -> FAIL naming `blocks/guide-reviewer.md changed`; (b) the generator on that same state -> FAIL "REFUSING to re-record seedVersion 1.4.3", with the lock left naming `1.4.3` alone; (c) `HEAD`'s own `seedmap.go` (const `1.4.2`) against a record naming `1.4.3` -> FAIL "names no content set"; (d) the record's description mutated on disk with the constant untouched -> FAIL "`seedcontent.lock.json` describes itself as ..., but the generator writes ...". Baselines: the unmutated scratch PASSED, and the guard had not run before this change at all.
+- MEASURED at the committed tree, with both scopes named because the count depends on them: the guard PASSES. `gofmt -l $(git ls-files '*.go')` run **from `agenthub_go`** covers **1255** paths as committed (1254 before this entry's new test file, which is why an earlier draft of this line said 1254), prints nothing and exits **0** - and the count is printed with it, so the green is not vacuous. Run **from the repo root**, the same command covers **1257** paths and exits **2** with no stdout: two tracked non-Go fixtures carry a `.go` suffix - `captain-definition.backend.go` and `docker-system/docker/Dockerfile.backend.go`, both outside this module - and gofmt names them on stderr (`expected 'package', found '{'`; `illegal character U+0023 '#'`). That is the fixtures, not this package. `go build ./...` and `go vet ./...` exit 0; `go test -count=1 ./fastmcp/seat_management/...` ok; `go test -count=1 ./...` -> exit 0, **141 packages ok, 0 FAIL**, 37 no-test-file packages.
+- NAMED LIMIT: the DB-backed cases in this lane SKIP without `AGENTHUB_TEST_PG_URL` / `SEAT_TEST_DATABASE_URL` / `TEST_DATABASE_URL` - the throwaway cluster's binaries are not cached in this tree and I did not fetch them. Injecting the variables at a dead port makes those cases fail fast (connection refused) rather than skip; that was my own env artifact, reverted, and it is recorded so nobody reads it as a defect. No DB-backed case can be reached by this change: the only `1.4.x` literal in Go is an arbitrary sample version in `server/httpapp/seat_admin_pin_test.go:18-58`.
+- NOT CHANGED: `seedmap_test.go` needed no edit (it compares every module version against the const, not a literal) and neither did `guides.lock.json` - all guide-pairing cases PASS at this revision, and the pre-change hash `3fab6144f51475bf581708c4d8a1ab187cd3027c67d28d0ad773e532e983a258` is pinned by NO file.
+
+## 2026-10-11 - the carry step is pinned at a SHARED progress_number: the collision, the silent loss, and the control
+
+- ADDED three cases to `agenthub_go/fastmcp/task_management/infrastructure/database/progress_history_drop_integration_test.go`, on the retroactive gate's verdict for `b7ba802b`: its three `subtask_id IS NOT DISTINCT FROM` predicates were asserted by NOTHING, because no case put a task note and a subtask note at the same `progress_number` (the existing cases seed 1 and 2, and use 2 again for the duplicate case).
+- RED-FIRST `TestTheRuledCarryStepCarriesBothIdentitiesAtASharedProgressNumber` (shared number, DIFFERENT content): on the parent revision the step REFUSES - `ERROR: progress_number is held by a ledger event whose content differs from the column's, for 2 entr(ies); progress_history is left intact (SQLSTATE P0001)`, the false positive the predicates remove - and with `b7ba802b` both notes are carried, each under its own identity.
+- RED-FIRST `TestTheRuledCarryStepCarriesTheSubtaskNoteTheLedgerAlreadyHoldsForTheTask` (shared number AND content, with the ledger already holding the TASK's event for that note - the dual-write state the 0002 bridge leaves): on the parent the step raises NOTHING, reports the entry as held, drops both columns and the subtask's note with them, and the ledger holds one event only - `the ledger holds no progress event for the subtask under its own id <uuid> ... it holds [<text>|1|]`. With the fix the entry is present under its own `subtask_id`. The assertion is on `subtask_id`, never on content, because pre-fix the CONTENT is present - under the task's identity.
+- NAMED CONTROL `TestTheRuledCarryStepCarriesTheSubtaskAtASharedProgressNumberWhenTheContentMatches` (shared number and content over an EMPTY ledger): MEASURED GREEN ON BOTH REVISIONS, and kept for exactly that reason - the `missing` CTE is a single pre-insert snapshot, so at its evaluation neither note is held and both entries insert, each carrying its own `subtask_id`. It guards the other edge: the fix must not over-tighten the empty-ledger path into raising.
+- RED ARM BY OVERLAY, nothing written into the tree: the parent SQL (`b7ba802b^`) injected with `go test -overlay=/tmp/overlay-red.json` - A and the dual-write case FAIL with the messages above, the control PASSES. GREEN ARM on the tree's SQL: all three PASS. The FIRST red attempt failed VACUOUSLY (`migration "0003_progress_history_carry_and_drop" has no SQL`) because the overlay pointed at a file the extraction had not written; it is recorded here because a vacuous red is the failure mode this row exists to prevent.
+- MEASURED on a real PostgreSQL through `tools/testpg/start.sh` (cluster on 127.0.0.1:55451), one fresh database per case through `newTestDatabase`; the `database` package `ok 38.191s`, and the three cases re-run after the last comment edit `ok 13.676s`. The whole module: `go test -count=1 ./...` -> exit 0, **141 packages ok, 0 FAIL, 37 no-test-files**, with the changed package inside it at `ok 191.873s`.
+- REFACTORED in the same file: the inline subtask INSERT in `TestTheRuledCarryStepCarriesTheNotesAndDropsTheColumns` now calls the new `seedSubtaskWithColumnNote` helper with the same values (`progress_2`, the same text, number 2) - one fixture definition instead of two - and `carriedEventIdentities` was added to read `content|number|subtask_id`. No existing case's numbers changed.
+
+## 2026-10-11 - the guard's blind-spot block names its prefilter, and its census names the tree it measured
+
+- COMMENT-ONLY change to `agenthub_go/fastmcp/task_management/infrastructure/database/create_tables_guard_test.go`:
+  the allowlist, the predicate and the three call sites are untouched, and the guard's verdict is unchanged.
+- ADDED a fourth blind spot to its "WHAT IT CANNOT SEE" block: the scan's prefilter
+  `bytes.Contains(source, []byte("CreateTables("))` only sees a gofmt-shaped call, so `cfg.CreateTables (ctx)` or a
+  newline between the name and `(` never reaches the AST pass at all. Both directions are stated - an unlisted call
+  in such a file is not reported, and an allowlist entry for that file's function would read as STALE because the
+  call was never recorded - and so is what still defeats it: a split after the dot, or a receiver on its own line,
+  is caught, because only name-to-parenthesis adjacency is what the prefilter sees.
+- CORRECTED the census bullet, and with it the pair quoted in the entry below: the 3120 `_test.go` / 2631 under
+  `.gomodcache/.gocache/.gotmp/.claude` figures describe the SHARED CHECKOUT they were measured in, not the commit -
+  a clean worktree of the same commit measures 490 `_test.go` files and none of them under those directories, so the
+  pair cannot be cross-checked from a checkout. The reproducible number is the one the guard prints on every run,
+  together with the tree it walked.
+- MEASURED after the edit: `gofmt -l` on that file -> empty; `go test -count=1 -run
+  TestFixturesBringUpTheSchemaThroughCreateSchema ./fastmcp/task_management/infrastructure/database/` -> PASS, the run
+  reporting `walked 490 _test.go file(s) under /home/daihu/__projects__/4genthub/agenthub_go (dot-directories
+  skipped), 4 of them naming CreateTables, and found 3 call site(s) in 3 file(s)`; `go vet` on that package -> rc 0.
+
+## 2026-10-11 - the last three fixture bring-ups adopt CreateSchema, and a database-free guard holds the next one
+
+- FIXED the 12 remaining `SQLSTATE P0001` reds in the three bring-ups the `92d3e825` repair did not reach: each
+  still booted a fresh throwaway database with a bare `cfg.CreateTables`, so nothing recorded the operator's
+  `0001_baseline` mark and the gated carry step `0003_progress_history_carry_and_drop` refused.
+  - `newAuthRepoEnv` (`fastmcp/auth/infrastructure/repositories/auth_repositories_test.go`)
+  - `newTeamTestEnv` (`fastmcp/team_management/infrastructure/repositories/orm/team_repository_test.go`)
+  - `newFastmcpTestDatabase` (`fastmcp/database_init_integration_test.go`), which now brings the schema up itself
+    and returns the DSN: the boot used to sit in the case body, so the fixture had no `cfg` to hand a helper. The
+    pool it opens is closed by a cleanup registered after the drop's, so cleanups (last in, first out) close it
+    before the database is dropped.
+- ADDED the rule as a check rather than a habit:
+  `agenthub_go/fastmcp/task_management/infrastructure/database/create_tables_guard_test.go`, a DATABASE-FREE source
+  scan - no cluster, no DSN - that fails when a `_test.go` calls `CreateTables` outside an allowlist keyed by FILE
+  and ENCLOSING FUNCTION, and that fails on a STALE allowlist entry and on a scan that finds nothing: silence is
+  the defect, because the failure it catches is invisible in exactly the default run. Its walk skips
+  dot-directories (3120 `_test.go` in the module, 2631 of them under `.gomodcache/.gocache/.gotmp/.claude`) and
+  reports what it walked: **490 real files, 4 naming CreateTables, 3 call sites**.
+- LEFT ALONE the three deliberate sites, each carrying its reason in the allowlist: the second in-process boot
+  (`migration_idempotence_test.go`), the second call after `CreateSchema` (`integration_test.go`), and the case
+  that MEASURES the refusal (`progress_history_drop_integration_test.go`).
+- MEASURED, on the cluster `AGENTHUB_TEST_PG_URL` names: the three fixed packages -> **ok 27.071s / ok 13.704s /
+  ok 10.575s**, the 12 reds gone; the DB-gated `./...` over `agenthub_go` -> **141 packages `ok`, zero FAIL, zero
+  `P0001`, zero build failures**, with the three inside it at ok 44.882s / ok 8.787s / ok 7.687s; `gofmt -l` empty
+  over the tracked set; `go build ./...` rc 0; `go vet ./...` rc 0.
+- SHOWN FAILING three times, with the output, then green again: an unlisted call ->
+  `zz_guard_falsify_test.go:13 in falsifyBareBoot calls CreateTables directly` FAIL; a stale entry ->
+  `createTablesSites still lists TestRealPostgresCreateTablesAndSessionsRENAMED ... but no CreateTables call is
+  there any more` FAIL; an empty corpus -> `walked 0 _test.go file(s)` FAIL. Every temporary change was removed in
+  the same turn it was made.
+- NOT CHANGED, named: the `./...` package count moved 142 -> 141 because the guard's new home is an existing test
+  package - `fastmcp/session_stream/testdb` now reports `[no test files]` instead of `ok`. No case was deleted.
+
+## 2026-10-11 - the four fixture bring-ups perform the operator's baseline mark
+
+- FIXED the 126 `SQLSTATE P0001` failures at `92d3e825`: the gated carry step
+  `0003_progress_history_carry_and_drop` refuses on any database whose `applied_migrations` ledger holds
+  no `0001_baseline` row, and `createAll` populates the catalogue before the runner runs, so a fresh
+  fixture database skips the frozen baseline without recording it and the step then refuses. Four shared
+  bring-up helpers booted with `cfg.CreateTables` and never marked.
+- CHANGED those four helpers to the flow the harness already documents and the passing fixtures already
+  use, `testdb.CreateSchema(t, cfg)` - expect the refusal, record the mark with `Runner.MarkBaseline`,
+  boot again: `newTestRepoEnv` (`repositories/testpg_test.go:49`), `newMissedNotificationTestEnv`
+  (`repositories/orm/missed_notification_repository_test.go:50`), `wsTestSessions`
+  (`application/services/websocket_notification_service_test.go:47`) and `newMissedNotificationAppEnv`
+  (`server/httpapp/missed_notification_replay_test.go:67`), which is also the bring-up the pin case uses.
+  Each helper creates its own throwaway database per test, which is why marking the cluster instead could
+  never have helped. No product code, no assertion, no package boundary and no gated blob changed: the
+  fold's seventeen paths stay byte-identical to `3bcc632a`.
+- MEASURED, on a cluster carrying NO baseline mark - the fixtures mark for themselves, so a fresh cluster
+  gives the same result: `go vet ./...` rc 0; `gofmt -l` empty on the four files; the four packages that
+  held the 126 pass with **test-level RUN 883 / PASS 883 / SKIP 0 / FAIL 0** and 4/4 packages `ok`; and
+  `TestSeatAdminPinReachesTheRowOnARealDatabase` **PASS by name** (it had been failing on this refusal,
+  not on an assertion), alongside `TestSeatAdminPinSeatVersion` PASS.
+- NOT FIXED, per the row: the seven `TestProductionModelsCRUDRealPostgres` `42P01` failures in `database`
+  are measured and are NOT counted as new.
+- The diagnostic that tested the other option is recorded as INCONCLUSIVE rather than as evidence against
+  it: marking the shared `postgres` database cannot reach these fixtures because each creates its own
+  database, so that experiment was aimed at the wrong database and was undone.
+
+
+
+## 2026-10-11 - the two schema guards build together again, by naming only
+
+- FIXED a build break at the assembled tip: `migration_baseline_parity_test.go` (the release line's) and the
+  fold's `schema_matches_definitions_test.go` are both `package database_test` and declared **four** names
+  twice - `TestSchemaMatchesGoDefinitions` (the name commit `10b27cdb` had given the release line's guard)
+  and the helpers `readBaselineSQL`, `assertBaselineHasNoDropOrAlter`, `baselineMigrationFile`. The package
+  did not compile: `go vet ./...` first said `TestSchemaMatchesGoDefinitions redeclared in this block`, and
+  after the ruled rename it said `baselineMigrationFile redeclared in this block`.
+- CHANGED names only, all in the RELEASE line's file: the test is restored to its pre-`10b27cdb` name
+  `TestBaselineMatchesEveryRegisteredTableDef` (function line and doc comment verbatim from
+  `git show 10b27cdb^`), and the three helpers take a `parity` prefix (`parityReadBaselineSQL`,
+  `parityAssertBaselineHasNoDropOrAlter`, `parityBaselineMigrationFile`). The fold's file is untouched, so
+  its gated blob `354f1415` - one of the o1c take's 17 - stays byte-identical to `3bcc632a`.
+- MEASURED: `go vet ./...` rc=0; `gofmt -l` empty on the file; no assertion, no test logic, no package and
+  no file moved.
+
+## 2026-10-11 - the pin route's store is now covered against real SQL
+
+- ADDED `agenthub_go/fastmcp/server/httpapp/seat_admin_pin_pg_test.go`:
+  `TestSeatAdminPinReachesTheRowOnARealDatabase` - the follow-on BOTH of R1's gates named
+  (`GATE-42de79c2` and its post-hoc re-gate): `TestSeatAdminPinSeatVersion` drives the real route,
+  handler and service through a SUBSTITUTED `seatAdminSource`, so every store assertion it makes is the
+  fake's answer, and `UpdatePinnedVersion` is a plain UPDATE whose behaviour no fake can fail. The new
+  case mounts the same routes over the production source (`newSeatAdminSource(sessions)`, no seam
+  swapped) on a real PostgreSQL and reads the row back through
+  `ORMSeatRepository.FindByRoomAndKey` rather than through the response; each refusal is followed by a
+  read of the row, so a check that refuses in the body and writes anyway fails here and passes there.
+- MEASURED with the database: PASS (and the fake-store case alongside it still passes). The SECONDS are
+  deliberately not quoted, because a duration here is a fact about the box: this same case has read
+  1.47s, 6.68s and 1.6s on three box-and-load combinations, and the first of those did not reproduce on
+  the reviewer's. It has
+  been SEEN FAILING, not only seen passing: with the store statement mutated to
+  `COALESCE("pinned_version", $1)` - a bound-but-ignored parameter, so a true no-op write - it reports
+  `the row reads "1.0.0" after the pin, want "1.0.1" - the response is not the store`, and the statement
+  was then restored byte-for-byte (`git diff` over `seat_repository.go` is empty).
+- GATED like its neighbours: without `AGENTHUB_TEST_PG_URL` it skips loudly, so a run that prints
+  SKIPPED has not covered this.
+- THE TENANT SCOPE IS NOW MEASURED, NOT JUST NAMED IN THE DOC (the gate's nit, closed in the same
+  commit as this line): every request above is made as the OWNING user, so a store that dropped its
+  `user_id` scope would pass all of them while the doc claimed that behaviour was covered. The case now
+  ends by swapping `authinterface.GetCurrentUserUniversal` to a SECOND user mid-case - the pattern
+  `token_mount_wiring_test.go` already uses - and making the same calls: the room's seat list and the
+  pin both read **404** for that other user, and the owner's row is read back unchanged afterwards.
+  FALSIFICATION, done by the reviewer's own `-overlay` method so this worktree stayed a single path
+  dirty: with `roomVisibilitySQL` mutated to `TRUE` (the read loses its tenant scope) the new
+  assertion goes **RED** - `another tenant's seat list: status 200, body {"success":true,"seats":[...{"seat_key":"alice","pinned_version":"1.0.1"...}]}` -
+  and the same case is **GREEN** with no overlay. The pin half stayed 404 under that read mutation
+  because the write path resolves its room through `seatAdminRoom` (owner-only) rather than the visible
+  read; that resolution was deliberately left alone, since the read scope is what the nit named.
+
+## 2026-10-11 - correction: the unfixed script suite's clean-tree result
+
+- MEASURED, to settle the one number the gate could not reproduce:
+  `python3 -m pytest --noconftest -p no:cacheprovider scripts/tests -q` on the UNFIXED tree
+  (`e0e75084^`, in a detached worktree, `GIT_DIR` unset) gives **88 passed** - not the
+  `12 failed, 76 passed` that an earlier version of the CHANGELOG entry and of `e0e75084`'s message
+  claimed. The same command on the FIXED tree at this branch's tip gives **92 passed** (the suite has
+  grown since that run's 88/90).
+- CHANGED nothing but the record: the `12 failed, 76 passed` half is withdrawn from
+  `CHANGELOG/2026-10-11--the-script-suites-git-fixtures-cannot-write-the-callers-repository.md` with the
+  command, the tree and the result that replace it. The hostile run's `30 failed, 42 passed, 4 skipped`,
+  the six staged paths and the two shared-repository digests are untouched.
+## 2026-10-11 - the assembly merge's three cases meet the entity and the table the ledger line left
+
+- THIS SECTION RECORDS THE MERGE'S OWN TEST CHANGE, not a new test. Merging `4genthub-min/batch-0.0.37` (`0e9746c0`) into `4genthub-min/fe-dev` conflicted on four paths; once the two Go files were resolved, two of the BATCH's cases still constructed entities with the progress column this branch removed, so `go vet` failed on both packages while `go build ./...` passed - a build does not compile test files, which is why only vet surfaced it.
+- CHANGED `agenthub_go/fastmcp/task_management/domain/entities/task_test.go`: `TestTheProgressReaderSkipsEntriesItCannotRead` built `Task{ProgressHistory: ...}` and called `task.GetProgressHistoryText()`. The batch's function is KEPT - it is the join the subtask DTO route reaches (`fastmcp/types/converters.go:182`) - while this branch's accessor went with the field, so the case now calls `ProgressHistoryText(map[string]any{...})` with the SAME map and the SAME two assertions: the unreadable-entry rule and the "no empty line between the separators" check are unchanged, only the call site moved to the function that still exists.
+- CHANGED `agenthub_go/fastmcp/types/dto_test.go`: the third part of `TestSubtaskDTOservesDetailsFromItsOwnProgressHistory` built `&entities.Subtask{ProgressHistory: ...}` and expected `details` to carry a note. An entity no longer carries a column to read (`fastmcp/types/converters.go:241` reaches it through `pyGetattr`), so that part now builds an entity with no field and asserts the EMPTY STRING - the "never nil, one meaning has one shape" rule the case's own comment states, which is exactly what the branch serves now. The dict halves of the case are untouched.
+- CHANGED `agenthub_go/fastmcp/server/httpapp/ledger_pg_test.go`: the batch's `ledgerPgSubtask` fixture INSERTed `progress_history` and `progress_count` into `subtasks`. Those columns are gone from the table by the time these cases run - this branch's carry step drops them, which the branch's own `progress_history_drop_integration_test.go` asserts - so the INSERT now names the row's columns and names neither of them. The case's subject (the ledger refuses a subtask that is not this task's own) and every assertion are untouched; the two columns were never read. This one only failed against a real database (`column "progress_history" of relation "subtasks" does not exist`, SQLSTATE 42703), because a build does not run the SQL either.
+- Two comments that named the removed accessor were corrected in the same merge: `fastmcp/types/converters.go:171` and `fastmcp/types/dto_test.go:185` now name `entities.Task.ProgressTextWith` over the ledger's events, which is what `task_response.go:106` actually calls. Nothing else in the repository referenced the accessor.
+- MEASURED, in `wt/fe-dev`, on the merge result: `gofmt -l` clean on the six Go files this merge touched; `go build ./...` -> rc 0; `go vet ./...` (which compiles every package's tests) -> silent; <GO TESTS>; frontend `npx tsc --noEmit -p .` -> rc 0, **0** `error TS`; `npx vitest run` -> **122 files / 1892 tests passed, 0 failed** (140.67s).
+
+## 2026-10-11 - the subtask write transport gets contract cases, and the complete-task case gets its path back
+
+- ADDED, `describe('Subtask API V2')` in `agenthub-frontend/src/tests/services/apiV2.test.ts`, four cases: `updateSubtask` sends title / description / status / progress_percentage in the QUERY at `/api/v2/subtasks/{id}` with method PUT and no body; `updateSubtask` sends only the fields that were supplied; `completeSubtask` carries the note in the query at `/api/v2/subtasks/{id}/complete` with method POST and no body; `completeSubtask` sends no `completion_notes` key when there is no note. The file had NO subtask cases at all before this, which is why nothing pinned the transport while the defect was live.
+- MEASURED RED FIRST: `npx vitest run src/tests/services/apiV2.test.ts -t 'Subtask API V2'` -> **4 failed | 31 skipped** against the pre-fix tip, the failures being the defect itself - `expected null to be 'Finished the parser'` (the query was empty) and `expected URLSearchParams {} to be undefined` (the input was in the body, where the route reads nothing).
+- The new cases drive `vi.mocked(global.fetch)` and answer with a real `Response` rather than the file's older `(global.fetch as any)` plus object-literal style, so the request shape is typed at the seam under test instead of asserted through a cast.
+- RESTORED in the same file, `describe('completeTask')`: both cases assert `expect(new URL(url).pathname).toBe(\`/api/v2/tasks/${taskId}/complete\`)` again. The `88ca41df` rewrite kept the query assertions but dropped the path, and the A1 gate falsified exactly that - mutating `/complete` to `/completed` left 31 passed.
+- MEASURED, in `wt/fe-dev`, from `agenthub-frontend`: the two affected files -> **2 files / 115 tests passed, 0 failed**; `npx tsc --noEmit -p .` -> **0** `error TS`; `npx vitest run` -> **122 files / 1892 tests passed, 0 failed** (134.93s; 1888 plus this change's four cases).
+
+## 2026-10-11 - the room's standing gets its red-first case, and the room fixture learns to carry a role
+
+- CHANGED `agenthub-frontend/src/tests/pages/SeatAuthoringPage.test.tsx`: the file-scope `listRooms` fixture now serves `team_id` and `role: 'owner'`. `Room.role` is REQUIRED on the served row and is what decides every write control the page offers, so without it each existing case silently asserted a VIEWER's page - and the write paths passed only because no gate existed yet. With the gate in place those cases would fail on the absent controls, which is the signal the field was missing rather than a regression in them.
+- ADDED, `describe('SeatAuthoringPage room standing')` in the same file, two cases: (1) a viewer of a shared room keeps the READ - the composed blocks and a row's inheritance label are asserted present - and is offered NO control that writes an overlay, with `Add at Seat` and `Remove here` asserted ABSENT, plus the standing sentence present, because absent controls with no reason read as a broken page; (2) the owner still gets `Remove here` ENABLED and `Add at Seat` present, and the viewer sentence asserted NOT to render, so the gate is not a blanket hide.
+- MEASURED RED FIRST, at the pre-gate tip: case (1) fails with the offered control printed in the failure - `Add at Seat</button> instead` at `src/tests/pages/SeatAuthoringPage.test.tsx:805` - while case (2) already passes. That asymmetry is what makes (1) the defect's own case and (2) its control rather than a second copy of it.
+- CHANGED `agenthub-frontend/src/tests/components/SeatComposerEditEntry.test.tsx` and `SeatComposerPurposes.test.tsx`: both `composerFixture`s supply `canWrite: true`, the prop `SeatComposer` now requires. Their subjects are the read and edit-entry surfaces rather than standing, so the owner value keeps them asserting what they were written for.
+- MEASURED, in `wt/fe-dev`, from `agenthub-frontend`: the three suites this change touches -> **3 files / 42 tests passed** (40 before, +2); `npx tsc --noEmit -p .` -> **0** `error TS`; `npx vitest run` -> **122 files / 1888 tests passed, 0 failed** (144.66s; 1886 plus this change's own two cases).
+
+## 2026-10-11 - the complete action's request is asserted where the server reads it
+
+- ADDED `agenthub-frontend/src/tests/services/apiV2.test.ts` (`describe('completeTask')`): a case asserting the request carries `completion_summary` (and `testing_notes` when given) in the URL's **query**, with `method: 'POST'` and **no body** - the shape `queryReq` in `agenthub_go/fastmcp/server/httpapp/task_routes.go` accepts. MEASURED RED at the pre-fix call site (`2ae4c944`): `AssertionError: expected null to be 'Task completed successfully'`, 1 failed | 31 passed (32); the same assertion passes at the fix.
+- REWRITTEN the two cases that had pinned the defect: one asserted an empty form body at the BARE url, an exact header object and the mock's own echo as the result, and the other repeated the body assertion. The first is replaced by the contract case above; the second now asserts the optional-parameter branch against the same contract - the query parameters, the method, and that nothing is sent in a body, which is the property the route's 422 depends on.
+- MEASURED GREEN at the fix: `npx vitest run src/tests/services/apiV2.test.ts` -> 1 file passed, 31 passed (31), 0 failed; `npx tsc --noEmit -p .` -> 0 `error TS`; `npx tsc --noEmit -p tsconfig.tests.json` -> 194, the standing ratchet; `npx vitest run` -> 122 files passed (122), 1886 tests passed (1886), 0 failed (159.95s) - the same totals as before the change, because one case left and one arrived.
+
+## 2026-10-11 - the index guard: case is folded outside the literal only, and a statement is read whole
+
+- CHANGED `agenthub_go/fastmcp/task_management/infrastructure/database/schema_matches_definitions_test.go`: `goDefNormalizeStatement` folds case through the new `goDefFoldOutsideLiterals` (a single-quoted literal's case is its value, so `WHERE role = 'owner'` and `WHERE role = 'Owner'` are different indexes); `goDefStepIndexes` iterates the new `goDefStatements(step.SQL)` - whole statements, the same unit the runtime side is parsed in - instead of splitting the migration on newlines. `goDefStatements` respects single-quoted literals, parentheses and `--` line comments (the migration's prose apostrophes would otherwise open a bogus literal and swallow every later statement), keeps a final statement with no trailing semicolon, and anything index-shaped that still cannot be parsed remains a `goDefParseError`, never a skip.
+- MEASURED RED: with the baseline's `uq_team_members_one_owner` changed to `WHERE role = 'Owner'` the guard fails naming that table and printing `migrations: ... where role = 'Owner'` against `runtime: ... where role = 'owner'`. Reverted, green.
+- MEASURED: with `ix_modules_user_id` written across two lines (the statement still whole) the guard stays green - it compares the statement, not its first line. With the split statement's column list drifted instead (`(kind)`) it is RED naming `create index ix_modules_user_id on modules (kind)`, so the second line is read and compared, not dropped.
+- MEASURED: `go test -count=1 -run TestSchemaMatchesGoDefinitions ./fastmcp/task_management/infrastructure/database/` -> `ok 0.006s`; `gofmt -l` clean on the file.
+
+## 2026-10-11 - the complete action's note: refused at the interface, passed by the router, written by the use case
+
+- ADDED, one case in `agenthub_go/fastmcp/task_management/interface/mcp_controllers/subtask_mcp_controller/handlers/progress_handler_test.go`: `TestCompleteSubtaskRequiresProgressNotes`. A 20+ character `completion_summary` with a 5-character note is refused as `complete_subtask` / `ErrorCodeValidation` with `Missing required field: progress_notes (minimum 10 characters). Completions must include progress description.` The case passes a **nil facade**, so a handler that skipped the check and reached the facade would panic rather than pass quietly.
+- ADDED, one case in `agenthub_go/fastmcp/task_management/application/facades/subtask_application_facade_test.go`: `TestHandleManageSubtaskCompleteHandsTheNoteToTheWiredLedger`, the complete twin of the update wire case. It pins the same WIRE - the facade builds both note-writing use cases before the composition root calls `WithLedger` - and asserts the write, the parent task id, the subtask id and the stored content. New fake `zpCompleteRepo` serves one task and implements the atomic increment the complete path type-asserts.
+- ADDED, three cases in `agenthub_go/fastmcp/task_management/application/use_cases/subtask_progress_note_test.go`: `TestCompleteSubtaskRecordsItsNoteInTheParentTasksLedger` (one entry, the parent task's id, the subtask's id, the stored content and the completion's own timestamp), `TestCompleteSubtaskWithoutALedgerRefusesRatherThanDroppingTheNote` (fails `ErrLedgerNotWired` and saves nothing), `TestCompleteSubtaskWithoutANoteWritesNoLedgerEntry` (no entry, the completion still happens).
+- CHANGED `agenthub_go/fastmcp/task_management/application/use_cases/use_cases_group3_test.go`: four `Execute` call sites gained the note argument (`nil` - those cases are about retry classification, not-found and parent progress).
+- MEASURED RED FIRST, because the defect was a SILENT drop: against the pre-fix save-only path the use-case cases fail `ledger writes = 0, want 1: the note this completion REQUIRES reached no reader` and `err = <nil>, want ErrLedgerNotWired` (the no-note case stays green); against `WithLedger` skipping the complete use case the facade case fails `status ledger is not wired: a status write must record its entry ...`; with the handler's check removed the handler case fails `op="complete_subtask" code="OPERATION_FAILED"`, because it passes a nil facade and a handler that skips the rule reaches it. Green with the fix.
+
+## 2026-10-11 - the pair key gets its discriminating case
+
+- ADDED, one case in `agenthub-frontend/src/tests/components/TaskDetailsDialog.servedProgressPayload.test.tsx`: a ledger event numbered 7 with content `retry`, and a served `details` holding `retry` at 3 and at 7. Two `retry` rows must render, and the column's surviving note - the row labelled "From the task's progress history" - must come first.
+- WHY IT IS THE ONE THAT MATTERS: the case above it cannot distinguish the pair key from the old text-only key, because its note carries the same text AND the same number in both sources; the gate showed a text-only revert leaving 10 tests green. This case fails under that revert: against `8d27cadf`'s component the observed message is `expected [ <div class="font-medium"></div> ] to have a length of 2 but got 1`, i.e. the column's note was silently swallowed. The count is the dedupe's own outcome, so the failure isolates the key rather than the placement.
+- MEASURED, in `wt/fe-dev`, from `agenthub-frontend`: the file alone with the new case filtered -> **1 failed | 4 skipped** against `8d27cadf`'s component and **1 passed | 4 skipped** at the change; the four suites this touches -> **4 files / 42 tests passed**; `npx vitest run` -> **122 files / 1886 tests passed, 0 failed**; `npx tsc --noEmit -p tsconfig.tests.json` -> **194**, unchanged, with no error in any touched file.
+
+## 2026-10-11 - the timeline's order gets its own case, and a surviving note is placed by progress number
+
+- ADDED, one case in `agenthub-frontend/src/tests/components/TaskDetailsDialog.servedProgressPayload.test.tsx`: a ledger holding a single `progress` event numbered 5, and a served `details` holding notes 1 and 5. It asserts the note numbered 1 renders ABOVE the ledger's note (index order over `getAllByRole('listitem')`) and that each note renders exactly once.
+- WHY IT IS RED-FIRST: against `8d27cadf`'s component it fails at `expect(preSwitch).toBeLessThan(later)` with the observed message `expected 1 to be less than 0` - the history row was appended after the ledger's, which is the defect the gate recorded as a nit. It passes once the rows are placed on the shared progress number.
+- MEASURED, in `wt/fe-dev`, from `agenthub-frontend`: the file alone with the new case filtered -> **1 failed | 3 skipped** against `8d27cadf`'s component and **1 passed | 3 skipped** at the change; the four suites this touches -> **4 files / 41 tests passed**; `npx vitest run` -> **122 files / 1885 tests passed, 0 failed**; `npx tsc --noEmit -p tsconfig.tests.json` -> **194**, unchanged, with no error in any touched file.
+
+## 2026-10-11 - the merged read gets its red-first case, and a note both sources hold renders once
+
+- ADDED, two cases in `agenthub-frontend/src/tests/components/TaskDetailsDialog.servedProgressPayload.test.tsx`, the file whose subject is the dialog's progress surface: (1) a task whose served `details` holds a note and whose events route is mocked EMPTY - the ledger has no row for a note written before the dual-write switch, so a dialog that renders the ledger alone cannot show it; (2) a note present in BOTH sources renders exactly once, asserted with `getAllByText(...)` of length 1, while the history-only sibling is still asserted present, so the case cannot pass by rendering nothing.
+- WHY THE FIRST ONE IS THE ONE THAT MATTERS: it is the RED-FIRST case for gate `f05714c4`'s blocker B1. Written before the component changed, it failed against the pre-change tip with `Unable to find an element with the text: Note written before the ledger switch`; it also asserts the column's `=== Progress N ===` header does NOT appear, so it pins the note's own text rather than the wire's formatting. The gate's complaint was exactly that the suite was GREEN while the blocker existed.
+- UNCHANGED, the same file's existing case still drives the dialog from the SERVED event stream and asserts the ledger's own text reaches the row - the half that had to keep passing.
+- MEASURED, in `wt/fe-dev`, from `agenthub-frontend`: the four suites this change touches (`TaskDetailsDialog.servedProgressPayload`, `TaskEventTimeline`, `TaskDetailsDialog`, `TaskDetailsDialog.realtime`) -> **4 files / 40 tests passed**; the new file alone -> **3 passed (3)** after the change, **2 failed | 1 passed (3)** before it; `npx vitest run` -> **122 files / 1884 tests passed, 0 failed** (two above the 1882 recorded at `f05714c4`, this change's own net case delta); `npx tsc --noEmit -p tsconfig.tests.json` -> **194**, unchanged, with no error in any touched file.
+
+## 2026-10-11 - the list's batch reads never see an id that is not an id
+
+- ADDED, one case in `agenthub_go/fastmcp/task_management/application/dtos/task/task_test.go`: `TestTaskListResponseDoesNotQueryRowsWithNoID`. `taskIDString` renders a row with no id as the literal `"None"`, and both batch reads cast their id slice `::uuid`; the counts read swallows its error and the notes read returns it, so such a page failed the whole list. The case's `uuidStrictProgressEvents` fake refuses a non-uuid exactly as the cast does, so the case fails for the query's own reason.
+- MEASURED RED FIRST: with the id slice built from `taskIDString` again, the case fails `a row with no id failed the whole list: invalid input syntax for type uuid: "None"` - the reviewer's report, reproduced by the case rather than asserted.
+
+## 2026-10-11 - the schema guard covers indexes (and the regex that had to go)
+
+- EXTENDED `agenthub_go/fastmcp/task_management/infrastructure/database/schema_matches_definitions_test.go`: `TestSchemaMatchesGoDefinitions` now compares the registry's indexes with the baseline's, not just columns, references, CHECKs and defaults. 60 statements, two of them UNIQUE, and a unique index is the whole invariant for `uq_overlays_target` and `uq_team_members_one_owner` - so losing one kept the guard green before this. Per table, both directions (an index whose table no definition registers is a failure too). New helpers: `goDefStepIndexes`, `goDefIndexStatements`, `goDefLooksLikeIndex`, `goDefIndexParts`, `goDefNormalizeStatement`; `goDefSortedKeys` is now generic over the map's value type, so it sorts the index map as well.
+- MEASURED RED, two directions in one run: `UNIQUE` dropped from `uq_overlays_target` in the baseline, and `ix_email_tokens_email`'s column list drifted in the registry - the guard names both tables and prints each side's statement. Reverted, green.
+- RECORDED, because the first attempt is instructive: that parse began as a single regex with optional groups next to optional quotes, which matched the migration's `IF NOT EXISTS` form and silently matched nothing on the runtime's bare form - an empty list reads exactly like agreement. Replaced by a word-by-word parse of the statement's fixed shape; the normalized statement text is still what is compared.
+
+## 2026-10-11 - the two findings GATE c663cca2 left open: the subtask note, and the number read inside the transaction
+
+- ADDED `agenthub_go/fastmcp/task_management/application/use_cases/subtask_progress_note_test.go`: three cases over the note a `manage_subtask` update carries - it reaches the PARENT task's ledger naming the subtask, its content is the stored form, its number and timestamp are the writer's; an update without a note writes nothing; a whitespace-only note writes nothing and still saves the subtask. Its `subtaskNoteLedger` is a seam that records the subtask id, which the task-level fakes cannot see.
+- ADDED `agenthub_go/fastmcp/task_management/infrastructure/database/subtask_note_ledger_integration_test.go`: the same write against a real PostgreSQL with the REAL repositories and recorder - one `task_events` row, `subtask_id` set, `progress_number` 1, and the task dialog's own render (built from the ledger alone) carrying the note. The rows are seeded with SQL because this environment's schema comes from the registry's DDL, where `tasks.created_at` has no default.
+- ADDED, one case in `agenthub_go/fastmcp/task_management/application/facades/subtask_application_facade_test.go`: `TestHandleManageSubtaskUpdateHandsTheNoteToTheWiredLedger`. It pins the WIRE rather than the write - the composition root builds the facade with its repositories already in hand (which builds the update use case there and then) and only then calls `WithLedger`, so a facade that kept the ledger to itself would drop every production note. MEASURED RED: with the prebuilt use case left unwired the case fails `HandleManageSubtask(update): status ledger is not wired: a status write must record its entry, and saving the status alone would be a silent success over a missing event`. New fakes in that file: `zpSubtaskRepo` (FindByID/Save over one subtask) and `zpNoteLedger` (records the entry, the task and the subtask).
+- ADDED, one case in `agenthub_go/fastmcp/task_management/infrastructure/repositories/task_event_repository_test.go`: `TestNextProgressNumberInTxIsReadInsideTheCallersTransaction`. Against a real PostgreSQL: the read REFUSES outside a transaction; a carried tip (a note numbered 7) gives 8; and two writers in two transactions take **{8, 9}** rather than sharing one number, which is the property the lock buys and the identity a reader merges copies by.
+- CHANGED, the interface's ripples: `TaskEventLedger` (services) and `LedgerRecorder` (use_cases) gained `NextProgressNumberInTx`, so seven test doubles implement it - `progressCapturingLedger`, `ledgerFakeRecorder`, `noopRecorder`, `unmovedLedgerRecorder`, `ledgerPathRecorder`, `ledgerSpy` and this packet's own `subtaskNoteLedger`.
+- CHANGED, the entity tests: `appendProgress` is gone from `entities/task_test.go`, replaced by `TouchForProgress` plus `NewProgressEntry`, because the entity no longer numbers a note - the ledger does, while it writes.
+- MEASURED RED FIRST, because the defect was a SILENT drop: with the note path mutated back to the pre-fix behaviour both the unit case and the integration case fail - `ledger writes = 0, want 1: the note this update REQUIRES reached no reader` and `the task's rendered notes do not carry the subtask's note "=== Progress 1 ===\nwired the parser and its case"; render = ""`.
+- MEASURED: `go build ./...` rc 0; `go vet ./fastmcp/task_management/... ./fastmcp/server/httpapp/...` rc 0; `gofmt -l fastmcp/` empty; `go test -count=1` green for `application/use_cases`, `application/facades`, `application/services` (4.856s), `domain/entities`, `interface/mcp_controllers/task_mcp_controller/...`, `server/mcptoolpath/progressdetails` (4.963s).
+- NOT DONE, recorded rather than implied: `ListAfter`/`Events` do not SELECT `subtask_id`, so no READER can say which subtask wrote a note yet - the integration case asserts the column from the row for that reason. A separate read-side gap.
+
+## 2026-10-11 - O1c addendum: the list and search rows' notes, and how the read is proved batched
+
+- ADDED, one case in `agenthub_go/fastmcp/task_management/infrastructure/repositories/task_event_repository_test.go`: `TestProgressEventsByTaskIsOneReadForTheWholePage`. Against a real PostgreSQL (skips without `AGENTHUB_TEST_PG_URL`, and a skip is not a pass): two tasks, one carrying two `progress` notes plus a `status_changed` event, and another user's task added to the same request. It asserts the answer is grouped by task id, that only the `progress` kind comes back with its `seq` order intact, that a task with no notes has no entry, that nothing from the other user appears, and that an empty page returns an empty map with no error.
+- CHANGED `agenthub_go/fastmcp/task_management/application/dtos/task/task_test.go`: `TestTaskListResponseFromDomainList` builds a two-task page, gives one task a note, and asserts the row's `details` is the ledger's render while the other row's is empty. Its new `fakeProgressEvents` **records the task-id arguments it was given**, so the case also pins the shape the gate asked about: ONE call for the page. A per-row read fails that third assertion instead of passing quietly.
+- CHANGED `agenthub_go/fastmcp/task_management/application/use_cases/port_draft_use_cases_test.go`: the `NewListTasksUseCase` call gained the new seam as `nil`; that case is about the filters, so an unread ledger is what it wants.
+- MEASURED: `AGENTHUB_TEST_PG_URL=… go test -count=1 -run TestProgressEventsByTaskIsOneReadForTheWholePage -v ./fastmcp/task_management/infrastructure/repositories/` -> **PASS (1.89s)**; `go test -count=1 ./fastmcp/task_management/application/dtos/task/ ./fastmcp/task_management/application/use_cases/ ./fastmcp/task_management/application/facades/` -> **ok 0.003s / ok 0.039s / ok 0.006s**; `gofmt -l fastmcp/` empty; `go build ./...` rc 0; `go vet` on the touched packages rc 0.
+- WHY BATCHED, because the gate left the choice open: the reviewer's addendum measured that no frontend surface reads a list item's `details` today (a row renders its timeline from `fullTask`, which only `getTask` fills), so the field's being wrong is a shape regression rather than a visible one. One query per page is the shape that makes the field correct for any client; a read per row for a field nothing consumes is the wrong trade; dropping the field from list items would make two clients get different shapes for the same question.
+
+## 2026-10-11 - Stage 1: the schema guard, and the fixture name the baseline took
+
+- ADDED `agenthub_go/fastmcp/task_management/infrastructure/database/schema_matches_definitions_test.go`: `TestSchemaMatchesGoDefinitions`, the guard that holds the runtime table definitions against the migration set. It is an **external test package** because `taskdb.Tables` is a package-level union each feature package appends to in its own `init` - the four blank imports are the point of the file, and without them the test would see a fifth of the schema and pass. Database-free: it reads the embedded set through `taskdb.LoadMigrations` and compares the column NAME set, the referenced-TABLE multiset, the CHECK expressions and the column DEFAULTs, the four axes the seat schema had already drifted on.
+- CHANGED `agenthub_go/fastmcp/task_management/infrastructure/database/migration_runner_integration_test.go`: the `MarkBaseline` case's fixture step was named `0001_baseline`, a free name until the real `0001_baseline.sql` landed. That case's env calls `CreateTables`, which applies the embedded set, so the name was **already recorded** when `MarkBaseline` ran: the mark returned nothing and the case failed on `marked [], want [0001_baseline]`. The fixture is `0900_baseline_probe` (a name the embedded set cannot contain) and the assertion is unchanged - it was the fixture that was wrong, not the runner.
+- MEASURED RED FIRST, which is what the row turns on: with a Go definition perturbed, `TestSchemaMatchesGoDefinitions` fails on every registered table; with `0001_baseline.sql` present it is green. `go test -count=1 ./fastmcp/task_management/infrastructure/database/` -> **ok 22.997s** (the package the baseline executes in, and the one the renamed fixture is in); `gofmt -l fastmcp/` empty; `go build ./...` rc 0; `go vet` on the touched packages rc 0.
+- NOT RUN, stated rather than implied: the live-database dump comparison. The only PostgreSQL reachable from this box is the scratch test server, which holds one database (`postgres`) with no application tables and no `applied_migrations`, and no dump artifact exists in the seat directory - so whether a live database holds the six `ProductionTables` is still unmeasured and needs the principal.
+
+## 2026-10-11 - O1c follow-up: the create response's note, and a seam that remembers
+
+- ADDED `agenthub_go/fastmcp/task_management/application/use_cases/status_ledger_progress_test.go`: `ledgerWithProgress()`, the seam wired AND remembering. `noopLedger` is by its own contract a pass-through that records nothing, which is right for the eleven cases about something else; a case that asserts a response carries the note its request wrote needs a seam that holds it, so `progressCapturingLedger.RecordProgress` keeps the `ProgressEntry` the use case built and its `Events` hands that note back as the task's ledger entry, in the payload shape the repository writes (`content` plus `progress_number`) that `ProgressTextWith` merges by.
+- CHANGED, the two cases the gate's BLOCKER named: `create_task_test.go` (`TestCreateTaskUseCaseSuccess`) and `update_task_test.go` (`TestUpdateTaskUseCaseUpdatesFields`) run against `ledgerWithProgress()` instead of `noopLedger()`. Their assertions were right and stayed: the response must carry `=== Progress 1 ===\n<the note>`, which is the whole point of the field.
+- NOT CHANGED: the other nine cases keep `noopLedger`, because they assert something else and a seam that returns a note would make them assert two things at once.
+- MEASURED: red before and green after, same command - `go test -count=1 ./fastmcp/task_management/application/use_cases/` failed with `create_task_test.go:112 details = ""` and `update_task_test.go:127 details = ""`, and now reports **ok 0.038s**. The gate measured both cases green at the parent `d46b7559`, which is what made this a regression rather than a stale expectation.
+
+## 2026-10-11 - O1c: the carry step's acceptance, and every test that pinned the progress column
+
+- ADDED `agenthub_go/fastmcp/task_management/infrastructure/database/progress_history_drop_integration_test.go`: three cases over the ruled carry-and-drop step, against a real PostgreSQL. The notes reach the ledger (payload read back byte-for-byte, with their numbers, the entry's own timestamp and `carried_from`) and the four columns leave the catalogue; a malformed entry - one with no timestamp - **fails** the step and leaves the column, the note and the `applied_migrations` row untouched; and a note the ledger already holds under the same identity is not carried twice. Each case recreates the pre-drop columns first, because the boot applies the embedded set and the columns are therefore already gone by the time a test runs.
+- CHANGED, the tests the removal touches: `progress_ledger_carry_integration_test.go` (the two `0002` cases that seeded the column are gone; its helpers `seedBranch`/`seedTaskWithColumnNote`/`ledgerProgressText` stay and are what the new file uses), `column_paths_test.go` and `schema_validator_test.go` (green once the registry rows went), `acceptance_scope_ensurer_test.go` (its insert no longer names the column), `draft_orm_repositories_test.go`, `task_status_ledger_test.go`, `websocket_payload_builder_test.go`, `websocket_notification_service_test.go`, `application/dtos/task/task_test.go`, `domain/entities/context_test.go`, `domain/entities/task_test.go`.
+- DELETED `domain/entities/task_progress_entries_test.go`: both cases existed only because the column reader did (`ProgressEntries`, `GetProgressHistoryText`), and one of them pinned the discard that `2c4582de` moved to the decode boundary - a boundary that no longer exists. Its ledger-side case survives in the re-pointed `task_test.go`.
+- KEPT, re-pointed: `TestProgressDetailsRoundTripThroughTheTools` (`fastmcp/server/mcptoolpath/progressdetails/`) is the wire test the ruling keeps. It no longer reads `tasks.progress_history` at all - the helper that did is deleted - and its assertion is the dual-write property it was already carrying: exactly one `progress` event per note.
+- MEASURED: `gofmt -l` empty on the touched files; `go build ./...` rc 0; `go vet ./...` rc 0; `go test -count=1 ./fastmcp/task_management/infrastructure/database/` -> **ok 16.812s**; `./fastmcp/task_management/infrastructure/repositories/` -> **ok 142.358s**; `./fastmcp/task_management/domain/entities/` -> **ok 0.011s**; `./fastmcp/task_management/application/dtos/task/` -> ok; `./fastmcp/task_management/application/services/` -> ok; `./fastmcp/task_management/domain/services/` -> ok; `./fastmcp/server/mcptoolpath/progressdetails/` -> ok 1.886s.
+- MEASURED FAILURE, kept because it is the finding: the first run of the affected packages failed twice and neither failure was the code. `task_test.go` compared a **two-note** render against an input holding one note and a claimed event - a stale `want` left by the edit - while `ProgressTextWith` was filtering non-`progress` kinds correctly; and this packet's own new test read a JSON object with `->>` twice, so Postgres answered `operator does not exist: text ->> unknown`. Both fixed, then re-run green.
+
+## 2026-10-11 - the seat pin's ORM UPDATE gets a committed case, and the admin mount does not carry the resolve route
+
+> **CASE SUPERSEDED AT THE MERGE (2026-10-11).** `TestSeatAdminPinSeatVersionAgainstTheRealStore`
+> existed only on the fold line. The batch merge took the release line's
+> `TestSeatAdminPinReachesTheRowOnARealDatabase` (`322d5ba5`, extended by `af366c96` with a measured
+> tenant scope) over it, and HEAD's `seat_admin_pin_pg_test.go` declares only that case. The entry
+> below is kept as the record of what `3a1663ca` (and its correction `6bb617f6`) committed. The
+> acceptance it describes is carried at HEAD by the surviving case, whose own record is the
+> `TEST-CHANGELOG.md` entry "the pin route's store is now covered against real SQL". Do not re-point
+> the two name references: the surviving case seeds different versions, mounts only the admin route,
+> and does not render the resolved seat, so re-pointing would misdescribe it.
+
+- ADDED, one case in `agenthub_go/fastmcp/server/httpapp/seat_admin_pin_pg_test.go`: `TestSeatAdminPinSeatVersionAgainstTheRealStore`. The committed case beside it drives the same route through `newFakeSeatAdmin()`, so the ORM statement `UPDATE "seats" SET "pinned_version" = …` (`seat_management/infrastructure/repositories/orm/seat_repository.go:109`) was executed by NO committed test - the reviewer's post-hoc approve on `42de79c2` and the architect's finding both said so, and the only proof was a scratch run that did not survive its session. This case seeds a room, a seat type with two version ROWS and a seat pinned to the older one, mounts the REAL sources over a real PostgreSQL, and asserts against the COLUMN rather than the response: a refused version leaves the row at `0.9.0`, an accepted one leaves it at `1.4.2`, the room's seats read the row back, the resolved seat renders it, and an absent seat is a 404 from the store.
+- MEASURED FAILURE FIRST, kept because it is the finding: the first run of this case was `resolving the pinned seat: status = 404, want 200: 404 page not found`. The admin mount (`seat_admin_mount.go`) does not carry the resolved-seat route - `seat_mount.go:210` does - so the case mounts both, in the order `app.go:134-135` mounts them. No production behaviour changed; the case was wrong about where the route lives, and the 404 is what said so.
+- MEASURED: `gofmt -l` on the new file -> empty; `go build ./...` rc 0; `go vet ./...` rc 0; `AGENTHUB_TEST_PG_URL=… go test -count=1 -run TestSeatAdminPinSeatVersionAgainstTheRealStore -v ./fastmcp/server/httpapp/` -> **PASS (1.40s)**, and the whole package with the new case: `AGENTHUB_TEST_PG_URL=… go test -count=1 ./fastmcp/server/httpapp/` -> **ok agenthub/fastmcp/server/httpapp 91.092s**.
+- CORRECTED 2026-10-11 (go-dev), after the reviewer's `GATE-2c636436`: this entry called the mount's `[SEAT] user … pinned dev/alice to 1.4.2` log line "the statement's evidence". It is not. The reviewer no-opped `UpdatePinnedVersion` in a second worktree and measured the line printing **anyway**, so what covers the statement is red-first - the same no-op makes the case FAIL on `seat_admin_pin_pg_test.go:110`, `:119` and `:127`, the assertions that read the COLUMN. The reviewer re-ran it independently at my tip: PASS 2.14s, no skip, `-count=2` fine, whole package ok 90.182s with 248 PASS / 0 FAIL / 0 SKIP, gofmt/vet/build clean. The row's own "do not file it" verdict on the missing resolve route in the admin mount stands: `seat_mount.go:209` carries that route and `app.go:134-135` mounts both on one mux, so it is not a production defect.
+
+## 2026-10-11 - three post-gate minors, and the reader that must not invent a note
+
+- ADDED, two cases in `agenthub_go/fastmcp/task_management/domain/entities/task_progress_entries_test.go`: `TestProgressEntriesSkipAValueThatIsNotANote` and `TestProgressTextWithSkipsALedgerEventWithNoReadableNote`. They pin the rule behind `task.go`'s explicit skips - a value the reader cannot read is not a note - and the second one exists because the invented entry was not merely untidy: it carried the empty string under number 0, which renders as a blank line AND claims that identity in the merge, where `ProgressTextWith` uses it to drop the ledger's own copy of a note.
+- CHANGED, the discard the reviewer flagged: `Task.ProgressEntries` no longer asserts a type and throws the `ok` away twice. `2c4582de`'s own message quotes those two lines as the pattern that hid the defect, and its fix moved the root cause to the decode boundary (`repoPlainValue`), so what is left here is malformed input, which is now skipped with the reason stated. The same rule is applied to the ledger side of the merge in `ProgressTextWith`.
+- ASSERTED, not logged, the claim `2c4582de`'s changelog makes: `progress_details_tool_path_pg_test.go`'s round-trip case already READ the ledger's kinds and only logged them; it now fails unless the round trip leaves exactly ONE `progress` event per note - the dual write `ea3efb20` added - because the property the claim rests on is that nothing re-records a stored note. The first form of this assertion expected NO `progress` event, which is what `2c4582de`'s own moment shows; it failed here, correctly, and the failure is why the assertion pins the property rather than that moment: asserting zero would have read as a defect the day a note was written through the ledger, which is now.
+- REMOVED, the last occurrence of a retired operation name: `list_agents` in `response_optimizer.go`'s `zpRespHighFrequencyOps`. Measured after the removal, the seven retired names (`register_agent`, `get_agent`, `list_agents`, `update_agent`, `unregister_agent`, `assign_agent_branch`, `unassign_agent_branch`) read zero occurrences in the tree outside the changelogs. Measured at the same time and NOT removed, because they are not retired: `assign_agent` and `unassign_agent` are the live branch-assignment operations, and `rebalance_agents` occurs only in the retired-path markers the census tracks.
+- MEASURED, from `wt/carry/agenthub_go` with `GOCACHE`/`TMPDIR` inside `.gocache`/`.gotmp` and `AGENTHUB_TEST_PG_URL='postgresql://agenthub_user@127.0.0.1:55995/postgres'`: `gofmt -l` on the touched files -> empty; `go build ./...` rc 0; `go vet ./...` rc 0; `go test -count=1 ./fastmcp/task_management/domain/entities/... ./fastmcp/task_management/application/services/... ./fastmcp/server/mcptoolpath/...` -> all `ok`, including the PG-backed round-trip case. The first form of the ledger assertion failed on that run and is quoted in the bullet above; the numbers here are from the run after the correction.
+
+
+
+- ADDED, two cases in `agenthub_go/fastmcp/task_management/infrastructure/database/progress_ledger_carry_integration_test.go`: `TestTheCarryMakesAPreSwitchNoteVisibleFromTheLedgerAlone` and `TestTheCarrySkipsANoteTheLedgerAlreadyHolds`. The subject is the one the frontend gate stopped on, and the assertion is the DIALOG'S OWN CALL, not a SQL read: `(&entities.Task{}).ProgressTextWith(events)` over the ledger's events alone (`application/dtos/task/task_response.go:107`), which shows nothing before the step and the note after it. It pins both tables' notes (a task's and a subtask's, the latter resolving its task from the subtask row), the merged text showing the note exactly once, the carried row reading `progress`/`human` with `carried_from` and `user_seq` >= 1, the task's own copy carrying `subtask_id` NULL while the subtask's names its subtask, idempotence over a second application, and that a note the ledger already holds is not copied at all.
+- MOVED, five existing cases, ALL for one measured reason: the embedded migration set was EMPTY, so `CreateTables` never ran the runner, and landing a step makes the runner create `applied_migrations` on every boot-built database. None of the five had a wrong expectation; each had a PREMISE that this change removes, and the fix states the new premise rather than muting the case.
+  - `migration_runner_integration_test.go` grows `newBareRunnerEnv` (the production schema WITHOUT the embedded set) and `recordedHas`, and `TestApplyRecordsEachStepAndASecondRunAppliesNothing` now uses the bare env - so it keeps asserting what it was written to assert, that the runner creates and owns its ledger, on a database where a boot has not already done it.
+  - The two `recordedMigrations` DeepEqual assertions in `TestAFailedStepRecordsNothingAndLeavesNoneOfItsOwnEffect` and `TestMarkBaselineRecordsAStepWithoutRunningIt` become `recordedHas` subset checks, because the ledger is shared with the embedded set now; each still names its own step and the name that must be absent.
+  - `fakedriver_test.go` answers the runner's two ledger queries (`to_regclass('applied_migrations')` and the recorded-names read) - a scripted double that meets a new query must be told what a database would say, and "not yet" is what a database whose boot has recorded nothing says.
+  - `integration_test.go`'s `TestRealPostgresCreateTablesAndSessions` counts `len(database.Tables)+1` and asserts the ledger exists, because `CreateTables` now ends with the runner owning one table of its own.
+- MEASURED, from `wt/carry/agenthub_go` with `GOCACHE`/`TMPDIR` inside `.gocache`/`.gotmp` and `AGENTHUB_TEST_PG_URL='postgresql://agenthub_user@127.0.0.1:55995/postgres'`: `gofmt -l` on all four touched Go files -> empty; `go build ./...` -> rc 0; `go vet ./...` -> rc 0; `go test -count=1 ./fastmcp/task_management/infrastructure/database/...` -> **ok** (35.6s, every case including the two new and the five moved); `-run TestTheCarry -v` -> **2 PASS, 0 FAIL**.
+- NOT RUN in this entry: the wider `./fastmcp/task_management/...` suite is reported to the lead separately. The database package is the one this change is in; the rename of the step's file (to `0002_progress_notes_backfill.sql`, so it cannot be mistaken for the DROP step O1c rules) happened after the first green run, and the package was re-run over it.
+
+## 2026-10-11 - the test-scope ratchet returns to 194, and the type it spent
+
+- CHANGED, one line in `agenthub-frontend/src/tests/pages/SeatDetailPage.test.tsx`: the standing case's never-settling promise is now `new Promise<never>(() => {})` instead of `Promise.withResolvers<never>()`. The destructuring discarded the resolver, so the hand-rolled deferred is exactly equivalent for a promise that never settles.
+- WHY: `npx tsc --noEmit -p tsconfig.tests.json` read 195 against the 194 recorded in the entry below, and the cause was MEASURED, not guessed - exporting the tree at `9ebb454f` (the commit whose changelog recorded 194) gave 194, exactly one file differed (`src/tests/pages/SeatDetailPage.test.tsx`, 5 -> 6), and the added error was `TS2339: Property 'withResolvers' does not exist on type 'PromiseConstructor'`, which arrived with `3e8c2084`. `withResolvers` is ES2024, absent from the test tsconfig's lib, and the case ran green either way (Node has it at runtime), so this was a typing gap, never a failing test.
+- THE OTHER OCCURRENCE IS LEFT ALONE ON PURPOSE: the same file carries a second `Promise.withResolvers` at line 366, PRE-EXISTING at `9ebb454f`, inside `it('shows that it is resolving instead of rendering the panels while the read is pending')`. Fixing that one too would take the baseline BELOW the recorded 194, so this change touches line 384 only.
+- MEASURED, in `wt/fe-dev`, from `agenthub-frontend`: `npx tsc --noEmit -p tsconfig.tests.json` -> **194**, with that file back at **5** and the sole surviving `withResolvers` error at line 366; `npx tsc --noEmit -p .` -> **0** `error TS`; `npx vitest run src/tests/pages/SeatDetailPage.test.tsx` -> **1 file passed, 29 passed (29)**.
+- NOT RUN, named: the full suite. This is one line inside one existing case, so the file's own suite is the proportionate run; the reviewer's re-gate at this tip carries the full run.
+
+## 2026-10-11 - the deleted progress timeline's cases change subject, and the ledger's row gets a note-text case
+
+- DELETED, because the subject is gone: the `ProgressHistoryTimeline` mocks in `agenthub-frontend/src/tests/components/TaskDetailsDialog.test.tsx` and `TaskDetailsDialog.realtime.test.tsx` (the component is deleted, so the mock registered a module nothing imports), and the progress-timeline describe in `SubtaskDetailsDialog.test.tsx`. No test was deleted merely for having been paired with deleted code: the three cases that still describe reachable behaviour were rewritten (two `it` bodies here) or repurposed (one file below).
+- CHANGED SUBJECT, not dropped: `TaskDetailsDialog.servedProgressPayload.test.tsx` used to assert the dialog rendered a progress timeline from `details`. It now mocks `getTaskEvents`, drives the dialog from the SERVED event stream, and asserts the note reaches the dialog as its own text with the ledger as the only progress surface. The 4a0a8c7a lesson it carried - a fake that supplies the input cannot detect its absence - is why it was repurposed rather than deleted, and its "what this file cannot see" paragraph still names the producer-side test that would close the gap.
+- CHANGED, `SubtaskDetailsDialog.test.tsx`'s surviving case asserts the RULING rather than the old guard: the served subtask DOES carry `details`, and the case fails if a `Progress History:` block or its trigger appears anyway. The progress section is expanded by default in that dialog, which is what makes the absence assertion able to fail rather than pass against a collapsed section.
+- ADDED, two cases that pin the failure mode the ruling names: `src/tests/lib/taskTimeline.test.ts` asserts `describeEvent` returns a progress note's own text, strips the `=== Progress N ===` header, and still names the kind when the payload carries no readable text; `TaskEventTimeline.test.tsx` asserts the ROW renders that text and not "Progress reported", through the real component.
+- CHANGED, one fixture moves to the wire's real keys: `TaskEventTimeline.test.tsx`'s vocabulary case carried `row(2, 'progress', { note: ... })`, a shape no writer emits; it now carries `{ progress_number: 2 }`, so the row exercises the fallback label against real key names instead of an invented one.
+- MEASURED, in `wt/fe-dev`, from `agenthub-frontend`: `npx tsc --noEmit -p .` -> rc 0, **0** `error TS`; the six touched suites -> **6 files / 66 tests passed**; `npx vitest run` -> rc 0, **122 files / 1882 tests passed, 0 failed**, one above the 1881 the entry below last recorded - this change's own net case delta, two added and one removed with the surface. `npx tsc --noEmit -p tsconfig.tests.json` -> **195**, one above the 194 recorded there, and NOT attributable to this change: the only error in a file this change touched is the `mockTask` fixture in `TaskDetailsDialog.test.tsx` that HEAD already carried (the edit only moved it from line 115 to 106, verified with `git show HEAD:<file>`), and `git diff --name-only 9ebb454f..HEAD -- agenthub-frontend/src/tests` names exactly ONE test file - another seat's `SeatDetailPage.test.tsx` (`3e8c2084`), which carries six errors of its own.
+
+## 2026-10-11 - the progress union gets the case its decision was written as, and six doubles learn one method
+
+- ADDED, one case in `agenthub_go/fastmcp/task_management/domain/entities/task_test.go`: `TestProgressTextWithRendersANoteOnceWhenBothSourcesHoldIt`. It is the lead's own sentence for this change - the same note written before the switch and one written after both appear ONCE, in order, from one read - made checkable without a database.
+- WHAT IT PINS, and why each part is there: the ledger's copies are handed over OUT of order, so the order must come from the number rather than the slice; one of them is the carry's copy of a column note (`carried_from`), which is the duplicate the identity has to collapse; one note exists only in the ledger, which is what the switch makes possible; a `claimed` event carrying progress-shaped fields proves the kind filter; and a nil slice must leave exactly the column's own text, which is what every reader saw before this change.
+- CHANGED, the existing `AppendProgress` assertion in the same file now also pins the note OBJECT: the dual write means the entity writes the column AND hands the same note to the ledger, so the case asserts the handed-over note carries the column's exact text and number.
+- CHANGED, six test doubles gained `RecordProgress` because the seam grew that write: `ledgerFakeRecorder` (which records the note, so a case can assert it reached the ledger) and `noopRecorder` in `application/use_cases`, plus `unmovedLedgerRecorder` in `application/facades` and `ledgerPathRecorder` in `interface/mcp_controllers/task_mcp_controller/handlers`. They are the same shape the existing `RecordStatusChange` cases already use.
+- CHANGED, the call sites the signatures moved: `TaskResponseFromDomain` gains the events argument in `application/dtos/task/task_test.go`, eleven `NewCreateTaskUseCase` constructions in `create_task_test.go` now wire `noopLedger()` (a create refuses a note it cannot record rather than dropping it), and `infrastructure/database/status_write_failure_integration_test.go` calls `Save` - the renamed seam - with no notes.
+- MEASURED, in `wt/fe-dev`: `gofmt -l` empty on the touched files; `go build ./...` rc 0; `go vet ./...` clean; `go test -count=1 ./fastmcp/task_management/...` every package `ok`; `go test ./... -count=1` every package `ok` with no `FAIL` line in the run.
+- NOT RUN, named: the `AGENTHUB_TEST_PG_URL`-gated cases - including the ledger's real-Postgres negative case - need a live cluster and are not part of what this run proved. Nothing here weakens them; they were left untouched.
+
+
+## 2026-10-11 - the script suite's git fixtures cannot write the caller's repository
+
+- ADDED `scripts/tests/gitfixture.py`: `environment()`, the caller's environment minus every variable
+  that can relocate a repository (`GIT_DIR`, `GIT_WORK_TREE`, `GIT_INDEX_FILE`, `GIT_COMMON_DIR`,
+  `GIT_OBJECT_DIRECTORY`, `GIT_ALTERNATE_OBJECT_DIRECTORIES`, `GIT_CONFIG*`), and `git(repo, ...)`, which
+  runs git inside `repo` under it. A fixture's `cwd` only scopes the call; only its environment scopes
+  the child, and an inherited `GIT_DIR` beat `cwd` for every one of them.
+- CHANGED every fixture call in the suite that can reach git to go through one of those two:
+  `_git` in `test_added_line_check.py`, `test_git_commit_capture.py`, `test_stash_patch_scan.py`,
+  `test_prepare_commit_msg_seat.py`, `test_gitignore_env_family.py`; the `git apply` and `git diff` sites
+  in `test_git_commit_capture.py` and `test_stash_patch_scan.py`; `git check-ignore` in
+  `test_gitignore_env_family.py`; `git worktree add|remove` in `test_census_audits.py`; `git ls-files` in
+  `test_team_definition.py`; and the child processes that run a script which may run git
+  (`test_added_line_check.py`, `test_stash_patch_scan.py`, `test_prepare_commit_msg_seat.py`,
+  `test_census_audits.py`, `test_run_mcp_tests_env_guard.py`). The killer script generated by
+  `test_git_commit_capture.py` scrubs its own environment, and that file carries an autouse fixture that
+  removes the relocating variables from the process, because its own children inherit the process.
+- ADDED `scripts/tests/test_git_fixture_is_hermetic.py`: the behavioural half drives the helper with
+  `GIT_DIR` pointed at a sentinel repository and asserts the sentinel's config, index and worktree stay
+  untouched; the structural half parses every test file in the directory and requires an explicit `env=`
+  on every child that can reach git. Written before the fix, the structural half named all eleven
+  bypasses by file and line.
+- MEASURED: `python3 -m pytest --noconftest -p no:cacheprovider scripts/tests -q` gives `90 passed` with a
+  clean environment and `90 passed` with `GIT_DIR` pointed at the shared `.git`, and the shared
+  repository's `.git/config`, `.git/index`, `git status --porcelain` and `git diff --cached` are identical
+  before and after. Unfixed under the same `GIT_DIR` condition the run was `30 failed, 42 passed,
+  4 skipped`, and it wrote `user.name = scan test` / `user.email = scan@test.invalid` into the `GIT_DIR`
+  it was given and staged six paths into that index.
+
+## 2026-10-11 - the subtask route's progress note and one shape for an empty details
+
+- EXTENDED `fastmcp/server/routes/port_routes_draft_test.go`: `TestPortUpdateSubtaskKeyOrder` now passes
+  `progress_notes` through `UpdateSubtask` and pins the key list
+  `[title, status, progress_percentage, progress_notes]`, which is where the route's defect lived; added
+  `TestPortUpdateSubtaskWithoutProgressNotesKeepsTheOldKeys` so the note stays opt-in rather than defaulted.
+- CHANGED ONE EXPECTATION in `fastmcp/types/dto_test.go`:
+  `TestSubtaskDTOservesDetailsFromItsOwnProgressHistory` asserted `details == nil` and "serves details as
+  null" for a subtask with no progress; it now asserts the empty string on the DTO and on the wire
+  (`ModelDump`), with the comment naming the reason - the task path serves `""` for the same meaning and
+  one meaning gets one shape. The populated-join assertion in the same case is untouched.
+- NO NEW TEST FILE: a second case for the same shape was written and then removed, because that existing
+  case already owns the claim and two homes for one fact is what drifts.
+- RUN: `go test -count=1 ./fastmcp/types/ ./fastmcp/server/routes/` -> both ok;
+  `go test -count=1 ./fastmcp/server/...` -> 5 packages ok, 0 failures;
+  `go test -count=1 ./fastmcp/task_management/...` -> 68 packages ok, 0 failures;
+  `go build ./...` clean; `go vet` on the three changed packages clean; `gofmt -l` on the changed files
+  prints nothing.
+- NOT RUN: there is no PostgreSQL-backed case for the full REST chain, and deliberately so rather than by
+  omission - `NewApp` over a throwaway database answers `{"detail":"Task <id> not found"}` for the parent
+  task whatever identity the row carries, because the subtask controller resolves it through
+  `facadeService.GetTaskFacade(nil, nil, &userID).GetTask(...)`. The attempt is recorded in the changelog
+  entry with both findings it produced instead of being papered over with a case that would silently skip.
+- REASON A SECOND IN-PROCESS DATABASE CANNOT BE USED IN THIS PACKAGE: the subtask facade is built from the
+  process-global `services.RepositoryProviderService{}.GetInstance()`. The first
+  `newMissedNotificationAppEnv` binds it, that case's `t.Cleanup` drops the database it points at, and the
+  next subtask request in the same process answers `sql: database is closed`. Subtask-backed cases in this
+  package therefore keep one environment per process; the facade is not re-architected for it.
+
+## 2026-10-11 - the script suite's stale expectations, re-measured case by case
+
+- CHANGED TWO DATA LISTS in `scripts/tests/test_team_roster.py`: `LIVE_SEATS` re-measured to five and
+  `OMP_SEATS` to four (`rig ps --nodes --rig 4genthub-min --json` -> five nodes, one `claude-code` and
+  four `omp`), and the first case renamed `test_the_declared_seats_are_the_live_ten` ->
+  `test_the_declared_seats_are_the_live_roster`. The assertion is untouched: `declared ==
+  sorted(LIVE_SEATS)` still fails on any drift, and it is deliberately not derived from `team.json`.
+- CHANGED THE COUNT in `scripts/tests/test_seat_policy_commit_form.py` from ten to five, and nothing
+  else: the room declares five seats and holds five `policy-*.json`. `test_no_sibling_prescribes_the_old_commit_form`
+  and both agreement assertions are byte-unchanged - no rule was weakened to make a case pass.
+- ADDED ONE BAND in `scripts/tests/test_team_definition.py`: `ROOM_WORD_LIMITS["4genthub-min"] =
+  {"guide-e2e-dev": (300, 420)}` for the room's one room-local instruction file (355 words measured).
+  The table was empty with a comment saying the room kept no such file; both ends of the band bite.
+- FIXED THE ROOM DATA, not the test, in `scripts/team/4genthub-ab/team.json`: `ab-policy-lead` and
+  `ab-policy-go-dev` pointed at `../4genthub-min/*.json`, which the policy rule forbids for the reason
+  `b4ca5c68` fixed for `4genthub-client`. Both policies are copied into the room byte-identically
+  (sha256 `97f1407a…`, `a72b59e7…`) and the entries point at them.
+- RE-DERIVED THE 19 §3.1 ANCHORS the S3 case reads: `ai_docs/api-integration/surface-inventory.md`
+  cited `models.go:582…938` while the TableDef entries sit at `596…958` (+14 to +20, from `0e03b3f7`
+  and `d5a59667`), each re-resolved by searching for its own TableDef entry rather than by offset.
+- RUN: `python3 -m pytest --noconftest -p no:cacheprovider scripts/tests -q` -> **12 failed, 76 passed**
+  before (**at `708e3131`**); **9 failed, 79 passed** after the counts row `7c358c4b`; **3 failed, 85 passed** in the
+  worktree after this change, the three being S3's cases, which read the document at `rev` through
+  `git show` rather than the worktree and therefore turn green with this commit.
+
+## 2026-10-11 - the API token's own usage counters, seen red before the wiring
+
+- ADDED one case in a NEW file, `agenthub_go/fastmcp/server/httpapp/api_token_usage_pg_test.go`:
+  `TestAuthenticatedAPITokenRequestAdvancesItsUsageCounters`, with its read-back helper `apiTokenUsageRow`.
+- IT IS A DATABASE CASE ON PURPOSE: both claims are claims about a ROW - `usage_count` and `last_used_at`
+  on the token that was just used - and a fake repository would only write the hypothesis back to its
+  author. It skips loudly without `AGENTHUB_TEST_PG_URL`, like its neighbours in that package.
+- SEEN RED, THEN GREEN: before the recorder was wired, the command below failed with
+  `an authenticated API-token request must advance the row's counters: before usage_count=0 last_used_at=<nil>, after usage_count=0 last_used_at=<nil>`. The request itself answered **200**, so the failure
+  isolates the missing write rather than a refused token; after `httpapp.NewApp` wires
+  `auth.APITokenUsageRecorder` to `TokenRepository.UpdateTokenUsage`, the same case passes.
+- THE TOKEN COMES FROM THE REAL PATH: the case signs the JWT with `services.JWTService.GenerateToken`
+  (`type api_token`, `jti` = the row id) and inserts the row through
+  `infrarepos.TokenRepository.CreateToken` - the pair `TokenApplicationFacade.CreateAPIToken` performs -
+  then drives the real `POST /mcp` route rather than calling the validator directly.
+- RUN: `AGENTHUB_TEST_PG_URL=postgresql://agenthub_user@127.0.0.1:55451/postgres go test -count=1 -run TestAuthenticatedAPITokenRequestAdvancesItsUsageCounters ./fastmcp/server/httpapp/` (1.52s red, 1.56s
+  green), then `go test -count=1 ./fastmcp/auth/...` and the whole `./fastmcp/server/httpapp/` package with
+  the same URL set so the database cases run instead of skipping.
+
+## 2026-10-11 - the ledger's subtask check and the body that is not a list
+
+- ADDED two cases in an EXISTING file, `agenthub_go/fastmcp/server/httpapp/ledger_pg_test.go`:
+  `TestLedgerIntentsRefusesASubtaskThatIsNotThisTasksOwn` and `TestLedgerIntentsRefusesABodyThatIsNotAList`,
+  with three fixtures beside them (`ledgerPgSubtask`, `ledgerPgIntentWithSubtask`, `ledgerPgRowSubtask`).
+- THE SUBTASK CASE IS FOUR SHAPES IN ONE, because the refusal token must not tell them apart: this task's
+  own subtask is ACCEPTED and the ROW is read back to prove it carries the id the intent named (the
+  falsification - a route that refused every `subtask_id` would fail there), then an unknown id, another
+  user's subtask and a subtask of a different task are each refused with `unknown_subtask`, carry no
+  sequence numbers, and write no row.
+- THE FIXTURE HAS A TRAP IN IT, measured rather than assumed: the second user needs a project and a branch
+  of their OWN. The shared `evidenceSeedBranch` writes its two rows under FIXED ids for whichever user asks
+  first, so the first version of this case died on `POST /api/v2/tasks/ = 500 ... AttributeError:
+  'ProjectManagementService' object has no attribute 'get_git_branch_by_id'` - a task validated against
+  another user's branch is refused by the TASK route before the ledger can say anything.
+- THE BODY CASE IS A TABLE OF FOUR: `null`, `{}` and a truncated `[` are 422, and `[]` is `200 []`. `null`
+  answering `200 []` is what the fix removes, and that line is why the case exists.
+- SEEN RED, THEN GREEN, in the same session: with the check and the pointer decode put back to their
+  pre-fix shape, the two cases fail with `a subtask that is not this task's own must be refused, got
+  [{"accepted":true,"user_seq":2,"seq":2}]` (and `:3`, `:4`) and with
+  `POST /api/v2/ledger/intents body null = 200, want 422: []`; restored, both pass and print the answers
+  they assert on.
+- RUN: `AGENTHUB_TEST_PG_URL=postgresql://agenthub_user@127.0.0.1:55441/postgres
+  go test -count=1 ./fastmcp/server/httpapp/ -run 'TestLedger'` over the same package. The database cases
+  RAN rather than skipping - `TestLedgerIntentsRecordsOfflineFactsUnchangedInArrivalOrder` 4.31s,
+  `TestLedgerIntentsRefusesASubtaskThatIsNotThisTasksOwn` 1.53s, `TestLedgerIntentsRefusesABodyThatIsNotAList`
+  3.38s - and a skip would have printed `SKIPPED` rather than these times.
+## 2026-10-11 - the seat detail standing gets its third state, and three cases pin it
+
+- ADDED, three cases in a new describe in the existing file `agenthub-frontend/src/tests/pages/SeatDetailPage.test.tsx`, one per way the rooms list can fail to answer: the list in flight (`listRooms` returns a promise that never settles), the list failing (`listRooms` rejects), and the list settling WITHOUT naming this room (`rooms: []`).
+- WHY THEY ARE THREE AND NOT ONE: the defect (GATE `f541f2f5`, M1) was that all three states were rendered as "viewer", so a single case would leave two of them unguarded - and the page's own third-state convention already had one case per state for the resolve read, which is the pattern copied here.
+- EACH CASE CARRIES A POSITIVE CONTROL, because "no Save and no viewer sentence" would otherwise pass against a page that rendered nothing at all: the in-flight case asserts the visible reason (`Loading your rooms, which decide what you can write here`) and that the standing-dependent tabs are absent; the failed case asserts the API's own message, an enabled `Retry`, and that clicking it re-reads the standing so the owner's page comes back (`listRooms` called twice, then the page renders); the settled-without-the-room case asserts its own message and the same absence of the viewer claim.
+- RED-FIRST MEASURED, page untouched: `npx vitest run src/tests/pages/SeatDetailPage.test.tsx` -> **3 failed | 26 passed (29)**, failing exactly the three new cases. After the fix, re-run in `wt/fe-dev`: **29 passed (29)**, and the full suite in the same worktree -> **122 files / 1881 tests passed, 0 failed**.
+- WHAT IS NOT IN THESE CASES, deliberately: no assertion pins the old predicate's shape, and none pins CSS or class names - the standing is asserted by what a reader sees and by which controls exist.
+
+## 2026-10-11 - vitest stops collecting the Playwright spec, and the certified suite goes green
+
+- CHANGED, one config file and no test file: `agenthub-frontend/vite.config.ts`'s `test.exclude` gains `e2e/**`. Vitest's default include matches `**/*.spec.ts` and `e2e/smoke.spec.ts` is a PLAYWRIGHT spec, so vitest collected it and the file failed at IMPORT rather than as a test.
+- WHY IT FAILED, precisely, because a collection failure reads like a test failure: `e2e/account.ts:17` reads the gitignored `e2e-test-account` at module scope, and no git worktree carries that file, so the run printed `FAIL e2e/smoke.spec.ts [ e2e/smoke.spec.ts ] Error: ENOENT ... e2e-test-account` beside `Test Files 1 failed | 122 passed (123)` with **Tests 1881 passed (1881)** - zero test failures under a red run.
+- THE CLASS WAS ALREADY ON THIS FILE: `src/tests/e2e/live-websocket.test.ts` carries the same exclusion, and the comment beside it claimed the repo has no Playwright config, which stopped being true when `playwright.config.ts` landed. The comment now states the real rule - Playwright owns both directories and `npx playwright test` is how they run.
+- VERIFIED, in `wt/fe-dev`, from `agenthub-frontend`: `npx vitest run` -> **rc=0, Test Files 122 passed (122), Tests 1881 passed (1881)**; the same command before the change -> **rc=1, 1 failed | 122 passed**, failing only on that unloadable file. The test total is IDENTICAL on both sides, which is the point: this change removes a load error, not a test.
+- NOT RUN, named: no Playwright invocation - the excluded spec is unchanged and is run by `npx playwright test`, whose own result (1 passed, 4.4s, against the deployed app) is recorded in the entry below.
 ## 2026-10-11 - the init SQL's two new gates: a name created twice, and the asset run on an empty database
 
 - THE DEFECT BOTH GATES PIN: `init_schema_postgresql.sql` created 13 names twice - a
@@ -241,6 +897,11 @@ Track test suite changes, fixes, and improvements for agenthub.
   registered twice across `Tables`/`ProductionTables` fails; each column's `EnumName` must have a
   `CREATE TYPE` BEFORE its table; and no `DROP`/`ALTER` may appear, comment lines excluded so the
   header's prose cannot hide one.
+
+  > **NAME SUPERSEDED (2026-10-11).** `10b27cdb` renamed this guard to `TestSchemaMatchesGoDefinitions`;
+  > `92d3e825` restored `TestBaselineMatchesEveryRegisteredTableDef` when the fold's own guard file
+  > collided with it in the same external test package. At HEAD that name belongs to the fold's
+  > `schema_matches_definitions_test.go`; this file's guard is `TestBaselineMatchesEveryRegisteredTableDef`.
 - WHY IT IS AN EXTERNAL TEST PACKAGE, and this is the whole reason the guard can work at all:
   `taskdb.Tables` is ONE slice every package appends its own set to in `init()`, and those packages
   import `taskdb` — so an internal (`package database`) test file that wanted the full registry would
@@ -474,6 +1135,14 @@ Track test suite changes, fixes, and improvements for agenthub.
 - VERIFIED, whole module: `go vet ./...` -> rc 0 with the test files compiled; `go build ./...` -> rc 0; `gofmt -l fastmcp internal cmd scripts` -> empty; `go test ./... -count=1` -> **rc 0, 136 packages `ok`, no `FAIL` line**. The run before the re-pointing was 127 ok with 8 red packages, all of them this change's own survivors.
 - NOT RUN, named rather than implied: `AGENTHUB_TEST_PG_URL` was **unset**, so every PostgreSQL-backed case in that sweep skipped loudly. The plan's step-2 acceptance names a run with it set; that half is not claimed by this entry.
 - ONE TRANSIENT, recorded so a reader does not chase it: an earlier sweep reported `infrastructure/configuration::TestToolConfigParity` red on a case whose `file` JSON named `manage_agent` - a key `testdata/tool_cases.json` does not contain - and `gofmt`/`vet` saw a mid-run `undefined: value_objects.AgentRole` in `domain/entities` while a peer was writing that package. Both passed on re-run and in the final sweep; the same class of mid-run failure was reported by a worker in another package, so the earlier red is attributed to concurrent writes in the tree, not to the cases.
+
+## 2026-10-10 - the subtask payload's details, and the measurement that it is really populated
+
+- ADDED `agenthub_go/fastmcp/types/dto_test.go::TestSubtaskDTOservesDetailsFromItsOwnProgressHistory` - one case, three scenarios: a subtask whose `progress_history` entries are inserted OUT of order (`progress_2` before `progress_1`, as Go map iteration gives them) must serve `details` joined in progress-NUMBER order; a subtask with no progress at all must serve `details` as null, not ""; and a `*entities.Subtask` reaches the same field through `pyGetattr` (`progress_history` -> `ProgressHistory`), covering the branch the dict path does not. It pins both the DTO field and the value `ModelDump` serves, since the served payload is the thing the frontend reads.
+- RED WITHOUT THE CHANGE, measured rather than assumed: with the `Details` population removed from `SubtaskToDTO` (the field, the `ModelDump` entry and the case left in place) the case fails `dto_test.go:202: details = <nil>, want the joined history in progress-number order`; restored, `go test ./fastmcp/types/ -count=1` -> `ok agenthub/fastmcp/types 0.005s`.
+- NO EXISTING FIXTURE WAS REPOINTED, and there was none to repoint: nothing in the tree pinned the subtask payload's key set (`grep -rl completion_summary` matches Go and frontend sources only, no golden), so the added field came with no expectation to update.
+- VERIFIED: `go vet ./...` rc=0; `go build ./...` rc=0; `go test ./fastmcp/types/... ./fastmcp/task_management/domain/entities/... ./fastmcp/task_management/interface/... ./internal/... -count=1` all ok; `gofmt -l` empty on both touched Go source files.
+- NOT RUN, so the reviewer is not misled: the subtask REST routes need `AGENTHUB_TEST_PG_URL`, and no route-level payload case was added or run for this field. The case pins the DTO the routes serialize, not a live response.
 
 ## 2026-10-10 - the delete cascade and the ledger row it refused
 
@@ -4976,3 +5645,153 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
 - `fastmcp/server/routes/ledger_routes_test.go` (NEW, no database): the read encodes the cursor, the tip and every field of an entry; an empty ledger answers a tip of 0; a failed read is refused; the intents route encodes the two answer shapes disjointly; an empty batch answers an empty list; a failed write is refused.
 - `fastmcp/server/httpapp/ledger_pg_test.go` (NEW, PostgreSQL): driven through `app.Handler()` so the path under test is the production one, and it SKIPS LOUDLY without `AGENTHUB_TEST_PG_URL` — a skip is not a pass. Five cases, each a claim about ROWS: the read is one cursor across all of a user's tasks; one batch decides each item and answers a resend from its row; a stale decision succeeds once the client re-reads; offline facts are recorded unchanged in arrival order; an unusable credential is refused like the ledger read.
 - **Honest about provenance:** these cases were written by the offloaded worker alongside the implementation, so I did not observe a RED state and I am NOT claiming one. What I did instead is the part a claim cannot substitute for: I read every query the ledger adds and confirmed each carries `user_id` in the statement, read the lock and the decision, and ran the cases myself. My run: the ledger's own packages `ok` (entities 0.005s, routes 0.010s) and the five PG cases verbosely, each `--- PASS` — `TestLedgerReadIsOneCursorAcrossAllOfAUsersTasks` 1.68s, `TestLedgerIntentsOneBatchDecidesEachItemAndAnswersTheResendFromItsRow` 1.57s, `TestLedgerIntentsStaleDecisionSucceedsOnceTheClientReReads` 2.02s, `TestLedgerIntentsRecordsOfflineFactsUnchangedInArrivalOrder` 1.62s, `TestLedgerIntentsRefusesAnUnusableCredentialLikeTheLedgerRead` 1.58s; package `ok 8.474s`.
+
+## 2026-10-11 - the progress reader's dropped check, and one inert operation name
+
+- ADDED, one case in an existing file, `agenthub_go/fastmcp/task_management/domain/entities/task_test.go`:
+  `TestTheProgressReaderSkipsEntriesItCannotRead` covers five history entries - two readable, and three that are
+  a non-object value, a non-string `content`, and a missing `content` (the reviewer's post-gate minor on the
+  item-3 commit, `qitem-20261010232112` / board `b668b4f6`).
+- SEEN RED on the old code, and the red IS the defect: with `m, _ := v.(map[string]any)` and
+  `c, _ := m["content"].(string)` restored, the case fails with `GetProgressHistoryText() =
+  "\n\n=== Progress 1 ===\nfirst\n\n\n\n\n\n=== Progress 5 ===\nlast"` - four spurious empty entries between the
+  separators, exactly the rendering that made two real notes look lost. Green after the fix.
+- NO OTHER TEST RE-PINNED. The reader's callers are in the run on purpose:
+  `go test -count=1 ./fastmcp/task_management/domain/entities/ ./fastmcp/task_management/application/services/
+  ./fastmcp/task_management/application/dtos/...` rc 0 (entities ok 0.010s, services ok 0.040s, dtos and its
+  three subpackages ok 0.002s each). `gofmt -l` on the three touched files prints nothing; `go build ./...` rc 0;
+  `go vet` clean on all four.
+- DELIBERATELY NOT ASSERTED, and recorded rather than quietly dropped: `2c4582de`'s "Nothing was re-recorded" is
+  retired (board `b668b4f6` item 2) because it asserts what the program did NOT do, which no test of the reader
+  can hold; the measurable halves of the sentence were already stated beside it.
+
+## 2026-10-11 — P4's ledger-tip nudge: four new cases, two on rows and two on the socket
+
+- ADDED, `agenthub_go/fastmcp/server/httpapp/ws_rigd_test.go` (no database):
+  `TestConnectorLedgerTipGoesOnlyToASocketThatAdvertisedAndWasEchoed` opens THREE sockets for one user - one that
+  advertises `ledger` and is echoed it, one that advertises only `ingest`, and one that advertises `commands`
+  (which this server does not serve, so `ready` cannot echo it) - and proves the frame reaches the first, carries
+  `user_seq` and no `events`/`cursor`/`after`/`tip`, and that the two silent sockets receive nothing at all, not
+  even an error, inside 700ms. `TestConnectorLedgerTipFollowsTheLastHandshake` proves a re-sent hello without the
+  capability stops the frame on the SAME socket that just received one. `TestLedgerTipIsAServerFrameAndNotAnInput`
+  proves a client that sends `ledger_tip` is answered `unknown_type` with `fatal: false` and keeps its socket -
+  the socket-side evidence for P4's third clause, "no code path treats the frame as a source of truth".
+- CHANGED, one existing case re-pinned to a behaviour that legitimately moved:
+  `TestConnectorReadyReportsProtocolHeartbeatAndEchoedCapabilities` now expects
+  `ready.capabilities = [ingest safeguards ledger]` (was `[ingest safeguards]`). Its own claim - the server never
+  echoes a capability it does not serve - is untouched, and `commands` remains the counter-example in the same
+  case that keeps it honest.
+- ADDED, `agenthub_go/fastmcp/server/httpapp/ledger_pg_test.go` (PostgreSQL; skips loudly without
+  `AGENTHUB_TEST_PG_URL`, and a skip is not a pass). `TestLedgerTipArrivesAfterADecisionCommitsAndTheNextPullAdvancesTheCursor`
+  opens a ledger-capable connector socket for the subject the request authenticates as, asserts NOTHING is pushed
+  before the commit, drives a real decision through `POST /api/v2/ledger/intents`, reads the frame after it and
+  requires the number it carries to be the `user_seq` the commit took, then pulls `GET /api/v2/ledger?after=<cursor>`
+  and finds that entry with the tip moved past the cursor.
+  `TestAClientWithNoSocketStillConvergesByPulling` makes the same commit with NO socket open and proves the pull
+  alone returns exactly the committed entry - P4's first clause, which the frame is subordinate to.
+- RED FIRST, quoted, one mutation per clause on the database-backed path:
+  with the emission removed from `ledgerIntentsWriterAdapter.SubmitIntents`, the case fails
+  `ledger_pg_test.go:865: read frame header: read tcp 127.0.0.1:45360->127.0.0.1:46463: i/o timeout`;
+  with `ledger` dropped from `wsEnabledCapabilities`, the echo case fails with
+  `ws_rigd_test.go:173: ready.capabilities = [ingest safeguards], want [ingest safeguards ledger]` and BOTH frame
+  cases time out at `ws_rigd_test.go:689` and `:723`. Both mutations restored before the runs below.
+- Result, this seat's own runs with `AGENTHUB_TEST_PG_URL` on the 55995 cluster: `gofmt -l fastmcp/server/httpapp/`
+  prints nothing; `go build ./...` rc 0; `go vet` on the three touched packages rc 0; the frame cases
+  `go test -count=1 -run 'LedgerTip|ConnectorReadyReportsProtocolHeartbeat|ConnectorPingIsAnswered' -v ./fastmcp/server/httpapp/`
+  -> every case PASS, `ok 2.161s`; the two PG cases verbosely -> `--- PASS` 2.60s and 1.49s, each logging what it
+  observed (`ledger_tip user_seq=1`, then a pull of count 1 with tip 1); the touched packages
+  `go test -count=1 ./fastmcp/server/httpapp/ ./fastmcp/ledger/... ./fastmcp/server/routes/...`
+  -> `ok agenthub/fastmcp/server/httpapp 133.422s`, `ok agenthub/fastmcp/ledger/domain/entities 0.002s`,
+  `ok agenthub/fastmcp/server/routes 0.007s`.
+- NOT ASSERTED, and named rather than quietly dropped: the frame's ARRIVAL ORDER against a concurrent commit (the
+  payload is the tip this batch took, and a higher tip from a parallel writer costs the client one extra pull,
+  which no test can pin deterministically), and the write-deadline path itself
+  (`SendTextWithin`'s deadline is exercised only through the socket's own read failures; a test that made a peer
+  stop reading would measure the kernel's buffers rather than the deadline).
+
+## 2026-10-11 — the process scrub and `environment()` cannot drift: two new cases, one per half
+
+- ADDED, `scripts/tests/test_git_fixture_is_hermetic.py::test_the_process_scrub_drops_the_family_that_environment_already_dropped`:
+  asserts the drop rule itself, from both sides, against both helpers - `relocates()` admits `GIT_DIR` and the
+  `GIT_CONFIG*` family and refuses `GIT_PAGER`; `environment()` keeps none of them; `without_relocating()` removes
+  them from the process environment AND reports them. This is the MAJOR the gate measured at `e0e75084`, where
+  `environment()` dropped the family and the autouse scrub looped over `RELOCATING` only.
+- ADDED, `scripts/tests/test_git_commit_capture.py::test_the_scrub_removes_the_ambient_git_config_this_module_runs_with`,
+  with a new `ambient_git_config` fixture that exports a `GIT_CONFIG_GLOBAL`/`GIT_CONFIG_SYSTEM` demanding a signed
+  commit. The autouse scrub requests that fixture, so the whole module now runs WITH the hostile variable present
+  and the case asserts it is gone before any body runs. This is the half that pins the CALL SITE - the defect - and
+  it fails if the fixture goes back to a list of its own names; a direct call of the fixture is not possible
+  (`pytest` refuses it: `Fixture "_no_ambient_git_location" called directly`), so the injection runs through the
+  fixture graph instead.
+- CHANGED, in the same fixture: the scrub is now `gitfixture.without_relocating(monkeypatch)`, one call to the
+  shared rule, instead of its own loop over `gitfixture.RELOCATING`. `gitfixture.py` gained `relocates(name)`,
+  `relocating_names(environ=None)` and `without_relocating(monkeypatch)`, and `environment()` now filters through
+  `relocates()` - the prefix match on the open `GIT_CONFIG` family lives in exactly one place.
+- UNCHANGED, deliberately: the structural case that requires an explicit `env=` on every child that can reach git.
+  It is why neither new case spawns a child that deliberately inherits; such a child cannot be written under
+  `scripts/tests/` without tripping it, which is the other half of the same guard.
+- PERTURBATIONS, measured one at a time and restored, each naming what turned red: `GIT_DIR` dropped from
+  `RELOCATING` -> `AssertionError: a fixture git call wrote the caller's config` plus `AssertionError: GIT_DIR can
+  relocate a repository or the config git reads`; a child appended with no `env=` -> `these children can reach git
+  without an explicit environment, so a caller's GIT_DIR would reach them: test_git_fixture_is_hermetic.py:146`;
+  the call site returned to the `RELOCATING` loop -> the wiring case fails on
+  `assert 'GIT_CONFIG_GLOBAL' not in environ({...})`, `test_a_real_commit_is_verified_as_landed_and_leaves_nothing_at_risk`
+  fails `assert 128 == 0`, and the hostile run fails both.
+- Result: the clean run `92 passed`, the hostile `GIT_CONFIG_GLOBAL` run `92 passed` (was `1 failed, 89 passed`
+  before the fix) and the hostile `GIT_DIR` run `92 passed`. Two cases added over `e0e75084`'s 90; none of the 90
+  was changed or weakened.
+
+## 2026-10-11 — P4's M2: the all-refused batch is pinned, red first
+
+- ADDED, `agenthub_go/fastmcp/server/httpapp/ledger_pg_test.go::TestALedgerBatchThatAcceptedNothingNudgesNobody`
+  (PostgreSQL; skips loudly without `AGENTHUB_TEST_PG_URL`, and that skip is not a pass). It is the case for the guard
+  `ledgerAcceptedTip` answers with - `return tip, tip > 0` - which the comment beside the nudge states and which NO
+  case held. The property is asserted as an OUTCOME, not as an expression: an ENTITLED socket receives NOTHING when
+  the batch accepted nothing, and the next batch that commits IS nudged on that same socket, so the silence is the
+  guard's doing rather than a socket that cannot hear. The all-refused batch is a decision on a STALE `base_seq`:
+  the request answers 200, the item is refused, and the case asserts the tip did not move and no row was written, so
+  "accepted nothing" is measured rather than assumed.
+- ORDERING IS LOAD-BEARING IN THE CASE, and it is commented there: the first decision (which makes the later one
+  stale) COMMITS and therefore nudges, so it is posted BEFORE the socket opens. The first draft opened the socket
+  first and read the staging commit's own frame as the refused batch's - `payload="{\"type\":\"ledger_tip\",\"user_seq\":1}"`.
+  A later reader who reorders those lines reintroduces exactly that false red.
+- RED FIRST, the reviewer's own mutation, quoted both ways:
+  `ledgerAcceptedTip: return tip, tip > 0  ->  return tip, true` makes the new case fail
+  `ledger_pg_test.go:996: an entitled socket received opcode=1 payload="{\"type\":\"ledger_tip\",\"user_seq\":0}" when the batch accepted nothing, want nothing`
+  (`--- FAIL ... (1.42s)`) - the frame the mutation invents, and it carries the tip of a batch that accepted
+  NOTHING. Restored, the case passes: `--- PASS: TestALedgerBatchThatAcceptedNothingNudgesNobody (2.14s)`, logging
+  `OBSERVED refused batch: rows 1 tip 1 unchanged and no frame -> then the commit's user_seq=2 arrived as 2`.
+  No production code changed in this commit: `ledger_mount.go` is byte-identical to `fcc8a2fc`, guard at line 212.
+- The Ledger set, with its count:
+  `AGENTHUB_TEST_PG_URL=postgresql://agenthub_user@127.0.0.1:55995/postgres go test -count=1 -run 'Ledger' -v ./fastmcp/server/httpapp/`
+  -> **16 top-level cases PASS, 0 SKIP** (plus 7 subtests), `ok agenthub/fastmcp/server/httpapp 22.468s`. Not narrowed:
+  the change adds a case to an existing file and edits no existing case.
+
+## 2026-10-12 — the forward path: the superseded global unique key is dropped at boot
+
+- IN THE EXISTING CASE, `agenthub_go/fastmcp/seat_management/infrastructure/database/ensure_seat_columns_test.go::TestEnsureSeatColumnsExistOnOldSchema`
+  (PostgreSQL; skips loudly without `SEAT_TEST_DATABASE_URL`, and that skip is not a pass). Its `room_decisions` fixture is
+  S1's OWN shape, so it now declares S1's two uniques — the episode tuple `uq_room_decisions_user_qitem UNIQUE (user_id, qitem_id)`
+  and the superseded `uq_room_decisions_idempotency_key UNIQUE (idempotency_key)` — and the case asserts, after
+  `EnsureSeatColumnsExist` ran, that the first is STILL enforced and the second is GONE. The assertion is
+  definition-level, through `pg_get_constraintdef(oid)`, because a name-only check passes on an object that merely happens
+  to be called right; the key is that the boot path drops the OBJECT, not the string.
+- THE BEHAVIOURAL HALF RIDES IN THE SAME CASE, because the definition is not the ruling's point: the global key scoped the
+  daemon's decisionId across tenants, so `tenant-a` and `tenant-b` inserting the same `qitem_id` under the same derived
+  `agenthub:decision:qitem-1` now BOTH land, where the global key refused the second with 23505 — the insert that
+  becomes a 500 when it reaches a route.
+- RED FIRST at the tip, the assertion quoted as it failed:
+  `ensure_seat_columns_test.go:177: the superseded global unique key is still enforced: def="UNIQUE (idempotency_key)" err=<nil>, want sql.ErrNoRows`
+  (`--- FAIL: TestEnsureSeatColumnsExistOnOldSchema (0.61s)`, `EXIT=1`). With the drop in the register's transaction:
+  `--- PASS: TestEnsureSeatColumnsExistOnOldSchema (0.68s)`, `ok agenthub/fastmcp/seat_management/infrastructure/database 0.685s`, `EXIT=0`.
+- Command, with `SEAT_TEST_DATABASE_URL` exported to the throwaway cluster's URL:
+  `go test -run TestEnsureSeatColumnsExistOnOldSchema -v ./fastmcp/seat_management/infrastructure/database/`.
+- No existing case was changed or weakened, and no case was removed: `gofmt -l` on both touched files prints nothing,
+  `go build ./...` exits 0, and `go vet ./fastmcp/seat_management/infrastructure/database/` exits 0.
+
+## 2026-10-14
+- `agenthub_client/internal/clientwatch/render_test.go`: added `TestEditShowsRemovedAndAddedLinesApart`.
+- `agenthub_client/internal/clientwatch/view_test.go`: added line diff, result folding, `--only` filter, minute stamp, working/quiet status and unknown-kind cases.
+- `agenthub_client/internal/clientwatch/render_test.go`: the two line-cap cases now pass `expand: true`, since results fold by default.
+- `agenthub_client/internal/clientlifecycle/idleguard_test.go`: added idle-room Jev decision, low-confidence, working-seat and stuck-seat cases; `doctor_test.go`, `rigd_test.go` and `clientservices/services_test.go` list the new `roomguard` safeguard.
+- `agenthub_client/internal/clientwatch/view_test.go`: added `TestAChangeOfToolKindGetsALabelledRule`.

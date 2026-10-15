@@ -71,12 +71,24 @@ func (r *zpUpdateRepo) Save(context.Context, *entities.Task) (*entities.Task, er
 // there is no bypass for a caller that forgets.
 type unmovedLedgerRecorder struct{}
 
+func (unmovedLedgerRecorder) RecordProgress(context.Context, string, string, entities.ProgressEntry) (*entities.TaskEvent, error) {
+	return &entities.TaskEvent{Kind: entities.TaskEventKindProgress}, nil
+}
+
+func (unmovedLedgerRecorder) NextProgressNumberInTx(context.Context, string) (int, error) {
+	return 1, nil
+}
+
 func (unmovedLedgerRecorder) StatusOf(context.Context, string) (string, error) {
 	return "unchanged", nil
 }
 
 func (unmovedLedgerRecorder) RecordStatusChange(context.Context, string, string, string) (*entities.TaskEvent, error) {
 	return &entities.TaskEvent{}, nil
+}
+
+func (unmovedLedgerRecorder) RecordGateVerdict(context.Context, string, map[string]any) (*entities.TaskEvent, error) {
+	return &entities.TaskEvent{Kind: entities.TaskEventKindGateVerdict}, nil
 }
 
 type passThroughTx struct{}

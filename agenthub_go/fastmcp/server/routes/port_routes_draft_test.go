@@ -108,11 +108,16 @@ func TestPortUpdateSubtaskKeyOrder(t *testing.T) {
 	title := "t"
 	status := "in_progress"
 	progress := 40
-	_, err := UpdateSubtask(context.Background(), "s1", &title, nil, &status, &progress, newPortUser("u"), c)
+	// progress_notes is carried because the tool path requires it for update and complete and reaches
+	// Subtask.AppendProgress with it; before this the route dropped it, answered 200 and stored
+	// nothing. It is asserted in the key list rather than only accepted, because the key is what the
+	// facade reads.
+	notes := "halfway there"
+	_, err := UpdateSubtask(context.Background(), "s1", &title, nil, &status, &notes, &progress, newPortUser("u"), c)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	want := []string{"title", "status", "progress_percentage"}
+	want := []string{"title", "status", "progress_percentage", "progress_notes"}
 	if len(c.updateKeys) != len(want) {
 		t.Fatalf("keys = %v, want %v", c.updateKeys, want)
 	}
@@ -120,6 +125,21 @@ func TestPortUpdateSubtaskKeyOrder(t *testing.T) {
 		if c.updateKeys[i] != want[i] {
 			t.Fatalf("keys = %v, want %v", c.updateKeys, want)
 		}
+	}
+}
+
+// A request that does not mention progress_notes must build exactly the update_data it built before
+// the field existed: the note is opt-in, not a default.
+func TestPortUpdateSubtaskWithoutProgressNotesKeepsTheOldKeys(t *testing.T) {
+	c := &portSubController{}
+	title := "t"
+	_, err := UpdateSubtask(context.Background(), "s1", &title, nil, nil, nil, nil, newPortUser("u"), c)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	want := []string{"title"}
+	if len(c.updateKeys) != len(want) || c.updateKeys[0] != want[0] {
+		t.Fatalf("keys = %v, want %v", c.updateKeys, want)
 	}
 }
 

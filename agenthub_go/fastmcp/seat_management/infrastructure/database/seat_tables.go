@@ -348,6 +348,75 @@ var seatDatabaseTables = []taskdb.TableDef{
 			")",
 		"CREATE INDEX ix_seat_feedback_user_id ON seat_feedback (user_id)",
 	}},
+	// The room decision channel, the two-way sibling of the friction channel above: a rig's daemon
+	// mirrors an ask up (durable-first, keyed by the daemon's decisionId) and the human's click comes
+	// down. IT IS A PROJECTION, not the authority - the local queue row is what a seat's work stops
+	// on, and the daemon applies the answers there, which is why `answered` is a step rather than an
+	// end state and only the daemon's own resolution produces `resolved`/`superseded`.
+	//
+	// room_id is the room's UUID rather than its slug, unlike seat_feedback.room: a decision must
+	// outlive a slug rename, because the answers are still owed after the room is renamed. state's
+	// CHECK is checked against domain/decisions by TestRoomDecisionStateCheckMatchesDomain, and the
+	// columns here must agree with the schema file's CREATE TABLE - TestSeatDDLParity owns that:
+	// columns, references, defaults and CHECKs alike.
+	{Name: "room_decisions", Model: "RoomDecisionORM", Columns: []taskdb.ColumnDef{
+		{Name: "id", Attr: "id", GoField: "ID", SQLType: "UUID", Nullable: false, PrimaryKey: true, Default: taskdb.DefaultUUIDv4},
+		{Name: "user_id", Attr: "user_id", GoField: "UserID", SQLType: "TEXT", Nullable: false},
+		{Name: "room_id", Attr: "room_id", GoField: "RoomID", SQLType: "UUID", Nullable: false},
+		{Name: "rig_name", Attr: "rig_name", GoField: "RigName", SQLType: "TEXT", Nullable: false},
+		{Name: "qitem_id", Attr: "qitem_id", GoField: "QitemID", SQLType: "TEXT", Nullable: false},
+		{Name: "author_seat_key", Attr: "author_seat_key", GoField: "AuthorSeatKey", SQLType: "TEXT", Nullable: false},
+		{Name: "destination", Attr: "destination", GoField: "Destination", SQLType: "TEXT", Nullable: false},
+		// Nullable because an ask may carry neither: NULL is "no summary"/"no humanDetail", which
+		// the domain entity renders as an empty string.
+		{Name: "summary", Attr: "summary", GoField: "Summary", SQLType: "TEXT", Nullable: true},
+		{Name: "detail", Attr: "detail", GoField: "Detail", SQLType: "TEXT", Nullable: true},
+		{Name: "questions", Attr: "questions", GoField: "Questions", SQLType: "JSON", Nullable: false},
+		{Name: "answers", Attr: "answers", GoField: "Answers", SQLType: "JSON", Nullable: false, Default: taskdb.DefaultEmptyDict},
+		{Name: "state", Attr: "state", GoField: "State", SQLType: "TEXT", Nullable: false},
+		{Name: "idempotency_key", Attr: "idempotency_key", GoField: "IdempotencyKey", SQLType: "TEXT", Nullable: false},
+		{Name: "created_at", Attr: "created_at", GoField: "CreatedAt", SQLType: "TIMESTAMP WITH TIME ZONE", Nullable: false, Default: taskdb.DefaultNowUTC},
+		{Name: "answered_at", Attr: "answered_at", GoField: "AnsweredAt", SQLType: "TIMESTAMP WITH TIME ZONE", Nullable: true},
+		{Name: "resolved_at", Attr: "resolved_at", GoField: "ResolvedAt", SQLType: "TIMESTAMP WITH TIME ZONE", Nullable: true},
+	}, DDL: []string{
+		// No DEFAULT on id, like every other table's RUNTIME DDL: the INSERT supplies the UUID from Go
+		// (taskdb.DefaultUUIDv4), because createAll runs on databases where uuid-ossp has not been
+		// created and uuid_generate_v4() does not exist.
+		//
+		// THE DEDUPE TUPLE IS THE EPISODE, (user_id, qitem_id), and it is the ONLY unique constraint
+		// here. idempotency_key is stored and correlatable but NOT unique: it is derived from the
+		// routed item, so one item asked about by two tenants is two asks, while a GLOBALLY unique key
+		// makes the second tenant's insert no-op and its loser read - scoped to that tenant - find
+		// nothing, which is one tenant's ask swallowed by another tenant's key.
+		"CREATE TABLE room_decisions (\n" +
+			"\tid UUID NOT NULL,\n" +
+			"\tuser_id TEXT NOT NULL,\n" +
+			"\troom_id UUID NOT NULL REFERENCES rooms (id),\n" +
+			"\trig_name TEXT NOT NULL,\n" +
+			"\tqitem_id TEXT NOT NULL,\n" +
+			"\tauthor_seat_key TEXT NOT NULL,\n" +
+			"\tdestination TEXT NOT NULL,\n" +
+			"\tsummary TEXT,\n" +
+			"\tdetail TEXT,\n" +
+			"\tquestions JSONB NOT NULL,\n" +
+			"\tanswers JSONB NOT NULL DEFAULT '{}'::jsonb,\n" +
+			"\tstate TEXT NOT NULL,\n" +
+			"\tidempotency_key TEXT NOT NULL,\n" +
+			"\tcreated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),\n" +
+			"\tanswered_at TIMESTAMP WITH TIME ZONE,\n" +
+			"\tresolved_at TIMESTAMP WITH TIME ZONE,\n" +
+			"\tacked_at TIMESTAMP WITH TIME ZONE,\n" +
+			"\tPRIMARY KEY (id),\n" +
+			"\tCONSTRAINT ck_room_decisions_state CHECK (state IN ('pending', 'answered', 'resolved', 'superseded')),\n" +
+			"\tCONSTRAINT uq_room_decisions_user_qitem UNIQUE (user_id, qitem_id)\n" +
+			")",
+		// TWO indexes, one per read: the panel lists a room's rows by (user_id, room_id) and filters
+		// on the state its open/answered split uses; the daemon's pull takes the state-'answered' rows
+		// of ONE MACHINE (rig_name) that carry no ack yet (acked_at), which the panel's index cannot
+		// serve - a pull is not a room's read.
+		"CREATE INDEX ix_room_decisions_user_room_state ON room_decisions (user_id, room_id, state)",
+		"CREATE INDEX ix_room_decisions_user_rig_state_acked ON room_decisions (user_id, rig_name, state, acked_at)",
+	}},
 	// Messages a window addressed to a seat, held until the client that holds that seat's terminal
 	// pulls them. IT IS THE FIRST SERVER-AUTHORED ROW A CLIENT CONSUMES on this axis: every other
 	// store here is client-authored. Keyed by the reported names rather than by a seat reference,

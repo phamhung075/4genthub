@@ -2,7 +2,7 @@
 
 > This is guidance for the agenthub
 > **MCP task surface** (`manage_task` / `manage_subtask`). A seat in a rig moves its own work
-> through the queue (`rig queue`), not through MCP tasks; the MCP surface is the product the user
+> through the queue (`4genteam room queue`), not through MCP tasks; the MCP surface is the product the user
 > drives.
 
 ## Task duplication prevention
@@ -37,7 +37,7 @@ Choose the right tier for the complexity. Log the work in MCP before modifying f
 The earlier Tier 3 spawned a sub-agent team (`TeamCreate`, `subagent_type`) and injected each
 member's config with the "Proxy Pattern". That mechanism is retired: the `.claude/agents/` library
 is gone and OpenRig seats replace sub-agent teams. Complex work is split across seats and routed
-through `rig queue`; see the seat model in
+through `4genteam room queue`; see the seat model in
 [`seat-model-and-mcp-surface.md`](./seat-model-and-mcp-surface.md).
 
 ## Reporting pattern

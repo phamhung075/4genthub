@@ -2,6 +2,7 @@ package httpapp
 
 import (
 	"context"
+	"log"
 	"net/http"
 
 	"agenthub/fastmcp/auth"
@@ -24,11 +25,12 @@ import (
 type App struct {
 	Sessions *database.SessionManager
 
-	projects routes.ProjectController
-	branches routes.BranchController
-	tasks    routes.UserTaskController
-	subtasks routes.SubtaskController
-	mcpTools *interfacelayer.DDDCompliantMCPTools
+	projects     routes.ProjectController
+	branches     routes.BranchController
+	tasks        routes.UserTaskController
+	subtasks     routes.SubtaskController
+	mcpTools     *interfacelayer.DDDCompliantMCPTools
+	taskProvider taskFacadeProvider
 }
 
 // NewApp wires repositories, services, hooks and controllers over sessions.
@@ -37,14 +39,34 @@ func NewApp(ctx context.Context, sessions *database.SessionManager) (*App, error
 	a := &App{Sessions: sessions}
 	factories.UnifiedContextRepositoryBuilder = unifiedContextRepositories
 	factories.UnifiedContextEntityLookup = contextEntityLookup{sessions}
+	if sessions != nil {
+		// ONE appender value, but its user_id is resolved per APPEND: see
+		// context_ledger_appender.go for why a value stamped once with an empty id cost a task its
+		// own updates (23505 on uq_task_event_seq, 2026-10-15).
+		factories.UnifiedContextEventAppender = contextLedgerAppender{sessions: sessions}
+	}
 	services.SetRepositoryProviderBackend(func() services.RepositoryProviderBackend { return repoBackend{sessions} })
 	facades.TokenFacadeRepositoryBackend = func(any) (repositories.ITokenRepository, error) {
 		return infrarepos.NewTokenRepository(sessions)
+	}
+	// The accepted-API-token usage recorder: the live auth path (auth.ValidateTokenUniversal)
+	// advances the counters of the token it has just accepted, through the same repository the
+	// token facade writes the row with. Without this wiring the token UI reads a usage_count and a
+	// last_used_at that nothing writes.
+	if tokenRepo, err := infrarepos.NewTokenRepository(sessions); err != nil {
+		log.Printf("api token usage recorder is NOT wired: %v", err)
+	} else {
+		auth.APITokenUsageRecorder = func(ctx context.Context, tokenID string) {
+			// A usage counter must never refuse a request that has already been authenticated, so a
+			// failure here is swallowed exactly as the ported Python did.
+			_, _ = tokenRepo.UpdateTokenUsage(ctx, tokenID)
+		}
 	}
 	ctxFactory := factories.NewUnifiedContextFacadeFactory(ctx, sessions)
 	a.projects = projectControllerAdapter{c: api_controllers.NewProjectAPIController(projectFacadeProvider{sessions: sessions, ctxFactory: ctxFactory})}
 	a.branches = branchControllerAdapter{c: api_controllers.NewBranchAPIController(branchFacadeProvider{sessions}, branchRepoProvider{sessions}), sessions: sessions}
 	taskProvider := taskFacadeProvider{sessions: sessions, ctxFactory: ctxFactory, notifier: newTaskNotifier(sessions)}
+	a.taskProvider = taskProvider
 	projectFactory, branchFactory, contextFactory, tokenFactory := buildMCPFacadeFactories(ctx, sessions, ctxFactory)
 	facadeService := services.NewFacadeService(taskFacadeFactory{taskProvider}, subtaskFacadeFactory{factory: factories.NewSubtaskFacadeFactory(services.RepositoryProviderService{}.GetInstance()), ctxFactory: ctxFactory, sessions: sessions}, projectFactory, branchFactory, contextFactory, tokenFactory)
 	services.SetInstance(facadeService)
@@ -136,6 +158,9 @@ func (a *App) Handler() http.Handler {
 	mountSeatRigSpecRoutes(mux, a.Sessions)
 	mountSeatStatusRoutes(mux, a.Sessions)
 	mountSeatFeedbackRoutes(mux, a.Sessions)
+	// The room decision channel: the friction channel's two-way sibling (an ask mirrored up, a
+	// human's click coming down), under the room family's prefix.
+	mountRoomDecisionRoutes(mux, a.Sessions)
 	mountTeamRoutes(mux, a.Sessions)
 	// The ledger's own layer: the cross-task cursor and the intents route (P2, P3).
 	mountLedgerRoutes(mux, a.Sessions)

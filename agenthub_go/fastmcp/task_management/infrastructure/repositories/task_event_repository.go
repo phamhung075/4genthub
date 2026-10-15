@@ -54,24 +54,32 @@ func (r *TaskEventRepository) Append(ctx context.Context, in entities.AppendTask
 // database assigned. This is what makes "the status and its entry commit together or not at all" a
 // property: the entry joins the caller's transaction, so a failure on either side rolls both back.
 //
-// THE SEQUENCES ARE THE WHOLE POINT, so they are assigned inside that transaction, which first
-// takes a per-USER advisory lock. Two concurrent appends for one user therefore serialize: the
-// second reads the first's committed MAX and takes the next number, so both sequences are gapless
-// and cannot repeat. The lock is keyed on the user rather than the task because the ledger now
-// carries TWO cursors - the task's `seq` and the user's `user_seq` - and a per-task lock would let
-// two appends for one user on DIFFERENT tasks take the same `user_seq`, which is the one thing the
-// cross-task cursor cannot survive. Appends for different users still never contend.
+// THE SEQUENCES ARE THE WHOLE POINT, so they are assigned inside that transaction, which takes the
+// ledger's locks in a FIXED ORDER: the per-USER lock first, then the per-TASK lock. Two concurrent
+// appends for one user therefore serialize, so `user_seq` is gapless; two concurrent appends for one
+// task serialize whatever user they write under, so `seq` is unique over the domain its constraint
+// states it over.
+//
+// WHY TWO LOCKS (2026-10-15). One lock keyed on the user was enough while every writer of a task
+// wrote under one user id. It is not enough now, and the measured counterexample is the reason:
+// the task-level context event was appended through a repository built with user_id "", so ONE task
+// carried two spellings of its caller's rows, and the per-user lock serialized writers that the
+// unique constraint - UNIQUE (task_id, seq) - does not distinguish. The first update of a freshly
+// created task then answered `duplicate key value violates unique constraint "uq_task_event_seq"`
+// (SQLSTATE 23505) on the deployed server and could never carry its own state again. The appender
+// now writes the caller's resolved id, and this lock closes the case the identity alone cannot: rows
+// already written under another id (the empty one included) still occupy their seq.
+//
+// WHY THIS ORDER AND NOT ANOTHER. Each append takes exactly one user lock and then exactly one task
+// lock, and no path takes them in the other order: a transaction that holds the task lock already
+// holds its user lock, so no two transactions can wait on each other. The order is the deadlock
+// argument, so it is stated in ONE place per lock (lockUserAppend, lockTaskAppend) and never
+// reversed.
 //
 // The unique constraints on (task_id, seq), (user_id, user_seq) and (user_id, client_event_id) are
-// the belt to that brace - if the lock were ever bypassed, a duplicate fails loudly rather than
+// the belt to that brace - if the locks were ever bypassed, a duplicate fails loudly rather than
 // overwriting an event. The vocabularies are CHECK constraints in the table's DDL, so a value
 // outside them is refused where the bytes land.
-//
-// WHY ONE LOCK AND NOT TWO: both sequences are read under the SAME key on purpose. A per-user lock
-// for user_seq beside a per-task lock for seq would hand every append two locks to take in an
-// order someone will eventually get wrong, and that failure mode is a deadlock rather than a
-// duplicate - much worse to find and much worse to run. One lock, keyed on the user, both
-// sequences: do not "improve" this into two.
 func (r *TaskEventRepository) AppendInTx(ctx context.Context, in entities.AppendTaskEvent) (*entities.TaskEvent, error) {
 	if !r.sessions.InTransaction(ctx) {
 		return nil, ErrNotInTransaction
@@ -99,8 +107,24 @@ func (r *TaskEventRepository) AppendInTx(ctx context.Context, in entities.Append
 	}
 	err := r.sessions.WithSession(ctx, func(ctx context.Context, s database.DBTX) error {
 		args := []any{r.userID, in.TaskID}
-		conds := `"user_id" = $1 AND "task_id" = $2`
+		// THE SEQ'S DOMAIN IS THE TASK, and the task is what its uniqueness is stated over:
+		// `uq_task_event_seq` is UNIQUE (task_id, seq). Computing it over a NARROWER domain - one
+		// user's rows for the task, which is what this read did - hands a second writer of the same
+		// task a number that is already taken. Measured on the deployed server 2026-10-15: the
+		// task-level context event (appended through a repository built with user_id "") and the
+		// task's own status event (appended under the caller) both computed seq 1 for one task, so
+		// the first update of a freshly created task answered
+		// `duplicate key value violates unique constraint "uq_task_event_seq"` (SQLSTATE 23505) and
+		// the task could never carry its own state again.
+		conds := `"task_id" = $2`
 		if err := lockUserAppend(ctx, s, r.userID); err != nil {
+			return err
+		}
+		// The second lock serializes the writers of ONE task's seq, whatever user they write under.
+		// The order - user, then task - is fixed here and nowhere reversed: the user lock is what
+		// keeps user_seq gapless, the task lock is what keeps seq unique, and a fixed order is what
+		// makes two appends unable to wait on each other.
+		if err := lockTaskAppend(ctx, s, in.TaskID); err != nil {
 			return err
 		}
 		// user_seq is read in its own statement, still under the lock: the LOCK is what makes MAX+1
@@ -156,6 +180,41 @@ func (r *TaskEventRepository) AppendInTx(ctx context.Context, in entities.Append
 		return nil, err
 	}
 	return out, nil
+}
+
+// NextProgressNumberInTx reads the number a new progress note for the task takes: one past the highest
+// progress_number the task's `progress` events carry, INSIDE the caller's transaction and under the SAME
+// advisory lock the append path takes (one lock, keyed on the user, as AppendInTx's own comment
+// insists). Without it two writers could read one tip and both write it, and the number is not a label:
+// content plus progress_number is the identity a reader merges copies by, so a shared number is a LOST
+// note rather than a cosmetic clash.
+//
+// It is not the per-event `seq` read again. `seq` orders the EVENTS within a task; the number orders the
+// NOTES, and the carry copied the dropped column's numbers into the ledger intact - so the sequence
+// continues from the column's last number rather than from the ledger's row count.
+func (r *TaskEventRepository) NextProgressNumberInTx(ctx context.Context, taskID string) (int, error) {
+	if !r.sessions.InTransaction(ctx) {
+		return 0, ErrNotInTransaction
+	}
+	next := 1
+	err := r.sessions.WithSession(ctx, func(ctx context.Context, s database.DBTX) error {
+		if _, err := s.ExecContext(ctx, `SELECT pg_advisory_xact_lock(hashtext($1))`, r.userID); err != nil {
+			return err
+		}
+		var highest float64
+		if err := s.QueryRowContext(ctx, `
+			SELECT COALESCE(MAX((payload ->> 'progress_number')::double precision), 0)
+			FROM task_events WHERE "user_id" = $1 AND "task_id" = $2 AND "kind" = 'progress'`,
+			r.userID, taskID).Scan(&highest); err != nil {
+			return err
+		}
+		next = int(highest) + 1
+		return nil
+	})
+	if err != nil {
+		return 0, err
+	}
+	return next, nil
 }
 
 // StatusOf reads the task's status inside the caller's transaction. The ledger asks for it before
@@ -246,6 +305,60 @@ func (r *TaskEventRepository) Events(ctx context.Context, taskID string) ([]*ent
 	}
 }
 
+// ProgressEventsByTask reads the progress entries of MANY tasks in ONE query, keyed by task id, each
+// task's entries oldest first. It exists because a list renders every row's details, and the list
+// builder already batches its other per-task read (GetCompletedSubtaskCounts) for the same reason: a
+// read per row turns one list request into one query per task, and the task list is the request a
+// client makes most often.
+//
+// It filters to kind='progress' in SQL rather than leaving the filter to the renderer, which is what
+// the name promises: ProgressTextWith would discard every other kind anyway, and the table carries
+// every lifecycle entry, so the filter is the difference between reading a task's notes and reading
+// its whole history.
+//
+// It does NOT page, unlike Events: Events pages to bound one task's read and then concatenates the
+// pages anyway, so the memory it saves is not real, and a batch cannot page on seq - there is no
+// single window over many tasks. Ordered by task_id then seq, which is the order the merge wants.
+func (r *TaskEventRepository) ProgressEventsByTask(ctx context.Context, taskIDs []string) (map[string][]*entities.TaskEvent, error) {
+	out := map[string][]*entities.TaskEvent{}
+	if len(taskIDs) == 0 {
+		return out, nil
+	}
+	err := r.sessions.WithSession(ctx, func(ctx context.Context, s database.DBTX) error {
+		args := []any{r.userID}
+		in := taskRepoInClause("task_id", taskIDs, &args, "::uuid")
+		rows, err := s.QueryContext(ctx, `
+			SELECT "id", "task_id", "user_id", "seq", "kind", "actor_kind", "actor_id", "payload", "created_at"
+			FROM task_events
+			WHERE "user_id" = $1 AND `+in+` AND "kind" = 'progress'
+			ORDER BY "task_id" ASC, "seq" ASC`, args...)
+		if err != nil {
+			return err
+		}
+		defer rows.Close()
+		for rows.Next() {
+			ev := &entities.TaskEvent{}
+			var kind, actorKind string
+			var payload *string
+			if err := rows.Scan(&ev.ID, &ev.TaskID, &ev.UserID, &ev.Seq, &kind, &actorKind, &ev.ActorID, &payload, &ev.CreatedAt); err != nil {
+				return err
+			}
+			ev.Kind = entities.TaskEventKind(kind)
+			ev.ActorKind = entities.TaskEventActorKind(actorKind)
+			if payload != nil {
+				_ = json.Unmarshal([]byte(*payload), &ev.Payload)
+			}
+			ev.CreatedAt = ev.CreatedAt.UTC()
+			out[ev.TaskID] = append(out[ev.TaskID], ev)
+		}
+		return rows.Err()
+	})
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // --- the ledger's own layer (P2, P3): the cross-task cursor and the decision reads ---
 
 // Transaction runs fn in one transaction. The ledger's intents route must DECIDE and APPEND in one
@@ -275,6 +388,21 @@ func (r *TaskEventRepository) LockUser(ctx context.Context) error {
 // the expression would serialize against nothing.
 func lockUserAppend(ctx context.Context, s database.DBTX, userID string) error {
 	_, err := s.ExecContext(ctx, `SELECT pg_advisory_xact_lock(hashtext($1))`, userID)
+	return err
+}
+
+// taskSeqLockNamespace is the fixed first key of the task lock, and it exists to keep the two
+// advisory-lock keyspaces apart: the user lock is the single-argument form (one int4 key), the task
+// lock is the two-argument form (int4, int4). Without a fixed first key the task lock would live in
+// the same single-key space as the user lock, and a task whose id hashed to a user's hash would
+// serialize against that user for no reason.
+const taskSeqLockNamespace = "task_events.seq"
+
+// lockTaskAppend is the ONE spelling of the ledger's per-task append lock. It is what makes the
+// computed seq unique over the domain the constraint states it over: two writers of one task, under
+// whatever user ids, cannot read one MAX and both write it.
+func lockTaskAppend(ctx context.Context, s database.DBTX, taskID string) error {
+	_, err := s.ExecContext(ctx, `SELECT pg_advisory_xact_lock(hashtext($1), hashtext($2))`, taskSeqLockNamespace, taskID)
 	return err
 }
 

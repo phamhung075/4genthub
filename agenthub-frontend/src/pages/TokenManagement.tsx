@@ -133,8 +133,9 @@ function ScopeCard({ scope, isSelected, onToggle }: ScopeCardProps) {
   );
 }
 
-// The connector scope can open the connector socket and publish terminal sessions, so it is
-// deliberately excluded from the "Full Access" quick action and must be selected by hand.
+// The connector scope can open the connector socket and publish terminal sessions, so "Client MCP"
+// leaves it out and "Client connector" selects only it: the agent daemon's upload token and the
+// MCP key are two separate tokens.
 const CONNECTOR_SCOPE = 'sessions:write';
 
 const AVAILABLE_SCOPES = [
@@ -435,53 +436,18 @@ export function TokenManagement() {
                   {/* Quick Actions */}
                   <div className="flex flex-wrap gap-2 p-4 bg-slate-100 dark:bg-slate-700 rounded-lg">
                     <Button
-                      variant="default"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSelectedScopes([CONNECTOR_SCOPE])}
+                    >
+                      Client connector
+                    </Button>
+                    <Button
+                      variant="outline"
                       size="sm"
                       onClick={() => setSelectedScopes(AVAILABLE_SCOPES.filter(s => s.value !== CONNECTOR_SCOPE).map(s => s.value))}
-                      className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white"
                     >
-                      <Shield className="h-4 w-4 mr-1" />
-                      Full Access
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        const readScopes = AVAILABLE_SCOPES
-                          .filter(s => s.value.includes(':read') || s.category === 'Core' || s.category === 'API')
-                          .map(s => s.value);
-                        setSelectedScopes(readScopes);
-                      }}
-                    >
-                      Read Only
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        const essentialScopes = [
-                          'openid', 'profile', 'email', 'mcp-api', 'mcp-roles',
-                          'projects:read', 'tasks:read', 'tasks:create', 'tasks:update',
-                          'contexts:read', 'contexts:update'
-                        ];
-                        setSelectedScopes(essentialScopes);
-                      }}
-                    >
-                      Essential
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        const executeScopes = [
-                          'openid', 'profile', 'email', 'mcp-api', 'mcp-roles', 'mcp-profile',
-                          'mcp:execute', 'mcp:delegate'
-                        ];
-                        setSelectedScopes(executeScopes);
-                      }}
-                    >
-                      <Zap className="h-4 w-4 mr-1" />
-                      Execute Only
+                      Client MCP
                     </Button>
                     <Button
                       variant="ghost"
@@ -494,8 +460,8 @@ export function TokenManagement() {
                   </div>
 
                   <p className="text-xs text-muted-foreground">
-                    Connector access (Publish Sessions) is not included in Full Access - select it explicitly to mint a
-                    connector token.
+                    Publish Sessions is not included in Client MCP. Mint "Client connector" (Publish Sessions
+                    only) as a separate token for the agent daemon.
                   </p>
 
                   {/* Improved Grid Layout for Scopes */}

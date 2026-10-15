@@ -379,6 +379,47 @@ export const apiReference: ApiReference = {
     },
     {
       "method": "GET",
+      "path": "/api/v2/machines/{machine}/work",
+      "pathParams": [
+        "machine"
+      ],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "POST",
+      "path": "/api/v2/openrig/decisions",
+      "pathParams": [],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v2/openrig/decisions/answers",
+      "pathParams": [],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "POST",
+      "path": "/api/v2/openrig/decisions/{id}/ack",
+      "pathParams": [
+        "id"
+      ],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "POST",
+      "path": "/api/v2/openrig/decisions/{id}/state",
+      "pathParams": [
+        "id"
+      ],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "GET",
       "path": "/api/v2/openrig/feedback",
       "pathParams": [],
       "handler": "",
@@ -458,6 +499,25 @@ export const apiReference: ApiReference = {
       "path": "/api/v2/openrig/rooms/{room}",
       "pathParams": [
         "room"
+      ],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v2/openrig/rooms/{room}/decisions",
+      "pathParams": [
+        "room"
+      ],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "POST",
+      "path": "/api/v2/openrig/rooms/{room}/decisions/{id}/answer",
+      "pathParams": [
+        "room",
+        "id"
       ],
       "handler": "",
       "description": ""
@@ -950,6 +1010,15 @@ export const apiReference: ApiReference = {
     {
       "method": "POST",
       "path": "/api/v2/tasks/{id}/evidence",
+      "pathParams": [
+        "id"
+      ],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v2/tasks/{id}/resume",
       "pathParams": [
         "id"
       ],

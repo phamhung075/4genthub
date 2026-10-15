@@ -13,6 +13,13 @@ transaction, together with its ledger row.
   from the runtime TableDef registry (the aggregate `taskdb.Tables`, then `ProductionTables`) and is
   FROZEN: never rename or reorder it once it has been applied anywhere. Only a database with an EMPTY
   catalogue receives it, because `migration_runner.Apply` skips it when the catalogue already holds
-  tables - the same rule `db_initializer.go` applies to the init SQL - and on a database that already
-  has the schema the runner records it without executing it (`Runner.MarkBaseline`, an owner action,
-  because it touches production). `migration_baseline_parity_test.go` holds the registry to the file.
+  tables - the same rule `db_initializer.go` applies to the init SQL. The runner NEVER auto-adopts: on
+  a database that already has the schema the mark is recorded only by `Runner.MarkBaseline`, an owner
+  action. Because `createAll` populates the catalogue before the runner runs, a FRESH boot is in that
+  state too, so any step that depends on the mark - currently
+  `0003_progress_history_carry_and_drop` - refuses (`SQLSTATE P0001`, naming the mark to run) until the
+  owner has marked, including on a database that has never held the columns that step drops.
+  Two guards hold it. `schema_matches_definitions_test.go` holds the registry to the embedded set of
+  steps, so every registered table is created by one of them; `migration_baseline_parity_test.go` holds
+  `0001_baseline.sql` back to the registry it was generated from, comparing column names, referenced
+  tables and CHECK expressions. The baseline itself must never drop or alter a column.

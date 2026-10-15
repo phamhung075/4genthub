@@ -27,6 +27,8 @@ import subprocess
 
 from pathlib import Path
 
+import gitfixture
+
 
 import pytest
 
@@ -55,10 +57,7 @@ def _tracked_rooms():
     untracked in this tree and a live rig besides, is an owner row (`f465d5df`) instead of a red
     guard here.
     """
-    listed = subprocess.run(
-        ["git", "ls-files", "--", "scripts/team/*/team.json"],
-        cwd=REPO_ROOT, capture_output=True, text=True, check=True,
-    ).stdout.split()
+    listed = gitfixture.git(REPO_ROOT, "ls-files", "--", "scripts/team/*/team.json").stdout.split()
     return sorted(Path(p).parts[2] for p in listed)
 
 
@@ -112,7 +111,11 @@ ROOM_WORD_LIMITS = {
     },
     "4genthub-ab": {"ab-terse": (25, 60), "ab-verify": (30, 70)},
     "4genthub-client": {"client-go-mission": (350, 560)},
-    "4genthub-min": {},  # every instruction module it names lives in the Go seed library
+    # RE-MEASURED 2026-10-11: this table is no longer empty. The room declares ONE room-local
+    # instruction module, `guide-e2e-dev -> guide-e2e-dev.md`, which it added after the comment
+    # below was written; the band is 355 words measured, a ceiling with room for about two
+    # sentences of honest editing and a floor that catches a truncated paste.
+    "4genthub-min": {"guide-e2e-dev": (300, 420)},
 }
 
 
@@ -124,7 +127,11 @@ ROOM_RUNTIMES = {
     "4genthub": {"claude-code"},
     "4genthub-ab": {"omp"},
     "4genthub-client": {"omp"},
-    "4genthub-min": {"claude-code", "omp"},
+    # CORRECTED 2026-10-15: the architect moved to `omp` with the rest of the room when the owner
+    # replaced that seat on 2026-10-14 20:21Z. The entry said {"claude-code", "omp"} and the
+    # definition said `claude-code`/`opus`; both were stale, and this table is what turns the stale
+    # pair into a red suite rather than a room that rebuilds the wrong runtime.
+    "4genthub-min": {"omp"},
 }
 
 

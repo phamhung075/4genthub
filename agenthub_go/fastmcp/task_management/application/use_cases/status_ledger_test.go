@@ -51,8 +51,9 @@ func (f *ledgerFakeRepo) Save(_ context.Context, task *entities.Task) (*entities
 // the repository's persisted rows. It cannot show atomicity - the fake transaction just runs the
 // unit of work - which is why the negative case is a real-Postgres test.
 type ledgerFakeRecorder struct {
-	repo    *ledgerFakeRepo
-	entries []ledgerEntry
+	repo     *ledgerFakeRepo
+	entries  []ledgerEntry
+	progress []entities.ProgressEntry
 }
 
 type ledgerEntry struct {
@@ -68,6 +69,23 @@ func (f *ledgerFakeRecorder) StatusOf(_ context.Context, taskID string) (string,
 func (f *ledgerFakeRecorder) RecordStatusChange(_ context.Context, taskID, oldStatus, newStatus string) (*entities.TaskEvent, error) {
 	f.entries = append(f.entries, ledgerEntry{taskID: taskID, old: oldStatus, new: newStatus})
 	return &entities.TaskEvent{TaskID: taskID, Kind: entities.TaskEventKindStatusChanged}, nil
+}
+
+// RecordProgress is the progress half of the one writer: it records the note so a case can assert the
+// note reached the ledger, and returns the entry the real recorder returns.
+func (f *ledgerFakeRecorder) RecordProgress(_ context.Context, taskID, subtaskID string, note entities.ProgressEntry) (*entities.TaskEvent, error) {
+	f.progress = append(f.progress, note)
+	return &entities.TaskEvent{TaskID: taskID, SubtaskID: subtaskID, Kind: entities.TaskEventKindProgress}, nil
+}
+
+// NextProgressNumberInTx answers the number the task's first note takes: these cases assert the note
+// and the transaction, not the numbering.
+func (f *ledgerFakeRecorder) NextProgressNumberInTx(context.Context, string) (int, error) {
+	return 1, nil
+}
+
+func (f *ledgerFakeRecorder) RecordGateVerdict(_ context.Context, taskID string, payload map[string]any) (*entities.TaskEvent, error) {
+	return &entities.TaskEvent{TaskID: taskID, Kind: entities.TaskEventKindGateVerdict, Payload: payload}, nil
 }
 
 // ledgerFakeTx counts the transactions the use case opens, the one unit of work SaveStatus needs.

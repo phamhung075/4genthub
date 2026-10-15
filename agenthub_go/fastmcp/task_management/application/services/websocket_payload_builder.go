@@ -17,7 +17,8 @@ type WebSocketPayloadBuilder struct{}
 //
 // task_response is the Python `task_response=None` optional TaskResponse DTO.
 // includeProgressHistory mirrors the Python default-True flag; with the history gone from the
-// payload it now gates the details string alone.
+// payload it now gates the details string alone - and only on the response branch, because the task
+// entity has no progress source of its own any more (the ledger's notes live in the response).
 func (WebSocketPayloadBuilder) BuildTaskPayload(
 	task *entities.Task,
 	taskResponse *taskdtos.TaskResponse,
@@ -52,11 +53,10 @@ func (WebSocketPayloadBuilder) BuildTaskPayload(
 		// Python has no `progress_percentage` attribute on Task, so hasattr is False -> 0.
 		payload.Set("progress_percentage", 0)
 
-		if includeProgressHistory {
-			payload.Set("details", task.GetProgressHistoryText())
-		} else {
-			payload.Set("details", "")
-		}
+		// The entity has no progress notes any more: the progress_history column is gone, and the
+		// ledger's notes reach a payload only through the task_response branch above, which is built
+		// with the events. So there is nothing here for includeProgressHistory to gate.
+		payload.Set("details", "")
 	}
 
 	// Team & assignment (from task entity).

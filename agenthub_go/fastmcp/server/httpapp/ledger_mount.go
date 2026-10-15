@@ -177,5 +177,37 @@ func (a ledgerIntentsWriterAdapter) SubmitIntents(ctx context.Context, userID st
 		return nil, err
 	}
 	service := ledgerservices.New(repositories.NewTaskEventRepository(a.sessions, scoped, ""))
-	return service.SubmitIntents(ctx, actor.Kind, actor.ID, intents)
+	answers, err := service.SubmitIntents(ctx, actor.Kind, actor.ID, intents)
+	if err != nil {
+		return nil, err
+	}
+	// P4's nudge, and it is sent HERE rather than inside the service for two reasons that are both
+	// about this being a nudge: the write above has already COMMITTED (a tip announced before the row
+	// was durable would send a client to read a ledger that does not have it yet), and the frame is an
+	// interface-layer act on a socket, which the application layer does not own.
+	//
+	// The subject passed is the RAW one the request authenticated as, not `scoped`: the connector keys
+	// its sockets by the subject it authenticated with, and the normalization above belongs to the
+	// ledger's own rows rather than to who the caller is.
+	//
+	// A batch that committed nothing (every item refused) moved no tip and nudges nobody: there is
+	// nothing new for a client to pull.
+	if tip, ok := ledgerAcceptedTip(answers); ok {
+		wsNotifyLedgerTip(userID, tip)
+	}
+	return answers, nil
+}
+
+// ledgerAcceptedTip is the highest user_seq a committed batch took, and whether it took one at all.
+// It is the value P4's frame carries: the tip moved AT LEAST here, and a client pulls from its own
+// cursor rather than from this number, so a concurrent commit that left the real tip higher costs
+// the client nothing but a second nudge.
+func ledgerAcceptedTip(answers []ledgerentities.Answer) (int64, bool) {
+	tip := int64(0)
+	for _, answered := range answers {
+		if answered.Accepted && answered.UserSeq > tip {
+			tip = answered.UserSeq
+		}
+	}
+	return tip, tip > 0
 }

@@ -11,7 +11,6 @@ import { FileText, Info, ChevronRight, Layers, Copy, Check as CheckIcon, Setting
 import RawJSONDisplay from "./ui/RawJSONDisplay";
 import { EnhancedJSONViewer } from "./ui/EnhancedJSONViewer";
 import { CopyableId } from "./ui/CopyableId";
-import { ProgressHistoryTimeline } from "./ProgressHistoryTimeline";
 import { TaskEventTimeline } from './TaskEventTimeline';
 import { useTask } from '../hooks/useTasks';
 
@@ -299,27 +298,17 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
                   <div>
                     <h4 className="font-semibold text-sm mb-3 text-text dark:text-text">Assignment & Organization</h4>
                     <div className="space-y-3 theme-context-insights">
-                      {/* Progress History Timeline. 4a0a8c7a dropped progress_history and
-                          progress_count from this payload and serves the joined history text as
-                          `details` instead, so the guard and the prop follow the field that is
-                          actually served - reading the dropped ones made this block silently
-                          never render, and no test could see it because the test built its own
-                          payload. */}
-                      {displayTask.details && (
-                        <div>
-                          <ProgressHistoryTimeline
-                            progressHistory={displayTask.details}
-                            variant="full"
-                            className="mt-1"
-                          />
-                        </div>
-                      )}
-
                       {/* Execution Ledger: the events the task actually wrote (task_events). The
-                          phase it shows is derived from these events, never from the task row -
-                          ProgressHistoryTimeline above reads the older progress fields, which O1c
-                          replaces with events. */}
-                      <TaskEventTimeline taskId={displayTask.id} />
+                          phase it shows is derived from these events, never from the task row, and
+                          it is the ONLY progress surface here: O1c replaced the older
+                          progress-history timeline with this one, so the two never render
+                          together. `details` below is the served union of both sources -
+                          ProgressTextWith joins the progress_history column's notes with the
+                          ledger's - and the timeline takes it because the ledger ALONE has no row
+                          for a note written before the dual-write switch. Cited by NAME, not by a
+                          line: the union lives in the O1c branch of task_response.go, so a
+                          checkout without it cannot answer a line number. */}
+                      <TaskEventTimeline taskId={displayTask.id} progressHistory={displayTask.details} />
 
                       {/* Assignees */}
                       {displayTask.assignees && displayTask.assignees.length > 0 && (

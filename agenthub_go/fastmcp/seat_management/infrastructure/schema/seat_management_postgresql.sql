@@ -290,6 +290,51 @@ CREATE TABLE IF NOT EXISTS seat_feedback (
 
 CREATE INDEX IF NOT EXISTS ix_seat_feedback_user_id ON seat_feedback (user_id);
 
+-- Table: room_decisions
+-- One ask a rig's daemon mirrored up, plus the answers the human clicked. IT IS A PROJECTION, NOT
+-- THE AUTHORITY: the local queue row is what a seat's work stops on and the daemon applies the
+-- answers there (recordHumanAnswer), which is why `answered` is a step rather than an end state and
+-- only the daemon's own resolution produces `resolved`/`superseded`.
+-- idempotency_key is the daemon's decisionId and is unique: the mirror is durable-first, so a
+-- redrive after a lost answer must collapse onto the row it already made rather than author a second
+-- decision the human would be asked twice. UNIQUE (user_id, qitem_id) says the same thing per local
+-- row: one mirrored row per local row.
+-- room_id is the room's UUID rather than its slug, unlike seat_feedback.room, because a decision must
+-- outlive a slug rename - the answers are still owed after the room is renamed.
+-- questions carries the daemon's HumanQuestion[] verbatim, under the limits its parseHumanQuestions
+-- enforces (1-4 questions, 2-4 options, ids ^[A-Za-z0-9_-]{1,40}$, option label at most 75
+-- characters, question text at most 500): the cloud refuses a malformed ask at the door rather than
+-- storing one the daemon would not have authored. answers is HumanAnswers (questionId -> optionId).
+-- summary and detail are nullable because an ask may carry neither. state is a closed vocabulary
+-- whose Go source of truth is fastmcp/room_decisions/domain/decisions, held to this copy by
+-- TestRoomDecisionStateCheckMatchesDomain.
+CREATE TABLE IF NOT EXISTS room_decisions (
+    id UUID PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    room_id UUID NOT NULL REFERENCES rooms (id),
+    rig_name TEXT NOT NULL,
+    qitem_id TEXT NOT NULL,
+    author_seat_key TEXT NOT NULL,
+    destination TEXT NOT NULL,
+    summary TEXT,
+    detail TEXT,
+    questions JSONB NOT NULL,
+    answers JSONB NOT NULL DEFAULT '{}'::jsonb,
+    state TEXT NOT NULL,
+    idempotency_key TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    answered_at TIMESTAMP WITH TIME ZONE,
+    resolved_at TIMESTAMP WITH TIME ZONE,
+    acked_at TIMESTAMP WITH TIME ZONE,
+    CONSTRAINT ck_room_decisions_state CHECK (state IN ('pending', 'answered', 'resolved', 'superseded')),
+    CONSTRAINT uq_room_decisions_user_qitem UNIQUE (user_id, qitem_id)
+);
+
+CREATE INDEX IF NOT EXISTS ix_room_decisions_user_room_state ON room_decisions (user_id, room_id, state);
+-- The answer leg's own index: a daemon pulls the answered rows of one machine (rig_name) that carry no
+-- ack yet (acked_at), a filter the panel's index above cannot serve.
+CREATE INDEX IF NOT EXISTS ix_room_decisions_user_rig_state_acked ON room_decisions (user_id, rig_name, state, acked_at);
+
 -- Table: seat_messages
 -- Text a window addressed to a seat, held until the client that holds that seat's terminal pulls it.
 -- SEAT-OWNED AND KEYED BY THE REPORTED NAMES, like seat_feedback, and for a stronger reason: no seat

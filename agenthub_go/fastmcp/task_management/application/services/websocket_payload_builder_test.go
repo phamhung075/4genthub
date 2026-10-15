@@ -12,21 +12,17 @@ import (
 
 func wsTestTask() *entities.Task {
 	return &entities.Task{
-		Title:       "Build payload",
-		Description: "short",
-		ID:          &value_objects.TaskId{EntityId: value_objects.EntityId{Value: "t-1"}},
-		Status:      &value_objects.TaskStatus{Value: "todo"},
-		Priority:    &value_objects.Priority{Value: "medium"},
-		GitBranchID: wsStrPtr("branch-1"),
-		ProgressHistory: map[string]any{
-			"progress_1": map[string]any{"progress_number": 1},
-		},
-		ProgressCount: 1,
-		Assignees:     []string{"alice"},
-		Labels:        []string{"bug"},
-		Dependencies:  []value_objects.TaskId{{EntityId: value_objects.EntityId{Value: "t-0"}}},
-		Subtasks:      []string{"s-1", "s-2"},
-		ContextID:     wsStrPtr("ctx-1"),
+		Title:        "Build payload",
+		Description:  "short",
+		ID:           &value_objects.TaskId{EntityId: value_objects.EntityId{Value: "t-1"}},
+		Status:       &value_objects.TaskStatus{Value: "todo"},
+		Priority:     &value_objects.Priority{Value: "medium"},
+		GitBranchID:  wsStrPtr("branch-1"),
+		Assignees:    []string{"alice"},
+		Labels:       []string{"bug"},
+		Dependencies: []value_objects.TaskId{{EntityId: value_objects.EntityId{Value: "t-0"}}},
+		Subtasks:     []string{"s-1", "s-2"},
+		ContextID:    wsStrPtr("ctx-1"),
 	}
 }
 

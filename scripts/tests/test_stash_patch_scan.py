@@ -17,11 +17,12 @@ from __future__ import annotations
 
 import importlib.util
 import json
-import os
 import subprocess
 import sys
 import time
 from pathlib import Path
+
+import gitfixture
 
 # <repo>/scripts/tests/<this file>: the repository root is two levels up, and that is where
 # scripts/git-hooks/ lives — the same relative path the pre-commit config's `entry` names.
@@ -34,9 +35,7 @@ FRESH = NOW - 3600  # inside the default 24h window
 
 
 def _git(repo: Path, *args: str) -> str:
-    return subprocess.run(
-        ["git", *args], cwd=repo, check=True, capture_output=True, text=True
-    ).stdout
+    return gitfixture.git(repo, *args).stdout
 
 
 def _repo(tmp_path: Path) -> Path:
@@ -57,9 +56,7 @@ def _repo(tmp_path: Path) -> Path:
 def _capture(repo: Path, path: str, content: str, dest: Path) -> None:
     """Write a REAL git patch for `content` at `path`, captured while it is dirty."""
     (repo / path).write_text(content, encoding="utf-8")
-    diff = subprocess.run(
-        ["git", "diff", "--", path], cwd=repo, check=True, capture_output=True, text=True
-    ).stdout
+    diff = gitfixture.git(repo, "diff", "--", path).stdout
     assert diff, f"the fixture produced an empty patch for {path}"
     dest.write_text(diff, encoding="utf-8")
 
@@ -80,7 +77,7 @@ def _scan(store: Path, repo: Path, *extra: str) -> subprocess.CompletedProcess:
         [sys.executable, str(SCAN), "--store", str(store), "--repo", str(repo), *extra],
         capture_output=True,
         text=True,
-        env={**os.environ, "PRE_COMMIT_HOME": str(store)},
+        env=gitfixture.environment(PRE_COMMIT_HOME=str(store)),
     )
 
 

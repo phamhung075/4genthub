@@ -776,6 +776,32 @@ CREATE TABLE seat_feedback (
 );
 CREATE INDEX ix_seat_feedback_user_id ON seat_feedback (user_id);
 
+-- Table: room_decisions
+CREATE TABLE room_decisions (
+	id UUID NOT NULL,
+	user_id TEXT NOT NULL,
+	room_id UUID NOT NULL REFERENCES rooms (id),
+	rig_name TEXT NOT NULL,
+	qitem_id TEXT NOT NULL,
+	author_seat_key TEXT NOT NULL,
+	destination TEXT NOT NULL,
+	summary TEXT,
+	detail TEXT,
+	questions JSONB NOT NULL,
+	answers JSONB NOT NULL DEFAULT '{}'::jsonb,
+	state TEXT NOT NULL,
+	idempotency_key TEXT NOT NULL,
+	created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+	answered_at TIMESTAMP WITH TIME ZONE,
+	resolved_at TIMESTAMP WITH TIME ZONE,
+	acked_at TIMESTAMP WITH TIME ZONE,
+	PRIMARY KEY (id),
+	CONSTRAINT ck_room_decisions_state CHECK (state IN ('pending', 'answered', 'resolved', 'superseded')),
+	CONSTRAINT uq_room_decisions_user_qitem UNIQUE (user_id, qitem_id)
+);
+CREATE INDEX ix_room_decisions_user_room_state ON room_decisions (user_id, room_id, state);
+CREATE INDEX ix_room_decisions_user_rig_state_acked ON room_decisions (user_id, rig_name, state, acked_at);
+
 -- Table: seat_messages
 CREATE TABLE seat_messages (
 	id UUID NOT NULL,

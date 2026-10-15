@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"agenthub/fastmcp/session_stream/testdb"
 	"agenthub/fastmcp/task_management/infrastructure/database"
 )
 
@@ -16,9 +17,7 @@ func TestSchemaValidatorRealPostgres(t *testing.T) {
 	defer db.Close()
 	ctx := context.Background()
 	cfg := &database.DatabaseConfig{Engine: &database.Engine{DB: db, URL: dsn}}
-	if err := cfg.CreateTables(ctx); err != nil {
-		t.Fatal(err)
-	}
+	testdb.CreateSchema(t, cfg)
 	engine := &database.Engine{DB: db, URL: dsn}
 	validator := database.NewSchemaValidator(ctx, engine)
 	results, err := validator.ValidateAll()

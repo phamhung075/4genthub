@@ -40,7 +40,7 @@ import (
 	_ "agenthub/fastmcp/seat_management/infrastructure/database"
 )
 
-const baselineMigrationFile = "0001_baseline.sql"
+const parityBaselineMigrationFile = "0001_baseline.sql"
 
 var (
 	baselineCreateTableHeader = regexp.MustCompile(`(?i)create table (?:if not exists )?"?([a-z_]+)"?\s*\(`)
@@ -48,14 +48,14 @@ var (
 	baselineCheckClause       = regexp.MustCompile(`(?i)check\s*\(`)
 )
 
-// TestSchemaMatchesGoDefinitions holds the registry to the baseline, table by table. A
+// TestBaselineMatchesEveryRegisteredTableDef holds the registry to the baseline, table by table. A
 // table added to a TableDef set and not regenerated makes this fail; so does a hand-edited baseline.
-func TestSchemaMatchesGoDefinitions(t *testing.T) {
-	raw := readBaselineSQL(t)
+func TestBaselineMatchesEveryRegisteredTableDef(t *testing.T) {
+	raw := parityReadBaselineSQL(t)
 
 	// The baseline only ever builds a schema, so it may not tear one down or alter one: the init SQL's
 	// DROP TABLE IF EXISTS is the recorded instance of what that costs.
-	assertBaselineHasNoDropOrAlter(t, raw)
+	parityAssertBaselineHasNoDropOrAlter(t, raw)
 	fileTables := baselineTableBodies(t, raw)
 
 	registered := map[string]bool{}
@@ -74,13 +74,13 @@ func TestSchemaMatchesGoDefinitions(t *testing.T) {
 		t.Fatal("no TableDef is registered, so this guard measured nothing")
 	}
 	t.Logf("searched: %d registered table(s) (%d aggregate, %d production), %d in %s",
-		len(order), len(database.Tables), len(database.ProductionTables), len(fileTables), baselineMigrationFile)
+		len(order), len(database.Tables), len(database.ProductionTables), len(fileTables), parityBaselineMigrationFile)
 
 	for _, def := range order {
 		body, ok := fileTables[def.Name]
 		if !ok {
 			t.Errorf("table %s: registered at runtime but absent from %s - regenerate the baseline",
-				def.Name, baselineMigrationFile)
+				def.Name, parityBaselineMigrationFile)
 			continue
 		}
 		runtimeBody := runtimeCreateTableBody(t, def)
@@ -117,29 +117,29 @@ func TestSchemaMatchesGoDefinitions(t *testing.T) {
 	// A CREATE TABLE in the baseline that no TableDef registers is drift in the other direction.
 	for name := range fileTables {
 		if !registered[name] {
-			t.Errorf("table %s: present in %s but no TableDef registers it", name, baselineMigrationFile)
+			t.Errorf("table %s: present in %s but no TableDef registers it", name, parityBaselineMigrationFile)
 		}
 	}
 }
 
-// readBaselineSQL returns the embedded baseline's text. It is read from the source tree rather than
+// parityReadBaselineSQL returns the embedded baseline's text. It is read from the source tree rather than
 // through LoadMigrations so a diff shows the file a human edits, which is the artifact this guards.
-func readBaselineSQL(t *testing.T) string {
+func parityReadBaselineSQL(t *testing.T) string {
 	t.Helper()
 	_, thisFile, _, ok := runtime.Caller(0)
 	if !ok {
 		t.Fatal("runtime.Caller(0) failed")
 	}
-	raw, err := os.ReadFile(filepath.Join(filepath.Dir(thisFile), "migrations", baselineMigrationFile))
+	raw, err := os.ReadFile(filepath.Join(filepath.Dir(thisFile), "migrations", parityBaselineMigrationFile))
 	if err != nil {
-		t.Fatalf("read %s: %v", baselineMigrationFile, err)
+		t.Fatalf("read %s: %v", parityBaselineMigrationFile, err)
 	}
 	return string(raw)
 }
 
-// assertBaselineHasNoDropOrAlter checks the file's SQL, ignoring comment lines so the header's prose
+// parityAssertBaselineHasNoDropOrAlter checks the file's SQL, ignoring comment lines so the header's prose
 // cannot hide one.
-func assertBaselineHasNoDropOrAlter(t *testing.T, raw string) {
+func parityAssertBaselineHasNoDropOrAlter(t *testing.T, raw string) {
 	t.Helper()
 	for i, line := range strings.Split(raw, "\n") {
 		if strings.HasPrefix(strings.TrimSpace(line), "--") {
@@ -148,7 +148,7 @@ func assertBaselineHasNoDropOrAlter(t *testing.T, raw string) {
 		up := strings.ToUpper(line)
 		if strings.Contains(up, "DROP ") || strings.Contains(up, "ALTER ") {
 			t.Errorf("%s line %d is a DROP or ALTER, which a baseline may never carry: %s",
-				baselineMigrationFile, i+1, strings.TrimSpace(line))
+				parityBaselineMigrationFile, i+1, strings.TrimSpace(line))
 		}
 	}
 }
@@ -170,7 +170,7 @@ func baselineTableBodies(t *testing.T, ddl string) map[string]string {
 		}
 		name := strings.ToLower(m[1])
 		if _, dup := bodies[name]; dup {
-			t.Errorf("table %s appears more than once in %s", name, baselineMigrationFile)
+			t.Errorf("table %s appears more than once in %s", name, parityBaselineMigrationFile)
 			continue
 		}
 		var body []string

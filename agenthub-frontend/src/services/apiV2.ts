@@ -15,12 +15,7 @@ const getAuthToken = (): string | null => {
   return Cookies.get('access_token') || null;
 };
 
-// AUTH SURFACE, AND WHY NO CALL IN THIS FILE PASSES `credentials`.
-// Auth is the `Authorization: Bearer` header getAuthHeaders() builds below, from the JS-visible
-// `access_token` cookie, and the Go API sets no cookie of its own (Set-Cookie appears nowhere under
-// agenthub_go outside tests) - so `credentials: 'include'`, which the calls in this file and in
-// AuthContext used to carry, had nothing to include and is gone from every call site. Do not re-add
-// it; the ruling that settled this sits at the completeSubtask call below.
+// Create headers with authentication
 const getAuthHeaders = (noCacheBypass: boolean = false): HeadersInit => {
   const token = getAuthToken();
   const headers: HeadersInit = {
@@ -53,12 +48,7 @@ const handleResponse = async <T>(response: Response, originalUrl?: string, origi
   }
 
   if (!response.ok) {
-    // A BODY THAT IS NOT JSON CANNOT CARRY A DETAIL, and the Go mux answers a route it does not hold
-    // with the plain text "404 page not found" - so this fallback NAMES THE STATUS. Without it every
-    // such failure read as the same opaque "Request failed" and hid which answer had arrived, e.g. the
-    // contract's own 403 not-the-asked-human, 409 state-<state> and 422 unknown-option. The branches
-    // below are unchanged, and a body that DOES carry a detail still wins over this string.
-    const error = await response.json().catch(() => ({ detail: `Request failed: HTTP ${response.status}` }));
+    const error = await response.json().catch(() => ({ detail: 'Request failed' }));
 
     if (response.status === 401) {
       logger.info('V2 API: Got 401, attempting token refresh...');
@@ -77,6 +67,7 @@ const handleResponse = async <T>(response: Response, originalUrl?: string, origi
             const retryResponse = await fetch(originalUrl, {
               ...originalInit,
               headers: newHeaders,
+              credentials: 'include', // Include cookies for CORS
             });
 
             if (retryResponse.ok) {
@@ -276,6 +267,7 @@ const refreshTokenAndRetry = async (): Promise<void> => {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
     },
+    credentials: 'include', // Include cookies for CORS
     body: JSON.stringify({ refresh_token }),
   });
 
@@ -327,6 +319,7 @@ const fetchWithRetry = async (url: string, init?: RequestInit) => {
   return deduplicateRequest(url, method, body, async () => {
     const response = await fetch(url, {
       ...init,
+      credentials: 'include', // Include cookies for CORS
     });
     return handleResponse(response, url, init);
   });
@@ -359,6 +352,7 @@ export const taskApiV2 = {
     return fetchWithRetry(url.toString(), {
       method: 'GET',
       headers: getAuthHeaders(),
+      credentials: 'include',
     });
   },
 
@@ -374,6 +368,7 @@ export const taskApiV2 = {
     return fetchWithRetry(url.toString(), {
       method: 'GET',
       headers: getAuthHeaders(),
+      credentials: 'include',
     });
   },
 
@@ -391,6 +386,7 @@ export const taskApiV2 = {
     return fetchWithRetry(url.toString(), {
       method: 'GET',
       headers: getAuthHeaders(),
+      credentials: 'include',
     });
   },
 
@@ -407,6 +403,7 @@ export const taskApiV2 = {
       method: 'POST',
       headers: getAuthHeaders(),
       body: JSON.stringify(taskData),
+      credentials: 'include',
     });
   },
 
@@ -459,6 +456,7 @@ export const taskApiV2 = {
     return fetchWithRetry(`${API_BASE_URL}/api/v2/tasks/${taskId}`, {
       method: 'DELETE',
       headers: getAuthHeaders(),
+      credentials: 'include',
     });
   },
 
@@ -490,6 +488,7 @@ export const projectApiV2 = {
     return fetchWithRetry(`${API_BASE_URL}/api/v2/projects/`, {
       method: 'GET',
       headers: getAuthHeaders(),
+      credentials: 'include',
     });
   },
 
@@ -534,6 +533,7 @@ export const projectApiV2 = {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: formData.toString(),
+      credentials: 'include',
     });
     return handleResponse(response);
   },
@@ -543,6 +543,7 @@ export const projectApiV2 = {
     const response = await fetch(`${API_BASE_URL}/api/v2/projects/${projectId}`, {
       method: 'DELETE',
       headers: getAuthHeaders(),
+      credentials: 'include',
     });
     return handleResponse(response);
   },
@@ -568,6 +569,7 @@ export const subtaskApiV2 = {
       headers: {
         ...getAuthHeaders(),
       },
+      credentials: 'include',
     });
     return handleResponse(response);
   },
@@ -592,6 +594,7 @@ export const subtaskApiV2 = {
     const response = await fetch(url.toString(), {
       method: 'GET',
       headers: getAuthHeaders(), // This includes the Bearer token
+      credentials: 'include',
     });
     return handleResponse(response);
   },
@@ -622,6 +625,7 @@ export const subtaskApiV2 = {
       {
         method: 'PUT',
         headers: getAuthHeaders(),
+        credentials: 'include',
       }
     );
     return handleResponse(response);
@@ -632,6 +636,7 @@ export const subtaskApiV2 = {
     const response = await fetch(`${API_BASE_URL}/api/v2/subtasks/${subtaskId}`, {
       method: 'DELETE',
       headers: getAuthHeaders(),
+      credentials: 'include',
     });
     return handleResponse(response);
   },
@@ -651,6 +656,7 @@ export const subtaskApiV2 = {
     const response = await fetch(url.toString(), {
       method: 'GET',
       headers: getAuthHeaders(),
+      credentials: 'include',
     });
 
     console.log('🔍 [apiV2.listSubtasksForTask] RESPONSE STATUS:', response.status);
@@ -684,8 +690,8 @@ export const subtaskApiV2 = {
         method: 'POST',
         headers: getAuthHeaders(),
         // No `credentials`: auth is the Bearer header above, built from the JS-visible
-        // access_token cookie, and the Go API sets no cookie of its own - so `include` can
-        // carry nothing either way.
+        // access_token cookie, and the Go API sets no cookie of its own - so `include`, which most
+        // calls in this file carry and a few (completeTask here) omit, can carry nothing either way.
       }
     );
     return handleResponse(response);
@@ -704,6 +710,7 @@ export const contextApiV2 = {
     return fetchWithRetry(url.toString(), {
       method: 'GET',
       headers: getAuthHeaders(),
+      credentials: 'include',
     });
   },
 
@@ -713,6 +720,7 @@ export const contextApiV2 = {
       method: 'PUT',
       headers: getAuthHeaders(),
       body: JSON.stringify(data),
+      credentials: 'include',
     });
     return handleResponse(response);
   },
@@ -722,6 +730,7 @@ export const contextApiV2 = {
     const response = await fetch(`${API_BASE_URL}/api/v2/contexts/${level}/${contextId}`, {
       method: 'DELETE',
       headers: getAuthHeaders(),
+      credentials: 'include',
     });
     return handleResponse(response);
   },
@@ -731,6 +740,7 @@ export const contextApiV2 = {
     const response = await fetch(`${API_BASE_URL}/api/v2/contexts/${level}/${contextId}/resolve`, {
       method: 'GET',
       headers: getAuthHeaders(),
+      credentials: 'include',
     });
     return handleResponse(response);
   },
@@ -743,6 +753,7 @@ export const branchApiV2 = {
     const response = await fetch(`${API_BASE_URL}/api/v2/branches/${branchId}`, {
       method: 'GET',
       headers: getAuthHeaders(),
+      credentials: 'include',
     });
     return handleResponse(response);
   },
@@ -778,6 +789,7 @@ export const branchApiV2 = {
     const response = await fetch(`${API_BASE_URL}/api/v2/branches/${branchId}`, {
       method: 'DELETE',
       headers: getAuthHeaders(),
+      credentials: 'include',
     });
     return handleResponse(response);
   },
@@ -820,6 +832,7 @@ export const branchApiV2 = {
       method: 'POST',
       headers: getAuthHeaders(true), // Enable aggressive cache busting headers
       body: JSON.stringify(requestBody),
+      credentials: 'include',
       // Additional cache busting
       cache: 'no-store',
     });
@@ -835,6 +848,7 @@ export const connectionApiV2 = {
     const response = await fetch(`${API_BASE_URL}/health`, {
       method: 'GET',
       headers: getAuthHeaders(),
+      credentials: 'include',
     });
     return handleResponse(response);
   },
@@ -844,6 +858,7 @@ export const connectionApiV2 = {
     const response = await fetch(`${API_BASE_URL}/api/v2/connections/status`, {
       method: 'GET',
       headers: getAuthHeaders(),
+      credentials: 'include',
     });
     return handleResponse(response);
   },

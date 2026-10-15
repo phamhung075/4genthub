@@ -132,27 +132,34 @@ func (p taskFacadeProvider) TaskFacade(ctx context.Context, userID, projectID, g
 	if gitBranchID != nil {
 		ledgerBranchID = *gitBranchID
 	}
+	// ONE repository is the ledger's read side for everything that needs it: the recorder writes
+	// through it, the update response reads its own note back through it, and GetTask unions it with
+	// the column. It is the same repository the events route reads.
+	taskEvents := infrarepos.NewTaskEventRepository(p.sessions, ledgerUserID, ledgerBranchID)
 	ledger := use_cases.StatusLedger{
 		Tx:     p.sessions,
-		Ledger: services.NewTaskEventRecorder(infrarepos.NewTaskEventRepository(p.sessions, ledgerUserID, ledgerBranchID), ledgerUserID),
+		Ledger: services.NewTaskEventRecorder(taskEvents, ledgerUserID),
+		Events: taskEvents,
 	}
 
 	deps := facades.TaskFacadeDeps{
 		GitBranchRepository: branchWithProject,
 		ContextService:      unified,
 		Notifier:            p.notifier,
-		CreateTask:          use_cases.NewCreateTaskUseCase(taskRepo, getter).WithHooks(taskHooks),
+		CreateTask:          use_cases.NewCreateTaskUseCase(taskRepo, getter).WithHooks(taskHooks).WithLedger(ledger),
 		UpdateTask:          use_cases.NewUpdateTaskUseCase(taskRepo, getter).WithHooks(taskHooks).WithLedger(ledger),
-		GetTask:             use_cases.NewGetTaskUseCase(taskRepo, contextReader{unified, userID}, getter),
+		GetTask:             use_cases.NewGetTaskUseCase(taskRepo, contextReader{unified, userID}, getter, taskEvents),
 		DeleteTask:          use_cases.NewDeleteTaskUseCase(taskRepo, subtaskRepo, cascadeBranchRepo{branchRepo}, projectRepo, nil),
 		CompleteTask:        use_cases.NewCompleteTaskUseCase(taskRepo, subtaskRepo, legacyTaskContextRepo{taskContextRepo}, completeContextFactory{p.ctxFactory, userID}).WithHooks(taskHooks).WithLedger(ledger),
-		SearchTasks:         use_cases.NewSearchTasksUseCase(taskRepo),
+		SearchTasks:         use_cases.NewSearchTasksUseCase(taskRepo, taskEvents),
 		NextTask:            use_cases.NewNextTaskUseCase(taskRepo, nil),
 		DependencyResolver:  services.NewDependencyResolverService(taskRepo, userID),
 		// The resume brief's two missing seams: the ledger it is built from (the SAME repository the
 		// events route reads, scoped to the same resolved user the status ledger writes under) and the
 		// one task-level context document it carries.
-		ResumeLedger:       infrarepos.NewTaskEventRepository(p.sessions, ledgerUserID, ledgerBranchID),
+		ResumeLedger: taskEvents,
+		// and the list/search responses' render source, the same repository again.
+		ProgressEvents:     taskEvents,
 		ResumeTaskContext:  taskContextRepo,
 		ApplyContextFormat: factories.ContextResponseApplyToTaskResponse,
 		CurrentUserID:      middleware.GetCurrentUserID,

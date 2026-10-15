@@ -2,43 +2,49 @@
 
 Written 2026-10-11 for the owner to review. Status of each item: "Exists" means it is in the client or its docs. "Missing" means no code was found. Not every module was read in detail.
 
+**Updated later the same day, after the client work landed.** Four of section 4.7's six items now ship in
+`4genteam`, so the lines below that still read "Missing" for them were corrected in place, each naming the
+commit that landed it (the first touch of that item's own file on the client line). Section 4.8 is the status
+table, and the check is the binary itself: `4genteam --help` lists the verbs and `4genteam doctor <rig>`
+lists the doctor's rows.
+
 ## 1. Options
 
 ### 1.1 Code and branches (git, code review)
 - Worktree per seat. Exists in the design (`ai_docs/core-architecture/seat-worktrees.md`), not enforced.
-- File-overlap detector. Missing. Detail in section 2.
+- File-overlap detector. Exists (`4genteam overlap`, `57d92bf`): two seats changing one file, and seat branches left with unmerged commits. Detail in section 2.
 - Branch and merge status board: which seat is ahead or behind main, which tips wait for review. Missing.
 - Pre-merge gate: tests, build and secret scan on the tip before the lead merges. Partly there (secretscan, reviewer).
-- Stale-branch alert: a seat branch untouched for N hours with unmerged commits. Missing.
-- Guard on `git add -A`, `commit -a`, push and force. Partly there (seat policies deny push).
+- Stale-branch alert: a seat branch untouched for N hours with unmerged commits. Exists, inside the overlap detector.
+- Guard on `git add -A`, `commit -a`, push and force. Exists for push and force (`4genteam guard`, `96a09a1`): per-repo pre-commit and pre-push hooks, so a push fails closed, a seat's commit in the shared checkout and a commit under a foreign author are refused, and a credential-looking diff is warned about. `git add -A` and `commit -a` are not blocked as such - the shared-checkout rule is what catches them.
 
 ### 1.2 Work tracking (Jira, Kanban board)
 - Board view of items per seat: owner, state, age. Missing.
-- Stuck-item alert: an item "in progress" with no activity for N minutes. Missing.
+- Stuck-item alert: an item "in progress" with no activity for N minutes. Exists (`4genteam stuck`, `4fa2c7c`), and rigd runs the scan every ten minutes.
 - Dependency check: do not start an item whose blocker is open. Missing.
-- Definition-of-done check before an item closes (tests run, changelog entry written, diff inspected). Missing.
+- Definition-of-done check before an item closes (tests run, changelog entry written, diff inspected). Partly (`4genteam evidence`, `a98e78b`): it prints the done report at close - the board row read back, the diff's size, and the doc-drift line ("code changed but no doc or changelog entry"). Whether the tests ran is the reviewer's ruling, not the client's.
 
 ### 1.3 Communication (Slack, standup)
 - `4genteam send`. Exists, but the sender is not trusted, see section 3.
 - Daily standup digest from the seat logs: what each seat did, what blocks it. Missing.
 - Handoff note when a seat is reseated or compacted, so the next session knows its state. Partly there (compaction supervisor).
-- Escalation route: a seat blocked for N minutes tells the lead, then the owner. Missing.
+- Escalation route: a seat blocked for N minutes tells the lead, then the owner. Exists, inside the stuck alerts (`4fa2c7c`): the same finding is re-sent to the lead and then written to the owner's queue row.
 
 ### 1.4 Environment and onboarding
 - `up` for the whole room, `seat sync`, `seat reseat`, skills delivery. Exists.
-- Seat doctor: cwd, branch, skills, guide version, tool access. `doctor` exists, the worktree and skill checks are not built.
+- Seat doctor: cwd, branch, skills, guide version, tool access. Exists (`4genteam doctor <rig>`, `9182f13`): one line per safeguard row (compact, watchdog, bridge, rigd, seats, identity, worktrees, clone, hooks, orphan_handoffs), then the per-seat findings - F1 a seat whose cwd is not its worktree, F2 a skill delivered but not declared by the client's tree, F3 a skill in the seat's set that its runtime did not load. Read-only; it exits 3 and names every row that is not running. The repair verb is `up`.
 - Fresh-seat orientation pack: repo map, rules, current board. Partly in skills.
 
 ### 1.5 Quality and safety
 - Off-peak gate and usage window. Exists.
-- Watchdog and restarts. Exists, but needs a manual restart after a reboot until rigd exists.
+- Watchdog and restarts. Exists, and rigd now runs and supervises it (`4genteam rigd`, `9182f13`), which is the manual-restart caveat's own condition. What happens after a machine reboot is still open - no unit starts rigd for you.
 - Audit log of every command a seat ran, per seat, append-only. Partly (`clientevidence`).
 - Forbidden-actions list and auto-fix circuit breaker. Requested, not built.
 - Secret scan on diffs before commit. Exists (`secretscan`).
 
 ### 1.6 Cost and capacity (team budget)
 - Token and cost per seat, per item. Partly (cost rows exist in the server).
-- Idle nudge and load balancing: give a task to an idle seat. Idle nudge requested, not built.
+- Idle nudge and load balancing: give a task to an idle seat. The idle nudge exists, inside the stuck alerts (`4fa2c7c`); load balancing is not built.
 - Review queue limit, so the reviewer is not buried. Missing.
 
 ### 1.7 Knowledge (wiki, docs)
@@ -340,3 +346,74 @@ Sizes: **small** is up to half a day, **medium** is one to two days.
 
 The lead creates one board task per item when the owner approves this analysis. The architect did not create
 them, because assigning work to go-dev and fe-dev is the lead's call.
+
+### 4.8 What ships now
+
+Measured 2026-10-11 against `4genteam --help` and the client's own history. The commit is the first touch of
+the file that carries the item, on the client line (`agenthub_client`, branch `4genthub-min/go-dev`), and the
+verb is the one the binary prints. **All six items of 4.7 land** - the plan outran its own status column.
+
+| # | Item | Where it lands | Commit |
+|---|---|---|---|
+| 1 | Seat doctor | `4genteam doctor` | `9182f13` (`internal/clientlifecycle/doctor.go`) |
+| 2 | Git guard, with the secret-scan warning | `4genteam guard` | `96a09a1` (`internal/clientguard/command.go`) |
+| 3 | Owner node and `4genteam send` method C | `4genteam send`; the node itself is a room member the server renders (4.6). Board task `44d2fd0b-81c8-4d31-bf2b-731d8b35bbe1` | `90845c2` (`internal/clientseat/ownersend.go`) |
+| 4 | Overlap detector, with the stale-branch alert | `4genteam overlap`, one scan in rigd's loop | `57d92bf` (`internal/clientlifecycle/overlap.go`) |
+| 5 | Stuck and idle alerts, with escalation | `4genteam stuck`, the same loop | `4fa2c7c` (`internal/clientlifecycle/stuck.go`) |
+| 6 | Done report, with the doc-drift line | printed by `4genteam evidence` before it submits | `63fd184` (`internal/clientevidence/evidence.go`, its first touch); the item landed in `a98e78b` |
+
+Read a verb before trusting a row: `4genteam <verb> --help` prints what it does and what it refuses, and
+`4genteam doctor <rig>` prints the rows the doctor actually has.
+
+## 5. Which product each item lands in
+
+Section 4 decided what to build and in what order. This section says which codebase each piece is built in, and names the decisions still owed to the owner. It is a plan; no code is written from it until the owner approves.
+
+Words used: the **board** is the 4genthub task board; the **queue** is OpenRig's coordination queue; **rigd** is the client's supervision loop (`agenthub_client/internal/clientlifecycle`).
+
+### 5.1 The products
+
+- **4genthub** - the server and its UI: Go under `agenthub_go` (the board, rooms and seats, `seat_links`, the ledger) and React under `agenthub-frontend`. Repository `/home/daihu/__projects__/4genthub`.
+- **4genteam** - the client's operational surface: the `4genteam` command (`agenthub_client/cmd/4genteam`), the rigd loops (`agenthub_client/internal/clientlifecycle`), and the git hooks (`4genthub/scripts/git-hooks`). `4genteam` is the one binary the client repository builds.
+- **4gent-client** - the same client repository (`agenthub_client`, `github.com/phamhung075/4genthub-client`) read as its library surface: the policy, session-log and secret-scan packages (`internal/clientpolicy`, `internal/seatlog`, `internal/secretscan`), the seat-side checker (`cmd/seatcheck`) and the seat state (`internal/clientservices`).
+
+**One repository, two names.** Measured: `4genteam` and `4gent-client` are one repository. `agenthub_client` is the only client checkout (`.gitmodules` names `git@github.com:phamhung075/4genthub-client.git`), and it ships the `4genteam` binary, rigd and the library packages together; the retired Python `openrig_*.py` scripts are no longer in the tree. So the last two columns below are that repository's two surfaces - what it runs and what it links - not two products. If two repositories were intended, that is open decision (d).
+
+### 5.2 The split
+
+| Item (section 4) | 4genthub (server / frontend) | 4genteam (CLI / rigd) | 4gent-client (client library) |
+|---|---|---|---|
+| **1 Seat doctor** | n/a - it reads git and files on the seat's machine only | **lands**: new checks in the `4genteam doctor` verb (`internal/clientlifecycle/doctor.go`), run at launch, reseat and on demand | **reads**: the seat's deny rules (`internal/clientpolicy`) and its log (`internal/seatlog`) for the skills and guide-version rows; no new package |
+| **2 Git guard** | **partly**: the hook scripts live in this repo's own tree (`scripts/git-hooks/`), and this repo is the first one guarded | **lands**: the verb that installs the hook into any repo, and the hook entry points | **lands**: the secret scan the hook calls (`internal/secretscan`) and the forbidden-action rules (`internal/clientpolicy`) |
+| **3 Owner node + `4genteam send` method C** (board `44d2fd0b`) | **lands**: the terminal member (`runtime: terminal`, `agent_ref: builtin:terminal`, `profile: none`), the `team apply --prune` exemption, and the `seat_links` that attribute its messages | **lands**: `up` adds the owner node; the new `4genteam send` verb (write a private file, type one command into the node's terminal, read the result file) | n/a - the send is a CLI command, not a library |
+| **4 Overlap detector + stale-branch alert** | n/a beyond the base-branch setting it reads (decision a) | **lands**: a new rigd loop in `internal/clientlifecycle` scanning every worktree | **partly**: the earlier session-log warning uses `internal/seatlog` (omp and claude-code only) - phase 2 |
+| **5 Stuck and idle alerts + escalation** | **partly**: it watches board rows, which are server data; no change unless a read is missing | **lands**: the same rigd loop, plus the escalation row it writes to the queue | **partly**: "no log activity for K minutes" uses `internal/seatlog` (omp and claude-code only) |
+| **6 Done report + doc-drift** | **partly**: it reads the board row it closes | **lands**: assembled by the client at item close (diff, changelog presence) | **partly**: the diff and changelog checks are client-side git reads |
+
+The deferred set, by product:
+
+| Deferred item | Product |
+|---|---|
+| Branch status board | 4genthub frontend; its data comes from the detector (4genteam) |
+| Pre-merge gate | 4genteam (client) plus this repo's hook scripts |
+| Board view per seat | 4genthub frontend - check whether the board page can already filter by seat first |
+| Standup digest | 4gent-client (seat logs) plus 4genthub (board data) |
+| Cost view | 4genthub frontend; the server's cost rows already exist |
+| Load balancing | 4genthub server plus 4genteam |
+| Review-queue limit | 4genthub server |
+| Command audit log | dropped/deferred - only omp and claude-code logs are readable, so it would be incomplete |
+| Handoff note | 4genteam (the compaction supervisor) plus 4gent-client (`internal/seatlog`) |
+
+### 5.3 The open decisions
+
+**(a) Base branch per room.** The detector compares each seat branch against a configured base, not `main` (4.5). Decision: what each room's base branch is, and who owns it - a room setting on the server (4genthub), a client config key in `~/.config/4genthub/.env` (4genteam), or the lead per batch. Recommendation: a room setting the client reads, falling back to `main`.
+
+**(b) "Owner outranks lead on priorities only."** The exact rule: an owner-signed message may set priorities, scope and the next task; it does not order a merge or a push. Where enforced: the git guard keeps push blocked for every seat whatever the sender (so the rule is not the only protection), and the lead follows it; no code reads message priority. Decision: confirm "priorities only, merges stay the lead's" (recommended).
+
+**(c) The rigd loop.** Items 4 and 5 ride one rigd loop in `internal/clientlifecycle`. Decision: the cadence (4.5 proposes every 10 minutes), and what happens when rigd is down - the detector and the alerts go silent, so the seat doctor (item 1) must report rigd's state; rigd phase 1 already carries that safeguard report.
+
+**(d) `4genteam` and `4gent-client`.** Measured as one repository (5.1). Decision: confirm they are two surfaces of `agenthub_client`, or name a second repository if one is intended. Does not block step 2 - both surfaces are go-dev's.
+
+### 5.4 Handoff to step 2
+
+The lead creates one board task per item in section 4.2's order: go-dev for the client items 1-6, fe-dev for the deferred board and cost views, and a reviewer gate on each tip.

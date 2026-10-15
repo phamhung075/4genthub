@@ -1,7 +1,6 @@
 package fastmcp_test
 
 import (
-	"context"
 	"database/sql"
 	"fmt"
 	"net/url"
@@ -10,9 +9,19 @@ import (
 	"time"
 
 	"agenthub/fastmcp"
+	"agenthub/fastmcp/session_stream/testdb"
 	"agenthub/fastmcp/task_management/infrastructure/database"
 )
 
+// newFastmcpTestDatabase creates a throwaway database on the cluster AGENTHUB_TEST_PG_URL names,
+// brings the schema up in it, and returns the database's DSN - which is what the initializer under
+// test is constructed from, so the case reads the database through the URL production would use.
+//
+// The bring-up is testdb.CreateSchema, not a bare cfg.CreateTables: the gated carry step
+// 0003_progress_history_carry_and_drop refuses on a database whose ledger holds no 0001_baseline
+// row, and createAll populates the catalogue before the runner runs, so a fresh fixture database
+// skips the frozen baseline without recording it and the bare boot refuses with P0001.
+// CreateSchema performs the operator's mark and boots again.
 func newFastmcpTestDatabase(t *testing.T) string {
 	t.Helper()
 	admin := os.Getenv("AGENTHUB_TEST_PG_URL")
@@ -38,21 +47,20 @@ func newFastmcpTestDatabase(t *testing.T) string {
 	})
 	u, _ := url.Parse(admin)
 	u.Path = "/" + name
-	return u.String()
+	dsn := u.String()
+	pool, err := database.PgxOpener(dsn, database.EngineOptions{PoolSize: 2, MaxOverflow: 2})
+	if err != nil {
+		t.Fatal(err)
+	}
+	// The pool outlives this helper, so it is closed by a cleanup rather than a defer. Cleanups run
+	// last registered first, so this one closes the pool BEFORE the drop-registered-above runs.
+	t.Cleanup(func() { pool.Close() })
+	testdb.CreateSchema(t, &database.DatabaseConfig{Engine: &database.Engine{DB: pool, URL: dsn}})
+	return dsn
 }
 
 func TestDatabaseInitializerCreateDefaultProject(t *testing.T) {
 	dsn := newFastmcpTestDatabase(t)
-	db, err := database.PgxOpener(dsn, database.EngineOptions{PoolSize: 2, MaxOverflow: 2})
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer db.Close()
-	ctx := context.Background()
-	cfg := &database.DatabaseConfig{Engine: &database.Engine{DB: db, URL: dsn}}
-	if err := cfg.CreateTables(ctx); err != nil {
-		t.Fatal(err)
-	}
 	init := fastmcp.NewDatabaseInitializer(dsn)
 	if !init.EnsureTablesExist() {
 		t.Fatal("EnsureTablesExist returned false")

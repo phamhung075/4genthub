@@ -33,8 +33,6 @@ type Task struct {
 	Status             *value_objects.TaskStatus
 	Priority           *value_objects.Priority
 	GitBranchID        *string
-	ProgressHistory    map[string]any
-	ProgressCount      int
 	EstimatedEffort    string
 	Assignees          []string
 	Labels             []string
@@ -60,6 +58,9 @@ type Task struct {
 	// CompletionSummary is `_completion_summary`; TestingNotes is the dynamic `_testing_notes` attribute.
 	CompletionSummary *string
 	TestingNotes      *string
+
+	ClaimedBy *string
+	ClaimedAt *time.Time
 }
 
 // NewTask applies the Python defaults, initializes timestamps and validates.
@@ -75,9 +76,6 @@ func NewTask(t Task) (*Task, error) {
 	}
 	if s.ProgressState == "" {
 		s.ProgressState = value_objects.ProgressStateInitial
-	}
-	if s.ProgressHistory == nil {
-		s.ProgressHistory = map[string]any{}
 	}
 	if s.Assignees == nil {
 		s.Assignees = []string{}
@@ -286,27 +284,35 @@ func (t *Task) UpdateDescription(description string) error {
 	return nil
 }
 
-// AppendProgress appends numbered progress to the history.
-func (t *Task) AppendProgress(content string) error {
-	t.ProgressCount++
-	header := fmt.Sprintf("=== Progress %d ===", t.ProgressCount)
-	if t.ProgressHistory == nil {
-		t.ProgressHistory = map[string]any{}
-	}
+// TouchForProgress is the mutation a progress write makes on the TASK itself. The note lives in the
+// ledger and the column with its counter is gone, so what is left on the entity is the touch - which
+// advances updated_at, the instant the note is stamped with - and the cleared context_id the column
+// path cleared before it moved.
+//
+// It does NOT build the entry, because the note's NUMBER belongs to the ledger and is assigned INSIDE
+// the writing transaction (StatusLedger.recordNotes), under the same advisory lock the append takes. A
+// number read before that transaction could race another writer and hand two notes one number - and the
+// number is not decoration: it is inside the note's text, and content plus number together is the
+// identity a reader merges copies by, so two live notes sharing one is a lost note, not a cosmetic
+// clash.
+func (t *Task) TouchForProgress() error {
 	if err := t.Touch("progress_update"); err != nil {
 		return err
 	}
-	t.ProgressHistory[fmt.Sprintf("progress_%d", t.ProgressCount)] = map[string]any{
-		"content":         header + "\n" + content,
-		"timestamp":       value_objects.IsoFormat(*t.UpdatedAt),
-		"progress_number": t.ProgressCount,
-	}
 	t.ContextID = nil
-	t.emit("progress_history", map[string]any{
-		"old_value": fmt.Sprintf("progress_added_%d", t.ProgressCount-1),
-		"new_value": fmt.Sprintf("progress_added_%d", t.ProgressCount),
-	})
 	return nil
+}
+
+// NewProgressEntry builds the entry a progress note is STORED as: the text with the numbered header the
+// column used to carry, that number, and the note's timestamp. It is exported because the ledger builds
+// the entries for a task's own notes AND its subtasks' - one definition of the header, so a reader
+// merging them cannot meet two formats.
+func NewProgressEntry(number int, content, timestamp string) ProgressEntry {
+	return ProgressEntry{
+		Number:    float64(number),
+		Content:   fmt.Sprintf("=== Progress %d ===\n%s", number, content),
+		Timestamp: timestamp,
+	}
 }
 
 // UpdateEstimatedEffort falls back to the MEDIUM label for invalid values.
@@ -481,9 +487,71 @@ func numberOf(v any) float64 {
 	return 0
 }
 
-// GetProgressHistoryText joins the history entries ordered by progress number.
-func (t *Task) GetProgressHistoryText() string {
-	if len(t.ProgressHistory) == 0 {
+// ProgressEntry is one progress note as the ledger stores it: the number it was written under, the
+// text exactly as the payload carries it - the numbered header is part of the stored string, so a
+// note reads the same whichever path produced it - and the timestamp the payload mirrors.
+type ProgressEntry struct {
+	Number    float64
+	Content   string
+	Timestamp string
+}
+
+// ProgressTextWith renders the task's progress notes from the LEDGER's events: the note text of every
+// `progress` event, ordered by the number its payload declares, joined the way the column's own
+// rendering joined them. It is the only progress surface now - the task row's progress_history column
+// is gone - so the argument is the whole source, not one half of a merge.
+//
+// The identity is the note's content plus its progress_number together, read from the payload exactly
+// as the writer stores it: that is the identity the carry's guard uses to tell a carried copy from a
+// note the ledger already holds, so deduping on it keeps a carried copy from rendering twice even if
+// one reached the ledger. An event whose payload carries no readable content is not a note, and it is
+// skipped rather than rendered as a blank line.
+func (t *Task) ProgressTextWith(progressEvents []*TaskEvent) string {
+	type noteIdentity struct {
+		number  float64
+		content string
+	}
+	entries := make([]ProgressEntry, 0, len(progressEvents))
+	seen := map[noteIdentity]bool{}
+	for _, event := range progressEvents {
+		if event == nil || event.Kind != TaskEventKindProgress {
+			continue
+		}
+		number := numberOf(event.Payload["progress_number"])
+		content, ok := event.Payload["content"].(string)
+		if !ok {
+			continue
+		}
+		id := noteIdentity{number, content}
+		if seen[id] {
+			continue
+		}
+		seen[id] = true
+		entries = append(entries, ProgressEntry{Number: number, Content: content})
+	}
+	sort.Slice(entries, func(i, j int) bool {
+		if entries[i].Number != entries[j].Number {
+			return entries[i].Number < entries[j].Number
+		}
+		return entries[i].Content < entries[j].Content
+	})
+	parts := make([]string, len(entries))
+	for i, e := range entries {
+		parts[i] = e.Content
+	}
+	return strings.Join(parts, "\n\n")
+}
+
+// ProgressHistoryText joins the history entries ordered by progress number. A task and a subtask write
+// the same entry shape (content + progress_number: Task.AppendProgress and Subtask.AppendProgress), so
+// the join lives once and both the task's response and the subtask's DTO call it.
+//
+// An entry that is not an object with a string `content` contributes NOTHING: it is skipped, not rendered.
+// Reading through a value that is not a map yields a nil map, a nil map yields "", and the entry then renders
+// as an EMPTY line that is indistinguishable from a real note whose text is blank - which is how two notes
+// were reported as lost before this function's caller was corrected at the decode boundary.
+func ProgressHistoryText(history map[string]any) string {
+	if len(history) == 0 {
 		return ""
 	}
 	type entry struct {
@@ -492,9 +560,16 @@ func (t *Task) GetProgressHistoryText() string {
 		content string
 	}
 	entries := []entry{}
-	for k, v := range t.ProgressHistory {
-		m, _ := v.(map[string]any)
-		c, _ := m["content"].(string)
+	for k, v := range history {
+		// BOTH assertions are checked, and the entry is skipped when either fails.
+		m, ok := v.(map[string]any)
+		if !ok {
+			continue
+		}
+		c, ok := m["content"].(string)
+		if !ok {
+			continue
+		}
 		entries = append(entries, entry{k, numberOf(m["progress_number"]), c})
 	}
 	sort.Slice(entries, func(i, j int) bool {
@@ -676,6 +751,14 @@ func (t *Task) CompleteTask(completionSummary string, contextUpdatedAt *time.Tim
 		t.emit("subtasks", map[string]any{"action": "all_subtasks_completed", "subtask_ids": t.Subtasks})
 	}
 	return nil
+}
+
+// Claim assigns the task to a seat and records the claim time.
+func (t *Task) Claim(seat string) error {
+	t.ClaimedBy = &seat
+	now := time.Now().UTC()
+	t.ClaimedAt = &now
+	return t.Touch("task_claimed")
 }
 
 // UpdateProgressState derives progress_state from the status and progress.
@@ -1055,6 +1138,16 @@ func (t *Task) ToDict() (map[string]any, error) {
 	}
 	if t.ProgressTimeline != nil {
 		result["progress_timeline"] = t.ProgressTimeline.ToDict()
+	}
+	if t.ClaimedBy != nil {
+		result["claimed_by"] = *t.ClaimedBy
+	} else {
+		result["claimed_by"] = nil
+	}
+	if t.ClaimedAt != nil {
+		result["claimed_at"] = value_objects.IsoFormat(*t.ClaimedAt)
+	} else {
+		result["claimed_at"] = nil
 	}
 	return result, nil
 }

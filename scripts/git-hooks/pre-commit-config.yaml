@@ -1,5 +1,5 @@
 # Pre-commit hooks configuration for CI/CD and local development
-# Install: pre-commit install -c scripts/git-hooks/pre-commit-config.yaml --hook-type pre-commit --hook-type prepare-commit-msg
+# Install: pre-commit install -c scripts/git-hooks/pre-commit-config.yaml --hook-type pre-commit --hook-type prepare-commit-msg --hook-type post-commit --hook-type pre-push
 #
 # NOTE: Hooks run on STAGED files only and automatically re-stage formatted files
 
@@ -30,3 +30,27 @@ repos:
         entry: scripts/git-hooks/prepare-commit-msg
         language: script
         stages: [prepare-commit-msg]
+
+  # After a commit, every running seat is told which commit landed and which files it touched, so a seat
+  # that is about to edit one of them reads it again. The script never fails a commit.
+  - repo: local
+    hooks:
+      - id: notify-seats
+        name: "tell the running seats about this commit"
+        entry: scripts/git-hooks/notify-seats
+        language: script
+        stages: [post-commit]
+        always_run: true
+        pass_filenames: false
+        verbose: false
+
+  # The remote carries main and frontend only; seats keep their branches and worktrees local.
+  - repo: local
+    hooks:
+      - id: remote-branches
+        name: "push only main or frontend"
+        entry: scripts/git-hooks/pre-push-branches
+        language: script
+        stages: [pre-push]
+        always_run: true
+        pass_filenames: false

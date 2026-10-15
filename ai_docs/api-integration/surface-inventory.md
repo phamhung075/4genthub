@@ -23,7 +23,7 @@ so a naive `grep HandleFunc` prints `"POST "+base+"/"` instead of `/api/v2/proje
 **Resolve them with the generator rather than by hand:** `cd agenthub_go && go run ./cmd/apirefgen` follows each `RegisterRoutes` call into the package that owns it and prints `<n> routes, <n> tools`; pass `-out /tmp/apiref.ts` to read the resolved list without writing the frontend artefact. At `db9d2bc3` it emitted **143 routes, 10 tools**, independently matching this section's count and resolving the function-scoped bases above (e.g. `/api/v2/tasks/{id}/events`). Writing a regex for this is how a reader reinvents the bug this paragraph describes — three such attempts on 2026-10-08 produced junk path keys while reporting plausible counts.
 The commands used and the full registration dump are in the acceptance appendix.
 
-**Reproduce:** `cd agenthub_go && grep -rn "mux\.HandleFunc(" --include='*.go' --exclude='*_test.go' fastmcp/server/httpapp fastmcp/auth | wc -l` -> **145** (httpapp 125, auth 20), re-run at `42de79c2`; the same command returned **146** (httpapp 126) at `6cfd56ab` before `e5ecff63` removed the two machine-token routes, and **145** (httpapp 125) before `e6829b32` removed the two always-500 task routes. *`rg` is NOT installed in this environment, so the earlier `rg -n` form could not run here, and it also counted `*_test.go` registrations — 125 at `db9d2bc3` rather than that pass's no-tests **123**; the tests-inclusive count for `httpapp` is now the number the no-tests figure used to be, which is how this line rots silently if it is quoted without its date.* The command above is the one that produced the number.*
+**Reproduce:** `cd agenthub_go && grep -rn "mux\.HandleFunc(" --include='*.go' --exclude='*_test.go' fastmcp/server/httpapp fastmcp/auth | wc -l` -> **156** (httpapp 136, auth 20), re-run at `6adbbc3f` (docs duty pass 10, 2026-10-13, on the architect's T13 ruling `ARCH-RULING-T13-2026-10-13.md`); it read **148** (httpapp 128, auth 20) at `3e81e1e9`, **145** (httpapp 125, auth 20) at `42de79c2`, and the same command returned **146** (httpapp 126) at `6cfd56ab` before `e5ecff63` removed the two machine-token routes, and **145** (httpapp 125) before `e6829b32` removed the two always-500 task routes. *`rg` is NOT installed in this environment, so the earlier `rg -n` form could not run here, and it also counted `*_test.go` registrations — 125 at `db9d2bc3` rather than that pass's no-tests **123**; the tests-inclusive count for `httpapp` is now the number the no-tests figure used to be, which is how this line rots silently if it is quoted without its date.* The command above is the one that produced the number.*
 
 **RE-RUN 2026-10-10 (writer seat) at HEAD `ab8ff69f`: the command above returns the same **144** (httpapp 124, auth 20), `go run ./cmd/apirefgen` independently wrote `144 routes, 10 tools`, and every one of the 124 `httpapp` registrations carries a citation in §1 within three lines — a COVERAGE check only, not a row-by-row re-resolution, so the §1 rows keep the dates their own passes recorded.**
 
@@ -73,17 +73,17 @@ Both forms point at the same kind of thing — the line that registers the route
 
 | Method | Path | Handler | Registration |
 |---|---|---|---|
-| GET | `/health` | `handleHealth` | `fastmcp/server/httpapp/app.go:123` |
-| POST | `/api/v2/projects/` | `routes.CreateProject` | `fastmcp/server/httpapp/app.go:146` |
-| GET | `/api/v2/projects/` | `routes.ListProjects` | `fastmcp/server/httpapp/app.go:159` |
-| GET | `/api/v2/projects/{id}` | `routes.GetProject` | `fastmcp/server/httpapp/app.go:167` |
-| PUT | `/api/v2/projects/{id}` | `routes.UpdateProject` | `fastmcp/server/httpapp/app.go:175` |
-| DELETE | `/api/v2/projects/{id}` | `routes.DeleteProject` | `fastmcp/server/httpapp/app.go:196` |
-| POST | `/api/v2/projects/{id}/health-check` | `routes.ProjectHealthCheck` | `fastmcp/server/httpapp/app.go:204` |
+| GET | `/health` | `handleHealth` | `fastmcp/server/httpapp/app.go:142` |
+| POST | `/api/v2/projects/` | `routes.CreateProject` | `fastmcp/server/httpapp/app.go:170` |
+| GET | `/api/v2/projects/` | `routes.ListProjects` | `fastmcp/server/httpapp/app.go:183` |
+| GET | `/api/v2/projects/{id}` | `routes.GetProject` | `fastmcp/server/httpapp/app.go:191` |
+| PUT | `/api/v2/projects/{id}` | `routes.UpdateProject` | `fastmcp/server/httpapp/app.go:199` |
+| DELETE | `/api/v2/projects/{id}` | `routes.DeleteProject` | `fastmcp/server/httpapp/app.go:220` |
+| POST | `/api/v2/projects/{id}/health-check` | `routes.ProjectHealthCheck` | `fastmcp/server/httpapp/app.go:228` |
 
-**The project-creation contract, STATED rather than implied — `POST /api/v2/projects/` (the trailing slash is part of the route) accepts `application/x-www-form-urlencoded` ONLY.** `app.go:146` registers it and `:151` parses the body with `_ = r.ParseForm()`, then refuses a body with no `name` through the shared `missingForm(r, "name")` helper (`:152`; it validates presence via `r.PostForm.Has`, `http.go:132`, and the `422` is `writeMissing`, `http.go:124`), and only then reads the VALUE with `r.PostForm.Get("name")` / `Get("description")` at `:156`: **CITATIONS RE-RESOLVED 2026-10-09 — this clause read `:135`/`:137-144`, the same region eleven lines above; and the mechanism it named (the value read) is one half of the handler while the check that produces the `422` is the other, so the clause now states both.** **`name` is required and `description` is optional**, and neither a JSON body nor a multipart body is read at all. **A JSON or multipart request is therefore refused with the SAME `422` that reports `body.name` missing**, because `ParseForm` reads neither encoding — so the refusal names a **MISSING FIELD** rather than the **ENCODING**, which is why two independent callers concluded they had a payload problem when they had a content-type problem. The application itself sends exactly this shape (`agenthub-frontend/src/services/apiV2.ts:475` posts `name`/`description` with `Content-Type: application/x-www-form-urlencoded`, and its flow measures **200** end to end), so **the route is not wrong — it was merely unstated.** **THE REUSABLE HALF: A REFUSAL THAT NAMES THE WRONG CAUSE COSTS A CALLER THE SAME TIME AS A SILENT FAILURE** — the same family as the reason text that never reached the chip, the preview read that looked truncated, and the grep that looked absent from the wrong field; and this is that family's **cheapest instance to fix, because the fix is a documented contract rather than a change to the refusal.**
+**The project-creation contract, STATED rather than implied — `POST /api/v2/projects/` (the trailing slash is part of the route) accepts `application/x-www-form-urlencoded` ONLY.** `app.go:170` registers it and `:175` parses the body with `_ = r.ParseForm()`, then refuses a body with no `name` through the shared `missingForm(r, "name")` helper (`:176`; it validates presence via `r.PostForm.Has`, `http.go:132`, and the `422` is `writeMissing`, `http.go:124`), and only then reads the VALUE with `r.PostForm.Get("name")` / `Get("description")` at `:180`: **RE-RESOLVED 2026-10-13 (docs duty pass 10) at `6adbbc3f` — these four read `:146`/`:151`/`:152`/`:156`, the same block 24 lines higher, because the ledger, room-decision, prefetch and orchestration routes landed above it (`mux.HandleFunc("POST "+base+"/", …)` is `app.go:170`, `_ = r.ParseForm()` `:175`, `missingForm(r, "name")` `:176`, `r.PostForm.Get("name")` `:180`); the movement is the tree's, not this clause's.** **CITATIONS RE-RESOLVED 2026-10-09 — this clause read `:135`/`:137-144`, the same region eleven lines above; and the mechanism it named (the value read) is one half of the handler while the check that produces the `422` is the other, so the clause now states both.** **`name` is required and `description` is optional**, and neither a JSON body nor a multipart body is read at all. **A JSON or multipart request is therefore refused with the SAME `422` that reports `body.name` missing**, because `ParseForm` reads neither encoding — so the refusal names a **MISSING FIELD** rather than the **ENCODING**, which is why two independent callers concluded they had a payload problem when they had a content-type problem. The application itself sends exactly this shape (`agenthub-frontend/src/services/apiV2.ts:475` posts `name`/`description` with `Content-Type: application/x-www-form-urlencoded`, and its flow measures **200** end to end), so **the route is not wrong — it was merely unstated.** **THE REUSABLE HALF: A REFUSAL THAT NAMES THE WRONG CAUSE COSTS A CALLER THE SAME TIME AS A SILENT FAILURE** — the same family as the reason text that never reached the chip, the preview read that looked truncated, and the grep that looked absent from the wrong field; and this is that family's **cheapest instance to fix, because the fix is a documented contract rather than a change to the refusal.**
 
-`App.Handler` (`app.go:121`; **re-resolved 2026-10-10 at `c08a742e` — this read `:111`, then `:120`, which is the doc comment one line above the declaration**) is the sole mux builder; it calls `mountRoutes`,
+`App.Handler` (`app.go:139`; **re-resolved 2026-10-13 at `6adbbc3f` — `:139` is the `// Handler returns the HTTP mux.` comment and `:140` the declaration, which is the convention the 2026-10-10 note below records; this read `:121`, an 18-line movement caused by the same run of route commits, note that the project block below `Handler` moved 24 lines because `registerProjectRoutes` also gained the two room-decision mounts**) is the sole mux builder; it calls `mountRoutes`,
 `mountWebSockets`, the five `mountSeat*`/`mountMachineToken` functions, `mountMiscRoutes`,
 and the two auth `RegisterRoutes` methods.
 
@@ -101,13 +101,14 @@ and the two auth `RegisterRoutes` methods.
 
 | Method | Path | Handler | Registration |
 |---|---|---|---|
-| POST | `/api/v2/tasks/` | `routes.CreateUserTask` | `task_routes.go:50` |
-| GET | `/api/v2/tasks/` | `routes.ListUserTasks` | `task_routes.go:85` |
-| GET | `/api/v2/tasks/{id}` | `routes.GetUserTask` | `task_routes.go:99` |
-| GET | `/api/v2/tasks/{id}/events` | `routes.GetTaskEvents` | `task_routes.go:103` |
-| PUT | `/api/v2/tasks/{id}` | `routes.UpdateUserTask` | `task_routes.go:113` |
-| DELETE | `/api/v2/tasks/{id}` | `routes.DeleteUserTask` | `task_routes.go:136` |
-| POST | `/api/v2/tasks/{id}/complete` | `routes.CompleteUserTask` | `task_routes.go:140` |
+| POST | `/api/v2/tasks/` | `routes.CreateUserTask` | `task_routes.go:58` |
+| GET | `/api/v2/tasks/` | `routes.ListUserTasks` | `task_routes.go:93` |
+| GET | `/api/v2/tasks/{id}` | `routes.GetUserTask` | `task_routes.go:107` |
+| GET | `/api/v2/tasks/{id}/events` | `routes.GetTaskEvents` | `task_routes.go:111` |
+| POST | `/api/v2/tasks/{id}/evidence` | `routes.SubmitTaskEvidence` | `task_routes.go:135` |
+| PUT | `/api/v2/tasks/{id}` | `routes.UpdateUserTask` | `task_routes.go:164` |
+| DELETE | `/api/v2/tasks/{id}` | `routes.DeleteUserTask` | `task_routes.go:187` |
+| POST | `/api/v2/tasks/{id}/complete` | `routes.CompleteUserTask` | `task_routes.go:191` |
 
 **DRIFT FOUND AND REPAIRED 2026-10-08 at HEAD `88d27758` (docs duty pass 4).** *Three rows in the table above cited a line that is no longer a registration (`PUT {id}` 107->117, `DELETE {id}` 130->140, `complete` 134->144) and one route had no row at all.* **The control that names the cause rather than assuming it: every moved row moved by EXACTLY +10, and the insertion that did it is the `GET /{id}/events` route — one registration plus its closure, added above them.** *So this is the rotted-pointer class the §1 citation pass predicted, reproduced on schedule, and the fix is a line number, not a re-reading of the table.* **Re-resolve a row by reading the file's own `base` const and matching the row's method+path to the registration that carries it — never by trusting the number.**
 
@@ -140,9 +141,9 @@ and the two auth `RegisterRoutes` methods.
 
 | Method | Path | Handler | Registration |
 |---|---|---|---|
-| GET | `/ws/realtime` | `handleRealtime` | `ws_mount.go:68` |
-| GET | `/ws/connector` | `handleConnector` | `ws_mount.go:69` |
-| GET | `/ws/sessions/{id}` | `handleSessionViewer` | `ws_mount.go:70` |
+| GET | `/ws/realtime` | `handleRealtime` | `ws_mount.go:70` |
+| GET | `/ws/connector` | `handleConnector` | `ws_mount.go:71` |
+| GET | `/ws/sessions/{id}` | `handleSessionViewer` | `ws_mount.go:72` |
 
 **DECLARED OUT OF SCOPE — THE THREE UNMOUNTED OLD-PROTOCOL WEBSOCKET ENDPOINTS (owner decision, 2026-10-06).** **The old-protocol surface served by `fastmcp/websocket/server.go` is NOT mounted on the live handler:** it registers **`/ws/{user_id}`** (`server.go:92`), **`/ws/health`** and **`/ws/stats`** (`server.go:93-94`) on **its own app**, and **nothing outside that package constructs it** (`NewWebSocketServer` has no non-test caller — the only imports of the package elsewhere are `wslib` for the `WebSocket` type, in `ws_mount.go:37` and `server/routes/websocket_routes.go:31` (**re-resolved 2026-10-10 at `c08a742e`; this read `:25`, which is the import block's `"time"`**)). **THE OWNER DECLARED THESE THREE OUT OF SCOPE RATHER THAN MOUNTING THEM, which is the honest closure of the parity claim: THE PORT IS COMPLETE FOR THE SURFACE IN USE, with `/ws/{user_id}`, `/ws/health` and `/ws/stats` DELIBERATELY EXCLUDED** — so nothing reads as though the old protocol is fully served. **AND IT IS A DECISION RATHER THAN AN OMISSION:** mounting them would have added endpoints **nothing consumes**, and **the owner chose the honest label over the tidier-looking port.**
 
@@ -349,6 +350,17 @@ within the caller's memberships.
 
 **Request shape — defined at `seat_feedback_mount.go:51-57`** (`seatFeedbackSubmission`: `room`, `seat`, `layer`, `text` required; `session` optional). **Re-resolved 2026-10-10 at `c08a742e`: this read `:64-70`, which is the mount function and its list handler, not the struct.** The `layer` vocabulary is the DDL's closed set (`runtime`, `openrig`, `cloud`, `seat-context`, `workspace`, `other`) rather than a list in this document; the credential scan and the page that groups by layer are described once in `README.md`'s *Rig and OpenRig workflow* section. **The third door onto the same writer is the MCP tool `submit_feedback` (§2.3) and the fourth is the shell client, invoked as `4genteam feedback ...` — the script it runs is `agenthub_client/src/agenthub_client/seat_feedback.sh`, carried in the client package by `[tool.setuptools.package-data]` (2026-10-09); it was `scripts/seat_feedback.sh` until the client relocation, and a path is not a door if the file is not there.**
 
+### 1.22 Ledger — base `/api/v2/ledger` (`ledger_mount.go:34`)
+
+**Added to this inventory on 2026-10-11 by go-dev, because the set join the §1 preamble describes found them missing: two live registrations with no row, while every count still agreed with itself.** Both landed with the O1a/O3 commits — `GET` and `POST .../intents` in `f285bdf6`, the task evidence row above in `5ab853d1` — and each row below cites the registration that carries its own method+path.
+
+| Method | Path | Handler | Registration |
+|---|---|---|---|
+| GET | `/api/v2/ledger` | `routes.GetLedger` | `ledger_mount.go:39` |
+| POST | `/api/v2/ledger/intents` | `routes.SubmitLedgerIntents` | `ledger_mount.go:52` |
+
+Both routes take the same `authed` wrapper as the task routes: the ledger is read and written on behalf of the user the bearer token resolves, and there is no machine token behind either one (`ledger_mount.go:29-33`).
+
 ---
 
 ## 2. MCP tool surface
@@ -488,27 +500,27 @@ it in `init()`; `ProductionTables` is deliberately separate.
 
 | Table | Model | Declaration |
 |---|---|---|
-| `agent_sessions` | `AgentSession` | `models.go:582` |
-| `api_tokens` | `APIToken` | `models.go:599` |
-| `context_delegations` | `ContextDelegation` | `models.go:616` |
-| `context_inheritance_cache` | `ContextInheritanceCache` | `models.go:645` |
-| `global_contexts` | `GlobalContext` | `models.go:669` |
-| `labels` | `Label` | `models.go:688` |
-| `missed_notifications` | `MissedNotification` | `models.go:699` |
-| `projects` | `Project` | `models.go:714` |
-| `templates` | `Template` | `models.go:726` |
-| `agent_session_events` | `AgentSessionEvent` | `models.go:747` |
-| `project_contexts` | `ProjectContext` | `models.go:759` |
-| `project_git_branchs` | `ProjectGitBranch` | `models.go:781` |
-| `branch_contexts` | `BranchContext` | `models.go:799` |
-| `tasks` | `Task` | `models.go:820` |
-| `subtasks` | `Subtask` | `models.go:856` |
-| `task_assignees` | `TaskAssignee` | `models.go:890` |
-| `task_contexts` | `TaskContext` | `models.go:903` |
-| `task_dependencies` | `TaskDependency` | `models.go:928` |
-| `task_labels` | `TaskLabel` | `models.go:938` |
+| `agent_sessions` | `AgentSession` | `models.go:592` |
+| `api_tokens` | `APIToken` | `models.go:611` |
+| `context_delegations` | `ContextDelegation` | `models.go:628` |
+| `context_inheritance_cache` | `ContextInheritanceCache` | `models.go:657` |
+| `global_contexts` | `GlobalContext` | `models.go:681` |
+| `labels` | `Label` | `models.go:700` |
+| `missed_notifications` | `MissedNotification` | `models.go:711` |
+| `projects` | `Project` | `models.go:726` |
+| `templates` | `Template` | `models.go:738` |
+| `agent_session_events` | `AgentSessionEvent` | `models.go:759` |
+| `project_contexts` | `ProjectContext` | `models.go:771` |
+| `project_git_branchs` | `ProjectGitBranch` | `models.go:793` |
+| `branch_contexts` | `BranchContext` | `models.go:811` |
+| `tasks` | `Task` | `models.go:832` |
+| `subtasks` | `Subtask` | `models.go:868` |
+| `task_assignees` | `TaskAssignee` | `models.go:902` |
+| `task_contexts` | `TaskContext` | `models.go:915` |
+| `task_dependencies` | `TaskDependency` | `models.go:940` |
+| `task_labels` | `TaskLabel` | `models.go:950` |
 
-**RE-SWEPT 2026-10-10 (writer seat, docs duty pass 9) at `cd5d1187` — and this table is where `76b800b9` moved everything.** The retirement of the `manage_agent` tool, the `agents` table and the 32-role registry deleted blocks in `models.go` above these declarations, so **all nineteen remaining anchors were stale by 19 or 37 lines** and each is re-derived here (`S3-REDERIVE.py` reports `FRESH 46` with zero not-fresh rows at this revision). **The `agents` row was struck rather than re-pointed: `database.Tables` no longer carries the table at all, so there is no line to cite** — the entry lives in §4 with the commit that removed it. `agent_sessions` and `agent_session_events` survive and are unchanged in substance: they are session bookkeeping, not the registry.
+**RE-DERIVED AGAIN 2026-10-11 (go-dev, row `qitem-20261011035828`, extended for row `qitem-20261011040203`): the same nineteen anchors had drifted a second time, and each shift is attributed to the commit that inserted above it rather than counted.** Five hunks account for all of it, read from `git diff -U0` between the revisions: `0e03b3f7` added ten lines in `AgentSession` at `models.go:86` plus two in the TableDef list above `api_tokens`, and `d5a59667` added two inside `Task` (`models.go:418`) and two inside `Subtask` (`models.go:483`) — the four that sit above `agent_sessions` — plus two above `subtasks` (`models.go:853`) and two above `task_assignees` (`models.go:891`). That is the whole ladder: `agent_sessions` **+14** (ten from `0e03b3f7`, four from `d5a59667`), the thirteen rows from `api_tokens` to `tasks` **+16**, `subtasks` **+18**, and the four rows from `task_assignees` to `task_labels` **+20**. Each row now cites its own TableDef line again, re-measured at this tip by searching for that entry rather than by adding an offset: `agent_sessions` 582→596, `api_tokens` 599→615, `context_delegations` 616→632, `context_inheritance_cache` 645→661, `global_contexts` 669→685, `labels` 688→704, `missed_notifications` 699→715, `projects` 714→730, `templates` 726→742, `agent_session_events` 747→763, `project_contexts` 759→775, `project_git_branchs` 781→797, `branch_contexts` 799→815, `tasks` 820→836, `subtasks` 856→874, `task_assignees` 890→910, `task_contexts` 903→923, `task_dependencies` 928→948, `task_labels` 938→958. **The shifts are not one insertion: they differ per row, which is why each was re-resolved by searching for the TableDef entry rather than by adding an offset.** The retirement of the `manage_agent` tool, the `agents` table and the 32-role registry deleted blocks in `models.go` above these declarations, so **all nineteen remaining anchors were stale by 19 or 37 lines** and each is re-derived here (`S3-REDERIVE.py` reports `FRESH 46` with zero not-fresh rows at this revision). **The `agents` row was struck rather than re-pointed: `database.Tables` no longer carries the table at all, so there is no line to cite** — the entry lives in §4 with the commit that removed it. `agent_sessions` and `agent_session_events` survive and are unchanged in substance: they are session bookkeeping, not the registry. **RE-DERIVED AGAIN 2026-10-11 (go-dev, the assembled tip `e42160c2`): the fold merge deleted 8 lines from `models.go` above these declarations, so all nineteen anchors were stale a third time — by 4 lines for the sixteen rows from `agent_sessions` to `tasks`, 6 for `subtasks`, and 8 for the four from `task_assignees` to `task_labels`. Each row above now cites the instrument's own HEAD value at that tip (`S3-REDERIVE.py HEAD 0e9746c0` first said `FRESH 46 / STALE->BATCH 19 / UNRESOLVED 0`, and the mapping applied was the cited -> new one: 596->592, 615->611, 632->628, 661->657, 685->681, 704->700, 715->711, 730->726, 742->738, 763->759, 775->771, 797->793, 815->811, 836->832, 874->868, 910->902, 923->915, 948->940, 958->950).**
 
 ### 3.2 Auth tables — appended to `Tables` via `init()`
 
@@ -520,12 +532,12 @@ it in `init()`; `ProductionTables` is deliberately separate.
 
 ### 3.3 Seat-management and team tables — appended to `Tables` via `init()`
 
-Declared in `fastmcp/seat_management/infrastructure/database/seat_tables.go` (`seatDatabaseTables`, **15 entries**, `seat_tables.go:16`) and
-`team_tables.go` (`teamManagementDatabaseTables`, **2 entries**, `team_tables.go:24`). **The two are composed and registered in ONE place** — `seatManagementDatabaseTables` (`seat_tables.go:397`, `append([]taskdb.TableDef{}, teamManagementDatabaseTables...)` then `seatDatabaseTables...`) and the package's `init()` (`seat_tables.go:402`). **`team_tables.go` contains no `init()` and does not append; an earlier version of this section cited an append at `team_tables.go:56`, which does not exist.** The same **17** tables are declared as DDL in
-`fastmcp/seat_management/infrastructure/schema/seat_management_postgresql.sql`: **the 15 seat tables plus the 2 team tables** (note for a reader counting
-statements: `grep -c 'CREATE TABLE IF NOT EXISTS'` returns **18** because the file's header
-COMMENT at line 6 contains that phrase; `grep -cE '^CREATE TABLE IF NOT EXISTS'` -> **17**, one per table, and no
-table is declared twice). **BOTH FIGURES IN THIS PARAGRAPH MOVED WHEN `seat_feedback` LANDED** — the 15/16 pair that stood here was the 15-table state, and the one-table difference is precisely the table this section did not list. **THEY MOVED AGAIN AT PASS 6 (2026-10-10), by TWO AND NOT BY ONE: `seat_messages` (`seat_tables.go:377`, DDL `:306`) and `machine_edges` (`seat_tables.go:316`, DDL `:371`) are what the two entries and the two statements are** — the pair counts 16/18/19, and the note above is why the unanchored `grep -c` reads one higher than the anchored form rather than equal to it. **AND THEY MOVED AGAIN ON 2026-10-10 AT THE `e5ecff63` GATE, DOWN BY ONE RATHER THAN UP: that commit dropped `machine_tokens`, so `seatDatabaseTables` counts 15 and the file declares 17 statements (18 unanchored, the header comment again) — the pair this paragraph states is therefore 15/17/18. `scripts/COUNTS-AUDIT.py` was red on its own memory for the length of that gate and is GREEN again now that its `EXPECTED` carries 15/17 (writer's row `0a94db94`).**
+Declared in `fastmcp/seat_management/infrastructure/database/seat_tables.go` (`seatDatabaseTables`, **16 entries**, `seat_tables.go:16`) and
+`team_tables.go` (`teamManagementDatabaseTables`, **2 entries**, `team_tables.go:24`). **The two are composed and registered in ONE place** — `seatManagementDatabaseTables` (`seat_tables.go:466`, `append([]taskdb.TableDef{}, teamManagementDatabaseTables...)` then `seatDatabaseTables...`) and the package's `init()` (`seat_tables.go:471`). **RE-RESOLVED 2026-10-13 (docs duty pass 10) at `6adbbc3f`: this sentence read `:397`/`:402`, and the two cites now sit at the composition and the `init()` again, verified one at a time (`var seatManagementDatabaseTables = append(` is `:466`, `func init() { taskdb.Tables = append(...) }` is `:471`); the room-decision tables below are what moved them.** **`team_tables.go` contains no `init()` and does not append; an earlier version of this section cited an append at `team_tables.go:56`, which does not exist.** The same **18** tables are declared as DDL in
+`fastmcp/seat_management/infrastructure/schema/seat_management_postgresql.sql`: **the 16 seat tables plus the 2 team tables** (note for a reader counting
+statements: `grep -c 'CREATE TABLE IF NOT EXISTS'` returns **19** because the file's header
+COMMENT at line 6 contains that phrase; `grep -cE '^CREATE TABLE IF NOT EXISTS'` -> **18**, one per table, and no
+table is declared twice). **BOTH FIGURES IN THIS PARAGRAPH MOVED WHEN `seat_feedback` LANDED** — the 15/16 pair that stood here was the 15-table state, and the one-table difference is precisely the table this section did not list. **THEY MOVED AGAIN AT PASS 6 (2026-10-10), by TWO AND NOT BY ONE: `seat_messages` (`seat_tables.go:377`, DDL `:306`) and `machine_edges` (`seat_tables.go:316`, DDL `:371`) are what the two entries and the two statements are** — the pair counts 16/18/19, and the note above is why the unanchored `grep -c` reads one higher than the anchored form rather than equal to it. **AND THEY MOVED AGAIN ON 2026-10-10 AT THE `e5ecff63` GATE, DOWN BY ONE RATHER THAN UP: that commit dropped `machine_tokens`, so `seatDatabaseTables` counts 15 and the file declares 17 statements (18 unanchored, the header comment again) — the pair this paragraph states is therefore 15/17/18. `scripts/COUNTS-AUDIT.py` was red on its own memory for the length of that gate and is GREEN again now that its `EXPECTED` carries 15/17 (writer's row `0a94db94`).** **AND THEY MOVED ONCE MORE ON 2026-10-13 AT `6adbbc3f`, UP BY ONE (docs duty pass 10, T13 unit 1 on `ARCH-RULING-T13-2026-10-13.md`): `2634db82` "feat(room-decisions): the ask mirror, the human's click and the panel's read" registered `room_decisions` — one depth-1 entry in `seatDatabaseTables` (`seat_tables.go:362`) and one DDL statement (`seat_management_postgresql.sql:311`) — so the pair this paragraph states is now 16/18/19.** **Measured on both sides rather than adjusted: `git show 2634db82^:…/seat_tables.go` counts 15 depth-1 entries and `2634db82:…` counts 16; the DDL file counts 17 `^CREATE TABLE IF NOT EXISTS` lines before that commit and 18 at it, unchanged from there to HEAD (`d50462e5`, the second room-decision commit, added columns and routes to the same table, not a statement). The §3.3 row that was missing for that table is added below in this pass, the same repair `seat_feedback` needed on 2026-10-06 — a count that is right says nothing about a row that is absent.**
 
 | Table | Model | Declaration (Go) | SQL |
 |---|---|---|---|
@@ -542,12 +554,15 @@ table is declared twice). **BOTH FIGURES IN THIS PARAGRAPH MOVED WHEN `seat_feed
 | `resolved_seats` | `ResolvedSeatORM` | `seat_tables.go:216` | `:245` |
 | `seat_settings` | `SeatSettingsORM` | `seat_tables.go:241` | `:263` |
 | `seat_feedback` | `SeatFeedbackORM` | `seat_tables.go:321` | `:278` |
-| `machines` | `MachineORM` | `seat_tables.go:253` | `:324` |
-| `seat_messages` | `SeatMessageORM` | `seat_tables.go:357` | `:306` |
-| `seat_status` | `SeatStatusORM` | `seat_tables.go:267` | `:335` |
-| `machine_edges` | `MachineEdgeORM` | `seat_tables.go:296` | `:355` |
+| `machines` | `MachineORM` | `seat_tables.go:253` | `:369` |
+| `seat_messages` | `SeatMessageORM` | `seat_tables.go:426` | `:351` |
+| `seat_status` | `SeatStatusORM` | `seat_tables.go:267` | `:380` |
+| `machine_edges` | `MachineEdgeORM` | `seat_tables.go:296` | `:400` |
+| `room_decisions` | `RoomDecisionORM` | `seat_tables.go:362` | `:311` |
 
-**`seat_feedback` IS THE ROW THIS DOCUMENT WAS MISSING (added 2026-10-06, pass 3).** It is registered (`seat_tables.go:321`), declared in the DDL (`:278`), and read by `NewORMSeatFeedbackRepository` over `seat_feedback` (`seat_management/infrastructure/repositories/orm/seat_feedback_repository.go:25`, `:47`); **`app.go:61-63` records that the boot needs the table registered, which is why it is in the composition rather than beside the routes.** **Its absence is what made §3.5's total one short and §3.3's SQL count one under the file's own `grep -cE`.**
+**`seat_feedback` IS THE ROW THIS DOCUMENT WAS MISSING (added 2026-10-06, pass 3).** It is registered (`seat_tables.go:321`), declared in the DDL (`:278`), and read by `NewORMSeatFeedbackRepository` over `seat_feedback` (`seat_management/infrastructure/repositories/orm/seat_feedback_repository.go:25`, `:47`); **`app.go:79-83` records that the boot needs the table registered, which is why it is in the composition rather than beside the routes** (**re-resolved 2026-10-13 at `6adbbc3f`: this read `app.go:61-63`, the same comment block, moved down by the construction lines above it**). **Its absence is what made §3.5's total one short and §3.3's SQL count one under the file's own `grep -cE`.**
+
+**`room_decisions` IS THE SECOND ROW THIS SECTION WAS MISSING (added 2026-10-13, docs duty pass 10, T13 unit 1).** `2634db82` registered it: one depth-1 entry in `seatDatabaseTables` (`seat_tables.go:362`, `RoomDecisionORM`) and one DDL statement (`seat_management_postgresql.sql:311`) — and it is the whole of this pass's table-count movement (§3.3's paragraph above, §3.5's total below, and `scripts/COUNTS-AUDIT.py`'s `EXPECTED`). The row above is its reading at `6adbbc3f`; **its absence left §3.3 listing 15 of the registry's 16 seat tables while the section's own count statement said 15 — two numbers that agreed with each other and with nothing in the tree.**
 
 ### 3.4 `ProductionTables` — declared but NOT appended to `Tables` (6)
 
@@ -571,7 +586,7 @@ declaration from `:100` to `:104`; the rule this sentence asserts is the header 
 
 ### 3.5 Totals
 
-- `database.Tables` at runtime: 19 (core) + 3 (auth) + **15** (seat) + 2 (team) = **39 tables** — **CORRECTED FROM 20/40 AT PASS 9 (2026-10-10, `cd5d1187`): `76b800b9` retired the `agents` table with the `manage_agent` tool and the 32-role registry, so the core block is 19 and the total is 39. The movement is that retirement, not a change in counting: `scripts/COUNTS-AUDIT.py`'s `EXPECTED` carries the same three moved rows and names the same commit.** **corrected from 38 on 2026-10-06 (pass 3): the inventory had never listed `seat_feedback`, which is the fourteenth seat table (§3.3).** **CORRECTED FROM 39 AT PASS 6 (2026-10-10): the seat block gained `seat_messages` and `machine_edges` (§3.3), so it is 16 and the total is 41 — two tables, not one.** **CORRECTED FROM 41 AT THE `e5ecff63` GATE (2026-10-10): the same commit that replaced the per-machine token removed `machine_tokens` (§3.3), so the seat block is 15 and the total is 40.**
+- `database.Tables` at runtime: 19 (core) + 3 (auth) + **16** (seat) + 2 (team) = **40 tables** — **RE-MEASURED 2026-10-13 AT `6adbbc3f` (docs duty pass 10, T13 unit 1) FROM 15/39, BY ONE TABLE AND NOT BY A COUNTING CHANGE: `2634db82` ("the ask mirror, the human's click and the panel's read") registered `room_decisions` in `seatDatabaseTables` (`seat_tables.go:362`) and in the DDL (`seat_management_postgresql.sql:311`), so the seat block is 16 and the total is 40; core 19, auth 3 and team 2 are unchanged and were re-read rather than carried. Re-derived, not adjusted: the depth-1 count is 15 at `2634db82^` and 16 at `2634db82`, and §3.3 now carries the row it was missing.** — **CORRECTED FROM 20/40 AT PASS 9 (2026-10-10, `cd5d1187`): `76b800b9` retired the `agents` table with the `manage_agent` tool and the 32-role registry, so the core block is 19 and the total is 39. The movement is that retirement, not a change in counting: `scripts/COUNTS-AUDIT.py`'s `EXPECTED` carries the same three moved rows and names the same commit.** **corrected from 38 on 2026-10-06 (pass 3): the inventory had never listed `seat_feedback`, which is the fourteenth seat table (§3.3).** **CORRECTED FROM 39 AT PASS 6 (2026-10-10): the seat block gained `seat_messages` and `machine_edges` (§3.3), so it is 16 and the total is 41 — two tables, not one.** **CORRECTED FROM 41 AT THE `e5ecff63` GATE (2026-10-10): the same commit that replaced the per-machine token removed `machine_tokens` (§3.3), so the seat block is 15 and the total is 40.**
 - Plus `ProductionTables`: **6** tables declared but not registered for creation.
 - **Both totals, and every count in this document, are re-derived by `scripts/COUNTS-AUDIT.py` in this repository — read-only, non-zero on any difference, safe to run in a gate (§1 carries the same pointer) — **and by RULE 84 (2026-10-10) a DECLARED anchor that matches nothing FAILS it and names itself, rather than printing `-` and comparing nothing: an instrument that goes quiet as the document drifts is worse than one that goes red.** It was TRACKED on 2026-10-09; before that it lived outside the worktree, so the pointer here named a path a reader could not follow. §3's OWN `file:line` anchors — the Declaration and SQL columns of §3.1–§3.4 — are re-derived by `scripts/S3-REDERIVE.py`, tracked beside it since 2026-10-10 with ROOT derived from its own location: it reads COMMITS (`git show`), exits non-zero on ANY anchor that is not fresh (an anchor stale since before its attribution base counts, because a verdict that passed those could not fail), and prints `BASE UNAVAILABLE` rather than passing quietly when that base is not in the checkout — the shallow-clone case.**
 - Every table in §3.1–3.4 carries a `user_id` column except `applied_migrations`

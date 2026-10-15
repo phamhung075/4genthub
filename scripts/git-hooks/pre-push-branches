@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# pre-push: the remote carries main and frontend and nothing else. Seats branch and use worktrees
+# locally, merge into main, and push main (or frontend for the frontend line). Any other remote ref
+# (a feature branch, a tag, a deletion) is refused. The owner can bypass with `git push --no-verify`.
+allowed="refs/heads/main refs/heads/frontend"
+status=0
+while read -r _local_ref _local_sha remote_ref _remote_sha; do
+    case " $allowed " in
+        *" $remote_ref "*) ;;
+        *) echo "pre-push: refused $remote_ref - the remote accepts only: ${allowed//refs\/heads\//}. Branch locally, merge into main, push main." >&2; status=1 ;;
+    esac
+done
+exit $status

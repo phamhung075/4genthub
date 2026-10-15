@@ -21,6 +21,10 @@ func (s *ledgerSpy) AppendInTx(_ context.Context, in entities.AppendTaskEvent) (
 
 func (s *ledgerSpy) StatusOf(context.Context, string) (string, error) { return "todo", nil }
 
+// NextProgressNumberInTx answers 1: this spy exists to record what the recorder WRITES, and the
+// numbering rule is the ledger's own test's subject.
+func (s *ledgerSpy) NextProgressNumberInTx(context.Context, string) (int, error) { return 1, nil }
+
 // WHO a status write is attributed to is the recorder's decision, taken from the request rather
 // than from a name each caller had to invent: a request that named a seat through the MCP header is
 // that SEAT acting on the caller's behalf, a request that named no seat belongs to the user whose

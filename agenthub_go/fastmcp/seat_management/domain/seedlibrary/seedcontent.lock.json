@@ -1,0 +1,37 @@
+{
+  "_what": "The content set each seedVersion names, APPEND-ONLY. seedVersion is stamped onto every seed module, and a stored seat type version is immutable, so (module, version) must resolve to ONE content set forever. Adding a record is the whole of an intentional content change: raise seedVersion in domain/seedmap/seedmap.go and run this package's tests with -update-seedcontent-lock. Editing a recorded set, or adding a record under a version that already has one, is the drift this file exists to refuse. SeedVersion 1.4.2 has no record here on purpose: it named TWO sets - the library as it stood when 42de79c2 raised the const to 1.4.2, and the same library after 39105865 changed two blocks under it - and recording either one would write down a claim that is false.",
+  "versions": [
+    {
+      "seed_version": "1.4.3",
+      "content_sha256": "39a18c2685c7860a5862932074c9ab041744c09c1d0cdcdc1472c3b5c45c2da8",
+      "files": {
+        "blocks/agenthub-http.json": "c6d599f33e5bbd7227673e73256b2cdd11dd3a18a3d6ac0f9db328c56b2c2044",
+        "blocks/deepseek-offload.json": "26abd04329a07313b103fbc4d6e86ccaa1d78bdbb2663f2148a91a347385fff1",
+        "blocks/guide-architect.md": "b586aeef61724e7b41b79ad9fd10e13f54e01549d7277671d7f1d7a5b8120835",
+        "blocks/guide-context-dev.md": "133f62b1c68b6e2fb42c450738148349537754633a73df2c975591f1ea033c0f",
+        "blocks/guide-fe-dev.md": "734bc48b379e4c9a7b956785d045f67c5026bde21e7f135ae5d262db1c4a0e36",
+        "blocks/guide-feedback-dev.md": "ca961a47ca18107db3d5c276875da2e64efa68b1521025a473294981fd7ae735",
+        "blocks/guide-go-dev.md": "e9ae5fdf8c6556b12d0d4c5133f932a06f80ab1df2f70256dbe37b2c73df6db8",
+        "blocks/guide-lead.md": "ba567103ea5ded0474a912b29c85878872d284b3a66f7a5a5ab483e876a4d024",
+        "blocks/guide-reviewer.md": "5baa65bbe30bd207ea5d055e884a1982037f35303e79dd45df09c933a6c5f342",
+        "blocks/guide-skills-dev.md": "6805d5964980691de2ad071e9329dd080a40ae060c6f83d3115d27742f8ae11e",
+        "blocks/guide-web-dev.md": "d45949df59d538be9cab81a7e850428e83023eadbe5315b4c93aa5d896e0be11",
+        "blocks/guide-writer.md": "591698b1d8d6d891333493fba088702939754ce02a01c510cd877857bea22acf",
+        "blocks/sequential-thinking.json": "65e65d8324b439aa3217056de4f8c88cc51d58dd5abbd55fe210e2de00b8b88b",
+        "seat-types/architect.yaml": "8a689be110a1f08e4277ae010fc6b713284917898d09ef9384b4770efdc0886a",
+        "seat-types/debugger.yaml": "1667b381051dfe57ead88cd07a287669e0b63b15e54009e7be7656ac3c30fb68",
+        "seat-types/developer.yaml": "e5e8616793c8418079de09bbfa4e5c85a5d8f42e97957f14e050a5c17da090f1",
+        "seat-types/lead.yaml": "6339974dd6ec6ef803ac4d0780c80a4cb28d5b28b9d659dcb1a648c790021b37",
+        "seat-types/planner.yaml": "c953e36f150d2de30f263b198076286f0e9a97d41ef3f4c51bffa3b62751fee0",
+        "seat-types/researcher.yaml": "8ca6d357f3ee1ab1b0a99f0b533c2795354953440d40b586137af8ac5d3381e8",
+        "seat-types/reviewer.yaml": "7a96a0c974123a7c1fdee7124710eda03cad84005b94ee7ee334c4f60af24cff",
+        "seat-types/tester.yaml": "4a0af93e06195194a5b185c65a29b8c53fe9950d8ae2f67035a17dedd13bcdaa",
+        "seat-types/writer.yaml": "04d0ceec6fa37ccbf192d2d8123436340f8e68ad952b1b3b4e3870dddf8a3256",
+        "shared-modules/comm-guard-skill.md": "2be33146fb8094df92e0a0b2c380e24c9c0975d482fabbeb7ce3116f29257da1",
+        "shared-modules/comm-guard.json": "ae327cc39791151787494366824467673e4c7150ac68b4f010f10131b4c3c299",
+        "shared-modules/guide-common.md": "583e83c7caa65d4dbc9550e064aa0f74da3ab3e2a6a334786ad8d60b35f085b0",
+        "shared-modules/mcp-usage.md": "367de23866eb9d4bc19e04b946381a3b0f650bbb2c645775d8a0c33cdf2a8e2e"
+      }
+    }
+  ]
+}

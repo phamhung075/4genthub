@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# post-commit: tell every running seat that the project moved, so it re-reads what it is about to edit.
+# Never fails a commit: a room that is down, a seat that is busy or a send that is unconfirmed is skipped.
+set -u
+state="${AGENTHUB_STATE_DIR:-$HOME/.config/4genthub}"
+sha=$(git rev-parse --short HEAD) || exit 0
+subject=$(git log -1 --format=%s)
+files=$(git show --name-only --format= HEAD | head -15)
+total=$(git show --name-only --format= HEAD | wc -l)
+message="New commit $sha on $(git rev-parse --abbrev-ref HEAD): $subject
+Files ($total): $(echo "$files" | tr '\n' ' ')
+Re-read any of these files before you edit them; a client change is only live after a build and a reseat."
+# main is the only reference. A seat whose tree lacks main's commits is told so, with the count.
+tmux_root="$state/tmux"
+behind_note() {
+    local session="$1" path behind
+    path=$(env -u TMUX TMUX_TMPDIR="$tmux_root" tmux display-message -p -t "$session" '#{pane_current_path}' 2>/dev/null) || return 0
+    [ -n "$path" ] && git -C "$path" rev-parse --git-dir >/dev/null 2>&1 || return 0
+    behind=$(git -C "$path" rev-list --count HEAD..main 2>/dev/null) || return 0
+    [ "${behind:-0}" -gt 0 ] || return 0
+    printf '\nWARNING: your tree (%s at %s) is %s commit(s) behind main. Only main is the reference: update it (git merge main or rebase onto main) before you continue, and re-read the files above.' \
+        "$path" "$(git -C "$path" rev-parse --short HEAD)" "$behind"
+}
+for dir in "$state"/rooms/*/; do
+    room=$(basename "$dir")
+    case "$room" in *.obsolete*) continue ;; esac
+    timeout 10 4genteam room status "$room" 2>/dev/null | awk '$3 == "running" { print $1, $4 }' | while read -r seat session; do
+        timeout 10 4genteam send --from git-hook --intent notice "$room" "$seat" "$message$(behind_note "$session")" >/dev/null 2>&1 || true
+    done
+done
+exit 0

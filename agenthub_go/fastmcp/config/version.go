@@ -22,7 +22,7 @@ package config
 // tree that lacks the content it names. Under a push-as-commits-land regime it goes as soon as the
 // tree holds content worth identifying, and a deploy that reports an unchanged version is then
 // confirmable only by /health's uptime, not by the string.
-const ReleaseVersion = "0.0.36"
+const ReleaseVersion = "0.0.38"
 
 // ServerName is the server's NAME — the brand subtitle after the dash, not a
 // description sentence. One definition for every place that advertises the

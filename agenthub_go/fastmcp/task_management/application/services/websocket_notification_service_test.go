@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"agenthub/fastmcp/session_stream/testdb"
 	"agenthub/fastmcp/task_management/domain/entities"
 	"agenthub/fastmcp/task_management/infrastructure/database"
 )
@@ -43,9 +44,7 @@ func wsTestSessions(t *testing.T) (*database.SessionManager, *sql.DB) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := cfg.CreateTables(context.Background()); err != nil {
-		t.Fatal(err)
-	}
+	testdb.CreateSchema(t, cfg)
 	t.Cleanup(func() {
 		database.ResetInstance()
 		_, _ = adm.Exec("DROP DATABASE IF EXISTS " + name + " WITH (FORCE)")
@@ -77,10 +76,10 @@ func TestDBWebSocketContextProvider(t *testing.T) {
 		VALUES ($1,'p','',now(),now(),$2,'active','{}')`, proj, user)
 	mustExec(`INSERT INTO project_git_branchs (id, project_id, name, description, created_at, updated_at, priority, status, metadata, task_count, completed_task_count, user_id)
 		VALUES ($1,$2,'feat','', now(), now(), 'medium','todo','{}',4,1,$3)`, branch, proj, user)
-	mustExec(`INSERT INTO tasks (id,title,description,git_branch_id,status,priority,progress_history,progress_count,estimated_effort,created_at,updated_at,completion_summary,testing_notes,progress_percentage,progress_state,user_id)
-		VALUES ($1,'My task','',$2,'todo','medium','{}',0,'',now(),now(),'','',0,'INITIAL',$3)`, task, branch, user)
-	mustExec(`INSERT INTO subtasks (id,task_id,title,description,status,priority,assignees,progress_percentage,progress_state,progress_notes,blockers,completion_summary,impact_on_parent,insights_found,user_id,created_at,updated_at,progress_history,progress_count)
-		VALUES ($1,$2,'My sub','','todo','medium','[]',0,'INITIAL','','','','','[]',$3,now(),now(),'{}',0)`, sub, task, user)
+	mustExec(`INSERT INTO tasks (id,title,description,git_branch_id,status,priority,estimated_effort,created_at,updated_at,completion_summary,testing_notes,progress_percentage,progress_state,user_id)
+		VALUES ($1,'My task','',$2,'todo','medium','',now(),now(),'','',0,'INITIAL',$3)`, task, branch, user)
+	mustExec(`INSERT INTO subtasks (id,task_id,title,description,status,priority,assignees,progress_percentage,progress_state,progress_notes,blockers,completion_summary,impact_on_parent,insights_found,user_id,created_at,updated_at)
+		VALUES ($1,$2,'My sub','','todo','medium','[]',0,'INITIAL','','','','','[]',$3,now(),now())`, sub, task, user)
 
 	p := &DBWebSocketContextProvider{Sessions: sm}
 	ctx := context.Background()

@@ -72,6 +72,7 @@ type SubtaskDTO struct {
 	Priority           string
 	Assignees          []string
 	AssigneesCount     int
+	Details            *string
 	ProgressPercentage *int
 	CreatedAt          *string
 	UpdatedAt          *string
@@ -89,6 +90,7 @@ func (d *SubtaskDTO) ModelDump() *entities.OrderedMap[any] {
 		"priority", d.Priority,
 		"assignees", dtoStrList(d.Assignees),
 		"assignees_count", d.AssigneesCount,
+		"details", dtoOpt(d.Details),
 		"progress_percentage", dtoInt(d.ProgressPercentage),
 		"created_at", dtoOpt(d.CreatedAt),
 		"updated_at", dtoOpt(d.UpdatedAt),
