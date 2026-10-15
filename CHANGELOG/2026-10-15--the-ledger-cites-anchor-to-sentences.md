@@ -26,10 +26,12 @@ ruling is the fix applied here: anchor each cite to the sentence it names, and d
 
 - **`agenthub-frontend/src/lib/taskTimeline.ts:4` keeps its `:175` and `:393`.** Both land on a sentence
   that carries the claim, so they are the form that works; the frontend is untouched.
-- **`intent.go:160` carries a bare `` `:677` `` and is left alone.** It names no file in its comment block,
-  and the architecture doc's `:677` is the offline decision's "What is true today", which has nothing to
-  do with "a client shows one to a seat". It is not one of the eight that were measured, and its target
-  cannot be resolved from the comment, so it is reported rather than guessed at.
+- **The bare `` `:677` `` the refusal-reason comment carried is dropped.** The lead measured the claim it
+  was reported with: every `.md` line 677 under `ai_docs/` and `agenthub_go/` was enumerated and the phrase
+  swept across every `.md` in the repo, and no doc states "a client shows the refusal reason to the seat"
+  at any line. A bare number names no file, so it resolved for no reader - the same class as the eight -
+  and the comment's own prose says the sentence without it. `NEXT_GEN.md:467` carries the same orphan form
+  and is left for the board's own writer.
 - **No code and no test changed:** four Go comment blocks, no statement.
 
 ## Verify

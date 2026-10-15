@@ -156,8 +156,8 @@ func Refusal(reason string, taskSeq int) Answer {
 	return Answer{Accepted: false, Reason: reason, TaskSeq: taskSeq}
 }
 
-// The refusal reasons, as stable tokens rather than sentences: a client shows one to a seat
-// (`:677`) and branches on it, so a reason that is prose cannot be branched on.
+// The refusal reasons, as stable tokens rather than sentences: a client shows one to a seat and
+// branches on it, so a reason that is prose cannot be branched on.
 const (
 	// ReasonInvalidClientEventID: the item named no outbox key, or one that is not a UUID. Nothing
 	// can be made idempotent without it, so the item is refused rather than appended keyless.
