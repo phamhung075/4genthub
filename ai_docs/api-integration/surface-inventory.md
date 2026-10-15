@@ -73,13 +73,13 @@ Both forms point at the same kind of thing — the line that registers the route
 
 | Method | Path | Handler | Registration |
 |---|---|---|---|
-| GET | `/health` | `handleHealth` | `fastmcp/server/httpapp/app.go:142` |
-| POST | `/api/v2/projects/` | `routes.CreateProject` | `fastmcp/server/httpapp/app.go:170` |
-| GET | `/api/v2/projects/` | `routes.ListProjects` | `fastmcp/server/httpapp/app.go:183` |
-| GET | `/api/v2/projects/{id}` | `routes.GetProject` | `fastmcp/server/httpapp/app.go:191` |
-| PUT | `/api/v2/projects/{id}` | `routes.UpdateProject` | `fastmcp/server/httpapp/app.go:199` |
-| DELETE | `/api/v2/projects/{id}` | `routes.DeleteProject` | `fastmcp/server/httpapp/app.go:220` |
-| POST | `/api/v2/projects/{id}/health-check` | `routes.ProjectHealthCheck` | `fastmcp/server/httpapp/app.go:228` |
+| GET | `/health` | `handleHealth` | `fastmcp/server/httpapp/app.go:151` |
+| POST | `/api/v2/projects/` | `routes.CreateProject` | `fastmcp/server/httpapp/app.go:179` |
+| GET | `/api/v2/projects/` | `routes.ListProjects` | `fastmcp/server/httpapp/app.go:192` |
+| GET | `/api/v2/projects/{id}` | `routes.GetProject` | `fastmcp/server/httpapp/app.go:200` |
+| PUT | `/api/v2/projects/{id}` | `routes.UpdateProject` | `fastmcp/server/httpapp/app.go:208` |
+| DELETE | `/api/v2/projects/{id}` | `routes.DeleteProject` | `fastmcp/server/httpapp/app.go:229` |
+| POST | `/api/v2/projects/{id}/health-check` | `routes.ProjectHealthCheck` | `fastmcp/server/httpapp/app.go:237` |
 
 **The project-creation contract, STATED rather than implied — `POST /api/v2/projects/` (the trailing slash is part of the route) accepts `application/x-www-form-urlencoded` ONLY.** `app.go:170` registers it and `:175` parses the body with `_ = r.ParseForm()`, then refuses a body with no `name` through the shared `missingForm(r, "name")` helper (`:176`; it validates presence via `r.PostForm.Has`, `http.go:132`, and the `422` is `writeMissing`, `http.go:124`), and only then reads the VALUE with `r.PostForm.Get("name")` / `Get("description")` at `:180`: **RE-RESOLVED 2026-10-13 (docs duty pass 10) at `6adbbc3f` — these four read `:146`/`:151`/`:152`/`:156`, the same block 24 lines higher, because the ledger, room-decision, prefetch and orchestration routes landed above it (`mux.HandleFunc("POST "+base+"/", …)` is `app.go:170`, `_ = r.ParseForm()` `:175`, `missingForm(r, "name")` `:176`, `r.PostForm.Get("name")` `:180`); the movement is the tree's, not this clause's.** **CITATIONS RE-RESOLVED 2026-10-09 — this clause read `:135`/`:137-144`, the same region eleven lines above; and the mechanism it named (the value read) is one half of the handler while the check that produces the `422` is the other, so the clause now states both.** **`name` is required and `description` is optional**, and neither a JSON body nor a multipart body is read at all. **A JSON or multipart request is therefore refused with the SAME `422` that reports `body.name` missing**, because `ParseForm` reads neither encoding — so the refusal names a **MISSING FIELD** rather than the **ENCODING**, which is why two independent callers concluded they had a payload problem when they had a content-type problem. The application itself sends exactly this shape (`agenthub-frontend/src/services/apiV2.ts:475` posts `name`/`description` with `Content-Type: application/x-www-form-urlencoded`, and its flow measures **200** end to end), so **the route is not wrong — it was merely unstated.** **THE REUSABLE HALF: A REFUSAL THAT NAMES THE WRONG CAUSE COSTS A CALLER THE SAME TIME AS A SILENT FAILURE** — the same family as the reason text that never reached the chip, the preview read that looked truncated, and the grep that looked absent from the wrong field; and this is that family's **cheapest instance to fix, because the fix is a documented contract rather than a change to the refusal.**
 
