@@ -252,7 +252,6 @@ type sweepCase struct {
 	wantEscalateTo string // empty: no escalation expected
 	wantEscalateAt string // empty: the escalation's note is not asserted
 	wantBlocker    string // empty: no block expected
-	wantRefused    bool   // the domain refuses the block, so nothing may be written
 	wantPruned     bool
 	wantRecords    []entities.TaskAuditKind
 }
@@ -347,15 +346,20 @@ func TestTaskLifecycleSweepTableOverAFakeClock(t *testing.T) {
 			task:        openFixture("t-critical-8d", inProgress, critical, 8*taskSweepTestDay),
 			wantBlocker: "no progress for 8 days at critical priority",
 			wantRecords: []entities.TaskAuditKind{entities.TaskAuditKindBlocked}},
-		{name: "todo critical 8d old is refused: the domain's rules do not reach blocked from todo",
+		// Every open state reaches blocked (value_objects.taskStatusTransitions), so a stale critical
+		// task blocks from any of the four, not only from in_progress.
+		{name: "todo critical 8d old is blocked",
 			task:        openFixture("t-todo-critical-8d", todo, critical, 8*taskSweepTestDay),
-			wantRefused: true},
-		{name: "review critical 8d old is refused: the domain's rules do not reach blocked from review",
+			wantBlocker: "no progress for 8 days at critical priority",
+			wantRecords: []entities.TaskAuditKind{entities.TaskAuditKindBlocked}},
+		{name: "review critical 8d old is blocked",
 			task:        openFixture("t-review-critical-8d", review, critical, 8*taskSweepTestDay),
-			wantRefused: true},
-		{name: "testing critical 8d old is refused: the domain's rules do not reach blocked from testing",
+			wantBlocker: "no progress for 8 days at critical priority",
+			wantRecords: []entities.TaskAuditKind{entities.TaskAuditKindBlocked}},
+		{name: "testing critical 8d old is blocked",
 			task:        openFixture("t-testing-critical-8d", testingState, critical, 8*taskSweepTestDay),
-			wantRefused: true},
+			wantBlocker: "no progress for 8 days at critical priority",
+			wantRecords: []entities.TaskAuditKind{entities.TaskAuditKindBlocked}},
 
 		// ---- the blocked row: never pruned, never escalated --------------------------------------
 		{name: "blocked is untouched",
@@ -435,13 +439,6 @@ func TestTaskLifecycleSweepTableOverAFakeClock(t *testing.T) {
 				}
 			}
 
-			if tc.wantRefused {
-				if run.report.Refused != 1 {
-					t.Errorf("the refusal was not reported: %+v", run.report)
-				}
-			} else if run.report.Refused != 0 {
-				t.Errorf("nothing should have been refused: %+v", run.report)
-			}
 			if run.report.Failed != 0 || run.report.Locked {
 				t.Errorf("the sweep reported %+v, want no failure and no lock skip", run.report)
 			}
@@ -459,7 +456,7 @@ func TestTaskLifecycleSweepRecordsWhatItDidOnTheReport(t *testing.T) {
 			UpdatedAt: taskSweepTestNow.Add(-2 * taskSweepTestDay)},
 		{ID: "t-block", UserID: "user-1", Title: "old and critical", Status: "in_progress", Priority: "critical",
 			UpdatedAt: taskSweepTestNow.Add(-9 * taskSweepTestDay)},
-		{ID: "t-refuse", UserID: "user-1", Title: "old, critical, todo", Status: "todo", Priority: "critical",
+		{ID: "t-block-todo", UserID: "user-1", Title: "old, critical, todo", Status: "todo", Priority: "critical",
 			UpdatedAt: taskSweepTestNow.Add(-9 * taskSweepTestDay)},
 		{ID: "t-keep", UserID: "user-1", Title: "young", Status: "todo", Priority: "low",
 			UpdatedAt: taskSweepTestNow.Add(-taskSweepTestHour)},
@@ -468,7 +465,7 @@ func TestTaskLifecycleSweepRecordsWhatItDidOnTheReport(t *testing.T) {
 	if run.err != nil {
 		t.Fatalf("the sweep failed: %v", run.err)
 	}
-	want := SweepReport{Pruned: 1, Escalated: 1, Blocked: 1, Refused: 1}
+	want := SweepReport{Pruned: 1, Escalated: 1, Blocked: 2}
 	if run.report != want {
 		t.Fatalf("report %+v, want %+v", run.report, want)
 	}

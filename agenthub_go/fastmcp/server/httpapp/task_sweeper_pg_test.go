@@ -155,8 +155,8 @@ func TestTaskLifecycleSweepOnPostgres(t *testing.T) {
 	if err != nil {
 		t.Fatalf("the sweep failed: %v", err)
 	}
-	t.Logf("OBSERVED one sweep: pruned %d, escalated %d, blocked %d, refused %d, failed %d",
-		report.Pruned, report.Escalated, report.Blocked, report.Refused, report.Failed)
+	t.Logf("OBSERVED one sweep: pruned %d, escalated %d, blocked %d, failed %d",
+		report.Pruned, report.Escalated, report.Blocked, report.Failed)
 	if report.Pruned != 1 || report.Escalated != 1 || report.Failed != 0 {
 		t.Fatalf("the sweep reported %+v, want one prune and one escalation and no failure", report)
 	}

@@ -254,10 +254,6 @@ type SweepReport struct {
 	Pruned    int
 	Escalated int
 	Blocked   int
-	// Refused counts the tasks the sweep could not block because the DOMAIN refuses the transition
-	// (todo, review and testing may not reach blocked - value_objects.taskStatusTransitions). They
-	// stay critical for the next interval rather than being forced into a state the domain forbids.
-	Refused int
 	// Failed counts the tasks the sweep could not act on: the work is logged and retried next
 	// interval, and one task's failure never stops the others.
 	Failed int
@@ -280,8 +276,8 @@ func (s *TaskLifecycleSweeper) Run(ctx context.Context) {
 		} else if report.Locked {
 			s.logf("task lifecycle sweep skipped: another instance holds the sweep lock")
 		} else {
-			s.logf("task lifecycle sweep: pruned %d, escalated %d, blocked %d, refused-to-block %d, failed %d",
-				report.Pruned, report.Escalated, report.Blocked, report.Refused, report.Failed)
+			s.logf("task lifecycle sweep: pruned %d, escalated %d, blocked %d, failed %d",
+				report.Pruned, report.Escalated, report.Blocked, report.Failed)
 		}
 		select {
 		case <-ctx.Done():
@@ -348,11 +344,6 @@ func (s *TaskLifecycleSweeper) sweep(ctx context.Context) (SweepReport, error) {
 				continue
 			}
 			if err := s.block(ctx, task, age, now); err != nil {
-				if err == errBlockRefused {
-					report.Refused++
-					s.logf("task lifecycle sweep: %s (%s, critical) is past the block age, but the domain refuses %s -> blocked; it stays critical", task.ID, task.Status, task.Status)
-					continue
-				}
 				report.Failed++
 				s.logf("task lifecycle sweep: %s (%s, critical) was not blocked: %v", task.ID, task.Status, err)
 				continue
@@ -443,22 +434,14 @@ func (s *TaskLifecycleSweeper) escalate(ctx context.Context, task SweepTask, age
 	return nil
 }
 
-// errBlockRefused is the sweep's own answer to a transition the DOMAIN refuses: todo, review and
-// testing may not reach blocked (value_objects.taskStatusTransitions), so the sweep leaves the task
-// where it is and says so, rather than forcing a state the domain's rules do not allow.
-var errBlockRefused = fmt.Errorf("the domain refuses this transition to blocked")
-
 // block hands a critical task to a human: the status becomes blocked and the blocker text - "no
 // progress for N days at critical priority" - is written as the note and carried in the record, so
 // the reason is readable after the task stops moving.
+//
+// THE ENTITY KEEPS THE RULE, so there is no separate check here: every open state reaches blocked
+// (value_objects.taskStatusTransitions), and Task.UpdateStatus refuses any transition that does not,
+// which is why a state the sweep cannot block surfaces as a failure rather than a silent skip.
 func (s *TaskLifecycleSweeper) block(ctx context.Context, task SweepTask, age time.Duration, now time.Time) error {
-	current, err := value_objects.NewTaskStatus(task.Status)
-	if err != nil {
-		return err
-	}
-	if !current.CanTransitionTo(string(value_objects.TaskStatusBlocked)) {
-		return errBlockRefused
-	}
 	blocker := fmt.Sprintf("no progress for %d days at critical priority", int(age/(24*time.Hour)))
 	record := taskSweepRecord(task, entities.TaskAuditKindBlocked, now)
 	record.Status = string(value_objects.TaskStatusBlocked)
