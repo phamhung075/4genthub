@@ -27,12 +27,21 @@ var TaskStatusValues = []TaskStatusEnum{
 
 // taskStatusTransitions encodes the workflow: direct TODO→DONE is allowed,
 // DONE can reopen to IN_PROGRESS, CANCELLED can reopen to TODO, ARCHIVED is final.
+//
+// EVERY OPEN STATE CAN REACH BLOCKED (owner ruling, 2026-10-15): a task must end `done` or `blocked`
+// after it is created, and the lifecycle sweep enforces that by blocking a task that has stood still
+// at critical priority longer than TASK_BLOCK_AFTER. It blocks THROUGH THIS RULE (Task.UpdateStatus),
+// so a state with no blocked edge cannot be blocked at all: a stale `todo`, `review` or `testing`
+// task would stay critical forever and the sweep would report a refusal every interval. The
+// TaskStateTransitionService's own rules table already carried all three edges; this table was the one
+// that did not, which is the inconsistency this closes. `done` and `archived` are deliberately NOT
+// blockable: a finished task is pruned rather than parked, and `archived` is final.
 var taskStatusTransitions = map[TaskStatusEnum][]TaskStatusEnum{
-	TaskStatusTodo:       {TaskStatusInProgress, TaskStatusCancelled, TaskStatusDone},
+	TaskStatusTodo:       {TaskStatusInProgress, TaskStatusBlocked, TaskStatusCancelled, TaskStatusDone},
 	TaskStatusInProgress: {TaskStatusBlocked, TaskStatusReview, TaskStatusTesting, TaskStatusCancelled, TaskStatusDone},
 	TaskStatusBlocked:    {TaskStatusInProgress, TaskStatusCancelled},
-	TaskStatusReview:     {TaskStatusInProgress, TaskStatusTesting, TaskStatusDone, TaskStatusCancelled},
-	TaskStatusTesting:    {TaskStatusInProgress, TaskStatusReview, TaskStatusDone, TaskStatusCancelled},
+	TaskStatusReview:     {TaskStatusInProgress, TaskStatusBlocked, TaskStatusTesting, TaskStatusDone, TaskStatusCancelled},
+	TaskStatusTesting:    {TaskStatusInProgress, TaskStatusBlocked, TaskStatusReview, TaskStatusDone, TaskStatusCancelled},
 	TaskStatusDone:       {TaskStatusInProgress},
 	TaskStatusCancelled:  {TaskStatusTodo},
 	TaskStatusArchived:   {},

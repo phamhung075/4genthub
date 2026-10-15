@@ -23,7 +23,13 @@ func TestTaskLifecycle(t *testing.T) {
 	if task.Status.Value != "todo" || task.Priority.Value != "medium" || task.ProgressState != value_objects.ProgressStateInitial {
 		t.Fatal("defaults")
 	}
-	if err := task.UpdateStatus(mustTaskStatus("blocked")); err == nil || err.Error() != "Cannot transition from todo to blocked" {
+	// An OPEN task can be blocked, and a finished or archived one cannot: the lifecycle sweep ends a
+	// stale critical task by blocking it THROUGH this rule, so every state it sweeps must have the
+	// edge (owner ruling 2026-10-15).
+	if err := task.UpdateStatus(mustTaskStatus("blocked")); err != nil || task.Status.Value != "blocked" {
+		t.Fatalf("blocking a todo task: %v", err)
+	}
+	if err := task.UpdateStatus(mustTaskStatus("archived")); err == nil || !strings.HasPrefix(err.Error(), "Cannot transition from blocked to archived") {
 		t.Fatalf("transition: %v", err)
 	}
 	if err := task.UpdateAssignees([]string{"@go-dev", "", "@x"}); err != nil {

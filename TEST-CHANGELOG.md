@@ -2,6 +2,13 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-15 - every open task state can be blocked
+
+- CHANGED `agenthub_go/fastmcp/task_management/domain/services/testdata/task_state_transition_cases.json`: `todo`/`review`/`testing` -> `blocked` are legal now, so the three cases assert `true` with `Status changed from '<state>' to 'blocked'` where they asserted `Transition failed: ...` (the service allowed the move and the entity refused it).
+- CHANGED `TestTaskLifecycle` in `agenthub_go/fastmcp/task_management/domain/entities/task_test.go`: blocking a `todo` task succeeds and leaves it `blocked`, and `blocked -> archived` is the move the entity still refuses.
+- ADDED the pin in `TestTaskStatusTransitions` (`domain/value_objects/value_objects_test.go`): `todo`/`in_progress`/`review`/`testing` can reach `blocked`; `done`/`cancelled`/`archived` cannot.
+- MEASURED: `go test -count=1 ./...` rc 0 and `go vet ./fastmcp/task_management/... ./cmd/...` clean (`agenthub_go`, no database).
+
 ## 2026-10-15 - seat tool hook and activity timeline
 
 - ADDED `agenthub_client/internal/clientactivity/activity_test.go`: the timeline merges the tool log, the send audit and the Jev log oldest first, skips lifecycle lines, and `--problems` keeps only blocked, failed and refused events.

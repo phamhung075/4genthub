@@ -87,8 +87,8 @@
     "Cannot transition from 'todo' to 'done'"
    ],
    "blocked": [
-    false,
-    "Transition failed: Cannot transition from todo to blocked"
+    true,
+    "Status changed from 'todo' to 'blocked'"
    ],
    "cancelled": [
     true,
@@ -302,8 +302,8 @@
     "Status changed from 'review' to 'done'"
    ],
    "blocked": [
-    false,
-    "Transition failed: Cannot transition from review to blocked"
+    true,
+    "Status changed from 'review' to 'blocked'"
    ],
    "cancelled": [
     false,
@@ -406,8 +406,8 @@
     "Status changed from 'testing' to 'done'"
    ],
    "blocked": [
-    false,
-    "Transition failed: Cannot transition from testing to blocked"
+    true,
+    "Status changed from 'testing' to 'blocked'"
    ],
    "cancelled": [
     false,

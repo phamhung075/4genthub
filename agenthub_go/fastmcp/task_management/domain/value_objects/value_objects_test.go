@@ -83,6 +83,21 @@ func TestTaskStatusTransitions(t *testing.T) {
 	if got := blocked.GetTransitionErrorMessage("done"); got != want {
 		t.Fatal(got)
 	}
+	// Every open state can be blocked; no finished one can. The lifecycle sweep ends a stale critical
+	// task by blocking it through this table, so the four states it sweeps must all carry the edge
+	// (owner ruling 2026-10-15: a task must end `done` or `blocked` after it is created).
+	for _, open := range []string{"todo", "in_progress", "review", "testing"} {
+		s, _ := NewTaskStatus(open)
+		if !s.CanTransitionTo("blocked") {
+			t.Errorf("%s must be blockable", open)
+		}
+	}
+	for _, finished := range []string{"done", "cancelled", "archived"} {
+		s, _ := NewTaskStatus(finished)
+		if s.CanTransitionTo("blocked") {
+			t.Errorf("%s must not be blockable", finished)
+		}
+	}
 	if _, err := NewTaskStatus("bogus"); err == nil || !strings.HasPrefix(err.Error(), "Invalid task status: bogus. Valid statuses: ") {
 		t.Fatal(err)
 	}
