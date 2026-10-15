@@ -25,9 +25,9 @@ pin.
   `<seat store>/agent-audit.jsonl` (3.2's audit clause) and the withheld directory is
   `<seat store>/agent-withheld/` (4.4).
 - **A dated naming note sits under the title** (D2), recording the rename, the kept file name and the
-  measured cite count - 40 tracked files, 55 occurrences, 24 of them code comments
-  (`git grep -l -- rigd-boundaries.md` at main `04fcd5d7`) - so a later reader decides the file rename on
-  evidence rather than on taste.
+  measured cite count - 40 tracked files and 55 occurrences of that path (`git grep -l` / `git grep -o`
+  at main `04fcd5d7`), 24 of the occurrences in 19 code files - so a later reader decides the file rename
+  on evidence rather than on taste.
 - **One grammar repair the rename caused:** 7.9's latch clause reads "an agent restart", not "a agent".
 
 ## Not in this change
@@ -42,8 +42,8 @@ pin.
   `agent-withheld/` have no reader until phase 2 (`CapabilityCommands = "commands"`,
   `agenthub_client/internal/clientsync/connector.go:57`, is the capability flag only); D3's naming is the
   design a phase-2 implementer follows, stated now because the doc is what that implementer reads.
-- **7.1's "There is no agent verb yet" is renamed, not reworded.** The verb exists
-  (`clientlifecycle/agent.go:691`, `4genteam agent status`), so after the rename the clause reads as a
-  stale statement of the state on 2026-10-11; rewording it is the architect's to rule, and it is named
-  here rather than changed silently.
+- **7.1's clause about the verb is renamed AND dated, per the architect's ruling.** There was no `agent`
+  verb when the clause was written - it landed 37 minutes later as `rigd` (`9182f13`), and `bc725e6`
+  renamed it `agent` - so the clause now states the fact it records rather than reading as today's state.
+  Its subject, the bridge's backoff and `spawnChild`/`awaitStart`, is untouched.
 - **No code, no test and no pin:** the diff is this doc and this entry.

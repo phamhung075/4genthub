@@ -3,11 +3,11 @@
 > **Naming note, 2026-10-15.** The component this file is about was renamed: `rigd` → `agent`, the
 > always-on verb of the client binary (`4genteam agent`; client `bc725e6`, 2026-10-15). Everything below
 > reads `agent`. This file keeps its historical name `rigd-boundaries.md` deliberately: 40 tracked files
-> cite it by that path (55 occurrences, 24 of them code comments; `git grep -l -- rigd-boundaries.md` at
-> main `04fcd5d7`), and no instrument reads a prose path, which is board T14's class. Renaming the file is
-> a file-by-file prose sweep, worth doing only if this doc becomes consumer-facing. Two clauses that
-> record the rename itself still read `rigd` - 7.2's sentence on the six names, and 7.9's ruled peak
-> clause - because they are history, not instruction.
+> cite it by that path - 55 occurrences (`git grep -l` gives the file count and `git grep -o` the
+> occurrences, at main `04fcd5d7`), 24 of the occurrences in 19 code files - and no instrument reads a
+> prose path, which is board T14's class. Renaming the file is a file-by-file prose sweep, worth doing
+> only if this doc becomes consumer-facing. Two clauses that record the rename itself still read `rigd` -
+> 7.2's sentence on the six names, and 7.9's ruled peak clause - because they are history, not instruction.
 
 Decision note by the architect, 2026-10-11. It answers the lead's request `qitem-20261010222721-557596c2630798bc` (owner priority: build NEXT_GEN F4 in two phases). It binds go-dev and fe-dev for phase 1. Phase 2 is designed here and NOT implemented.
 
@@ -231,7 +231,7 @@ The incident: the compaction supervisor and the rig watchdog were not running, a
 - The supervisor logs **only when it acts** (`Step`, `supervisor.go:98`). On a quiet rig a healthy supervisor writes nothing, so its log age cannot tell dead from idle. The 12:41 last-log age proved nothing by itself.
 - The watchdog logs a heartbeat line every 15 polls of 60 s (`clientrestore/watchdog.go:282`). The bridge retries with doubling backoff up to 120 s (`clientbridge/bridge.go:338`).
 - No OS supervisor exists on this machine: PID 1 is `init`, and `systemctl --user` reports `offline` (architect ran both, 2026-10-11).
-- There is no agent verb yet. "The skeleton's bridge reconnect/reuse" therefore names the bridge's backoff and `spawnChild`/`awaitStart`; this section reuses both.
+- There was no `agent` verb yet when this ruling was written (it landed 37 minutes later, as `rigd`, commit `9182f13`; `bc725e6` renamed it `agent`). "The skeleton's bridge reconnect/reuse" therefore names the bridge's backoff and `spawnChild`/`awaitStart`; this section reuses both.
 
 ### 7.1 (a) Where supervision lives
 
