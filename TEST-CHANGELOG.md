@@ -2,6 +2,13 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-15 - the census goes green: the purged rigspec row leaves the inventory
+
+- `agenthub_go/fastmcp/server/httpapp/ws_mount_test.go`: `TestRealtimeDispatchAcceptsExactlyPingHeartbeatAndSubscribe`'s doc comment is the only change — three line numbers dropped because they named a file `a50929c6` deleted, and the claim they carried kept, anchored to its sentences. No case added, changed, removed or weakened; the accepted set the case pins is unchanged, which `go test ./fastmcp/server/httpapp/` re-asserts.
+- No case was added to or removed from `scripts/tests/test_census_audits.py` in this lane: the three it reports at the old tip are its own HEAD assertion (`CITATION-AUDIT.py is not clean at HEAD`, `COUNTS-AUDIT.py is not clean at HEAD`, `the export as committed is not clean`), and they go green because the fix IS the new HEAD — the module-scoped fixture exports the committed revision, so this suite is measured after the commit, never before it.
+- MEASURED at the committed tip: `CI= python3 scripts/CITATION-AUDIT.py` -> `rows 147  stale 0  unresolved 0`; `python3 scripts/COUNTS-AUDIT.py` -> rc 0 ("all numbers re-derived and matching"); `python3 -m pytest scripts/tests -q` -> 97 passed.
+- The two census figures moved with the fix rather than being adjusted to it, and each was re-derived at the commit that caused it: `rows 148 -> 147` (the struck `inv:286`) and `httpapp registrations 136 -> 135` (the one registration `cbc51bae` removed).
+
 ## 2026-10-15 - the seat pane starts without the tmux variables
 
 - ADDED `pty::launch_env_tests::the_pane_command_unsets_the_tmux_pane_variables_and_the_denied_keys` in `agenthub_client/rust/agenthub-runtime/src/pty/mod.rs`: the pane command is `env -u <denied> -u TMUX -u TMUX_PANE <runner>`, with and without denied keys.

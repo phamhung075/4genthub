@@ -46,7 +46,16 @@ GO = f"{ROOT}/agenthub_go"
 # The numbers as the surface inventory states them. Each entry names the instrument that
 # re-derives it, because a number without its instrument is the failure this file exists for.
 EXPECTED = {
-    "httpapp route registrations": 136,     # grep -rn 'mux.HandleFunc(' fastmcp/server/httpapp, minus _test.go
+    "httpapp route registrations": 135,     # grep -rn 'mux.HandleFunc(' fastmcp/server/httpapp, minus _test.go
+                                            #   136 -> 135 (2026-10-15, go-dev, docs duty pass 11): cbc51bae
+                                            #     ("refactor: purge the legacy rig client; client routes move to
+                                            #     /api/v2") deleted seat_rigspec_mount.go - a pure delete, `0 230`
+                                            #     on that path - and the one registration it carried was
+                                            #     GET /api/v2/rooms/{room}/rigspec. Re-derived, not adjusted: the
+                                            #     same pattern returns 136 at df5e9069 (cbc51bae^) and 135 at
+                                            #     1a5d4ddc. The document moved with it in the same pass: §1's
+                                            #     Reproduce line heads with 155 (httpapp 135, auth 20), §1.17's
+                                            #     row was struck and §4's gone list carries the route.
                                             #   125 -> 128: three registrations landed after the last recorded
                                             #     125, which was itself right at 42de79c2. Named from the tree
                                             #     rather than adjusted to a total: GET /api/v2/ledger and

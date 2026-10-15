@@ -649,11 +649,15 @@ func TestMountWebSocketsRealtimeWithCORSAndOrigin(t *testing.T) {
 // /ws/realtime as a DECISION instead of an accident.
 //
 // The accepted set is the same one the retired Python endpoint had: message_type in ["ping",
-// "heartbeat"] (agenthub_main/src/fastmcp/server/routes/websocket_routes.py:680) and
-// message_type == "subscribe" (:701). Everything else fell into ITS else branch too (:748),
-// answering the identical "Unknown message type" / UNKNOWN_MESSAGE_TYPE payload - so refusing a
-// frame is this endpoint being faithful to the platform, not a gap in the port. The realtime socket
-// pushes changes server->client, and mutations travel over the HTTP API.
+// "heartbeat"] or message_type == "subscribe", and every other value fell into that endpoint's own
+// else branch too, answering the identical "Unknown message type" / UNKNOWN_MESSAGE_TYPE payload - so
+// refusing a frame is this endpoint being faithful to the platform, not a gap in the port. The
+// realtime socket pushes changes server->client, and mutations travel over the HTTP API.
+//
+// NO LINE NUMBER IS CITED FOR THOSE THREE CLAIMS, deliberately: they named
+// agenthub_main/src/fastmcp/server/routes/websocket_routes.py, a file deleted with the Python backend
+// by a50929c6, so a number there resolves for no reader and a bare `:NNN` resolved for no reader even
+// when the file existed. The sentence is the anchor; the retention the test pins is the decision.
 //
 // The test exists because that refusal was SILENT in both directions: a client whose frame can never
 // be accepted received an error nobody read, and no test on either side failed. It asserts through a
