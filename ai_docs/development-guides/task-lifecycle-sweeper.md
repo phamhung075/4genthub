@@ -19,6 +19,6 @@ Owner ruling, 2026-10-15: a task must end `done` or `blocked` after it is create
 - Priority and status changes go through `Task.UpdatePriority` / `Task.UpdateStatus`, which keep the transition rules; no direct SQL updates.
 - Tests: table-driven sweep over a fake clock (each row of the table, plus "done 6d old is kept", "blocked is untouched", "critical stays critical until the block age").
 
-## Open point for the owner
+## Evidence is kept
 
-"Complete" tasks are deleted, so their completion summary and evidence disappear. If the audit trail must keep them, the sweep archives instead of deleting (`status=archived`) and a second, longer rule deletes archived tasks. Default until ruled: delete.
+Owner ruling, 2026-10-15: deleting a completed task must not lose its completion summary and evidence. Before a task is deleted the sweep writes one audit record holding the task id, title, completion summary, evidence and timestamps; the audit trail is not pruned by this sweep. Test: a pruned task has exactly one audit record carrying its summary.
