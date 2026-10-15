@@ -23,6 +23,9 @@ Other seats edit the same tree. Commit by pathspec and do not stage first: `git 
 
 Run the script tests with the canonical command, always with `--noconftest`, from the repository root: `python3 -m pytest --noconftest -p no:cacheprovider scripts/tests -q`. The flag is not decoration: the repository conftest reaches for PostgreSQL before every test, so without it the run HANGS rather than fails. **Read the exit code WITHOUT a pipe:** a pipeline reports the LAST command's status, so `... | tail` reports 0 whatever pytest said; the run is green only when pytest itself exits 0 and prints the count.
 
+### Work first, docs when the task is done
+**The work is build, improve, fix.** A seat spends its turns on that, not on prose about it. To share an idea, a finding, a ruling or a status, talk through the queue (`4genteam room queue create`); a doc is not the place for it. `CHANGELOG/` and `TEST-CHANGELOG.md` are written once, when the task is done, in the same commit as the code, and only when the change needs them: a plan, a finding, a ruling, a status and a re-measured number are not changes. Do not open a sweep or a reconcile task on docs unless the owner asks for one. A doc line that is wrong is corrected when you next change the code it describes.
+
 ### Writing documentation
 **A doc names no commit hash, no count, no line number and no measured-on-date note; it points to the code or the command that gives the answer.** One page per topic, updated in place, with no per-change entries. `CHANGELOG/` carries only what a user or operator would notice, and an entry there must record a change. A claim that needs a number states the command that prints it. Stop commits whose only purpose is to re-measure a number in a doc: delete the number instead. This page is one of the texts `guides.lock.json` pins, so a change here is re-recorded in that lock, in the same commit, or the lock's own tests go red.
 
