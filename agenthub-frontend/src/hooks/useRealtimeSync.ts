@@ -9,6 +9,7 @@ import {
   type SeatEventPayload,
   type RoomEventPayload,
   type NotificationEventPayload,
+  type RigSafeguardAlertPayload,
   isBranchDeletePayload,
   isSubtaskDeletePayload,
   isProjectDeletePayload,
@@ -25,6 +26,34 @@ import { useNotificationStore } from '../store/notifications';
 // 🔥 GLOBAL toast deduplication tracker (module-level, shared across ALL hook instances)
 // This prevents duplicate toasts when multiple components use useRealtimeSync
 const globalRecentToastsMap = new Map<string, number>();
+
+/**
+ * The dashboard inbox line for one safeguard alert.
+ *
+ * 7.3's push carries the ROW - which safeguard, on which rig or machine, in what state - and no
+ * message, so the sentence is composed here: the subject first, then the machine the row came from,
+ * then the state and the counters that explain it. A frame with no state is 7.3's dead-man alert for
+ * the machine-level supervisor, which is the connector's silence rather than a state a child
+ * reported, so it says that instead of inventing one.
+ */
+const describeSafeguardAlert = (row: RigSafeguardAlertPayload): string => {
+  const where = [
+    row.rig ? `rig ${row.rig}` : '',
+    row.connector_id ? `connector ${row.connector_id}` : '',
+  ].filter(Boolean).join(', ');
+  const subject = `Safeguard ${row.safeguard}${where ? ` (${where})` : ''}`;
+
+  if (!row.state) {
+    return `${subject} is unreachable: the connector stayed offline past its heartbeat close`;
+  }
+
+  const counters = [
+    typeof row.restarts === 'number' && row.restarts > 0 ? `${row.restarts} restarts` : '',
+    typeof row.age_s === 'number' ? `last beat ${row.age_s}s ago` : '',
+  ].filter(Boolean).join(', ');
+
+  return `${subject} is ${row.state}${counters ? ` (${counters})` : ''}`;
+};
 
 /**
  * Hook to sync WebSocket events with React Query cache
@@ -957,6 +986,37 @@ export const useRealtimeSync = (
       logger.debug('[useRealtimeSync] Notification stored:', id);
     };
 
+    // Handler for safeguard alerts: the server's 7.3 push (entity 'rig_safeguard'), live or replayed
+    // from the missed-notification store on reconnect. The frame carries the ROW, so the text is
+    // composed from it (describeSafeguardAlert), and the dedupe key is the FRAME id rather than
+    // metadata.entity_id: the row key repeats across the row's life, so keying on it would swallow a
+    // second genuine alert - stopped again after a recovery - while a replay of one frame keeps its id
+    // and stays one inbox row.
+    const handleRigSafeguardAlert = (message: WSMessage) => {
+      const primary = message.payload.data.primary as RigSafeguardAlertPayload;
+      const safeguard = typeof primary?.safeguard === 'string' ? primary.safeguard : '';
+
+      if (!safeguard) {
+        logger.warn('[useRealtimeSync] Safeguard alert frame without a safeguard name');
+        return;
+      }
+
+      const id = message.id;
+      const text = describeSafeguardAlert(primary);
+
+      useNotificationStore.getState().add({
+        id,
+        message: text,
+        kind: 'safeguard_alert',
+      });
+
+      showToastOnce(`safeguard-${id}`, () => {
+        showWarning(text);
+      });
+
+      logger.debug('[useRealtimeSync] Safeguard alert stored:', { id, safeguard, state: primary.state });
+    };
+
     // Handler for room events (entity 'room'): room create/delete and the company
     // settings change, which arrives as a room 'updated' with id 'company'.
     const handleRoomUpdate = (message: WSMessage) => {
@@ -1049,6 +1109,9 @@ export const useRealtimeSync = (
               break;
             case 'notification':
               handleNotification(message);
+              break;
+            case 'rig_safeguard':
+              handleRigSafeguardAlert(message);
               break;
             default:
               logger.debug('[useRealtimeSync] Unknown entity type:', entity);
