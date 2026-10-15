@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+- **A long token in a setup command wraps instead of running off the box** - 2026-10-15
+  - `src/components/help/shared/CommandBox.tsx`: the command text uses `break-all whitespace-pre-wrap` and the copy button stays top-aligned. The Copy button still copies the whole command on one line.
+
 ### Added
 - **A generated token opens its own setup guide, and /help-setup teaches both tokens** - 2026-10-15
   - NEW `src/components/tokens/ClientTokenGuides.tsx`: `ConnectorTokenGuide` (env line, `4genteam up`, `heal --check`, Sessions page) and `McpTokenGuide` (`AGENTHUB_URL`, `AGENTHUB_TOKEN`, `room reseat`). `src/pages/TokenManagement.tsx` shows the connector popup for a token holding only `sessions:write` and the MCP popup otherwise; the generated settings are kept in state, so the popup no longer shows empty scopes after the form resets.
