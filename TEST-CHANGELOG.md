@@ -2,6 +2,12 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-15 - The comm guard's native spellings, pinned before and after
+
+- ADDED 20 native cases to `TestBypassSuspected` and the new `TestBypassSuspectedKnownShapeIsNotALicence` (`agenthub_client/internal/commpolicy/policy_test.go`): `4genteam send` (both arities, absolute path, after an env assignment, collapsed spaces), `4genteam input`, `4genteam room queue create` are bypasses; `4genteam seatcheck send`, `audit-scan`, `queue list`, `queue claim`, `room stop`, `ps`, bare `4genteam` and a truncated `room queue` are not; a `prog sub-verb` known entry allows that shape and no other. `TestBypassSuspectedNilKnown` extended to the native send.
+- FALSIFIED, not asserted: the same observed file (`4genteam send …` twice, `4genteam room queue create …`, `4genteam seatcheck send …`, `4genteam ps …`, `tmux send-keys …`) through `seatcheck audit-scan --known seatcheck --file` at HEAD's predicate flags ONLY the `tmux` line — every native send is silently GREEN — and at the fixed predicate flags the two sends, the rail's create and the `tmux` line, leaving the checked send and the read alone.
+- MEASURED: `go test ./internal/commpolicy/ ./cmd/seatcheck/ -count=1` ok; client `go test ./...` all 28 packages ok.
+
 ## 2026-10-15 - The shadow-gate test states the env it asks for, and the held text queues
 
 - FIXED `TestFailingTestRunInShadowCompletesWithExitFive` (`agenthub_client/internal/clientcomplete/complete_test.go`): it omitted the `t.Setenv(enforcementEnv, "")` its sibling at `:220` already had, so with the state root's `.env` (`VALIDATION_GATE_ENFORCEMENT=true`) inherited by every seat's shell it exited 6 (`ExitGateRefused`) where the shadow path's 5 is the whole point - the suite read the machine it ran on. Falsified with the same instrument: HEAD's file FAILS with `exit 6 err "4genteam complete: the gate says reject (D3: the test run failed)…"`, the fixed file PASSES `-run TestFailingTestRunInShadowCompletesWithExitFive`, and `go test ./...` leaves all 28 packages ok with `VALIDATION_GATE_ENFORCEMENT=true` in the environment.
