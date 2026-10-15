@@ -131,12 +131,16 @@ func TestRigSafeguardSchemaAgreesWithTheORMRow(t *testing.T) {
 
 	// The closed sets are stated in both sources, and the test composes them FROM the constants the
 	// store and the socket validate against: a state or a safeguard added to the code without the
-	// DDL is a failure here rather than a value storable by only one creation path.
+	// DDL is a failure here rather than a value storable by only one creation path. The scope rule is
+	// composed the same way, from the machine-scoped names, so a name moving between the two scopes
+	// cannot leave the CHECK behind.
 	states := []string{StateRunning, StateStopped, StateSilent, StateFailing}
-	safeguards := []string{SafeguardCompact, SafeguardWatchdog, SafeguardBridge, SafeguardRigd}
+	safeguards := []string{SafeguardCompact, SafeguardWatchdog, SafeguardMessages, SafeguardRoomGuard, SafeguardBridge, SafeguardAgent}
+	machineScoped := []string{SafeguardBridge, SafeguardAgent}
 	wantChecks := rigSafeguardSorted([]string{
 		"state IN ('" + strings.Join(states, "', '") + "')",
 		"safeguard IN ('" + strings.Join(safeguards, "', '") + "')",
+		"CASE WHEN safeguard IN ('" + strings.Join(machineScoped, "', '") + "') THEN rig = '' ELSE length(rig) BETWEEN 1 AND 255 END",
 	})
 	fileChecks := rigSafeguardSorted(rigSafeguardBodyChecks(fileBody))
 	if !reflect.DeepEqual(fileChecks, wantChecks) {

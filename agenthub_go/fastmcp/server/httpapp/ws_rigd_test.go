@@ -211,7 +211,7 @@ func TestConnectorPingIsAnsweredWithPongAndAnUnknownTypeKeepsTheSocket(t *testin
 
 	c.send(map[string]any{"type": "no_such_kind"})
 	refused := c.recv()
-	if refused["type"] != "error" || refused["error"] != "unknown type" {
+	if refused["type"] != "error" || refused["message"] != "unknown type" {
 		t.Fatalf("unknown type answered %v", refused)
 	}
 	if refused["code"] != "unknown_type" {
@@ -252,7 +252,7 @@ func TestConnectorRefusesASafeguardFrameWithoutTheEchoedCapability(t *testing.T)
 }
 
 // TestConnectorClosesASocketSilentForThreeHeartbeats: 2.2's server half of the heartbeat. It is what
-// makes the rigd dead-man timely on a machine that vanishes without closing its sockets.
+// makes the agent dead-man timely on a machine that vanishes without closing its sockets.
 func TestConnectorClosesASocketSilentForThreeHeartbeats(t *testing.T) {
 	prev := wsConnectorIdleTimeout
 	wsConnectorIdleTimeout = func() time.Duration { return 200 * time.Millisecond }
@@ -362,7 +362,7 @@ func TestConnectorRefusesACursorOverItsByteBound(t *testing.T) {
 		"cursor": string(make([]byte, 513)),
 	})
 	refused := c.recv()
-	if refused["type"] != "error" || refused["error"] != "cursor is too long" {
+	if refused["type"] != "error" || refused["message"] != "cursor is too long" {
 		t.Fatalf("over-long cursor answered %v", refused)
 	}
 	if refused["code"] != "cursor_is_too_long" {
@@ -457,33 +457,55 @@ func sessionStateRowCount(t *testing.T, sessions *database.SessionManager, userI
 	return count
 }
 
-// TestSafeguardFrameRefusesAStateOrSafeguardOutsideTheRuledSets: the two closed sets of 7.6 are
-// stated to the database as CHECKs and refused here first, so a bad row never reaches a constraint.
+// TestSafeguardFrameRefusesAStateOrSafeguardOutsideTheRuledSets: 7.6's closed set - the six names
+// the client reports (7.2) - and the rig rule each name's scope carries (D2) are stated to the
+// database as CHECKs and refused here first, so a bad row never reaches a constraint.
 func TestSafeguardFrameRefusesAStateOrSafeguardOutsideTheRuledSets(t *testing.T) {
 	env := newPGStreamEnv(t)
 	c := env.connector(t, "user-rigd")
 	c.rigdHello(t, "c1", connectorCapabilityIngest, connectorCapabilitySafeguards)
 
 	c.send(map[string]any{"type": "safeguard", "rig": "rig-1", "safeguard": "compact", "state": "paused", "restarts": 0, "age_s": 1})
-	if got := c.recv(); got["type"] != "error" || got["error"] != "bad state" || got["code"] != "bad_state" {
+	if got := c.recv(); got["type"] != "error" || got["message"] != "bad state" || got["code"] != "bad_state" {
 		t.Fatalf("an unknown state answered %v", got)
 	}
 	c.send(map[string]any{"type": "safeguard", "rig": "rig-1", "safeguard": "keeper", "state": "running", "restarts": 0, "age_s": 1})
-	if got := c.recv(); got["type"] != "error" || got["error"] != "bad safeguard" {
+	if got := c.recv(); got["type"] != "error" || got["message"] != "bad safeguard" {
 		t.Fatalf("an unknown safeguard answered %v", got)
 	}
 	c.send(map[string]any{"type": "safeguard", "rig": "", "safeguard": "compact", "state": "running", "restarts": 0, "age_s": 1})
-	if got := c.recv(); got["type"] != "error" || got["error"] != "bad rig" {
+	if got := c.recv(); got["type"] != "error" || got["message"] != "bad rig" {
 		t.Fatalf("a missing rig answered %v", got)
 	}
 	if got := sessionStateRowCount(t, env.sessions, "user-rigd", "c1", "rig-1", "compact"); got != 0 {
 		t.Fatalf("stored rows after three refused frames = %d, want 0", got)
 	}
+	// The other half of the scope rule: a machine-scoped name carrying a rig is refused too, so the
+	// key can hold one machine row per connector rather than one per spelling of the empty rig.
+	c.send(map[string]any{"type": "safeguard", "rig": "rig-1", "safeguard": "bridge", "state": "running", "restarts": 0, "age_s": 1})
+	if got := c.recv(); got["type"] != "error" || got["message"] != "bad rig" {
+		t.Fatalf("a machine-scoped safeguard carrying a rig answered %v", got)
+	}
+	if got := sessionStateRowCount(t, env.sessions, "user-rigd", "c1", "rig-1", "compact"); got != 0 {
+		t.Fatalf("stored rows after four refused frames = %d, want 0", got)
+	}
+	// And the machine scope is accepted with NO rig: this is the row the client publishes for its
+	// machine-level supervisor, which the four-name set and its blanket rig rule refused "bad rig" at
+	// every connect.
+	c.safeguardFrame(t, map[string]any{"rig": "", "safeguard": "agent", "state": "running", "restarts": 0, "age_s": 1})
+	if got := sessionStateRowCount(t, env.sessions, "user-rigd", "c1", "", "agent"); got != 1 {
+		t.Fatalf("the machine-scoped agent row stored %d rows, want 1", got)
+	}
 }
 
 // TestRigdDeadmanAlertsWhenASafeguardsConnectorStaysOffline is 7.3's dead-man: a connector that
-// advertised safeguards and stays offline past its heartbeat close is alerted for `rigd`, and a
-// reconnect inside that window cancels it.
+// advertised safeguards and stays offline past its heartbeat close is alerted for the machine-level
+// `agent` safeguard, and a reconnect inside that window cancels it.
+//
+// The case keeps the names it was written with - the file, `rigdHello` and this function's own name
+// still say `rigd`, the word the client retired on 2026-10-15 (`bc725e6`). Renaming them is a
+// separate decision, the one the ruling parked for the doc's own title and file name; what the
+// assertion below pins is the name the SERVER now raises the alert under.
 //
 // The timer is the seam (wsConnectorDeadmanAfter), so the case drives the callback instead of
 // waiting 75 seconds: what it checks is which delay was armed, and what firing it does.
@@ -514,7 +536,7 @@ func TestRigdDeadmanAlertsWhenASafeguardsConnectorStaysOffline(t *testing.T) {
 	select {
 	case pending = <-armed:
 	case <-time.After(5 * time.Second):
-		t.Fatal("closing the last socket of a safeguards connector must arm the rigd dead-man")
+		t.Fatal("closing the last socket of a safeguards connector must arm the agent dead-man")
 	}
 	want := 3 * time.Duration(connectorHeartbeatSeconds) * time.Second
 	if pending.delay != want {
@@ -526,8 +548,8 @@ func TestRigdDeadmanAlertsWhenASafeguardsConnectorStaysOffline(t *testing.T) {
 	if len(alerts) != 1 {
 		t.Fatalf("alerts after the heartbeat close = %d, want 1", len(alerts))
 	}
-	if got := storedString(t, alerts[0].Primary, "safeguard"); got != "rigd" {
-		t.Errorf("dead-man alert safeguard = %q, want rigd", got)
+	if got := storedString(t, alerts[0].Primary, "safeguard"); got != "agent" {
+		t.Errorf("dead-man alert safeguard = %q, want agent", got)
 	}
 	if got := storedString(t, alerts[0].Primary, "connector_id"); got != "c1" {
 		t.Errorf("dead-man alert connector_id = %q, want c1", got)
@@ -644,7 +666,7 @@ func TestSessionStateReachesTheSessionListAndIsKeptWhenAbsent(t *testing.T) {
 	// The ruled set is running|stopped: anything else costs the connector that frame and stores
 	// nothing, which is why the column needs no CHECK of its own.
 	refused := send("s1", map[string]any{"state": "paused"})
-	if refused["type"] != "error" || refused["error"] != "bad state" || refused["code"] != "bad_state" {
+	if refused["type"] != "error" || refused["message"] != "bad state" || refused["code"] != "bad_state" {
 		t.Fatalf("state=paused answered %v", refused)
 	}
 	if got, _ := seatStateOf(t, env, user, sid); got != "stopped" {

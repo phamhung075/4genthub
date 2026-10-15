@@ -339,7 +339,7 @@ func TestConnectorCapCountsCharactersNotBytes(t *testing.T) {
 		t.Fatalf("a message of exactly 1 MiB characters (%d bytes) must be served, got %v", len(atCap), got)
 	}
 	c.sendRaw(helloOfChars(routes.SessionStreamMaxMsgChars + 1))
-	if got := c.recv(); got["type"] != "error" || got["error"] != "message too large" {
+	if got := c.recv(); got["type"] != "error" || got["message"] != "message too large" {
 		t.Fatalf("a message of 1 MiB + 1 characters must be refused, got %v", got)
 	}
 	c.hello("c1") // the socket is still usable
@@ -403,7 +403,7 @@ func TestConnectorRefusesEventsForAnUnregisteredSessionKey(t *testing.T) {
 	env := newPGStreamEnv(t)
 	c := env.connector(t, "user-1")
 	c.hello("c1")
-	if got := c.appendEvents("nope", event(map[string]any{"text": "x"})); got["type"] != "error" || got["error"] != "unknown session" {
+	if got := c.appendEvents("nope", event(map[string]any{"text": "x"})); got["type"] != "error" || got["message"] != "unknown session" {
 		t.Fatalf("events for an unregistered key answered %v", got)
 	}
 }
@@ -413,7 +413,7 @@ func TestConnectorHelloCannotSwitchTheConnectorID(t *testing.T) {
 	c := newStreamEnv(t, nil).connector(t, "user-1")
 	c.hello("c1")
 	c.send(map[string]any{"type": "hello", "connector_id": "c2"})
-	if got := c.recv(); got["type"] != "error" || got["error"] != "connector_id already set" {
+	if got := c.recv(); got["type"] != "error" || got["message"] != "connector_id already set" {
 		t.Fatalf("the second hello answered %v", got)
 	}
 }
@@ -427,7 +427,7 @@ func TestConnectorSurvivesNonObjectEventsAndAnOddProject(t *testing.T) {
 	if got := c.recv(); got["type"] != "session_ack" {
 		t.Fatalf("a session with a non-string project answered %v", got)
 	}
-	if got := c.appendEvents("s1", 1, "x", nil); got["type"] != "error" || got["error"] != "each event must be an object" {
+	if got := c.appendEvents("s1", 1, "x", nil); got["type"] != "error" || got["message"] != "each event must be an object" {
 		t.Fatalf("non-object events answered %v", got)
 	}
 	if got := c.appendEvents("s1", event(map[string]any{"a": 1})); got["type"] != "events_ack" {

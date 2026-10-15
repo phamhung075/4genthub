@@ -35,11 +35,15 @@ CREATE TABLE IF NOT EXISTS rig_safeguards (
     age_s INTEGER NOT NULL,
     last_beat_at TIMESTAMP WITHOUT TIME ZONE,
     PRIMARY KEY (user_id, connector_id, rig, safeguard),
-    -- The two closed sets of 7.6, stated to the database so no path can store a state or a safeguard
-    -- the vocabulary does not name. The ingest refuses them first, with a frame error rather than a
-    -- constraint violation.
+    -- The closed set of 7.6 and the rig rule that belongs to each name's scope, stated to the
+    -- database so no path can store a safeguard or a rig the vocabulary does not name. ck_..._rig is
+    -- the scope rule the ingest states too: a rig-scoped safeguard needs a rig of 1..255, and the two
+    -- machine-scoped ones (bridge, agent) need exactly none. rig VARCHAR(255) already caps the upper
+    -- bound; it is stated here so the constraint reads as the rule the code states. The ingest refuses
+    -- a bad row first, with a frame error rather than a constraint violation.
     CONSTRAINT ck_rig_safeguards_state CHECK (state IN ('running', 'stopped', 'silent', 'failing')),
-    CONSTRAINT ck_rig_safeguards_safeguard CHECK (safeguard IN ('compact', 'watchdog', 'bridge', 'rigd'))
+    CONSTRAINT ck_rig_safeguards_safeguard CHECK (safeguard IN ('compact', 'watchdog', 'messages', 'roomguard', 'bridge', 'agent')),
+    CONSTRAINT ck_rig_safeguards_rig CHECK (CASE WHEN safeguard IN ('bridge', 'agent') THEN rig = '' ELSE length(rig) BETWEEN 1 AND 255 END)
 );
 
 CREATE INDEX IF NOT EXISTS ix_rig_safeguards_user_connector ON rig_safeguards (user_id, connector_id);

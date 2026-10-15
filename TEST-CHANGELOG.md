@@ -18,6 +18,15 @@ Track test suite changes, fixes, and improvements for agenthub.
 - CHANGED `TestTaskLifecycle` in `agenthub_go/fastmcp/task_management/domain/entities/task_test.go`: blocking a `todo` task succeeds and leaves it `blocked`, and `blocked -> archived` is the move the entity still refuses.
 - ADDED the pin in `TestTaskStatusTransitions` (`domain/value_objects/value_objects_test.go`): `todo`/`in_progress`/`review`/`testing` can reach `blocked`; `done`/`cancelled`/`archived` cannot.
 - MEASURED: `go test -count=1 ./...` rc 0 and `go vet ./fastmcp/task_management/... ./cmd/...` clean (`agenthub_go`, no database).
+## 2026-10-15 - six safeguards, one scope rule, the message field
+
+- ADDED `TestValidateStatesTheSixNamesAndTheirScopes` in `agenthub_go/fastmcp/rig_safeguard/infrastructure/repositories/orm/rig_safeguard_repository_test.go`: the six names with their scope's rig, the four refusals, the retired `rigd` name, an unknown name and an unknown state, with no database in the way.
+- ADDED `TestUpsertAcceptsEachOfTheSixNamesInItsScope` (same file, PostgreSQL), and two machine-scope refusals in `TestUpsertRefusesTheClosedSetsBeforeAnyStatement`, which now expects six refused frames to leave no row.
+- CHANGED `agenthub_go/fastmcp/rig_safeguard/infrastructure/database/rig_safeguard_schema_test.go`: the expected CHECK set is composed from the six constants plus the machine-scoped names for the new rig CHECK.
+- CHANGED `agenthub_go/fastmcp/server/httpapp/ws_rigd_test.go`: six connector-frame assertions move from `error` to `message`, the dead-man alert asserts `safeguard == "agent"`, and the refusal case gains the scope rule (a machine-scoped row carrying a rig is refused; an `agent` row with the empty rig is stored).
+- CHANGED `agenthub_go/fastmcp/server/httpapp/ws_connector_test.go`: four assembled-frame assertions move from `error` to `message`.
+- ADDED `agenthub_go/fastmcp/task_management/infrastructure/database/rig_safeguards_migration_integration_test.go` (PostgreSQL): the `0004` step run through the runner over a table built as the pre-step baseline created it.
+- MEASURED: `go test ./...` rc 0 with no database; with `tools/testpg` - `./fastmcp/rig_safeguard/...` ok, the httpapp socket subset (`-run 'Safeguard|Deadman|Rigd|Connector'`) ok in 44.7 s, the new migration case ok in 0.8 s. The three guards were FALSIFIED: each goes red with the change reverted, and the two edited files were restored byte-identically afterwards.
 
 ## 2026-10-15 - seat tool hook and activity timeline
 

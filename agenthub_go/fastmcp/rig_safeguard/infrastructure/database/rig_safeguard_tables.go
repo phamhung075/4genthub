@@ -38,7 +38,8 @@ var rigSafeguardTables = []taskdb.TableDef{
 			"\tlast_beat_at TIMESTAMP WITHOUT TIME ZONE,\n" +
 			"\tPRIMARY KEY (user_id, connector_id, rig, safeguard),\n" +
 			"\tCONSTRAINT ck_rig_safeguards_state CHECK (state IN ('running', 'stopped', 'silent', 'failing')),\n" +
-			"\tCONSTRAINT ck_rig_safeguards_safeguard CHECK (safeguard IN ('compact', 'watchdog', 'bridge', 'rigd'))\n" +
+			"\tCONSTRAINT ck_rig_safeguards_safeguard CHECK (safeguard IN ('compact', 'watchdog', 'messages', 'roomguard', 'bridge', 'agent')),\n" +
+			"\tCONSTRAINT ck_rig_safeguards_rig CHECK (CASE WHEN safeguard IN ('bridge', 'agent') THEN rig = '' ELSE length(rig) BETWEEN 1 AND 255 END)\n" +
 			")",
 		"CREATE INDEX ix_rig_safeguards_user_connector ON rig_safeguards (user_id, connector_id)",
 	}},
