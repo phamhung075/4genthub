@@ -88,6 +88,7 @@ The frames above run between agent and the server. The browser never sees them. 
   - `updated`: a `seat_state` change, or a `status` change, including `MarkOffline`, which emits one frame per session it marks.
 - **No push per `events` batch:** live events stay on `/ws/sessions/{id}`.
 - **The browser** handles `agent_session` by invalidating `['sessions']` (`sessionKeys.list`) in each branch, the same placing as `handleSeatUpdate`. It does not parse the row out of the frame: the GET stays the single read path.
+- **The browser** handles the safeguard alert of 7.3 (entity `rig_safeguard`, action/event_type `safeguard_alert`) by putting it in the dashboard inbox (`useNotificationStore`) with a warning toast, live and replayed alike. The frame carries the ROW rather than a message, so the line is composed from the row's own fields (`safeguard`, `rig`, `connector_id`, `state`, `restarts`, `age_s`), and a frame with no `state` is the dead-man alert and says the connector stayed offline past its heartbeat close. **The dedupe key is the FRAME id, not `metadata.entity_id`**: `entity_id` here is the row key, which repeats across the row's life, so keying on it would collapse a genuine second alert into the first while a replay of one frame keeps its id. Recorded 2026-10-15, when the consumer landed (`agenthub-frontend/src/hooks/useRealtimeSync.ts`); before it, this entity fell to the dispatcher's default branch and the alert reached no surface at all.
 
 ### 2.4 Phase-2 frames (designed now, NOT implemented)
 
