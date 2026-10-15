@@ -103,8 +103,8 @@
     {
       "seat_key": "architect",
       "seat_type": "architect",
-      "runtime": "claude-code",
-      "model": "opus",
+      "runtime": "omp",
+      "model": "deepseek/deepseek-flash",
       "pinned_version": "1.4.3"
     }
   ],

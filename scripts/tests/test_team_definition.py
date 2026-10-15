@@ -127,7 +127,11 @@ ROOM_RUNTIMES = {
     "4genthub": {"claude-code"},
     "4genthub-ab": {"omp"},
     "4genthub-client": {"omp"},
-    "4genthub-min": {"claude-code", "omp"},
+    # CORRECTED 2026-10-15: the architect moved to `omp` with the rest of the room when the owner
+    # replaced that seat on 2026-10-14 20:21Z. The entry said {"claude-code", "omp"} and the
+    # definition said `claude-code`/`opus`; both were stale, and this table is what turns the stale
+    # pair into a red suite rather than a room that rebuilds the wrong runtime.
+    "4genthub-min": {"omp"},
 }
 
 

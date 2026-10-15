@@ -4,10 +4,15 @@ The room definition for the minimum team, applied by `4genteam team apply` (the 
 `agenthub_client/src/agenthub_client/team_setup.py`; this named `scripts/openrig_team_setup.py`
 until the 2026-10-09 client relocation moved the scripts into the installed client). It mirrors the
 SHAPE of `scripts/team/4genthub/team.json` and **inherits nothing from it**: that room is nine seats
-on `claude-code` with an empty model, this one is nine seats on `omp` with
-`deepseek/deepseek-flash` plus an architect on `claude-code`, and `seat_type`, `runtime` and `model`
+on `claude-code` with an empty model, this one is FIVE seats (it was nine when this paragraph was
+written) all on `omp` with `deepseek/deepseek-flash`, and `seat_type`, `runtime` and `model`
 are stated **per seat** here — a room definition copied from the other file would describe a fleet
 that does not exist, and it would do it silently because every field would be filled in.
+**CORRECTED 2026-10-15, and this sentence is the third committed copy of the same stale claim:** it
+read "nine seats … plus an architect on `claude-code`". The owner replaced the architect seat on
+2026-10-14 20:21Z, so the room runs five seats and the architect runs `omp` /
+`deepseek/deepseek-flash`; `team.json:106-107`, `scripts/tests/test_team_roster.py` and
+`scripts/tests/test_team_definition.py`'s `ROOM_RUNTIMES` moved with this note, in one commit.
 
 ## The ten modules
 

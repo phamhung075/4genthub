@@ -30,11 +30,14 @@ pytestmark = pytest.mark.unit
 REPO_ROOT = Path(__file__).resolve().parents[2]
 TEAM_JSON = REPO_ROOT / "scripts" / "team" / "4genthub-min" / "team.json"
 
-# The team the rig is RUNNING. RE-MEASURED 2026-10-11: `rig ps --nodes --rig 4genthub-min --json`
-# reports FIVE nodes - one `claude-code` (architect) and four `omp` - and the room's `team.json`
-# declares exactly those five, so the two writes agree at five. This list held ten from 2026-10-08
-# (go-dev2 was removed that day); skills-dev, web-dev and writer were retired from the room since,
-# which is why the roster case below reads five and not the ten it was written with.
+# The team the rig is RUNNING. RE-MEASURED 2026-10-15: ALL FIVE SEATS RUN `omp` - the owner replaced
+# the architect seat on 2026-10-14 20:21Z, and the room's `spec.json`, `4genteam ps --nodes --json` and
+# the cloud now all report `omp` for every seat - and the room's `team.json` declares exactly those
+# five, so the two writes agree at five. The 2026-10-11 reading this comment used to carry (one
+# `claude-code` architect and four `omp`) was true when taken and is exactly what the definition
+# drifted from: the file went on saying `claude-code`/`opus` for two more days, and the case that
+# asserted that runtime string from memory is DELETED rather than re-pointed - asserting a runtime
+# string is how it drifted, and the pair of set comparisons below already carries its intent.
 LIVE_SEATS = [
     "architect",
     "fe-dev",
@@ -43,11 +46,12 @@ LIVE_SEATS = [
     "reviewer",
 ]
 
-# WHICH of those seats run omp, measured the same way and on the same day as `LIVE_SEATS` above: the
-# node list is one `claude-code` seat and four `omp` seats. Recorded rather than recomputed for the
-# reason the pair exists - a set derived from `team.json` agrees with `team.json` by construction,
-# and this pair exists because the room and the rig disagreed for two days.
+# WHICH of those seats run omp, measured the same way and on the same day as `LIVE_SEATS` above: all
+# five, since 2026-10-15. Recorded rather than recomputed for the reason the pair exists - a set
+# derived from `team.json` agrees with `team.json` by construction, and this pair exists because the
+# room and the rig disagreed for two days.
 OMP_SEATS = [
+    "architect",
     "fe-dev",
     "go-dev",
     "lead",
@@ -64,12 +68,6 @@ def test_the_declared_seats_are_the_live_roster():
     assert declared == sorted(LIVE_SEATS)
 
 
-def test_the_architect_runs_claude_code():
-    seats = {seat["seat_key"]: seat for seat in team()["seats"]}
-    assert "architect" in seats, "the live rig runs an architect seat"
-    assert seats["architect"]["runtime"] == "claude-code"
-
-
 def test_the_rooms_omp_seats_are_the_rigs_omp_seats():
     """The room's omp seats and the rig's omp seats are the SAME SET, in both directions.
 
@@ -82,6 +80,13 @@ def test_the_rooms_omp_seats_are_the_rigs_omp_seats():
     Both sides are named when this fails, because the reader has to know WHICH file moved: the seats
     the room declares on omp that the rig does not run there, and the omp seats the room leaves off
     omp. The comparison is against the measured `OMP_SEATS`, never against the file under test.
+
+    THIS CASE ALSO CARRIES WHAT `test_the_architect_runs_claude_code` USED TO SAY, and it says it
+    better: that case asserted ONE seat's runtime string from memory, and a hard-coded string is
+    exactly what drifted - the definition went on declaring `claude-code`/`opus` for two days after
+    the owner had moved that seat to `omp`. The property the room needs is the one asserted here (the
+    definition names no seat whose declared runtime disagrees with the roster the rig runs, in either
+    direction), so the old case is DELETED rather than re-pointed to the new string.
     """
     declared = {seat["seat_key"]: seat["runtime"] for seat in team()["seats"]}
     room_omp = {key for key, runtime in declared.items() if runtime == "omp"}
