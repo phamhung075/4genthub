@@ -116,6 +116,8 @@
     {"from": "architect", "to": "go-dev", "kind": "delegates_to"},
     {"from": "architect", "to": "fe-dev", "kind": "delegates_to"},
     {"from": "architect", "to": "reviewer", "kind": "delegates_to"},
+    {"from": "reviewer", "to": "go-dev", "kind": "delegates_to"},
+    {"from": "reviewer", "to": "fe-dev", "kind": "delegates_to"},
     {"from": "lead", "to": "architect", "kind": "collaborates_with"},
     {"from": "lead", "to": "go-dev", "kind": "collaborates_with"},
     {"from": "lead", "to": "fe-dev", "kind": "collaborates_with"},
