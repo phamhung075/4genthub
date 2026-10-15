@@ -28,14 +28,14 @@ const reference: ApiReference = {
   routes: [
     {
       method: 'GET',
-      path: '/api/v2/openrig/rooms',
+      path: '/api/v2/rooms',
       pathParams: [],
       handler: 'handleListRooms',
       description: 'Lists the rooms the caller owns.',
     },
     {
       method: 'DELETE',
-      path: '/api/v2/openrig/rooms/{room}/seats/{seat}/links/{to}/{kind}',
+      path: '/api/v2/rooms/{room}/seats/{seat}/links/{to}/{kind}',
       pathParams: ['room', 'seat', 'to', 'kind'],
       // An inline closure: the generator emits no handler name, and this is LEGITIMATE.
       handler: '',
@@ -69,11 +69,11 @@ describe('ApiReferenceView', () => {
     renderView();
 
     expect(within(routesRegion()).getByText('2 routes, generated from the mounts rather than typed by hand.')).toBeInTheDocument();
-    expect(within(routesRegion()).getByText('/api/v2/openrig/rooms')).toBeInTheDocument();
+    expect(within(routesRegion()).getByText('/api/v2/rooms')).toBeInTheDocument();
     expect(within(routesRegion()).getByText('handleListRooms')).toBeInTheDocument();
     expect(within(routesRegion()).getByText('Lists the rooms the caller owns.')).toBeInTheDocument();
     expect(
-      within(routesRegion()).getByText('/api/v2/openrig/rooms/{room}/seats/{seat}/links/{to}/{kind}')
+      within(routesRegion()).getByText('/api/v2/rooms/{room}/seats/{seat}/links/{to}/{kind}')
     ).toBeInTheDocument();
   });
 
@@ -84,11 +84,11 @@ describe('ApiReferenceView', () => {
     renderView();
 
     const row = within(routesRegion())
-      .getByText('/api/v2/openrig/rooms/{room}/seats/{seat}/links/{to}/{kind}')
+      .getByText('/api/v2/rooms/{room}/seats/{seat}/links/{to}/{kind}')
       .closest('li') as HTMLElement;
 
     expect(row.textContent?.replace(/\s+/g, '')).toBe(
-      'DELETE/api/v2/openrig/rooms/{room}/seats/{seat}/links/{to}/{kind}'
+      'DELETE/api/v2/rooms/{room}/seats/{seat}/links/{to}/{kind}'
     );
     expect(row.querySelector('p')).toBeNull();
   });

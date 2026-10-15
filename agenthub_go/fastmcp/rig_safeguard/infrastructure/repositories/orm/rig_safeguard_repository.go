@@ -2,8 +2,9 @@
 //
 // It is deliberately small: the frame is an upsert of one row per (user, connector, rig, safeguard),
 // the latest state wins, and the ONLY decision the server makes on it is the alert - the transition
-// rule in transitionAlerts below. rigd judges the silence of its children; the server judges the
-// rows rigd sends, and its own socket's liveness (7.4).
+// rule in transitionAlerts below. The client's machine-level supervisor (`agent`, the safeguard it
+// renamed from `rigd` on 2026-10-15) judges the silence of its children; the server judges the rows
+// that supervisor sends, and its own socket's liveness (7.4).
 package orm
 
 import (
@@ -15,16 +16,26 @@ import (
 	"agenthub/fastmcp/task_management/infrastructure/database"
 )
 
-// validate checks the closed sets the safeguard frame reports (7.6) before any statement is built,
-// so an unknown state or safeguard costs the connector one frame and nothing else. The CHECK
-// constraints in the table state the same two sets to the database; this is the refusal that
-// explains itself over the socket instead of surfacing as an internal error.
+// validate checks the closed set of safeguard names and the rig rule that belongs to each name's
+// scope (7.2, 7.6) before any statement is built, so a refused frame costs the connector that frame
+// and nothing else. The CHECK constraints in the table state the same two rules to the database;
+// this is the refusal that explains itself over the socket instead of surfacing as an internal
+// error.
+//
+// THE NAME IS CHECKED FIRST, because the name's scope is what decides the rig rule: a rig-scoped
+// safeguard needs a rig of 1..255, and a machine-scoped one needs EXACTLY none. The three messages
+// are unchanged - `bad rig`, `bad safeguard`, `bad state` - so the codes the socket answers with
+// (`bad_rig`, `bad_safeguard`, `bad_state`) are the ones the client already reads.
 func validate(row rigdb.RigSafeguardORM) error {
-	if row.Rig == "" || len(row.Rig) > 255 {
-		return &tmvo.ValueError{Msg: "bad rig"}
-	}
 	switch row.Safeguard {
-	case rigdb.SafeguardCompact, rigdb.SafeguardWatchdog, rigdb.SafeguardBridge, rigdb.SafeguardRigd:
+	case rigdb.SafeguardCompact, rigdb.SafeguardWatchdog, rigdb.SafeguardMessages, rigdb.SafeguardRoomGuard:
+		if row.Rig == "" || len(row.Rig) > 255 {
+			return &tmvo.ValueError{Msg: "bad rig"}
+		}
+	case rigdb.SafeguardBridge, rigdb.SafeguardAgent:
+		if row.Rig != "" {
+			return &tmvo.ValueError{Msg: "bad rig"}
+		}
 	default:
 		return &tmvo.ValueError{Msg: "bad safeguard"}
 	}

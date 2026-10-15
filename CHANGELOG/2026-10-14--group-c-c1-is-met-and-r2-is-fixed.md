@@ -7,11 +7,11 @@ That is stale in three ways, and the owner's own note ("the 4genthub-min seats n
 
 - The u2 branch IS merged: `a118585 merge: 4genthub-min/u2-native-runner into feat/support-agy-watch` in the
   client repo, and the live room's state root is the one that merge introduced (`~/.config/4genthub`, not
-  `~/.openrig`).
+  `~/config/4genthub`).
 - The build IS installed: `~/.local/bin/agenthub-runtime` 21:09, `~/.local/bin/4genteam` 21:23.
-- The check holds: `ps -eo pid,ppid,args | grep -E 'agenthub-runtime|pi-runner|openrig'` lists five
+- The check holds: `ps -eo pid,ppid,args | grep -E 'agenthub-runtime|pi-runner|the reference client'` lists five
   `agenthub-runtime --state-dir /home/daihu/.config/4genthub runner 4genthub-min/<seat>` processes under the
-  room's own tmux session, and no `openrig` and no `pi-runner.js`. `4genteam up 4genthub-min --team <team dir>
+  room's own tmux session, and no `the reference client` and no `pi-runner.js`. `4genteam up 4genthub-min --team <team dir>
   --room-only` exits 0 and prints all five seats `running`.
 
 C1's row still reads `[ ]`; the flip belongs to whoever holds the document (see the warning below).

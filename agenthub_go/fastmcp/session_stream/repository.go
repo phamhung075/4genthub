@@ -174,7 +174,7 @@ func truncatedPayload() *entities.OrderedMap[any] {
 // ambiguous, and ck_agent_sessions_seat_pair could not store it - but a WHOLE PAIR THAT CANNOT BE
 // ADDRESSED LOSES THE ANNOTATION AND KEEPS THE SESSION, which the dropped result reports to the
 // caller. The two failures are not comparable: the pair is an annotation on the session, while
-// namePattern is OpenRig's POD OR MEMBER ID rule and room_slug holds a RIG name the server may
+// namePattern is the POD OR MEMBER ID rule and room_slug holds a RIG name the server may
 // never have rendered - so an unaddressable annotation must never cost the connector its whole
 // event stream. A dropped pair is not stored raw either: every non-null pair in the table stays a
 // name a reader can use without re-validating it, rather than a stale carrier that looks

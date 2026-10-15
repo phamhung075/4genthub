@@ -607,11 +607,14 @@ func wsErrorData(message, code string) *entities.OrderedMap[any] {
 	return m
 }
 
-// wsConnectorError builds the connector's error frame. 2.2 adds `code` (a stable identifier) and
-// `fatal` to the message the frame already carried. The code is the message lower-cased with its
-// spaces underscored, which is what makes the one code the doc NAMES fall out of the message
-// exactly: "unknown type" is `unknown_type` (2.3.3). The message stays where it was, so the frames
-// the connector tests already assert are unchanged apart from the two new fields.
+// wsConnectorError builds the connector's error frame. 2.2 names its field `message`, the human
+// text, and the frame carries `code` - the message lower-cased with its spaces underscored, which is
+// what makes the one code the doc NAMES fall out of the message exactly: "unknown type" is
+// `unknown_type` (2.3.3). `code` and `fatal` were the two additions to that ruled row; the field the
+// row names has been `message` since the ruling of 2026-10-11 (`2004877a`), the browser socket's own
+// error payload uses it (`wsErrorData`), and the client's reader reads it
+// (agenthub_client/internal/clientsync/agent.go:666). An earlier builder wrote `error` here, which
+// no reader ever read - the client logged every refusal with an empty reason.
 //
 // fatal is false on every frame this server sends. 2.2 makes a fatal error one the server closes the
 // socket after, and phase 1 rules no condition that costs a connector its whole socket: a refused
@@ -619,7 +622,7 @@ func wsErrorData(message, code string) *entities.OrderedMap[any] {
 func wsConnectorError(message string) *entities.OrderedMap[any] {
 	m := entities.NewOrderedMap[any]()
 	m.Set("type", "error")
-	m.Set("error", message)
+	m.Set("message", message)
 	m.Set("code", wsConnectorErrorCode(message))
 	m.Set("fatal", false)
 	return m

@@ -39,7 +39,7 @@ import {
 /** The layer as a heading reads it; the wire value keeps its hyphen and is shown beside it. */
 const LAYER_LABEL: Record<FeedbackLayer, string> = {
   runtime: 'Runtime',
-  openrig: 'OpenRig',
+  client: 'Client',
   cloud: 'Cloud',
   'seat-context': 'Seat context',
   workspace: 'Workspace',

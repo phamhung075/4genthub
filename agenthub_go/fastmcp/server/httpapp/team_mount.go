@@ -2,16 +2,16 @@ package httpapp
 
 // team_mount.go serves the team boundary (NEXT_GEN D5, slice 1):
 //
-//	POST   /api/v2/openrig/teams
-//	GET    /api/v2/openrig/teams
-//	GET    /api/v2/openrig/teams/{team}
-//	DELETE /api/v2/openrig/teams/{team}
-//	GET    /api/v2/openrig/teams/{team}/members
-//	POST   /api/v2/openrig/teams/{team}/members
-//	PATCH  /api/v2/openrig/teams/{team}/members/{user}
-//	DELETE /api/v2/openrig/teams/{team}/members/{user}
+//	POST   /api/v2/teams
+//	GET    /api/v2/teams
+//	GET    /api/v2/teams/{team}
+//	DELETE /api/v2/teams/{team}
+//	GET    /api/v2/teams/{team}/members
+//	POST   /api/v2/teams/{team}/members
+//	PATCH  /api/v2/teams/{team}/members/{user}
+//	DELETE /api/v2/teams/{team}/members/{user}
 //
-// `{team}` is the team SLUG (the OpenRig convention the room routes use), looked up within
+// `{team}` is the team SLUG (the slug convention the room routes use), looked up within
 // the caller's memberships: a slug is unique per owner, not globally.
 //
 // A team is the account boundary its members share. Slice 1 is single-owner: the creator
@@ -69,28 +69,28 @@ type teamMemberRoleRequest struct {
 }
 
 func mountTeamRoutes(mux *http.ServeMux, sessions *database.SessionManager) {
-	mux.HandleFunc("POST /api/v2/openrig/teams", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+	mux.HandleFunc("POST /api/v2/teams", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleCreateTeam(w, r, u, sessions)
 	}))
-	mux.HandleFunc("GET /api/v2/openrig/teams", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+	mux.HandleFunc("GET /api/v2/teams", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleListTeams(w, r, u, sessions)
 	}))
-	mux.HandleFunc("GET /api/v2/openrig/teams/{team}", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+	mux.HandleFunc("GET /api/v2/teams/{team}", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleGetTeam(w, r, u, sessions)
 	}))
-	mux.HandleFunc("DELETE /api/v2/openrig/teams/{team}", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+	mux.HandleFunc("DELETE /api/v2/teams/{team}", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleDeleteTeam(w, r, u, sessions)
 	}))
-	mux.HandleFunc("GET /api/v2/openrig/teams/{team}/members", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+	mux.HandleFunc("GET /api/v2/teams/{team}/members", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleListTeamMembers(w, r, u, sessions)
 	}))
-	mux.HandleFunc("POST /api/v2/openrig/teams/{team}/members", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+	mux.HandleFunc("POST /api/v2/teams/{team}/members", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleAddTeamMember(w, r, u, sessions)
 	}))
-	mux.HandleFunc("PATCH /api/v2/openrig/teams/{team}/members/{user}", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+	mux.HandleFunc("PATCH /api/v2/teams/{team}/members/{user}", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleUpdateTeamMember(w, r, u, sessions)
 	}))
-	mux.HandleFunc("DELETE /api/v2/openrig/teams/{team}/members/{user}", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+	mux.HandleFunc("DELETE /api/v2/teams/{team}/members/{user}", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleRemoveTeamMember(w, r, u, sessions)
 	}))
 }

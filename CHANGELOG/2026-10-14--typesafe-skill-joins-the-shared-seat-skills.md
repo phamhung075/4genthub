@@ -14,4 +14,4 @@
 
 - Tested: `go test ./internal/clientskills/...` passes (the link test walks the whole skill tree).
 - Not delivered to running seats yet: `sync rig` builds the store, then `seat reseat` copies skills into a live
-  agent directory. Reseating the five live seats waits for a quiet moment in the OpenRig-free cutover work.
+  agent directory. Reseating the five live seats waits for a quiet moment in the 4genteam-free cutover work.

@@ -4,7 +4,7 @@
 - `ai_docs/core-architecture/agenthub-system-architecture.md` — **§2.6's client paragraph is corrected in place, beside the text it overtakes.** Four claims were
   false of this tree: the binary is **`4genteam`** (`cmd/4genteam`), not `cmd/agenthubclient`; the command surface is the registry of nine Go packages plus the
   deliberate `seatcheck` refusal (`agenthub_client/cmd/4genteam/main.go:98-108`); **`sync rig` / `sync bundle` / `sync switch` are built** (each answers with its own
-  usage) and nothing points at the retired `openrig_seat_sync.py`; and **`4genteam evidence` does not exist** (`unknown command evidence`, no `clientevidence`
+  usage) and nothing points at the retired `seat_sync.py`; and **`4genteam evidence` does not exist** (`unknown command evidence`, no `clientevidence`
   package), so the command and JSON payload that paragraph carried describe an unbuilt design. `feedback` is built (`internal/clientfeedback/feedback.go`).
 - The §2.14 status cell "the client binary is partial (2.6); the remaining sync verbs and `feedback` are still Python scripts" is corrected the same way.
 

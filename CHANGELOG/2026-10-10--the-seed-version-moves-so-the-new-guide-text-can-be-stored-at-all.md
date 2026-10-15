@@ -30,7 +30,7 @@
 
 ### Not in this commit
 - The order after the bump, which is not this seat's to run: the principal pushes and deploys, runs
-  `POST /api/v2/openrig/seat-types/seed` so the new immutable version is stored, and moves the `4genthub-min`
+  `POST /api/v2/seat-types/seed` so the new immutable version is stored, and moves the `4genthub-min`
   seat pins off `1.3.0`. 4genthub row `0a502904` carries that chain and its acceptance line —
   `call_seat(room=4genthub-min, seat=go-dev)` carrying `### Writing style` and zero `caveman`.
 

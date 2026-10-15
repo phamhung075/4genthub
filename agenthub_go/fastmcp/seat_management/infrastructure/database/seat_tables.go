@@ -343,7 +343,7 @@ var seatDatabaseTables = []taskdb.TableDef{
 			"\ttext TEXT NOT NULL,\n" +
 			"\tmachine_id TEXT NOT NULL DEFAULT '',\n" +
 			"\tcreated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),\n" +
-			"\tCONSTRAINT ck_seat_feedback_layer CHECK (layer IN ('runtime', 'openrig', 'cloud', 'seat-context', 'workspace', 'other')),\n" +
+			"\tCONSTRAINT ck_seat_feedback_layer CHECK (layer IN ('runtime', 'client', 'cloud', 'seat-context', 'workspace', 'other')),\n" +
 			"\tPRIMARY KEY (id)\n" +
 			")",
 		"CREATE INDEX ix_seat_feedback_user_id ON seat_feedback (user_id)",

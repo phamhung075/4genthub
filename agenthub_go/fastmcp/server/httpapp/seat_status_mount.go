@@ -2,8 +2,8 @@ package httpapp
 
 // seat_status_mount.go stores and serves the status a per-PC bridge reports:
 //
-//	POST /api/v2/openrig/seat-status
-//	GET  /api/v2/openrig/machines
+//	POST /api/v2/seat-status
+//	GET  /api/v2/machines
 //
 // A report replaces its machine's seat set, agent snapshot and edge set. Every string field of a
 // report is scanned for credentials before anything is stored. Both routes take the
@@ -79,7 +79,7 @@ type seatStatusReport struct {
 }
 
 // seatStatusEdge is one reported link: the room (pod) it belongs to and the two ends, with the
-// kind one of OpenRig's five. The ends are `from` and `to` on the wire, which is also how a
+// kind one of the five. The ends are `from` and `to` on the wire, which is also how a
 // rendered rigspec names them.
 type seatStatusEdge struct {
 	Room string `json:"room"`
@@ -109,10 +109,10 @@ type seatStatusAgent struct {
 }
 
 func mountSeatStatusRoutes(mux *http.ServeMux, sessions *database.SessionManager) {
-	mux.HandleFunc("POST /api/v2/openrig/seat-status", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+	mux.HandleFunc("POST /api/v2/seat-status", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handlePostSeatStatus(w, r, u, sessions)
 	}))
-	mux.HandleFunc("GET /api/v2/openrig/machines", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+	mux.HandleFunc("GET /api/v2/machines", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleListMachines(w, r, u, sessions)
 	}))
 }
@@ -324,7 +324,7 @@ func (rep *seatStatusReport) toMachine(lastSeen time.Time) (*repositories.Machin
 		if err := repositories.ValidateName("seat key", e.To); err != nil {
 			return nil, fmt.Errorf("edges[%d]: %v", i, err)
 		}
-		// The kind vocabulary is commpolicy's, so a kind added to OpenRig's language is accepted
+		// The kind vocabulary is commpolicy's, so a kind added to the link-kind language is accepted
 		// here without a second list to keep in step.
 		if !commpolicy.ValidKind(commpolicy.LinkKind(e.Kind)) {
 			return nil, fmt.Errorf("edges[%d].kind %q is invalid", i, e.Kind)

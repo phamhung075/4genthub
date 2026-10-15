@@ -171,9 +171,9 @@ CREATE INDEX IF NOT EXISTS ix_rooms_user_id ON rooms (user_id);
 CREATE INDEX IF NOT EXISTS ix_rooms_team_id ON rooms (team_id);
 
 -- Table: seats
--- A seat inside a room. seat_key is the OpenRig member id.
+-- A seat inside a room. seat_key is the member id.
 -- pinned_version NULL means the seat follows the seat type's latest version.
--- permission_policy is the OpenRig permission_policy name rendered on the member.
+-- permission_policy is the permission_policy name rendered on the member.
 CREATE TABLE IF NOT EXISTS seats (
     id UUID PRIMARY KEY,
     user_id TEXT NOT NULL,
@@ -285,7 +285,7 @@ CREATE TABLE IF NOT EXISTS seat_feedback (
     text TEXT NOT NULL,
     machine_id TEXT NOT NULL DEFAULT '',
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-    CONSTRAINT ck_seat_feedback_layer CHECK (layer IN ('runtime', 'openrig', 'cloud', 'seat-context', 'workspace', 'other'))
+    CONSTRAINT ck_seat_feedback_layer CHECK (layer IN ('runtime', 'client', 'cloud', 'seat-context', 'workspace', 'other'))
 );
 
 CREATE INDEX IF NOT EXISTS ix_seat_feedback_user_id ON seat_feedback (user_id);

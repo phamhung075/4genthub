@@ -10,4 +10,4 @@
 
 ### Verified
 - `agenthub_client/tests/test_cli.py`: new `test_up_initialises_every_service_in_order`; 6 passed. Live: `lead` 499k to 33k by the tool, `reviewer` and `context-dev` witnessed by the supervisor; nine `4genthub-min` seats `in_sync` after `4genteam sync pull`. The supervisor's own hard-limit call has not yet fired (no seat past 300k).
-- Not done: edges for the Topology page. The server refuses allowing links on omp seats, so the graph for `4genthub-min` needs the bridge to report OpenRig's edges; queued to the lead, server half first because the status route rejects unknown fields.
+- Not done: edges for the Topology page. The server refuses allowing links on omp seats, so the graph for `4genthub-min` needs the bridge to report the client's edges; queued to the lead, server half first because the status route rejects unknown fields.

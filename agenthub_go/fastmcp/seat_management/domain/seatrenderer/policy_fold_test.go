@@ -203,7 +203,7 @@ func TestRenderPolicyLimitsNamesASiblingForEveryDenial(t *testing.T) {
 // under either match order rather than only under first-match.
 func TestRenderPolicyConfigEmitsAnAllowanceFirst(t *testing.T) {
 	folded, err := FoldPolicies([]resolver.ResolvedModule{
-		policyModule("policy.a", `{"role":"dev","bash":{"patterns":[{"match":"rig whoami*","approval":"allow"},{"match":"git push*","approval":"deny","sibling":"commit and tell the lead"}]}}`),
+		policyModule("policy.a", `{"role":"dev","bash":{"patterns":[{"match":"4genteam whoami*","approval":"allow"},{"match":"git push*","approval":"deny","sibling":"commit and tell the lead"}]}}`),
 	})
 	if err != nil {
 		t.Fatalf("FoldPolicies: %v", err)
@@ -212,7 +212,7 @@ func TestRenderPolicyConfigEmitsAnAllowanceFirst(t *testing.T) {
 	if err != nil {
 		t.Fatalf("RenderPolicyConfig: %v", err)
 	}
-	allow := strings.Index(doc, "rig whoami*")
+	allow := strings.Index(doc, "4genteam whoami*")
 	deny := strings.Index(doc, "git push*")
 	if allow < 0 || deny < 0 {
 		t.Fatalf("the document lacks a rule:\n%s", doc)
@@ -229,8 +229,8 @@ func TestRenderPolicyConfigEmitsAnAllowanceFirst(t *testing.T) {
 // rather than picking a winner - a seat would then have to guess which one the runtime applied.
 func TestFoldRefusesAMatchThatIsBothAllowedAndDenied(t *testing.T) {
 	_, err := FoldPolicies([]resolver.ResolvedModule{
-		policyModule("policy.a", `{"role":"dev","bash":{"patterns":[{"match":"rig whoami*","approval":"allow"}]}}`),
-		policyModule("policy.b", `{"role":"dev","bash":{"patterns":[{"match":"rig whoami*","approval":"deny","sibling":"ask the lead"}]}}`),
+		policyModule("policy.a", `{"role":"dev","bash":{"patterns":[{"match":"4genteam whoami*","approval":"allow"}]}}`),
+		policyModule("policy.b", `{"role":"dev","bash":{"patterns":[{"match":"4genteam whoami*","approval":"deny","sibling":"ask the lead"}]}}`),
 	})
 	if err == nil {
 		t.Fatal("a match declared both allowed and denied was folded instead of refused")
@@ -244,7 +244,7 @@ func TestFoldRefusesAMatchThatIsBothAllowedAndDenied(t *testing.T) {
 // allowance listed under a "Refused" heading would tell it the opposite of what its policy says.
 func TestRenderPolicyLimitsSeparatesTheAllowanceFromTheRefusals(t *testing.T) {
 	folded, err := FoldPolicies([]resolver.ResolvedModule{
-		policyModule("policy.a", `{"role":"dev","bash":{"patterns":[{"match":"rig whoami*","approval":"allow"},{"match":"git push*","approval":"deny","sibling":"commit and tell the lead"}]}}`),
+		policyModule("policy.a", `{"role":"dev","bash":{"patterns":[{"match":"4genteam whoami*","approval":"allow"},{"match":"git push*","approval":"deny","sibling":"commit and tell the lead"}]}}`),
 	})
 	if err != nil {
 		t.Fatalf("FoldPolicies: %v", err)
@@ -252,7 +252,7 @@ func TestRenderPolicyLimitsSeparatesTheAllowanceFromTheRefusals(t *testing.T) {
 	text := RenderPolicyLimits(folded)
 	allowedAt := strings.Index(text, "### Allowed in every approval mode")
 	refusedAt := strings.Index(text, "### Refused shell commands")
-	whoamiAt := strings.Index(text, "`rig whoami*`")
+	whoamiAt := strings.Index(text, "`4genteam whoami*`")
 	pushAt := strings.Index(text, "`git push*`")
 	if allowedAt < 0 || refusedAt < 0 || whoamiAt < 0 || pushAt < 0 {
 		t.Fatalf("the limits text lacks a section or a rule:\n%s", text)
@@ -271,7 +271,7 @@ func TestRenderPolicyLimitsSeparatesTheAllowanceFromTheRefusals(t *testing.T) {
 // seat's own act, so the allowance is refused BY NAME with the way out, the same form as the guard's
 // refusal of an approval it cannot express.
 func TestFoldRefusesASeatScopedAllowance(t *testing.T) {
-	const allowRule = `{"role":"dev","bash":{"patterns":[{"match":"rig whoami*","approval":"allow"}]}}`
+	const allowRule = `{"role":"dev","bash":{"patterns":[{"match":"4genteam whoami*","approval":"allow"}]}}`
 
 	seatScoped := policyModule("policy.a", allowRule)
 	seatScoped.Overridden = true
@@ -281,7 +281,7 @@ func TestFoldRefusesASeatScopedAllowance(t *testing.T) {
 	if err == nil {
 		t.Fatal("a seat-scoped allowance was folded instead of refused")
 	}
-	for _, want := range []string{`"policy.a"`, `"rig whoami*"`, "seat-scoped", "room owner's act", "move the block to the room scope"} {
+	for _, want := range []string{`"policy.a"`, `"4genteam whoami*"`, "seat-scoped", "room owner's act", "move the block to the room scope"} {
 		if !strings.Contains(err.Error(), want) {
 			t.Errorf("error = %q, want it to contain %q", err.Error(), want)
 		}

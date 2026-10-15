@@ -14,7 +14,7 @@ import (
 const CallSeatToolName = "call_seat"
 
 // CallSeatToolDescription is read by LLM seats.
-const CallSeatToolDescription = "Resolve one exact seat by room and seat key. Returns the seat's runtime, permission policy, resolved snapshot hash and its rendered context files. When the hash is new, the call writes a resolved_seats row for it. 4genthub stores the seat and its context, OpenRig runs the seat, and the brain is the occupant."
+const CallSeatToolDescription = "Resolve one exact seat by room and seat key. Returns the seat's runtime, permission policy, resolved snapshot hash and its rendered context files. When the hash is new, the call writes a resolved_seats row for it. 4genthub stores the seat and its context, the 4genteam client runs the seat, and the brain is the occupant."
 
 // SeatResolver resolves a seat and renders it to its immutable snapshot.
 // SeatResolutionService is the production implementation. ResolveSeat returns a

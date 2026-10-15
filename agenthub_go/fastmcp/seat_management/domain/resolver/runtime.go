@@ -8,9 +8,9 @@ import (
 // Runtimes a seat can run on: the ones the seat renderer can render. This is the one list;
 // validation in the API, rigspec and the seed library, and the renderer, all read it.
 //
-// omp (Oh My Pi) is the runtime that carries a non-Anthropic provider: OpenRig passes a seat its
+// omp (Oh My Pi) is the runtime that carries a non-Anthropic provider: the client passes a seat its
 // provider key only when the model is written "provider/id", for example "deepseek/deepseek-flash"
-// (OpenRig docs/reference/rig-spec.md, Oh My Pi). Like codex and agy it receives no Claude
+// (Oh My Pi). Like codex and agy it receives no Claude
 // fragment, so it renders guidance and skills only.
 const (
 	RuntimeClaudeCode = "claude-code"

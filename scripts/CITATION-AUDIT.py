@@ -28,7 +28,7 @@ WHERE IT LIVES. Tracked beside `COUNTS-AUDIT.py` in `scripts/`, with ROOT derive
 file's own location, so a clean clone at any path can run it. Until 2026-10-10 it was seat-local
 and ROOT was one seat's absolute path, which is why the census behind the inventory's route rows
 could not be re-run by a successor; the pass records in the inventory that name a
-`~/.openrig/agenthub-seats/<seat>/CITATION-AUDIT.py` path are the records of the runs made before
+`~/.config/4genthub/agenthub-seats/<seat>/CITATION-AUDIT.py` path are the records of the runs made before
 the move.
 
 USAGE:  python3 scripts/CITATION-AUDIT.py              # audit only, changes nothing

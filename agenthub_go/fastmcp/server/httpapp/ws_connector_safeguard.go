@@ -164,7 +164,7 @@ func wsArmConnectorDeadman(userID, connectorID string) {
 		// The error is dropped because there is no caller left to tell: the connector is gone, and
 		// that is the case this alert exists for. What the push path does keep is the notice itself -
 		// an offline user's alerts wait in the notification store for their next connect.
-		_ = raiseRigdDeadmanAlert(context.Background(), userID, connectorID)
+		_ = raiseAgentDeadmanAlert(context.Background(), userID, connectorID)
 	}
 	timer := wsConnectorDeadmanAfter(wsConnectorIdleTimeout(), fire)
 
@@ -197,20 +197,23 @@ func raiseRigSafeguardAlert(ctx context.Context, userID, connectorID string, row
 		wsRigSafeguardEntityID(connectorID, row.Rig, row.Safeguard), userID, data, nil)
 }
 
-// raiseRigdDeadmanAlert is 7.3's dead-man for rigd itself: a connector that advertised safeguards
-// stayed offline past its heartbeat close. On a machine with no OS supervisor this is the only
-// observer of a dead rigd. It names the machine and no rig, because the alert is about the
-// connector's own socket - the one silence the server judges (7.4).
-func raiseRigdDeadmanAlert(ctx context.Context, userID, connectorID string) error {
+// raiseAgentDeadmanAlert is 7.3's dead-man for the machine-level supervisor itself - the safeguard
+// the client reports as `agent`, which it renamed from `rigd` on 2026-10-15 (`bc725e6`): a connector
+// that advertised safeguards stayed offline past its heartbeat close. On a machine with no OS
+// supervisor this is the only observer of a dead agent. It names the machine and no rig, which is the
+// machine scope `agent` carries (D2): the alert is about the connector's own socket - the one silence
+// the server judges (7.4).
+func raiseAgentDeadmanAlert(ctx context.Context, userID, connectorID string) error {
 	data := entities.NewOrderedMap[any]()
 	data.Set("connector_id", connectorID)
-	data.Set("safeguard", rigdb.SafeguardRigd)
+	data.Set("safeguard", rigdb.SafeguardAgent)
 	return routes.BroadcastDataChange(ctx, safeguardAlertEventType, rigSafeguardEntity,
-		wsRigSafeguardEntityID(connectorID, "", rigdb.SafeguardRigd), userID, data, nil)
+		wsRigSafeguardEntityID(connectorID, "", rigdb.SafeguardAgent), userID, data, nil)
 }
 
 // wsRigSafeguardEntityID names one row as the push frame's entity_id: the parts of the key that are
-// known, in the key's order. The dead-man knows no rig, so it names the connector and `rigd`.
+// known, in the key's order. The dead-man knows no rig, so it names the connector and its
+// machine-scoped safeguard.
 func wsRigSafeguardEntityID(connectorID, rig, safeguard string) string {
 	parts := []string{}
 	for _, part := range []string{connectorID, rig, safeguard} {

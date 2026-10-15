@@ -10,5 +10,5 @@
 - `agenthub_go/fastmcp/seat_management/domain/seedlibrary/guide_commit_form_test.go` and `agenthub_main/src/tests/scripts/test_seat_policy_commit_form.py` — both red before this change; see `TEST-CHANGELOG.md`.
 
 ### Not in this commit
-- The ten live `~/.openrig/state/omp/*/agent/AGENTS.md`: outside the repository, and the lead takes that step separately.
+- The ten live `~/.config/4genthub/state/omp/*/agent/AGENTS.md`: outside the repository, and the lead takes that step separately.
 - `ai_docs/index.json`: the generated docs index, whose diff is the architect's two decision notes rather than this change.

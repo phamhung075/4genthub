@@ -56,7 +56,7 @@ EXPECTED = {
                                             #     the same pass, so the set join the §1 preamble describes
                                             #     145 -> 148 holds again.
                                             #   124 -> 125 (docs duty pass 7): 42de79c2 added PUT /api/v2/
-                                            #     openrig/rooms/{room}/seats/{seat}/pin at seat_admin_mount.go:362,
+                                            #     rooms/{room}/seats/{seat}/pin at seat_admin_mount.go:362,
                                             #     handler handleSetSeatPin. The tree moved and BOTH this file and the
                                             #     document stood still, which is exactly the shape this audit exists
                                             #     for; the §1 table also gained the row, because a count that is
@@ -75,8 +75,8 @@ EXPECTED = {
                                             #     pattern returns 126 at 6cfd56ab and 123 at e6829b32.
                                             #   126 -> 124: e5ecff63 ("feat(auth)!: one credential, AGENTHUB_TOKEN
                                             #     replaces the per-machine token") DELETED machine_token_mount.go, which
-                                            #     carried the two machine-token registrations - POST /api/v2/openrig/
-                                            #     machines and DELETE /api/v2/openrig/machines/{machine}/token. Its other
+                                            #     carried the two machine-token registrations - POST /api/v2/
+                                            #     machines and DELETE /api/v2/machines/{machine}/token. Its other
                                             #     httpapp edits swap the auth wrapper (machineAuthed -> authed) on
                                             #     registrations that STAY, so those move a wrapper and not a count.
                                             #     Re-derived, not adjusted: the same pattern returns 126 at 6cfd56ab and

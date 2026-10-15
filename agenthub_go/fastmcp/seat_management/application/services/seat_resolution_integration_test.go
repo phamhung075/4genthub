@@ -169,13 +169,13 @@ func must(t *testing.T, err error) {
 // seedFixtureCatalogRefs stores a module version for every ref the embedded library carries that
 // the library does not author itself.
 //
-// Those refs are the curated OpenRig catalog skills (queue-handoff@1.0.0,
-// test-driven-development@1.0.0, ...): they live in the OpenRig catalog, published there by
-// `scripts/openrig_team_setup.py publish-skills`, not in this repository. The seeder refuses a ref
+// Those refs are the curated catalog skills (queue-handoff@1.0.0,
+// test-driven-development@1.0.0, ...): they live in the skill catalog, published there by
+// the skill publish step, not in this repository. The seeder refuses a ref
 // it cannot resolve, so without them this test cannot seed at all.
 //
 // The bodies are FIXTURES, not product data: one valid skill block per ref, so the seed and the
-// resolve can be exercised end to end on a machine with no OpenRig checkout. The slug and version
+// resolve can be exercised end to end on a machine with no catalog checkout. The slug and version
 // are the library's own, so what resolves is the ref the catalog would really satisfy.
 func seedFixtureCatalogRefs(t *testing.T, ctx context.Context, user string, seeds []seedmap.Seed, modules repositories.ModuleRepository) {
 	t.Helper()

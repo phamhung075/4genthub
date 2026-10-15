@@ -13,14 +13,31 @@ const (
 	StateFailing = "failing"
 )
 
-// The safeguards rigd supervises, one row per rig (7.2). SafeguardRigd is the machine-level row the
-// server needs by name: it is the one the dead-man alert (7.3) is raised for, so the server names it
-// rather than taking it from a frame.
+// The safeguards the connector supervises (7.2), one row per safeguard per rig per connector. This
+// is the CLIENT's wire vocabulary, adopted whole: the client is the side that produces these rows
+// (`Verify` and `publishRows`), so the closed set lives on the side that writes it and the server
+// refuses a name that is not one of the six.
+//
+// THE SCOPE IS PART OF THE NAME'S MEANING, and it decides the row's rig:
+//
+//	rig-scoped     (rig 1..255): compact, watchdog, messages, roomguard   one row per rig
+//	machine-scoped (rig exactly ""): bridge, agent                        one row per connector
+//
+// EXACTLY empty for the machine-scoped two, not "anything": rig is part of the primary key
+// (user_id, connector_id, rig, safeguard), so an arbitrary rig on a machine row would let one
+// machine-level row exist under several spellings and the upsert would stop being idempotent.
+//
+// `agent` is the machine-level supervisor the client renamed from `rigd` (bc725e6, 2026-10-15); the
+// old name is DELETED rather than aliased. SafeguardAgent is the one the SERVER needs by name: it is
+// the machine-level row the dead-man alert (7.3) is raised for, so the server names it rather than
+// taking it from a frame.
 const (
-	SafeguardCompact  = "compact"
-	SafeguardWatchdog = "watchdog"
-	SafeguardBridge   = "bridge"
-	SafeguardRigd     = "rigd"
+	SafeguardCompact   = "compact"
+	SafeguardWatchdog  = "watchdog"
+	SafeguardMessages  = "messages"
+	SafeguardRoomGuard = "roomguard"
+	SafeguardBridge    = "bridge"
+	SafeguardAgent     = "agent"
 )
 
 // RigSafeguardORM is a row of rig_safeguards.

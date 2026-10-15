@@ -1,7 +1,7 @@
 // The execution ledger's DERIVED phase, and the labels its rows and badge use.
 //
 // THE PHASE IS COMPUTED FROM THE EVENTS AND NEVER STORED AS A SECOND STATUS - the architecture's
-// own words (`ai_docs/core-architecture/agenthub-system-architecture.md:173`, `:389`). That is why
+// own words (`ai_docs/core-architecture/agenthub-system-architecture.md:175`, `:393`). That is why
 // everything here is a pure function of the event sequence: nothing reads the task row's `status`,
 // so a task whose stored status and ledger disagree cannot make the timeline claim the stored one.
 //

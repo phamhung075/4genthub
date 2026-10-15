@@ -1,11 +1,11 @@
-# The startup `rig whoami` on a non-yolo seat
+# The startup `4genteam whoami` on a non-yolo seat
 
 **Question (owner item, 2026-10-07):** under the default non-yolo policy, seats prompt for the startup
-`rig whoami`. Where does that happen, does it block startup, and what is the fix?
+`4genteam whoami`. Where does that happen, does it block startup, and what is the fix?
 
 **Verdict in one paragraph.** The gate is the seat's **launch posture**, not a permission list: a policy
 that is not `builtin:yolo` — including **no policy at all** — resolves to `floor`, and the live pi adapter
-maps `floor` to **`omp --approval-mode always-ask`**. The startup file then *orders* `rig whoami --json` as
+maps `floor` to **`omp --approval-mode always-ask`**. The startup file then *orders* `4genteam whoami --json` as
 the first thing a seat does, so on a floor seat the mandated first call is a gated tool call. It **blocks**:
 `ask.timeout` is `0` live, which *disables* the automatic selection, so an unanswered prompt waits
 indefinitely. The fix belongs in the one place that can carve out a single command **in every approval
@@ -13,29 +13,29 @@ mode** — the seat's own omp config, which **this repo already generates** — 
 
 ## 1. Where it happens, with file and line
 
-The live daemon for this rig is the **source tree at `/home/daihu/__projects__/openrig`**, not the installed
+The live daemon for this rig is the **source tree at `/home/daihu/__projects__/reference`**, not the installed
 global package: the running launcher is
-`/home/daihu/__projects__/openrig/packages/daemon/dist/adapters/pi-runner.js`, and the installed
-`@openrig/cli` 0.6.3 contains **no `approval-mode` string at all** (`grep -rn "approval-mode"
-"$(npm root -g)/@openrig/cli"` → nothing). Cite the source tree; the installed copy cannot be the mechanism.
+`/home/daihu/__projects__/reference/packages/daemon/dist/adapters/pi-runner.js`, and the installed
+`@reference/cli` 0.6.3 contains **no `approval-mode` string at all** (`grep -rn "approval-mode"
+"$(npm root -g)/@reference/cli"` → nothing). Cite the source tree; the installed copy cannot be the mechanism.
 
 | step | what happens | evidence |
 |---|---|---|
-| **trigger** | the shipped startup file orders the call: "## Identity — run this first" → `rig whoami --json` | `packages/daemon/assets/guidance/openrig-start.md:9,12` (identical in the installed asset) |
-| **trigger (second home)** | the daemon **types the same order into every fresh conversation**: "derive your identity with `rig whoami --json` and read durable obligations with `rig queue list …`" | `packages/daemon/src/domain/startup-orchestrator.ts:602` (installed dist: `startup-orchestrator.js:472`) |
+| **trigger** | the shipped startup file orders the call: "## Identity — run this first" → `4genteam whoami --json` | `packages/daemon/assets/guidance/client-start.md:9,12` (identical in the installed asset) |
+| **trigger (second home)** | the daemon **types the same order into every fresh conversation**: "derive your identity with `4genteam whoami --json` and read durable obligations with `the task queue list …`" | `packages/daemon/src/domain/startup-orchestrator.ts:602` (installed dist: `startup-orchestrator.js:472`) |
 | **posture** | any policy that is not `builtin:yolo` — `locked`, `standard`, `open`, a deliberate `none`, **or absent** — resolves to `floor`; only `yolo` is `full_bypass` | `packages/daemon/src/domain/permission-policy/policy-ref.ts:122`; `dist/…/policy-ref.js:99` ("yolo → full_bypass, else floor") and `:125-126`; the file header: "ABSENT (no value) = the floor (honest absence)" |
 | **gate** | the pi adapter turns the posture into the approval mode: `yoloEnabled(process.env, binding.launchPosture) ? "approve" : "no-approve"` → **`--approval-mode always-ask`** | `packages/daemon/src/adapters/pi-runtime-adapter.ts:241` (posture) and `:244` (the flag) |
 | **gate (other paths)** | the same mapping on resume and in the runner protocol, so it is not path-dependent | `pi-resume.ts:93`, `pi-runner-protocol.ts:248,279`; `pi-runner.ts:625` (only `yolo`/`always-ask` accepted) and `:638` (`OMP requires --approval-mode yolo or always-ask, not Pi trust flags`) |
 | **live proof** | every seat today runs `omp --mode rpc … --approval-mode yolo` | `ps -eo pid,args \| grep omp` — the child of `pi-runner.js`; measured for context-dev, fe-dev, feedback-dev, go-dev2 and the writer |
 
-**The `--approval-mode` flag is omp's own**, not OpenRig's invention: `omp --help` documents
+**The `--approval-mode` flag is omp's own**, not the client's invention: `omp --help` documents
 `--approval-mode=<value>  Override tools.approvalMode for this session (always-ask|write|yolo)` and
-`--auto-approve  Auto-approve all tool calls (skip approval prompts)` (omp/18.6.0). OpenRig decides *which*
+`--auto-approve  Auto-approve all tool calls (skip approval prompts)` (omp/18.6.0). 4genteam decides *which*
 value the seat gets.
 
 **The other runtimes, for completeness** (they are *not* this gate): the floor is Claude
 `--permission-mode acceptEdits` and Codex `-s workspace-write` (`daemon/dist/adapters/yolo-mode.js`,
-`claudePostureFlag` / `codexPostureArg`), and OpenRig's own manual states the Claude consequence plainly —
+`claudePostureFlag` / `codexPostureArg`), and the client's own manual states the Claude consequence plainly —
 *"It does not add a global `Bash(rig:*)` allowance"*, so other actions "follow native rules and prompts"
 (`daemon/docs/reference/getting-started.md:447-449`). The three packaged policy bodies say the same thing for
 Pi: *"Pi `--no-approve` is a resource-TRUST posture, not a permission floor (Pi has no permission surface)"*
@@ -57,7 +57,7 @@ policy has no command-level surface on this runtime, so the launch flag is the e
 ## 3. The fix — two lines in a file this repo already generates
 
 The seat's approval rules live in its **own omp config**, `agent/config.yml`, and that file is rendered by
-**`agenthub_client/src/agenthub_client/seat_policy.py:152`** (`render_config` — the port of the deleted `scripts/openrig_seat_policy.py`, where the same function sat at `:145-161`), which today emits only **deny** rules: **CORRECTED 2026-10-10 (writer seat, at the pinned client commit `eaa6ba7`): the Python port is gone. `RenderConfig` is `agenthub_client/internal/clientpolicy/policy.go:174`, and it no longer emits only deny rules** — it writes the header (`:177`), `mcp.startupTimeoutMs: 0` (`:178`), `compaction.keepRecentTokens` (`:179`), an optional `defaultThinkingLevel` (`:180`-`:182`), then `bash.allowCompoundCommands` with the `rig whoami*` allow FIRST (`:183`-`:184`), the role's denials (`:185`-`:187`) and `tools.approval` (`:188`-`:193`). The YAML below is a subset of that document, not the whole of it.
+**`agenthub_client/src/agenthub_client/seat_policy.py:152`** (`render_config` — the port of the deleted `scripts/seat_policy.py`, where the same function sat at `:145-161`), which today emits only **deny** rules: **CORRECTED 2026-10-10 (writer seat, at the pinned client commit `eaa6ba7`): the Python port is gone. `RenderConfig` is `agenthub_client/internal/clientpolicy/policy.go:174`, and it no longer emits only deny rules** — it writes the header (`:177`), `mcp.startupTimeoutMs: 0` (`:178`), `compaction.keepRecentTokens` (`:179`), an optional `defaultThinkingLevel` (`:180`-`:182`), then `bash.allowCompoundCommands` with the `4genteam whoami*` allow FIRST (`:183`-`:184`), the role's denials (`:185`-`:187`) and `tools.approval` (`:188`-`:193`). The YAML below is a subset of that document, not the whole of it.
 
 ```yaml
 bash:
@@ -90,17 +90,17 @@ omp's schema says the other dispositions exist and that a per-command entry wins
 **The change** — add to the rendered config, with the other patterns:
 
 ```yaml
-    - match: "rig whoami*"
+    - match: "4genteam whoami*"
       approval: allow
 ```
 
 That is the whole fix: the startup identity call is auto-approved **even under `always-ask`**, and nothing else
 is loosened. Two notes for whoever lands it: the rules are **ordered**, so if a deny pattern ever matches
-`rig whoami` the allow must sit above it (none does today); and `allowCompoundCommands: true` means each
-command inside `a && b` is evaluated separately, so `cd <dir> && rig whoami --json` matches too.
+`4genteam whoami` the allow must sit above it (none does today); and `allowCompoundCommands: true` means each
+command inside `a && b` is evaluated separately, so `cd <dir> && 4genteam whoami --json` matches too.
 
 **Where the fix must land, given a change already in flight.** On this rig today the writer is **not** the render:
-both on-disk files carry a header a deleted script wrote (`# generated by scripts/openrig_seat_policy.py … -
+both on-disk files carry a header a deleted script wrote (`# generated by scripts/seat_policy.py … -
 do not edit` — nine of the ten seats' files still carry it and the tenth has none, measured 2026-10-09), so no
 seat has installed from a render yet. But the setting is moving — the client's
 `agenthub_client/src/agenthub_client/seat_sync.py` installs a **server-rendered** document
@@ -137,15 +137,15 @@ revision dated the first of those removals **2026-10-08**, which is when `11e57b
 of history that did not survive (`11e57beb` is not an ancestor of `HEAD`, and the path is present again at
 `1c7b6631^`), so it is `1c7b6631` that carries the removal on the live line).
 Specified, not landed: the two-line addition to `render_config` — it belongs in the live writer,
-`agenthub_client/src/agenthub_client/seat_policy.py` (the port of the deleted `scripts/openrig_seat_policy.py`),
-and code is not this seat's lane. Applying the rendered configs is runtime state; not done here. **CORRECTED 2026-10-10 (writer seat, at `eaa6ba7`): THE ADDITION HAS LANDED.** `agenthub_client/internal/clientpolicy/policy.go:184` renders `- match: "rig whoami*"` with `approval: allow` as the FIRST pattern, ahead of the role's denials, and the comment at `:172` gives the reason this paragraph gives. The live writer is that file. What is still not verified is the runtime half this paragraph names — a seat actually launched `always-ask` — and that is a launch, not a code change.
+`agenthub_client/src/agenthub_client/seat_policy.py` (the port of the deleted `scripts/seat_policy.py`),
+and code is not this seat's lane. Applying the rendered configs is runtime state; not done here. **CORRECTED 2026-10-10 (writer seat, at `eaa6ba7`): THE ADDITION HAS LANDED.** `agenthub_client/internal/clientpolicy/policy.go:184` renders `- match: "4genteam whoami*"` with `approval: allow` as the FIRST pattern, ahead of the role's denials, and the comment at `:172` gives the reason this paragraph gives. The live writer is that file. What is still not verified is the runtime half this paragraph names — a seat actually launched `always-ask` — and that is a launch, not a code change.
 
 ## 4. Reproduce
 
 **Operational warning — do not test this by hand.** omp resolves its config from the **real** home (the policy
 generator says so in `real_home()`: *"the REAL user's home directory — which `$HOME` is not, inside an omp
 seat"*), so `HOME=/tmp/scratch omp config set …` writes the **live** config. During this measurement exactly
-that replaced this seat's `bash.patterns` with a single test entry. It was repaired with the generator itself — `scripts/openrig_seat_policy.py` then, `4genteam policy` now:
+that replaced this seat's `bash.patterns` with a single test entry. It was repaired with the generator itself — `scripts/seat_policy.py` then, `4genteam policy` now:
 `apply --rig 4genthub-min` reported `writer: written` and nine `ok`, and the check that did that is
 `4genteam policy apply --rig 4genthub-min --check`. **Use `4genteam policy apply --rig <rig> --check` to inspect
 and `4genteam policy apply --rig <rig>` to repair; never `omp config set` on a live seat.** The
@@ -153,12 +153,12 @@ generator's check is what made the damage visible and scoped (`writer: DRIFT` ag
 
 ```bash
 # the gate, in the live tree
-grep -n "approval-mode" /home/daihu/__projects__/openrig/packages/daemon/src/adapters/pi-runtime-adapter.ts
+grep -n "approval-mode" /home/daihu/__projects__/reference/packages/daemon/src/adapters/pi-runtime-adapter.ts
 ps -eo pid,args | grep -E "pi-runner|omp --mode" | cut -c1-200
 
 # the trigger
-grep -n "run this first" -A4 "$(npm root -g)/@openrig/cli/daemon/assets/guidance/openrig-start.md"
-grep -n "derive your identity" /home/daihu/__projects__/openrig/packages/daemon/src/domain/startup-orchestrator.ts
+grep -n "run this first" -A4 "$(npm root -g)/@reference/cli/daemon/assets/guidance/client-start.md"
+grep -n "derive your identity" /home/daihu/__projects__/reference/packages/daemon/src/domain/startup-orchestrator.ts
 
 # the blocking behaviour and the fix surface
 omp config get ask.timeout --json
@@ -167,8 +167,8 @@ omp config get tools.approval --json
 
 # the generator, and the check that the rendered file is the live config
 # the generator was deleted in 1c7b6631, so read it from its parent commit
-git -C /home/daihu/__projects__/4genthub show 1c7b6631^:scripts/openrig_seat_policy.py | sed -n '145,161p'
-cat /home/daihu/.openrig/state/omp/<rig>-<seat>@<rig>/agent/config.yml
+git -C /home/daihu/__projects__/4genthub show 1c7b6631^:scripts/seat_policy.py | sed -n '145,161p'
+cat /home/daihu/.config/4genthub/state/omp/<rig>-<seat>@<rig>/agent/config.yml
 ```
 
 ## 5. Boundaries observed

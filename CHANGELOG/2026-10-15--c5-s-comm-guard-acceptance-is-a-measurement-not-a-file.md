@@ -31,7 +31,7 @@ finding belongs to is not built either. The board now says what C5 actually has 
   branch: the unit is delivered, and merged into the integration branch at `892f867` — **CORRECTED
   2026-10-15 05:0xZ: this clause read "delivered, ungated and unmerged"**; the review gate on it is the
   reviewer's guard gate, whose one required edit (`policy.go`'s comment claiming `rig` on `PATH` is
-  `@openrig/cli`) must land on that branch rather than before it.
+  `@reference/cli`) must land on that branch rather than before it.
 
 ## Instruments
 

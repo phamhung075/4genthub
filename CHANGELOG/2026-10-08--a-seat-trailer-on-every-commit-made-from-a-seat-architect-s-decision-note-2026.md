@@ -5,9 +5,9 @@
   all needed to name, and the answer turned out to be a trailer in a commit BODY that nobody had opened -
   every search read the header, because that is where authorship usually lives.
 - **What landed**: `scripts/git-hooks/prepare-commit-msg`, a versioned `prepare-commit-msg` hook running
-  `git interpret-trailers --in-place --if-exists doNothing --trailer "Seat: $OPENRIG_SESSION_NAME"`, and
+  `git interpret-trailers --in-place --if-exists doNothing --trailer "Seat: $AGENTHUB_SESSION_NAME"`, and
   ONLY when that variable is set, so a commit made by a human from the host is untouched.
-  **`OPENRIG_SESSION_NAME` is the `rig send` address**, so a reader who finds the trailer can message the
+  **`AGENTHUB_SESSION_NAME` is the `4genteam send` address**, so a reader who finds the trailer can message the
   seat directly - the reach-back no other attribution instrument had. **And the absence reads positively:**
   the owner commits from the host where the variable is unset, so a commit with no `Seat:` trailer says
   "not a seat", which would have answered the whole question in one `git log`.

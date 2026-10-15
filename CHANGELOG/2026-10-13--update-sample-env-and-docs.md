@@ -1,7 +1,7 @@
 # Update .env.sample Templates & Documentation
 
 1. **agenthub_client Updates:**
-   - Updated `agenthub_client/.env.sample` removing deprecated OpenRig variables (`OPENRIG_URL`, `OPENRIG_PORT`, `OPENRIG_STATE_ROOT`, `OPENRIG_SKILLS_ROOT`, `OPENRIG_CLIENT_SKILLS`) and adding TypeSafe AI / Jev gate variables (`TYPESAFE_API_KEY`, `TYPESAFE_BASE_URL`) and `DEEPSEEK_API_KEY`.
+   - Updated `agenthub_client/.env.sample` removing deprecated 4genteam variables (`AGENTHUB_URL`, `AGENTHUB_PORT`, `AGENTHUB_STATE_ROOT`, `AGENTHUB_SKILLS_ROOT`, `AGENTHUB_CLIENT_SKILLS`) and adding TypeSafe AI / Jev gate variables (`TYPESAFE_API_KEY`, `TYPESAFE_BASE_URL`) and `DEEPSEEK_API_KEY`.
    - Updated `agenthub_client/README.md` Configuration table with active variables and accurate compaction ceiling defaults.
    - Updated `agenthub_client/docs/AGENT-SETUP.md` and `agenthub_client/skills/client/install/SKILL.md` to reflect the clean configuration template.
    - Pinned submodule commit `94fa49e`.

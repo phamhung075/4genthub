@@ -44,9 +44,20 @@ func main() {
 	if err != nil {
 		log.Fatalf("database config: %v", err)
 	}
-	app, err := httpapp.NewApp(ctx, database.NewSessionManager(cfg))
+	sessions := database.NewSessionManager(cfg)
+	app, err := httpapp.NewApp(ctx, sessions)
 	if err != nil {
 		log.Fatalf("app: %v", err)
+	}
+
+	// The task lifecycle sweep: one pass per TASK_SWEEP_INTERVAL (default 1h) over the tasks the
+	// owner's ruling covers, started here under sigCtx and guarded by a Postgres advisory lock so
+	// two server instances never sweep twice. Composed BEFORE the server starts on purpose: the
+	// schedule is read from the environment here, and a malformed TASK_* variable fails startup
+	// rather than being quietly served the default a misspelling was meant to replace.
+	sweeper, err := httpapp.NewTaskLifecycleSweeper(ctx, sessions)
+	if err != nil {
+		log.Fatalf("task lifecycle sweeper: %v", err)
 	}
 
 	host := envOr("FASTMCP_HOST", "0.0.0.0")
@@ -61,6 +72,8 @@ func main() {
 
 	sigCtx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
 	defer stop()
+
+	go sweeper.Run(sigCtx)
 
 	serverErr := make(chan error, 1)
 	go func() {

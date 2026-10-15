@@ -17,7 +17,7 @@ package apiref_test
 // or matched as a substring. That matters twice over. `{$}` is Go's end-anchor for a trailing slash and
 // not a parameter, so a normaliser rewriting `{...}` would report /api/v2/branches/{$} as missing while
 // the tables are right; and a path parameter absorbs a literal segment, so
-// /api/v2/openrig/seats/{room}/{seat} also serves /api/v2/openrig/seats/{room}/messages. A gate built
+// /api/v2/seats/{room}/{seat} also serves /api/v2/seats/{room}/messages. A gate built
 // on either would be red on correct code and would be disabled rather than fixed.
 //
 // AND WHY IT COMPARES AGAINST THE PRODUCER RATHER THAN A SECOND EXTRACTOR: this is not the witness.

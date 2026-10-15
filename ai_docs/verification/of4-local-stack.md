@@ -174,7 +174,7 @@ database before the server.**
 Room `of4room` with seats `alpha` (developer), `beta` (reviewer), `gamma`, and `blankmodel`
 (model `''` — the deliberate empty-model fixture), plus a `4genthub-min rig mirror` room. The
 repository's seeding entry point is `4genteam team apply [--team DIR]`
-(**corrected 2026-10-09, writer seat: this named `scripts/openrig_team_setup.py`, a path absent
+(**corrected 2026-10-09, writer seat: this named `scripts/team_setup.py`, a path absent
 from the working tree and the index — the module is now
 `agenthub_client/src/agenthub_client/team_setup.py` behind the `4genteam` console script. Measured
 then: `4genteam team apply --help` is `[--dry-run] [--team TEAM]`, and `--dry-run` prints the plan
@@ -187,11 +187,11 @@ made this data.
 
 ```bash
 AGENTHUB_URL=http://127.0.0.1:8000 AGENTHUB_TOKEN=local-dev \
-  4genteam sync rig of4room --out /home/daihu/.openrig/agenthub-seats
-cd /home/daihu/.openrig/agenthub-seats/of4room/rig && rig up ./rig.yaml --yes --json
+  4genteam sync rig of4room --out /home/daihu/.config/4genthub/agenthub-seats
+cd /home/daihu/.config/4genthub/agenthub-seats/of4room/rig && rig up ./rig.yaml --yes --json
 ```
 
-**The first command replaces `python3 scripts/openrig_seat_sync.py rig of4room …`, corrected
+**The first command replaces `python3 scripts/seat_sync.py rig of4room …`, corrected
 2026-10-09 (writer seat): that path is absent from the working tree and the index, while
 `4genteam sync rig` is the same operation — measured then, its help is `room` with `--out` and
 `--update` — and the environment pair it reads is unchanged.**
@@ -203,8 +203,8 @@ session state.
 (their own rows exist where a fix is owed):
 
 1. **`--out` must be the store the tmux-global-PATH `seatcheck` resolves to.** A seat's `HOME`
-   is per-seat (`~/.openrig/state/omp/<session>`), so the default store expands to a per-seat
-   path and the checker gate **refuses the pull**. `/home/daihu/.openrig/agenthub-seats` is
+   is per-seat (`~/.config/4genthub/state/omp/<session>`), so the default store expands to a per-seat
+   path and the checker gate **refuses the pull**. `/home/daihu/.config/4genthub/agenthub-seats` is
    where `~/.local/bin/seatcheck` points, and it passes.
 2. **The rig build swaps in a fresh rig directory, so anything an operator placed inside it is
    deleted.** A `.env` symlink added to the rig directory was gone after the next build; the
@@ -219,14 +219,14 @@ session state.
    `resolver.CheckRuntime` (`agenthub_go/fastmcp/seat_management/domain/resolver/runtime.go:23`,
    called from `rigspec/rigspec.go:124` and `repositories/names.go:26`), which checks the
    **runtime** only. *(The model→provider mapping is omp's, not this repository's.)*
-4. **`GET /api/v2/openrig/seats/{room}/{seat}` carries the seat's `runtime` and rendered
+4. **`GET /api/v2/seats/{room}/{seat}` carries the seat's `runtime` and rendered
    `files` but no `model` field** (keys: `files hash policy room runtime seat`), so a check for
-   the occupant's *model* must read `GET /api/v2/openrig/rooms/{room}/seats` instead.
+   the occupant's *model* must read `GET /api/v2/rooms/{room}/seats` instead.
 
 ## 8. Teardown, as the run did it
 
 Stop the member rig (`rig seat stop` / `rig down`), remove the scratch store directory
-(`~/.openrig/agenthub-seats/of4room`), and revert any occupant change to the fixture's value.
+(`~/.config/4genthub/agenthub-seats/of4room`), and revert any occupant change to the fixture's value.
 **Leave the Postgres data dir in place** unless you are done with the stack — it is what makes
 the next bring-up cheap.
 

@@ -9,12 +9,12 @@
 
 ### Changed
 - `agenthub_go/NEXT_GEN.md`:
-  - **F4:** `[x]` -> `[~]`. The tick cited `scripts/openrig_seat_sync.py` and `scripts/openrig_bridge.py`, which are no longer in the tree. The box now names the remaining scope (rigd phase 1 and phase 2) and points to the ruling.
+  - **F4:** `[x]` -> `[~]`. The tick cited `scripts/seat_sync.py` and `scripts/bridge.py`, which are no longer in the tree. The box now names the remaining scope (rigd phase 1 and phase 2) and points to the ruling.
   - **P4:** `ledger_tip` is sent only to a client that advertised the `ledger` capability.
   - **G3:** records the boundary ruling. `eedc1a4` is a C4 precondition, followed by the sequence: review, pin bump, operator install, A0-A4.
   - **P2:** records that "after P1" is met, not removed.
   - **P7:** records that P7 stands minus its CHECK.
 
 ### Verified
-- `git ls-files scripts | grep openrig_` prints nothing (architect ran, 2026-10-11).
+- `git ls-files scripts | grep ` prints nothing (architect ran, 2026-10-11).
 - No code changed in this commit, so no tests apply. The ruling rows were read back: `87c58552` (rigd), `f1bb7614` (G3) and `aa8d172e` (P-chain).

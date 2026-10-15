@@ -124,7 +124,7 @@ func (p taskFacadeProvider) TaskFacade(ctx context.Context, userID, projectID, g
 
 	// The status ledger. The recorder is the one writer of the task-event ledger and takes the
 	// caller's transaction, so a status write and its status_changed entry share one transaction
-	// (the decision at ai_docs/core-architecture/agenthub-system-architecture.md:612).
+	// (the decision at ai_docs/core-architecture/agenthub-system-architecture.md:614).
 	ledgerUserID, ledgerBranchID := "", ""
 	if userID != nil {
 		ledgerUserID = *userID

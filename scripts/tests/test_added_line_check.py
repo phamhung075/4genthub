@@ -61,7 +61,7 @@ def _repo(tmp_path: Path) -> Path:
 
 def _run(repo: Path, *args: str) -> tuple[int, str, str]:
     """The tool as a committer runs it: a subprocess, with the seat in the environment."""
-    env = gitfixture.environment(OPENRIG_SESSION=SEAT)
+    env = gitfixture.environment(AGENTHUB_SESSION_NAME=SEAT)
     proc = subprocess.run(
         [sys.executable, str(CHECK), *args], cwd=repo, capture_output=True, text=True, env=env
     )

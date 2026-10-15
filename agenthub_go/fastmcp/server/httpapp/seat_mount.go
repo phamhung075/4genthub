@@ -1,18 +1,18 @@
 package httpapp
 
-// seat_mount.go serves the company-workplace seats to the OpenRig client.
+// seat_mount.go serves the company-workplace seats to the 4genteam client.
 //
-//	GET  /api/v2/openrig/seats/{room}/{seat}   resolved, rendered and stored snapshot
-//	POST /api/v2/openrig/rooms/{room}/seats/{seat}/messages           one message to a seat's session
-//	GET  /api/v2/openrig/rooms/{room}/seats/{seat}/messages           the seat's PENDING messages
-//	POST /api/v2/openrig/rooms/{room}/seats/{seat}/messages/{id}/ack  a client delivered one message
-//	POST /api/v2/openrig/seat-types/seed       seed the caller's seat types from the embedded library
+//	GET  /api/v2/seats/{room}/{seat}   resolved, rendered and stored snapshot
+//	POST /api/v2/rooms/{room}/seats/{seat}/messages           one message to a seat's session
+//	GET  /api/v2/rooms/{room}/seats/{seat}/messages           the seat's PENDING messages
+//	POST /api/v2/rooms/{room}/seats/{seat}/messages/{id}/ack  a client delivered one message
+//	POST /api/v2/seat-types/seed       seed the caller's seat types from the embedded library
 //
 // A snapshot is immutable: the same seat definition always returns the same hash, so the
-// client can pin it and OpenRig materializes exactly those files.
+// client can pin it and the client materializes exactly those files.
 //
 // WHY THE MESSAGE STORE EXISTS, AND WHAT DELIVERY CANNOT BE. Delivery in this product is CLIENT-side:
-// only the OpenRig client running on the machine that holds a seat's terminal can put text into that
+// only the 4genteam client running on the machine that holds a seat's terminal can put text into that
 // seat's session, and this server cannot reach that terminal. So the sender's route STORES the text,
 // and the client PULLS it and delivers it locally. The store is the server's only row on this axis
 // that a client consumes rather than authors.
@@ -207,7 +207,7 @@ func (u *seatUseCases) SeedSeatTypes(ctx context.Context, userID string) (int, e
 }
 
 func mountSeatRoutes(mux *http.ServeMux, sessions *database.SessionManager) {
-	mux.HandleFunc("GET /api/v2/openrig/seats/{room}/{seat}", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+	mux.HandleFunc("GET /api/v2/seats/{room}/{seat}", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleResolveSeat(w, r, u, sessions)
 	}))
 	// The chat window's route carries the room, like every other seat sub-resource (/overlay,
@@ -217,7 +217,7 @@ func mountSeatRoutes(mux *http.ServeMux, sessions *database.SessionManager) {
 	// two rooms carrying the same seat key. With the room in the path the handler resolves the
 	// seat the URL names and can answer 404 for one that is not in it, which the key-only shape
 	// could not do at all.
-	mux.HandleFunc("POST /api/v2/openrig/rooms/{room}/seats/{seat}/messages", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+	mux.HandleFunc("POST /api/v2/rooms/{room}/seats/{seat}/messages", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleSendSeatMessage(w, r, u, sessions)
 	}))
 	// The client's half of the same path. Both routes take the USER token (`authed`), like every other
@@ -225,13 +225,13 @@ func mountSeatRoutes(mux *http.ServeMux, sessions *database.SessionManager) {
 	// machine is DATA in the request (the ack body's machine_id) rather than a credential — see the
 	// residual limit at the top of this file. The ack is a POST on the message rather than a second
 	// GET: it RECORDS that one message reached the terminal, and a GET must not have that effect.
-	mux.HandleFunc("GET /api/v2/openrig/rooms/{room}/seats/{seat}/messages", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+	mux.HandleFunc("GET /api/v2/rooms/{room}/seats/{seat}/messages", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handlePullSeatMessages(w, r, u, sessions)
 	}))
-	mux.HandleFunc("POST /api/v2/openrig/rooms/{room}/seats/{seat}/messages/{id}/ack", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+	mux.HandleFunc("POST /api/v2/rooms/{room}/seats/{seat}/messages/{id}/ack", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleAckSeatMessage(w, r, u, sessions)
 	}))
-	mux.HandleFunc("POST /api/v2/openrig/seat-types/seed", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+	mux.HandleFunc("POST /api/v2/seat-types/seed", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleSeedSeatTypes(w, r, u, sessions)
 	}))
 }

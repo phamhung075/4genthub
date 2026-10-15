@@ -152,9 +152,10 @@ func TestUpsertKeepsOneRowPerKeyAndTheLatestState(t *testing.T) {
 	}
 }
 
-// TestUpsertRefusesTheClosedSetsBeforeAnyStatement: 7.6's four states and four safeguards are
-// checked in the store, so an unknown value is the frame's error rather than a constraint violation
-// surfacing as an internal one, and nothing is stored.
+// TestUpsertRefusesTheClosedSetsBeforeAnyStatement: 7.6's four states and the six safeguards (7.2),
+// with the rig rule each name's scope carries (D2), are checked in the store, so an unknown value is
+// the frame's error rather than a constraint violation surfacing as an internal one, and nothing is
+// stored.
 func TestUpsertRefusesTheClosedSetsBeforeAnyStatement(t *testing.T) {
 	sessions := testdb.NewSessions(t)
 	ctx := context.Background()
@@ -166,8 +167,10 @@ func TestUpsertRefusesTheClosedSetsBeforeAnyStatement(t *testing.T) {
 	}{
 		{"an unknown state", func(r *rigdb.RigSafeguardORM) { r.State = "paused" }, "bad state"},
 		{"an unknown safeguard", func(r *rigdb.RigSafeguardORM) { r.Safeguard = "keeper" }, "bad safeguard"},
-		{"a missing rig", func(r *rigdb.RigSafeguardORM) { r.Rig = "" }, "bad rig"},
-		{"a rig past the column", func(r *rigdb.RigSafeguardORM) { r.Rig = strings.Repeat("r", 256) }, "bad rig"},
+		{"a rig-scoped safeguard with no rig", func(r *rigdb.RigSafeguardORM) { r.Rig = "" }, "bad rig"},
+		{"a rig-scoped safeguard past the column", func(r *rigdb.RigSafeguardORM) { r.Rig = strings.Repeat("r", 256) }, "bad rig"},
+		{"a machine-scoped safeguard carrying a rig", func(r *rigdb.RigSafeguardORM) { r.Safeguard = rigdb.SafeguardBridge }, "bad rig"},
+		{"the machine-scoped agent carrying a rig", func(r *rigdb.RigSafeguardORM) { r.Safeguard = rigdb.SafeguardAgent }, "bad rig"},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -184,6 +187,86 @@ func TestUpsertRefusesTheClosedSetsBeforeAnyStatement(t *testing.T) {
 		})
 	}
 	if got := safeguardRowCount(t, sessions, safeguardRow("rig-1", rigdb.StateRunning, 0)); got != 0 {
-		t.Fatalf("rows after four refused frames = %d, want 0", got)
+		t.Fatalf("rows after six refused frames = %d, want 0", got)
+	}
+}
+
+// TestUpsertAcceptsEachOfTheSixNamesInItsScope: D1 and D2, half by half - each of the six names
+// stores with the rig its scope demands: a rig for the four rig-scoped ones, EXACTLY an empty rig for
+// bridge and agent. This is the shape the client publishes on every ready
+// (agenthub_client/internal/clientservices/services.go:79-83), and the three names the old set did
+// not hold were refused at every connect.
+//
+// It is a store case rather than a validate() case on purpose: what it proves is that the accepted
+// halves reach the table, which is where the scope rule also exists as a CHECK.
+func TestUpsertAcceptsEachOfTheSixNamesInItsScope(t *testing.T) {
+	sessions := testdb.NewSessions(t)
+	ctx := context.Background()
+
+	cases := []struct{ name, rig string }{
+		{rigdb.SafeguardCompact, "rig-1"},
+		{rigdb.SafeguardWatchdog, "rig-1"},
+		{rigdb.SafeguardMessages, "rig-1"},
+		{rigdb.SafeguardRoomGuard, "rig-1"},
+		{rigdb.SafeguardBridge, ""},
+		{rigdb.SafeguardAgent, ""},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			row := safeguardRow(c.rig, rigdb.StateRunning, 0)
+			row.Safeguard = c.name
+			if _, err := Upsert(ctx, sessions, row); err != nil {
+				t.Fatalf("upsert %s with rig %q: %v", c.name, c.rig, err)
+			}
+			if stored := storedSafeguard(t, sessions, row); stored.Safeguard != c.name || stored.Rig != c.rig {
+				t.Errorf("stored %s/%q, want %s/%q", stored.Safeguard, stored.Rig, c.name, c.rig)
+			}
+		})
+	}
+}
+
+// TestValidateStatesTheSixNamesAndTheirScopes is the rule itself, with no database in the way: every
+// one of the six names is read with the rig shape its scope allows, and the only other name and the
+// only other state are refused. The three messages are the ones the socket turns into
+// `bad_rig` / `bad_safeguard` / `bad_state`, which is what the client reads.
+func TestValidateStatesTheSixNamesAndTheirScopes(t *testing.T) {
+	row := func(safeguard, rig, state string) rigdb.RigSafeguardORM {
+		return rigdb.RigSafeguardORM{UserID: "user1", ConnectorID: "conn1", Rig: rig, Safeguard: safeguard, State: state}
+	}
+	longRig := strings.Repeat("r", 256)
+	cases := []struct {
+		what string
+		row  rigdb.RigSafeguardORM
+		want string
+	}{
+		{"compact with a rig", row(rigdb.SafeguardCompact, "rig-1", rigdb.StateRunning), ""},
+		{"watchdog with a rig", row(rigdb.SafeguardWatchdog, "rig-1", rigdb.StateStopped), ""},
+		{"messages with a rig", row(rigdb.SafeguardMessages, "rig-1", rigdb.StateSilent), ""},
+		{"roomguard with a rig", row(rigdb.SafeguardRoomGuard, "rig-1", rigdb.StateFailing), ""},
+		{"bridge with no rig", row(rigdb.SafeguardBridge, "", rigdb.StateRunning), ""},
+		{"agent with no rig", row(rigdb.SafeguardAgent, "", rigdb.StateRunning), ""},
+		{"compact with no rig", row(rigdb.SafeguardCompact, "", rigdb.StateRunning), "bad rig"},
+		{"messages with no rig", row(rigdb.SafeguardMessages, "", rigdb.StateRunning), "bad rig"},
+		{"a rig past the column", row(rigdb.SafeguardWatchdog, longRig, rigdb.StateRunning), "bad rig"},
+		{"bridge carrying a rig", row(rigdb.SafeguardBridge, "rig-1", rigdb.StateRunning), "bad rig"},
+		{"agent carrying a rig", row(rigdb.SafeguardAgent, "rig-1", rigdb.StateRunning), "bad rig"},
+		{"the retired rigd name", row("rigd", "rig-1", rigdb.StateRunning), "bad safeguard"},
+		{"an unknown name", row("keeper", "rig-1", rigdb.StateRunning), "bad safeguard"},
+		{"an unknown state", row(rigdb.SafeguardCompact, "rig-1", "paused"), "bad state"},
+	}
+	for _, c := range cases {
+		t.Run(c.what, func(t *testing.T) {
+			err := validate(c.row)
+			if c.want == "" {
+				if err != nil {
+					t.Fatalf("validate = %v, want the row accepted", err)
+				}
+				return
+			}
+			var ve *tmvo.ValueError
+			if !errors.As(err, &ve) || ve.Msg != c.want {
+				t.Fatalf("validate = %v, want ValueError %q", err, c.want)
+			}
+		})
 	}
 }

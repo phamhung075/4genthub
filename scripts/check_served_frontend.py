@@ -3,7 +3,7 @@
 
 WHY IT EXISTS
     On 2026-10-10 production served a frontend built on 2026-10-08 19:26:51Z: two days and 165
-    commits behind main, with the composer work missing and the deleted `scripts/openrig_*.py`
+    commits behind main, with the composer work missing and the deleted `scripts/*.py`
     names still on screen as instructions. Two seats measured that BY HAND, with a shape of
     command neither could hand to a successor. This is the one command.
 
@@ -11,7 +11,7 @@ WHAT IT ASSERTS (default mode, the census)
     1. at least one `4genteam` verb is served  - `4genteam sync pull`, `4genteam sync switch`,
        `4genteam bridge` are the replacements, and every panel that carried a deleted script name
        now carries one of them.
-    2. ZERO deleted-script names are served - matched as a PATTERN (`openrig_<name>.py`), not as a
+    2. ZERO deleted-script names are served - matched as a PATTERN (`scripts/<name>.py`), not as a
        closed list of four, so the next deletion is covered without editing this file.
 
 THE TWO MISTAKES THIS IS BUILT TO NOT MAKE
@@ -20,10 +20,10 @@ THE TWO MISTAKES THIS IS BUILT TO NOT MAKE
       assets reports 0 old strings AND 0 new ones - which reads like a clean surface and is really
       a scan that sees nothing. So the walk takes the CLOSURE: the index's refs, then the refs
       found inside those, to a fixpoint.
-    * THE NAIVE NEEDLE. The old string is `openrig_seat_sync.py pull`; the new one is
+    * THE NAIVE NEEDLE. The old string is `scripts/seat_sync.py pull`; the new one is
       `4genteam sync pull`. A census keyed on `sync pull` therefore returns ZERO on the stale build
       as well as on the fresh one - a false pass, on the exact artifact this exists to catch.
-      `4genteam` and `openrig_*.py` are the discriminators; `sync pull` is not one, and
+      `4genteam` and `scripts/*.py` are the discriminators; `sync pull` is not one, and
       test_needle_boundary_is_documented pins that down.
 
 WHAT THE CENSUS DOES *NOT* PROVE, AND THE MODE THAT CLOSES IT
@@ -61,9 +61,9 @@ VERB_PATTERNS = {
     "sync switch": re.compile(r"4genteam sync switch"),
     "bridge": re.compile(r"4genteam bridge"),
 }
-# The deleted names, as a PATTERN: every `openrig_<something>.py` reference is a fossil, whether or
+# The deleted names, as a PATTERN: every `scripts/<something>.py` reference is a fossil, whether or
 # not it is one of the four names that happened to appear in the 08 Oct bundle.
-DELETED_NAME = re.compile(r"openrig_[a-z0-9_]+\.py", re.IGNORECASE)
+DELETED_NAME = re.compile(r"scripts/[a-z0-9_]+\.py", re.IGNORECASE)
 
 # Refs to other assets: the queued form the HTML uses, and the bare hashed file name a chunk uses
 # to name its lazy siblings (`./SeatDetailPage-BpUArPYK.js`).

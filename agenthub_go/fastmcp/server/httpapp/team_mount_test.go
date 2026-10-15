@@ -95,14 +95,14 @@ func teamDo(mux *http.ServeMux, method, path, body string, withAuth bool) *httpt
 func TestTeamRoutesRequireAuth(t *testing.T) {
 	mux := teamTestMux(t, &fakeTeamSource{})
 	for _, c := range []struct{ method, path string }{
-		{http.MethodPost, "/api/v2/openrig/teams"},
-		{http.MethodGet, "/api/v2/openrig/teams"},
-		{http.MethodGet, "/api/v2/openrig/teams/eng"},
-		{http.MethodDelete, "/api/v2/openrig/teams/eng"},
-		{http.MethodGet, "/api/v2/openrig/teams/eng/members"},
-		{http.MethodPost, "/api/v2/openrig/teams/eng/members"},
-		{http.MethodPatch, "/api/v2/openrig/teams/eng/members/bob"},
-		{http.MethodDelete, "/api/v2/openrig/teams/eng/members/bob"},
+		{http.MethodPost, "/api/v2/teams"},
+		{http.MethodGet, "/api/v2/teams"},
+		{http.MethodGet, "/api/v2/teams/eng"},
+		{http.MethodDelete, "/api/v2/teams/eng"},
+		{http.MethodGet, "/api/v2/teams/eng/members"},
+		{http.MethodPost, "/api/v2/teams/eng/members"},
+		{http.MethodPatch, "/api/v2/teams/eng/members/bob"},
+		{http.MethodDelete, "/api/v2/teams/eng/members/bob"},
 	} {
 		rec := teamDo(mux, c.method, c.path, `{}`, false)
 		if rec.Code != http.StatusForbidden {
@@ -115,7 +115,7 @@ func TestTeamRoutesCreateAndList(t *testing.T) {
 	src := &fakeTeamSource{team: &teamrepos.Team{ID: "t1", Slug: "eng", Name: "Engineering", UserID: teamTestUser}}
 	mux := teamTestMux(t, src)
 
-	rec := teamDo(mux, http.MethodPost, "/api/v2/openrig/teams", `{"slug":"eng","name":"Engineering"}`, true)
+	rec := teamDo(mux, http.MethodPost, "/api/v2/teams", `{"slug":"eng","name":"Engineering"}`, true)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("create = %d %s", rec.Code, rec.Body.String())
 	}
@@ -134,7 +134,7 @@ func TestTeamRoutesCreateAndList(t *testing.T) {
 	}
 
 	src.teams = []teamrepos.Membership{{Team: teamrepos.Team{ID: "t1", Slug: "eng"}, Role: teamrepos.RoleViewer}}
-	rec = teamDo(mux, http.MethodGet, "/api/v2/openrig/teams", "", true)
+	rec = teamDo(mux, http.MethodGet, "/api/v2/teams", "", true)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("list = %d %s", rec.Code, rec.Body.String())
 	}
@@ -166,7 +166,7 @@ func TestTeamRoutesErrorMapping(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			mux := teamTestMux(t, &fakeTeamSource{err: c.err})
-			rec := teamDo(mux, http.MethodGet, "/api/v2/openrig/teams/eng", "", true)
+			rec := teamDo(mux, http.MethodGet, "/api/v2/teams/eng", "", true)
 			if rec.Code != c.want {
 				t.Fatalf("status = %d, want %d (%s)", rec.Code, c.want, rec.Body.String())
 			}
@@ -178,7 +178,7 @@ func TestTeamRoutesPassTheActingUserAndPathValues(t *testing.T) {
 	src := &fakeTeamSource{member: &teamrepos.TeamMember{ID: "m1", TeamID: "t1", UserID: "bob", Role: teamrepos.RoleViewer}}
 	mux := teamTestMux(t, src)
 
-	rec := teamDo(mux, http.MethodPatch, "/api/v2/openrig/teams/t1/members/bob", `{"role":"viewer"}`, true)
+	rec := teamDo(mux, http.MethodPatch, "/api/v2/teams/t1/members/bob", `{"role":"viewer"}`, true)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("patch = %d %s", rec.Code, rec.Body.String())
 	}
@@ -186,7 +186,7 @@ func TestTeamRoutesPassTheActingUserAndPathValues(t *testing.T) {
 		t.Errorf("patch args = actor=%q team=%q member=%q role=%q", src.actor, src.teamID, src.memberUser, src.roleArg)
 	}
 
-	rec = teamDo(mux, http.MethodDelete, "/api/v2/openrig/teams/t1/members/bob", "", true)
+	rec = teamDo(mux, http.MethodDelete, "/api/v2/teams/t1/members/bob", "", true)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("delete = %d %s", rec.Code, rec.Body.String())
 	}
@@ -197,7 +197,7 @@ func TestTeamRoutesPassTheActingUserAndPathValues(t *testing.T) {
 
 func TestTeamRoutesRejectUnknownBodyFields(t *testing.T) {
 	mux := teamTestMux(t, &fakeTeamSource{team: &teamrepos.Team{ID: "t1", Slug: "eng"}})
-	rec := teamDo(mux, http.MethodPost, "/api/v2/openrig/teams", `{"slug":"eng","name":"Engineering","extra":1}`, true)
+	rec := teamDo(mux, http.MethodPost, "/api/v2/teams", `{"slug":"eng","name":"Engineering","extra":1}`, true)
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("unknown field = %d, want 400", rec.Code)
 	}

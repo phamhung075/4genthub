@@ -1,7 +1,7 @@
 ## The mission's item 4 fits its word budget again, which my own amendment had broken
 
 - **What broke:** the `mission-4genthub` context file is held to **350–520 words** by a test in
-  `test_openrig_team_setup.py` (`test_context_files_respect_word_limits[mission-4genthub]`), and the item-4
+  `test_team_setup.py` (`test_context_files_respect_word_limits[mission-4genthub]`), and the item-4
   rewrite that removed the dead cleanups took the file to **614** — so the fix for a stale entry broke a live
   budget. Caught by running the script suite rather than by the change's own gates, which is the only place it
   could be caught: nothing about a Markdown edit looks like a word count.

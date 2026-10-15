@@ -31,10 +31,10 @@ instrument behind every line, and the two facts that had moved since the lead me
   unpushed three.
 - `cat u3bin/PROVENANCE.txt` (client `0a968fc`, `4genteam` `fcef38d2…`, `agenthub-runtime` `a5a59568…`,
   built `2026-10-14T21:40Z`); `sha256sum` on the two harness copies → `28302b7b…`, **151731 B** each.
-- `ps -eo pid,cmd | grep -iE 'openrig|rigd|pi-runner'` → no rows; `ls -d ~/.openrig` → absent;
-  `find /home/daihu -maxdepth 4 -name openrig.sqlite` → nothing.
-- `git grep -n '\.openrig' HEAD -- internal cmd` (non-test) → 0 in `agenthub_client`, and
-  `OPENRIG_STATE_ROOT` → 0 under the same paths.
+- `ps -eo pid,cmd | grep -iE 'the reference client|rigd|pi-runner'` → no rows; `ls -d ~/config/4genthub` → absent;
+  `find /home/daihu -maxdepth 4 -name the reference client.sqlite` → nothing.
+- `git grep -n '\config/4genthub' HEAD -- internal cmd` (non-test) → 0 in `agenthub_client`, and
+  `AGENTHUB_STATE_ROOT` → 0 under the same paths.
 - `4genteam decide --help` (rc 0) and four runs of the real binary against a local stub at
   `TYPESAFE_BASE_URL=http://127.0.0.1:8791` with `JEV_DECISION_LOG_PATH=/tmp/uarch/decisions.log`; the
   log's four lines and the stub's hit count are quoted in the item.

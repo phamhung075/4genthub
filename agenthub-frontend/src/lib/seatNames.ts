@@ -1,5 +1,5 @@
 /**
- * Seat naming rules - OpenRig room slugs (pod ids), seat keys (member ids),
+ * Seat naming rules - room slugs (pod ids), seat keys (member ids),
  * model ids, and module slugs, versions and refs. Each pattern mirrors the
  * server rule in seat_management/domain/repositories/names.go.
  *

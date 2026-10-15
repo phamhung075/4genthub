@@ -1,14 +1,14 @@
 ## The citation census is tracked beside its sibling, and its root is derived
 
 ### Changed
-- `scripts/CITATION-AUDIT.py` (**NEW**; it was `/home/daihu/.openrig/agenthub-seats/4genthub-min/CITATION-AUDIT.py`, seat-local and unversioned, until this commit):
+- `scripts/CITATION-AUDIT.py` (**NEW**; it was `/home/daihu/.config/4genthub/agenthub-seats/4genthub-min/CITATION-AUDIT.py`, seat-local and unversioned, until this commit):
   - **ROOT is derived from the file's own location** (`scripts/CITATION-AUDIT.py` -> `scripts/` -> the repository root) instead of the hardcoded `/home/daihu/__projects__/4genthub`, so a clean clone at any path runs it.
   - **The checking mode is the default and is now gate-safe.** It writes nothing, and it exits **1** when any row is stale or unresolved — it exited **0** on `stale 59` before, so a gate running it could not have failed. Exit codes are documented in the docstring: 0 clean, 1 stale/unresolved, 2 refused.
   - **`--write` is explicit AND guarded.** It refuses (exit 2, tree untouched) while any gate marker is present, naming the marker it found; the marker set is `CI` plus the `PRE_COMMIT_*` family pre-commit sets while it runs this repository's hooks (and rewinds the whole worktree to the index). In a shell where `CI` is set for other reasons, the deliberate form is explicit and visible rather than silent: `CI= python3 scripts/CITATION-AUDIT.py --write`.
   - **It verifies its own work**: after a rewrite it re-runs the check and exits 1 if anything is still stale or unwritable, so it cannot report a tree it did not leave. Arguments other than the three modes are refused with exit 2.
   - `--self-test` keeps its method, and its verdict now reaches the process exit code (`sys.exit(main())`), which it did not before — it returned 0 whatever it found.
 - `scripts/COUNTS-AUDIT.py`: two sentences that named CITATION-AUDIT.py as seat-local and outside `scripts/` now name it as the tracked sibling, with the rewriting mode described as an explicit guarded flag.
-- `ai_docs/api-integration/surface-inventory.md`: the live pointer paragraph names `scripts/CITATION-AUDIT.py` for the §1 citations as it already named `scripts/COUNTS-AUDIT.py` for the counts, and states that the pass records naming a `~/.openrig/agenthub-seats/<seat>/` path are the runs made before the move. Those records are history and are not rewritten.
+- `ai_docs/api-integration/surface-inventory.md`: the live pointer paragraph names `scripts/CITATION-AUDIT.py` for the §1 citations as it already named `scripts/COUNTS-AUDIT.py` for the counts, and states that the pass records naming a `~/.config/4genthub/agenthub-seats/<seat>/` path are the runs made before the move. Those records are history and are not rewritten.
 
 ### Why (the defect, reframed)
 - **Not a dangling reference — the document already named the seat path.** The defect is REPRODUCIBILITY: the census that justified 144 lines of change in `79e54a50` existed only on one seat's disk, and ROOT was a personal absolute path, so a successor could not re-run the check the document relies on. `COUNTS-AUDIT.py` made this move on 2026-10-09; this is its sibling, and it closes the same class for the citation half.

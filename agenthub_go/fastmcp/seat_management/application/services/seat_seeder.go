@@ -44,7 +44,7 @@ func SeedSeatTypes(ctx context.Context, userID string, seeds []seedmap.Seed, mod
 		// every resolve downstream — a 404 that surfaces on a different route from the seed that
 		// caused it. The loop above stored this seed's own modules, so this catches exactly the
 		// curated refs seedmap appends as ExtraRefs, which nothing here authors: publish them
-		// (scripts/openrig_team_setup.py publish-skills) before seeding the seat types.
+		// (the skill publish step) before seeding the seat types.
 		for _, ref := range seed.ModuleRefs {
 			found, err := modules.GetVersion(ctx, userID, ref.Slug, ref.Version)
 			if err != nil {

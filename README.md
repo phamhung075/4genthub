@@ -134,9 +134,9 @@ graph TD
 
 **`4genteam` is the client orchestrator; 4genthub is the central data platform for orchestration.** The `4genteam` CLI launches and supervises seats on your machine (via the native supervisor stack: `agent` (the always-on local client), `compact-run`, `watchdog`, `bridge`, and `watch`); this service stores the state they report and serves the configuration they pull. **The client initiates every exchange — the server never reaches into a user's machine.**
 
-> **Note on Client LLMs & OpenRig Decommissioning:**
+> **Note on Client LLMs & 4genteam Decommissioning:**
 > - **Client-side LLMs:** Seats and user LLMs (Gemini, DeepSeek, Claude Code, omp) run locally on the user's PC. The server does not host, run, or proxy client LLM sessions.
-> - **OpenRig status:** OpenRig daemon and runtime orchestration are decommissioned in favor of native `4genteam`. OpenRig legacy code is retained strictly in its directory for review only.
+> - **4genteam status:** 4genteam daemon and runtime orchestration are decommissioned in favor of native `4genteam`. 4genteam legacy code is retained strictly in its directory for review only.
 
 The **`4genteam` client** carries the traffic. It is the Go module in this repository (`agenthub_client/`), built as the `4genteam` command, whose dispatch table names one package per verb (`agenthub_client/cmd/4genteam/main.go:98-106`). Each package holds `AGENTHUB_TOKEN` (never a value in this repository) and talks to this API:
 
@@ -150,7 +150,7 @@ The client also carries `4genteam policy`, `seat`, `feedback`, `watch` and `comp
 
 The seat model itself — rooms, seats, seat types, modules, overlays, links — is documented **once**, in `agenthub_go/NEXT_GEN.md` under "How the project and its seats work together", with the HTTP and MCP surface in `ai_docs/api-integration/surface-inventory.md`. **It is not repeated here.**
 
-**Seats can also report friction back.** The same channel has three doors onto one writer: the MCP tool `submit_feedback`, the HTTP routes `POST`/`GET /api/v2/openrig/feedback`, and the `4genteam feedback` verb, which is `agenthub_client/internal/clientfeedback/feedback.go` (registered with the other verbs at `agenthub_client/cmd/4genteam/main.go:105`), for runtimes without MCP. A report carries the **layer** it belongs to (`runtime`, `cloud`, `seat-context`, `workspace`, `other`), the room and seat, and what happened; the credential scan runs before storage, and the dashboard groups reports by layer so a theme several seats hit reads as one theme rather than as several notes.
+**Seats can also report friction back.** The same channel has three doors onto one writer: the MCP tool `submit_feedback`, the HTTP routes `POST`/`GET /api/v2/feedback`, and the `4genteam feedback` verb, which is `agenthub_client/internal/clientfeedback/feedback.go` (registered with the other verbs at `agenthub_client/cmd/4genteam/main.go:105`), for runtimes without MCP. A report carries the **layer** it belongs to (`runtime`, `cloud`, `seat-context`, `workspace`, `other`), the room and seat, and what happened; the credential scan runs before storage, and the dashboard groups reports by layer so a theme several seats hit reads as one theme rather than as several notes.
 
 ## 🤖 **Agent Registry & Seat Model**
 

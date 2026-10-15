@@ -19,13 +19,13 @@ Measured 2026-10-14 on the live room `4genthub-min`, while briefing the seats.
 - Consequence, in the seats themselves: `~/.config/4genthub/rooms/4genthub-min/seats/<seat>/` holds only the
   agent's own databases — no guide, no policy. The live go-dev and reviewer panes were observed hunting for a
   role guide (`grep -rl 'go-dev' /tmp --include='*.md'`; "the old rig dir is gone"; `local:agents/reviewer`)
-  because the OpenRig-era launch directory `/home/daihu/.openrig/agenthub-seats/4genthub-min/rig` no longer
+  because the 4genteam-era launch directory `/home/daihu/.config/4genthub/agenthub-seats/4genthub-min/rig` no longer
   exists and the native launch writes no replacement.
 
 ### Why it matters for the cutover
 The five live seats run on `agenthub-runtime runner` **without the role guide and the per-seat permission
-policy the rig defines**. C1's check is met (no `openrig`, no `pi-runner.js`, five seats running — see
-evidence) and stays met; this is a different, silent loss of seat configuration that the OpenRig launch used
+policy the rig defines**. C1's check is met (no `the reference client`, no `pi-runner.js`, five seats running — see
+evidence) and stays met; this is a different, silent loss of seat configuration that the 4genteam launch used
 to perform, and it is invisible to every check that only asks whether a process is up.
 
 ### Not changed
@@ -34,9 +34,9 @@ the overlay slugs against the team definition and hands each seat a materialised
 runtime resolves them itself from a spec that carries the file paths rather than the slugs.
 
 ### Evidence
-- `ps -eo pid,ppid,args | grep -E 'agenthub-runtime|pi-runner|openrig'`: five
+- `ps -eo pid,ppid,args | grep -E 'agenthub-runtime|pi-runner|the reference client'`: five
   `agenthub-runtime --state-dir /home/daihu/.config/4genthub runner 4genthub-min/<seat>` processes under the
-  room's tmux session, no `openrig`, no `pi-runner.js`.
+  room's tmux session, no `the reference client`, no `pi-runner.js`.
 - `4genteam up 4genthub-min --team <team dir> --room-only`: exit 0, five seats `running`.
 - `cat ~/.config/4genthub/rooms/4genthub-min/spec.json`: `agent_dir`, `cwd`, `permission_policy` null for
   every seat; `overlays` populated.

@@ -11,7 +11,7 @@ instrument — *a call site that ISSUES an exec of the program named `rig`*, non
   and two comments. `internal/clientseat/sync.go:24` spawns `self sync rig …` — its own binary, not `rig`.
 - `rig-shim` is gone (`8193820`): the only remaining mention is `clientruntime/command_test.go:5-10`, which
   pins its absence.
-- The 39 remaining `openrig` strings are cloud route names (`/api/v2/openrig/…`) — the server's own path
+- The 39 remaining `the reference client` strings are cloud route names (`/api/v2/…`) — the server's own path
   segment, not a client dependency.
 
 **The check, with `rig` unreachable** (`PATH=/home/daihu/.local/bin:/usr/bin:/bin`; `command -v rig` prints
@@ -39,4 +39,4 @@ so the text was not left staged in the input box. The same shape held for the go
 ### Still open
 - The forced-provider-stream-error half of C2: allotted to fe-dev, on a scratch room.
 - C4's U3 run: the harness's bytes are recovered at `/tmp/acc.bak7` (1564 lines, the run-11 vintage; the
-  canonical copy under `~/.openrig/agenthub-seats/4genthub-min/` is gone with the seat home).
+  canonical copy under `~/.config/4genthub/agenthub-seats/4genthub-min/` is gone with the seat home).

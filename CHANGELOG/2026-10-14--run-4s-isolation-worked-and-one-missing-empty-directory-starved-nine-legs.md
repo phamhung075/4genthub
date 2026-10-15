@@ -14,7 +14,7 @@ fixtures seeded: spec.json + team/team.json     fresh daemon: 0 queue fds at sta
 
 **The isolation is proven, not asserted.** A4's process tree for the room reads
 `agenthub-runtime --state-dir /tmp/u3run4/state runner cutover-lab/lead` and its `omp` child with a
-session dir under the same isolated root, and carries no OpenRig or `pi-runner.js` cmdline. P2 passes
+session dir under the same isolated root, and carries no 4genteam or `pi-runner.js` cmdline. P2 passes
 with its own words — *"the client's daemon listens THERE — the knob works"*. The daemon record reads:
 the socket **predates this run's own `up`**, so the rollback **refuses** to stop it — which is the
 behaviour that has to be right, because that daemon was the lead's and a run must not kill it.

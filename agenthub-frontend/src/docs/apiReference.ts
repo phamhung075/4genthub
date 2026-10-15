@@ -364,6 +364,52 @@ export const apiReference: ApiReference = {
       "description": ""
     },
     {
+      "method": "POST",
+      "path": "/api/v2/decisions",
+      "pathParams": [],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v2/decisions/answers",
+      "pathParams": [],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "POST",
+      "path": "/api/v2/decisions/{id}/ack",
+      "pathParams": [
+        "id"
+      ],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "POST",
+      "path": "/api/v2/decisions/{id}/state",
+      "pathParams": [
+        "id"
+      ],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v2/feedback",
+      "pathParams": [],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "POST",
+      "path": "/api/v2/feedback",
+      "pathParams": [],
+      "handler": "",
+      "description": ""
+    },
+    {
       "method": "GET",
       "path": "/api/v2/ledger",
       "pathParams": [],
@@ -379,6 +425,13 @@ export const apiReference: ApiReference = {
     },
     {
       "method": "GET",
+      "path": "/api/v2/machines",
+      "pathParams": [],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "GET",
       "path": "/api/v2/machines/{machine}/work",
       "pathParams": [
         "machine"
@@ -387,68 +440,15 @@ export const apiReference: ApiReference = {
       "description": ""
     },
     {
-      "method": "POST",
-      "path": "/api/v2/openrig/decisions",
+      "method": "GET",
+      "path": "/api/v2/modules",
       "pathParams": [],
       "handler": "",
       "description": ""
     },
     {
       "method": "GET",
-      "path": "/api/v2/openrig/decisions/answers",
-      "pathParams": [],
-      "handler": "",
-      "description": ""
-    },
-    {
-      "method": "POST",
-      "path": "/api/v2/openrig/decisions/{id}/ack",
-      "pathParams": [
-        "id"
-      ],
-      "handler": "",
-      "description": ""
-    },
-    {
-      "method": "POST",
-      "path": "/api/v2/openrig/decisions/{id}/state",
-      "pathParams": [
-        "id"
-      ],
-      "handler": "",
-      "description": ""
-    },
-    {
-      "method": "GET",
-      "path": "/api/v2/openrig/feedback",
-      "pathParams": [],
-      "handler": "",
-      "description": ""
-    },
-    {
-      "method": "POST",
-      "path": "/api/v2/openrig/feedback",
-      "pathParams": [],
-      "handler": "",
-      "description": ""
-    },
-    {
-      "method": "GET",
-      "path": "/api/v2/openrig/machines",
-      "pathParams": [],
-      "handler": "",
-      "description": ""
-    },
-    {
-      "method": "GET",
-      "path": "/api/v2/openrig/modules",
-      "pathParams": [],
-      "handler": "",
-      "description": ""
-    },
-    {
-      "method": "GET",
-      "path": "/api/v2/openrig/modules/{slug}/versions/{version}",
+      "path": "/api/v2/modules/{slug}/versions/{version}",
       "pathParams": [
         "slug",
         "version"
@@ -458,7 +458,7 @@ export const apiReference: ApiReference = {
     },
     {
       "method": "PUT",
-      "path": "/api/v2/openrig/modules/{slug}/versions/{version}",
+      "path": "/api/v2/modules/{slug}/versions/{version}",
       "pathParams": [
         "slug",
         "version"
@@ -468,365 +468,15 @@ export const apiReference: ApiReference = {
     },
     {
       "method": "GET",
-      "path": "/api/v2/openrig/overlay",
+      "path": "/api/v2/overlay",
       "pathParams": [],
       "handler": "",
       "description": ""
     },
     {
       "method": "PUT",
-      "path": "/api/v2/openrig/overlay",
+      "path": "/api/v2/overlay",
       "pathParams": [],
-      "handler": "",
-      "description": ""
-    },
-    {
-      "method": "GET",
-      "path": "/api/v2/openrig/rooms",
-      "pathParams": [],
-      "handler": "",
-      "description": ""
-    },
-    {
-      "method": "POST",
-      "path": "/api/v2/openrig/rooms",
-      "pathParams": [],
-      "handler": "",
-      "description": ""
-    },
-    {
-      "method": "DELETE",
-      "path": "/api/v2/openrig/rooms/{room}",
-      "pathParams": [
-        "room"
-      ],
-      "handler": "",
-      "description": ""
-    },
-    {
-      "method": "GET",
-      "path": "/api/v2/openrig/rooms/{room}/decisions",
-      "pathParams": [
-        "room"
-      ],
-      "handler": "",
-      "description": ""
-    },
-    {
-      "method": "POST",
-      "path": "/api/v2/openrig/rooms/{room}/decisions/{id}/answer",
-      "pathParams": [
-        "room",
-        "id"
-      ],
-      "handler": "",
-      "description": ""
-    },
-    {
-      "method": "GET",
-      "path": "/api/v2/openrig/rooms/{room}/overlay",
-      "pathParams": [
-        "room"
-      ],
-      "handler": "",
-      "description": ""
-    },
-    {
-      "method": "PUT",
-      "path": "/api/v2/openrig/rooms/{room}/overlay",
-      "pathParams": [
-        "room"
-      ],
-      "handler": "",
-      "description": ""
-    },
-    {
-      "method": "GET",
-      "path": "/api/v2/openrig/rooms/{room}/rigspec",
-      "pathParams": [
-        "room"
-      ],
-      "handler": "",
-      "description": ""
-    },
-    {
-      "method": "GET",
-      "path": "/api/v2/openrig/rooms/{room}/seats",
-      "pathParams": [
-        "room"
-      ],
-      "handler": "",
-      "description": ""
-    },
-    {
-      "method": "POST",
-      "path": "/api/v2/openrig/rooms/{room}/seats",
-      "pathParams": [
-        "room"
-      ],
-      "handler": "",
-      "description": ""
-    },
-    {
-      "method": "DELETE",
-      "path": "/api/v2/openrig/rooms/{room}/seats/{seat}",
-      "pathParams": [
-        "room",
-        "seat"
-      ],
-      "handler": "",
-      "description": ""
-    },
-    {
-      "method": "GET",
-      "path": "/api/v2/openrig/rooms/{room}/seats/{seat}/links",
-      "pathParams": [
-        "room",
-        "seat"
-      ],
-      "handler": "",
-      "description": ""
-    },
-    {
-      "method": "PUT",
-      "path": "/api/v2/openrig/rooms/{room}/seats/{seat}/links",
-      "pathParams": [
-        "room",
-        "seat"
-      ],
-      "handler": "",
-      "description": ""
-    },
-    {
-      "method": "DELETE",
-      "path": "/api/v2/openrig/rooms/{room}/seats/{seat}/links/{to}/{kind}",
-      "pathParams": [
-        "room",
-        "seat",
-        "to",
-        "kind"
-      ],
-      "handler": "",
-      "description": ""
-    },
-    {
-      "method": "GET",
-      "path": "/api/v2/openrig/rooms/{room}/seats/{seat}/messages",
-      "pathParams": [
-        "room",
-        "seat"
-      ],
-      "handler": "",
-      "description": ""
-    },
-    {
-      "method": "POST",
-      "path": "/api/v2/openrig/rooms/{room}/seats/{seat}/messages",
-      "pathParams": [
-        "room",
-        "seat"
-      ],
-      "handler": "",
-      "description": ""
-    },
-    {
-      "method": "POST",
-      "path": "/api/v2/openrig/rooms/{room}/seats/{seat}/messages/{id}/ack",
-      "pathParams": [
-        "room",
-        "seat",
-        "id"
-      ],
-      "handler": "",
-      "description": ""
-    },
-    {
-      "method": "PUT",
-      "path": "/api/v2/openrig/rooms/{room}/seats/{seat}/occupant",
-      "pathParams": [
-        "room",
-        "seat"
-      ],
-      "handler": "",
-      "description": ""
-    },
-    {
-      "method": "GET",
-      "path": "/api/v2/openrig/rooms/{room}/seats/{seat}/overlay",
-      "pathParams": [
-        "room",
-        "seat"
-      ],
-      "handler": "",
-      "description": ""
-    },
-    {
-      "method": "PUT",
-      "path": "/api/v2/openrig/rooms/{room}/seats/{seat}/overlay",
-      "pathParams": [
-        "room",
-        "seat"
-      ],
-      "handler": "",
-      "description": ""
-    },
-    {
-      "method": "PUT",
-      "path": "/api/v2/openrig/rooms/{room}/seats/{seat}/permission-policy",
-      "pathParams": [
-        "room",
-        "seat"
-      ],
-      "handler": "",
-      "description": ""
-    },
-    {
-      "method": "PUT",
-      "path": "/api/v2/openrig/rooms/{room}/seats/{seat}/pin",
-      "pathParams": [
-        "room",
-        "seat"
-      ],
-      "handler": "",
-      "description": ""
-    },
-    {
-      "method": "PUT",
-      "path": "/api/v2/openrig/rooms/{room}/team",
-      "pathParams": [
-        "room"
-      ],
-      "handler": "",
-      "description": ""
-    },
-    {
-      "method": "POST",
-      "path": "/api/v2/openrig/seat-status",
-      "pathParams": [],
-      "handler": "",
-      "description": ""
-    },
-    {
-      "method": "GET",
-      "path": "/api/v2/openrig/seat-types",
-      "pathParams": [],
-      "handler": "",
-      "description": ""
-    },
-    {
-      "method": "POST",
-      "path": "/api/v2/openrig/seat-types",
-      "pathParams": [],
-      "handler": "",
-      "description": ""
-    },
-    {
-      "method": "POST",
-      "path": "/api/v2/openrig/seat-types/seed",
-      "pathParams": [],
-      "handler": "",
-      "description": ""
-    },
-    {
-      "method": "POST",
-      "path": "/api/v2/openrig/seat-types/{slug}/versions",
-      "pathParams": [
-        "slug"
-      ],
-      "handler": "",
-      "description": ""
-    },
-    {
-      "method": "GET",
-      "path": "/api/v2/openrig/seats/{room}/{seat}",
-      "pathParams": [
-        "room",
-        "seat"
-      ],
-      "handler": "",
-      "description": ""
-    },
-    {
-      "method": "GET",
-      "path": "/api/v2/openrig/settings",
-      "pathParams": [],
-      "handler": "",
-      "description": ""
-    },
-    {
-      "method": "PUT",
-      "path": "/api/v2/openrig/settings",
-      "pathParams": [],
-      "handler": "",
-      "description": ""
-    },
-    {
-      "method": "GET",
-      "path": "/api/v2/openrig/teams",
-      "pathParams": [],
-      "handler": "",
-      "description": ""
-    },
-    {
-      "method": "POST",
-      "path": "/api/v2/openrig/teams",
-      "pathParams": [],
-      "handler": "",
-      "description": ""
-    },
-    {
-      "method": "DELETE",
-      "path": "/api/v2/openrig/teams/{team}",
-      "pathParams": [
-        "team"
-      ],
-      "handler": "",
-      "description": ""
-    },
-    {
-      "method": "GET",
-      "path": "/api/v2/openrig/teams/{team}",
-      "pathParams": [
-        "team"
-      ],
-      "handler": "",
-      "description": ""
-    },
-    {
-      "method": "GET",
-      "path": "/api/v2/openrig/teams/{team}/members",
-      "pathParams": [
-        "team"
-      ],
-      "handler": "",
-      "description": ""
-    },
-    {
-      "method": "POST",
-      "path": "/api/v2/openrig/teams/{team}/members",
-      "pathParams": [
-        "team"
-      ],
-      "handler": "",
-      "description": ""
-    },
-    {
-      "method": "DELETE",
-      "path": "/api/v2/openrig/teams/{team}/members/{user}",
-      "pathParams": [
-        "team",
-        "user"
-      ],
-      "handler": "",
-      "description": ""
-    },
-    {
-      "method": "PATCH",
-      "path": "/api/v2/openrig/teams/{team}/members/{user}",
-      "pathParams": [
-        "team",
-        "user"
-      ],
       "handler": "",
       "description": ""
     },
@@ -882,6 +532,263 @@ export const apiReference: ApiReference = {
     },
     {
       "method": "GET",
+      "path": "/api/v2/rooms",
+      "pathParams": [],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "POST",
+      "path": "/api/v2/rooms",
+      "pathParams": [],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v2/rooms/{room}",
+      "pathParams": [
+        "room"
+      ],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v2/rooms/{room}/decisions",
+      "pathParams": [
+        "room"
+      ],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "POST",
+      "path": "/api/v2/rooms/{room}/decisions/{id}/answer",
+      "pathParams": [
+        "room",
+        "id"
+      ],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v2/rooms/{room}/overlay",
+      "pathParams": [
+        "room"
+      ],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v2/rooms/{room}/overlay",
+      "pathParams": [
+        "room"
+      ],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v2/rooms/{room}/seats",
+      "pathParams": [
+        "room"
+      ],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "POST",
+      "path": "/api/v2/rooms/{room}/seats",
+      "pathParams": [
+        "room"
+      ],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v2/rooms/{room}/seats/{seat}",
+      "pathParams": [
+        "room",
+        "seat"
+      ],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v2/rooms/{room}/seats/{seat}/links",
+      "pathParams": [
+        "room",
+        "seat"
+      ],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v2/rooms/{room}/seats/{seat}/links",
+      "pathParams": [
+        "room",
+        "seat"
+      ],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v2/rooms/{room}/seats/{seat}/links/{to}/{kind}",
+      "pathParams": [
+        "room",
+        "seat",
+        "to",
+        "kind"
+      ],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v2/rooms/{room}/seats/{seat}/messages",
+      "pathParams": [
+        "room",
+        "seat"
+      ],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "POST",
+      "path": "/api/v2/rooms/{room}/seats/{seat}/messages",
+      "pathParams": [
+        "room",
+        "seat"
+      ],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "POST",
+      "path": "/api/v2/rooms/{room}/seats/{seat}/messages/{id}/ack",
+      "pathParams": [
+        "room",
+        "seat",
+        "id"
+      ],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v2/rooms/{room}/seats/{seat}/occupant",
+      "pathParams": [
+        "room",
+        "seat"
+      ],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v2/rooms/{room}/seats/{seat}/overlay",
+      "pathParams": [
+        "room",
+        "seat"
+      ],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v2/rooms/{room}/seats/{seat}/overlay",
+      "pathParams": [
+        "room",
+        "seat"
+      ],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v2/rooms/{room}/seats/{seat}/permission-policy",
+      "pathParams": [
+        "room",
+        "seat"
+      ],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v2/rooms/{room}/seats/{seat}/pin",
+      "pathParams": [
+        "room",
+        "seat"
+      ],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v2/rooms/{room}/team",
+      "pathParams": [
+        "room"
+      ],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "POST",
+      "path": "/api/v2/seat-status",
+      "pathParams": [],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v2/seat-types",
+      "pathParams": [],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "POST",
+      "path": "/api/v2/seat-types",
+      "pathParams": [],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "POST",
+      "path": "/api/v2/seat-types/seed",
+      "pathParams": [],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "POST",
+      "path": "/api/v2/seat-types/{slug}/versions",
+      "pathParams": [
+        "slug"
+      ],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v2/seats/{room}/{seat}",
+      "pathParams": [
+        "room",
+        "seat"
+      ],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "GET",
       "path": "/api/v2/sessions",
       "pathParams": [],
       "handler": "",
@@ -893,6 +800,20 @@ export const apiReference: ApiReference = {
       "pathParams": [
         "id"
       ],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v2/settings",
+      "pathParams": [],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v2/settings",
+      "pathParams": [],
       "handler": "",
       "description": ""
     },
@@ -1030,6 +951,76 @@ export const apiReference: ApiReference = {
       "path": "/api/v2/tasks/{task_id}/subtasks/summaries",
       "pathParams": [
         "task_id"
+      ],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v2/teams",
+      "pathParams": [],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "POST",
+      "path": "/api/v2/teams",
+      "pathParams": [],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v2/teams/{team}",
+      "pathParams": [
+        "team"
+      ],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v2/teams/{team}",
+      "pathParams": [
+        "team"
+      ],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v2/teams/{team}/members",
+      "pathParams": [
+        "team"
+      ],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "POST",
+      "path": "/api/v2/teams/{team}/members",
+      "pathParams": [
+        "team"
+      ],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v2/teams/{team}/members/{user}",
+      "pathParams": [
+        "team",
+        "user"
+      ],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v2/teams/{team}/members/{user}",
+      "pathParams": [
+        "team",
+        "user"
       ],
       "handler": "",
       "description": ""
@@ -2014,7 +2005,7 @@ export const apiReference: ApiReference = {
     },
     {
       "name": "call_seat",
-      "description": "Resolve one exact seat by room and seat key. Returns the seat's runtime, permission policy, resolved snapshot hash and its rendered context files. When the hash is new, the call writes a resolved_seats row for it. 4genthub stores the seat and its context, OpenRig runs the seat, and the brain is the occupant.",
+      "description": "Resolve one exact seat by room and seat key. Returns the seat's runtime, permission policy, resolved snapshot hash and its rendered context files. When the hash is new, the call writes a resolved_seats row for it. 4genthub stores the seat and its context, the 4genteam client runs the seat, and the brain is the occupant.",
       "parameters": {
         "properties": {
           "room": {
@@ -2044,14 +2035,14 @@ export const apiReference: ApiReference = {
     },
     {
       "name": "submit_feedback",
-      "description": "Report friction you hit while working: the layer it is in (runtime, openrig, cloud, seat-context, workspace, other), the room and seat you are, and what happened. The owner reads these grouped by layer.",
+      "description": "Report friction you hit while working: the layer it is in (runtime, client, cloud, seat-context, workspace, other), the room and seat you are, and what happened. The owner reads these grouped by layer.",
       "parameters": {
         "properties": {
           "layer": {
-            "description": "[REQUIRED] The layer the friction is in. One of: runtime, openrig, cloud, seat-context, workspace, other",
+            "description": "[REQUIRED] The layer the friction is in. One of: runtime, client, cloud, seat-context, workspace, other",
             "enum": [
               "runtime",
-              "openrig",
+              "client",
               "cloud",
               "seat-context",
               "workspace",

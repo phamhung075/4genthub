@@ -67,10 +67,10 @@ func TestAppBootsAgainstAMigratedDatabase(t *testing.T) {
 		method string
 		path   string
 	}{
-		{http.MethodPost, "/api/v2/openrig/seat-status"},
-		{http.MethodGet, "/api/v2/openrig/machines"},
-		{http.MethodPost, "/api/v2/openrig/feedback"},
-		{http.MethodGet, "/api/v2/openrig/feedback"},
+		{http.MethodPost, "/api/v2/seat-status"},
+		{http.MethodGet, "/api/v2/machines"},
+		{http.MethodPost, "/api/v2/feedback"},
+		{http.MethodGet, "/api/v2/feedback"},
 	} {
 		req := httptest.NewRequest(probe.method, probe.path, strings.NewReader(``))
 		rec := httptest.NewRecorder()

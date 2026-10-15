@@ -1,7 +1,7 @@
 # scripts/team/4genthub-min — what this directory is, and the two things it does not settle
 
 The room definition for the minimum team, applied by `4genteam team apply` (the module is
-`agenthub_client/src/agenthub_client/team_setup.py`; this named `scripts/openrig_team_setup.py`
+`agenthub_client/src/agenthub_client/team_setup.py`; this named `scripts/team_setup.py`
 until the 2026-10-09 client relocation moved the scripts into the installed client). It mirrors the
 SHAPE of `scripts/team/4genthub/team.json` and **inherits nothing from it**: that room is nine seats
 on `claude-code` with an empty model, this one is FIVE seats (it was nine when this paragraph was
@@ -47,7 +47,7 @@ Seven seats match a seeded type by name — `lead`, `reviewer`, `writer`, `archi
 is the ten seats in `team.json`, which is the check to run on this paragraph rather than counting
 table rows.
 
-*Measured 2026-10-08: `resolved_spec_name` per seat from the OpenRig ledger (`nodes`, rig
+*Measured 2026-10-08: `resolved_spec_name` per seat from the 4genteam ledger (`nodes`, rig
 `01M447FRCC0P2WBKPA45R21M8N`) compared against the nine files in `seedlibrary/seat-types/`. NOT from
 `team.json` — that file states `developer` for the three, so a check reading it would be comparing the
 file with itself, which is how a first version of this check answered ten and zero and looked right.
@@ -67,7 +67,7 @@ while their local `agent.yaml` says developer.
 - **`apply` has not been run.** The `4genthub-min` room does not exist, and creating a room and ten
   seats in production is the owner's decision, not a data change.
 
-  > **CORRECTED 2026-10-10 (web-dev, row `qitem-20261007162529-198e75cb265f3ba1`) — THIS BULLET IS FALSE, NOT EARLY, AND IT IS KEPT ABOVE AS WHAT IT SAID.** The room **exists in production**, written by **`b553b586` at 2026-10-07 17:18:49Z** — the principal's own run. Its commit subject reads *"The 4genthub-min room is created in production"* and its `CHANGELOG/` entry reads *"the room, its 10 seats and the 10 seat overlays were written … run by the principal, who holds the token"*. Measured read-only 2026-10-10: `GET /api/v2/openrig/rooms` -> `4genthub-dev`, **`4genthub-min` · "4genthub minimum team"**, `smoke`; `GET /api/v2/openrig/rooms/4genthub-min/seats` -> HTTP 200, **10 seats**; `4genteam seat status 4genthub-min` -> the ten with resolved snapshot hashes (`lead` `7ac2237e0d0e`, `web-dev` `ebff3c29104d`). **This paragraph was written BEFORE that run and never revisited.** What an `apply` would change *today* is the smaller, different thing: the live room carries `guide-go-dev2` and `policy-go-dev2` (a seat since retired) and **lacks `guide-architect` and `policy-architect`**, and it has `go-dev2` and **no `architect`** — so the architect pair added to `team.json` on 2026-10-09 has never reached the room, and publishing it is a production write and the owner's decision in precisely the sense this bullet meant.
+  > **CORRECTED 2026-10-10 (web-dev, row `qitem-20261007162529-198e75cb265f3ba1`) — THIS BULLET IS FALSE, NOT EARLY, AND IT IS KEPT ABOVE AS WHAT IT SAID.** The room **exists in production**, written by **`b553b586` at 2026-10-07 17:18:49Z** — the principal's own run. Its commit subject reads *"The 4genthub-min room is created in production"* and its `CHANGELOG/` entry reads *"the room, its 10 seats and the 10 seat overlays were written … run by the principal, who holds the token"*. Measured read-only 2026-10-10: `GET /api/v2/rooms` -> `4genthub-dev`, **`4genthub-min` · "4genthub minimum team"**, `smoke`; `GET /api/v2/rooms/4genthub-min/seats` -> HTTP 200, **10 seats**; `4genteam seat status 4genthub-min` -> the ten with resolved snapshot hashes (`lead` `7ac2237e0d0e`, `web-dev` `ebff3c29104d`). **This paragraph was written BEFORE that run and never revisited.** What an `apply` would change *today* is the smaller, different thing: the live room carries `guide-go-dev2` and `policy-go-dev2` (a seat since retired) and **lacks `guide-architect` and `policy-architect`**, and it has `go-dev2` and **no `architect`** — so the architect pair added to `team.json` on 2026-10-09 has never reached the room, and publishing it is a production write and the owner's decision in precisely the sense this bullet meant.
   >
   > **ROW RELATIONSHIP, SAID OUT LOUD RATHER THAN IMPLIED: this is not a line row `2458e090` missed.** That row — landed by `27f27267` (2026-10-09 23:04:26Z), this file's last touch — covered the `guide-common`/overlay lines (`:14`, `:58`) and is **closed**; this bullet and the links bullet below are **new lines that were never in its scope.**
 - **The three-home deletion waits** on a live-seat observation that a seat's `AGENTS.md` came from a

@@ -25,4 +25,4 @@
 - `python3 scripts/CITATION-AUDIT.py --write` -> rc 0, `rewrote 30 citations in .../surface-inventory.md`.
 - `python3 -m pytest --noconftest -p no:cacheprovider scripts/tests/test_census_audits.py -q` -> **11 passed**.
 - `python3 -m pytest --noconftest -p no:cacheprovider scripts/tests -q`, from the repository root with
-  `OPENRIG_SKILLS_ROOT` unset and no `PYTHONPATH` -> **81 passed, 3 warnings in 11.4s**, 0 failed.
+  `AGENTHUB_SKILLS_ROOT` unset and no `PYTHONPATH` -> **81 passed, 3 warnings in 11.4s**, 0 failed.

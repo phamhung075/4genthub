@@ -3,7 +3,7 @@
 agenthub is a cloud service that stores the state of AI work — projects, git branches, tasks,
 subtasks, a four-level context hierarchy,
 and the **seat model** that describes who does the work and how they are configured. A separate
-client (OpenRig) runs the seats on your machine; this API is where their state lives.
+client (4genteam) runs the seats on your machine; this API is where their state lives.
 
 **The route and tool tables on this page are GENERATED from the running code** — every path in them
 is a real registration, read from the server's own registration sites at build time, so they cannot
@@ -44,7 +44,7 @@ Two kinds of credential are accepted:
 | Credential | How it is obtained | Typical use |
 | :--- | :--- | :--- |
 | **Keycloak access token** | The web app's own OIDC login flow (authorization code). | The browser UI, and any client that logs a human in. |
-| **API token** | Created through `POST /api/v2/tokens`. | Scripts, the OpenRig client, MCP clients. |
+| **API token** | Created through `POST /api/v2/tokens`. | Scripts, the 4genteam client, MCP clients. |
 
 An API token carries **scopes**; the token endpoints accept an arbitrary scope list and **apply NO
 DEFAULT — a token minted without scopes carries none**, so a scope-gated request is refused with
@@ -193,10 +193,9 @@ seat.
 A **seat link** is a first-class edge from one seat to another with a kind and an `allow` flag; the
 communication policy is enforced from these edges.
 
-### Rendering a room
+### Resolving a seat
 
-`GET /api/v2/openrig/rooms/{room}/rigspec` renders a room as an OpenRig RigSpec document, the form a
-client launches. `GET /api/v2/openrig/seats/{room}/{seat}` resolves one seat and its rendered files.
+`GET /api/v2/seats/{room}/{seat}` resolves one seat and its rendered files.
 
 ## Errors and status codes
 
@@ -244,7 +243,7 @@ METHOD as well as the path, because a path match is not coverage on its own:*
   placeholder turns that into `/api/v2/branches/:p`, and then reports the collection route as absent
   from these tables — when the tables are the only one of the two that is right.
 - **A path parameter absorbs a literal segment — and the METHOD is what decides whether that counts
-  as coverage.** `/api/v2/openrig/seats/{room}/{seat}` also matches `/api/v2/openrig/seats/{room}/messages`
+  as coverage.** `/api/v2/seats/{room}/{seat}` also matches `/api/v2/seats/{room}/messages`
   by PATTERN, but the registered pattern is `GET` (`agenthub_go/fastmcp/server/httpapp/seat_mount.go:184`),
   so a `POST` to that path reaches the pattern and is then refused by the method: **`405`, not the `200`
   a path-only reading predicts.** *(This bullet used to read "A client calling the latter is not calling

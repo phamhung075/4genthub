@@ -18,7 +18,7 @@ The push that landed today (`origin/main 5b33a8a7` -> `b403e61b`) carries `533d6
 refs/heads/main` = `b403e61b`; `git merge-base --is-ancestor` confirms `533d64b6`, `eec5922b`, `5defdbd2` and
 `39b4cfcb` are all in it; `GET https://api.4genthub.com/health` returned `version 0.0.37` with `uptime_seconds` 246 -
 so the restart was observable while the release string was not. That is the case the marker exists for, and the seed
-sequence (`deploy` -> `/health` shows the new version -> `POST /api/v2/openrig/seat-types/seed` -> re-pin) was
+sequence (`deploy` -> `/health` shows the new version -> `POST /api/v2/seat-types/seed` -> re-pin) was
 designed to be confirmed by it. Bumping before the seed keeps the rule's own instrument usable for the one operator
 action that is not cheaply reversible: the store freezes what a version names.
 

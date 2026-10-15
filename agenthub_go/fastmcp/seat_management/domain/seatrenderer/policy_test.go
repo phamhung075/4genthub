@@ -101,7 +101,7 @@ func TestParsePolicyModuleNamesWhatItRefuses(t *testing.T) {
 // so requiring a sibling of it would be a second voice saying the same thing. The asymmetry is the
 // rule - a denial without a sibling is a trap, an allowance without one is complete.
 func TestParsePolicyModuleAcceptsAnAllowanceWithoutASibling(t *testing.T) {
-	policy, err := ParsePolicyModule(`{"role":"dev","bash":{"patterns":[{"match":"rig whoami*","approval":"allow"}]}}`)
+	policy, err := ParsePolicyModule(`{"role":"dev","bash":{"patterns":[{"match":"4genteam whoami*","approval":"allow"}]}}`)
 	if err != nil {
 		t.Fatalf("an allowance was refused: %v", err)
 	}
@@ -115,7 +115,7 @@ func TestParsePolicyModuleAcceptsAnAllowanceWithoutASibling(t *testing.T) {
 // can never silently not apply - and the message names BOTH values it can express, so a publisher
 // reading only the error knows what to write.
 func TestParsePolicyModuleStillRefusesAnUnknownApprovalByName(t *testing.T) {
-	_, err := ParsePolicyModule(`{"role":"dev","bash":{"patterns":[{"match":"rig send*","approval":"prompt","sibling":"use seatcheck"}]}}`)
+	_, err := ParsePolicyModule(`{"role":"dev","bash":{"patterns":[{"match":"4genteam send*","approval":"prompt","sibling":"use seatcheck"}]}}`)
 	if err == nil {
 		t.Fatal("an approval the kind cannot express was accepted")
 	}

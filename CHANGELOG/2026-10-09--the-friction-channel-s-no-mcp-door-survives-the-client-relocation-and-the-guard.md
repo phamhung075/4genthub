@@ -6,7 +6,7 @@
 - `agenthub_client/pyproject.toml`: `[tool.setuptools.package-data]` names `seat_feedback.sh`. Measured on the built wheel both ways (`uv build`, then the archive's member list): BEFORE, twelve modules and no script; AFTER, `agenthub_client/seat_feedback.sh` present. Without that line only an editable checkout had the door — every other install had the verb and nothing to run.
 
 ### Verified on the artifact, not on the source tree
-- Wheel built from the package, installed into a throwaway venv with `uv pip install`, and driven there against a local stub of the route: `4genteam feedback --layer openrig --text ...` exits 0, and the stub receives `POST /api/v2/openrig/feedback` with the bearer token and the body `{"room","seat","session","layer","text"}`; a layer outside the vocabulary exits 2 having dialed nothing. The Go guard, both tests: `ok agenthub/fastmcp/server/httpapp 0.108s`.
+- Wheel built from the package, installed into a throwaway venv with `uv pip install`, and driven there against a local stub of the route: `4genteam feedback --layer the reference client --text ...` exits 0, and the stub receives `POST /api/v2/feedback` with the bearer token and the body `{"room","seat","session","layer","text"}`; a layer outside the vocabulary exits 2 having dialed nothing. The Go guard, both tests: `ok agenthub/fastmcp/server/httpapp 0.108s`.
 - What an install needs, stated because it is not obvious: `AGENTHUB_REPO_ROOT` must point at a checkout. Without it a wheel install dies at import — `ModuleNotFoundError: No module named 'utils'` (`team_setup.py:117`) — because `paths.HOOKS_DIR` is derived from the installation directory.
 
 ### Not in this commit

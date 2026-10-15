@@ -4,7 +4,7 @@
 // fails visibly at render instead of writing bytes no one can trace back to a source.
 //
 // The provenance is a path/digest pair: the path is relative to the root its publisher used
-// (the skill library publishes paths relative to the OpenRig repository root; import-project
+// (the skill library publishes paths relative to the catalog repository root; import-project
 // publishes paths relative to the project root), and the digest is the sha256 of the file at
 // that path when it was published. A drift check recomputes the digest and reports a mismatch
 // rather than letting the two copies diverge silently. A skill committed on two edges records

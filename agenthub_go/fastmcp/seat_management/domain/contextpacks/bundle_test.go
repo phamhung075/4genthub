@@ -51,7 +51,7 @@ func TestAssembleBundleFramesAndSkipsMissing(t *testing.T) {
 	if err != nil {
 		t.Fatalf("assemble: %v", err)
 	}
-	if !strings.HasPrefix(got.Text, "# OpenRig Context Pack: x v1.0.0\n\n") {
+	if !strings.HasPrefix(got.Text, "# Context Pack: x v1.0.0\n\n") {
 		t.Errorf("bundle does not lead with the pack frame: %q", got.Text[:40])
 	}
 	if !strings.Contains(got.Text, "a purpose") {
@@ -171,7 +171,7 @@ func TestAssembleBundleTrimsThePurposeLikeJavaScript(t *testing.T) {
 
 // ---- the source's own cases, mirrored ---------------------------------------------------------
 //
-// Basis: openrig 1a05af1b, `packages/daemon/test/context-pack-compose.test.ts`
+// Basis: the reference implementation's context-pack compose suite
 // (44c78c466956fbfd174fa3bab0952acf1605ca27 for ref-safety, its ATOM-3 block for plain assembly)
 // and `packages/daemon/test/context-pack-bundle-assembler.test.ts`
 // (62e1e8f21423aeca9372e9932b99486728b7b508). The 2026-10-10 parity audit took these two files as
@@ -195,7 +195,7 @@ func TestAssemblePlainFilesPreservesEOFNewlineBytes(t *testing.T) {
 			if got.Text != want {
 				t.Errorf("text = %q, want %q (EOF-newline bytes preserved)", got.Text, want)
 			}
-			if strings.Contains(got.Text, "# OpenRig Context Pack:") || strings.Contains(got.Text, "## File:") {
+			if strings.Contains(got.Text, "# Context Pack:") || strings.Contains(got.Text, "## File:") {
 				t.Errorf("plain assembly framed the text: %q", got.Text)
 			}
 			if got.Bytes != len(want) {
@@ -269,7 +269,7 @@ func TestAssembleBundleWithNoFilesIsAnEmptyList(t *testing.T) {
 	if got.MissingFiles == nil || len(got.MissingFiles) != 0 {
 		t.Errorf("missingFiles = %+v, want an empty, non-nil list", got.MissingFiles)
 	}
-	if !strings.Contains(got.Text, "# OpenRig Context Pack: test v1") {
+	if !strings.Contains(got.Text, "# Context Pack: test v1") {
 		t.Errorf("an empty pack lost its frame: %q", got.Text)
 	}
 }

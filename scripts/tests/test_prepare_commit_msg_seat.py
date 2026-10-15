@@ -61,7 +61,7 @@ def _seats(repo: Path) -> list[str]:
 def test_a_seat_commit_carries_the_send_address(tmp_path: Path) -> None:
     repo = _repo(tmp_path)
     _install(repo)
-    _commit(repo, "feat: something", {"OPENRIG_SESSION_NAME": ADDRESS})
+    _commit(repo, "feat: something", {"AGENTHUB_SESSION_NAME": ADDRESS})
     assert _seats(repo) == [ADDRESS]
 
 
@@ -71,7 +71,7 @@ def test_the_case_can_fail_a_do_nothing_hook(tmp_path: Path) -> None:
     noop = tmp_path / "noop"
     noop.write_text("#!/bin/sh\nexit 0\n")
     _install(repo, src=noop)
-    _commit(repo, "feat: something", {"OPENRIG_SESSION_NAME": ADDRESS})
+    _commit(repo, "feat: something", {"AGENTHUB_SESSION_NAME": ADDRESS})
     assert _seats(repo) == []
 
 
@@ -79,7 +79,7 @@ def test_no_seat_identity_writes_nothing_and_still_commits(tmp_path: Path) -> No
     """The owner commits from the host, where the variable is unset."""
     repo = _repo(tmp_path)
     _install(repo)
-    _commit(repo, "docs: from the host", {"OPENRIG_SESSION_NAME": ""})
+    _commit(repo, "docs: from the host", {"AGENTHUB_SESSION_NAME": ""})
     assert _seats(repo) == []
     assert _git(repo, "log", "-1", "--format=%s").strip() == "docs: from the host"
 
@@ -90,7 +90,7 @@ def test_a_hand_written_trailer_is_left_alone(tmp_path: Path) -> None:
     _commit(
         repo,
         "fix: hand written\n\nSeat: someone-else@rig\n",
-        {"OPENRIG_SESSION_NAME": ADDRESS},
+        {"AGENTHUB_SESSION_NAME": ADDRESS},
     )
     assert _seats(repo) == ["someone-else@rig"]
 
@@ -104,7 +104,7 @@ def test_prose_that_looks_like_a_trailer_is_not_one(tmp_path: Path) -> None:
     repo = _repo(tmp_path)
     _install(repo)
     body = "feat: something\n\nGates: the rung that watches for it\nSeat: not-a-trailer-here\n\nSeat is written at the end.\n"
-    _commit(repo, body, {"OPENRIG_SESSION_NAME": ADDRESS})
+    _commit(repo, body, {"AGENTHUB_SESSION_NAME": ADDRESS})
     assert _seats(repo) == [ADDRESS]
 
 
@@ -116,7 +116,7 @@ def test_no_message_file_is_not_a_failure(tmp_path: Path) -> None:
         [str(hook)],
         capture_output=True,
         text=True,
-        env=gitfixture.environment(OPENRIG_SESSION_NAME=ADDRESS),
+        env=gitfixture.environment(AGENTHUB_SESSION_NAME=ADDRESS),
     )
     assert result.returncode == 0
     assert _seats(repo) == []

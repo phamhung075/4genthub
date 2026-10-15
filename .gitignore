@@ -554,12 +554,12 @@ agenthub_go/blockdrift
 agenthub_go/scratch/
 testground/
 
-# OpenRig runtime and orchestration files
-.openrig/
+# 4genteam runtime and orchestration files
+.config/4genthub/
 .agents/
 CULTURE.md
 rig.yaml
-# OpenRig's launch render writes this name into its launch cwd; the project's one rules file is the
+# the client's launch render writes this name into its launch cwd; the project's one rules file is the
 # tracked AGENTS.md (f7a809dc). Anchored to the root, so a nested CLAUDE.md stays visible.
 /CLAUDE.md
 

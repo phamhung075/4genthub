@@ -95,9 +95,9 @@ skills:
   enablePiProject: false
 ```
 
-"The `config.yml` the running runtime reads" is the harness agent directory OpenRig launches omp with (`~/.openrig/state/omp/<session>/agent/` per `072996ad`), not only `rig/agents/<seat>/`. **Which of the two omp actually reads is the first thing the client item measures**, and the check in section 6 proves it. The test is `omp skill list --json`, which reports each loaded skill's `filePath` and `source`.
+"The `config.yml` the running runtime reads" is the harness agent directory 4genteam launches omp with (`~/.config/4genthub/state/omp/<session>/agent/` per `072996ad`), not only `rig/agents/<seat>/`. **Which of the two omp actually reads is the first thing the client item measures**, and the check in section 6 proves it. The test is `omp skill list --json`, which reports each loaded skill's `filePath` and `source`.
 
-The architect measured it in an empty directory: it listed `openrig-skills`, `refocusing` and `rigs` from `~/.agents/skills` (`source: agents:user`). A seat started today gets those three skills.
+The architect measured it in an empty directory: it listed `client-skills`, `refocusing` and `rigs` from `~/.agents/skills` (`source: agents:user`). A seat started today gets those three skills.
 
 **claude-code seats** (the architect):
 - `--setting-sources project,local`
@@ -107,7 +107,7 @@ The client builds `skills-plugin`: `.claude-plugin/plugin.json` with `{"name":"s
 
 Measured by the architect on 2026-10-11 with claude 2.1.296, in an empty directory with no tools:
 
-| | user skills, e.g. `openrig-skills`, `refocusing`, `rigs` | user-installed plugins (`design`, `typesafe`, ...) | the scratch plugin's skill, as `seatskills:probe-skill` | the runtime's bundled skills (`verify`, `debug`, ...) and `builtin` plugins |
+| | user skills, e.g. `client-skills`, `refocusing`, `rigs` | user-installed plugins (`design`, `typesafe`, ...) | the scratch plugin's skill, as `seatskills:probe-skill` | the runtime's bundled skills (`verify`, `debug`, ...) and `builtin` plugins |
 |---|---|---|---|---|
 | `--setting-sources user,project,local` | loaded | loaded | loaded | loaded |
 | `--setting-sources project,local` | absent | absent | loaded | loaded |
@@ -132,7 +132,7 @@ Either one alone is enough. No Claude Code setting that turns off project skills
 
 **F2 already names this case:** a project skill is loaded un-prefixed. Run in the main checkout today, the check fails with `F1` and `F2` (13 skills).
 
-The architect's agent directory also still holds four skills that the client tree does not resolve (`agent-starters`, `openrig-architect`, `plan-review`, `topology-mutation-and-seat-management`). These are cloud-snapshot leftovers, and section 2's `sync rig` drops them.
+The architect's agent directory also still holds four skills that the client tree does not resolve (`agent-starters`, `client-architect`, `plan-review`, `topology-mutation-and-seat-management`). These are cloud-snapshot leftovers, and section 2's `sync rig` drops them.
 
 ## 6. The one check, run by `up` after every seat launch, exit 3 on failure
 
@@ -169,7 +169,7 @@ The architect's absence from the rig is the same staleness.
 |---|---|
 | a fixture tree with a skill in `share/` and in `rooms/r/` under the same name | `sync rig` refuses it as a duplicate (section 1) |
 | a snapshot holding a skill the tree does not resolve | `sync rig` removes it from `skills/` and `agent.yaml`, and names it |
-| a fake `omp` whose `skill list` adds `openrig-skills` from `~/.agents` | `F2` |
+| a fake `omp` whose `skill list` adds `client-skills` from `~/.agents` | `F2` |
 | a fake `omp` missing `seat-worktree` | `F3` |
 | a fake `omp` listing `seat-worktree` from `.agents/skills` | `F4` |
 | a delivered copy edited after delivery | `F5` |
