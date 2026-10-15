@@ -26,6 +26,9 @@ Run the script tests with the canonical command, always with `--noconftest`, fro
 ### Work first, docs when the task is done
 **The work is build, improve, fix.** A seat spends its turns on that, not on prose about it. To share an idea, a finding, a ruling or a status, talk through the queue (`4genteam room queue create`); a doc is not the place for it. `CHANGELOG/` and `TEST-CHANGELOG.md` are written once, when the task is done, in the same commit as the code, and only when the change needs them: a plan, a finding, a ruling, a status and a re-measured number are not changes. Do not open a sweep or a reconcile task on docs unless the owner asks for one. A doc line that is wrong is corrected when you next change the code it describes.
 
+### Think and reply in short pointers
+**The owner's rule of 2026-10-15, read beside the work-first rule above.** Think in short pointers: a few terse lines naming the next step, the fact you rely on, the risk — no full reasoning, no restatement of the task, no alternative you will not take. A reply and a queue row give the result first, then at most five short lines: paths and ids, not paragraphs. Do not paste large tool output or a whole file into a thought or a row; quote only the lines that matter. Keep within your thinking level.
+
 ### Writing documentation
 **A doc names no commit hash, no count, no line number and no measured-on-date note; it points to the code or the command that gives the answer.** One page per topic, updated in place, with no per-change entries. `CHANGELOG/` carries only what a user or operator would notice, and an entry there must record a change. A claim that needs a number states the command that prints it. Stop commits whose only purpose is to re-measure a number in a doc: delete the number instead. This page is one of the texts `guides.lock.json` pins, so a change here is re-recorded in that lock, in the same commit, or the lock's own tests go red.
 
