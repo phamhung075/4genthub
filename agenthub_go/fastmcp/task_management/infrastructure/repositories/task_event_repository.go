@@ -54,24 +54,32 @@ func (r *TaskEventRepository) Append(ctx context.Context, in entities.AppendTask
 // database assigned. This is what makes "the status and its entry commit together or not at all" a
 // property: the entry joins the caller's transaction, so a failure on either side rolls both back.
 //
-// THE SEQUENCES ARE THE WHOLE POINT, so they are assigned inside that transaction, which first
-// takes a per-USER advisory lock. Two concurrent appends for one user therefore serialize: the
-// second reads the first's committed MAX and takes the next number, so both sequences are gapless
-// and cannot repeat. The lock is keyed on the user rather than the task because the ledger now
-// carries TWO cursors - the task's `seq` and the user's `user_seq` - and a per-task lock would let
-// two appends for one user on DIFFERENT tasks take the same `user_seq`, which is the one thing the
-// cross-task cursor cannot survive. Appends for different users still never contend.
+// THE SEQUENCES ARE THE WHOLE POINT, so they are assigned inside that transaction, which takes the
+// ledger's locks in a FIXED ORDER: the per-USER lock first, then the per-TASK lock. Two concurrent
+// appends for one user therefore serialize, so `user_seq` is gapless; two concurrent appends for one
+// task serialize whatever user they write under, so `seq` is unique over the domain its constraint
+// states it over.
+//
+// WHY TWO LOCKS (2026-10-15). One lock keyed on the user was enough while every writer of a task
+// wrote under one user id. It is not enough now, and the measured counterexample is the reason:
+// the task-level context event was appended through a repository built with user_id "", so ONE task
+// carried two spellings of its caller's rows, and the per-user lock serialized writers that the
+// unique constraint - UNIQUE (task_id, seq) - does not distinguish. The first update of a freshly
+// created task then answered `duplicate key value violates unique constraint "uq_task_event_seq"`
+// (SQLSTATE 23505) on the deployed server and could never carry its own state again. The appender
+// now writes the caller's resolved id, and this lock closes the case the identity alone cannot: rows
+// already written under another id (the empty one included) still occupy their seq.
+//
+// WHY THIS ORDER AND NOT ANOTHER. Each append takes exactly one user lock and then exactly one task
+// lock, and no path takes them in the other order: a transaction that holds the task lock already
+// holds its user lock, so no two transactions can wait on each other. The order is the deadlock
+// argument, so it is stated in ONE place per lock (lockUserAppend, lockTaskAppend) and never
+// reversed.
 //
 // The unique constraints on (task_id, seq), (user_id, user_seq) and (user_id, client_event_id) are
-// the belt to that brace - if the lock were ever bypassed, a duplicate fails loudly rather than
+// the belt to that brace - if the locks were ever bypassed, a duplicate fails loudly rather than
 // overwriting an event. The vocabularies are CHECK constraints in the table's DDL, so a value
 // outside them is refused where the bytes land.
-//
-// WHY ONE LOCK AND NOT TWO: both sequences are read under the SAME key on purpose. A per-user lock
-// for user_seq beside a per-task lock for seq would hand every append two locks to take in an
-// order someone will eventually get wrong, and that failure mode is a deadlock rather than a
-// duplicate - much worse to find and much worse to run. One lock, keyed on the user, both
-// sequences: do not "improve" this into two.
 func (r *TaskEventRepository) AppendInTx(ctx context.Context, in entities.AppendTaskEvent) (*entities.TaskEvent, error) {
 	if !r.sessions.InTransaction(ctx) {
 		return nil, ErrNotInTransaction
@@ -99,8 +107,24 @@ func (r *TaskEventRepository) AppendInTx(ctx context.Context, in entities.Append
 	}
 	err := r.sessions.WithSession(ctx, func(ctx context.Context, s database.DBTX) error {
 		args := []any{r.userID, in.TaskID}
-		conds := `"user_id" = $1 AND "task_id" = $2`
+		// THE SEQ'S DOMAIN IS THE TASK, and the task is what its uniqueness is stated over:
+		// `uq_task_event_seq` is UNIQUE (task_id, seq). Computing it over a NARROWER domain - one
+		// user's rows for the task, which is what this read did - hands a second writer of the same
+		// task a number that is already taken. Measured on the deployed server 2026-10-15: the
+		// task-level context event (appended through a repository built with user_id "") and the
+		// task's own status event (appended under the caller) both computed seq 1 for one task, so
+		// the first update of a freshly created task answered
+		// `duplicate key value violates unique constraint "uq_task_event_seq"` (SQLSTATE 23505) and
+		// the task could never carry its own state again.
+		conds := `"task_id" = $2`
 		if err := lockUserAppend(ctx, s, r.userID); err != nil {
+			return err
+		}
+		// The second lock serializes the writers of ONE task's seq, whatever user they write under.
+		// The order - user, then task - is fixed here and nowhere reversed: the user lock is what
+		// keeps user_seq gapless, the task lock is what keeps seq unique, and a fixed order is what
+		// makes two appends unable to wait on each other.
+		if err := lockTaskAppend(ctx, s, in.TaskID); err != nil {
 			return err
 		}
 		// user_seq is read in its own statement, still under the lock: the LOCK is what makes MAX+1
@@ -364,6 +388,21 @@ func (r *TaskEventRepository) LockUser(ctx context.Context) error {
 // the expression would serialize against nothing.
 func lockUserAppend(ctx context.Context, s database.DBTX, userID string) error {
 	_, err := s.ExecContext(ctx, `SELECT pg_advisory_xact_lock(hashtext($1))`, userID)
+	return err
+}
+
+// taskSeqLockNamespace is the fixed first key of the task lock, and it exists to keep the two
+// advisory-lock keyspaces apart: the user lock is the single-argument form (one int4 key), the task
+// lock is the two-argument form (int4, int4). Without a fixed first key the task lock would live in
+// the same single-key space as the user lock, and a task whose id hashed to a user's hash would
+// serialize against that user for no reason.
+const taskSeqLockNamespace = "task_events.seq"
+
+// lockTaskAppend is the ONE spelling of the ledger's per-task append lock. It is what makes the
+// computed seq unique over the domain the constraint states it over: two writers of one task, under
+// whatever user ids, cannot read one MAX and both write it.
+func lockTaskAppend(ctx context.Context, s database.DBTX, taskID string) error {
+	_, err := s.ExecContext(ctx, `SELECT pg_advisory_xact_lock(hashtext($1), hashtext($2))`, taskSeqLockNamespace, taskID)
 	return err
 }
 

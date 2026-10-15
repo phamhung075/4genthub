@@ -5,6 +5,7 @@ import (
 	"crypto/sha1"
 	"encoding/hex"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -460,7 +461,15 @@ func (s *UnifiedContextService) UpdateContext(ctx context.Context, level, contex
 				ver = v
 			}
 		}
-		_, _ = s.EventAppender.Append(ctx, entities.AppendTaskEvent{
+		// A FAILED APPEND IS LOGGED, NOT DROPPED, and it is not returned: the context row write above
+		// has already landed, so failing here would report a saved context as a refusal, and the
+		// caller's best-effort contract (parity with the ported Python, which logs and continues) is
+		// what the surrounding code keeps. What it may not do is vanish: the ledger's other writer is
+		// this same task's own status event under the same user id, and an event that silently did
+		// not land is a history the reader cannot tell apart from one that never happened - which is
+		// exactly how the 23505 of 2026-10-15 stayed hidden on the tasks whose status rows were
+		// already there (the loser of the collision was this append, and nothing said so).
+		if _, err := s.EventAppender.Append(ctx, entities.AppendTaskEvent{
 			TaskID:    contextID,
 			Kind:      entities.TaskEventKindContextUpdated,
 			ActorKind: entities.TaskEventActorSeat,
@@ -470,7 +479,9 @@ func (s *UnifiedContextService) UpdateContext(ctx context.Context, level, contex
 				"id":      contextID,
 				"version": ver,
 			},
-		})
+		}); err != nil {
+			log.Printf("task context event NOT recorded for task %s (level %s): %v", contextID, level, err)
+		}
 	}
 
 	resp := entities.NewOrderedMap[any]()

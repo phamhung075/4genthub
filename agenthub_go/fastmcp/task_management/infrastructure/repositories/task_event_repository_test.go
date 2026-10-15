@@ -377,3 +377,63 @@ func TestNextProgressNumberInTxIsReadInsideTheCallersTransaction(t *testing.T) {
 		t.Fatalf("numbers = %v, want {8, 9}: each writer continues the task's ONE sequence", numbers)
 	}
 }
+
+// TestTaskEventAppendTakesTheNextTaskSeqAcrossTwoWriterIdentities is the regression for the
+// 2026-10-15 defect: `manage_task(action=update)` answered
+// `duplicate key value violates unique constraint "uq_task_event_seq"` (SQLSTATE 23505)
+// deterministically on a freshly created task, and get showed the row unchanged because the whole
+// update transaction rolled back.
+//
+// WHAT IT PINS. The task-level context event was appended through a repository built with user_id ""
+// while the task's own status event was appended under the caller, so ONE task carried two spellings of
+// its writer's rows. The seq is unique over (task_id, seq) - the TASK, not (user, task) - so computing
+// it over the narrower domain handed the second writer a number already taken. Here the two identities
+// are two users, which is what a second identity IS; the first append is the context event's position,
+// the second is the task's own, and it must take the NEXT number rather than collide.
+func TestTaskEventAppendTakesTheNextTaskSeqAcrossTwoWriterIdentities(t *testing.T) {
+	sessions := newTestRepoEnv(t)
+	ctx := context.Background()
+	branchID := taskRepoTestBranch(t, sessions, taskRepoTestUserA)
+	repo := taskRepoTestNewRepo(t, sessions, taskRepoTestUserA, branchID, false)
+	firstWriter := NewTaskEventRepository(sessions, taskRepoTestUserB, branchID)
+	secondWriter := NewTaskEventRepository(sessions, taskRepoTestUserA, branchID)
+
+	task, err := repo.CreateTask(ctx, "Two writer identities, one task", "D", "high", []string{"agent-x"}, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	taskID := task.ID.Value
+
+	first, err := firstWriter.Append(ctx, entities.AppendTaskEvent{
+		TaskID:    taskID,
+		Kind:      entities.TaskEventKindContextUpdated,
+		ActorKind: entities.TaskEventActorSeat,
+		ActorID:   "context",
+	})
+	if err != nil {
+		t.Fatalf("the first writer: %v", err)
+	}
+	second, err := secondWriter.Append(ctx, entities.AppendTaskEvent{
+		TaskID:    taskID,
+		Kind:      entities.TaskEventKindStatusChanged,
+		ActorKind: entities.TaskEventActorHuman,
+		ActorID:   "test",
+	})
+	if err != nil {
+		t.Fatalf("the second writer must take the task's next seq, not collide: %v", err)
+	}
+	if second.Seq != first.Seq+1 {
+		t.Fatalf("seq = %d after %d, want the next number: the seq is the TASK's", second.Seq, first.Seq)
+	}
+
+	// The reader is scoped to its own user, so this one assertion covers two properties: the caller
+	// sees the entry it just wrote, and it does NOT see the other identity's - which is why a row
+	// written under a different spelling of the same caller is a row the caller's history loses.
+	own, err := secondWriter.ListAfter(ctx, taskID, 0, 100)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(own) != 1 || own[0].Seq != second.Seq {
+		t.Fatalf("the caller's own ledger read must hold exactly its entry at seq %d, got %#v", second.Seq, own)
+	}
+}

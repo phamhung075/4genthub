@@ -25,8 +25,8 @@ import (
 type App struct {
 	Sessions *database.SessionManager
 
-	projects routes.ProjectController
-	branches routes.BranchController
+	projects     routes.ProjectController
+	branches     routes.BranchController
 	tasks        routes.UserTaskController
 	subtasks     routes.SubtaskController
 	mcpTools     *interfacelayer.DDDCompliantMCPTools
@@ -40,7 +40,10 @@ func NewApp(ctx context.Context, sessions *database.SessionManager) (*App, error
 	factories.UnifiedContextRepositoryBuilder = unifiedContextRepositories
 	factories.UnifiedContextEntityLookup = contextEntityLookup{sessions}
 	if sessions != nil {
-		factories.UnifiedContextEventAppender = infrarepos.NewTaskEventRepository(sessions, "", "")
+		// ONE appender value, but its user_id is resolved per APPEND: see
+		// context_ledger_appender.go for why a value stamped once with an empty id cost a task its
+		// own updates (23505 on uq_task_event_seq, 2026-10-15).
+		factories.UnifiedContextEventAppender = contextLedgerAppender{sessions: sessions}
 	}
 	services.SetRepositoryProviderBackend(func() services.RepositoryProviderBackend { return repoBackend{sessions} })
 	facades.TokenFacadeRepositoryBackend = func(any) (repositories.ITokenRepository, error) {
