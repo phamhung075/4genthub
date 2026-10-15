@@ -2,6 +2,12 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-15 - Seat env and MCP config, watch rule
+
+- ADDED in the client repo: `a_seats_env_carries_the_state_roots_env_file` and `the_seat_mcp_config_names_variables_and_no_secret` (`rust/agenthub-runtime/src/supervisor/mod.rs`): the state root's `.env` reaches the seat, the spec wins over the file and the runtime over both, and the seat's `mcp.json` holds variable names only.
+- ADDED `TestRuleWeightJoiningAndFailure` and `TestRuleCarriesTheClockAndMeter` (`internal/clientwatch/view_test.go`): the rule weights, the joined call, the red rule after a failure, and the clock and meter on the rule in a one-seat pane.
+- MEASURED: client `go vet ./... && go test ./...` and `cargo test --offline` (92 passed).
+
 ## 2026-10-14 - Jev moves to the client
 
 - REMOVED the server-side Jev tests with the code they covered: `room_decision_ladder_test.go`, `httpapp/room_decisions_ladder_test.go`, `validation_gate_service_test.go`, `complete_task_validation_gate_test.go`, `typesafe_jev_client_test.go`, and `TestRoomDecisionServiceEvaluatorAutoSelectAndPending` with its fake evaluator in `room_decision_service_test.go`.

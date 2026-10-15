@@ -101,3 +101,9 @@ These are pointers; never copy their content into this file.
   `agenthub_http` entry there (a stdio `mcp-proxy` to `localhost:8000`) overrode the `.mcp.json` entry and failed
   with `MCP subprocess closed stdout before responding`; with the entry removed the same fresh `omp` mounts the
   nine tools. Report a missing mount to the lead rather than working around it silently.
+- **How a seat gets the server (2026-10-15).** The client runtime starts every seat with
+  `~/.config/4genthub/.env` in its environment (the seat spec's `env` wins over the file; the runtime's
+  `AGENTHUB_*` keys win over both) and writes `<seat dir>/mcp.json` naming `${AGENTHUB_URL}/mcp` and
+  `Bearer ${AGENTHUB_TOKEN}`. A running seat never re-reads either: after a change run
+  `4genteam room reseat <rig> <seat>`. Verified: a reseated `go-dev` listed the nine tools and `manage_project`
+  `list` returned the projects. Never read or print the token; check presence only.
