@@ -7,6 +7,7 @@ Track test suite changes, fixes, and improvements for agenthub.
 - ADDED `agenthub-frontend/src/tests/hooks/test_useRealtimeSync_rigSafeguard.test.tsx`: six cases over the exact frame `routes.BroadcastDataChange` shapes for 7.3's producers - the row with its counters lands in the inbox and toasts once; the dead-man frame (no `state`) reads as unreachable; a replayed frame stays one row and one toast; a second alert about the same row is a second row, which is the `metadata.entity_id` trap (the row key repeats); a frame naming no safeguard is dropped with a warning; and the rendered `NotificationBell` shows the line and the unread badge.
 - ADDED is RED before the change, measured with a throwaway probe on the pre-change tree: the frame left the store empty with only `debug('[useRealtimeSync] Unknown entity type:', 'rig_safeguard')`, while the control (entity `notification`) landed - so the empty inbox was the missing case and not the harness.
 - MEASURED in the fe worktree: `npx vitest run src/tests/hooks` -> 17 files, 135 tests passed (129 before, 6 added); `npx tsc --noEmit` clean.
+- MEASURED, whole suite: `npx vitest run` -> 123 files, 1 failed | 122 passed (1899 tests). The one failure is `src/tests/pages/HelpSetup.test.tsx:21` (`getMultipleElementsFoundError`) and it is PRE-EXISTING, reproduced identically in the shared checkout at main without this branch; it is reported to the lead as its own row.
 
 ## 2026-10-15 - the help page shows the connector command twice on purpose
 
