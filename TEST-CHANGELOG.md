@@ -2,6 +2,14 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-15 - the client pin carries the reseat announcements and the dead-publisher correction
+
+- `agenthub_client/internal/clientseat/quiet_test.go`: added `TestWaitUntilQuietNamesTheWordOnItsFirstReading` and `TestWaitUntilQuietNamesAnUnreadableActivityOnItsFirstReading` — a wait that meets an unrecognized activity word, or no readable activity at all, says so on the FIRST reading and once per reason, instead of staying silent until its deadline.
+- `agenthub_client/internal/clientseat/reseat_test.go`: added `TestReseatSaysWhatItWaitsForAndThatItRestarts` and `TestReseatNamesTheBudgetASeatMissedWithADuration` — the verb prints its wait with the budget before waiting and the restart before the blocking call, and the give-up line names the seat and the budget as a duration rather than a truncated minute count.
+- `agenthub_client/rust/agenthub-runtime/src/supervisor/mod.rs`: added five unit tests — `a_seat_state_document_names_the_process_that_published_it`, `an_observed_death_names_the_claim_whose_publisher_is_gone`, `an_observed_death_is_silent_when_nothing_contradicts_the_claim` (its six silent cases: a live publisher, a pane that is gone, a seat that has not published readiness, a word that is not a claim of life, an unreadable document, and no publisher pid), `the_observed_death_reaches_the_seat_state_file_and_stays_there`, and `process_liveness_separates_a_live_pid_from_one_that_cannot_exist` — plus one end-to-end `the_status_corrects_a_claim_whose_publisher_is_gone`, which drives a real tmux pane and a room spec on disk with a state document whose publisher pid cannot exist and requires both `Dead` and `agent_exited` in the file.
+- `agenthub_client/rust/agenthub-runtime/src/runner/mod.rs`: no test file changed for it; the writer now stamps the publishing process's pid into the seat state document, which the supervisor tests above read back.
+- At this change: `go test -count=1 ./...` = 30 packages ok, 0 FAIL; `cargo test` in `rust/agenthub-runtime` = 117 passed, 0 failed, 0 ignored.
+
 ## 2026-10-15 - the client pin carries the guard fix and the agy header model
 
 - `agenthub_client/internal/clientwatch/watch_test.go`: added `TestSeatModelOfFallsBackToTheRoomSpec` (an agy log names no model, so the seat's model is the room spec's).
