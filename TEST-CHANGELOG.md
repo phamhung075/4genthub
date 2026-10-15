@@ -2,6 +2,10 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-15 - the client pin carries the guard fix and the agy header model
+
+- `agenthub_client/internal/clientwatch/watch_test.go`: added `TestSeatModelOfFallsBackToTheRoomSpec` (an agy log names no model, so the seat's model is the room spec's).
+
 ## 2026-10-15 - the client pin carries the agy seat guard and the watch fix
 
 - `agenthub_client/internal/clientwatch/watch_test.go`: added `TestSeatLogFollowsTheAgyTranscriptOnceItIsNewer` (a seat with an omp log and a newer agy transcript resolves to the agy one, and back to omp when the omp log is newer).
