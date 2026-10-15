@@ -2,6 +2,12 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-15 - the connector token is its own credential
+
+- CHANGED `internal/clientlifecycle/{agent,offpeak_gate,lifecycle}_test.go` and `internal/clientsync/connectorverb_test.go` (`agenthub_client`) to set `AGENTHUB_CONNECTOR_TOKEN` where the code under test now reads it.
+- ADDED `TestMissingCloudEnvNamesTheConnectorTokenSeparately` in `internal/clientlifecycle/agent_test.go`.
+- MEASURED: `go test ./...` clean.
+
 ## 2026-10-15 - rigd is agent; --rig is --room
 
 - RENAMED `internal/clientlifecycle/rigd_test.go` and `internal/clientsync/rigd_test.go` to `agent_test.go` (`agenthub_client`), with `Rigd*`/`RigDaemon*` identifiers following the code.
