@@ -179,16 +179,9 @@ describe('TokenManagement', () => {
       });
     });
 
-    it('Full Access selects every scope except the connector scope (literal set)', async () => {
-      renderWithProviders(<TokenManagement />);
-
-      fireEvent.change(screen.getByPlaceholderText(/Production API/), { target: { value: 'Full Access Token' } });
-      fireEvent.click(screen.getByRole('button', { name: /Full Access/i }));
-      fireEvent.click(screen.getByRole('button', { name: /Generate API Token/i }));
-
-      // Literal, never derived from AVAILABLE_SCOPES: adding any scope must turn this red so the
-      // Full Access decision is deliberate. The connector scope is deliberately absent.
-      const FULL_ACCESS_SCOPES = [
+    // Literal, never derived from AVAILABLE_SCOPES: adding any scope must turn these red so the decision is
+    // deliberate. The connector scope is the only one that separates the two client tokens.
+      const CLIENT_MCP_SCOPES = [
         'openid', 'profile', 'email', 'offline_access', 'mcp-api', 'mcp-roles', 'mcp-profile',
         'projects:create', 'projects:read', 'projects:update', 'projects:delete',
         'tasks:create', 'tasks:read', 'tasks:update', 'tasks:delete',
@@ -198,9 +191,36 @@ describe('TokenManagement', () => {
         'mcp:execute', 'mcp:delegate',
       ];
 
+    const mintWith = async (button: RegExp, name: string) => {
+      renderWithProviders(<TokenManagement />);
+      fireEvent.change(screen.getByPlaceholderText(/Production API/), { target: { value: name } });
+      fireEvent.click(screen.getByRole('button', { name: button }));
+      fireEvent.click(screen.getByRole('button', { name: /Generate API Token/i }));
+    };
+
+    it('Full Access selects every scope, the connector scope included', async () => {
+      await mintWith(/^Full Access$/i, 'Full Access Token');
       await waitFor(() => {
         expect(mockTokenService.generateToken).toHaveBeenCalledWith(
-          expect.objectContaining({ scopes: FULL_ACCESS_SCOPES })
+          expect.objectContaining({ scopes: [...CLIENT_MCP_SCOPES, 'sessions:write'] })
+        );
+      });
+    });
+
+    it('Client MCP selects every scope except the connector scope', async () => {
+      await mintWith(/^Client MCP$/i, 'Client MCP');
+      await waitFor(() => {
+        expect(mockTokenService.generateToken).toHaveBeenCalledWith(
+          expect.objectContaining({ scopes: CLIENT_MCP_SCOPES })
+        );
+      });
+    });
+
+    it('Client connector selects only the connector scope', async () => {
+      await mintWith(/^Client connector$/i, 'Client connector');
+      await waitFor(() => {
+        expect(mockTokenService.generateToken).toHaveBeenCalledWith(
+          expect.objectContaining({ scopes: ['sessions:write'] })
         );
       });
     });
