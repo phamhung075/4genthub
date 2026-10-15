@@ -68,7 +68,7 @@ func TestSeatAdminPutModuleVersionRefusesUnrenderableContent(t *testing.T) {
 			mux := seatAdminTestMux(t, fake)
 			body := testModuleBody(t, c.kind, c.content)
 
-			rec := doTestRequest(t, mux, http.MethodPut, "/api/v2/openrig/modules/bad/versions/1.0.0", body)
+			rec := doTestRequest(t, mux, http.MethodPut, "/api/v2/modules/bad/versions/1.0.0", body)
 			if rec.Code != http.StatusBadRequest {
 				t.Fatalf("status = %d, want 400: %s", rec.Code, rec.Body.String())
 			}
@@ -101,7 +101,7 @@ func TestSeatAdminPutModuleVersionAcceptsRenderableContentPerKind(t *testing.T) 
 		"skill": "skill", "mcp-mod": "mcp", "tool-mod": "tool",
 	}
 	for slug, content := range cases {
-		rec := doTestRequest(t, mux, http.MethodPut, "/api/v2/openrig/modules/"+slug+"/versions/1.0.0",
+		rec := doTestRequest(t, mux, http.MethodPut, "/api/v2/modules/"+slug+"/versions/1.0.0",
 			testModuleBody(t, kinds[slug], content))
 		if rec.Code != http.StatusOK {
 			t.Errorf("%s (%s): status = %d, want 200: %s", slug, kinds[slug], rec.Code, rec.Body.String())
@@ -130,13 +130,13 @@ func TestSeatAdminPublishedModuleResolvesInASeat(t *testing.T) {
 	mux := seatAdminTestMux(t, fake)
 
 	const markdown = "# Good skill\n\nrendered from the module version\n"
-	rec := doTestRequest(t, mux, http.MethodPut, "/api/v2/openrig/modules/good-skill/versions/1.0.0",
+	rec := doTestRequest(t, mux, http.MethodPut, "/api/v2/modules/good-skill/versions/1.0.0",
 		testModuleBody(t, "skill", testSkillBlock(t, markdown)))
 	if rec.Code != http.StatusOK {
 		t.Fatalf("publish: %d %s", rec.Code, rec.Body.String())
 	}
 
-	rec = doTestRequest(t, mux, http.MethodPut, "/api/v2/openrig/rooms/dev/seats/alice/overlay",
+	rec = doTestRequest(t, mux, http.MethodPut, "/api/v2/rooms/dev/seats/alice/overlay",
 		`{"ops":[{"kind":"add","slug":"good-skill","version":"1.0.0"}]}`)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("overlay add: %d %s", rec.Code, rec.Body.String())

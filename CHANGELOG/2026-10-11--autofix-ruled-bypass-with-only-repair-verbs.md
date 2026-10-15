@@ -17,7 +17,7 @@
     - Secrets are kept out of the log by test.
     - Evidence is structured rows only.
   - Six named tests.
-- Section 7.9a records two inputs from the same row: arm a wake timer only when the blocker can clear inside the interval, and `--wake-after` reminders recur, which goes to the OpenRig friction report.
+- Section 7.9a records two inputs from the same row: arm a wake timer only when the blocker can clear inside the interval, and `--wake-after` reminders recur, which goes to the 4genteam friction report.
 
 ### Verified
 - `claude --help` (2.1.296), run by the architect: `--tools`, `--strict-mcp-config`, `--mcp-config` and `--permission-mode` exist, and `--restricted` "refuses bypassPermissions".

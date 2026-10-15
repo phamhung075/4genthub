@@ -421,7 +421,7 @@ func resolvePattern(expr ast.Expr, bases map[string]string) (string, bool) {
 	return "", false
 }
 
-// splitPattern turns `GET /api/v2/openrig/rooms/{room}` into its method, its path and its parameters.
+// splitPattern turns `GET /api/v2/rooms/{room}` into its method, its path and its parameters.
 // The method may be absent (a mux registers the handler for every method then), and the path is
 // reported as registered so the drift test can compare literals rather than reconstructions.
 func splitPattern(pattern string) (method, path string, params []string, err error) {

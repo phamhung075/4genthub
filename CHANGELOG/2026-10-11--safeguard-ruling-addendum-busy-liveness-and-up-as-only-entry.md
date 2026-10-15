@@ -5,13 +5,13 @@
 - **§7.7:**
   - Last activity is a heartbeat, or an `in_flight {op, since, deadline}` call the child declared. A declared call extends liveness only up to its deadline.
   - A seat's last activity is its last transcript write, or a tool call that is still open.
-  - OpenRig's queue-stuck-sweep and liveness oracle false positives go to the OpenRig owner as a friction report. No seat edits OpenRig code.
+  - the client's queue-stuck-sweep and liveness oracle false positives go to the 4genteam owner as a friction report. No seat edits 4genteam code.
 - **§7.8:**
   - One compiled list, `clientservices.Obligatory`. Its rows are `daemon`, `gate`, `seats`, `rigd`, `bridge`, `compact` and `watchdog`.
   - The duplicate daemon-start and restore paths each become a single row.
   - The start order has no cycle.
   - The gate's check is "readable": a peak refusal means the gate is working.
-  - The `continue` verb is deleted. The owner deletes the `~/.openrig/bin` scripts; no seat does.
+  - The `continue` verb is deleted. The owner deletes the `~/.config/4genthub/bin` scripts; no seat does.
   - One `Verify()` is shared by `up` and the read-only `doctor`, and both exit 3.
 
 ### Verified

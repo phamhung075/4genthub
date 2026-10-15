@@ -184,7 +184,7 @@ done
 # WHY THIS EXISTS: every check above asks whether a URL ANSWERS, and none asks WHICH BUILD is
 # answering. On 2026-10-10 that is how this script printed "Frontend deployment completed
 # successfully!" against a frontend built two days and 165 commits earlier - the composer work
-# missing and the deleted scripts/openrig_*.py names still on screen - while the deploy looked
+# missing and the deleted scripts/*.py names still on screen - while the deploy looked
 # green. A reachable page proves a server, not a deploy.
 print_status "Verifying the live frontend IS the build just made..."
 

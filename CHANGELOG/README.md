@@ -34,7 +34,7 @@ Newest 30 at the time of the split (2026-10-10):
 | 2026-10-10 | Release `0.0.29` — the deploy marker, because production already reports `0.0.28` | `2026-10-10--release-0-0-29-the-deploy-marker-because-production-already-reports-0-0-28.md` |
 | 2026-10-10 | The room's own note taught a company overlay that `team.json` leaves empty (row `2458e090` | `2026-10-10--the-room-s-own-note-taught-a-company-overlay-that-team-json-leaves-empty-row.md` |
 | 2026-10-10 | The G2 status paragraph contradicted its own AT HEAD block about which directory the probe | `2026-10-10--the-g2-status-paragraph-contradicted-its-own-at-head-block-about-which.md` |
-| 2026-10-10 | The last four `openrig_seat_sync.py` mentions in the Python client now name the module and | `2026-10-10--the-last-four-openrig-seat-sync-py-mentions-in-the-python-client-now-name-the.md` |
+| 2026-10-10 | The last four `seat_sync.py` mentions in the Python client now name the module and | `2026-10-10--the-last-four-client-seat-sync-py-mentions-in-the-python-client-now-name-the.md` |
 | 2026-10-10 | The runtime-switch playbook told the next kickoff to deny omp seats the MCP tools they now | `2026-10-10--the-runtime-switch-playbook-told-the-next-kickoff-to-deny-omp-seats-the-mcp.md` |
 | 2026-10-09 | The port-claim sweep: 135 claim lines and 65 false ones, and the gate's 59 is the two-word | `2026-10-09--the-port-claim-sweep-135-claim-lines-and-65-false-ones-and-the-gate-s-59-is-the.md` |
 | 2026-10-09 | The artefact gate now compares the served payload, and the stale-text hole is closed (row  | `2026-10-09--the-artefact-gate-now-compares-the-served-payload-and-the-stale-text-hole-is.md` |

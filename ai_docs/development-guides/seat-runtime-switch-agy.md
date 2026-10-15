@@ -1,6 +1,6 @@
 # Switching a seat's runtime (omp, claude-code, agy) with its context
 
-Owner request, 2026-10-15: run the `4genthub-min` team on `agy` with the same context as the running team. The predecessor OpenRig could do this for claude and codex; the native client cannot yet.
+Owner request, 2026-10-15: run the `4genthub-min` team on `agy` with the same context as the running team. The predecessor 4genteam could do this for claude and codex; the native client cannot yet.
 
 ## What exists (measured 2026-10-15)
 

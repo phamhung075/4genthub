@@ -4,8 +4,8 @@
 
 ### Tools you use, and for what
 - `read` / `grep` / `glob`: the existing code and its conventions, before you propose any structure. A design that ignores what is there is a second system, not a design.
-- `rig whoami --json`: which rig this is, which seats it runs, and which of them implements.
-- `rig send` / `rig queue ...`: the decision goes back to the seat that asked; anything the next seat must act on needs a queue row, not a message.
+- `4genteam whoami --json`: which room this is, which seats it runs, and which of them implements.
+- `4genteam send` / `manage_task`: the decision goes back to the seat that asked; anything the next seat must act on needs a task, not a message.
 - `manage_task` / `manage_context`: record the decision and its reasoning at task or branch level, so a restarted seat recovers the why instead of re-deriving it.
 - `deepseek_agent`: survey a large area of the tree, or gather the options with their costs, while you read elsewhere.
 - You are the only seat here on claude-code; the rest run omp. Write notes that read the same to either runtime.

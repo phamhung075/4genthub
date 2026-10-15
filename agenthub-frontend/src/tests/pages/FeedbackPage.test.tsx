@@ -75,7 +75,7 @@ describe('FeedbackPage', () => {
     await screen.findByRole('heading', { level: 2, name: 'Runtime' });
     expect(screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent)).toEqual([
       'Runtime',
-      'OpenRig',
+      'Client',
       'Cloud',
       'Seat context',
       'Workspace',
@@ -111,7 +111,7 @@ describe('FeedbackPage', () => {
     expect(within(workspace).queryByText('Nothing reported for this layer.')).not.toBeInTheDocument();
 
     // The other five headings stay, each with its own empty state.
-    for (const label of ['Runtime', 'OpenRig', 'Cloud', 'Seat context', 'Other']) {
+    for (const label of ['Runtime', 'Client', 'Cloud', 'Seat context', 'Other']) {
       const section = await sectionFor(label);
       expect(within(section).getByText('Nothing reported for this layer.')).toBeInTheDocument();
     }
@@ -178,10 +178,10 @@ describe('FeedbackPage', () => {
       success: true,
       total: 1,
       layers: [
-        group('openrig', [
+        group('client', [
           report({
             id: 'o1',
-            layer: 'openrig',
+            layer: 'client',
             text: 'the seat never came back after a restart',
             room: 'dev',
             seat: 'beta',
@@ -195,7 +195,7 @@ describe('FeedbackPage', () => {
 
     renderPage();
 
-    const section = await sectionFor('OpenRig');
+    const section = await sectionFor('Client');
     expect(within(section).getByText('2026-10-06T15:17:31Z')).toBeInTheDocument();
     expect(within(section).getByText('dev/beta')).toBeInTheDocument();
     expect(within(section).getByText('bridge-7')).toBeInTheDocument();

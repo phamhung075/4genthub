@@ -3,7 +3,7 @@
 ### Changed
 
 - `agenthub_client` gitlink: d84da76 -> a118585 (`feat/support-agy-watch` with `4genthub-min/u2-native-runner` merged). The client
-  keeps its state in `~/.config/4genthub`, has no OpenRig fallbacks and adds `4genteam decide`.
+  keeps its state in `~/.config/4genthub`, has no 4genteam fallbacks and adds `4genteam decide`.
 
 ### Added
 

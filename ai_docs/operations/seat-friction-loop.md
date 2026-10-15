@@ -10,7 +10,7 @@ things; the lead holds the context and is answerable that the team works correct
 
 The owner's set is mostly right in *intent* and wrong in *shape*: **the transport and the record already exist.**
 A friction-reporting channel ships end-to-end today (`submit_feedback` MCP + `4genteam feedback` → `POST
-/api/v2/openrig/feedback`, with a closed `layer` vocabulary the owner already reads grouped by layer —
+/api/v2/feedback`, with a closed `layer` vocabulary the owner already reads grouped by layer —
 `agenthub_client/internal/clientfeedback/feedback.go:40-62`, `ai_docs/api-integration/surface-inventory.md:339-350`).
 Upward routing already exists (queue-handoff `escalation`; comm-guard-skill `--intent escalation|report`). The record
 of a landed change already exists (changelog-updater). **What is genuinely missing is the middle:** what a friction
@@ -27,7 +27,7 @@ delivery; the loader resolves share → room → seat, never `client/`.
 
 The format (`agenthub_client/internal/clientskills/tree.go:1-12`): a directory that holds `SKILL.md` **is** a skill; a
 directory without one is a seat folder. A skill's id is its front-matter `name` (`name` and `description` required;
-`allowed-tools`, `license`, `metadata.openrig` optional). `sync rig ROOM` copies each resolved skill to
+`allowed-tools`, `license`, `metadataconfig/4genthub` optional). `sync rig ROOM` copies each resolved skill to
 `<agentDir>/skills/<id>/` and declares it in `agent.yaml` (`resources.skills`, profile `uses.skills`); an omp seat then
 gets a second copy into its harness agent dir (`internal/clientseat/skills.go`).
 
@@ -49,8 +49,8 @@ the seat-level ones become a room-level copy per room, or are promoted to `share
 
 ## 2. The dedupe — every proposed skill, ruled
 
-Evidence: the 13 skills read in full (delivered tree `/home/daihu/.openrig/state/omp/4genthub-min-architect@4genthub-min/agent/skills/`,
-`~/.claude/skills/` for `refocusing`/`openrig-skills`, and the client source `agenthub_client/skills/`), plus the
+Evidence: the 13 skills read in full (delivered tree `/home/daihu/.config/4genthub/state/omp/4genthub-min-architect@4genthub-min/agent/skills/`,
+`~/.claude/skills/` for `refocusing`/`client-skills`, and the client source `agenthub_client/skills/`), plus the
 existing feedback channel and the oversight governance loops.
 
 ### 2.1 `share/friction-report` — **EXTEND the existing channel** (not a new channel)
@@ -58,7 +58,7 @@ existing feedback channel and the oversight governance loops.
 **Collision (name it):** the friction channel already exists — CLIENT `internal/clientfeedback/feedback.go` (the ONE
 writer; `:1-7` "ONE WRITER CONTRACT WITH THE MCP TOOL … the same five fields"; `:57-62` `4genteam feedback --layer
 <layer> --text <text> [--room R] [--seat S] [--session X]`; "The owner reads the reports grouped by layer"). Its
-`layer` vocabulary is closed: `runtime | openrig | cloud | seat-context | workspace | other`
+`layer` vocabulary is closed: `runtime | client | cloud | seat-context | workspace | other`
 (`ai_docs/api-integration/surface-inventory.md:339-350`). The **transport rules** are owned by `comm-guard-skill`
 (`--intent <task|escalation|report|question|notice>`); the **durable-item vocabulary** by `queue-handoff`.
 
@@ -70,7 +70,7 @@ writer; `:1-7` "ONE WRITER CONTRACT WITH THE MCP TOOL … the same five fields";
 - The owner's "**plus a board item tagged `friction`**" is the genuinely new half: a queue row / board item tagged
   `friction` carrying the same text, so the item is *trackable* where work is tracked while the report itself is
   *read* by the owner in the channel. Keep them one report with two views, never two reports.
-- The `layer` values are reused as-is; the owner's `tool` tag maps onto `runtime`/`openrig`/`cloud` — do not add a
+- The `layer` values are reused as-is; the owner's `tool` tag maps onto `runtime`/`client`/`cloud` — do not add a
   parallel vocabulary.
 
 ### 2.2 `share/self-check-while-working` — **MERGE INTO the existing checks** (thin checklist, no restatement)
@@ -101,7 +101,7 @@ item, never a chat line. A minimum room has no oversight pod; on this room the l
 ### 2.4 `lead/architect-ecosystem-review` — **NEW**
 
 No existing skill defines a recurring lead+architect review over the friction board, stuck queue rows and cost rows
-producing one ranked improvement list. **Reconcile:** its inputs are existing surfaces (`rig parked`, `rig queue`
+producing one ranked improvement list. **Reconcile:** its inputs are existing surfaces (`rig parked`, `the task queue`
 stuck rows, the board, the feedback channel grouped by `layer`, the cost rows); its output is a ranked list, which is
 new. Keep the cadence decision in §8 — not a fixed daily in the skill text.
 
@@ -143,7 +143,7 @@ it does not happen.
 | 6 | `lead/autonomy-charter` | **NEW, owner-gated** | cites the push/changelog/worktree rules; does not restate them |
 | 7 | `reviewer/improvement-review` | **NEW** | reviewer verdict path (`seat-worktree`); `development-team`'s no-manufactured-obligations |
 
-**Also touched (must not be bypassed):** `openrig-skills` is the shipped index — any new skill is registered there
+**Also touched (must not be bypassed):** `client-skills` is the shipped index — any new skill is registered there
 (EXTEND, not a parallel index); `token-economy` shapes the report text; `changelog-updater` records the landed change.
 
 ## 3. Routing: report → triage → fix → close (reuse, don't invent)
@@ -234,8 +234,8 @@ No skill text, no code, no new route, no board task. Design only — acceptance 
 - `rooms/` (the room- and seat-level location): an **empty placeholder today** — `rooms/<room>/` and
   `rooms/<room>/<seat>/` are the documented layout (`agenthub_client/internal/clientskills/tree.go:1-12`) with no
   content. The set in §1 would be its first occupants.
-- Delivered but not yet client-owned (cloud snapshot / OpenRig vendored), among the 18 skills in the architect's
-  delivered tree: comm-guard-skill, queue-handoff, plan-review, refocusing, openrig-skills, plus four cloud leftovers
+- Delivered but not yet client-owned (cloud snapshot / 4genteam vendored), among the 18 skills in the architect's
+  delivered tree: comm-guard-skill, queue-handoff, plan-review, refocusing, client-skills, plus four cloud leftovers
   `sync rig` should drop. The seat-skills ruling §1 plans to fold comm-guard-skill and queue-handoff into `share/`;
   that copy has not landed (no `agenthub_client/skills` source exists for them).
 
@@ -245,4 +245,4 @@ No skill text, no code, no new route, no board task. Design only — acceptance 
 - Existing friction channel: `agenthub_client/internal/clientfeedback/feedback.go`;
   `ai_docs/api-integration/surface-inventory.md` §1.21.
 - Handoff vocabulary: skill `queue-handoff`. Transport policy: skill `comm-guard-skill`.
-- Oversight loops: OpenRig `pods/oversight-team`, `core/human-in-the-loop`.
+- Oversight loops: 4genteam `pods/oversight-team`, `core/human-in-the-loop`.

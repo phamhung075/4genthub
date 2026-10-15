@@ -23,6 +23,6 @@
 ### Verified
 
 - Read-only: sqlite reads over `queue_items` (destination, `human_intent`, `last_nudge_result`) and the `events`
-  table; a read-only search over `/home/daihu/.openrig/transcripts/4genthub-min/`; the gate file itself. No test,
+  table; a read-only search over `/home/daihu/.config/4genthub/transcripts/4genthub-min/`; the gate file itself. No test,
   build or formatter was run, because no code changed. Both claims trace to the lead's 10:21Z brief, which is now
   cited as their source rather than quoted as measurement.

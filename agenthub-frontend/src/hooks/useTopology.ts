@@ -2,7 +2,7 @@
  * Topology Hooks - the whole workspace as rooms, seats and edges in one query.
  *
  * F6 reads the existing routes and folds them into one shape: rooms
- * (`GET /api/v2/openrig/rooms`), seats per room (`/rooms/{room}/seats`) and
+ * (`GET /api/v2/rooms`), seats per room (`/rooms/{room}/seats`) and
  * links per seat (`/rooms/{room}/seats/{seat}/links`, which returns the links
  * FROM that seat, so one call per seat covers every cloud edge). It is one React
  * Query key so the realtime seat handler can invalidate the whole view with a
@@ -10,7 +10,7 @@
  *
  * A room's edges come from EXACTLY ONE of two sources, never both and never blended:
  *   - the cloud's seat links, when the room has any; otherwise
- *   - the online machine report (`GET /api/v2/openrig/machines`, the `edges` array the
+ *   - the online machine report (`GET /api/v2/machines`, the `edges` array the
  *     per-PC bridge sends), because the cloud refuses allow=true links on omp seats, so a
  *     running rig's real edges only exist in that report.
  * `edgeSource` records which one was used, so the page can say it rather than imply it.

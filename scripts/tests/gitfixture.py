@@ -101,7 +101,7 @@ def environment(**overrides: str) -> dict[str, str]:
     """The caller's environment minus every variable that can relocate a repository.
 
     `overrides` are applied afterwards, so a fixture can still add what it needs (`PRE_COMMIT_HOME`,
-    `OPENRIG_SESSION`, a `PATH` prefix, `CI`) without re-introducing a relocation.
+    `AGENTHUB_SESSION_NAME`, a `PATH` prefix, `CI`) without re-introducing a relocation.
     """
     env = {key: value for key, value in os.environ.items() if not relocates(key)}
     env.update(overrides)

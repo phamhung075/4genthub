@@ -3,7 +3,7 @@
 ### Added
 - `ai_docs/operations/seat-friction-loop.md`: the dedupe of the owner's 7-skill friction loop against the 16 skills
   on disk. Verdicts: `share/friction-report` **EXTEND** — the friction channel already ships end-to-end
-  (`submit_feedback` MCP + `4genteam feedback` -> `POST /api/v2/openrig/feedback`, closed `layer` vocabulary, owner
+  (`submit_feedback` MCP + `4genteam feedback` -> `POST /api/v2/feedback`, closed `layer` vocabulary, owner
   reads by layer; `internal/clientfeedback/feedback.go`); `share/self-check-while-working` **MERGE** — worktree,
   branch, changelog, tests and skills each already have an owner, including the `F1`-`F5` launch check (specified,
   not yet landed); `lead/friction-triage`, `lead/architect-ecosystem-review`, `architect/system-improvement-analysis`,

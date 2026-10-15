@@ -11,7 +11,7 @@ tree and each with the commit that landed it:
 - `POST /api/v2/ledger/intents` — `ledger_mount.go:52`, from `f285bdf6`
 - `POST /api/v2/tasks/{id}/evidence` — `task_routes.go:121`, from `5ab853d1`
 
-The fourth recent move, `PUT /api/v2/openrig/rooms/{room}/seats/{seat}/pin` (`42de79c2`), was already
+The fourth recent move, `PUT /api/v2/rooms/{room}/seats/{seat}/pin` (`42de79c2`), was already
 recorded by the document's own pass-7 narrative; the anchored figure simply never followed it.
 
 - `ai_docs/api-integration/surface-inventory.md`: the anchored Reproduce line now reads **148**

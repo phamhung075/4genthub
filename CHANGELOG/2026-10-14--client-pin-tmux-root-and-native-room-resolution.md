@@ -6,7 +6,7 @@
   - `520b479`: `feed`, `watch`, `grid` and the input check resolve native rooms (`<state>/rooms/<room>/seats/<seat>`); seat naming comes from the runtime's `SeatSessionName`.
 
 ### Impact
-`4genteam ps/feed/watch` see rooms started by `agenthub-runtime` from a plain shell, with no OpenRig on the machine.
+`4genteam ps/feed/watch` see rooms started by `agenthub-runtime` from a plain shell, with no 4genteam on the machine.
 
 ### Testing
 Client: `go build`, `go vet`, `go test ./...` green at `520b479`. Parent: `cd agenthub_go && go build ./... && go test ./...`.

@@ -2,7 +2,7 @@
 // may carry: 1-4 questions, each with 2-4 options the human can click.
 //
 // THE LIMITS ARE THE DAEMON'S, PORTED RATHER THAN RE-INVENTED. The authority is
-// packages/daemon/src/domain/human-questions.ts in the OpenRig repository: parseHumanQuestions
+// the reference implementation's human-questions module: parseHumanQuestions
 // there is what a local queue row is validated against before a decision is ever authored, and a
 // cloud that accepted a wider shape would store an ask the daemon refuses to author - or, worse,
 // accept one the daemon cannot apply. The constants below carry the daemon's values and the daemon's

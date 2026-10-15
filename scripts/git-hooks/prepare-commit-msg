@@ -12,8 +12,8 @@
 # `Claude-Session:`, which marks a RUNTIME and not a seat - so a seat field has to be written by a
 # hook rather than inherited from git or from the runtime.
 #
-# THE VALUE IS THE ADDRESS, NOT MERELY A UNIQUE STRING. OPENRIG_SESSION_NAME exports the seat's
-# `rig send` address - for example 4genthub-min-architect@4genthub-min - so a reader who finds this
+# THE VALUE IS THE ADDRESS, NOT MERELY A UNIQUE STRING. AGENTHUB_SESSION_NAME exports the seat's
+# `4genteam send` address - for example 4genthub-min-architect@4genthub-min - so a reader who finds this
 # trailer can MESSAGE THE SEAT DIRECTLY. That reach-back is the property no other instrument had.
 # (web-dev's six hand-written `Seat: 4genthub-min.web-dev` trailers are the precedent for the FIELD
 # name and place, and not for the value: that form is the logical id, which cannot be messaged.)
@@ -25,7 +25,7 @@
 # checks that the lines are yours before you commit; the trailer records who committed them.
 #
 # AND THE ABSENCE MEANS SOMETHING ONLY ONCE THIS IS LIVE. The owner commits from the host, where
-# OPENRIG_SESSION_NAME is unset, so the hook writes no trailer there - so an absent `Seat:` trailer
+# AGENTHUB_SESSION_NAME is unset, so the hook writes no trailer there - so an absent `Seat:` trailer
 # means "not a seat". BUT THAT INFERENCE IS VALID ONLY AFTER THE HOOK IS INSTALLED: before it, seat
 # commits carry no trailer either (go-dev's own did not), so an absence must be compared against the
 # install commit before it is read as an answer.
@@ -49,11 +49,11 @@ fi
 
 # No seat identity in the environment: this is not a seat's commit (the owner commits from the host).
 # Add nothing and never refuse the commit - an unset variable is a fact, not an error.
-if [ -z "${OPENRIG_SESSION_NAME:-}" ]; then
+if [ -z "${AGENTHUB_SESSION_NAME:-}" ]; then
     exit 0
 fi
 
 # --if-exists doNothing leaves a hand-written trailer alone, so a seat that already wrote one by hand
 # gets no second line, and an amend cannot accumulate a third.
 git interpret-trailers --in-place --if-exists doNothing \
-    --trailer "Seat: $OPENRIG_SESSION_NAME" "$1"
+    --trailer "Seat: $AGENTHUB_SESSION_NAME" "$1"

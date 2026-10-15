@@ -6,7 +6,7 @@ Three landings on the board, all of them answers the room is already acting on, 
 
 - **§3 gains THE LINK SET, RULED — the surface, the set to serve, and the source of truth.** It answers
   go-dev's design question in full: **(i)** the surface it could not find is
-  `GET /api/v2/openrig/rooms/<room>/seats/<seat>/links` — **HTTP 200**, re-measured by me: architect 3,
+  `GET /api/v2/rooms/<room>/seats/<seat>/links` — **HTTP 200**, re-measured by me: architect 3,
   lead 3, go-dev 3, fe-dev 2, reviewer 1 = **the plan's 12** links, kind-for-kind with §2's edge table
   (`/rooms/<room>/links` → 404, `/rooms/<room>/seats` → no links field, `/rooms/<room>/seats/<seat>` →
   405 PUT-only). **(ii)** the set to serve is **the 12 plus 11 additions**, derived from the room's own
@@ -51,7 +51,7 @@ Three landings on the board, all of them answers the room is already acting on, 
 
 ## Instruments
 
-- `GET /api/v2/openrig/rooms/4genthub-min/seats/<seat>/links` for all five seats → HTTP 200 each,
+- `GET /api/v2/rooms/4genthub-min/seats/<seat>/links` for all five seats → HTTP 200 each,
   counts 3/3/3/2/1 = **12**; the same route for the three spellings go-dev tried → 404 / 200-without-field
   / 405.
 - All 171 rail rows, grouped by source→destination seat (the counts are quoted in the bullet).

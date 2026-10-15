@@ -37,11 +37,11 @@ from pathlib import Path
 
 PATCH_NAME = re.compile(r"^patch(?P<epoch>\d+)-(?P<pid>\d+)$")
 
-# The layout this exists for: one store per seat under the OpenRig state dir, plus the framework's
+# The layout this exists for: one store per seat under the 4genteam state dir, plus the framework's
 # historical default, which still holds the largest pile.
 #
 # NOTE, AND IT COST A FALSE GREEN: `~` IS NOT THE HUMAN'S HOME INSIDE A SEAT. A seat's $HOME points at its
-# own state directory, so `~/.cache/pre-commit` resolves to that SEAT'S store and `~/.openrig/state/…` to a
+# own state directory, so `~/.cache/pre-commit` resolves to that SEAT'S store and `~/.config/4genthub/state/…` to a
 # path that does not exist — the first run of this scan reported "1 store, 99 patches" and quietly ignored
 # the other 653. The human's home is therefore read from the passwd database, never from $HOME.
 # THAT LESSON WAS IN THE COMMENT BUT NOT IN THE CODE: the first version of `default_stores` kept `{home}`
@@ -84,7 +84,7 @@ def default_stores(
     candidates.append(Path("~/.cache/pre-commit").expanduser())  # THIS seat's own store
     candidates.append(human / ".cache" / "pre-commit")
     candidates.extend(
-        sorted((human / ".openrig" / "state").glob("*/*/.cache/pre-commit"))
+        sorted((human / "config/4genthub" / "state").glob("*/*/.cache/pre-commit"))
     )
     seen: set[Path] = set()
     stores: list[Path] = []

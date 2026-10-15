@@ -5,7 +5,7 @@
 
 ### Why it lands before the apply
 - `4genteam team apply` publishes changed module content at the next patch (`agenthub_client/internal/clientteam/cloud.go` resolveModules, `nextPatch`). The repo text of `project-4genthub.txt` differs from the stored 1.0.0, so the apply publishes it as 1.0.1.
-- The company overlay it then sends (`PUT /api/v2/openrig/overlay`, `plan.go:244-249`) takes each module's version from `team.json` (`overlayBody`, `plan.go:165-178`), not from the advanced version.
+- The company overlay it then sends (`PUT /api/v2/overlay`, `plan.go:244-249`) takes each module's version from `team.json` (`overlayBody`, `plan.go:165-178`), not from the advanced version.
 - Left at 1.0.0, the apply would publish 1.0.1 and then re-pin the overlay to 1.0.0. That publish is referenced by nothing: the run reports success and no seat changes. With 1.0.1 here, the same apply publishes and moves the ref in one run.
 
 ### Expected intermediate state, not a defect

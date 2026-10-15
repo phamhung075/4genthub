@@ -2,10 +2,10 @@ package resolver
 
 import "fmt"
 
-// PermissionPolicies are the permission_policy names OpenRig records in a RigSpec (the
+// PermissionPolicies are the permission_policy names recorded in a seat spec (the
 // bare names of `rig policy list`); the spec field itself takes builtin:<name> or none.
 // yolo is the only one that changes the launch posture (full bypass); the others keep the
-// harness floor and are translated into native config by OpenRig's permission skill.
+// harness floor and are translated into native config by the client's permission skill.
 var PermissionPolicies = []string{"locked", "standard", "open", "yolo", "none"}
 
 // DefaultPermissionPolicy is the policy of a seat that does not name one: conservative, never

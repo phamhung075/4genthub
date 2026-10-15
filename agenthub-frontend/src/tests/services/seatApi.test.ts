@@ -25,35 +25,35 @@ interface Row {
   body?: string;
 }
 
-const OPENRIG = '/api/v2/openrig';
+const API_V2 = '/api/v2';
 
 const rows: Row[] = [
   // Rooms
-  { entry: 'listRooms', method: 'GET', paths: [`${OPENRIG}/rooms`], call: () => seatApi.listRooms() },
+  { entry: 'listRooms', method: 'GET', paths: [`${API_V2}/rooms`], call: () => seatApi.listRooms() },
   {
     entry: 'createRoom',
     method: 'POST',
-    paths: [`${OPENRIG}/rooms`],
+    paths: [`${API_V2}/rooms`],
     call: () => seatApi.createRoom({ slug: 'dev', name: 'Dev' }),
     body: JSON.stringify({ slug: 'dev', name: 'Dev' }),
   },
   {
     entry: 'deleteRoom',
     method: 'DELETE',
-    paths: [`${OPENRIG}/rooms/dev%20room`],
+    paths: [`${API_V2}/rooms/dev%20room`],
     call: () => seatApi.deleteRoom('dev room'),
   },
   {
     entry: 'setRoomTeam',
     method: 'PUT',
-    paths: [`${OPENRIG}/rooms/dev%20room/team`],
+    paths: [`${API_V2}/rooms/dev%20room/team`],
     call: () => seatApi.setRoomTeam('dev room', 'eng'),
     body: JSON.stringify({ team: 'eng' }),
   },
   {
     entry: 'listTeams',
     method: 'GET',
-    paths: [`${OPENRIG}/teams`],
+    paths: [`${API_V2}/teams`],
     call: () => seatApi.listTeams(),
   },
 
@@ -61,13 +61,13 @@ const rows: Row[] = [
   {
     entry: 'listSeatTypes',
     method: 'GET',
-    paths: [`${OPENRIG}/seat-types`],
+    paths: [`${API_V2}/seat-types`],
     call: () => seatApi.listSeatTypes(),
   },
   {
     entry: 'createSeatTypeVersion',
     method: 'POST',
-    paths: [`${OPENRIG}/seat-types/coder/versions`],
+    paths: [`${API_V2}/seat-types/coder/versions`],
     call: () =>
       seatApi.createSeatTypeVersion('coder', {
         module_refs: ['instructions@1.0.0'],
@@ -78,19 +78,19 @@ const rows: Row[] = [
   {
     entry: 'listModules',
     method: 'GET',
-    paths: [`${OPENRIG}/modules`],
+    paths: [`${API_V2}/modules`],
     call: () => seatApi.listModules(),
   },
   {
     entry: 'getModuleVersion',
     method: 'GET',
-    paths: [`${OPENRIG}/modules/coder/versions/1.0.0`],
+    paths: [`${API_V2}/modules/coder/versions/1.0.0`],
     call: () => seatApi.getModuleVersion('coder', '1.0.0'),
   },
   {
     entry: 'putModuleVersion',
     method: 'PUT',
-    paths: [`${OPENRIG}/modules/coder/versions/1.0.0`],
+    paths: [`${API_V2}/modules/coder/versions/1.0.0`],
     call: () =>
       seatApi.putModuleVersion('coder', '1.0.0', { kind: 'instruction', content: 'Be brief.' }),
     body: JSON.stringify({ kind: 'instruction', content: 'Be brief.' }),
@@ -100,13 +100,13 @@ const rows: Row[] = [
   {
     entry: 'listSeats',
     method: 'GET',
-    paths: [`${OPENRIG}/rooms/dev/seats`],
+    paths: [`${API_V2}/rooms/dev/seats`],
     call: () => seatApi.listSeats('dev'),
   },
   {
     entry: 'createSeat',
     method: 'POST',
-    paths: [`${OPENRIG}/rooms/dev/seats`],
+    paths: [`${API_V2}/rooms/dev/seats`],
     call: () =>
       seatApi.createSeat('dev', {
         seat_key: 'alice',
@@ -124,13 +124,13 @@ const rows: Row[] = [
   {
     entry: 'removeSeat',
     method: 'DELETE',
-    paths: [`${OPENRIG}/rooms/dev/seats/alice`],
+    paths: [`${API_V2}/rooms/dev/seats/alice`],
     call: () => seatApi.removeSeat('dev', 'alice'),
   },
   {
     entry: 'updateSeatOccupant',
     method: 'PUT',
-    paths: [`${OPENRIG}/rooms/dev/seats/alice/occupant`],
+    paths: [`${API_V2}/rooms/dev/seats/alice/occupant`],
     call: () => seatApi.updateSeatOccupant('dev', 'alice', { runtime: 'omp', model: 'deepseek-flash' }),
     body: JSON.stringify({ runtime: 'omp', model: 'deepseek-flash' }),
   },
@@ -140,9 +140,9 @@ const rows: Row[] = [
     entry: 'getOverlay',
     method: 'GET',
     paths: [
-      `${OPENRIG}/overlay`,
-      `${OPENRIG}/rooms/dev/overlay`,
-      `${OPENRIG}/rooms/dev/seats/alice/overlay`,
+      `${API_V2}/overlay`,
+      `${API_V2}/rooms/dev/overlay`,
+      `${API_V2}/rooms/dev/seats/alice/overlay`,
     ],
     call: () =>
       Promise.all([
@@ -155,9 +155,9 @@ const rows: Row[] = [
     entry: 'putOverlay',
     method: 'PUT',
     paths: [
-      `${OPENRIG}/overlay`,
-      `${OPENRIG}/rooms/dev/overlay`,
-      `${OPENRIG}/rooms/dev/seats/alice/overlay`,
+      `${API_V2}/overlay`,
+      `${API_V2}/rooms/dev/overlay`,
+      `${API_V2}/rooms/dev/seats/alice/overlay`,
     ],
     call: () => {
       const ops = [{ kind: 'add' as const, slug: 'instructions', version: '1.0.0', content: '' }];
@@ -176,13 +176,13 @@ const rows: Row[] = [
   {
     entry: 'listLinks',
     method: 'GET',
-    paths: [`${OPENRIG}/rooms/dev/seats/alice/links`],
+    paths: [`${API_V2}/rooms/dev/seats/alice/links`],
     call: () => seatApi.listLinks('dev', 'alice'),
   },
   {
     entry: 'putLink',
     method: 'PUT',
-    paths: [`${OPENRIG}/rooms/dev/seats/alice/links`],
+    paths: [`${API_V2}/rooms/dev/seats/alice/links`],
     call: () =>
       seatApi.putLink('dev', 'alice', { to_seat: 'bob', kind: 'delegates_to', allow: true }),
     body: JSON.stringify({ to_seat: 'bob', kind: 'delegates_to', allow: true }),
@@ -190,26 +190,26 @@ const rows: Row[] = [
   {
     entry: 'putPermissionPolicy',
     method: 'PUT',
-    paths: [`${OPENRIG}/rooms/dev/seats/alice/permission-policy`],
+    paths: [`${API_V2}/rooms/dev/seats/alice/permission-policy`],
     call: () => seatApi.putPermissionPolicy('dev', 'alice', 'locked'),
     body: JSON.stringify({ permission_policy: 'locked' }),
   },
   {
     entry: 'deleteLink',
     method: 'DELETE',
-    paths: [`${OPENRIG}/rooms/dev%20room/seats/alice/links/bob/delegates_to`],
+    paths: [`${API_V2}/rooms/dev%20room/seats/alice/links/bob/delegates_to`],
     call: () => seatApi.deleteLink('dev room', 'alice', 'bob', 'delegates_to'),
   },
 
   // Messages. MOUNT STATUS AT THIS FOLD'S BASE: mounted - `a56e58a7` added
-  // `POST /api/v2/openrig/rooms/{room}/seats/{seat}/messages` to seat_mount.go and the regenerated
+  // `POST /api/v2/rooms/{room}/seats/{seat}/messages` to seat_mount.go and the regenerated
   // artefact (144 routes) carries it. The path is room-scoped like every other seat route, and the verb
   // is the only thing that distinguishes its call site from the GET resolution pattern - which is why
   // `method` is a required field here rather than an optional one.
   {
     entry: 'sendSeatMessage',
     method: 'POST',
-    paths: [`${OPENRIG}/rooms/dev/seats/alice/messages`],
+    paths: [`${API_V2}/rooms/dev/seats/alice/messages`],
     call: () => seatApi.sendSeatMessage('dev', 'alice', { text: 'hello' }),
     body: JSON.stringify({ text: 'hello' }),
   },
@@ -218,7 +218,7 @@ const rows: Row[] = [
   {
     entry: 'fetchMachines',
     method: 'GET',
-    paths: [`${OPENRIG}/machines`],
+    paths: [`${API_V2}/machines`],
     call: () => seatApi.fetchMachines(),
   },
 
@@ -226,13 +226,13 @@ const rows: Row[] = [
   {
     entry: 'getSettings',
     method: 'GET',
-    paths: [`${OPENRIG}/settings`],
+    paths: [`${API_V2}/settings`],
     call: () => seatApi.getSettings(),
   },
   {
     entry: 'putSettings',
     method: 'PUT',
-    paths: [`${OPENRIG}/settings`],
+    paths: [`${API_V2}/settings`],
     call: () => seatApi.putSettings(true),
     body: JSON.stringify({ follow_latest: true }),
   },
@@ -241,7 +241,7 @@ const rows: Row[] = [
   {
     entry: 'getResolvedSeat',
     method: 'GET',
-    paths: [`${OPENRIG}/seats/dev/alice`],
+    paths: [`${API_V2}/seats/dev/alice`],
     call: () => seatApi.getResolvedSeat('dev', 'alice'),
   },
 ];

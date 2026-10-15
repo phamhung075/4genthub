@@ -264,7 +264,7 @@ func (s *SeatResolutionService) policy(ctx context.Context, userID string, seat 
 
 // snapshotHash identifies a resolved seat: the module hash alone would not change when
 // only the policy or the rendered files change, and a stale snapshot would be reused.
-func snapshotHash(moduleHash, policyHash string, files []seatrenderer.OpenRigSpecFile) string {
+func snapshotHash(moduleHash, policyHash string, files []seatrenderer.SeatSpecFile) string {
 	h := sha256.New()
 	write := func(s string) {
 		var n [8]byte

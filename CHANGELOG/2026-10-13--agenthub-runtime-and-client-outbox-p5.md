@@ -1,6 +1,6 @@
 # Rust agenthub-runtime, Agy Watch & Client Outbox P5
 
-Delivered the NEXT-GEN2 architecture foundation replacing OpenRig:
+Delivered the NEXT-GEN2 architecture foundation replacing 4genteam:
 
 1. **Rust Core Runtime (`agenthub_client/rust/agenthub-runtime`):**
    - High-performance headless PTY runner and bracketed paste delivery (`\x1b[200~` ... `\x1b[201~`).

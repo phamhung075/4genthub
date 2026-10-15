@@ -122,8 +122,8 @@
         {
           "hash": "1d2fd0f924a73a033df6f3f3e6b1520e",
           "modified": "2026-10-10T09:01:25.824031",
-          "name": "openrig-seat-limits.md",
-          "path": "operations/openrig-seat-limits.md",
+          "name": "client-seat-limits.md",
+          "path": "operations/client-seat-limits.md",
           "size": 7284
         },
         {
@@ -136,8 +136,8 @@
         {
           "hash": "7aee1e932ba684aa53925cee4a86b2df",
           "modified": "2026-10-09T21:46:13.780653",
-          "name": "watching-openrig-seats.md",
-          "path": "operations/watching-openrig-seats.md",
+          "name": "watching-client-seats.md",
+          "path": "operations/watching-client-seats.md",
           "size": 8109
         },
         {
@@ -253,11 +253,11 @@
     "operations": {
       "files": [
         "complete-operations-guide.md",
-        "openrig-seat-limits.md",
+        "client-seat-limits.md",
         "seat-approval-and-the-startup-call.md",
         "seat-compaction-supervisor.md",
         "syncing-seats-with-the-cloud.md",
-        "watching-openrig-seats.md"
+        "watching-client-seats.md"
       ]
     },
     "setup-guides": {

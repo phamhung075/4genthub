@@ -17,9 +17,9 @@ in its 10:21Z brief). Where the two meet, the measurement is quoted rather than 
 
 1. **The registry is empty.** `rig gateway human list` answers *"no human configured yet — register one: `rig gateway
    human add <entityId> --display-name … --binding … --delivery-class …`"* (architect, 10:09Z).
-2. **There is no `gateway/` directory to be empty either.** The OpenRig home `/home/daihu/.openrig` holds
-   `openrig.sqlite` (174.1 MB), `daemon.json`, `topology/rigs/`, `briefs/`, `transcripts/`, `specs/`, `state/`,
-   `reference/`, `skills/` — and `ls -d /home/daihu/.openrig/gateway` answers *No such file or directory* (architect).
+2. **There is no `gateway/` directory to be empty either.** The 4genteam home `/home/daihu/config/4genthub` holds
+   `the reference client.sqlite` (174.1 MB), `daemon.json`, `topology/rigs/`, `briefs/`, `transcripts/`, `specs/`, `state/`,
+   `reference/`, `skills/` — and `ls -d /home/daihu/.config/4genthub/gateway` answers *No such file or directory* (architect).
    Human fragments are "file-per-human fragments under `gateway/humans/`" (`rig gateway human --help`); nothing here
    has ever created one.
 3. **The only human-channel operation the rig has recorded failed.** `state/human-channel-operations.jsonl` holds
@@ -29,16 +29,16 @@ in its 10:21Z brief). Where the two meet, the measurement is quoted rather than 
    human delivery binding yesterday; it failed; nothing retried.
 4. **There is no operator or kernel session either.** `tmux ls` lists exactly five sessions, all
    `4genthub-min-<seat>@4genthub-min` (architect, fe-dev, go-dev, lead, reviewer), created 11:16:58–11:17:06 local
-   (architect, 10:22Z). No kernel window and no operator window exists; the five are what `rig whoami` reports as the
+   (architect, 10:22Z). No kernel window and no operator window exists; the five are what `4genteam whoami` reports as the
    roster.
-5. **The human route exists, and the daemon refuses it.** `rig queue create --help` documents `--human-intent
+5. **The human route exists, and the daemon refuses it.** `the task queue create --help` documents `--human-intent
    <intent>` ("decision (default) or update: a quiet informational delivery, never an approval request") and
    `--human-detail-file` (architect). The daemon raises `invalid_human_notification` for **four distinct causes**
-   (`/home/daihu/__projects__/openrig/packages/daemon/src/domain/queue-repository.ts:1552-1562`; architect):
+   (`/home/daihu/__projects__/reference/packages/daemon/src/domain/queue-repository.ts:1552-1562`; architect):
    `humanIntent` must be `decision|update` (`:1553`); `humanDetail` must be nonempty (`:1556`);
    **`humanIntent`/`humanDetail` require a human destination** (`:1560`); and **the fields require the current queue
    schema, or they were not saved** (`:1562`). The lead reports a row to `human@4genthub-min` refused with this code and
-   **reproduced it in kind** at 2026-10-11T10:38:56Z (lead): `rig queue create --destination 'human@4genthub-min'
+   **reproduced it in kind** at 2026-10-11T10:38:56Z (lead): `the task queue create --destination 'human@4genthub-min'
    --summary '…' --body '…' --human-intent decision --json` → `{"error":"invalid_human_notification","message":
    "humanIntent/humanDetail require a human destination; agent continuation belongs in its own qitem."}`. That message
    is the **third** of the four throws (`:1560`), which I confirmed at the site (architect); the other three did not
@@ -55,7 +55,7 @@ in its 10:21Z brief). Where the two meet, the measurement is quoted rather than 
 6. **The daemon itself says a row to an absent destination is a record, not a delivery.** Its advisory reads
    *"Suspected seat typo: '\<ref\>' matches no session address of locally known rig '\<rig\>'. Available
    destinations: … **The row keeps the exact destination as typed; this warning does not guarantee pickup or
-   delivery.**"* (`/home/daihu/__projects__/openrig/packages/daemon/src/startup.ts:418-422`; architect). With no human
+   delivery.**"* (`/home/daihu/__projects__/reference/packages/daemon/src/startup.ts:418-422`; architect). With no human
    registered and no session for one, an owner-facing row is a record — before any seat has to reason about it.
 
 ### The cost, already paid — two owner-claiming relays in this rig's life
@@ -109,13 +109,13 @@ own §5 input list is `rig parked`, so this is its input too.
 Findings 1 and 2 are not written down anywhere I know of. **This one is**, twice, and the review's job is to say so
 rather than re-derive it:
 
-- `ai_docs/operations/client-features-for-the-dev-team.md` **§3** already names the open problem: *"`rig send` takes
-  the sender from the session the daemon stamps (`X-OpenRig-Session`) and ignores any name passed by the caller. The
+- `ai_docs/operations/client-features-for-the-dev-team.md` **§3** already names the open problem: *"`4genteam send` takes
+  the sender from the session the daemon stamps (`X-4genteam-Session`) and ignores any name passed by the caller. The
   owner session is not a managed seat, so its messages arrive unsigned and the architect refuses to treat them as the
   owner."*
 - **§4.6** states the ceiling in plain words: *"the owner node gives attribution and an audit trail, not
   authentication."* Its table marks the only change that would close the gap — *"Making the signature real proof
-  (checking which program sent a request, not just what it claims)"* — as **OpenRig's daemon, and not built**, and out
+  (checking which program sent a request, not just what it claims)"* — as **the client's daemon, and not built**, and out
   of scope for the client work.
 - Ruling `e2948011` (architect, accepted) fixed the standard that follows: identity travels on the **envelope**, never
   in the message text.
@@ -146,7 +146,7 @@ Item 3 is *"Owner node and `4genteam send` method C"* (§4.7's table; go-dev; bo
    owner's act.
 2. **Is the queue's human path the intended owner channel here**, or is the console the owner's only real surface
    until a session exists? The daemon's own advisory points at the second — owner and lead.
-3. **Does OpenRig's daemon-side signature check (attribution → authentication) enter scope** for the plan, or stay
+3. **Does the client's daemon-side signature check (attribution → authentication) enter scope** for the plan, or stay
    explicitly out of it? §4.6 already marks it out; nothing here changes that — owner and platform.
 
 ## 5. Method and limits

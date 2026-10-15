@@ -38,11 +38,11 @@ var (
 	ErrTeamHasOwner = errors.New("team already has an owner")
 )
 
-// teamSlugPattern is the OpenRig name rule, the same one room slugs use: a team slug is a
+// teamSlugPattern is the name rule, the same one room slugs use: a team slug is a
 // URL-safe identifier written into paths, so no dots or other punctuation.
 var teamSlugPattern = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_-]*$`)
 
-// ValidateTeamSlug checks slug against the OpenRig name rule.
+// ValidateTeamSlug checks slug against the name rule.
 func ValidateTeamSlug(slug string) error {
 	if !teamSlugPattern.MatchString(slug) {
 		return fmt.Errorf("team slug %q must match %s", slug, teamSlugPattern)

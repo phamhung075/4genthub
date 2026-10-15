@@ -1,4 +1,4 @@
-# Syncing local OpenRig seats with the 4genthub cloud
+# Syncing local 4genteam seats with the 4genthub cloud
 
 The cloud owns what a seat is and resolves it to a snapshot named by a hash. The local client
 compares each seat's pinned hash with the cloud's, adopts a newer snapshot, and can restart the
@@ -12,20 +12,20 @@ cloud room  --hash per seat-->  4genteam seat  --4genteam sync rig ROOM --update
                                       +-- relaunch (when quiet) -->  seat loads it at start
 ```
 
-**The `scripts/openrig_*.py` paths this document used to instruct are gone, and the port they were
-waiting on has happened.** `scripts/openrig_seat_client.py` and `scripts/openrig_seat_sync.py`
+**The `scripts/*.py` paths this document used to instruct are gone, and the port they were
+waiting on has happened.** `scripts/seat_client.py` and `scripts/seat_sync.py`
 moved into the client package as `seat_client.py` and `seat_sync.py`; both are absent from the
 working tree and the index (the deletion is staged with the pending line decision, not yet
-committed, so `git show HEAD:scripts/openrig_seat_client.py` still resolves while the file on disk
+committed, so `git show HEAD:scripts/seat_client.py` still resolves while the file on disk
 does not). The console script is `4genteam` (also installed as `agenthub-client`), which runs
 `agenthub_client.cli:main`. **Two older instructions are therefore dead and must not be followed:**
-`python3 scripts/openrig_seat_client.py …`, and `agenthub-client sync status <room>` — the latter
+`python3 scripts/seat_client.py …`, and `agenthub-client sync status <room>` — the latter
 was never a verb, because `sync` is `seat_sync` (`pull`, `rig`, `bundle`, `offline-install`,
 `respawn`, `install-checker`, `switch`), while per-seat `status` lives under `4genteam seat`.
 
 Environment: `AGENTHUB_URL` (for production `https://api.4genthub.com`) and `AGENTHUB_TOKEN`. The
 token is passed on in the environment and never printed or written. The store is
-`~/.openrig/agenthub-seats` (`--out`).
+`~/.config/4genthub/agenthub-seats` (`--out`).
 
 ## Commands
 
@@ -53,10 +53,10 @@ pin says. Use it when a seat has to load something that is not part of its snaps
 changed guide in the repo. `seat sync --relaunch quiet` cannot do that, because a seat whose pin is already
 current is reported "in sync" and is never restarted. The DeepSeek peak gate applies (`--allow-peak` skips it).
 `--force` skips the quiet wait. Before each restart the client also replaces the omp seat's own skill directory
-(`~/.openrig/state/omp/<session>/agent/skills`) with the skills `sync rig` built for it, because nothing else copies
+(`~/.config/4genthub/state/omp/<session>/agent/skills`) with the skills `sync rig` built for it, because nothing else copies
 them there. A `rig launch` whose reply times out counts as done when the seat's tmux session comes up within 3 minutes.
 
-`send` puts `From NAME:` in front of the text (default `owner session`) because `rig send` does not carry the
+`send` puts `From NAME:` in front of the text (default `owner session`) because `4genteam send` does not carry the
 sender outside a seat shell, and it passes the text to `rig` as one argument, so a shell expands nothing in it.
 
 Exit codes: 0 ok (`status`: all in sync), 2 usage or environment, 3 a cloud, sync or relaunch step
@@ -82,7 +82,7 @@ failed, 4 `status` found a seat behind or not pulled.
   pathspec commit with no pre-stage). `4genthub-min/lead` resolved to the same snapshot hash on
   2026-10-08 21:23Z and on 2026-10-10, which rules out a stale cache but not a publish that landed
   **unreferenced**, because an unreferenced version changes nothing a seat sees; the one command that
-  separates the two is `GET /api/v2/openrig/modules` (latest per module, with `sha256`) or `GET /api/v2/openrig/modules/{slug}/versions/{version}`. **No corrected body had reached a
+  separates the two is `GET /api/v2/modules` (latest per module, with `sha256`) or `GET /api/v2/modules/{slug}/versions/{version}`. **No corrected body had reached a
   seat in the two days before 2026-10-10.** The corrections are committed in the repo (`0ea06c77`,
   `1f0b177a`, `d1114170`) and publishing them is the principal's token, not a seat's; a corrected body
   must also go out as a NEW version and the refs must name it, because a module version is immutable

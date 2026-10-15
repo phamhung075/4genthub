@@ -179,8 +179,8 @@ func TestLoadEmbeddedSeedsCarryCommGuard(t *testing.T) {
 		if err := json.Unmarshal([]byte(tool.content), &settings); err != nil {
 			t.Fatalf("%s: comm-guard is not valid JSON: %v", seed.SeatTypeSlug, err)
 		}
-		wantDeny := []string{"Bash(rig send:*)", "Bash(rig queue:*)", "Bash(rig broadcast:*)", "Bash(tmux send-keys:*)", "Bash(tmux paste-buffer:*)"}
-		if strings.Join(settings.Permissions.Deny, "|") != strings.Join(wantDeny, "|") || strings.Join(settings.Permissions.Allow, "|") != "Bash(seatcheck send:*)|Bash(rig whoami:*)" {
+		wantDeny := []string{"Bash(4genteam send:*)", "Bash(4genteam input:*)", "Bash(tmux send-keys:*)", "Bash(tmux paste-buffer:*)"}
+		if strings.Join(settings.Permissions.Deny, "|") != strings.Join(wantDeny, "|") || strings.Join(settings.Permissions.Allow, "|") != "Bash(seatcheck send:*)|Bash(4genteam whoami:*)" {
 			t.Fatalf("%s: permissions = %+v", seed.SeatTypeSlug, settings.Permissions)
 		}
 		for _, code := range []string{"Exit code 2", "Exit code 3", "Exit code 5"} {

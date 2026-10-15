@@ -6,7 +6,7 @@
   (`seat-friction-loop.md` §8, step 3), written from evidence that already exists - read-only reads plus the lead's
   transport measurements. No new probe, no code, no decision. Three findings, each with its evidence and its author:
   - **This rig has no registered human.** `rig gateway human list` -> "no human configured yet"; there is no
-    `gateway/` directory under `/home/daihu/.openrig` at all; `state/human-channel-operations.jsonl` holds exactly
+    `gateway/` directory under `/home/daihu/config/4genthub` at all; `state/human-channel-operations.jsonl` holds exactly
     two lines ever, both from `4genthub-min-architect@4genthub-min` on 2026-10-10T07:03:01Z, `action: binding`,
     `subject: x@external`, `effect: started` then `failed`; `tmux ls` lists exactly the five seats, so there is no
     kernel and no operator session. A row to the owner is therefore a **record, not a delivery** - the daemon's own
@@ -43,6 +43,6 @@
 ### Verified
 
 - Read-only instruments only, quoted in the note: `rig gateway human list`, `rig daemon status`, `rig parked`,
-  `tmux ls`, `rig queue create --help`, `ls /home/daihu/.openrig`, and two OpenRig source sites
+  `tmux ls`, `the task queue create --help`, `ls /home/daihu/config/4genthub`, and two 4genteam source sites
   (`queue-repository.ts:1552-1562`, `startup.ts:418-422`). No test, build or formatter was run, because no code
   changed.

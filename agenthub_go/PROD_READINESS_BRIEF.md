@@ -10,7 +10,7 @@ find out whether that is TRUE, and produce a go / no-go report. You do NOT deplo
   config and nginx files, `curl` of public endpoints. Forbidden: restart/stop/rm/build/run, any write
   or DDL, pg_dump to anywhere other than stdout counts, editing files, `git push`, CapRover deploy.
 - Never print, copy or log secrets: env VALUES, tokens, passwords, keys, DB rows with user data.
-  Report env var NAMES only. The e2e account in ~/.openrig/specs/4genthub-go/e2e-account.env may
+  Report env var NAMES only. The e2e account in the e2e account file kept outside the repository may
   be used ONLY against a LOCAL Go server you start yourself, never against production.
 - No commit, no push, no deleting Python sources. Work only inside agenthub_go/ (reports) and /tmp.
 - The agy pod is held and not part of this task. Ignore claims about production deploy elsewhere.

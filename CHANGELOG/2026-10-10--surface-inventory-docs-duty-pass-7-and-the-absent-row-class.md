@@ -3,7 +3,7 @@
 Writer seat, at `42de79c2`, after that commit added one route and shifted 28 citations.
 
 ### Added
-- **`PUT /api/v2/openrig/rooms/{room}/seats/{seat}/pin`** (`seat_admin_mount.go:362`, handler `handleSetSeatPin`) joins the §1.16 table in file order, between `permission-policy` and `overlay`. It was the **only** live route with no row: §1 held **144 rows for 145 registrations**.
+- **`PUT /api/v2/rooms/{room}/seats/{seat}/pin`** (`seat_admin_mount.go:362`, handler `handleSetSeatPin`) joins the §1.16 table in file order, between `permission-policy` and `overlay`. It was the **only** live route with no row: §1 held **144 rows for 145 registrations**.
 
 ### Changed
 - **§1's counts now read `145 = 125 httpapp + 20 auth`** (the Reproduce line, re-run at `42de79c2`), from `144 = 124 + 20` at `a7990665`. The MCP tool count is unchanged at **10**. `scripts/COUNTS-AUDIT.py`'s `EXPECTED` for `httpapp` route registrations moved **124 -> 125** with the move recorded in its own comment, which is where previous passes recorded theirs.

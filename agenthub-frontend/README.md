@@ -13,7 +13,7 @@ sets `envDir: '..'`, so the env FILE Vite reads is the REPO ROOT's `.env` - this
 `.env.sample` - and **a shell export of `VITE_WS_URL` WINS over that file's value**, because Vite gives
 variables already present when it runs the highest priority. The socket URL a dev client ends up with is
 decided by the CONFIG's env loading, measured by reading the injected object itself (the investigation is
-filed at `.openrig/agenthub-seats/4genthub-min/VITE-ENV-INVESTIGATION.md`): the first line of the
+filed at `.config/4genthub/agenthub-seats/4genthub-min/VITE-ENV-INVESTIGATION.md`): the first line of the
 transformed `src/config/environment.ts` IS `import.meta.env`, and two dev servers with the same source
 file differ - one loaded the parent env and carried `VITE_WS_URL`, the other set no `envDir`, so Vite used
 its default (this directory, which holds only `.env.sample`) and injected only the process environment's

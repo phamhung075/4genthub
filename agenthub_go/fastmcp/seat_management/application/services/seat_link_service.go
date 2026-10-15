@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"strings"
 
+	"agenthub/fastmcp/seat_management/domain/linkgraph"
 	"agenthub/fastmcp/seat_management/domain/repositories"
-	"agenthub/fastmcp/seat_management/domain/rigspec"
 )
 
 // ErrLinkCycle is a link that would close a delegates_to/spawned_by launch cycle.
@@ -52,7 +52,7 @@ func (s *SeatLinkService) checkLaunchCycle(ctx context.Context, userID, roomID s
 	for _, seat := range seats {
 		keys[seat.ID] = seat.SeatKey
 	}
-	var edges []rigspec.Edge
+	var edges []linkgraph.Edge
 	for _, seat := range seats {
 		links, err := s.store.ListSeatLinks(ctx, userID, seat.ID)
 		if err != nil {
@@ -62,12 +62,12 @@ func (s *SeatLinkService) checkLaunchCycle(ctx context.Context, userID, roomID s
 			replaced := l.FromSeatID == link.FromSeatID && l.ToSeatID == link.ToSeatID && l.Kind == link.Kind
 			to, inRoom := keys[l.ToSeatID]
 			if l.Allow && !replaced && inRoom {
-				edges = append(edges, rigspec.Edge{Kind: l.Kind, From: keys[l.FromSeatID], To: to})
+				edges = append(edges, linkgraph.Edge{Kind: l.Kind, From: keys[l.FromSeatID], To: to})
 			}
 		}
 	}
-	edges = append(edges, rigspec.Edge{Kind: link.Kind, From: keys[link.FromSeatID], To: keys[link.ToSeatID]})
-	if cycle := rigspec.FindLaunchCycle(edges); cycle != nil {
+	edges = append(edges, linkgraph.Edge{Kind: link.Kind, From: keys[link.FromSeatID], To: keys[link.ToSeatID]})
+	if cycle := linkgraph.FindLaunchCycle(edges); cycle != nil {
 		return fmt.Errorf("%w: %s", ErrLinkCycle, strings.Join(cycle, " -> "))
 	}
 	return nil

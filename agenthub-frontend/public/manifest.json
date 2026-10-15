@@ -1,7 +1,7 @@
 {
   "short_name": "4genthub",
   "name": "4genthub - rooms, seats and modules",
-  "description": "4genthub keeps the state of your AI development work in the cloud: rooms, seats and modules. OpenRig runs the seats on your machine with Claude Code, codex, agy or omp.",
+  "description": "4genthub keeps the state of your AI development work in the cloud: rooms, seats and modules. The 4genteam client runs the seats on your machine with Claude Code, codex, agy or omp.",
   "icons": [
     {
       "src": "favicon.ico",

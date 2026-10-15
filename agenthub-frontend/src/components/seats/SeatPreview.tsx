@@ -64,23 +64,8 @@ export const SeatPreview: React.FC<SeatPreviewProps> = ({ room, seat }) => {
               Copy pull command
             </Button>
           </div>
-          {/* WHAT IS TRUE TODAY, and it is measured rather than promised: delivery is the MANUAL pull
-              above, so the files reach the machine when they are pulled and the seat relaunches,
-              and a session already running keeps what it loaded. AND THE RENDERER'S STARTUP HINT IS
-              NOT UNREAD - ITS READER IS OUTSIDE THIS REPO: OpenRig's own daemon resolves
-              startupFileYAML{DeliveryHint} at launch (codex-runtime-adapter.js:230 and :594 with its
-              own detectDeliveryHint, claude-code-adapter.js:131 and :553, pi-runtime-adapter.js:95,
-              agy-runtime-adapter.js:93, stub-runtime-adapter.js:72; the enum is declared at
-              domain/types.d.ts:1277 - auto | guidance_merge | skill_install | send_text), so the
-              emit is load-bearing and must not be deleted, and it is live on this rig:
-              the rig's own agents/<seat>/agent.yaml carries delivery_hint: send_text, including
-              this seat's own file. WHAT AN EARLIER WORDING OF THIS COMMENT GOT WRONG WAS THE SCOPE OF ITS SEARCH,
-              NOT THE CLIENTS: agenthub_client/ and the Go port (agenthub_go/internal/clientsync,
-              clientcmd, clientbridge, apiref and cmd/agenthubclient) do treat a resolved file as
-              path + content and read no hint - but the launcher that reads it is not in this repo,
-              so "no reader anywhere, in either client" was false of the tree. The hint delivers the
-              role text into the pane AFTER launch; it is not what carries these files to a machine,
-              so the sentence above stands as written. */}
+          {/* Delivery is the MANUAL pull above: the files reach the machine when they are pulled and
+              the seat relaunches, and a session already running keeps what it loaded. */}
           <p className="text-xs text-muted-foreground">
             A running session keeps what it loaded; the files reach the machine when they are pulled
             and the seat relaunches.

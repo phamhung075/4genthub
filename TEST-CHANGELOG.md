@@ -23,6 +23,14 @@ Track test suite changes, fixes, and improvements for agenthub.
 
 - ADDED `scripts/tests/test_notify_seats_behind_note.py`: four cases over the real `scripts/git-hooks/notify-seats`, with `tmux` (the pane path) and `4genteam` (one running seat, the message captured) stubbed and `GIT_DIR` exported as a post-commit hook receives it - a seat one commit behind ITS OWN `main` is warned with its own revision, the committer's own tree and a path that is not a repository stay silent while the plain notice is still sent, and the `GIT_DIR` leak that made the old reading possible is pinned, so the leading case cannot pass by reading the wrong repository.
 - MEASURED: `python3 -m pytest scripts/tests -q` -> 95 passed, 3 warnings (91 before, 4 added); the warning case is RED against the pre-fix script and green after.
+## 2026-10-15 - legacy rig-client purge and `/api/v2` route rename
+
+- CHANGED route literals from the old client sub-prefix to `/api/v2/...` across the Go tests under `agenthub_go/`, `agenthub-frontend` tests and `agenthub_client` tests; index-based path parsing in `agenthub_client/internal/clientteam/{fake,importproject,publish}_test.go` shifted by one segment.
+- CHANGED the seat renderer and seedlibrary tests: four `comm-guard` denies and the `4genteam send` patterns; the seed lock tests follow `seedVersion` 1.4.4.
+- CHANGED the feedback layer tests (Go and `FeedbackPage` frontend test) to the `client` layer value.
+- REMOVED `TestRenderSeatRigValidate` (needed the external binary) and the tests of the deleted legacy client packages.
+- CHANGED `scripts/tests` for the generic `scripts/<name>.py` deleted-name pattern.
+- MEASURED: `go test ./...` (`agenthub_go`, `agenthub_client`) rc 0, `cargo test --offline` 103 passed, `pytest scripts/tests` 91 passed.
 
 ## 2026-10-15 - every open task state can be blocked
 
@@ -184,7 +192,7 @@ Track test suite changes, fixes, and improvements for agenthub.
 
 ## 2026-10-13 - Sample env and documentation updates
 
-- UPDATED `agenthub_client/.env.sample`, `agenthub_client/README.md`, `docs/AGENT-SETUP.md`, `skills/client/install/SKILL.md`, and root `.env.sample` removing legacy OpenRig variables and adding TypeSafe AI / Jev gate and validation configuration.
+- UPDATED `agenthub_client/.env.sample`, `agenthub_client/README.md`, `docs/AGENT-SETUP.md`, `skills/client/install/SKILL.md`, and root `.env.sample` removing legacy 4genteam variables and adding TypeSafe AI / Jev gate and validation configuration.
 - PINNED: `agenthub_client` commit `94fa49e`. All client unit tests pass cleanly (`go test ./...` exit 0).
 - BUILT: `~/.local/bin/4genteam` from `./cmd/4genteam`.
 
@@ -1038,7 +1046,7 @@ Track test suite changes, fixes, and improvements for agenthub.
 
 ## 2026-10-10 - the contextpacks port's two uncompared layers, against the source's CASES
 
-- ADDED to `agenthub_go/fastmcp/seat_management/domain/contextpacks/`: the source's own cases, mirrored from openrig `1a05af1b` `packages/daemon/test/context-pack-compose.test.ts` and `context-pack-bundle-assembler.test.ts` — the EOF-newline byte matrix (4 combinations), the missing-entry path case, the estimate-from-assembled-bytes case, the trimmed-purpose-keeps-line-breaks case, the empty-pack case, and the source's literal ref/version accepts and rejects. These are the two layers the 2026-10-10 parity audit had declared uncompared; the cases are what closes them, because a pass that re-reads the port re-derives the same misunderstanding.
+- ADDED to `agenthub_go/fastmcp/seat_management/domain/contextpacks/`: the source's own cases, mirrored from the reference client `1a05af1b` `packages/daemon/test/context-pack-compose.test.ts` and `context-pack-bundle-assembler.test.ts` — the EOF-newline byte matrix (4 combinations), the missing-entry path case, the estimate-from-assembled-bytes case, the trimmed-purpose-keeps-line-breaks case, the empty-pack case, and the source's literal ref/version accepts and rejects. These are the two layers the 2026-10-10 parity audit had declared uncompared; the cases are what closes them, because a pass that re-reads the port re-derives the same misunderstanding.
 - RED WITHOUT THE CHANGE, measured rather than assumed: the source's `toEqual([{ path: "absent.md" }])` assertion **does not compile** against the port as it stood (`bundle.go` `f28c216d`) — `got.MissingFiles[0].Path undefined (type string has no field or method Path)`. The port returned bare strings from `AssemblePlainFiles` while `assembleBundle` already carried `{path, role}`.
 - FALSIFICATION PAIR, in throwaway copies: the eight parity tests against the UNEDITED package all PASS (`ok 0.003s` — so ref-safety and the bundle frame were parity-exact, and the shape was the only divergence), and the same nine tests against the fixed package all PASS (`ok 0.005s`).
 - EXTENDED `TestAssembleBundleFramesAndSkipsMissing`: a summary-less header, `bytes == len(text)`, the missing entry's role, and the trim asserted at the JOIN (untrimmed content would leave four newlines there) rather than by a trailing-suffix check.
@@ -1077,7 +1085,7 @@ Track test suite changes, fixes, and improvements for agenthub.
 
 ## 2026-10-10 - the seat pin route's case, and the three fakes that had to move with it
 
-- ADDED `agenthub_go/fastmcp/server/httpapp/seat_admin_pin_test.go`, one case (`TestSeatAdminPinSeatVersion`) covering R1's acceptance: pin to a version the seat's type does not have -> 400; to `1.4.2` -> 200 carrying `"pinned_version":"1.4.2"`; a following `GET /api/v2/openrig/rooms/dev/seats` reads the pin back out of the store, so the case cannot pass on an echo; an omitted version -> 400; an absent seat -> 404. It drives the real mux built by `mountSeatAdminRoutes`, so the request crosses the handler, the service and its version check.
+- ADDED `agenthub_go/fastmcp/server/httpapp/seat_admin_pin_test.go`, one case (`TestSeatAdminPinSeatVersion`) covering R1's acceptance: pin to a version the seat's type does not have -> 400; to `1.4.2` -> 200 carrying `"pinned_version":"1.4.2"`; a following `GET /api/v2/rooms/dev/seats` reads the pin back out of the store, so the case cannot pass on an echo; an omitted version -> 400; an absent seat -> 404. It drives the real mux built by `mountSeatAdminRoutes`, so the request crosses the handler, the service and its version check.
 - EXTENDED three fakes, because the two new methods landed on the interfaces they implement: `fakeSeatAdminStore` (services tests - `GetSeatTypeVersion` searches its own `versions`, `UpdateSeatPinnedVersion` honors `updateErr`), the controller's `fakeStore`, and httpapp's `fakeSeatAdmin`. The compiler named all three; no search did.
 - VERIFIED: `go test ./fastmcp/server/httpapp/ -run TestSeatAdminPinSeatVersion -count=1 -v` -> PASS (0.00s); `go test ./fastmcp/server/httpapp/ ./fastmcp/seat_management/interface/mcp_controllers/ -count=1` with `AGENTHUB_TEST_PG_URL` set -> `ok` 230.673s / 0.004s; `go test ./fastmcp/seat_management/... -count=1` -> every package `ok`; `go vet` and `go build ./...` rc 0.
 - NOT RUN from here: the clean-export `go test ./... -count=1` is the architect's gate on this commit, and this worktree holds another seat's in-flight edits.
@@ -1351,7 +1359,7 @@ Track test suite changes, fixes, and improvements for agenthub.
 ## 2026-10-10 - the server-side seatcheck copy is removed with its 3 test files; the client module's copy is the guard's canonical source
 
 - DELETED, tracked and staged by explicit path: `agenthub_go/cmd/seatcheck/main.go`, `main_test.go` (695 lines) and `exec_test.go` (246) - 1371 lines. Row `37dd5c78`. The copy that stays is `agenthub_client/cmd/seatcheck`, whose suite (`main_test.go` 714 + `exec_test.go` 246) is now the tree's ONLY seatcheck suite and is strictly larger than the one that left.
-- WHY THAT COPY AND NOT THE OTHER (the rule, with its evidence): the canonical copy is the one the installer builds, on the module the installer names. `agenthub_client/README.md:73` instructs `4genteam sync install-checker --go-dir .`; `install-checker` has no default `--go-dir`, so the named module IS the guard's source, and the client is the module that ships to operators. The kept copy is also the maintained one (`clientenv.ResolveSeatStore`, this tree's one implementation of that store, 2026-10-10) while the removed one still mirrored the deleted `scripts/openrig_seat_sync.py` (`main.go:55,78`).
+- WHY THAT COPY AND NOT THE OTHER (the rule, with its evidence): the canonical copy is the one the installer builds, on the module the installer names. `agenthub_client/README.md:73` instructs `4genteam sync install-checker --go-dir .`; `install-checker` has no default `--go-dir`, so the named module IS the guard's source, and the client is the module that ships to operators. The kept copy is also the maintained one (`clientenv.ResolveSeatStore`, this tree's one implementation of that store, 2026-10-10) while the removed one still mirrored the deleted `scripts/seat_sync.py` (`main.go:55,78`).
 - PARITY, MEASURED: `diff` of the two entry points is 32 lines, all in the import block and the pin-store resolution; no other behaviour differed, so only the maintenance question decided it.
 - NOTHING BUILT OR RAN THE DELETED COPY, and the removal is the proof: `agenthub_go`'s `go build ./...` is rc=0 with it gone (a package `main` cannot be imported; no Go file outside the package named it; the script test that built it, `scripts/tests/test_seatcheck_guard.py` with `--go-dir agenthub_go`, was deleted in the Python cutover).
 - THE OTHER PACKAGE'S SUITE STAYS GREEN, and the wording it asserts was not pinned: `go test -count=1 ./cmd/agenthubclient/` -> `ok 0.003s` after the owner sentence at `cmd/agenthubclient/main.go:58` stopped naming the removed path. `TestUnportedCommandRefusesRatherThanStubbing` asserts the exit code (`ExitUnavailable`), that stderr says `not ported`, and that stdout is empty - so the sentence could be corrected without re-pinning a test.
@@ -1364,7 +1372,7 @@ The change is `agenthub_client` commit **3583a49** (`fix(team): publish-skills r
 - `agenthub_client/internal/clientteam/publish_test.go`: `TestPublishSkillsRefusesAnInventoryThatCarriesNoGeneratedFrom` is the new case. `writeLibrary`'s pinned inventory has its `generated_from` deleted (`clearInventoryGeneratedFrom` - the pre-2026-10-09 format), and the verb must answer `ExitUsage` BEFORE any request, naming the inventory path it read and the missing `generated_from`, with zero requests seen by the package's fake transport. `regenerateInventory` is the new helper - commit the library, name that revision in `generated_from` - which is what the generator does; `TestPublishSkillsChangedContentPushesTheNextPatch` and `TestPublishSkillsRefusesASecret` call it after moving bytes and digests, because a pin that no longer describes the record is refused (and would otherwise refuse there for the wrong reason).
 - `agenthub_client/internal/clientteam/fixtures_test.go`: `writeLibrary` now ends in `regenerateInventory`, so every fixture inventory carries the pin the format requires. Before this, all eleven fixture-driven publish cases published an inventory with NO pin - which is why the hole was invisible to the suite: the fixture was the retired format.
 - RED FIRST, measured rather than argued: with the refusal forced off the unpinned fixture was PUBLISHED - `publishing 3 skill block(s)`, `module alpha-skill@1.0.0: applied`, `module beta-skill@1.0.0: applied`, `module gamma-skill@1.0.0: applied`, `publish summary: 3 pushed, 0 new version(s), 0 skipped`, exit 0 - and the package was **41 passed, 1 failed, 0 skipped**, the new case alone. Green with the refusal restored: **42 passed, 0 failed, 0 skipped** (`go test -count=1 ./internal/clientteam/`), `gofmt -l internal/clientteam` empty, `go vet ./internal/clientteam/...` clean.
-- The census the refusal rests on, so the ruling's branch is visible: every `*.json` present under `/home/daihu/__projects__/4genthub` and `/home/daihu/.openrig` (2749 files) was scanned for the inventory shape - a top-level `skills` array whose rows carry `canonical`/`plugin`. Four match, and all four are the same committed record `ai_docs/agent-system/skill-library.json` (52 skills, `generated_from` naming `31fe301b`) plus its three worktree copies in another rig. No real inventory omits the pin, so the refusal closes a case nothing in the tree exercises.
+- The census the refusal rests on, so the ruling's branch is visible: every `*.json` present under `/home/daihu/__projects__/4genthub` and `/home/daihu/config/4genthub` (2749 files) was scanned for the inventory shape - a top-level `skills` array whose rows carry `canonical`/`plugin`. Four match, and all four are the same committed record `ai_docs/agent-system/skill-library.json` (52 skills, `generated_from` naming `31fe301b`) plus its three worktree copies in another rig. No real inventory omits the pin, so the refusal closes a case nothing in the tree exercises.
 - The real record was driven again through the changed verb, not only the fixtures: `4genteam team publish-skills --dry-run --inventory ai_docs/agent-system/skill-library.json --source-root <clone at 31fe301b>` gives `exit 0` and `plan: publish-skills 52 skill block(s)`, while the live moved checkout still refuses at the pre-existing staleness check (naming `agent-starters`, checkout `8e8961f4…` against the recorded `66cbaa25…`) - the new refusal is not what fires for it.
 
 ## 2026-10-10 - team publish-skills now has a test that drives it: an inventory whose generated_from does not describe the revision it names is refused (the port target of retired Python row 25)
@@ -1382,17 +1390,17 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
 - `scripts/tests/test_team_roster.py` (NEW case `test_the_rooms_omp_seats_are_the_rigs_omp_seats`, with the measured `OMP_SEATS` beside `LIVE_SEATS`): the room's omp seats and the rig's omp seats are the same set in BOTH directions, and that split is a split of the live roster - every omp seat exists, and the seats declared on something else are exactly the roster minus the omp half, so a runtime string nobody runs (a typo, or a third runtime added to one file alone) cannot leave both sets looking right. It replaces the case deleted in `91cf4295`, whose subject was never the client's `SEAT_ROLES` table: it was the AGREEMENT between the two writes for one team - `team.json` rebuilds the room, the policy writer emits an omp `config.yml` for every seat the room declares on omp - which is how `team.json` kept declaring `go-dev2` after the rig stopped running that seat.
 - THE HALF NOT LANDED, stated so it is not missed: the case that drives the writer itself, `4genteam policy show SEAT --rig RIG --team FILE`, waits for the pin bump and is owed to task `fe6ebedc`; the docstring and the module docstring both say so.
 - RED FIRST, twice, each perturbation made in the real file and restored BYTE-IDENTICAL (after both: `git diff --exit-code -- scripts/team/4genthub-min/team.json` clean, sha256 still `dc18278ddd49cfe3f9ef597ed3d12b3926e2f87fa8b32b1258bd5ad869b6ea6a`). (a) `skills-dev` moved from omp to claude-code -> fails: "the rig runs ['skills-dev'] on omp but the room does not declare them that way". (b) `architect` moved from claude-code to omp -> fails: "the room declares ['architect'] on omp but the rig does not run them there" (and this one also reds `test_the_architect_runs_claude_code`, which pins that runtime: **2 failed, 2 passed**).
-- Commands and results, from the repository root with `OPENRIG_SKILLS_ROOT` unset and no `PYTHONPATH`: `scripts/tests/test_team_roster.py` -> **4 passed** (3 before the new case); the whole directory -> **82 passed, 3 warnings in 11.2s, 0 failed** (81 before, the census case having been made green by `d6c345e5` earlier in the same session).
+- Commands and results, from the repository root with `AGENTHUB_SKILLS_ROOT` unset and no `PYTHONPATH`: `scripts/tests/test_team_roster.py` -> **4 passed** (3 before the new case); the whole directory -> **82 passed, 3 warnings in 11.2s, 0 failed** (81 before, the census case having been made green by `d6c345e5` earlier in the same session).
 - The comparison is against the recorded measurement and never against the file under test: deriving `OMP_SEATS` from `team.json` would make the case agree with itself, which is the shape this invariant exists to catch.
 
 ## 2026-10-10 - the retired Python client's tests leave this repository: the 8+3 data cases stay in a client-free file, and the canonical run is 80 passed
 
 - DELETED: `scripts/tests/test_seatcheck_guard.py` (3 cases) and `scripts/tests/_client_tree.py` (the pinned-revision reader added in `dfb8e6a0`). Both reached the client submodule's Python (`seat_sync`, `team_setup`), which the client repository deleted in `1eca7de`, so the reader had no live implementation left to materialise. Nothing under `scripts/tests` imports the client any more, which is why the suite needs no pin at all.
-- RE-HOMED IN PLACE: `scripts/tests/test_team_definition.py` now holds exactly the 8 cases the split keeps - 7 about the rooms under `scripts/team` (`test_the_per_room_tables_cover_every_shipped_room`, `test_every_room_names_files_that_resolve`, `test_every_room_defines_what_its_overlays_use_and_covers_its_seats`, `test_every_room_seat_is_a_known_type_on_the_declared_runtimes`, `test_every_room_local_context_file_has_a_band_it_respects`, `test_delegate_module_carries_the_chef_and_worker_wording`, `test_project_brief_starts_with_the_safety_rule`) and 1 about the inventory's curation (`test_the_inventory_curation_accounts_for_every_skill`). They read `scripts/team/*/team.json` and the inventory as DATA (`json.loads`), so they collect on a machine that has never cloned OpenRig; `_load_module()`'s client import and the `hashlib`, `io`, `os`, `re`, `tarfile` imports went with the cases that used them.
+- RE-HOMED IN PLACE: `scripts/tests/test_team_definition.py` now holds exactly the 8 cases the split keeps - 7 about the rooms under `scripts/team` (`test_the_per_room_tables_cover_every_shipped_room`, `test_every_room_names_files_that_resolve`, `test_every_room_defines_what_its_overlays_use_and_covers_its_seats`, `test_every_room_seat_is_a_known_type_on_the_declared_runtimes`, `test_every_room_local_context_file_has_a_band_it_respects`, `test_delegate_module_carries_the_chef_and_worker_wording`, `test_project_brief_starts_with_the_safety_rule`) and 1 about the inventory's curation (`test_the_inventory_curation_accounts_for_every_skill`). They read `scripts/team/*/team.json` and the inventory as DATA (`json.loads`), so they collect on a machine that has never cloned 4genteam; `_load_module()`'s client import and the `hashlib`, `io`, `os`, `re`, `tarfile` imports went with the cases that used them.
 - `scripts/tests/test_team_roster.py` keeps its 3 data cases; its 4th (`test_the_omp_seats_are_exactly_the_seat_roles_table`) is REMOVED. Its subject - the Python `SEAT_ROLES` table - was deleted with the client (`1eca7de`), and the live Go policy writer emits roles from `--team` with no compiled table, so the premise is gone rather than moved; `POLICY_PATH`, `RIG`, `load_policy()` and `importlib.util` go with it.
-- NOT KEPT HERE, named so it is not missed: the case that digested the inventory's recorded `sha256` against the OpenRig revision its `generated_from` names. That rule is implemented by the live Go `team publish-skills` verb, so it is port row 25 in `DISPOSITION-retired-python-client-tests-2026-10-10.md` and belongs driven through that verb rather than re-implemented in Python. Until that port lands this repository has no check that the committed inventory describes the revision it names. `test_seatcheck_guard.py`'s subject - the install-then-linked-run composite - is a client-repository port (`clientsync/installchecker_e2e_test.go`) and an owner decision, not absorbed here.
+- NOT KEPT HERE, named so it is not missed: the case that digested the inventory's recorded `sha256` against the 4genteam revision its `generated_from` names. That rule is implemented by the live Go `team publish-skills` verb, so it is port row 25 in `DISPOSITION-retired-python-client-tests-2026-10-10.md` and belongs driven through that verb rather than re-implemented in Python. Until that port lands this repository has no check that the committed inventory describes the revision it names. `test_seatcheck_guard.py`'s subject - the install-then-linked-run composite - is a client-repository port (`clientsync/installchecker_e2e_test.go`) and an owner decision, not absorbed here.
 - `scripts/tests/pytest.ini`: the paragraph describing the two modules reading the pinned revision through `_client_tree.py` is corrected, since it named code this change removes; the `--noconftest -p no:cacheprovider` addopts are unchanged.
-- Commands and results, from the repository root, `OPENRIG_SKILLS_ROOT` unset and no `PYTHONPATH`: BEFORE, `python3 -m pytest --noconftest -p no:cacheprovider scripts/tests -q` -> **1 failed, 108 passed, 4 warnings in 22.1s**, collection clean at 109 tests. AFTER, the same command -> **1 failed, 80 passed, 3 warnings in 10.7s**, collection 81 tests, no skip. Per file: `test_team_definition.py` -> **16 passed** (8 cases, 3 of them parametrized over the 3 tracked rooms), `test_team_roster.py` -> **3 passed**.
+- Commands and results, from the repository root, `AGENTHUB_SKILLS_ROOT` unset and no `PYTHONPATH`: BEFORE, `python3 -m pytest --noconftest -p no:cacheprovider scripts/tests -q` -> **1 failed, 108 passed, 4 warnings in 22.1s**, collection clean at 109 tests. AFTER, the same command -> **1 failed, 80 passed, 3 warnings in 10.7s**, collection 81 tests, no skip. Per file: `test_team_definition.py` -> **16 passed** (8 cases, 3 of them parametrized over the 3 tracked rooms), `test_team_roster.py` -> **3 passed**.
 - The one failure is NOT this change: `test_census_audits.py::test_the_census_instrument_is_clean_at_head_and_says_how_much_it_read[script0-rows (\d+)]` reports `CITATION-AUDIT.py ... rows 144 stale 30`, every stale row a `routes_mount.go` line. That file was moved by other seats' committed Go work (`c0fed377`, `e5ecff63`, `05991818`); this change touches no Go and no route.
 - This supersedes the `dfb8e6a0` entry's "NEITHER MODULE IS DEAD CODE, which is why nothing was deleted" - true while the pin still carried `team_setup.py` and `seat_sync.py`, and undone by the client repository's `1eca7de`.
 
@@ -1410,7 +1418,7 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
 - `scripts/tests/test_seatcheck_guard.py` and `scripts/tests/test_team_definition.py`: `_load_module()` calls `_client_tree.ensure_on_path(REPO_ROOT)` and turns a refusal into a skip that says `SKIPPED, NOT PASSED` with the reason. Both import the client at MODULE level, so an absent path was a COLLECTION error: the whole directory yielded no verdict at all, which is worse than a red test because a collection error is silent about which of the two things is wrong.
 - `scripts/tests/pytest.ini`: the `pythonpath = ../../agenthub_client/src` setting is REMOVED and the comment above it corrected. It named a tree this superproject does not have - 0 `.py` tracked under the gitlink, and no `src/` in the submodule's working tree at all - so it pointed at a deleted directory, and on a machine that did have a checkout there it would have SHADOWED the pin. With `pythonpath` gone the canonical command needs no prefix, which is what that setting was added for.
 - NEITHER MODULE IS DEAD CODE, which is why nothing was deleted: the pin carries `src/agenthub_client/seat_sync.py` (git blob `c065763a`) and `src/agenthub_client/team_setup.py` (git blob `313bb48e`). Say it in the other direction too: `test_seatcheck_guard.py`'s subject is alive independently of the client - it builds and LINKS the real `seatcheck` binary out of THIS superproject's Go module (`GO_DIR = parents[2]/agenthub_go`, `install-checker --go-dir`), and its three cases are end-to-end (allowed peer, refusal with an audit row, forged direct send detected). The Python client is only the driver there.
-- Commands and results, from the repository root, `OPENRIG_SKILLS_ROOT` unset and NO `PYTHONPATH`: BEFORE, `python3 -m pytest --noconftest -p no:cacheprovider scripts/tests -q` stopped at `2 errors during collection` (`ERROR scripts/tests/test_seatcheck_guard.py`, `ERROR scripts/tests/test_team_definition.py`) and ran nothing at all. AFTER, the same command gives **1 failed, 108 passed, 4 warnings in 22.0s**, with collection clean at 109 tests and no skip. Each file alone: `test_team_definition.py` **40 passed in 9.5s**; `test_seatcheck_guard.py` **3 passed in 2.3s**.
+- Commands and results, from the repository root, `AGENTHUB_SKILLS_ROOT` unset and NO `PYTHONPATH`: BEFORE, `python3 -m pytest --noconftest -p no:cacheprovider scripts/tests -q` stopped at `2 errors during collection` (`ERROR scripts/tests/test_seatcheck_guard.py`, `ERROR scripts/tests/test_team_definition.py`) and ran nothing at all. AFTER, the same command gives **1 failed, 108 passed, 4 warnings in 22.0s**, with collection clean at 109 tests and no skip. Each file alone: `test_team_definition.py` **40 passed in 9.5s**; `test_seatcheck_guard.py` **3 passed in 2.3s**.
 - The one failure is NEITHER of these modules and is not caused by this change: `test_team_roster.py::test_the_omp_seats_are_exactly_the_seat_roles_table` OPENS `agenthub_client/src/agenthub_client/seat_policy.py` by path (`FileNotFoundError`) instead of importing it, so it was never a collection error and it becomes visible now that the run reaches it. That is row `fe6ebedc`, which already carries its ruling: redefine the assertion, do not port it and do not delete it.
 - The loader's own two paths were exercised rather than assumed: `_pinned_commit` reads `c401888b…` from the gitlink, `ensure_on_path` materialises `/tmp/pinned-client-*/src` with all 11 client modules and places it at `sys.path[0]`, and a root with no git history at all refuses loudly - `git ls-tree failed in /tmp/…: fatal: not a git repository (or any of the parent directories): .git`.
 
@@ -1426,13 +1434,13 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
 
 ## 2026-10-10 - the skill-library guard digests the revision the inventory NAMES, not the checkout on the pod
 
-- `scripts/tests/test_team_definition.py`: the three checkout-dependent cases digested `OPENRIG_SKILLS_ROOT` / `../openrig` whatever its HEAD happened to be, so the verdict was a property of the machine rather than of the record. `_openrig_root_or_skip()` is replaced by `_inventory_names()` (reads the revision out of the inventory's own `generated_from`), `_materialised()` (`git archive <rev> -- <the two committed edges>` into `tmp_path`, unpacked with `tarfile` so a missing `tar` binary cannot read as a pass), and `_named_revision_or_skip(tmp_path)`, which tries the recorded checkout, then `OPENRIG_SKILLS_ROOT`, then `OPENRIG_CHECKOUT_DEFAULT`, and skips LOUDLY naming every checkout it tried and why it could not supply the revision. `git archive` reads committed objects, so an uncommitted edit in the checkout cannot leak into the digest.
+- `scripts/tests/test_team_definition.py`: the three checkout-dependent cases digested `AGENTHUB_SKILLS_ROOT` / `../reference` whatever its HEAD happened to be, so the verdict was a property of the machine rather than of the record. `_root_or_skip()` is replaced by `_inventory_names()` (reads the revision out of the inventory's own `generated_from`), `_materialised()` (`git archive <rev> -- <the two committed edges>` into `tmp_path`, unpacked with `tarfile` so a missing `tar` binary cannot read as a pass), and `_named_revision_or_skip(tmp_path)`, which tries the recorded checkout, then `AGENTHUB_SKILLS_ROOT`, then `AGENTHUB_CHECKOUT_DEFAULT`, and skips LOUDLY naming every checkout it tried and why it could not supply the revision. `git archive` reads committed objects, so an uncommitted edit in the checkout cannot leak into the digest.
 - WHY the named revision rather than the checkout: on this pod the checkout was `4b48ca21`, **439 commits past** the named `31fe301b`, and **23 of the 54 recorded sides** had drifted - re-measuring the inventory against that tree would have re-based its truth on whichever checkout was present. The named revision measures **0** drifted sides, so a refusal now means the record and the revision genuinely disagree, which is the act that needs a human: move the pin, or regenerate.
-- `test_the_shipped_inventory_digests_match_the_committed_openrig_checkout` is renamed to `test_the_shipped_inventory_digests_match_the_revision_the_inventory_names` (and takes `tmp_path`); it keeps the two invariants that were already pinned, `count == len(skills)` and `len(modules) == count`, plus `sides == 54`.
+- `test_the_shipped_inventory_digests_match_the_committed_checkout` is renamed to `test_the_shipped_inventory_digests_match_the_revision_the_inventory_names` (and takes `tmp_path`); it keeps the two invariants that were already pinned, `count == len(skills)` and `len(modules) == count`, plus `sides == 54`.
 - `test_a_pin_that_moved_without_regenerating_is_refused` **ADDED**: it perturbs the MATERIALISED pin (one byte appended to a canonical `SKILL.md`) and requires the refusal to name the skill, the recorded digest and the recomputed one. It is the mirror of the inventory-perturbation case: without it, feeding the guard the named revision would be worth nothing if a named revision whose bytes moved went unseen.
 - `test_publish_skills_reads_the_revision_the_inventory_names` **ADDED**: it drives the pinned client's own publish entry point, `publish-skills --dry-run --inventory … --source-root <named revision>`, asserts the plan line names `count` blocks and that nothing is called (no token, no server), then re-runs the same argv against the perturbed pin and requires a non-zero exit naming the skill. The rule keeps one implementation: the test calls the module rather than re-deriving it.
-- RED FIRST, SAME COMMAND, SAME ENVIRONMENT (`env -u OPENRIG_SKILLS_ROOT`): the committed file, run from `git show HEAD:…` under a probe name inside `scripts/tests/` and removed after the run, gave **2 failed, 36 passed** - and the red is exactly the masking this fixes: the guard refused on `agent-starters`, a drifted row, so `test_the_inventory_guard_reads_the_mirror_too` failed on `assert 'messaging-the-human' in message` for a reason that has nothing to do with the mirror. The changed file gives **40 passed, 0 skipped** - no skip, because the named revision is in the local checkout's history even though its tip has moved on.
-- Commands: `env -u OPENRIG_SKILLS_ROOT PYTHONPATH=<client tree>/src python3 -m pytest scripts/tests/test_team_definition.py -q -p no:cacheprovider` → **40 passed in 9.3s**, against the client tree the parent itself pins. The Python client is not in this repository's working tree, so it was read read-only out of the pin: `git -C agenthub_client archive c401888b958f3db829cfa487b6d7f4315b4ed5b8 -- src | tar -x -C <tmp>` (`team_setup.py` content sha256 `a72d9ebe…`, git blob `313bb48e`), and that tree named on `PYTHONPATH`. The submodule's working HEAD `35a40a5` is **66 commits above** that pin and carries no `src/` at all, which is why the bare command stops at collection on `ModuleNotFoundError: No module named 'agenthub_client.team_setup'` (`scripts/tests/pytest.ini`'s `pythonpath = ../../agenthub_client/src` points at the deleted tree). The 40 passed reproduce identically on the newer client module in a tipcheck clone (blob `5bea478f`, from `1751922e`), so the cases do not depend on which of the two reads them.
+- RED FIRST, SAME COMMAND, SAME ENVIRONMENT (`env -u AGENTHUB_SKILLS_ROOT`): the committed file, run from `git show HEAD:…` under a probe name inside `scripts/tests/` and removed after the run, gave **2 failed, 36 passed** - and the red is exactly the masking this fixes: the guard refused on `agent-starters`, a drifted row, so `test_the_inventory_guard_reads_the_mirror_too` failed on `assert 'messaging-the-human' in message` for a reason that has nothing to do with the mirror. The changed file gives **40 passed, 0 skipped** - no skip, because the named revision is in the local checkout's history even though its tip has moved on.
+- Commands: `env -u AGENTHUB_SKILLS_ROOT PYTHONPATH=<client tree>/src python3 -m pytest scripts/tests/test_team_definition.py -q -p no:cacheprovider` → **40 passed in 9.3s**, against the client tree the parent itself pins. The Python client is not in this repository's working tree, so it was read read-only out of the pin: `git -C agenthub_client archive c401888b958f3db829cfa487b6d7f4315b4ed5b8 -- src | tar -x -C <tmp>` (`team_setup.py` content sha256 `a72d9ebe…`, git blob `313bb48e`), and that tree named on `PYTHONPATH`. The submodule's working HEAD `35a40a5` is **66 commits above** that pin and carries no `src/` at all, which is why the bare command stops at collection on `ModuleNotFoundError: No module named 'agenthub_client.team_setup'` (`scripts/tests/pytest.ini`'s `pythonpath = ../../agenthub_client/src` points at the deleted tree). The 40 passed reproduce identically on the newer client module in a tipcheck clone (blob `5bea478f`, from `1751922e`), so the cases do not depend on which of the two reads them.
 - The client did NOT have to move for these cases: the pin's `skill_library_modules` already reads the mirror's file (`team_setup.py:739`), so the defect was entirely the tests' choice of INPUT - they digested the checkout on the pod instead of the revision the record names. Fix 3, the publish path, is likewise already the pinned behaviour and is now driven rather than assumed.
 
 ## 2026-10-10 - the root `.env` guard gets its own test: the switch script must refuse before it writes, and the single backup slot's identity is pinned
@@ -1454,7 +1462,7 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
 - Companion to `f2c5520f`, which armed `scripts/team/4genthub/team.json:9` at `1.0.1` (row `9651609a`). The two are one change: the ref and the tests that read it.
 - `scripts/tests/test_team_definition.py` `test_overlays_send_full_op_lists`: the company overlay's `project-4genthub` op now expects `1.0.1`; `delegate-deepseek` stays `1.1.0`. An inline comment says why the literal is deliberate: the pending company-overlay apply depends on it, and a flip back to `1.0.0` makes the apply publish `1.0.1` that nothing references.
 - `test_409_on_a_module_is_an_error`: the overridden PUT path is no longer the literal `.../versions/1.0.0`. The version is read from `_definition("4genthub")["modules"]`. With the literal, the client PUTs `1.0.1`, the override never matches, and the case fails on `code == 1` for a reason unrelated to 409 handling.
-- NOT RUN, verified by inspection only. `python3 -m pytest --noconftest -p no:cacheprovider scripts/tests/test_team_definition.py -q` (with or without `PYTHONPATH=agenthub_client/src`) stops at collection with `ModuleNotFoundError: No module named 'agenthub_client.team_setup'`; the client's Python tree was deleted in `1eca7de` (reviewer row `06e20876`). Checked instead: the file parses (`ast.parse`), and the derived expression evaluated against `team.json` gives `/api/v2/openrig/modules/project-4genthub/versions/1.0.1`. THE RUN IS OWED once `06e20876` restores collection.
+- NOT RUN, verified by inspection only. `python3 -m pytest --noconftest -p no:cacheprovider scripts/tests/test_team_definition.py -q` (with or without `PYTHONPATH=agenthub_client/src`) stops at collection with `ModuleNotFoundError: No module named 'agenthub_client.team_setup'`; the client's Python tree was deleted in `1eca7de` (reviewer row `06e20876`). Checked instead: the file parses (`ast.parse`), and the derived expression evaluated against `team.json` gives `/api/v2/modules/project-4genthub/versions/1.0.1`. THE RUN IS OWED once `06e20876` restores collection.
 
 ## 2026-10-10 - the build report's minification label reads the artefact, and a pure classifier lets the suite pin it without a build
 
@@ -1496,7 +1504,7 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
 
 ## 2026-10-10 - a comment stops claiming a field is unread, and the suite's silence is the finding
 
-- **NO TEST CHANGED, AND THAT IS THE FINDING RATHER THAN AN OMISSION.** `agenthub-frontend/src/components/seats/SeatPreview.tsx` carried a delivery comment asserting that the render's `startupFileYAML{DeliveryHint}` had "NOTHING READS IT YET IN EITHER CLIENT … greps to zero". That claim reached `origin/main` **with every suite green, and it is false**: the reader is **OpenRig's own daemon, which is outside this repo** — every launch adapter resolves the field (`codex-runtime-adapter.js:230` and `:594`, which carries its own `detectDeliveryHint`, `claude-code-adapter.js:131` and `:553`, `pi-runtime-adapter.js:95`, `agy-runtime-adapter.js:93`, `stub-runtime-adapter.js:72`), the enum is declared at `domain/types.d.ts:1277`, and the live proof is this rig's own `agents/<seat>/agent.yaml`, which carries `delivery_hint: send_text`.
+- **NO TEST CHANGED, AND THAT IS THE FINDING RATHER THAN AN OMISSION.** `agenthub-frontend/src/components/seats/SeatPreview.tsx` carried a delivery comment asserting that the render's `startupFileYAML{DeliveryHint}` had "NOTHING READS IT YET IN EITHER CLIENT … greps to zero". That claim reached `origin/main` **with every suite green, and it is false**: the reader is **the client's own daemon, which is outside this repo** — every launch adapter resolves the field (`codex-runtime-adapter.js:230` and `:594`, which carries its own `detectDeliveryHint`, `claude-code-adapter.js:131` and `:553`, `pi-runtime-adapter.js:95`, `agy-runtime-adapter.js:93`, `stub-runtime-adapter.js:72`), the enum is declared at `domain/types.d.ts:1277`, and the live proof is this rig's own `agents/<seat>/agent.yaml`, which carries `delivery_hint: send_text`.
 - WHY NO CASE WAS ADDED, said so the omission is not read as neglect: **a sentence has no branch, prop or call to pin**, and a case asserting this text would pin WORDING — the carrier this room deletes rather than adds. What the sentence describes (the pull command) is already pinned by `SeatPreview.test.tsx`.
 - **THE SPECIES:** an unbacked prose claim about LIVE code, produced by a grep whose SCOPE was this repo's two clients and whose WORDING was widened to "repo-wide" and "in either client" by `4e193c18` and `499abf30` while the scope never moved. A suite cannot catch a false sentence; only a measurement against the tree can — which is why this was found by reading the field's consumers, not by running anything here.
 - **AND ONE TRAP WORTH KEEPING, CAUGHT BY `tsc` BEFORE THE COMMIT:** the first wording wrote the rig path as `agents/*/agent.yaml` inside the JSX comment — the `*/` CLOSED the comment early, the remainder became code, and `tsc` reported `TS1005` at :76 and `TS1381` at :83, which read as nonsense as prose and are exact as a parse failure. **A glob inside a block comment is a terminator, not a pattern**; the path is now written `<seat>`. Recorded because the next person to cite a glob in a comment will meet it too.
@@ -1508,7 +1516,7 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
 ## 2026-10-10 - the seat message store's tests: the ordering, the refusals, and the one ruled behaviour that needs a database
 
 - NEW `agenthub_go/fastmcp/seat_management/application/services/seat_message_service_test.go` - the service contract: the credential scan NAMES THE FIELD and stores nothing, the name and text refusals each carry a sentence the window renders, the page's default (50) and clamp (200) come from the service rather than from a caller, a mangled cursor is a refusal rather than an empty page (an empty page would read as "nothing is waiting" and drop a backlog the caller cannot see), and the ack takes a message out of the pending set while a second ack is `ErrSeatMessageNotPending`. The fake store holds the two behaviours the rows depend on: a stored message is pending, an acked one never returns.
-- NEW `agenthub_go/internal/clientsync/messagesverb_test.go` - the DELIVERY ORDER against a scripted cloud, asserted as a CALL SEQUENCE rather than an outcome: `GET | SEND | ACK m1 | SEND | ACK m2`. A send that failed is neither acknowledged nor recorded (so the next run delivers it); a message already in the ledger is re-acked instead of typed twice; the ack-failed case leaves the ledger HOLDING the id, which is the one window at-least-once allows a duplicate; `--dry-run` types and acknowledges nothing; and the usage, credential and empty-seat cases. What it does not prove is stated in the file: the real handlers' behaviour is `httpapp`'s tests, and a real `rig send` reaching a real session needs a running seat.
+- NEW `agenthub_go/internal/clientsync/messagesverb_test.go` - the DELIVERY ORDER against a scripted cloud, asserted as a CALL SEQUENCE rather than an outcome: `GET | SEND | ACK m1 | SEND | ACK m2`. A send that failed is neither acknowledged nor recorded (so the next run delivers it); a message already in the ledger is re-acked instead of typed twice; the ack-failed case leaves the ledger HOLDING the id, which is the one window at-least-once allows a duplicate; `--dry-run` types and acknowledges nothing; and the usage, credential and empty-seat cases. What it does not prove is stated in the file: the real handlers' behaviour is `httpapp`'s tests, and a real `4genteam send` reaching a real session needs a running seat.
 - NEW `agenthub_go/fastmcp/seat_management/infrastructure/repositories/orm/seat_message_repository_integration_test.go` - DB-GATED, and it SKIPS without `SEAT_TEST_DATABASE_URL`: the keyset page walks the same set while a message lands mid-walk and repeats nothing, the same-instant pair orders by id, the ack removes the row from pending while a second ack is false, both deletes are scoped by tenant and by name, and `DeleteForRoom` does not cross the tenant boundary. **This is where the ruled REDELIVERY behaviour is proven, because it is SQL** - and this environment has no PostgreSQL, so it skipped here; that is stated rather than implied.
 - `agenthub_go/fastmcp/server/httpapp/seat_mount_test.go` - the verb-scoped case now asserts the two DIRECTIONS of one path instead of a 405 (a POST stores and answers the id; a GET reaches the pull, proved by the machine-auth 401 a user token gets); the resolution table keeps only its refusal rows, with the success path's assertions moved to the cases that own them; and four new cases: the pull needs a machine token, delivered-once-and-not-again (pull, ack, pull again is empty, a second ack is 409), the credential 422 with the field named and nothing stored, and the SAME 404 byte for byte on both directions.
 - `agenthub_go/fastmcp/seat_management/application/services/room_deletion_service_test.go` and `agenthub_go/fastmcp/server/httpapp/seat_admin_mount_test.go` - the cascade's new call is asserted on the fake store's call list (`tx-begin, room-overlay, status, MESSAGES, edges, room, tx-end`) and the admin fake records the message deletes, with both failure tables gaining the new call as a failure point so a stop-at-first-failure rollback covers it.
@@ -1555,7 +1563,7 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
 
 ## 2026-10-10 - the seat chat window's route gets the test that pins what the verb decides
 
-- `agenthub_go/fastmcp/server/httpapp/seat_mount_test.go`: three tests for the newly mounted `POST /api/v2/openrig/seats/{seat}/messages` - `TestSeatMessageRouteIsVerbScoped`, `TestSeatMessageRouteRefusalsComeFromRouting`, `TestSeatMessageRouteRequiresAuth`. They mount the real routes through the file's existing `seatTestMux`/`doTestRequest`/`fakeSeatSource` seam, so no new fake was added for them.
+- `agenthub_go/fastmcp/server/httpapp/seat_mount_test.go`: three tests for the newly mounted `POST /api/v2/seats/{seat}/messages` - `TestSeatMessageRouteIsVerbScoped`, `TestSeatMessageRouteRefusalsComeFromRouting`, `TestSeatMessageRouteRequiresAuth`. They mount the real routes through the file's existing `seatTestMux`/`doTestRequest`/`fakeSeatSource` seam, so no new fake was added for them.
 - **The case that matters is the path collision, because the path alone cannot decide this route.** `/seats/{seat}/messages` and the resolution `GET /seats/{room}/{seat}` have the same shape, so `TestSeatMessageRouteIsVerbScoped` POSTs to `/seats/coder/messages` and then GETs the identical path: the POST must be the message route (**501**, the delivery refusal, carrying a `detail`) and the GET must still be the resolution, answering 200 with `"room":"coder"` and `"seat":"messages"`. `TestSeatMessageRouteRefusalsComeFromRouting` keeps the refusals attributable to routing rather than to the caller's content: malformed body **400**, unknown field **400** (the body is `{text}` and nothing else), POST on the GET-only resolution pattern **405**, a three-segment path **404**.
 - **SEEN RED FIRST, BY REMOVING THE MOUNT RATHER THAN BY TRUSTING THE TEST:** with the route registration disabled, all six requests are answered **405** `Method Not Allowed` - the live call site's defect, reproduced - and with it restored all three tests pass. Two of my own expectations were wrong on the first run and are recorded rather than quietly corrected: `POST /seats/coder` is **404** (a one-segment path matches no pattern at all, so the 405 needs the two-segment GET-only path `/seats/dev/coder`), and a missing bearer is **403** only when the request carries no usable `Authorization` header - `doTestRequest` always sets one, so the auth case builds its own request.
 
@@ -1591,7 +1599,7 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
 - `scripts/tests/test_check_served_frontend.py` - **THIRTEEN** cases for `scripts/check_served_frontend.py`, all hermetic: a threaded `http.server` over `tmp_path` docroots, so no case reaches production and every case goes through the same HTTP path the deploy uses.
 - **THE FIXTURE THAT MATTERS IS THE ONE THE FIRST CENSUS GOT WRONG:** the stale page is named only by a chunk-map INSIDE the entry, never by `index.html`. A scan of the index's own assets finds 0 old strings AND 0 new ones, which reads as a clean surface and is really a scan that sees nothing - this case fails if the walk stops at the first hop.
 - **THE 08 OCT SHAPE IS PINNED AS A FAILING CASE** (fossils present, no verb anywhere -> exit 1 STALE) beside the fresh shape (exit 0), so the instrument is falsified in both directions instead of being one that only ever says one thing.
-- **THE NEEDLE BOUNDARY IS PINNED SO A LATER "SIMPLIFICATION" FAILS HERE INSTEAD OF IN PRODUCTION:** `sync pull` does not occur in the stale string (`openrig_seat_sync.py pull` contains `sync.py pull`), so a census keyed on that needle reads as "the old string is gone" on the bundle that still has it.
+- **THE NEEDLE BOUNDARY IS PINNED SO A LATER "SIMPLIFICATION" FAILS HERE INSTEAD OF IN PRODUCTION:** `sync pull` does not occur in the stale string (`seat_sync.py pull` contains `sync.py pull`), so a census keyed on that needle reads as "the old string is gone" on the bundle that still has it.
 - **FAIL-CLOSED CASES, WHICH THE INTERIM SHELL SCRIPT COULD NOT EXPRESS:** a 404 inside the closure is exit 2 `INCOMPLETE`, never OK; a closure cap refuses a partial census; an unreachable origin is exit 2; a server sending no `Last-Modified` still censuses, because the date is the dating instrument and not a precondition. And a bundle holding nothing but the token passes the census and FAILS `--expect-dist`, which is why identity exists at all.
 - **TWO OF THESE CASES CAUGHT BUGS IN THE CENSUS ITSELF WHILE IT WAS WRITTEN:** one exposed a JS-only build inventory reporting a stylesheet as absent (a false identity mismatch), the other that the report counted stale files without naming WHICH - a successor could see "1 file" and not find it.
 - Commands: `python3 -m pytest --noconftest -p no:cacheprovider scripts/tests/test_check_served_frontend.py -q` -> 13 passed; the whole suite -> **49 passed, 0 failed**.
@@ -1617,7 +1625,7 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
 - `agenthub-frontend/src/components/seats/SeatPreview.tsx` - the resolved-snapshot card gains ONE sentence under the pull command: "A running session keeps what it loaded; the files reach the machine when they are pulled and the seat relaunches."
 - **NO CASE ACCOMPANIES IT, DELIBERATELY.** The change is copy: it adds no branch, no prop, no state and no call, so there is no behaviour to pin, and a case asserting this string would pin the WORDING - the failure mode this changelog has removed elsewhere. The thing the sentence describes is already pinned by `src/tests/components/SeatPreview.test.tsx`'s "names the pull command and switches the shown file from the given room and seat", which asserts the command that delivery actually runs.
 - **THE MEASUREMENT THAT DECIDED THE WORDING, because the obvious sentence would have been false:** a tree-wide search for `delivery_hint` / `DeliveryHint` / `sendText` / `startup_files` returns the renderer WRITING the field (`renderer.go:40`, `:106`, `:289`), its `renderer_test.go` and documentation - and **zero** readers in EITHER client: the shipped Python client (`agenthub_client/`, whose `4genteam` entry point `pyproject.toml:13` still ships as `agenthub_client.cli:main`) greps to 0, and so does the Go port (`agenthub_go/internal/{clientsync,clientcmd,clientbridge,apiref}`, `cmd/agenthubclient`). The render therefore DESCRIBES startup delivery that no client performs, so "applies at next launch" would have asserted machinery nobody implemented; the card's own pull command is the path that exists, and the sentence says so.
-- **CORRECTED IN THE SAME SESSION, BEFORE THE PUSH; THE FIRST SCOPE IS QUOTED HERE, NOT LEFT STANDING:** the line above first read that the search finds "**zero** readers under `agenthub_client` (`bridge.py`, `cli.py`, `seat_sync.py`, `watch.py`, `team_setup.py`) or `scripts`". The ENUMERATION was the rot: `scripts/openrig_seat_sync.py` and `scripts/openrig_bridge.py` are ABSENT from the tree, so `scripts` names a directory the client has left - it still holds unrelated Python tooling, just none of the client scripts the clause was written to cover - and a hand-maintained module list rots again whenever the client moves. The first correction then over-claimed in its turn by calling the Go client the live one, which `pyproject.toml:13` contradicts; the claim now names BOTH surfaces and picks neither. What never changed is the measurement it rests on - no reader anywhere - and no case, fixture or assertion moved.
+- **CORRECTED IN THE SAME SESSION, BEFORE THE PUSH; THE FIRST SCOPE IS QUOTED HERE, NOT LEFT STANDING:** the line above first read that the search finds "**zero** readers under `agenthub_client` (`bridge.py`, `cli.py`, `seat_sync.py`, `watch.py`, `team_setup.py`) or `scripts`". The ENUMERATION was the rot: `scripts/seat_sync.py` and `scripts/bridge.py` are ABSENT from the tree, so `scripts` names a directory the client has left - it still holds unrelated Python tooling, just none of the client scripts the clause was written to cover - and a hand-maintained module list rots again whenever the client moves. The first correction then over-claimed in its turn by calling the Go client the live one, which `pyproject.toml:13` contradicts; the claim now names BOTH surfaces and picks neither. What never changed is the measurement it rests on - no reader anywhere - and no case, fixture or assertion moved.
 - **THE THREE FILES THAT RENDER THE COMPONENT WERE RUN FIRST AND STAYED GREEN**, which is the control that the added paragraph broke no existing query: `npx vitest run src/tests/components/SeatPreview.test.tsx src/tests/pages/SeatAuthoringPage.test.tsx src/tests/pages/SeatDetailPage.test.tsx` -> **3 files passed (3), 56 tests passed (56)**.
 - Commands, with only this component dirty: `npx tsc --noEmit -p .` -> exit 0, **0** `error TS`; `npx vitest run` -> exit 0, **114 files passed (114), 1784 tests passed (1784), 0 failed**, 67.14s - the SAME 114/1784 as the previous commit, which is the expected shape for a copy change that adds no case; `npx vite build` -> exit 0 in 17.96s, **2.91 MB** of js+css.
 - **THE RELAUNCH BUTTON IS NOT HERE AND ITS ABSENCE IS THE POINT:** a one-click relaunch needs step 5's apply request (table, endpoint, client watcher), which is owner-gated, and the render it would depend on describes delivery no client performs. The lead ruled the backed sentence and the exclusion; the evidence chain is filed as board row `d46bcb4f`.
@@ -1641,22 +1649,22 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
 
 ## 2026-10-09 - the seatcheck guard's header and the client test's fake now name what exists (row `6c31a0d8`)
 
-- `agenthub_client/tests/test_seat_client.py:73` — `FakeSync`'s docstring said it "stands in for openrig_seat_sync", a script in neither the tree nor the index; it stands in for `agenthub_client.seat_sync`, the module `seat_client.load_sync()` returns.
-- `agenthub_client/tests/test_seatcheck_guard.py:3-4` — the header named `openrig_seat_sync.py install-checker` as the builder of the binary these cases run, and handed the reader a cross-reference to `test_openrig_seat_sync.py`. It now names the live verb — `4genteam sync install-checker`, `MEASURED`: that command's `--help` exits 0 with `usage: 4genteam sync install-checker [-h] [--out OUT]`, and `4genteam sync --help` describes it as "build seatcheck into the seat store and link it on PATH" — and the sibling's real file, `agenthub_client/tests/test_seat_sync.py`. `:173`'s "sibling fixture in test_openrig_seat_sync.py" names the same file and is corrected with it.
-- **COMMENTS AND DOCSTRINGS ONLY — no case, assertion, fixture or helper was touched, and none needed to move.** Nothing pinned these strings, which is why they rotted instead of failing: a repository-wide search for `openrig_seat_sync` returned these prose sites in `agenthub_client/` and no assertion reading them, so deleting the script broke no case. After the edit the package has no match.
-- **THE STALE TEST FILE NAME WAS THE SAME ROT ONE STEP OVER, and it is recorded rather than fixed in silence:** `agenthub_client/tests/test_openrig_seat_sync.py` is absent from the tree and the index (`git ls-files --error-unmatch` → `did not match any file(s) known to git`), while the directory holds `test_seat_sync.py` — so both cross-references led a reader nowhere. **No coverage was added for a file NAME**, because a case asserting that a docstring mentions a path pins prose rather than behaviour; the header's orientation value is restored by the edit itself.
+- `agenthub_client/tests/test_seat_client.py:73` — `FakeSync`'s docstring said it "stands in for seat_sync", a script in neither the tree nor the index; it stands in for `agenthub_client.seat_sync`, the module `seat_client.load_sync()` returns.
+- `agenthub_client/tests/test_seatcheck_guard.py:3-4` — the header named `seat_sync.py install-checker` as the builder of the binary these cases run, and handed the reader a cross-reference to `test_seat_sync.py`. It now names the live verb — `4genteam sync install-checker`, `MEASURED`: that command's `--help` exits 0 with `usage: 4genteam sync install-checker [-h] [--out OUT]`, and `4genteam sync --help` describes it as "build seatcheck into the seat store and link it on PATH" — and the sibling's real file, `agenthub_client/tests/test_seat_sync.py`. `:173`'s "sibling fixture in test_seat_sync.py" names the same file and is corrected with it.
+- **COMMENTS AND DOCSTRINGS ONLY — no case, assertion, fixture or helper was touched, and none needed to move.** Nothing pinned these strings, which is why they rotted instead of failing: a repository-wide search for `seat_sync` returned these prose sites in `agenthub_client/` and no assertion reading them, so deleting the script broke no case. After the edit the package has no match.
+- **THE STALE TEST FILE NAME WAS THE SAME ROT ONE STEP OVER, and it is recorded rather than fixed in silence:** `agenthub_client/tests/test_seat_sync.py` is absent from the tree and the index (`git ls-files --error-unmatch` → `did not match any file(s) known to git`), while the directory holds `test_seat_sync.py` — so both cross-references led a reader nowhere. **No coverage was added for a file NAME**, because a case asserting that a docstring mentions a path pins prose rather than behaviour; the header's orientation value is restored by the edit itself.
 - Commands: `python3 -m pytest agenthub_client/tests -q` (guard root variable unset) → **318 passed, 0 skipped, 69.11s**; `python3 -m ruff check agenthub_client/tests/test_seat_client.py agenthub_client/tests/test_seatcheck_guard.py` → **All checks passed!**
 - **NOT RUN:** nothing exercises a comment, so there is no runtime path for this change; the suite is the control that the touched files still import and pass.
 
 
-- `agenthub_client/tests/test_team_setup.py` — `_openrig_root_or_skip()` no longer requires `OPENRIG_SKILLS_ROOT` to be set. It tries the configured value first and then `OPENRIG_CHECKOUT_DEFAULT` (`REPO_ROOT.parent / "openrig"`, the checkout beside this repository), and returns the first candidate carrying **both** committed edges the inventory's recorded paths live under — `OPENRIG_SKILL_EDGES`, `skills/_canonical` (all 35 canonical rows) and `packages/daemon/assets/plugins/openrig-core/skills` (all 19 plugin rows). **No case was added, weakened or deleted:** the same three cases call the same helper and still recompute through `skill_library_modules()`, so the rule keeps one implementation.
+- `agenthub_client/tests/test_team_setup.py` — `_root_or_skip()` no longer requires `AGENTHUB_SKILLS_ROOT` to be set. It tries the configured value first and then `AGENTHUB_CHECKOUT_DEFAULT` (`REPO_ROOT.parent / "the reference client"`, the checkout beside this repository), and returns the first candidate carrying **both** committed edges the inventory's recorded paths live under — `AGENTHUB_SKILL_EDGES`, `skills/_canonical` (all 35 canonical rows) and `packages/daemon/assets/plugins/client-core/skills` (all 19 plugin rows). **No case was added, weakened or deleted:** the same three cases call the same helper and still recompute through `skill_library_modules()`, so the rule keeps one implementation.
 - **WHY: the variable is set nowhere committed, so the guard's default state was SKIP — a guard that reports on its own baseline.** The three cases that need a checkout skipped on every machine whose shell does not happen to export the variable, which is the environment a seat actually gets; a stale digest could still ship green. The skip is now the statement that no checkout was found, not the statement that nobody set a variable.
-- **MEASURED BEFORE AND AFTER ON THE SAME FILE, variable unset (`env -u OPENRIG_SKILLS_ROOT`), the before state run from the committed file itself rather than quoted:** pre-change (`git show HEAD:…` into a temp name inside `agenthub_client/tests/`, removed after the run) → **1 passed, 3 skipped**, reason `SKIPPED, NOT PASSED (OPENRIG_SKILLS_ROOT is not set): … Set OPENRIG_SKILLS_ROOT=/path/to/openrig`; changed file → **54 passed, 0 skipped**. Whole client suite, variable unset: **318 passed, 0 skipped, 69.11s** — the entry dated 2026-10-09 below records **315 passed, 3 skipped** for the same suite without the variable, and 318 is the number it records WITH the checkout, so the derived root lands on exactly the run the variable used to buy.
-- **THE PERTURBATION STILL REDDENS THEM, checked on the changed file rather than assumed:** with the shipped inventory's `agent-browser` canonical digest replaced by 64 zeros in a copy and fed through the real case body, `test_the_shipped_inventory_digests_match_the_committed_openrig_checkout` raises `SetupError` naming the skill, the recorded digest **and** the recomputed one — `skill 'agent-browser': source /home/daihu/__projects__/openrig/skills/_canonical/process/agent-browser/SKILL.md digests f2709bae71a8c60f6a4b80a6873560cdea9632000ed4b28d082dfae58801199b, but the inventory records 0000…0000 … the inventory is stale` — the same red the reviewer reproduced (`f2709bae` vs `000`), with the shipped file untouched.
-- **THE LOUD SKIP SURVIVES FOR A PATH THAT GENUINELY IS NOT THERE, driven through the real helper:** with the derived root pointed at a non-existent directory and the variable unset, `pytest.skip` raises `SKIPPED, NOT PASSED (OPENRIG_SKILLS_ROOT is not set): the inventory's digests can only be verified against a real OpenRig checkout, and none of these is one - /nonexistent/no-openrig-here has no skills/_canonical, packages/daemon/assets/plugins/openrig-core/skills. Set OPENRIG_SKILLS_ROOT=…`.
-- **A SET-BUT-WRONG VARIABLE CAN NO LONGER PUT THE GUARD BACK TO SLEEP:** `OPENRIG_SKILLS_ROOT=/nonexistent/typo-openrig` with the checkout present resolves to the checkout instead of skipping, so a typo left in a shell profile does not silence the case — and when no candidate is usable every one of them is named with the edges it is missing, so the reason a reader sees is the path that was actually tried.
+- **MEASURED BEFORE AND AFTER ON THE SAME FILE, variable unset (`env -u AGENTHUB_SKILLS_ROOT`), the before state run from the committed file itself rather than quoted:** pre-change (`git show HEAD:…` into a temp name inside `agenthub_client/tests/`, removed after the run) → **1 passed, 3 skipped**, reason `SKIPPED, NOT PASSED (AGENTHUB_SKILLS_ROOT is not set): … Set AGENTHUB_SKILLS_ROOT=/path/to/reference`; changed file → **54 passed, 0 skipped**. Whole client suite, variable unset: **318 passed, 0 skipped, 69.11s** — the entry dated 2026-10-09 below records **315 passed, 3 skipped** for the same suite without the variable, and 318 is the number it records WITH the checkout, so the derived root lands on exactly the run the variable used to buy.
+- **THE PERTURBATION STILL REDDENS THEM, checked on the changed file rather than assumed:** with the shipped inventory's `agent-browser` canonical digest replaced by 64 zeros in a copy and fed through the real case body, `test_the_shipped_inventory_digests_match_the_committed_checkout` raises `SetupError` naming the skill, the recorded digest **and** the recomputed one — `skill 'agent-browser': source /home/daihu/__projects__/reference/skills/_canonical/process/agent-browser/SKILL.md digests f2709bae71a8c60f6a4b80a6873560cdea9632000ed4b28d082dfae58801199b, but the inventory records 0000…0000 … the inventory is stale` — the same red the reviewer reproduced (`f2709bae` vs `000`), with the shipped file untouched.
+- **THE LOUD SKIP SURVIVES FOR A PATH THAT GENUINELY IS NOT THERE, driven through the real helper:** with the derived root pointed at a non-existent directory and the variable unset, `pytest.skip` raises `SKIPPED, NOT PASSED (AGENTHUB_SKILLS_ROOT is not set): the inventory's digests can only be verified against a real 4genteam checkout, and none of these is one - /nonexistent/no-client-here has no skills/_canonical, packages/daemon/assets/plugins/client-core/skills. Set AGENTHUB_SKILLS_ROOT=…`.
+- **A SET-BUT-WRONG VARIABLE CAN NO LONGER PUT THE GUARD BACK TO SLEEP:** `AGENTHUB_SKILLS_ROOT=/nonexistent/typo-the reference client` with the checkout present resolves to the checkout instead of skipping, so a typo left in a shell profile does not silence the case — and when no candidate is usable every one of them is named with the edges it is missing, so the reason a reader sees is the path that was actually tried.
 - **BOTH EDGES ARE REQUIRED ON PURPOSE:** a half-cloned tree is reported absent rather than digested, so the failure a reader meets is `SKIPPED, NOT PASSED` naming the missing edge instead of the publish path's `cannot read …` on a path that was never there.
-- Commands: `env -u OPENRIG_SKILLS_ROOT python3 -m pytest agenthub_client/tests/test_team_setup.py -q -rs` → **54 passed**; `OPENRIG_SKILLS_ROOT=/home/daihu/__projects__/openrig … -q -rs` → **54 passed**; `python3 -m pytest agenthub_client/tests -q` (variable unset) → **318 passed, 0 skipped**; `python3 -m ruff check agenthub_client/tests/test_team_setup.py` → clean.
+- Commands: `env -u AGENTHUB_SKILLS_ROOT python3 -m pytest agenthub_client/tests/test_team_setup.py -q -rs` → **54 passed**; `AGENTHUB_SKILLS_ROOT=/home/daihu/__projects__/reference … -q -rs` → **54 passed**; `python3 -m pytest agenthub_client/tests -q` (variable unset) → **318 passed, 0 skipped**; `python3 -m ruff check agenthub_client/tests/test_team_setup.py` → clean.
 - **NOT RUN:** the guard was never driven against a checkout whose skills genuinely drifted from the shipped inventory — the perturbation above is a copy of the INVENTORY, not a moved checkout, and moving a real one is what the reviewer's isolated worktree already did for this rule.
 
 
@@ -1670,12 +1678,12 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
 
 - `agenthub_client/tests/test_team_setup.py` — `test_the_inventory_guard_reads_the_mirror_too` **ADDED**: it perturbs the `plugin` digest of a row carrying both edges in a `tmp_path` copy and requires the refusal to name the skill and **both** mirror digests. It is the mirror's twin of `test_the_inventory_guard_names_the_skill_and_both_digests`, and like its sibling it recomputes **through `skill_library_modules()`**, so the rule still has one implementation.
 - **IT DISCRIMINATES — RED BEFORE THE FIX, GREEN AFTER — and that is what keeps it from being vacuous.** Against the unfixed module the case reported `Failed: DID NOT RAISE <class 'agenthub_client.team_setup.SetupError'>`, `exit 1`: the guard was green while the mirror's recorded digest described nothing. Once `skill_library_modules()` reads the mirror (`team_setup.py:764-768`) the same digest is refused.
-- **The `MEASURED GAP` in the entry below is CLOSED, not restated.** All **54** row-sides are read by the shipped path now, and `test_the_shipped_inventory_digests_match_the_committed_openrig_checkout` gained `sides == 54` to pin the count the fix covers — with a message saying the number must be confirmed deliberately before it is changed, because 52 skills and 2 mirrored pairs is what makes 54.
+- **The `MEASURED GAP` in the entry below is CLOSED, not restated.** All **54** row-sides are read by the shipped path now, and `test_the_shipped_inventory_digests_match_the_committed_checkout` gained `sides == 54` to pin the count the fix covers — with a message saying the number must be confirmed deliberately before it is changed, because 52 skills and 2 mirrored pairs is what makes 54.
 - `test_the_inventory_curation_accounts_for_every_skill` + `_curation_gaps(inventory)` **ADDED**, because `F1-DIGEST-RERUN-2026-10-09.py` retires with this change and it was the only checker of curation completeness: a curated name that is no row, an `unused_by_default` name that is no row, a row that is neither, a skill that is both. **Hermetic — no checkout involved, so no skip.** `TestLoadEmbeddedSeedsCarryCuratedSkillRefs` (`seedlibrary_test.go:398`) covers the other direction, and **a misspelled unused name passes it by reaching no seed either** — which is exactly why this was not left to the Go test.
 - **Both sides were then shown RED on the fixed module**, so the refusal is verified as behaviour rather than as the new case's own shape: a scratch `AGENTHUB_REPO_ROOT` with `agent-browser`'s canonical digest and, separately, `messaging-the-human`'s plugin digest replaced by 64 zeros failed the shipped-inventory guard `exit 1`, each naming its side — `source …/process/agent-browser/SKILL.md digests f2709bae…1199b, but the inventory records 0000…0000` and `mirror …/skills/messaging-the-human/SKILL.md digests 58137243…faa08, but the inventory records 0000…0000`. The shipped inventory's sha256 was identical before and after (`a862c7d8…`), and each scratch tree was removed.
 - **The curation case was seen red on a broken copy too:** `agent-operated-software` misspelled in `unused_by_default` plus `agent-starters` dropped from `architect`'s curation gave `1 failed, 53 deselected`, naming all three gaps — the misspelled name "is not a row" and **both** now-homeless skills "is neither curated nor unused_by_default". The shipped inventory: `1 passed`.
-- **The CLI was run as well, so the refusal is pinned at the face a publish actually uses:** `OPENRIG_SKILLS_ROOT=…/openrig 4genteam team publish-skills --dry-run` → `plan: publish-skills 52 skill block(s)` plus 52 `plan: module …` lines, `exit 0`; with a scratch copy whose `messaging-the-human` mirror digest is zeroed → `exit 2`, `error: skill 'messaging-the-human': mirror …/skills/messaging-the-human/SKILL.md digests 58137243…faa08, but the inventory records 0000…0000`. The shipped file's sha256 was unchanged (`a862c7d8…`) and the scratch tree was removed.
-- Commands: `OPENRIG_SKILLS_ROOT=/home/daihu/__projects__/openrig python3 -m pytest agenthub_client/tests/test_team_setup.py -q` → **54 passed**; `env -u OPENRIG_SKILLS_ROOT …` → **51 passed, 3 skipped** (the three cases that need the checkout; `-rs` names the variable, the value it holds and what to set instead). The whole client suite on this tree: **318 passed** with the checkout, **315 passed, 3 skipped** without — and `test_team_setup.py` is the only file under `agenthub_client/tests/` that imports `team_setup`, so the module's change reaches no other file.
+- **The CLI was run as well, so the refusal is pinned at the face a publish actually uses:** `AGENTHUB_SKILLS_ROOT=…/reference 4genteam team publish-skills --dry-run` → `plan: publish-skills 52 skill block(s)` plus 52 `plan: module …` lines, `exit 0`; with a scratch copy whose `messaging-the-human` mirror digest is zeroed → `exit 2`, `error: skill 'messaging-the-human': mirror …/skills/messaging-the-human/SKILL.md digests 58137243…faa08, but the inventory records 0000…0000`. The shipped file's sha256 was unchanged (`a862c7d8…`) and the scratch tree was removed.
+- Commands: `AGENTHUB_SKILLS_ROOT=/home/daihu/__projects__/reference python3 -m pytest agenthub_client/tests/test_team_setup.py -q` → **54 passed**; `env -u AGENTHUB_SKILLS_ROOT …` → **51 passed, 3 skipped** (the three cases that need the checkout; `-rs` names the variable, the value it holds and what to set instead). The whole client suite on this tree: **318 passed** with the checkout, **315 passed, 3 skipped** without — and `test_team_setup.py` is the only file under `agenthub_client/tests/` that imports `team_setup`, so the module's change reaches no other file.
 - **NOT RUN:** `4genteam team drift-check` against the published blocks — it needs `AGENTHUB_URL`/`AGENTHUB_TOKEN` (production), and it is the owner item, not this row.
 
 ## 2026-10-09 - the occupant route's URL, verb and body are asserted, and the case was made to fail on both perturbations
@@ -1683,7 +1691,7 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
 - `agenthub-frontend/src/tests/services/seatApi.test.ts` gains ONE case for `updateSeatOccupant`: the request goes to `…/rooms/{room}/seats/{seat}/occupant`, method `PUT`, body `JSON.stringify({runtime, model})`. The file's own `@fileoverview` says it exists to check "the requests the Go seat routes define"; before this case it asserted the URL for **3 of `seatApi`'s 23 entries** (`deleteLink`, `putPermissionPolicy`, `deleteRoom`) and this route was not among them.
 - **WHY IT IS NOT ONE MORE GREEN:** nothing observed this path. `src/tests/pages/SeatDetailPage.test.tsx:21` mocks `updateSeatOccupant` at MODULE level and `:483`/`:499` assert the HOOK's arguments, so a wrong path or verb inside `src/services/seatApi.ts:117-121` left the suite green while the seat-detail LLM tab would fail against a real server. The page test pins the layer above; this pins the layer beneath, so it is a complement rather than a copy.
 - **SEEN RED TWICE, ON THE PERTURBED VALUE, WITH THE PERTURBATION VERIFIED ON DISK BY `grep` BEFORE THE RUN WAS READ:**
-  - path `…/occupant` → `…/occupants` (`seatApi.ts:119`): the run logs `PUT http://localhost:8000/api/v2/openrig/rooms/dev/seats/alice/occupants` and the case fails `expected 'http://localhost:8000/api/v2/openrig/…' to match /\/api\/v2\/openrig\/rooms\/dev\/seats\/alice\/occupant$/` — **1 failed | 3 passed**. Restored: `git diff --stat` on `seatApi.ts` empty, **4 passed**.
+  - path `…/occupant` → `…/occupants` (`seatApi.ts:119`): the run logs `PUT http://localhost:8000/api/v2/rooms/dev/seats/alice/occupants` and the case fails `expected 'http://localhost:8000/api/v2/…' to match /\/api\/v2\/reference\/rooms\/dev\/seats\/alice\/occupant$/` — **1 failed | 3 passed**. Restored: `git diff --stat` on `seatApi.ts` empty, **4 passed**.
   - verb `jsonPut` → `jsonBody` (PUT → POST on the same line): the run logs `POST …/occupant` and the case fails `expected 'POST' to be 'PUT' // Object.is equality` — **1 failed | 3 passed**. Restored: diff empty, **4 passed**.
 - **A FALSE GREEN WAS TAKEN FIRST AND IS RECORDED, because avoiding it is the point of the probe:** the first attempt edited `seatApi.ts` by a RELATIVE path from a kernel whose cwd is the rig directory. `tool.edit` returns `{'text': 'File not found: …', 'hasError': True}` — an ERROR VALUE, not an exception — so the `try` around the call never fired, nothing was perturbed, and the run reported **4 passed** on an unmodified tree. Every probe since greps the file on disk before its result is read as evidence.
 - Commands and results, with the frontend's only dirty path being this test file, at tip `f66fc3b4`: `npx tsc --noEmit -p .` → exit 0, **0** `error TS`; `npx vitest run src/tests/services/seatApi.test.ts` → **4 passed** (3 before); `npx vitest run` → exit 0, **113 files passed (113), 1779 tests passed (1779), 0 failed**, 116.04s — the +1 test is this case and the FILE COUNT did not move, which is the control; `npx vite build` → exit 0 in 18.68s into `build/`, **2975.8 kB** of js+css across 94 files.
@@ -1700,7 +1708,7 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
 
 ## 2026-10-09 - two test-file comments named deleted scripts, and no test asserted either live string
 
-- `agenthub_go/internal/clientsync/lock_test.go:13` and `status_test.go:12` — **comments only, no assertion touched.** `lock_test.go`'s comment named `openrig_seat_sync.py` as the source of `read_lock`; `status_test.go`'s named `scripts/tests/test_openrig_seat_client.py` as the source of the party-spec case. Both now name the tracked files (`agenthub_client/src/agenthub_client/seat_sync.py`, `agenthub_client/tests/test_seat_client.py`), verified in the index before the edit, and the second keeps the move in the sentence rather than dropping it.
+- `agenthub_go/internal/clientsync/lock_test.go:13` and `status_test.go:12` — **comments only, no assertion touched.** `lock_test.go`'s comment named `seat_sync.py` as the source of `read_lock`; `status_test.go`'s named `scripts/tests/test_seat_client.py` as the source of the party-spec case. Both now name the tracked files (`agenthub_client/src/agenthub_client/seat_sync.py`, `agenthub_client/tests/test_seat_client.py`), verified in the index before the edit, and the second keeps the move in the sentence rather than dropping it.
 - **NO CASE WAS ADDED, WEAKENED OR DELETED, because neither live string is asserted anywhere.** Checked both ways and stated rather than left implicit: `grep` for the refusal sentence (`not ported into the Go client yet`) and for `deploy-backend.sh` / `deploy-frontend.sh` across `*_test.go`, `*_test.py` and `*.bats` finds no assertion — the only hit is `lock_test.go:13`, and it is prose. That gap is recorded as the reason the strings rotted; it is not papered over by adding a new pin on a sentence, which would pin wording rather than behaviour.
 - **THE LIVE PATH WAS EXERCISED, so the changed string is verified as behaviour and not as text:** `go run ./cmd/agenthubclient sync bundle` → the new refusal sentence on stderr, exit **3** (`ExitUnavailable`). No test covers that path, which is exactly why it was run.
 - Commands: `gofmt` from the **repository root** over **1275** tracked `.go` files → nothing of mine listed (two pre-existing non-Go parse findings stand); `go build ./...` → rc=0; `go vet ./...` → clean; `go test -count=1 ./internal/clientsync/` → **ok 0.309s**; `go test -count=1 ./...` → **ok, every package**.
@@ -1717,12 +1725,12 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
 ## 2026-10-09 - the shipped inventory's digests are watched by the suite, and the guard was seen red before green
 
 - `agenthub_client/tests/test_team_setup.py` (new cases) — the guard for `ai_docs/agent-system/skill-library.json`, whose only former enforcer was `publish-skills`, a networked action. Both cases recompute **through `skill_library_modules()`** (`team_setup.py:709`) and copy no verification logic:
-  - `test_the_shipped_inventory_digests_match_the_committed_openrig_checkout` runs the real inventory against the real `OPENRIG_SKILLS_ROOT` checkout, then pins the two invariants a silent edit would break: `count == len(skills)`, and `len(modules) == count`.
+  - `test_the_shipped_inventory_digests_match_the_committed_checkout` runs the real inventory against the real `AGENTHUB_SKILLS_ROOT` checkout, then pins the two invariants a silent edit would break: `count == len(skills)`, and `len(modules) == count`.
   - `test_the_inventory_guard_names_the_skill_and_both_digests` is the non-vacuity case. It perturbs one digest in a **copy** of the inventory under `tmp_path` — the shipped file is never touched — and requires the failure to name the skill, the RECORDED digest and the RECOMPUTED one. The pairing is the assertion: without both, a reader cannot tell which side moved.
-  - `_openrig_root_or_skip()` **skips loudly**, saying `SKIPPED, NOT PASSED` and naming `OPENRIG_SKILLS_ROOT`, the value it holds and how to enable the check. A case whose green is "skipped" is the same silence this guard exists to end, one level down.
-- **SEEN RED, and red on the shipped inventory's own schema:** a scratch `AGENTHUB_REPO_ROOT` carrying a copy of the inventory with `agent-browser`'s canonical digest replaced by 64 zeros made the guard fail, `exit 1`: `SetupError: skill 'agent-browser': /home/daihu/__projects__/openrig/skills/_canonical/process/agent-browser/SKILL.md digests f2709bae71a8c60f6a4b80a6873560cdea9632000ed4b28d082dfae58801199b, but the inventory records 0000000000000000000000000000000000000000000000000000000000000000; the inventory is stale - regenerate it before publishing`. Then restored: **green**, and the shipped inventory's sha256 was byte-identical before and after the demonstration (`a862c7d8…`).
+  - `_root_or_skip()` **skips loudly**, saying `SKIPPED, NOT PASSED` and naming `AGENTHUB_SKILLS_ROOT`, the value it holds and how to enable the check. A case whose green is "skipped" is the same silence this guard exists to end, one level down.
+- **SEEN RED, and red on the shipped inventory's own schema:** a scratch `AGENTHUB_REPO_ROOT` carrying a copy of the inventory with `agent-browser`'s canonical digest replaced by 64 zeros made the guard fail, `exit 1`: `SetupError: skill 'agent-browser': /home/daihu/__projects__/reference/skills/_canonical/process/agent-browser/SKILL.md digests f2709bae71a8c60f6a4b80a6873560cdea9632000ed4b28d082dfae58801199b, but the inventory records 0000000000000000000000000000000000000000000000000000000000000000; the inventory is stale - regenerate it before publishing`. Then restored: **green**, and the shipped inventory's sha256 was byte-identical before and after the demonstration (`a862c7d8…`).
 - **MEASURED GAP, reported rather than papered over:** the guard verifies the **primary** side of each row only. Perturbing the *mirror* digest of `messaging-the-human` (one of the two rows carrying both edges) left the guard **green** — `skill_library_modules()` records `mirror_sha256` but never reads the mirror's file, so those 2 sides are verified nowhere but the cloud `drift-check`. The fix belongs to `skill_library_modules()` as its own change; this test must not grow a second copy of the rule.
-- Commands: `OPENRIG_SKILLS_ROOT=/home/daihu/__projects__/openrig python3 -m pytest agenthub_client/tests/test_team_setup.py -q` → **52 passed**; the same command with the variable unset (`env -u OPENRIG_SKILLS_ROOT`) → **50 passed, 2 skipped**, and `-rs` shows the skip reason naming the variable.
+- Commands: `AGENTHUB_SKILLS_ROOT=/home/daihu/__projects__/reference python3 -m pytest agenthub_client/tests/test_team_setup.py -q` → **52 passed**; the same command with the variable unset (`env -u AGENTHUB_SKILLS_ROOT`) → **50 passed, 2 skipped**, and `-rs` shows the skip reason naming the variable.
 - **NOT RUN:** `4genteam team drift-check` against the published blocks — it needs `AGENTHUB_URL`/`AGENTHUB_TOKEN` (production), and it is the owner item, not this row.
 
 ## 2026-10-09 - the assignee response cases assert the STORED form, and the seam they existed for is gone
@@ -1961,7 +1969,7 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
 
 ## 2026-10-09 - the two frontend pins that named a moved script now name the installed client, and they moved with the strings they assert
 
-- `agenthub-frontend/src/tests/pages/SeatsPage.test.tsx:412` pinned the bridge empty state as `'No bridge connected. Run scripts/openrig_bridge.py on your PC.'` and `agenthub-frontend/src/tests/pages/SeatDetailPage.test.tsx:457` pinned `/openrig_seat_sync.py switch/`. The relocation moved that tool to the `4genteam` console script, so both assertions named a path that no longer answers. They now pin `'No bridge connected. Run 4genteam bridge register then 4genteam bridge run on your PC.'` and `/4genteam sync switch/`, **in the same commit as the four source strings they assert** - a string and its pin apart is a red suite.
+- `agenthub-frontend/src/tests/pages/SeatsPage.test.tsx:412` pinned the bridge empty state as `'No bridge connected. Run scripts/bridge.py on your PC.'` and `agenthub-frontend/src/tests/pages/SeatDetailPage.test.tsx:457` pinned `/seat_sync.py switch/`. The relocation moved that tool to the `4genteam` console script, so both assertions named a path that no longer answers. They now pin `'No bridge connected. Run 4genteam bridge register then 4genteam bridge run on your PC.'` and `/4genteam sync switch/`, **in the same commit as the four source strings they assert** - a string and its pin apart is a red suite.
 - These are the pins that catch a silent divergence rather than a broken build: each renders the REAL component with `seatApi` mocked and asserts the exact sentence a user reads, so the empty-state wording and the model-change hint are pinned, not sampled. The command shapes behind them were measured from `4genteam sync pull --help` / `sync switch --help` (positionals `room seat`) rather than inferred, and the `bridge` verb the empty state names was chosen from what fills the panel: the machines list is served from the status store, so a report clears it and registration alone does not.
 - Commands and results: `cd agenthub-frontend && npx vitest run src/tests/pages/SeatsPage.test.tsx src/tests/pages/SeatDetailPage.test.tsx` -> **2 files, 53 tests passed**; the full suite -> **111 files, 1767 tests passed**; `npx tsc --noEmit -p .` -> exit 0, 0 errors; `npx vite build` -> exit 0.
 
@@ -2009,7 +2017,7 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
 - `agenthub_go/fastmcp/seat_management/domain/seedlibrary/guides_test.go`: `guideSeats` gains `architect`, so the existing load/render/lock tests now cover `guide-architect` and assert its heading appears once in the rendered context. No new test was written and no assertion was weakened — the same checks that held for the other nine hold for the tenth.
 - `scripts/tests/test_seat_policy_commit_form.py`: the policy-module count moves **nine → ten** and the wording follows. This was a genuine regression introduced by adding a tenth policy module, not a stale pin: the suite read `AssertionError: assert 10 == 9` before the change. The invariant the file exists to test — every policy module carries the same commit-form siblings — now holds for the architect file too, because its deny set was copied verbatim rather than paraphrased.
 - Commands and results. From `agenthub_go`: `go test -count=1 ./fastmcp/seat_management/domain/seedlibrary/... ./modulecontent/... ./seatrenderer/...` -> `ok` for all three packages. From the repository root: `python3 scripts/tests/test_seat_policy_commit_form.py` -> **4 passed** (2 failed before the fix).
-- Known, pre-existing, not this change: `scripts/tests/test_team_roster.py` fails one case on `FileNotFoundError` for `scripts/openrig_seat_policy.py`, which is staged-deleted while the retirement trigger has not fired. That failure is independent of this commit.
+- Known, pre-existing, not this change: `scripts/tests/test_team_roster.py` fails one case on `FileNotFoundError` for `scripts/seat_policy.py`, which is staged-deleted while the retirement trigger has not fired. That failure is independent of this commit.
 
 ## 2026-10-09 - the gone-source contract pinned end to end, and exit 2 made reachable from a test
 
@@ -2055,36 +2063,36 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
 
 - The twelve script tests move from `agenthub_main/src/tests/scripts/` to `scripts/tests/`; every module path changes from `parents[4]` to `parents[2]`, and the one site that reaches the Go module root uses `parents[1] / "agenthub_go"`. New and tracked: `scripts/tests/pytest.ini`, carrying `addopts = --noconftest -p no:cacheprovider` **and the reason in a comment** — the repository conftest reaches for PostgreSQL before every test, so without the flag the run HANGS rather than fails. It is a guard rather than a present need: nothing above `scripts/tests` carries a conftest today.
 - Commands and results, from the repository root: `python3 -m pytest --noconftest -p no:cacheprovider scripts/tests -q` -> **319 passed, 9 warnings in 70.08s**; the same command with NO flags -> 319 passed and no `.pytest_cache` created, which is the config's `-p no:cacheprovider` applying; `cd agenthub_go && go test ./fastmcp/seat_management/domain/seedlibrary/... ./fastmcp/seat_management/domain/seatrenderer/...` -> `ok`, `ok`.
-- **319 against the move's 315 baseline, and the four are attributed rather than merely reported as different**: `test_openrig_compact_supervisor.py` 7 -> 9 (from `1a1ae32c`, `7c1270d3`) and `test_openrig_seat_policy.py` 12 -> 14 (from `db9d2bc3`); every other file is unchanged, `test_team_roster.py`'s four included, so the move added and removed nothing.
+- **319 against the move's 315 baseline, and the four are attributed rather than merely reported as different**: `test_compact_supervisor.py` 7 -> 9 (from `1a1ae32c`, `7c1270d3`) and `test_seat_policy.py` 12 -> 14 (from `db9d2bc3`); every other file is unchanged, `test_team_roster.py`'s four included, so the move added and removed nothing.
 - `grep -rn 'agenthub_main\|src/tests' scripts/tests/` -> nothing. The new files are named in the commit with `git add -N` first (they are brand new) and the commit names the old directory too, so `git` reports the twelve as renames rather than as a delete plus twelve adds.
 
 
 
 ## 2026-10-08 - seat config pins the compaction tail and the thinking trial
 
-- `agenthub_main/src/tests/scripts/test_openrig_seat_policy.py`: two tests (every seat has `compaction.keepRecentTokens`; only `writer` has `defaultThinkingLevel: medium`); the byte comparison now passes the rig. `python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts/test_openrig_seat_policy.py src/tests/scripts/test_openrig_seat_sync.py` -> 125 passed.
+- `agenthub_main/src/tests/scripts/test_seat_policy.py`: two tests (every seat has `compaction.keepRecentTokens`; only `writer` has `defaultThinkingLevel: medium`); the byte comparison now passes the rig. `python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts/test_seat_policy.py src/tests/scripts/test_seat_sync.py` -> 125 passed.
 
 ## 2026-10-08 - a witnessed compaction is followed by one resume message
 
-- `agenthub_main/src/tests/scripts/test_openrig_compact_supervisor.py`: two tests pin the resume send (once after a witnessed compaction, never without a witness). `python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts/test_openrig_compact_supervisor.py` -> 9 passed.
+- `agenthub_main/src/tests/scripts/test_compact_supervisor.py`: two tests pin the resume send (once after a witnessed compaction, never without a witness). `python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts/test_compact_supervisor.py` -> 9 passed.
 
 ## 2026-10-08 - the two always-500 task routes are pinned absent, with a control so the assertion cannot pass vacuously
 
 - `agenthub_go/fastmcp/server/httpapp/routes_mount_test.go`: `GET /api/v2/tasks/stats/summary` leaves `handlerPatterns`, `GET /api/tasks/task-1` leaves `expectedProbes()` because `mountRoutes` no longer registers it, and a new `TestRemovedTaskRoutesAreAbsent` asserts `404` for `/api/tasks/task-1` with its live neighbour `/api/tasks/task-1/context/summary` as a control that must stay mounted.
 - **THE FIRST DRAFT PASSED VACUOUSLY, AND THE CONTROL IS WHY IT CANNOT NOW.** `testRouteDeps()` mounts `mountRoutes`, but the v2 task routes come from `App.registerTaskRoutes`, which that harness never calls — so a 404 on the v2 stats path meant "this mux never mounted it", not "it was removed". A control probe in each harness is what turns the 404 into an observation instead of a silence.
 - **AND THE v2 PATH CANNOT BE ASSERTED AS 404 AT ALL.** It sits under the `GET /api/v2/tasks/` prefix route, which matches the whole subtree and answers 403 before auth whether or not the dedicated handler exists; the test says so in its own comment, and that half is evidenced by the symbol grep and the build instead of by a request.
-- Commands and results: `cd agenthub_go && go test ./fastmcp/server/... ./fastmcp/task_management/interface/api_controllers/...` -> every package `ok`; `gofmt -l` over the tracked `.go` files -> empty; `go vet ./fastmcp/server/... ./fastmcp/task_management/interface/...` -> clean; the acceptance grep -> **21 matches in 10 files at HEAD, 0 after**; `go test ./fastmcp/seat_management/domain/seedlibrary/...` -> `ok`; `cd agenthub_main && python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts/test_openrig_seat_policy.py -q` -> **12 passed**.
+- Commands and results: `cd agenthub_go && go test ./fastmcp/server/... ./fastmcp/task_management/interface/api_controllers/...` -> every package `ok`; `gofmt -l` over the tracked `.go` files -> empty; `go vet ./fastmcp/server/... ./fastmcp/task_management/interface/...` -> clean; the acceptance grep -> **21 matches in 10 files at HEAD, 0 after**; `go test ./fastmcp/seat_management/domain/seedlibrary/...` -> `ok`; `cd agenthub_main && python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts/test_seat_policy.py -q` -> **12 passed**.
 
 ## 2026-10-08 - the room definition and the policy table are compared to each other and to the live roster
 
 - `agenthub_main/src/tests/scripts/test_team_roster.py` (new): loads `team.json` and asserts the seat keys equal the live ten measured 2026-10-08, that the architect seat runs `claude-code`, that every `seat_overlays` key is a declared seat and every module `file` exists, and that team.json's `omp` seats equal the keys of `SEAT_ROLES["4genthub-min"]`. **RED BEFORE THE FIX, in the shape the decision note predicted**: `2 failed, 2 passed` — the seat set reported `go-dev2` where the roster has `architect`, the architect assertion reported that the live rig runs one, and the two that passed did so only because both files still carried `go-dev2` together.
 - **THE LAST ASSERTION IS THE ONE THAT MATTERS OVER TIME.** The stale definition was not a typo; it was two files agreeing with each other and disagreeing with the rig, and nothing compared them. Asserting the two sets are equal is what makes the next drift report itself.
 - `agenthub_main/src/tests/scripts/test_seat_policy_commit_form.py`: its counts follow the tree — "the ten policy modules" is now nine, in the docstring, the loader test's name and assertion, and both commit-form tests. THE SIBLING FAILED THE MOMENT THE SEAT WAS RETIRED (`2 failed, 313 passed` on the first full run), which is the suite doing its job on a file the dispatch did not name; it is corrected here rather than left red.
-- Commands and results: `cd agenthub_main && python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts -q` -> **315 passed, 9 warnings in 69.49s**. The count before this work is **306** as recorded in the entry below, so the arithmetic is not all mine: this change contributes the four in the new file, and the rest are other seats' additions in the shared tree. `cd agenthub_go && go test ./fastmcp/seat_management/domain/seedlibrary/... ./fastmcp/seat_management/domain/seatrenderer/...` -> `ok`, `ok`; the scope grep `git grep -n "go-dev2" -- scripts/team scripts/openrig_seat_policy.py agenthub_go/fastmcp/seat_management ai_docs/operations/seat-guides` -> **18 at HEAD, 0 after**.
+- Commands and results: `cd agenthub_main && python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts -q` -> **315 passed, 9 warnings in 69.49s**. The count before this work is **306** as recorded in the entry below, so the arithmetic is not all mine: this change contributes the four in the new file, and the rest are other seats' additions in the shared tree. `cd agenthub_go && go test ./fastmcp/seat_management/domain/seedlibrary/... ./fastmcp/seat_management/domain/seatrenderer/...` -> `ok`, `ok`; the scope grep `git grep -n "go-dev2" -- scripts/team scripts/seat_policy.py agenthub_go/fastmcp/seat_management ai_docs/operations/seat-guides` -> **18 at HEAD, 0 after**.
 
 ## 2026-10-08 - compaction notice no longer asks the seat to compact itself
 
-- `agenthub_main/src/tests/scripts/test_openrig_compact_supervisor.py`: `test_the_notice_tells_the_seat_to_stop_and_not_to_compact_itself` (new); the still-working test now asserts "do not compact yourself" instead of the old `rig send ... /compact` instruction. 33 script tests pass (`--noconftest`).
+- `agenthub_main/src/tests/scripts/test_compact_supervisor.py`: `test_the_notice_tells_the_seat_to_stop_and_not_to_compact_itself` (new); the still-working test now asserts "do not compact yourself" instead of the old `4genteam send ... /compact` instruction. 33 script tests pass (`--noconftest`).
 
 ## 2026-10-08 - the commit form the seats read, pinned on both sides (go + python)
 
@@ -2120,7 +2128,7 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
 
 ## 2026-10-08 - compaction supervisor tests
 
-- `agenthub_main/src/tests/scripts/test_openrig_compact_supervisor.py` (new, 5 tests): under the limit is left alone; past 200k and still working is told once and not compacted; quiet past 200k is told then compacted; a seat that dropped below is told again later; at 400k it is compacted while working. Run with `pytest --noconftest` because the repo conftest connects to PostgreSQL before every test. Together with the watch tests: 28 pass.
+- `agenthub_main/src/tests/scripts/test_compact_supervisor.py` (new, 5 tests): under the limit is left alone; past 200k and still working is told once and not compacted; quiet past 200k is told then compacted; a seat that dropped below is told again later; at 400k it is compacted while working. Run with `pytest --noconftest` because the repo conftest connects to PostgreSQL before every test. Together with the watch tests: 28 pass.
 
 ## 2026-10-08 - the task-event ledger's acceptance tests, written failing-first
 
@@ -2135,11 +2143,11 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
 
 ## 2026-10-08 - the seat watch token bar and the Claude Code log in the feed
 
-- `agenthub_main/src/tests/scripts/test_openrig_watch_tools.py`: replaced the pane-mirror test; added `test_a_claude_code_call_and_its_result_show_like_an_omp_one`, `test_context_tokens_reads_both_runtimes_and_ignores_records_without_usage`, `test_the_token_bar_shows_percent_and_tokens_of_the_compaction_point`. 23 pass.
+- `agenthub_main/src/tests/scripts/test_watch_tools.py`: replaced the pane-mirror test; added `test_a_claude_code_call_and_its_result_show_like_an_omp_one`, `test_context_tokens_reads_both_runtimes_and_ignores_records_without_usage`, `test_the_token_bar_shows_percent_and_tokens_of_the_compaction_point`. 23 pass.
 
 ## 2026-10-08 - the seat watch follows live tmux sessions and mirrors a non-omp seat
 
-- `agenthub_main/src/tests/scripts/test_openrig_watch_tools.py`: added `test_seats_are_the_live_tmux_sessions_and_a_non_omp_seat_gets_a_pane_mirror` (seat list from tmux sessions of the rig only; omp seat gets the feed command, a Claude seat gets a capture-pane mirror). 20 pass.
+- `agenthub_main/src/tests/scripts/test_watch_tools.py`: added `test_seats_are_the_live_tmux_sessions_and_a_non_omp_seat_gets_a_pane_mirror` (seat list from tmux sessions of the rig only; omp seat gets the feed command, a Claude seat gets a capture-pane mirror). 20 pass.
 
 ## 2026-10-08 - the View-details dialog after ONE click, at full fidelity (a guard, not a reproduction)
 
@@ -2305,7 +2313,7 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
 
 ## 2026-10-07 - watch tools: the `watch` command
 
-- `tests/scripts/test_openrig_watch_tools.py`: one spec, `watch` opens the grid and the lead window with feed and input.
+- `tests/scripts/test_watch_tools.py`: one spec, `watch` opens the grid and the lead window with feed and input.
 
 ## 2026-10-07 - room deletion: the real contract, the predicted refusal, and the server's own sentence
 
@@ -2326,7 +2334,7 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
 
 ## 2026-10-07 - watch tools: JSON result with a trailer, cut JSON, and prose
 
-- `tests/scripts/test_openrig_watch_tools.py`: three specs for `pretty()` (trailer kept, cut-off JSON indented, prose untouched).
+- `tests/scripts/test_watch_tools.py`: three specs for `pretty()` (trailer kept, cut-off JSON indented, prose untouched).
 
 ## 2026-10-07 - the toast hooks' violation: one pin that discriminates, and one that does not
 
@@ -2346,7 +2354,7 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
 
 ## 2026-10-07 - grid input panes
 
-- `src/tests/scripts/test_openrig_watch_tools.py`: 4 specs for `inputs open|hide` and the `input` loop (herdr and `rig send`
+- `src/tests/scripts/test_watch_tools.py`: 4 specs for `inputs open|hide` and the `input` loop (herdr and `4genteam send`
   faked): open splits one input pane per seat pane, a second open adds none, hide closes only the input panes, a typed
   line reaches the right seat and `/hide` leaves the loop. 14 pass.
 
@@ -2462,10 +2470,10 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
   pinned hash against a **different** stored expected hash, asserting `pinned_hash:abc123` and
   `expected_hash:cloud999` on the wire, so a wiring that served the intended hash under `pinned_hash` fails.
   All eight `TestSeatStatus*` PASS.
-- `test_openrig_bridge.py` + `test_openrig_seat_sync.py`: **166 passed** after the reader fix. Three tests were
+- `test_bridge.py` + `test_seat_sync.py`: **166 passed** after the reader fix. Three tests were
   failing before it — two in the bridge suite and the seat_sync one — and all three were the same cause:
-  `openrig_bridge.py:568` read the renamed key, so the verdict became `unknown`. The seat_sync test now asserts
-  the `rig whoami` exemption is FIRST and that the denies that follow it are exactly the list it always named.
+  `bridge.py:568` read the renamed key, so the verdict became `unknown`. The seat_sync test now asserts
+  the `4genteam whoami` exemption is FIRST and that the denies that follow it are exactly the list it always named.
 - `machineSeats.test.ts`: 3 passed. `npx tsc --noEmit -p .` → **0 errors** (it was 4, all from one
   `Pick<…,'hash'>` that the rename missed).
 
@@ -2516,18 +2524,18 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
 
 ## 2026-10-07 - the config check separates allow from deny, and pins the one allowance
 
-- `src/tests/scripts/test_openrig_seat_policy.py`: `deny_patterns()` used to **assert** that every
+- `src/tests/scripts/test_seat_policy.py`: `deny_patterns()` used to **assert** that every
   `bash.patterns` entry is a deny, so the new exemption would have failed the helper rather than been
   described by it. It now filters on `approval == "deny"` and the allowance is asserted on its own by
   `test_every_seat_exempts_the_startup_rig_whoami_and_only_that`, which pins the exact list —
-  `["rig whoami*"]` — for **every** seat in the rig. Pinning the whole list rather than membership is the
+  `["4genteam whoami*"]` — for **every** seat in the rig. Pinning the whole list rather than membership is the
   point: a second allowance added later would be a silent widening of an exemption that exists to stop one
   blocking call, and this test refuses it loudly.
 - The exemption was also checked against the **deny** side rather than assumed compatible: for every
-  seat/role, no deny pattern in the table matches `rig whoami --json`. That is why the entry can sit first
+  seat/role, no deny pattern in the table matches `4genteam whoami --json`. That is why the entry can sit first
   and win under either match order, and it is the assertion a reader would otherwise have to make in their
   head.
-- Verified: `pytest … test_openrig_seat_policy.py` → **12 passed** (11 before, plus the new test);
+- Verified: `pytest … test_seat_policy.py` → **12 passed** (11 before, plus the new test);
   `ruff check` on both changed files → All checks passed; the rendered YAML eyeballed via
   `show go-dev --rig 4genthub-min`, where the allow entry is the first pattern under `bash:`.
 
@@ -2561,7 +2569,7 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
 
 ## 2026-10-07 - the notice generator's tests retire with it, and their properties have successors (python)
 
-- `agenthub_main/src/tests/scripts/test_openrig_seat_policy.py`: **SEVEN tests removed** with the notice verb they
+- `agenthub_main/src/tests/scripts/test_seat_policy.py`: **SEVEN tests removed** with the notice verb they
   covered — `test_every_notice_lists_every_refused_command_of_its_seat`,
   `test_the_notice_names_what_to_do_instead_of_pushing`,
   `test_only_the_non_lead_notice_hands_rig_control_to_the_lead`,
@@ -2578,9 +2586,9 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
   `test_the_default_state_root_survives_a_home_that_points_at_a_seat` asserted the path the tool uses is
   single-nested under the machine state root; it now checks `config_path` / `agent/config.yml`, the file that remains,
   instead of `notice_path` / `agent/AGENTS.md`.
-- Commands: `python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts/test_openrig_seat_policy.py -q`
+- Commands: `python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts/test_seat_policy.py -q`
   -> **11 passed**; `python3 -m ruff check` on both changed files -> **All checks passed**;
-  `python3 scripts/openrig_seat_policy.py --help` -> verbs `{show,apply}`.
+  `python3 scripts/seat_policy.py --help` -> verbs `{show,apply}`.
 
 ## 2026-10-07 - the connector client's redaction and frame shapes are pinned by tests (Go client)
 
@@ -2602,7 +2610,7 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
 
 ## 2026-10-07 - apply reads the stored seat types, and an empty company overlay is not sent (scripts)
 
-- `agenthub_main/src/tests/scripts/test_openrig_team_setup.py`: the fake server counts `GET /api/v2/openrig/seat-types` apart (`seat_type_reads`) so every existing write-order and request-count assertion stays about writes; its default answer is an empty store, so the existing cases still run the seed. Four cases added: the seed is skipped when every needed seat type is stored; the seed runs first when one is missing; an unreadable seat-type list stops before any write (`requests == []`); an empty `company_overlay` yields no `overlay company` step. 50 passed.
+- `agenthub_main/src/tests/scripts/test_team_setup.py`: the fake server counts `GET /api/v2/seat-types` apart (`seat_type_reads`) so every existing write-order and request-count assertion stays about writes; its default answer is an empty store, so the existing cases still run the seed. Four cases added: the seed is skipped when every needed seat type is stored; the seed runs first when one is missing; an unreadable seat-type list stops before any write (`requests == []`); an empty `company_overlay` yields no `overlay company` step. 50 passed.
 
 ## 2026-10-07 - the docs page's mock follows its import, and the fixture assertions are the proof (frontend)
 
@@ -2693,7 +2701,7 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
 
 ## 2026-10-06 - the guard's store is a build-time fact, and the fixture stops writing machine state
 
-- `test_openrig_seatcheck_guard.py`: `installed_checker` now stubs `seat_sync.checker_link` instead of relying on
+- `test_seatcheck_guard.py`: `installed_checker` now stubs `seat_sync.checker_link` instead of relying on
   HOME, so the link installs into the temp directory. THIS IS A MACHINE-STATE REPAIR AS WELL AS AN ADAPTATION:
   with the link resolving from the account, the red run had written the REAL `~/.local/bin/seatcheck` and left it
   pointing at a pytest temporary binary; with the stub the suite cannot touch it, and a full folder run now leaves
@@ -2706,7 +2714,7 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
 - `cmd/seatcheck/main_test.go`: `TestDefaultPinsUsesTheBuildTimeStore` pins the property that makes the seam safe -
   a binary built with a store reads exactly that directory - while `TestDefaultPinsDoesNotFollowHome` keeps the
   fallback pinned.
-- `test_openrig_seat_sync.py`: `fake_go_build` took the built binary from argv POSITION 3, so the two flags the seam
+- `test_seat_sync.py`: `fake_go_build` took the built binary from argv POSITION 3, so the two flags the seam
   adds made it write into the current directory instead; it now locates `-o`, and the command assertion pins the
   new argv EXACTLY, seam included, rather than pinning less.
 - THE GENERALISATION THIS CHANGE RECORDS, and it is why the fixture was adapted rather than the assertions
@@ -2718,18 +2726,18 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
   src/tests/scripts -q` from `agenthub_main` -> 280 passed, 8 warnings, 67s. The seam proved both ways by hand:
   built with `-X main.installedPinsDir=/tmp/seamprobe` the guard refuses naming
   `/tmp/seamprobe/4genthub-min/feedback-dev/policy.json`; built without it,
-  `/home/daihu/.openrig/agenthub-seats/4genthub-min/feedback-dev/policy.json`.
+  `/home/daihu/.config/4genthub/agenthub-seats/4genthub-min/feedback-dev/policy.json`.
 
 ## 2026-10-06 - the bridge's defaults are pinned against HOME (python scripts)
 
-- `agenthub_main/src/tests/scripts/test_openrig_bridge.py`: `test_the_path_defaults_do_not_follow_home`
+- `agenthub_main/src/tests/scripts/test_bridge.py`: `test_the_path_defaults_do_not_follow_home`
   loads the module TWICE under two different HOMEs - one of them named like a seat state directory - and
   asserts `DEFAULT_ENV_FILE`, `DEFAULT_PINS` and `DEFAULT_SYNC_STATE` are EQUAL across the two loads, then
   that none of them sits under either fake home. The equality across two HOMEs is the shape the sync
   script's own test uses, and it is what makes the test ask the PROPERTY rather than the wording: anything
   that follows HOME cannot survive the second load, whatever the implementation looks like.
 - PROVED BY REVERTING ONE SITE, not argued: putting `DEFAULT_PINS` back on `Path.home()` fails it with
-  "DEFAULT_PINS followed HOME: <seat-like>/.openrig/agenthub-seats against <other-home>/.openrig/agenthub-seats",
+  "DEFAULT_PINS followed HOME: <seat-like>/.config/4genthub/agenthub-seats against <other-home>/.config/4genthub/agenthub-seats",
   which names the site rather than the line; the site was restored and the file's 55 tests pass again.
 - Commands: `cd agenthub_main && python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts -q`.
 
@@ -2773,7 +2781,7 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
 
 ## 2026-10-06 - the client's path defaults are pinned to the account, not HOME (python scripts)
 
-- `test_openrig_seat_sync.py`: `test_the_store_and_state_root_do_not_follow_home` reloads the module under
+- `test_seat_sync.py`: `test_the_store_and_state_root_do_not_follow_home` reloads the module under
   two different HOMEs and states the independence as an EQUALITY - the same assertion shape as the guard's
   `TestDefaultPinsDoesNotFollowHome` and the sibling's `test_the_default_state_root_is_the_same_under_any_HOME`
   - covering `DEFAULT_OUT`, `OMP_STATE_ROOT` and `checker_link()`.
@@ -2784,10 +2792,10 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
   keep every assertion; only the seam they simulate through changed.
 - Load-bearing by mutation: `DEFAULT_OUT` restored to `Path.home()` fails the new case with the doubled path
   visible in the assertion, and nothing else in the file changes verdict.
-- Commands: `python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts/test_openrig_seat_sync.py
-  src/tests/scripts/test_openrig_seat_policy.py -q` from `agenthub_main` -> 129 passed, 2 warnings, 42s (with the
-  mutation: 1 failed). Driven by hand: `python3 scripts/openrig_seat_sync.py pull --help` prints
-  `/home/daihu/.openrig/agenthub-seats` from inside a seat and from the operator shell alike.
+- Commands: `python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts/test_seat_sync.py
+  src/tests/scripts/test_seat_policy.py -q` from `agenthub_main` -> 129 passed, 2 warnings, 42s (with the
+  mutation: 1 failed). Driven by hand: `python3 scripts/seat_sync.py pull --help` prints
+  `/home/daihu/.config/4genthub/agenthub-seats` from inside a seat and from the operator shell alike.
 
 ## 2026-10-06 - the seatcheck store resolution is pinned, where every other test stubbed it
 
@@ -2803,15 +2811,15 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
 - Commands: `go test -count=1 ./cmd/seatcheck/` -> ok 0.133s (FAIL with the mutation); `go vet ./cmd/seatcheck/`
   -> no output, exit 0; `gofmt -l ./cmd/seatcheck/` -> empty. Driven against the built binary from inside a seat:
   allow exit 0, deny exit 3 (`denied: no link`), missing policy exit 2, unreadable policy (mode 000) exit 2 - and
-  after the fix the missing-policy message names `/home/daihu/.openrig/agenthub-seats/<rig>/<member>/policy.json`
+  after the fix the missing-policy message names `/home/daihu/.config/4genthub/agenthub-seats/<rig>/<member>/policy.json`
   rather than the seat's own state directory.
 
 ## 2026-10-06 - the state root's default is pinned as a RESOLVED PATH (python scripts)
 
-- `agenthub_main/src/tests/scripts/test_openrig_seat_policy.py` gains two cases, WRITTEN BEFORE THE FIX and
+- `agenthub_main/src/tests/scripts/test_seat_policy.py` gains two cases, WRITTEN BEFORE THE FIX and
   failing on the unfixed script with the doubled path visible in the assertion -
-  `PosixPath('/home/daihu/.openrig/state/omp/4genthub-min-web-dev@4genthub-min/.openrig/state/omp')` against the
-  expected `/home/daihu/.openrig/state/omp`:
+  `PosixPath('/home/daihu/.config/4genthub/state/omp/4genthub-min-web-dev@4genthub-min/.config/4genthub/state/omp')` against the
+  expected `/home/daihu/.config/4genthub/state/omp`:
   `test_the_default_state_root_survives_a_home_that_points_at_a_seat` sets HOME to a seat's own state directory,
   reloads the module, and asserts the RESOLVED PATH equals the passwd-derived state root, that the seat's own
   directory is not a prefix of it, and that `notice_path` is single-nested under it;
@@ -2819,13 +2827,13 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
   different HOMEs.
 - The assertion is a path rather than a message on purpose: a case pinning the wording would be a wording test,
   and the defect was in what the path RESOLVED to.
-- Commands: `cd agenthub_main && python3 -m pytest src/tests/scripts/test_openrig_seat_policy.py -q` -> 18 passed
+- Commands: `cd agenthub_main && python3 -m pytest src/tests/scripts/test_seat_policy.py -q` -> 18 passed
   (16 before, 2 new); `python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts -q` -> 276 passed,
   2 failed, and NEITHER FAILURE IS THIS CHANGE: both are
-  `test_openrig_team_setup.py::test_context_files_respect_word_limits[mission-4genthub]`, which asserts the word
+  `test_team_setup.py::test_context_files_respect_word_limits[mission-4genthub]`, which asserts the word
   count of `scripts/team/4genthub/mission.md` is within (350, 520) while the file now measures 544 words - the
   writer's stale-baseline correction (`1f0b177a`) is what moved it, and that test file does not reference
-  `openrig_seat_policy` at all.
+  `seat_policy` at all.
 
 ## 2026-10-06 - the pull path ported with all three Python specs (Go client)
 
@@ -2902,7 +2910,7 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
 - SMOKE, the REAL BINARY against a real (tiny) HTTP cloud rather than only the unit fakes: `sync status cd`
   printed the Python's own table (`writer pinned None cloud h3 not pulled`, `lead pinned h2 cloud h2 in
   sync`) and exited 4; `--seat lead` exited 0; a 404 cloud printed `GET
-  /api/v2/openrig/rooms/nope/rigspec failed: HTTP 404` and exited 3; and without the env var it printed
+  /api/v2/rooms/nope/rigspec failed: HTTP 404` and exited 3; and without the env var it printed
   `AGENTHUB_URL is not set` and exited 2.
 - Commands: `go test ./internal/clientsync/ ./internal/clientcmd/ -count=1` -> ok (16 tests);
   `go vet` over both -> 0 bytes, exit 0; `gofmt -l` -> empty.
@@ -2947,14 +2955,14 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
 ## 2026-10-06 - the pinned-snapshot reader ported with its two refusals (Go client)
 
 - `internal/clientsync/lock_test.go`: `TestReadLockMirrorsThePythonBranches` pins ALL THREE outcomes of
-  `openrig_seat_sync.py`'s `read_lock`, because the two failure ones are what a port drops silently:
+  `seat_sync.py`'s `read_lock`, because the two failure ones are what a port drops silently:
   **absent is not an error** (the seat was never pulled, which `status` renders as "not pulled"), **a
   directory counts as absent** (the Python's `is_file()` is false for one, and so is a stat that fails),
   a valid lock yields both fields, and then the refusals: invalid JSON exits 2 with the Python's
   "cannot read lock file <path>: <cause>" prefix, and five malformed shapes (`no hash`, `no path`, `hash`
   as a number, `path` null, a JSON list) exit 2 with "lock file <path> is malformed". An unreadable file
   is covered too, skipped when running as root.
-- WHY the parity basis is the CODE rather than a Python test for this piece: `test_openrig_seat_sync.py`
+- WHY the parity basis is the CODE rather than a Python test for this piece: `test_seat_sync.py`
   has no direct unit test of `read_lock` - its specs for it are behavioural, through the pull path - so
   the three branches are read from `read_lock` itself and pinned here, and the two that a caller would
   otherwise only meet in production are named in the test's own subtests.
@@ -3225,7 +3233,7 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
 
 ## 2026-10-06 - the guide document's install is pinned, with the seam the old check would have mis-warned (Python scripts, packet 6 step 1)
 
-- `agenthub_main/src/tests/scripts/test_openrig_seat_sync.py`:
+- `agenthub_main/src/tests/scripts/test_seat_sync.py`:
   `test_rig_installs_the_rendered_guide_document_verbatim` - the render's `AGENTS.md` lands in the agent
   directory byte for byte, and a rebuild that renders the same guide writes nothing (a rebuild is not a
   diff). `test_rig_installs_the_guide_document_for_a_seat_with_no_mcp_block` - a seat with guide blocks
@@ -3235,7 +3243,7 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
 - **Falsified**: removing the install branch makes both fail - `installed …/AGENTS.md` absent from
   stderr, then the file itself missing.
 - Commands: `cd agenthub_main && python3 -m pytest --noconftest -p no:cacheprovider
-  src/tests/scripts/test_openrig_seat_sync.py -q` -> **110 passed**.
+  src/tests/scripts/test_seat_sync.py -q` -> **110 passed**.
 
 ## 2026-10-06 - the library's own guide, through the real render (Go, packet 6 step 1)
 
@@ -3341,13 +3349,13 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
 
 ## 2026-10-06 - the per-seat policy is now delivered by the client, and pinned (Python scripts)
 
-- `agenthub_main/src/tests/scripts/test_openrig_seat_sync.py`: five tests over the policy pass —
+- `agenthub_main/src/tests/scripts/test_seat_sync.py`: five tests over the policy pass —
   the single-source proof (the written `config.yml` equals `render_config(...)` from the REAL module,
   with the fixture rig added to its table), the merge (an unrelated `model:` key survives while the
   policy's keys arrive), semantic idempotence (second run writes nothing, mtime untouched), a seat
   the governed rig's table omits (warned as unpoliced, no policy keys written), and a rig outside the
   table (no policy, no editorial line).
-- `agenthub_main/src/tests/scripts/test_openrig_seat_policy.py`: one test that `--check` tolerates a
+- `agenthub_main/src/tests/scripts/test_seat_policy.py`: one test that `--check` tolerates a
   key the policy does not define and still reports a rule that is wrong.
 - **Falsified, both**: a copy instead of a merge fails the merge test with `KeyError: 'model'`; one
   restated rule fails the single-source test because the file stops matching `render_config`.
@@ -3355,7 +3363,7 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
   `rm -rf …` citing `Blocked by bash pattern: rm -rf*` (the eleventh line of the policy document)
   while `rm -r …` ran — the enforcement reads the file the pipeline writes.
 - Commands: `cd agenthub_main && python3 -m pytest --noconftest -p no:cacheprovider
-  src/tests/scripts/test_openrig_seat_sync.py src/tests/scripts/test_openrig_seat_policy.py -q`
+  src/tests/scripts/test_seat_sync.py src/tests/scripts/test_seat_policy.py -q`
   -> **117 passed**.
 
 ## 2026-10-06 - the rendered omp seat file carries both hand-written MCP entries (Go)
@@ -3411,7 +3419,7 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
 
 ## 2026-10-06 - the per-seat omp permission policy is pinned (Python)
 
-- `agenthub_main/src/tests/scripts/test_openrig_seat_policy.py` (8 tests, all pass): every seat waits for MCP and checks compound commands; every seat including the lead is denied push, amend, `git add -A`, hard reset, ssh and tmux kill; only the lead keeps `rig launch` and the agent/seat/connection MCP tools; the context-sync and deepseek tools are never denied; only the reviewer loses `edit`/`ast_edit`; an unlisted rig or seat has no permissive default; `apply` writes every seat, is idempotent, `--check` reports drift and refuses a seat that was never launched.
+- `agenthub_main/src/tests/scripts/test_seat_policy.py` (8 tests, all pass): every seat waits for MCP and checks compound commands; every seat including the lead is denied push, amend, `git add -A`, hard reset, ssh and tmux kill; only the lead keeps `rig launch` and the agent/seat/connection MCP tools; the context-sync and deepseek tools are never denied; only the reviewer loses `edit`/`ast_edit`; an unlisted rig or seat has no permissive default; `apply` writes every seat, is idempotent, `--check` reports drift and refuses a seat that was never launched.
 
 ## 2026-10-06 - the MCP protocol revision is pinned to what the implementation matches (Go)
 
@@ -3458,7 +3466,7 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
 
 ## 2026-10-06 - the omp startup setting's install is pinned, including the clobber it must not do (Python scripts)
 
-- `agenthub_main/src/tests/scripts/test_openrig_seat_sync.py` gained four tests over the existing omp
+- `agenthub_main/src/tests/scripts/test_seat_sync.py` gained four tests over the existing omp
   fixture, which now renders BOTH files (the shape the render has since `9b0e55ac`):
   `test_rig_sets_the_omp_startup_setting_without_clobbering_other_keys` (a pre-existing `config.yml`
   holding an unrelated nested key AND an unrelated top-level key keeps both while gaining the rendered
@@ -3474,7 +3482,7 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
   `KeyError: 'renderMarkdownResults'` — the unrelated key is gone, which is exactly the failure the
   correction forbids. The other three pass either way.
 - Commands: `cd agenthub_main && python3 -m pytest --noconftest -p no:cacheprovider
-  src/tests/scripts/test_openrig_seat_sync.py -q` -> **103 passed**.
+  src/tests/scripts/test_seat_sync.py -q` -> **103 passed**.
 
 ## 2026-10-06 - the upgrade path's in-process idempotence is now a check (Go)
 
@@ -3498,7 +3506,7 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
 
 ## 2026-10-06 - the per-seat omp MCP install is pinned five ways (Python scripts)
 
-- `agenthub_main/src/tests/scripts/test_openrig_seat_sync.py` gained five tests over the existing rig
+- `agenthub_main/src/tests/scripts/test_seat_sync.py` gained five tests over the existing rig
   fixture: `test_rig_installs_the_rendered_omp_mcp_document_verbatim` (the document lands in the seat's
   agent dir byte for byte, `Bearer ${AGENTHUB_TOKEN}` included, and the fixture's pod id `main` pins
   the session derivation as `main-seat1@room1` rather than the rig name),
@@ -3515,7 +3523,7 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
   `${AGENTHUB_TOKEN}` on 3 requests — the A2 trap, which is why the acceptance for the live seat is
   "lists the tools AND one call lands" rather than "the tools are listed".
 - Commands: `cd agenthub_main && python3 -m pytest --noconftest -p no:cacheprovider
-  src/tests/scripts/test_openrig_seat_sync.py -q` -> **99 passed**.
+  src/tests/scripts/test_seat_sync.py -q` -> **99 passed**.
 
 ## 2026-10-06 - the parity guard stops racing the build (Go)
 
@@ -3534,7 +3542,7 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
 
 ## 2026-10-06 - the rig build's preserve window is pinned with a mid-build drop (Python scripts)
 
-- `agenthub_main/src/tests/scripts/test_openrig_seat_sync.py` gained
+- `agenthub_main/src/tests/scripts/test_seat_sync.py` gained
   `test_rig_build_keeps_a_file_placed_while_it_materializes`: it hooks `materialize_agent` — the
   moment between the old preserve read and the swap — and drops a file into the rig directory
   there, then asserts the file survives, that stderr names it, and that the build's own `rig.yaml`
@@ -3548,11 +3556,11 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
 - The two preservation tests and the counterweight test from the earlier entry are unchanged and
   still pass.
 - Commands: `cd agenthub_main && python3 -m pytest --noconftest -p no:cacheprovider
-  src/tests/scripts/test_openrig_seat_sync.py -q` -> **94 passed**.
+  src/tests/scripts/test_seat_sync.py -q` -> **94 passed**.
 
 ## 2026-10-06 - the bundle build's silence about a missing pin is pinned three ways (Python scripts)
 
-- `agenthub_main/src/tests/scripts/test_openrig_seat_sync.py` gained three tests over the existing
+- `agenthub_main/src/tests/scripts/test_seat_sync.py` gained three tests over the existing
   bundle fixture (stubbed `subprocess.run`, real `cmd_bundle` path):
   `test_bundle_warns_when_the_rig_root_carries_no_pin` (warning on stderr naming the seat and
   `no policy.json in agents/seat1`, while stdout stays exactly the bundle path and the exit is 0),
@@ -3566,7 +3574,7 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
   actual `rig bundle create`: `Bundle created` + `Integrity: PASS` + `policy.json members: 0` with no
   warning before, and the same command printing one warning line after, with the exit still 0.
 - Commands: `cd agenthub_main && python3 -m pytest --noconftest -p no:cacheprovider
-  src/tests/scripts/test_openrig_seat_sync.py -q` -> **93 passed** (90 before these three).
+  src/tests/scripts/test_seat_sync.py -q` -> **93 passed** (90 before these three).
 
 ## 2026-10-06 - the friction table lands, and the class no gate saw gets its guard (Go)
 
@@ -3635,13 +3643,13 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
   still renders none. `0` is also the reason a RUNNING seat needs a relaunch to pick a server up.
 - **Proven on the real stack, not only in unit tests:** a booted `cmd/agenthub` on a throwaway Postgres,
   one published `mcp` block and one seat type, a seat created with `runtime: omp`, and
-  `GET /api/v2/openrig/rooms/mcp/rigspec` forcing a resolve →
+  `GET /api/v2/rooms/mcp/rigspec` forcing a resolve →
   `resolved_seats.files` = `agent.yaml`, `guidance/role.md`, `runtime/omp-mcp.json`. **Those bytes were
   then taken from the database, installed as an agent-dir `.mcp.json`, and read by the REAL runtime**,
   which expanded the token and authenticated: the probe endpoint saw
   `Authorization: Bearer e2e-token-1234` on 20 requests. The stored file still carries the literal
   `${AGENTHUB_TOKEN}`, so no credential is on disk.
-- `OPENRIG_TEST_AGENT_VALIDATE=1 go test -count=1 -run TestRenderSeatRigValidate
+- `AGENTHUB_TEST_AGENT_VALIDATE=1 go test -count=1 -run TestRenderSeatRigValidate
   ./fastmcp/seat_management/domain/seatrenderer/` → PASS for claude-code, codex and omp with the real
   `rig agent validate`. `go test -count=1 ./fastmcp/seat_management/...` → 16 packages green; `gofmt`
   clean.
@@ -3731,12 +3739,12 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
 - Live smoke with the real binary: a database holding ONLY the pre-wiring `teams`, `team_members` and
   `rooms` (no `team_id`), booted with `AUTO_MIGRATE=true` — after boot `rooms.team_id` is `uuid`
   nullable with `rooms_team_id_fkey -> teams` and `ix_rooms_team_id`, all 38 registered tables exist,
-  `/health` is 200, and `PUT /api/v2/openrig/rooms/dev/team` answers 403 `{"detail":"Not authenticated"}`
+  `/health` is 200, and `PUT /api/v2/rooms/dev/team` answers 403 `{"detail":"Not authenticated"}`
   (mounted and behind auth) rather than 404.
 
 ## 2026-10-06 - the rig build's delete of operator files is pinned from both sides (Python scripts)
 
-- `agenthub_main/src/tests/scripts/test_openrig_seat_sync.py` gained two tests over the existing
+- `agenthub_main/src/tests/scripts/test_seat_sync.py` gained two tests over the existing
   local-HTTP-server fixture, so the whole client path runs and only the cloud is canned:
   `test_rig_build_keeps_operator_files_it_did_not_create` places a marker file and a SYMLINK in
   `<out>/<room>/rig` between two builds and asserts both survive, that the stderr notice names
@@ -3749,7 +3757,7 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
   (`FileNotFoundError: .../room1/rig/operator-notes.txt`) and passes with it; the counterweight test
   passes both ways, which is what a guard for an unchanged invariant should do.
 - Commands: `cd agenthub_main && python3 -m pytest --noconftest -p no:cacheprovider
-  src/tests/scripts/test_openrig_seat_sync.py -q` -> **90 passed** (88 before these two), and the
+  src/tests/scripts/test_seat_sync.py -q` -> **90 passed** (88 before these two), and the
   whole script suite `... src/tests/scripts -q` -> **221 passed**.
 - No credential is created, read or printed by either test: the marker holds the text
   "placed by the operator" and the symlink points at a temp file holding "not a credential".
@@ -3992,7 +4000,7 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
 
 - Ran the whole `./fastmcp/seat_management/...` tree WITH `SEAT_TEST_DATABASE_URL` set, which the ungated runs never exercise: on a fresh database exactly one test fails, `TestSeatResolutionEndToEnd`, at the seed, naming the cause — `seed architect: module ref queue-handoff@1.0.0 does not exist — publish the catalog before seeding the seat types`. Everything else, including `TestSeatRepositoriesIntegration` in the orm package, passes against the real database.
 - That test was ALREADY RED before this change; the change moved the failure to the point of cause. Swapping only `seat_seeder.go` back to its parent and re-running on the same fresh database: the seed succeeds (silently, as designed then) and the FIRST resolve fails at `seat_resolution_integration_test.go:81` with `module test-driven-development@1.0.0 not found in catalog` — the 404 three steps downstream that the seeder check now reports up front.
-- REPAIRED, by the lead's ruling (stub fixtures, not a shim): `seedFixtureCatalogRefs` in `seat_resolution_integration_test.go` writes a module version for every ref the library carries that the library does not author — one valid skill block per ref, the library's own slug@version, named in the comment as FIXTURES that exist so the seed and the resolve can be exercised without an OpenRig checkout. With them the test PASSES against real PostgreSQL: it seeds the nine seat types, creates the room and seats, resolves, and the resolve writes `resolved_seats` (5 snapshots for that run's user in the test database), which is the drift path's precondition. The whole gated seat tree is green on a fresh database.
+- REPAIRED, by the lead's ruling (stub fixtures, not a shim): `seedFixtureCatalogRefs` in `seat_resolution_integration_test.go` writes a module version for every ref the library carries that the library does not author — one valid skill block per ref, the library's own slug@version, named in the comment as FIXTURES that exist so the seed and the resolve can be exercised without an 4genteam checkout. With them the test PASSES against real PostgreSQL: it seeds the nine seat types, creates the room and seats, resolves, and the resolve writes `resolved_seats` (5 snapshots for that run's user in the test database), which is the drift path's precondition. The whole gated seat tree is green on a fresh database.
 - TRAP, worth knowing before running these tests: they apply their schema with `CREATE TABLE IF NOT EXISTS`, so a test database created before `ck_modules_kind` gained `'mcp'` keeps the old constraint and rejects an mcp block with `violates check constraint "ck_modules_kind"` — a failure that looks like bad seed data but is a stale table. Use a fresh database per run (or drop the stale tables first).
 
 ## 2026-10-06 — the seeder verifies the refs it writes (Go)
@@ -4045,8 +4053,8 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
 
 ## 2026-10-05 — the bridge's machine token and register step (scripts)
 
-- `agenthub_main/src/tests/scripts/test_openrig_bridge.py` gains eight cases and a body slot on its fake HTTP server (so a register response can carry a token). `test_sender_reads_the_machine_token_not_the_user_token` (the bearer is `AGENTHUB_MACHINE_TOKEN`, never the user token); `test_sender_without_the_machine_token_exits_2_naming_it` (loud usage failure naming the variable); `test_401_names_the_register_step` (the cycle reports the 401 and the register command); `test_register_writes_env_file_0600_and_never_prints_the_token` (the POST carries the user bearer and `{"machine_id": ...}`, the file is mode 0600, and the token appears in neither stdout nor stderr); `test_register_preserves_other_env_lines_and_replaces_the_token` (merge, not overwrite); `test_register_refused_is_loud_and_writes_nothing` (a 401 from the register route exits 1 and leaves no file); `test_register_without_the_user_token_is_a_usage_error` (exit 2). `test_usage_errors_exit_2` now clears `AGENTHUB_MACHINE_TOKEN`, which is the variable `run` actually reads.
-- Commands: `python3 -m py_compile` on the script and the test file OK; `ruff check` All checks passed; `ruff format --check` clean; `cd agenthub_main && python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts/test_openrig_bridge.py -q` -> 48 passed (was 40 before these eight).
+- `agenthub_main/src/tests/scripts/test_bridge.py` gains eight cases and a body slot on its fake HTTP server (so a register response can carry a token). `test_sender_reads_the_machine_token_not_the_user_token` (the bearer is `AGENTHUB_MACHINE_TOKEN`, never the user token); `test_sender_without_the_machine_token_exits_2_naming_it` (loud usage failure naming the variable); `test_401_names_the_register_step` (the cycle reports the 401 and the register command); `test_register_writes_env_file_0600_and_never_prints_the_token` (the POST carries the user bearer and `{"machine_id": ...}`, the file is mode 0600, and the token appears in neither stdout nor stderr); `test_register_preserves_other_env_lines_and_replaces_the_token` (merge, not overwrite); `test_register_refused_is_loud_and_writes_nothing` (a 401 from the register route exits 1 and leaves no file); `test_register_without_the_user_token_is_a_usage_error` (exit 2). `test_usage_errors_exit_2` now clears `AGENTHUB_MACHINE_TOKEN`, which is the variable `run` actually reads.
+- Commands: `python3 -m py_compile` on the script and the test file OK; `ruff check` All checks passed; `ruff format --check` clean; `cd agenthub_main && python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts/test_bridge.py -q` -> 48 passed (was 40 before these eight).
 
 ## 2026-10-05 — occupant PUT keeps the runtime when it is blank (Go)
 
@@ -4081,8 +4089,8 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
 
 ## 2026-10-06 — seatcheck acceptance end-to-end against a pulled seat (scripts)
 
-- New `agenthub_main/src/tests/scripts/test_openrig_seatcheck_guard.py`: three cases that run the REAL binary `install-checker` builds and links (`<store>/bin/seatcheck` via `~/.local/bin`) against a seat `pull` materialized, so the pinned policy and the guard are exercised together rather than stubbed: `test_linked_guard_delivers_to_an_allowed_peer` (PERMITTED — exit 0, `rig send` argv carries the message, audit decision line plus `delivered` outcome); `test_linked_guard_refuses_a_disallowed_peer_and_audits_it` (REFUSED with an audit row — exit 3, `denied: no link`, nothing sent, exactly one denied record); `test_audit_scan_detects_a_forged_direct_rig_send` (DETECTED, not prevented — a direct `rig send` writes no audit row, so `audit-scan` flags the observed line and exits 4 while a `seatcheck send` line stays clean). The file is self-contained (its own stub server, `env` and `installed_checker` fixtures) and skips when `go` is absent, since the binary is the artifact under test.
-- These are acceptance tests for the mechanism, not units of `openrig_seat_sync.py`, so they live in their own file; `test_openrig_seat_sync.py` is unchanged. This completes, at the connection level, coverage that existed only as units: `test_pull_and_rig_fail_loudly_without_the_link` (a) and the Go cases `TestSendAllowedDelivers`, `TestSendDeniedWritesAuditAndSkipsDelivery`, `TestAuditScanFindsBypassAndSkipsKnownWrapper`.
+- New `agenthub_main/src/tests/scripts/test_seatcheck_guard.py`: three cases that run the REAL binary `install-checker` builds and links (`<store>/bin/seatcheck` via `~/.local/bin`) against a seat `pull` materialized, so the pinned policy and the guard are exercised together rather than stubbed: `test_linked_guard_delivers_to_an_allowed_peer` (PERMITTED — exit 0, `4genteam send` argv carries the message, audit decision line plus `delivered` outcome); `test_linked_guard_refuses_a_disallowed_peer_and_audits_it` (REFUSED with an audit row — exit 3, `denied: no link`, nothing sent, exactly one denied record); `test_audit_scan_detects_a_forged_direct_rig_send` (DETECTED, not prevented — a direct `4genteam send` writes no audit row, so `audit-scan` flags the observed line and exits 4 while a `seatcheck send` line stays clean). The file is self-contained (its own stub server, `env` and `installed_checker` fixtures) and skips when `go` is absent, since the binary is the artifact under test.
+- These are acceptance tests for the mechanism, not units of `seat_sync.py`, so they live in their own file; `test_seat_sync.py` is unchanged. This completes, at the connection level, coverage that existed only as units: `test_pull_and_rig_fail_loudly_without_the_link` (a) and the Go cases `TestSendAllowedDelivers`, `TestSendDeniedWritesAuditAndSkipsDelivery`, `TestAuditScanFindsBypassAndSkipsKnownWrapper`.
 - Commands: `ruff format --check` -> 2 files already formatted; `ruff check` -> All checks passed; `python3 -m py_compile` on both -> OK; `cd agenthub_main && python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts -q` -> 205 passed; `go test -count=1 ./cmd/seatcheck ./fastmcp/seat_management/domain/commpolicy` -> ok (unchanged).
 
 ## 2026-10-05 — context-pack algebra (Go, NEXT_GEN F2)
@@ -4115,18 +4123,18 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
 
 ## 2026-10-05 — publish-skills + skill blocks (scripts + Go seeds/renderer)
 
-- `agenthub_main/src/tests/scripts/test_openrig_team_setup.py` gains six cases for `publish-skills` over a fixture library (a canonical-only skill, a plugin-only skill, and a canonical/plugin overlap), reusing the file's recording HTTP server: one block per skill with the exact provenance dict; the plugin-only skill sources from the plugin path with no mirror; the overlap is ONE module carrying canonical `source_path`/`sha256` plus `mirror_path`/`mirror_sha256` (three PUTs, not four); a re-run skips all three with no request; changed content lands at the next patch; a credential-shaped literal is refused with exit 2 and zero requests; a source file that no longer matches the inventory digest is refused as stale; a missing `--source-root`/`OPENRIG_SKILLS_ROOT` is a usage error. The two `import-project` skill assertions now check the block shape and its computed digest.
+- `agenthub_main/src/tests/scripts/test_team_setup.py` gains six cases for `publish-skills` over a fixture library (a canonical-only skill, a plugin-only skill, and a canonical/plugin overlap), reusing the file's recording HTTP server: one block per skill with the exact provenance dict; the plugin-only skill sources from the plugin path with no mirror; the overlap is ONE module carrying canonical `source_path`/`sha256` plus `mirror_path`/`mirror_sha256` (three PUTs, not four); a re-run skips all three with no request; changed content lands at the next patch; a credential-shaped literal is refused with exit 2 and zero requests; a source file that no longer matches the inventory digest is refused as stale; a missing `--source-root`/`AGENTHUB_SKILLS_ROOT` is a usage error. The two `import-project` skill assertions now check the block shape and its computed digest.
 - Go: `domain/skillblock/skillblock_test.go` (valid block, mirror block, nine refusal cases, credential refusal, `Marshal` keeps the text readable and round-trips); `seatrenderer` gains `TestRenderSeatSkillBlockInvalidError` (plain text, bad digest, missing content, unknown field each name the module) and asserts the block's text is what lands in `skills/skill.alpha/SKILL.md`; `seedlibrary` asserts every type's `comm-guard-skill` is a block whose digest matches its committed source and `TestLoadEmbeddedSeedsCarryCuratedSkillRefs` checks the SHIPPED seeds against `ai_docs/agent-system/skill-library.json` (each seat carries exactly its curation, every ref is in the inventory, `unused_by_default` is wired nowhere); `seedmap` asserts extra refs append after the authored module refs.
-- Commands: `python3 -m py_compile scripts/openrig_team_setup.py` -> OK; `cd agenthub_main && python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts -q` -> 200 passed / 0 failed; `gofmt -l fastmcp/seat_management/` -> empty; `go vet ./fastmcp/seat_management/...`, `go build ./...`, `go test -count=1 ./fastmcp/seat_management/...` -> green (15 packages).
+- Commands: `python3 -m py_compile scripts/team_setup.py` -> OK; `cd agenthub_main && python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts -q` -> 200 passed / 0 failed; `gofmt -l fastmcp/seat_management/` -> empty; `go vet ./fastmcp/seat_management/...`, `go build ./...`, `go test -count=1 ./fastmcp/seat_management/...` -> green (15 packages).
 
 ## 2026-10-05 — drift-check (scripts, stored skill provenance vs disk)
 
-- Home, and why it is `openrig_team_setup.py`: a check belongs with the contract it checks. That script already holds BOTH halves of this one - the module-version PUT that creates the blocks and the path-plus-sha data that describes them - so the check and the publisher share the provenance key names as constants instead of as a convention between two files. `openrig_seat_sync.py` has the checking habit but not the subject; the reviewer ruled the same way (ownership over habit) after weighing the alternative.
+- Home, and why it is `team_setup.py`: a check belongs with the contract it checks. That script already holds BOTH halves of this one - the module-version PUT that creates the blocks and the path-plus-sha data that describes them - so the check and the publisher share the provenance key names as constants instead of as a convention between two files. `seat_sync.py` has the checking habit but not the subject; the reviewer ruled the same way (ownership over habit) after weighing the alternative.
 
-- `agenthub_main/src/tests/scripts/test_openrig_team_setup.py` gains eight cases for the new `drift-check` subcommand, reusing the file's recording HTTP server and its `project_root` fixture: a clean tree (both digest pairs of a canonical/plugin overlap match, an `mcp` block is not a skill block, exit 0, no output, only GETs recorded); a MISMATCH whose only finding line names the skill, the path, the resolving root and both hashes, asserted exactly; a `missing-source` path naming every root tried; a `no-provenance` block (raw `SKILL.md` text, the pre-provenance shape); a divergent `mirror_path`/`mirror_sha256` reported as its own `mirror` line with the primary pair clean; mismatch + no-provenance together proving the categories stay separate; a library path (`skills/_canonical/...`) resolved under `--library-root` and named in the line; and the env default `$OPENRIG_SKILLS_ROOT` resolving a library path cleanly with no flag. The helper passes an empty `--library-root` by default so the cases stay hermetic.
-- Real-data check (read-only) against `ai_docs/agent-system/skill-library.json` and the OpenRig checkout: 52 blocks (2 mirror pairs, 54 paths) -> 0 findings with both roots, 54 `missing-source` with only `--root`.
+- `agenthub_main/src/tests/scripts/test_team_setup.py` gains eight cases for the new `drift-check` subcommand, reusing the file's recording HTTP server and its `project_root` fixture: a clean tree (both digest pairs of a canonical/plugin overlap match, an `mcp` block is not a skill block, exit 0, no output, only GETs recorded); a MISMATCH whose only finding line names the skill, the path, the resolving root and both hashes, asserted exactly; a `missing-source` path naming every root tried; a `no-provenance` block (raw `SKILL.md` text, the pre-provenance shape); a divergent `mirror_path`/`mirror_sha256` reported as its own `mirror` line with the primary pair clean; mismatch + no-provenance together proving the categories stay separate; a library path (`skills/_canonical/...`) resolved under `--library-root` and named in the line; and the env default `$AGENTHUB_SKILLS_ROOT` resolving a library path cleanly with no flag. The helper passes an empty `--library-root` by default so the cases stay hermetic.
+- Real-data check (read-only) against `ai_docs/agent-system/skill-library.json` and the 4genteam checkout: 52 blocks (2 mirror pairs, 54 paths) -> 0 findings with both roots, 54 `missing-source` with only `--root`.
 - Mutation proof (one byte, `body` -> `BODY` in the fixture skill file): clean -> exit 0, no output; flipped -> exit 1 with `  alpha-skill: .claude/skills/alpha-skill/SKILL.md (digest @ /tmp/drift-proof) stored 803fdad58b5902a8d1976652f0e07d6199519452c9ca03eb98d0ede4fd15481f computed 89ddc1b8940d74024887ef4f426b60bf62ba7c64fb719520b8c4d381b453cff5`; restored -> exit 0, no output.
-- Commands: `python3 -m py_compile scripts/openrig_team_setup.py` -> OK; `cd agenthub_main && python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts/test_openrig_team_setup.py -q -k drift_check` -> 8 passed; the full `src/tests/scripts` suite -> 202 passed, 0 failed.
+- Commands: `python3 -m py_compile scripts/team_setup.py` -> OK; `cd agenthub_main && python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts/test_team_setup.py -q -k drift_check` -> 8 passed; the full `src/tests/scripts` suite -> 202 passed, 0 failed.
 
 ## 2026-10-05 — mcp block kind in the palette (frontend, D1/D2/D4)
 
@@ -4150,8 +4158,8 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
 
 ## 2026-10-05 — import-project (scripts, client-side module import)
 
-- `agenthub_main/src/tests/scripts/test_openrig_team_setup.py` gains four cases for the new `import-project` subcommand, reusing the file's recording HTTP server: a tmp project root with one http and one stdio `.mcp.json` server and two `.claude/skills/*` dirs, asserting the exact `mcp` block payloads (`name`/`type`/`url`/`command`/`args`; `headers`/`env` values kept verbatim as `${VAR}` references) and `skill` modules (`kind: skill`, content = `SKILL.md`); a credential-shaped literal (`Bearer sk-...`) refused with exit 2, a message naming the server and `${ENV_VAR}`, and zero requests; a dry run that sends nothing; and `test_import_project_uses_the_hooks_project_root_derivation` asserting `team_setup.get_project_root is utils.env_loader.get_project_root` — one derivation, not a copy.
-- Commands: `python3 -m py_compile scripts/openrig_team_setup.py` -> OK; `cd agenthub_main && python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts -q` -> 184 passed, 1 pre-existing failure (`mission-4genthub: 522 words, expected 350-520`; committed content, not touched by this change).
+- `agenthub_main/src/tests/scripts/test_team_setup.py` gains four cases for the new `import-project` subcommand, reusing the file's recording HTTP server: a tmp project root with one http and one stdio `.mcp.json` server and two `.claude/skills/*` dirs, asserting the exact `mcp` block payloads (`name`/`type`/`url`/`command`/`args`; `headers`/`env` values kept verbatim as `${VAR}` references) and `skill` modules (`kind: skill`, content = `SKILL.md`); a credential-shaped literal (`Bearer sk-...`) refused with exit 2, a message naming the server and `${ENV_VAR}`, and zero requests; a dry run that sends nothing; and `test_import_project_uses_the_hooks_project_root_derivation` asserting `team_setup.get_project_root is utils.env_loader.get_project_root` — one derivation, not a copy.
+- Commands: `python3 -m py_compile scripts/team_setup.py` -> OK; `cd agenthub_main && python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts -q` -> 184 passed, 1 pre-existing failure (`mission-4genthub: 522 words, expected 350-520`; committed content, not touched by this change).
 
 ## 2026-10-05 — overlay PUT fold guard (Go, seat management)
 
@@ -4205,7 +4213,7 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
   with room/type/runtime/model/version/policy, and zero rooms shows the empty state. The Seats tab is activated with
   `user-event`, not `fireEvent.click`, because Radix Tabs activates on a real pointer event.
 - Commands: `npx tsc --noEmit -p .` -> 0 errors; `npx vitest run` -> 96 files / 1663 tests passed; `npx vite build` ok.
-  Browser smoke of the production bundle served by one local Bun stub (the three openrig seat routes): `/topology`
+  Browser smoke of the production bundle served by one local Bun stub (the three the reference client seat routes): `/topology`
   rendered the summary `2 rooms · 3 seats · 2 links`, both room groups with their nodes, two edges by kind
   (`delegates_to`, `escalates_to`) and the legend; the Seats tab rendered the three-row table with `follows latest` and
   `locked` intact.
@@ -4258,7 +4266,7 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
 
 - `fastmcp/seat_management/domain/seatrenderer/renderer_test.go`: new `TestRenderSeatCodexRulesDenyTheDirectSendSurface` — a codex seat carrying the comm-guard tool module renders `runtime/codex.rules` with the five `forbidden` prefixes and no `allow` rule; a claude-code seat with the same module renders no codex file and keeps its settings fragment; a codex seat with no tool module renders no rules file. Its last case covers the branch the reviewer flagged as untested: a deny entry that is not `Bash(...)` (`Read(/etc/shadow)`) must be LISTED as a comment instead of dropped, while only the Bash entry becomes a prefix rule.
 - `TestRenderSeatSameModulesOnBothRuntimes` restated (the contract genuinely changed): codex now expects the rules file and checks its five `decision = "forbidden"` entries; agy and omp still render no runtime file.
-- `TestRenderSeatRigValidate` now renders each seat with the seed library's real modules — before, the fixture carried no tool module, so the new artefact was not covered by the real validator. `OPENRIG_TEST_AGENT_VALIDATE=1 go test -count=1 -run TestRenderSeatRigValidate ./fastmcp/seat_management/domain/seatrenderer/` -> PASS for claude-code, codex and omp, each printing `Agent spec valid`.
+- `TestRenderSeatRigValidate` now renders each seat with the seed library's real modules — before, the fixture carried no tool module, so the new artefact was not covered by the real validator. `AGENTHUB_TEST_AGENT_VALIDATE=1 go test -count=1 -run TestRenderSeatRigValidate ./fastmcp/seat_management/domain/seatrenderer/` -> PASS for claude-code, codex and omp, each printing `Agent spec valid`.
 - Commands: `gofmt -l fastmcp/seat_management/domain/seatrenderer/` clean; `go vet ./fastmcp/seat_management/domain/seatrenderer/` clean; `go test -count=1 ./fastmcp/seat_management/domain/seatrenderer/` ok.
 
 ## 2026-10-05 — dashboard push: notification consumer (frontend, D3)
@@ -4315,14 +4323,14 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
 
 ## 2026-10-05 — dead seat reads stopped and can be respawned (Python)
 
-- `src/tests/scripts/test_openrig_bridge.py`: the captured death node (`sessionStatus running`, `lifecycleState attention_required`, `agentActivity {unknown, no_runtime_hook}`) now expects `stopped`; an omp-style just-launched node (`unknown`, reason absent) still expects `unknown` (an agy node in the same window reports `no_runtime_hook` and reads `stopped` - that is the cold-start overlap the 30s respawn hold covers).
-- `src/tests/scripts/test_openrig_seat_sync.py`: six new `respawn` cases — launches only on the dead reading for the whole wait; refuses a live seat (exit 2); refuses a seat OpenRig does not list; reports success (exit 0, caveat on stderr) when `rig seat launch` warned but the seat came up; fails (exit 1) when the seat is still dead after the launch; surfaces `rig seat launch`'s own message instead of a traceback.
+- `src/tests/scripts/test_bridge.py`: the captured death node (`sessionStatus running`, `lifecycleState attention_required`, `agentActivity {unknown, no_runtime_hook}`) now expects `stopped`; an omp-style just-launched node (`unknown`, reason absent) still expects `unknown` (an agy node in the same window reports `no_runtime_hook` and reads `stopped` - that is the cold-start overlap the 30s respawn hold covers).
+- `src/tests/scripts/test_seat_sync.py`: six new `respawn` cases — launches only on the dead reading for the whole wait; refuses a live seat (exit 2); refuses a seat 4genteam does not list; reports success (exit 0, caveat on stderr) when `rig seat launch` warned but the seat came up; fails (exit 1) when the seat is still dead after the launch; surfaces `rig seat launch`'s own message instead of a traceback.
 - Commands: bridge file -> 41 passed; seat-sync file -> 88 passed.
 
 ## 2026-10-05 — offline bundle carries the pinned policy (Python seat sync)
 
-- `src/tests/scripts/test_openrig_seat_sync.py`: four rig tests moved from the old symlink contract to the materialized one (`agents/<seat>` is now a real directory carrying the rendered files plus the seat's `policy.json`/`pinned.json`); two new tests for `offline-install` (it writes `<home>/.openrig/agenthub-seats/<rig>/<member>/` and skips a policy that names another seat; it fails loudly with exit 2 when the bundle carries no policy).
-- Commands: `python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts/test_openrig_seat_sync.py -q` -> 82 passed; whole scripts suite -> 174 passed.
+- `src/tests/scripts/test_seat_sync.py`: four rig tests moved from the old symlink contract to the materialized one (`agents/<seat>` is now a real directory carrying the rendered files plus the seat's `policy.json`/`pinned.json`); two new tests for `offline-install` (it writes `<home>/.config/4genthub/agenthub-seats/<rig>/<member>/` and skips a policy that names another seat; it fails loudly with exit 2 when the bundle carries no policy).
+- Commands: `python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts/test_seat_sync.py -q` -> 82 passed; whole scripts suite -> 174 passed.
 
 ## 2026-10-04 — branch collection POST exact match (Go)
 
@@ -4339,9 +4347,9 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
 
 ## 2026-10-04 — F4: dead-agent state mapping (Python scripts)
 
-- `src/tests/scripts/test_openrig_bridge.py`: three `seat_state` cases added/updated — the captured death node (session running, `lifecycleState: attention_required`, `agentActivity.state: unknown` + `no_runtime_hook`) maps to `unknown`; `attention_required` alone maps to `unknown`; `attention_required` with `needs_input` maps to `blocked`. The payload-shape test is unchanged (its `needs_input` node still blocks).
-- `scripts/openrig_bridge.py` (not a test): `attention_required` alone is no longer a blocked signal; reproduced live on a scratch rig before/after (bridge `blocked` -> `unknown`), `rig seat stop` still `stopped`.
-- Commands: `python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts/test_openrig_bridge.py -q` -> 40 passed; `python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts -q` -> 172 passed.
+- `src/tests/scripts/test_bridge.py`: three `seat_state` cases added/updated — the captured death node (session running, `lifecycleState: attention_required`, `agentActivity.state: unknown` + `no_runtime_hook`) maps to `unknown`; `attention_required` alone maps to `unknown`; `attention_required` with `needs_input` maps to `blocked`. The payload-shape test is unchanged (its `needs_input` node still blocks).
+- `scripts/bridge.py` (not a test): `attention_required` alone is no longer a blocked signal; reproduced live on a scratch rig before/after (bridge `blocked` -> `unknown`), `rig seat stop` still `stopped`.
+- Commands: `python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts/test_bridge.py -q` -> 40 passed; `python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts -q` -> 172 passed.
 
 ## 2026-10-04 — B2: document `--noconftest` for the session_stream test (Python)
 
@@ -4369,11 +4377,11 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
 
 ## 2026-10-04 — seatcheck PATH cold start (Go/scripts)
 
-- Added `test_seat_path_reads_the_daemon_path_at_cold_start`: at cold start `seat_path` returns the rig daemon's PATH (stubbed) with source `DAEMON_PATH_SOURCE`, and falls back to the shell PATH with `SHELL_PATH_SOURCE` only when no daemon is found. The autouse `no_tmux_server` fixture now also stubs `openrig_daemon_pid` to None so tests never touch the live daemon.
+- Added `test_seat_path_reads_the_daemon_path_at_cold_start`: at cold start `seat_path` returns the rig daemon's PATH (stubbed) with source `DAEMON_PATH_SOURCE`, and falls back to the shell PATH with `SHELL_PATH_SOURCE` only when no daemon is found. The autouse `no_tmux_server` fixture now also stubs `daemon_pid` to None so tests never touch the live daemon.
 - Updated `test_shell_path_fallback_is_said_in_the_output` for the new fallback message.
-- Before/after: at HEAD `scripts/openrig_seat_sync.py` has no `DAEMON_PATH_SOURCE` and `seat_path()` at cold start returns the operator's shell PATH (`/operator/shell/bin`); at the tip it returns the daemon PATH.
-- Commands: `python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts/test_openrig_seat_sync.py -q -k cold_start` -> 1 passed; the whole scripts suite -> 167 passed, 4 warnings.
-- Review follow-up (parsing coverage): added `test_openrig_daemon_port_prefers_openrig_port_then_url` (`OPENRIG_PORT` wins, else the `OPENRIG_URL` port, else None), `test_openrig_daemon_pid_parses_ss_output` (a canned `ss -ltnp` via a monkeypatched `subprocess.run`: the `pid=` line returns the pid, a matching line with no `pid=` returns None) and `test_proc_env_path_reads_the_path_of_this_process` (`/proc/<self pid>/environ`, skipped without `/proc`). Whole scripts suite now 170 passed.
+- Before/after: at HEAD `scripts/seat_sync.py` has no `DAEMON_PATH_SOURCE` and `seat_path()` at cold start returns the operator's shell PATH (`/operator/shell/bin`); at the tip it returns the daemon PATH.
+- Commands: `python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts/test_seat_sync.py -q -k cold_start` -> 1 passed; the whole scripts suite -> 167 passed, 4 warnings.
+- Review follow-up (parsing coverage): added `test_daemon_port_prefers_port_then_url` (`AGENTHUB_PORT` wins, else the `AGENTHUB_URL` port, else None), `test_daemon_pid_parses_ss_output` (a canned `ss -ltnp` via a monkeypatched `subprocess.run`: the `pid=` line returns the pid, a matching line with no `pid=` returns None) and `test_proc_env_path_reads_the_path_of_this_process` (`/proc/<self pid>/environ`, skipped without `/proc`). Whole scripts suite now 170 passed.
 
 ## 2026-10-04 — Subtask assignee filter fixed (N2)
 
@@ -4402,7 +4410,7 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
 ## 2026-10-04 — Python call_agent removal (principal session)
 
 - Removed with the subject: `agent_management/interface/test_call_agent_mcp_tool.py`; the whole `tests/performance/agent_management/` package (k6 + locust `call_agent` load tests and their README); `agent_management/application/test_orphaned_agent_facade.py` (its entire subject was the `get_agent_for_call` response); the `TestGetAgentForCall` class in `test_agent_management_facade.py`; the two call-specific tests in `agent_management/integration/test_agent_instantiation_flow.py`. `test_orphaned_agent_workflow_e2e.py` lost STEP 6 (the call-response orphan flag) and keeps the marketplace/import flow; `test_agent_customization_e2e.py` exercises `get_or_create_instance` directly (the mechanism it already used).
-- Re-homed: `test_token_consumption_service.py` and `test_token_consumption_helper.py` use `create_context` (5 tokens) instead of `call_agent` (20) as the example operation and their expected numbers were updated; `mcp_keycloak_auth_test.py` asserts `manage_agent` (the role tool lists lost `call_agent`); `ddd_compliant_mcp_tools_test.py` lost the `CallAgentMCPController` patch blocks and the `_call_agent_controller` mock; `server_test.py` and `test_server_edge_cases.py` lost the `enabled_tools["call_agent"]` assertion; `mcp_client_utils.py` lost its `call_agent` branch; `tool_fixtures.py` lost the unused `mock_call_agent_facade`; `mcp_auto_injection_fixtures.py` validates `rig whoami` in the session context (was `call_agent('master-orchestrator-agent')`).
+- Re-homed: `test_token_consumption_service.py` and `test_token_consumption_helper.py` use `create_context` (5 tokens) instead of `call_agent` (20) as the example operation and their expected numbers were updated; `mcp_keycloak_auth_test.py` asserts `manage_agent` (the role tool lists lost `call_agent`); `ddd_compliant_mcp_tools_test.py` lost the `CallAgentMCPController` patch blocks and the `_call_agent_controller` mock; `server_test.py` and `test_server_edge_cases.py` lost the `enabled_tools["call_agent"]` assertion; `mcp_client_utils.py` lost its `call_agent` branch; `tool_fixtures.py` lost the unused `mock_call_agent_facade`; `mcp_auto_injection_fixtures.py` validates `4genteam whoami` in the session context (was `call_agent('master-orchestrator-agent')`).
 - Command/result: `cd agenthub_main && .venv/bin/python -m pytest --noconftest -q src/tests/auth/application/test_token_consumption_service.py` → 22 passed, 1 failed (`test_consume_tokens_for_operation_auto_create_balance`, `'NoneType' object is not subscriptable`, unrelated to this removal and failing under `--noconftest`). The full suite with conftest hangs in collection in this environment (pre-existing).
 
 ## 2026-10-04 — Agent frontend removed; assignee pickers seat-only (T7, frontend half)
@@ -4420,7 +4428,7 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
 
 - Deleted with their subjects: the `agent_management` package tests (entities, services, ORM repositories, REST routes) and `server/httpapp/agent_mgmt_mount_test.go`.
 - `fastmcp/task_management/infrastructure/database/models_prod_test.go`: `prodModelTypes` and `prodExpectedColumns` drop `AgentTemplate`/`UserAgentInstance` and `agent_templates`/`user_agent_instances`; `ProductionTables` count 8 to 6.
-- `seatrenderer/renderer_test.go`: uses the moved DTOs (`OpenRigSpec`, `OpenRigTokenEnvVar`) from its own package now.
+- `seatrenderer/renderer_test.go`: uses the moved DTOs (`4genteamSpec`, `4genteamTokenEnvVar`) from its own package now.
 - Result (from `agenthub_go`, GOCACHE/TMPDIR set, `AGENTHUB_TEST_PG_URL` and `SEAT_TEST_DATABASE_URL` at 54329): `gofmt -l` empty; `go vet ./...` clean; `go test ./...` green except `fastmcp.TestDatabaseMigratorRunMigrations` (`details=true progress_history=false`), which fails identically at HEAD in a clean `git archive` export, so it is pre-existing and unrelated.
 
 ## 2026-10-04 — Default-wildcard CORS simple-request branches pinned (OF4 review)
@@ -4452,8 +4460,8 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
 
 ## 2026-10-04 — G2 validate check is env-gated (OF1, Go)
 
-- `agenthub_go/fastmcp/seat_management/domain/seatrenderer/renderer_test.go`: `TestRenderSeatRigValidate` now requires `OPENRIG_TEST_AGENT_VALIDATE=1` and fails (does not skip) when `rig` is absent, the daemon is unreachable or a rendered spec is invalid; without the variable it skips with the reason. There is no in-process substitute: only rig's own validator is the G2 check.
-- Behaviour proved in four runs from `agenthub_go` (`GOCACHE`/`TMPDIR` set): unset -> SKIP; set -> PASS for `claude-code`, `codex`, `omp` (daemon on 7433); set + `OPENRIG_URL=http://127.0.0.1:1` -> FAIL ("Daemon did not respond"); set + PATH without `rig` -> FAIL ("rig binary is not on PATH").
+- `agenthub_go/fastmcp/seat_management/domain/seatrenderer/renderer_test.go`: `TestRenderSeatRigValidate` now requires `AGENTHUB_TEST_AGENT_VALIDATE=1` and fails (does not skip) when `rig` is absent, the daemon is unreachable or a rendered spec is invalid; without the variable it skips with the reason. There is no in-process substitute: only rig's own validator is the G2 check.
+- Behaviour proved in four runs from `agenthub_go` (`GOCACHE`/`TMPDIR` set): unset -> SKIP; set -> PASS for `claude-code`, `codex`, `omp` (daemon on 7433); set + `AGENTHUB_URL=http://127.0.0.1:1` -> FAIL ("Daemon did not respond"); set + PATH without `rig` -> FAIL ("rig binary is not on PATH").
 - No frontend test file was uncommitted: `git status --short --untracked-files=all` lists only `.claude`, `CLAUDE.md`, `agenthub_go/NEXT_GEN.md`, `ai_docs/index.json` — none a test file.
 
 ## 2026-10-04 — Session stream: the remaining Python tests ported (Task A4/A6/A7, Go)
@@ -4589,8 +4597,8 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
 
 ## 2026-10-04 — call_agent removal: tests removed and re-homed (T6, Go)
 
-- Removed with their code: `agents_mount_test.go`, `call_agent_test.go`, `call_agent_port_test.go`, `agent_invocation_handler_test.go`, `yaml_agent_template_loader_test.go`, the seeder tests (in `openrig_spec_renderer_test.go`) and `TestPathResolverGetCursorAgentDir`.
-- Changed: `openrig_spec_renderer_test.go` `loadTestTemplate` builds the `AgentTemplate` directly (same slug, version, prompt, rule and output format values); `authenticateTestUser` and `doTestRequest` moved into `seat_mount_test.go` for the seat mount tests; token cost tests 68 to 67 operations; golden and tool config fixtures lost `call_agent`; version test expects 0.0.14; connection tool text test lost the Agent Library Dir line.
+- Removed with their code: `agents_mount_test.go`, `call_agent_test.go`, `call_agent_port_test.go`, `agent_invocation_handler_test.go`, `yaml_agent_template_loader_test.go`, the seeder tests (in `spec_renderer_test.go`) and `TestPathResolverGetCursorAgentDir`.
+- Changed: `spec_renderer_test.go` `loadTestTemplate` builds the `AgentTemplate` directly (same slug, version, prompt, rule and output format values); `authenticateTestUser` and `doTestRequest` moved into `seat_mount_test.go` for the seat mount tests; token cost tests 68 to 67 operations; golden and tool config fixtures lost `call_agent`; version test expects 0.0.14; connection tool text test lost the Agent Library Dir line.
 - Added: `TestMCPToolsListPublishesCallSeat` fails if tools/list publishes `call_agent`.
 - Result: `gofmt -l` empty, `go vet ./...` clean, `go test ./...` 139 packages ok (from `agenthub_go`).
 
@@ -4714,7 +4722,7 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
 
 ## 2026-10-04 — seatcheck PATH check uses the tmux global PATH
 
-- Added (`test_openrig_seat_sync.py`): `test_tmux_global_path_reads_the_global_environment`, `test_tmux_global_path_is_none_without_an_answer` (4 cases: non-zero exit, `-PATH`, tmux missing, tmux hangs past the 5 s timeout), `test_path_limit_says_only_the_default_tmux_socket_is_queried`, `test_pull_checks_the_tmux_global_path_not_the_shell_path`, `test_pull_fails_when_the_tmux_global_path_lacks_the_checker`, `test_shell_path_fallback_is_said_in_the_output`. Added an autouse fixture `no_tmux_server` so the other tests never reach a real tmux server.
+- Added (`test_seat_sync.py`): `test_tmux_global_path_reads_the_global_environment`, `test_tmux_global_path_is_none_without_an_answer` (4 cases: non-zero exit, `-PATH`, tmux missing, tmux hangs past the 5 s timeout), `test_path_limit_says_only_the_default_tmux_socket_is_queried`, `test_pull_checks_the_tmux_global_path_not_the_shell_path`, `test_pull_fails_when_the_tmux_global_path_lacks_the_checker`, `test_shell_path_fallback_is_said_in_the_output`. Added an autouse fixture `no_tmux_server` so the other tests never reach a real tmux server.
 - Verified: the 4 new behaviour tests failed before the change; `pytest --noconftest src/tests/scripts` 166 passed after it (the timeout case and the PATH_LIMIT test failed first).
 
 ## 2026-10-04 — TestMachineExpectedHashIntegration reruns on a used database
@@ -4724,17 +4732,17 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
 
 ## 2026-10-04 — switch accepts the agy runtime
 
-- Added: `test_switch_accepts_the_agy_runtime` (`test_openrig_seat_sync.py`): `switch room1 seat1 --runtime agy` keeps the seat's current model, exits 0, PUTs `{"runtime": "agy", "model": "old-model"}` and prints the `switched:` line. The first draft passed `--model ""`, which is pinned as invalid (exit 2) by `test_switch_usage_errors_exit_2`; another seat replaced it with this runtime-only form before commit.
-- Verified: the test fails (exit 2) with `RUNTIMES` reverted and passes with it; `test_openrig_seat_sync.py` 67 passed.
+- Added: `test_switch_accepts_the_agy_runtime` (`test_seat_sync.py`): `switch room1 seat1 --runtime agy` keeps the seat's current model, exits 0, PUTs `{"runtime": "agy", "model": "old-model"}` and prints the `switched:` line. The first draft passed `--model ""`, which is pinned as invalid (exit 2) by `test_switch_usage_errors_exit_2`; another seat replaced it with this runtime-only form before commit.
+- Verified: the test fails (exit 2) with `RUNTIMES` reverted and passes with it; `test_seat_sync.py` 67 passed.
 
 ## 2026-10-04 — delegate-deepseek module 1.1.0
 
-- Added: `test_delegate_module_carries_the_chef_and_worker_wording` (`test_openrig_team_setup.py`): the module text has the chef wording and `team.json` carries version 1.1.0. Changed: the company overlay test expects `delegate-deepseek@1.1.0`; the word limit for the module is 100-230 (was 100-180).
-- Verified: the new test and the overlay test failed before the change; `test_openrig_team_setup.py` 24 passed after it.
+- Added: `test_delegate_module_carries_the_chef_and_worker_wording` (`test_team_setup.py`): the module text has the chef wording and `team.json` carries version 1.1.0. Changed: the company overlay test expects `delegate-deepseek@1.1.0`; the word limit for the module is 100-230 (was 100-180).
+- Verified: the new test and the overlay test failed before the change; `test_team_setup.py` 24 passed after it.
 
 ## 2026-10-03 — seat status accepts the agy runtime
 
-- Added: `TestSeatStatusPostAcceptsEverySeatRuntime` (`seat_status_mount_test.go`) posts a report for each of claude-code, codex, agy, terminal and unknown and expects 200; `test_runtime_mapping_keeps_every_supported_runtime` (`test_openrig_bridge.py`) checks the bridge maps agy to `agy` and an unlisted runtime to `unknown`.
+- Added: `TestSeatStatusPostAcceptsEverySeatRuntime` (`seat_status_mount_test.go`) posts a report for each of claude-code, codex, agy, terminal and unknown and expects 200; `test_runtime_mapping_keeps_every_supported_runtime` (`test_bridge.py`) checks the bridge maps agy to `agy` and an unlisted runtime to `unknown`.
 - Verified: the Python case for agy failed before the change; `go test ./fastmcp/server/httpapp/` and `pytest --noconftest src/tests/scripts` (155 passed on the committed tests only; the working tree then also held a failing, uncommitted `test_switch_accepts_the_agy_runtime`, fixed in the entry below) pass after it.
 
 ## 2026-10-04 — remove tests for APIs the code does not have
@@ -4759,7 +4767,7 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
 
 ## 2026-10-03 — seat types seed without AGENTHUB_PUBLIC_URL
 
-- Added: `TestSeedSeatTypesWorksWithoutPublicURL` (verifies `POST /api/v2/openrig/seat-types/seed` succeeds without `AGENTHUB_PUBLIC_URL`), `TestSeedSeatTypesErrorMapping` (verifies 500 status on seed repository error) in `seat_mount_test.go`.
+- Added: `TestSeedSeatTypesWorksWithoutPublicURL` (verifies `POST /api/v2/seat-types/seed` succeeds without `AGENTHUB_PUBLIC_URL`), `TestSeedSeatTypesErrorMapping` (verifies 500 status on seed repository error) in `seat_mount_test.go`.
 
 ## 2026-10-03 — SubtaskEditDialog effects
 
@@ -4814,7 +4822,7 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
 
 ## 2026-10-03 — deterministic bridge timeout, permission-policy route
 
-- Changed (`test_openrig_bridge.py`): the run-loop timeout step no longer races a 0.5 s server sleep against a 0.2 s client timeout; the server holds the request open until the fixture releases it and `SEND_TIMEOUT` is 1 s, so the timeout is certain and normal requests have a wide margin under load. Three runs: 33 passed.
+- Changed (`test_bridge.py`): the run-loop timeout step no longer races a 0.5 s server sleep against a 0.2 s client timeout; the server holds the request open until the fixture releases it and `SEND_TIMEOUT` is 1 s, so the timeout is certain and normal requests have a wide margin under load. Three runs: 33 passed.
 - Added: `TestSeatAdminPermissionPolicyIsRenderedAndTenantScoped` (PUT permission-policy: another tenant 404 and unchanged, invalid value 400 and not rendered, valid value stored and rendered on the member in the rigspec). The 400 and valid-store cases were already in `TestSeatAdminSetPermissionPolicy`.
 
 ## 2026-10-03 — hard-delete cycle subtest, exact expected-hash row count
@@ -4827,16 +4835,16 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
 
 ## 2026-10-03 — seat checker PATH limit
 
-- Changed (`test_openrig_seat_sync.py`): the pull-without-checker and install-checker-not-on-PATH tests also assert the daemon-PATH note (`rig daemon stop`, "inherit", "does not expose"). file: 66 passed.
+- Changed (`test_seat_sync.py`): the pull-without-checker and install-checker-not-on-PATH tests also assert the daemon-PATH note (`rig daemon stop`, "inherit", "does not expose"). file: 66 passed.
 
 ## 2026-10-03 — per-seat permission policy
 
 - Added: `TestRenderRoomPermissionPolicyPerSeat` (all five policies render exactly once, on the member), `TestRoomRigSpecRendersPermissionPolicyPerSeat` (three seats, three policies, none on the rig, a `?permission_policy=` query changes nothing), `TestSeatAdminServiceSetPermissionPolicy`, `TestSeatAdminSetPermissionPolicy` (200, 400 for invalid/empty/unknown field, 404 for unknown room/seat, rejected call leaves the seat unchanged), `TestSeatAdminCreateSeatPermissionPolicy` (default `standard`, explicit, invalid is 400 and stores nothing), `TestSeatUpdatePermissionPolicyIsUserScoped`, tenant and update checks in the Postgres integration test, and a probe for the new route in the auth table.
-- Changed: `TestRenderRoomRigCLI` runs the real `rig spec validate` + `preflight` for `""`, `locked`, `standard`, `yolo`, `none` with the policy on every seat; the rig-level and override tests are removed. `test_openrig_seat_sync.py`: the `--permission-policy` tests become one test that the plain path is requested and the flag is rejected.
+- Changed: `TestRenderRoomRigCLI` runs the real `rig spec validate` + `preflight` for `""`, `locked`, `standard`, `yolo`, `none` with the policy on every seat; the rig-level and override tests are removed. `test_seat_sync.py`: the `--permission-policy` tests become one test that the plain path is requested and the flag is rejected.
 
 ## 2026-10-03 — place_agent
 
-- Added (`test_openrig_seat_sync.py`): `test_place_agent_links_a_directory_and_a_file`, `test_place_agent_replaces_a_real_directory_and_an_older_link`, `test_place_agent_without_symlinks_fails_loudly_and_copies_nothing`. scripts suite file: 61 passed.
+- Added (`test_seat_sync.py`): `test_place_agent_links_a_directory_and_a_file`, `test_place_agent_replaces_a_real_directory_and_an_older_link`, `test_place_agent_without_symlinks_fails_loudly_and_copies_nothing`. scripts suite file: 61 passed.
 
 ## 2026-10-03 — reviewer-requested seat removal and overlay tests
 
@@ -4846,9 +4854,9 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
 
 - Added: `TestSendHasNoPinsFlag`, `TestSendRefusesAPolicyOfAnotherSeat`, `TestSendRefusesAnIdentityThatIsNotADirectoryName`, `TestSendAuditsBeforeDelivering` (the stub reads the audit file at delivery time), `TestSendAuditFileMustBePrivate`, `TestSendDeliveryFailureIsItsOwnExitCode` (rig exits 1,2,3,4,7 all become 5, audit shows the decision then delivery_failed), repeated-member tests; and `exec_test.go` running the real `rigSend` and `rigWhoami` against a fake `rig` on PATH (argv `send -- <session> --rig=x`, message with shell metacharacters is one argument and not evaluated, stdin detached with a pipe holding LEAK on os.Stdin, exit code and missing binary, whoami argv and failures). `exec_test.go` drafted by deepseek session e2c71135-50ac-4873-8cac-5ecdb0c55167 (the worker ran it with `go test -overlay`; I applied it, unescaped, and re-ran it). Mutations: dropping `--` fails `TestRigSendArgv` and the message test; dropping the seat check fails the mismatch test. cmd/seatcheck ok.
 
-## 2026-10-03 — comm-guard allows rig whoami
+## 2026-10-03 — comm-guard allows 4genteam whoami
 
-- Changed: `TestLoadEmbeddedSeedsCarryCommGuard` expects the allow list `seatcheck send`, `rig whoami` and the skill to explain exit codes 2, 3 and 5; the renderer tests expect 5 denies and 2 allows (7 `Bash(` entries) on claude-code and the extra allow order. seatrenderer, seedlibrary, seedmap ok.
+- Changed: `TestLoadEmbeddedSeedsCarryCommGuard` expects the allow list `seatcheck send`, `4genteam whoami` and the skill to explain exit codes 2, 3 and 5; the renderer tests expect 5 denies and 2 allows (7 `Bash(` entries) on claude-code and the extra allow order. seatrenderer, seedlibrary, seedmap ok.
 
 ## 2026-10-03 — missing-tables startup notice
 
@@ -4885,7 +4893,7 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
 
 ## 2026-10-03 — Seat checker: install-checker and a PATH check in pull and rig
 
-- Added in `test_openrig_seat_sync.py`: link missing / resolves elsewhere / correct link for `pull` and `rig`; `install-checker` build command, env and cwd, atomic replacement of an existing link, PATH failure with the link still created, no `go`, build failure (nothing linked). An autouse fixture stubs the requirement for the older pull/rig tests. `src/tests/scripts` 149 passed.
+- Added in `test_seat_sync.py`: link missing / resolves elsewhere / correct link for `pull` and `rig`; `install-checker` build command, env and cwd, atomic replacement of an existing link, PATH failure with the link still created, no `go`, build failure (nothing linked). An autouse fixture stubs the requirement for the older pull/rig tests. `src/tests/scripts` 149 passed.
 
 ## 2026-10-03 — seatcheck delivers to the full session name
 
@@ -4917,15 +4925,15 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
 
 ## 2026-10-03 — Secret scanners: empty-user URL credentials and whitespace parity
 
-- Added fixture cases `url-empty-user`, `url-empty-password`, `url-nbsp-in-password`, `url-vtab-in-password`, `url-space-ends-userinfo`, `known-gap-url-slash-in-password`; `SECRET_PARTS` entries in `test_openrig_scrub.py`. Red before (Go: url-empty-user; Python: url-empty-user, url-nbsp, url-vtab), green after: secretscan ok, `src/tests/scripts` 137 passed.
+- Added fixture cases `url-empty-user`, `url-empty-password`, `url-nbsp-in-password`, `url-vtab-in-password`, `url-space-ends-userinfo`, `known-gap-url-slash-in-password`; `SECRET_PARTS` entries in `test_scrub.py`. Red before (Go: url-empty-user; Python: url-empty-user, url-nbsp, url-vtab), green after: secretscan ok, `src/tests/scripts` 137 passed.
 
 ## 2026-10-03 — seatcheck send identity and pins layout
 
-- Rewrote the `send` tests in `cmd/seatcheck/main_test.go` around the `identify`/`deliver` seams (the re-exec helper process is gone): allowed (target `b@r`, joined text, audit 0600), exit code passthrough, denied (no link, wrong intent, explicit deny, unlinked recipient; stderr equals the audit reason, nothing delivered), policy missing/corrupt (exit 2, no audit, no delivery), usage errors, identity failure, audit append, audit failure (exit 1, no delivery). `audit-scan` now flags `rig send b@r hi` and not `seatcheck send ...`. Real binary smoke: exit 2 without policy, exit 3 with an empty policy. cmd/seatcheck ok.
+- Rewrote the `send` tests in `cmd/seatcheck/main_test.go` around the `identify`/`deliver` seams (the re-exec helper process is gone): allowed (target `b@r`, joined text, audit 0600), exit code passthrough, denied (no link, wrong intent, explicit deny, unlinked recipient; stderr equals the audit reason, nothing delivered), policy missing/corrupt (exit 2, no audit, no delivery), usage errors, identity failure, audit append, audit failure (exit 1, no delivery). `audit-scan` now flags `4genteam send b@r hi` and not `seatcheck send ...`. Real binary smoke: exit 2 without policy, exit 3 with an empty policy. cmd/seatcheck ok.
 
-## 2026-10-03 — openrig_team_setup.py apply failed with 404 seat type not found on a fresh database
+## 2026-10-03 — team_setup.py apply failed with 404 seat type not found on a fresh database
 
-- Changed: `test_openrig_team_setup.py` order test starts with the seed; `test_409_on_a_module_is_an_error` expects 2 requests (seed, failing module). Added: `test_seed_failure_stops_before_any_other_call`. 23 passed (red before: order test).
+- Changed: `test_team_setup.py` order test starts with the seed; `test_409_on_a_module_is_an_error` expects 2 requests (seed, failing module). Added: `test_seed_failure_stops_before_any_other_call`. 23 passed (red before: order test).
 
 ## 2026-10-03 — `AddVersion` lost-race re-read
 
@@ -4953,7 +4961,7 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
 
 ## 2026-10-03 — URL credentials in secret scanners
 
-- Added: fixture cases `url-credentials`, `url-at-in-password`, `url-plain` in `secretscan/testdata/scan_cases.json`; `test_openrig_scrub.py` `SECRET_PARTS` entries for both secret cases. Verified red before the fix (Go `TestContainsMatchesSharedFixture`, Python `test_fixture_secret_cases_are_redacted`), green after: `secretscan` ok, `src/tests/scripts` 130 passed.
+- Added: fixture cases `url-credentials`, `url-at-in-password`, `url-plain` in `secretscan/testdata/scan_cases.json`; `test_scrub.py` `SECRET_PARTS` entries for both secret cases. Verified red before the fix (Go `TestContainsMatchesSharedFixture`, Python `test_fixture_secret_cases_are_redacted`), green after: `secretscan` ok, `src/tests/scripts` 130 passed.
 
 ## 2026-10-03 — Add-seat model
 
@@ -5011,15 +5019,15 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
 
 - Added: `TestSeatAdminListModules`, `TestSeatAdminCreateSeatTypeVersion`, `TestSeatAdminCreateSeatTypeVersionRejects`, auth probes in `seat_admin_mount_test.go`; `TestParseModuleRef`, `TestNextPatchVersion` in `names_test.go`; `ListLatest` and `SetDefaultRuntime` tenant checks in the Postgres integration test (skipped without `SEAT_TEST_DATABASE_URL`).
 
-## 2026-10-03 — OpenRig coherence for seats
+## 2026-10-03 — 4genteam coherence for seats
 
 - Added: `commpolicy` mapping tests, `repositories/names_test.go`, `domain/rigspec/rigspec_test.go` (incl. real `rig spec validate`/`preflight` when a daemon runs), `server/httpapp/seat_rigspec_mount_test.go`.
-- Changed: `seat_admin_mount_test.go`, `policy_test.go` use OpenRig kinds and ids.
-- Added 10 `rig` tests in `agenthub_main/src/tests/scripts/test_openrig_seat_sync.py` (38 total); 4 frontend tests in `SeatsPage.test.tsx`/`SeatDetailPage.test.tsx` (13 total).
+- Changed: `seat_admin_mount_test.go`, `policy_test.go` use 4genteam kinds and ids.
+- Added 10 `rig` tests in `agenthub_main/src/tests/scripts/test_seat_sync.py` (38 total); 4 frontend tests in `SeatsPage.test.tsx`/`SeatDetailPage.test.tsx` (13 total).
 
 ## 2026-10-03 — Bridge v1
 
-- Added: `test_openrig_scrub.py` (19) and `test_openrig_bridge.py` (26), `secretscan_test.go`, `seat_status_mount_test.go`, machine repository tests (fake driver and Postgres integration); 4 frontend tests in `SeatsPage.test.tsx`.
+- Added: `test_scrub.py` (19) and `test_bridge.py` (26), `secretscan_test.go`, `seat_status_mount_test.go`, machine repository tests (fake driver and Postgres integration); 4 frontend tests in `SeatsPage.test.tsx`.
 - Shared fixture `scan_cases.json` is used by both the Go scanner and the Python scrubber.
 
 ## 2026-10-03 — Seat library
@@ -5028,11 +5036,11 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
 
 ## 2026-10-03 — Module authoring and team setup
 
-- Added: module PUT handler tests in `seat_admin_mount_test.go`, `names_test.go` validators, `test_openrig_team_setup.py` (21 tests).
+- Added: module PUT handler tests in `seat_admin_mount_test.go`, `names_test.go` validators, `test_team_setup.py` (21 tests).
 
 ## 2026-10-03 — Seat switching
 
-- Added: `seat_admin_service_test.go`, `manage_seat_controller_test.go`, `manage_seat_mcp_test.go`, occupant handler and repository tests, rigspec `permission_policy` tests, 14 `switch` and policy tests in `test_openrig_seat_sync.py` (script suite 127), 4 frontend tests in `SeatDetailPage.test.tsx` (21 seat page tests).
+- Added: `seat_admin_service_test.go`, `manage_seat_controller_test.go`, `manage_seat_mcp_test.go`, occupant handler and repository tests, rigspec `permission_policy` tests, 14 `switch` and policy tests in `test_seat_sync.py` (script suite 127), 4 frontend tests in `SeatDetailPage.test.tsx` (21 seat page tests).
 
 ## Current Status
 
@@ -5050,15 +5058,15 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
 
 ### Added
 
-- `agenthub_main/src/tests/scripts/test_openrig_watch_tools.py`: 2 tests for `--detail` (reasoning, speech and incoming messages appear only with it; a one-character reply is skipped). 6 pass.
-- `agenthub_main/src/tests/scripts/test_openrig_seat_client.py`: 9 tests with fakes (behind detection, quiet wait including the give-up and the just-wrote cases, sync adopting through the script, a pin that does not move, relaunch only changed and quiet seats, the seat filter). 9 pass.
-- `agenthub_main/src/tests/scripts/test_openrig_seat_policy.py`: 2 tests (every seat's notice carries the common procedure and its own guide; a seat without a guide file is an error). 16 pass.
-- `agenthub_main/src/tests/scripts/test_openrig_seat_policy.py`: 1 test that every seat's notice carries the 4genthub task/context rule and the deepseek offload rule. 14 pass.
-- `agenthub_main/src/tests/scripts/test_openrig_seat_policy.py`: 4 tests for the seat notice (lists every refused command and tool of its seat, says what to do instead of pushing, the lead/non-lead wording, `apply` writes it and `--check` sees it drift). 13 pass.
-- `agenthub_main/src/tests/scripts/test_openrig_watch_tools.py`: 4 tests for how a session log line becomes a feed line (tool call, policy refusal vs quoted text, non-events, MCP colour).
-- Go (`agenthub_go`): tests for the OpenRig renderer and seeder (`openrig_spec_renderer_test.go`); seat_management resolver, seatrenderer (including a real `rig agent validate` run when a daemon is available), commpolicy, seedmap (all 32 library agents), repositories (fake driver plus a Postgres integration test gated by `SEAT_TEST_DATABASE_URL`), `SeatResolutionService` end-to-end test (gated by `SEAT_TEST_DATABASE_URL` and `AGENT_LIBRARY_DIR_PATH`), `Overlay.ValidateTarget`, `cmd/seatcheck`, and the seat and seat-admin HTTP handlers.
+- `agenthub_main/src/tests/scripts/test_watch_tools.py`: 2 tests for `--detail` (reasoning, speech and incoming messages appear only with it; a one-character reply is skipped). 6 pass.
+- `agenthub_main/src/tests/scripts/test_seat_client.py`: 9 tests with fakes (behind detection, quiet wait including the give-up and the just-wrote cases, sync adopting through the script, a pin that does not move, relaunch only changed and quiet seats, the seat filter). 9 pass.
+- `agenthub_main/src/tests/scripts/test_seat_policy.py`: 2 tests (every seat's notice carries the common procedure and its own guide; a seat without a guide file is an error). 16 pass.
+- `agenthub_main/src/tests/scripts/test_seat_policy.py`: 1 test that every seat's notice carries the 4genthub task/context rule and the deepseek offload rule. 14 pass.
+- `agenthub_main/src/tests/scripts/test_seat_policy.py`: 4 tests for the seat notice (lists every refused command and tool of its seat, says what to do instead of pushing, the lead/non-lead wording, `apply` writes it and `--check` sees it drift). 13 pass.
+- `agenthub_main/src/tests/scripts/test_watch_tools.py`: 4 tests for how a session log line becomes a feed line (tool call, policy refusal vs quoted text, non-events, MCP colour).
+- Go (`agenthub_go`): tests for the 4genteam renderer and seeder (`spec_renderer_test.go`); seat_management resolver, seatrenderer (including a real `rig agent validate` run when a daemon is available), commpolicy, seedmap (all 32 library agents), repositories (fake driver plus a Postgres integration test gated by `SEAT_TEST_DATABASE_URL`), `SeatResolutionService` end-to-end test (gated by `SEAT_TEST_DATABASE_URL` and `AGENT_LIBRARY_DIR_PATH`), `Overlay.ValidateTarget`, `cmd/seatcheck`, and the seat and seat-admin HTTP handlers.
 - Frontend: `agenthub-frontend/src/tests/pages/SeatsPage.test.tsx` (6) and `SeatDetailPage.test.tsx` (3). The rest of the frontend suite already had 710 failing tests before this change (59 files); the count is unchanged.
-- Python: `agenthub_main/src/tests/scripts/test_openrig_seat_sync.py` (22 unit tests for `scripts/openrig_seat_sync.py`).
+- Python: `agenthub_main/src/tests/scripts/test_seat_sync.py` (22 unit tests for `scripts/seat_sync.py`).
 - Gated tests skip without their environment variables. Run the Postgres ones against a throwaway container: `SEAT_TEST_DATABASE_URL=postgres://... AGENT_LIBRARY_DIR_PATH=agenthub_main/agent-library go test ./fastmcp/seat_management/...`.
 
 ---
@@ -5456,7 +5464,7 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
 ## 2026-10-10 — every database-gated skip says the case did not run
 - Fifteen files under `agenthub_go/fastmcp/` (17 sites) replaced `<VAR> not set` / `<VAR> is required` with `SKIPPED, NOT PASSED: <VAR> is unset, so this case did NOT run - <how to run it>`. The terse count is measured at **zero**; the loud lines are what the tests now print — e.g. `auth_repositories_test.go:135: SKIPPED, NOT PASSED: AGENTHUB_TEST_PG_URL is unset, so this case did NOT run - bash tools/testpg/start.sh prints a URL to pass to it`, from every one of the eight cases that helper wakes.
 - `TEST_DATABASE_URL`'s text names the constraint that distinguishes it — a DSN whose database already carries the production-like schema — so it does not send a reader to the cluster script for a case the script cannot satisfy.
-- TEXT ONLY: no CI change, no new coverage, no gate moved; the platform skips that state an environment fact (Windows, root, `rig` off PATH, the `OPENRIG_TEST_AGENT_VALIDATE` opt-in) are untouched.
+- TEXT ONLY: no CI change, no new coverage, no gate moved; the platform skips that state an environment fact (Windows, root, `rig` off PATH, the `AGENTHUB_TEST_AGENT_VALIDATE` opt-in) are untouched.
 - Result: `gofmt -l` on the 15 files printed nothing; `go vet ./fastmcp/...` rc=0; `go test -count=1 ./fastmcp/...` no failures.
 
 ## 2026-10-10 — the seat 404 is decided by sentinel identity, and the text stops deciding
@@ -5486,7 +5494,7 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
 
 ## 2026-10-10 — the context-pack purpose trim is tested against the engine, and falsified by reverting the call site
 - `fastmcp/seat_management/domain/contextpacks/bundle_test.go`: NEW `TestAssembleBundleTrimsThePurposeLikeJavaScript`. A purpose with a leading BOM (U+FEFF) and a trailing NEL (U+0085) must come out with the BOM **gone** and the NEL **kept** — the two code points where ECMAScript `trim()` and Go's `strings.TrimSpace` disagree (measured over the whole BMP: 25 code points each, 24 shared). The case carries its own control — `strings.TrimSpace(purpose) != jsTrim(purpose)` on that exact input — so replacing `jsTrim` with `TrimSpace` cannot satisfy the control and the three assertions at once.
-- **Falsified, not asserted:** in a throwaway copy of the package (stdlib-only, so it builds standalone) with the call site reverted to `strings.TrimSpace`, `go test -count=1 -run TestAssembleBundleTrimsThePurposeLikeJavaScript ./contextpacks/` **FAILS** with all three assertions — `bundle_test.go:149` (the purpose was not trimmed to the ECMAScript set), `:152` (a BOM survived) and `:155` (a trailing NEL was trimmed) — while the same case passes in the tree. The failing text is the assembled bundle: `# OpenRig Context Pack: x v1\n\n\ufeffa BOM-led purpose\n\n## File: a.md …`.
+- **Falsified, not asserted:** in a throwaway copy of the package (stdlib-only, so it builds standalone) with the call site reverted to `strings.TrimSpace`, `go test -count=1 -run TestAssembleBundleTrimsThePurposeLikeJavaScript ./contextpacks/` **FAILS** with all three assertions — `bundle_test.go:149` (the purpose was not trimmed to the ECMAScript set), `:152` (a BOM survived) and `:155` (a trailing NEL was trimmed) — while the same case passes in the tree. The failing text is the assembled bundle: `# 4genteam Context Pack: x v1\n\n\ufeffa BOM-led purpose\n\n## File: a.md …`.
 - `TestAssembleBundleTrimsEndLikeJavaScript` (the 2026-10-09 case) still passes unchanged, which is the guard on the shared predicate: `jsTrimEnd` now calls `isECMAScriptSpace` exactly as its old inline switch did.
 - Result: `gofmt -l` on the two files printed nothing; `go test -count=1 ./fastmcp/seat_management/domain/contextpacks/` → `ok 0.002s`; `go vet ./fastmcp/seat_management/domain/contextpacks/` rc=0; `go build ./...` rc=0.
 

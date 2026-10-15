@@ -1,4 +1,4 @@
-// Package contextpacks ports the OpenRig context-pack algebra
+// Package contextpacks ports the context-pack algebra
 // (packages/daemon/src/domain/context-packs + markdown-address.ts) as pure logic: text in,
 // spans and profiles out, with no OS dependency. File reads arrive through the caller
 // (ComposeInput.ReadFile, AssembleBundle's reader), which is what lets the same algebra serve

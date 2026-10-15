@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -120,7 +119,7 @@ type mcpServerJSON struct {
 	Env     map[string]string `json:"env"`
 }
 
-func mcpServers(t *testing.T, spec *OpenRigSpec) map[string]mcpServerJSON {
+func mcpServers(t *testing.T, spec *SeatSpec) map[string]mcpServerJSON {
 	t.Helper()
 	var doc struct {
 		MCPServers map[string]mcpServerJSON `json:"mcpServers"`
@@ -133,7 +132,7 @@ func mcpServers(t *testing.T, spec *OpenRigSpec) map[string]mcpServerJSON {
 
 // mcpServersAt reads a `{"mcpServers": …}` document from one rendered file. One document has two
 // destinations: a claude-code seat carries it at mcpFragmentPath, an omp seat at ompMCPPath.
-func mcpServersAt(t *testing.T, spec *OpenRigSpec, path string) map[string]mcpServerJSON {
+func mcpServersAt(t *testing.T, spec *SeatSpec, path string) map[string]mcpServerJSON {
 	t.Helper()
 	var doc struct {
 		MCPServers map[string]mcpServerJSON `json:"mcpServers"`
@@ -144,7 +143,7 @@ func mcpServersAt(t *testing.T, spec *OpenRigSpec, path string) map[string]mcpSe
 	return doc.MCPServers
 }
 
-func filePaths(spec *OpenRigSpec) []string {
+func filePaths(spec *SeatSpec) []string {
 	out := make([]string, len(spec.Files))
 	for i, f := range spec.Files {
 		out[i] = f.Path
@@ -210,7 +209,7 @@ func TestRenderSeatOmitsAgentsMDWhenNoGuideResolves(t *testing.T) {
 	}
 }
 
-func fileContent(t *testing.T, spec *OpenRigSpec, path string) string {
+func fileContent(t *testing.T, spec *SeatSpec, path string) string {
 	t.Helper()
 	for _, f := range spec.Files {
 		if f.Path == path {
@@ -254,7 +253,7 @@ type parsedAgentYAML struct {
 	} `yaml:"startup"`
 }
 
-func parseAgentYAML(t *testing.T, spec *OpenRigSpec) parsedAgentYAML {
+func parseAgentYAML(t *testing.T, spec *SeatSpec) parsedAgentYAML {
 	t.Helper()
 	var parsed parsedAgentYAML
 	if err := yaml.Unmarshal([]byte(fileContent(t, spec, agentYAMLPath)), &parsed); err != nil {
@@ -265,15 +264,15 @@ func parseAgentYAML(t *testing.T, spec *OpenRigSpec) parsedAgentYAML {
 
 // assertNoSecret fails if any rendered file carries a literal bearer credential;
 // the spec may only reference the token through its environment variable.
-func assertNoSecret(t *testing.T, spec *OpenRigSpec) {
+func assertNoSecret(t *testing.T, spec *SeatSpec) {
 	t.Helper()
-	token := os.Getenv(OpenRigTokenEnvVar)
+	token := os.Getenv(TokenEnvVar)
 	for _, f := range spec.Files {
 		if i := strings.Index(f.Content, "Bearer "); i >= 0 && !strings.HasPrefix(f.Content[i+len("Bearer "):], "${") {
 			t.Fatalf("file %q carries a literal bearer credential", f.Path)
 		}
 		if token != "" && strings.Contains(f.Content, token) {
-			t.Fatalf("file %q embeds the live %s value", f.Path, OpenRigTokenEnvVar)
+			t.Fatalf("file %q embeds the live %s value", f.Path, TokenEnvVar)
 		}
 	}
 }
@@ -319,7 +318,7 @@ func TestRenderSeatClaudeCode(t *testing.T) {
 	}
 
 	mcp := fileContent(t, spec, mcpFragmentPath)
-	if !strings.Contains(mcp, "Bearer ${"+OpenRigTokenEnvVar+"}") {
+	if !strings.Contains(mcp, "Bearer ${"+TokenEnvVar+"}") {
 		t.Fatalf("mcp fragment missing token indirection:\n%s", mcp)
 	}
 	if !strings.Contains(mcp, `"url": "`+testMCPURL+`"`) {
@@ -520,8 +519,8 @@ func TestRenderSeatKeepsCommGuardNextToAnotherToolModule(t *testing.T) {
 	if err := json.Unmarshal([]byte(fileContent(t, spec, settingsFragmentPath)), &settings); err != nil {
 		t.Fatal(err)
 	}
-	wantDeny := "Bash(rig send:*)|Bash(rig queue:*)|Bash(rig broadcast:*)|Bash(tmux send-keys:*)|Bash(tmux paste-buffer:*)|Bash(rm:*)"
-	if strings.Join(settings.Permissions.Deny, "|") != wantDeny || strings.Join(settings.Permissions.Allow, "|") != "Bash(seatcheck send:*)|Bash(rig whoami:*)|Read" {
+	wantDeny := "Bash(4genteam send:*)|Bash(4genteam input:*)|Bash(tmux send-keys:*)|Bash(tmux paste-buffer:*)|Bash(rm:*)"
+	if strings.Join(settings.Permissions.Deny, "|") != wantDeny || strings.Join(settings.Permissions.Allow, "|") != "Bash(seatcheck send:*)|Bash(4genteam whoami:*)|Read" {
 		t.Fatalf("permissions = %+v", settings.Permissions)
 	}
 	if skill := fileContent(t, spec, "skills/comm-guard-skill/SKILL.md"); !strings.Contains(skill, "seatcheck send") {
@@ -555,8 +554,8 @@ func TestRenderSeatSameModulesOnBothRuntimes(t *testing.T) {
 	if err != nil {
 		t.Fatalf("claude-code: %v", err)
 	}
-	if settings := fileContent(t, claude, settingsFragmentPath); strings.Count(settings, "Bash(") != 7 {
-		t.Fatalf("claude-code settings fragment should carry the 5 denies and the 2 allows:\n%s", settings)
+	if settings := fileContent(t, claude, settingsFragmentPath); strings.Count(settings, "Bash(") != 6 {
+		t.Fatalf("claude-code settings fragment should carry the 4 denies and the 2 allows:\n%s", settings)
 	}
 
 	codex, err := RenderSeat(withModules(seatFixture("codex"), modules), testMCPURL)
@@ -565,9 +564,8 @@ func TestRenderSeatSameModulesOnBothRuntimes(t *testing.T) {
 	}
 	rules := fileContent(t, codex, codexRulesPath)
 	for _, want := range []string{
-		`pattern = ["rig", "send"]`,
-		`pattern = ["rig", "queue"]`,
-		`pattern = ["rig", "broadcast"]`,
+		`pattern = ["4genteam", "send"]`,
+		`pattern = ["4genteam", "input"]`,
 		`pattern = ["tmux", "send-keys"]`,
 		`pattern = ["tmux", "paste-buffer"]`,
 	} {
@@ -575,8 +573,8 @@ func TestRenderSeatSameModulesOnBothRuntimes(t *testing.T) {
 			t.Fatalf("codex rules missing %s:\n%s", want, rules)
 		}
 	}
-	if got := strings.Count(rules, `decision = "forbidden"`); got != 5 {
-		t.Fatalf("codex rules carry %d forbidden rules, want the 5 denies:\n%s", got, rules)
+	if got := strings.Count(rules, `decision = "forbidden"`); got != 4 {
+		t.Fatalf("codex rules carry %d forbidden rules, want the 4 denies:\n%s", got, rules)
 	}
 	if strings.Contains(rules, "claude") {
 		t.Fatalf("codex rules mention claude:\n%s", rules)
@@ -727,7 +725,7 @@ func TestRenderSeatMCPBlocksCarryTheSeatIdentity(t *testing.T) {
 		t.Fatalf("claude-code %s = %q, want %q", mcpblock.SeatHeader, got, want)
 	}
 	// The block's own headers are not disturbed by the stamp.
-	if got := claude["agenthub_http"].Headers["Authorization"]; got != "Bearer ${"+OpenRigTokenEnvVar+"}" {
+	if got := claude["agenthub_http"].Headers["Authorization"]; got != "Bearer ${"+TokenEnvVar+"}" {
 		t.Fatalf("stamping the identity changed Authorization: %q", got)
 	}
 	// A stdio server has no header channel at all: a header belongs to an HTTP call, so the renderer
@@ -761,7 +759,7 @@ func TestRenderSeatMCPBlocksCarryTheSeatIdentity(t *testing.T) {
 	}
 }
 
-func mustRender(t *testing.T, seat resolver.ResolvedSeat) *OpenRigSpec {
+func mustRender(t *testing.T, seat resolver.ResolvedSeat) *SeatSpec {
 	t.Helper()
 	spec, err := RenderSeat(seat, testMCPURL)
 	if err != nil {
@@ -837,7 +835,7 @@ func TestRenderSeatOmpWaitsForMCPConnections(t *testing.T) {
 func TestRenderSeatCodexRulesDenyTheDirectSendSurface(t *testing.T) {
 	guard := resolver.ResolvedModule{
 		Slug: "comm-guard", Version: "1.1.1", Kind: resolver.KindTool,
-		Content: `{"permissions":{"deny":["Bash(rig send:*)","Bash(rig queue:*)","Bash(rig broadcast:*)","Bash(tmux send-keys:*)","Bash(tmux paste-buffer:*)"],"allow":["Bash(seatcheck send:*)","Bash(rig whoami:*)"]}}`,
+		Content: `{"permissions":{"deny":["Bash(4genteam send:*)","Bash(4genteam input:*)","Bash(tmux send-keys:*)","Bash(tmux paste-buffer:*)"],"allow":["Bash(seatcheck send:*)","Bash(4genteam whoami:*)"]}}`,
 	}
 
 	codex, err := RenderSeat(withModules(seatFixture("codex"), []resolver.ResolvedModule{guard}), testMCPURL)
@@ -845,7 +843,7 @@ func TestRenderSeatCodexRulesDenyTheDirectSendSurface(t *testing.T) {
 		t.Fatalf("RenderSeat(codex): %v", err)
 	}
 	rules := fileContent(t, codex, codexRulesPath)
-	for _, want := range []string{`pattern = ["rig", "send"]`, `pattern = ["tmux", "paste-buffer"]`} {
+	for _, want := range []string{`pattern = ["4genteam", "send"]`, `pattern = ["tmux", "paste-buffer"]`} {
 		if !strings.Contains(rules, want) {
 			t.Fatalf("rules missing %s:\n%s", want, rules)
 		}
@@ -872,7 +870,7 @@ func TestRenderSeatCodexRulesDenyTheDirectSendSurface(t *testing.T) {
 			t.Fatalf("claude-code seat rendered the codex rules file")
 		}
 	}
-	if settings := fileContent(t, claude, settingsFragmentPath); !strings.Contains(settings, "Bash(rig send:*)") {
+	if settings := fileContent(t, claude, settingsFragmentPath); !strings.Contains(settings, "Bash(4genteam send:*)") {
 		t.Fatalf("claude-code settings fragment lost the deny list:\n%s", settings)
 	}
 
@@ -924,7 +922,7 @@ func TestRenderSeatMCPBlocksMountEveryServer(t *testing.T) {
 	if len(servers) != 2 || servers["agenthub_http"].URL != testMCPURL || servers["sequential-thinking"].Command != "npx" {
 		t.Fatalf("servers from [A,B] = %+v", servers)
 	}
-	if servers["agenthub_http"].Headers["Authorization"] != "Bearer ${"+OpenRigTokenEnvVar+"}" {
+	if servers["agenthub_http"].Headers["Authorization"] != "Bearer ${"+TokenEnvVar+"}" {
 		t.Fatalf("platform headers = %v", servers["agenthub_http"].Headers)
 	}
 	assertNoSecret(t, spec)
@@ -1079,7 +1077,7 @@ func TestRenderSeatSeededTypesMountDifferentServerSets(t *testing.T) {
 	}
 }
 
-func writeSpecFiles(t *testing.T, dir string, spec *OpenRigSpec) {
+func writeSpecFiles(t *testing.T, dir string, spec *SeatSpec) {
 	t.Helper()
 	for _, f := range spec.Files {
 		path := filepath.Join(dir, filepath.FromSlash(f.Path))
@@ -1089,48 +1087,6 @@ func writeSpecFiles(t *testing.T, dir string, spec *OpenRigSpec) {
 		if err := os.WriteFile(path, []byte(f.Content), 0o644); err != nil {
 			t.Fatalf("write %s: %v", path, err)
 		}
-	}
-}
-
-// TestRenderSeatRigValidate writes the rendered spec to disk and validates it with
-// the real rig CLI, whose validate path needs a running OpenRig daemon. Set
-// OPENRIG_TEST_AGENT_VALIDATE=1 to run it. With the variable set, a missing `rig`,
-// an unreachable daemon or an invalid spec all FAIL the test, so the G2 runtime
-// validation cannot pass silently on a host without a daemon; without the variable
-// the test skips (there is no in-process substitute that would mean the same thing:
-// only rig's own validator is the check).
-func TestRenderSeatRigValidate(t *testing.T) {
-	if os.Getenv("OPENRIG_TEST_AGENT_VALIDATE") != "1" {
-		t.Skip("set OPENRIG_TEST_AGENT_VALIDATE=1 to run the rig agent validate check (needs OpenRig and its daemon)")
-	}
-	rigPath, err := exec.LookPath("rig")
-	if err != nil {
-		t.Fatalf("OPENRIG_TEST_AGENT_VALIDATE=1 but the rig binary is not on PATH: %v", err)
-	}
-	seeds, seedErr := seedlibrary.Load()
-	if seedErr != nil {
-		t.Fatal(seedErr)
-	}
-	var modules []resolver.ResolvedModule
-	for _, m := range seeds[0].Modules {
-		modules = append(modules, resolver.ResolvedModule{Slug: m.Slug, Version: m.Version, Kind: m.Kind, Content: m.Content})
-	}
-	for _, runtime := range []string{"claude-code", "codex", "omp"} {
-		t.Run(runtime, func(t *testing.T) {
-			spec, err := RenderSeat(withModules(seatFixture(runtime), modules), testMCPURL)
-			if err != nil {
-				t.Fatalf("RenderSeat: %v", err)
-			}
-			dir := t.TempDir()
-			writeSpecFiles(t, dir, spec)
-			out, err := exec.Command(rigPath, "agent", "validate", filepath.Join(dir, "agent.yaml")).CombinedOutput()
-			if err != nil {
-				t.Fatalf("rig agent validate failed (OPENRIG_TEST_AGENT_VALIDATE=1 requires rig and a running daemon): %v\n%s", err, out)
-			}
-			if !strings.Contains(string(out), "Agent spec valid") {
-				t.Fatalf("unexpected rig output:\n%s", out)
-			}
-		})
 	}
 }
 

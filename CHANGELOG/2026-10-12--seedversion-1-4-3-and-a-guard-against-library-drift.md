@@ -70,8 +70,8 @@ every guide-pairing case passes at this revision, and `seedmap_test.go` needed n
 compares every module version against the const rather than a literal.
 
 ## Sequence this unblocks
-Owner deploy, then `POST /api/v2/openrig/seat-types/seed`, then the per-seat re-pin through R1
-(`PUT /api/v2/openrig/rooms/{room}/seats/{seat}/pin`) at `1.4.3`.
+Owner deploy, then `POST /api/v2/seat-types/seed`, then the per-seat re-pin through R1
+(`PUT /api/v2/rooms/{room}/seats/{seat}/pin`) at `1.4.3`.
 
 ## The repair path, beside the forward one
 
@@ -87,7 +87,7 @@ the store does not hold. The only legal repair is a new version, in one fixed or
 stop editing the seed library and its lock file (seeding the new version freezes *its* content in turn, so an
 edit after the seed needs yet another version), raise the version constant in
 `agenthub_go/fastmcp/seat_management/domain/seedmap/seedmap.go`, commit that one line with its CHANGELOG entry,
-have the owner deploy the commit, and have the owner call `POST /api/v2/openrig/seat-types/seed` from a binary
+have the owner deploy the commit, and have the owner call `POST /api/v2/seat-types/seed` from a binary
 that contains the intended text — the call reports the stored count or the conflict, so read it, and name the
 commit in the instruction, because a binary built before the content edit stores the old text under the new
 number and that cannot be undone without yet another version.
@@ -95,14 +95,14 @@ number and that cannot be undone without yet another version.
 **If a seat still renders the old guide after the version moved.** Seeding a version moves no existing seat:
 `pinned_version` is read when a seat is created or resolved, an existing seat answers 409 `exists` so `team apply`
 skips it, and apply skips the seed too once every seat-type slug is stored — so the pin must be moved explicitly
-with `PUT /api/v2/openrig/rooms/{room}/seats/{seat}/pin {"pinned_version":"<version>"}`, which answers 400 when
+with `PUT /api/v2/rooms/{room}/seats/{seat}/pin {"pinned_version":"<version>"}`, which answers 400 when
 the seat's type has no such version, 404 for an absent seat, and 200 with the row reading the new version. A moved
 pin still does not change a running seat: the pin is read at resolve time and **a seat already launched keeps the
 snapshot it was launched with**, so relaunch it — re-pin idle seats first and the lead last, so the last seat
 re-pinned can confirm the others came up on the new version, then set `pinned_version` in the team files
 (`scripts/team/*/team.json`) so the file matches the store. When a seat still renders the old text, read three
 things in this order and stop at the first mismatch: the seat's pin and the version the resolution returns
-(`GET /api/v2/openrig/seats/{room}/{seat}`, whose resolved `agent.yaml` carries the version); the seat's own
+(`GET /api/v2/seats/{room}/{seat}`, whose resolved `agent.yaml` carries the version); the seat's own
 rendered `AGENTS.md`, whose `seat-type-version:` line names what it actually launched with; then the section list
 under that line, where the new text would appear. A pin that moved while the rendered file stayed old means the
 seat was never relaunched; a rendered version that is the one the store held *before* the repair means the store

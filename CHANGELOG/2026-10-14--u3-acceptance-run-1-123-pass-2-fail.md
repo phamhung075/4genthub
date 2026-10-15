@@ -75,7 +75,7 @@ room out of it.
   yields `needs_input`, no read ever saw a torn state file) plus B1p 13/13 (launch posture per policy
   value). B1 asserts the bounded set its own header names: a real channel death cannot carry a re-send,
   because the runner does not respawn its own child.
-- **(d) no OpenRig process** — A4 10/10 scoped to the room's process tree, A4(vi) 3/3 per-PID isolation for
+- **(d) no 4genteam process** — A4 10/10 scoped to the room's process tree, A4(vi) 3/3 per-PID isolation for
   both the agent and the process owning the room socket; the machine-wide form is out of scope by design.
 - Plus B3 6/6 (`alert=seat_up_with_queued_work` on the room status, 3 nudge attempts with non-shrinking
   gaps), C3 7/7 (omp/deepseek present, off-peak answers, the seat transcript exists and is non-empty),

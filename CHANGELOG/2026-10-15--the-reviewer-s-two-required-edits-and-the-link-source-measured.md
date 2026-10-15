@@ -12,9 +12,9 @@ The reviewer approved the delta and required two edits, both of them the class t
 a claim written from a measurement that had stopped being true.
 
 1. **§3's `rig`-on-`PATH` claim.** The line read "`~/.local/bin/rig` is gone and `rig` on `PATH` is
-   `@openrig/cli`". Measured now by the reviewer (`…GATE…` §3): `command -v rig` → nothing and
+   `@reference/cli`". Measured now by the reviewer (`…GATE…` §3): `command -v rig` → nothing and
    `ls ~/.local/bin/rig` → `No such file`, so `rig` is not on `PATH` at all. Three states had been
-   asserted for one fact — one file with `4genteam` (the finding), absent (the lead), `@openrig/cli`
+   asserted for one fact — one file with `4genteam` (the finding), absent (the lead), `@reference/cli`
    (the board) — and only the last had an instrument, which nobody had named.
 2. **Three instrument lines about ancestry.** Both the corrections entry and C5's line claimed `892f867`
    and `400e568` were "on `4genthub-min/seat-runtime-socket` only — not an ancestor of
@@ -49,7 +49,7 @@ one failed); the fail-closed decision comes after it.
 
 ## What changed
 
-- `NEXT-GEN2.md` §3: the `rig`/`PATH` claim corrected in place, with the `@openrig/cli` reading's own
+- `NEXT-GEN2.md` §3: the `rig`/`PATH` claim corrected in place, with the `@reference/cli` reading's own
   instrument (the 2026-10-14 changelog entry that recorded the nvm symlink and `rig --version`).
 - `NEXT-GEN2.md` §3: the `400e568` ancestry clause corrected; C5's line's three clauses corrected (the
   guard unit is in the integration branch, the integration is ahead of the pin, C5 waits for the install

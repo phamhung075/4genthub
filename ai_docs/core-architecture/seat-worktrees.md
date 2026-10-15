@@ -6,7 +6,7 @@ Architect ruling, 2026-10-11. Requested by the owner through the lead (`qitem-20
 
 ## 0. The single home
 
-| | A: the room's seat file, `scripts/team/<room>/team.json`, plus one derivation rule in the client | B: the materialized rig, `~/.openrig/agenthub-seats/<room>/rig/{rig.yaml, agents/}` |
+| | A: the room's seat file, `scripts/team/<room>/team.json`, plus one derivation rule in the client | B: the materialized rig, `~/.config/4genthub/agenthub-seats/<room>/rig/{rig.yaml, agents/}` |
 |---|---|---|
 | Tracked and reviewable | yes | no: `sync rig` generates it, and no seat may edit it by hand |
 | Already true today | it defines the five live seats, including the architect | it lists ten members and no architect: stale, finding `072996ad` |

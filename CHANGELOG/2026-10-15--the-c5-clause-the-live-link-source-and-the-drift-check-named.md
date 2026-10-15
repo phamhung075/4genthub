@@ -8,12 +8,12 @@ no code.
 
 - **§6's C5 clause is corrected: two of its three steps are already done and its first step points at a
   subject that no longer exists.** The clause read *"Snapshot the live rig, then `4genteam` takes over
-  the five seats, then stop the OpenRig daemon and remove the `rig`-exec paths and `openrig.sqlite`
-  dependencies."* Measured: **no OpenRig rig is left to snapshot** (`pgrep -af 'openrig|rigd'` → no rows,
-  `~/.openrig` absent, the only daemons are native `agenthub-runtime`), and **the takeover it sequences
+  the five seats, then stop the 4genteam daemon and remove the `rig`-exec paths and `the reference client.sqlite`
+  dependencies."* Measured: **no 4genteam rig is left to snapshot** (`pgrep -af 'the reference client|rigd'` → no rows,
+  `~/config/4genthub` absent, the only daemons are native `agenthub-runtime`), and **the takeover it sequences
   after the snapshot has already happened** (the live `spec.json` names `omp`/`deepseek/deepseek-flash`
   for all five seats). A snapshot does exist and it is **forensic rather than operative**:
-  `openrig-20261014T175930Z.sqlite` (231313408 B) plus its 60369 B JSON sibling, taken 2026-10-14
+  `client-20261014T175930Z.sqlite` (231313408 B) plus its 60369 B JSON sibling, taken 2026-10-14
   19:59Z. **Ruled, on the lead's own question: that snapshot SATISFIES the clause's original intent (a
   restore point for the rig being retired) and is not a step to repeat** — the tooling retired with the
   rig. The operative baseline is the lead's native one, re-verified here: a consistent `VACUUM INTO`
@@ -44,7 +44,7 @@ no code.
 
 ## Instruments
 
-- `pgrep -af 'openrig|rigd'` → no rows; `ls -d ~/.openrig` → no such file.
+- `pgrep -af 'the reference client|rigd'` → no rows; `ls -d ~/config/4genthub` → no such file.
 - `ls -la ~/.config/4genthub/snapshots/` → the 231313408 B forensic sqlite, the 60369 B json, the
   1241088 B native `queue.sqlite` and the 277841 B tarball, with their mtimes.
 - `sqlite3` read-only over both rails: `pragma quick_check` → ok for each; `queue_rows` 217 (baseline,

@@ -317,12 +317,12 @@ func (f *roomDecisionFixture) do(method, path, bearer, body string) *httptest.Re
 
 func (f *roomDecisionFixture) answer(slug, id, body string) *httptest.ResponseRecorder {
 	f.t.Helper()
-	return f.do(http.MethodPost, "/api/v2/openrig/rooms/"+slug+"/decisions/"+id+"/answer", "user-jwt", body)
+	return f.do(http.MethodPost, "/api/v2/rooms/"+slug+"/decisions/"+id+"/answer", "user-jwt", body)
 }
 
 func (f *roomDecisionFixture) read(slug string) *httptest.ResponseRecorder {
 	f.t.Helper()
-	return f.do(http.MethodGet, "/api/v2/openrig/rooms/"+slug+"/decisions", "user-jwt", "")
+	return f.do(http.MethodGet, "/api/v2/rooms/"+slug+"/decisions", "user-jwt", "")
 }
 
 // pendingDecision is one mirrored ask of user A in room alpha.
@@ -621,11 +621,11 @@ func TestRoomDecisionAnswerIsOwnerOnly(t *testing.T) {
 	}
 
 	// No bearer at all: the shared auth failure, before any room or decision logic runs.
-	rec = f.do(http.MethodPost, "/api/v2/openrig/rooms/alpha/decisions/"+roomDecisionTestDecID+"/answer", "", body)
+	rec = f.do(http.MethodPost, "/api/v2/rooms/alpha/decisions/"+roomDecisionTestDecID+"/answer", "", body)
 	if rec.Code != http.StatusForbidden || !strings.Contains(rec.Body.String(), "Not authenticated") {
 		t.Fatalf("unauthenticated answer = %d %s, want 403 Not authenticated", rec.Code, rec.Body.String())
 	}
-	if rec := f.do(http.MethodGet, "/api/v2/openrig/rooms/alpha/decisions", "", ""); rec.Code != http.StatusForbidden {
+	if rec := f.do(http.MethodGet, "/api/v2/rooms/alpha/decisions", "", ""); rec.Code != http.StatusForbidden {
 		t.Fatalf("unauthenticated read = %d, want 403", rec.Code)
 	}
 }
@@ -661,7 +661,7 @@ func ingestBody(rig string) string {
 func TestRoomDecisionIngestCreatesOnceAndNamesItsRoom(t *testing.T) {
 	f := newRoomDecisionFixture(t).withRows().mount()
 
-	rec := f.do(http.MethodPost, "/api/v2/openrig/decisions", "user-jwt", ingestBody("alpha"))
+	rec := f.do(http.MethodPost, "/api/v2/decisions", "user-jwt", ingestBody("alpha"))
 	if rec.Code != http.StatusOK {
 		t.Fatalf("ingest = %d %s, want 200", rec.Code, rec.Body.String())
 	}
@@ -682,7 +682,7 @@ func TestRoomDecisionIngestCreatesOnceAndNamesItsRoom(t *testing.T) {
 
 	// The redrive: the same ask's idempotency_key again is the row the first attempt made, and the
 	// response says which call stored it - that is how the daemon learns its earlier attempt landed.
-	rec = f.do(http.MethodPost, "/api/v2/openrig/decisions", "user-jwt", ingestBody("alpha"))
+	rec = f.do(http.MethodPost, "/api/v2/decisions", "user-jwt", ingestBody("alpha"))
 	if rec.Code != http.StatusOK {
 		t.Fatalf("redrive = %d %s, want 200", rec.Code, rec.Body.String())
 	}
@@ -700,18 +700,18 @@ func TestRoomDecisionIngestCreatesOnceAndNamesItsRoom(t *testing.T) {
 	// The body's own room wins over the rig's name: that is the door for a rig whose name is not its
 	// room's slug.
 	named := strings.Replace(ingestBody("not-a-room"), `"rig":"not-a-room"`, `"rig":"not-a-room","room":"alpha"`, 1)
-	if rec := f.do(http.MethodPost, "/api/v2/openrig/decisions", "user-jwt", named); rec.Code != http.StatusOK {
+	if rec := f.do(http.MethodPost, "/api/v2/decisions", "user-jwt", named); rec.Code != http.StatusOK {
 		t.Fatalf("ingest naming its own room = %d %s, want 200", rec.Code, rec.Body.String())
 	}
 
 	// A slug that resolves to nothing is the pinned 404 rather than a silent wrong room.
-	unknown := f.do(http.MethodPost, "/api/v2/openrig/decisions", "user-jwt", ingestBody("not-a-room"))
+	unknown := f.do(http.MethodPost, "/api/v2/decisions", "user-jwt", ingestBody("not-a-room"))
 	if unknown.Code != http.StatusNotFound || !strings.Contains(unknown.Body.String(), `room \"not-a-room\" not found`) {
 		t.Fatalf("ingest into an unknown room = %d %s, want 404 naming the slug", unknown.Code, unknown.Body.String())
 	}
 
 	// No bearer: the shared auth failure, before anything is read or written.
-	if rec := f.do(http.MethodPost, "/api/v2/openrig/decisions", "", ingestBody("alpha")); rec.Code != http.StatusForbidden {
+	if rec := f.do(http.MethodPost, "/api/v2/decisions", "", ingestBody("alpha")); rec.Code != http.StatusForbidden {
 		t.Fatalf("unauthenticated ingest = %d, want 403", rec.Code)
 	}
 }
@@ -771,7 +771,7 @@ func TestRoomDecisionIngestRefusalsAreTheContracts(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			f := newRoomDecisionFixture(t).withRows().mount()
-			rec := f.do(http.MethodPost, "/api/v2/openrig/decisions", "user-jwt", tc.body)
+			rec := f.do(http.MethodPost, "/api/v2/decisions", "user-jwt", tc.body)
 			if rec.Code != tc.status || !strings.Contains(rec.Body.String(), tc.contains) {
 				t.Fatalf("ingest = %d %s, want %d containing %q", rec.Code, rec.Body.String(), tc.status, tc.contains)
 			}
@@ -814,7 +814,7 @@ func TestRoomDecisionPullPagesByCursorAndNeverRepeatsAnAckedAnswer(t *testing.T)
 	f := newRoomDecisionFixture(t).withRows(first, second).mount()
 	f.store.roomSlugs = map[string]string{roomDecisionTestRoomID: "alpha"}
 
-	rec := f.do(http.MethodGet, "/api/v2/openrig/decisions/answers?rig=4genthub-min&limit=1", "user-jwt", "")
+	rec := f.do(http.MethodGet, "/api/v2/decisions/answers?rig=4genthub-min&limit=1", "user-jwt", "")
 	if rec.Code != http.StatusOK {
 		t.Fatalf("pull = %d %s, want 200", rec.Code, rec.Body.String())
 	}
@@ -841,7 +841,7 @@ func TestRoomDecisionPullPagesByCursorAndNeverRepeatsAnAckedAnswer(t *testing.T)
 
 	// Resuming hands over what follows, and nothing before it. The cursor travels as a URL query
 	// value, which is how the daemon sends it back.
-	rec = f.do(http.MethodGet, "/api/v2/openrig/decisions/answers?rig=4genthub-min&after="+url.QueryEscape(cursor), "user-jwt", "")
+	rec = f.do(http.MethodGet, "/api/v2/decisions/answers?rig=4genthub-min&after="+url.QueryEscape(cursor), "user-jwt", "")
 	resumed := decodeRoomDecisionPage(t, rec)
 	rows, _ = resumed["answers"].([]any)
 	if len(rows) != 1 {
@@ -852,12 +852,12 @@ func TestRoomDecisionPullPagesByCursorAndNeverRepeatsAnAckedAnswer(t *testing.T)
 	}
 
 	// The ack IS the delivery record: once it lands, the pull does not hand that answer out again.
-	ack := f.do(http.MethodPost, "/api/v2/openrig/decisions/"+first.ID+"/ack", "user-jwt",
+	ack := f.do(http.MethodPost, "/api/v2/decisions/"+first.ID+"/ack", "user-jwt",
 		`{"machine_id":"host-1","outcome":"applied"}`)
 	if ack.Code != http.StatusOK {
 		t.Fatalf("ack = %d %s, want 200", ack.Code, ack.Body.String())
 	}
-	fresh := decodeRoomDecisionPage(t, f.do(http.MethodGet, "/api/v2/openrig/decisions/answers?rig=4genthub-min", "user-jwt", ""))
+	fresh := decodeRoomDecisionPage(t, f.do(http.MethodGet, "/api/v2/decisions/answers?rig=4genthub-min", "user-jwt", ""))
 	rows, _ = fresh["answers"].([]any)
 	if len(rows) != 1 {
 		t.Fatalf("page after the ack = %v, want the one un-acked answer", fresh["answers"])
@@ -867,12 +867,12 @@ func TestRoomDecisionPullPagesByCursorAndNeverRepeatsAnAckedAnswer(t *testing.T)
 	}
 
 	// A cursor this endpoint did not mint is the pinned sentence, and never a silent first page.
-	bad := f.do(http.MethodGet, "/api/v2/openrig/decisions/answers?rig=4genthub-min&after=not-a-cursor", "user-jwt", "")
+	bad := f.do(http.MethodGet, "/api/v2/decisions/answers?rig=4genthub-min&after=not-a-cursor", "user-jwt", "")
 	if bad.Code != http.StatusBadRequest || !strings.Contains(bad.Body.String(), `after \"not-a-cursor\" must be a cursor this endpoint returned`) {
 		t.Fatalf("malformed cursor = %d %s, want the pinned 400", bad.Code, bad.Body.String())
 	}
 	// A pull that names no machine cannot be answered with a page: there is no filter to build.
-	if rec := f.do(http.MethodGet, "/api/v2/openrig/decisions/answers", "user-jwt", ""); rec.Code != http.StatusBadRequest {
+	if rec := f.do(http.MethodGet, "/api/v2/decisions/answers", "user-jwt", ""); rec.Code != http.StatusBadRequest {
 		t.Fatalf("pull with no rig = %d %s, want 400", rec.Code, rec.Body.String())
 	}
 }
@@ -886,7 +886,7 @@ func TestRoomDecisionAckResolvesOnlyOnAppliedAndOnlyOnce(t *testing.T) {
 	untouched := answeredDecision("d1e0d3c2-3333-4333-8333-000000000003", roomDecisionTestNow)
 	f := newRoomDecisionFixture(t).withRows(applied, dropped, untouched).mount()
 
-	rec := f.do(http.MethodPost, "/api/v2/openrig/decisions/"+applied.ID+"/ack", "user-jwt",
+	rec := f.do(http.MethodPost, "/api/v2/decisions/"+applied.ID+"/ack", "user-jwt",
 		`{"machine_id":"host-1","outcome":"applied"}`)
 	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"delivered":true`) {
 		t.Fatalf("applied ack = %d %s, want 200 delivered:true", rec.Code, rec.Body.String())
@@ -904,7 +904,7 @@ func TestRoomDecisionAckResolvesOnlyOnAppliedAndOnlyOnce(t *testing.T) {
 
 	// A drop is the same delivery record and NOT a resolution: the row keeps its state and is never
 	// handed out again.
-	rec = f.do(http.MethodPost, "/api/v2/openrig/decisions/"+dropped.ID+"/ack", "user-jwt",
+	rec = f.do(http.MethodPost, "/api/v2/decisions/"+dropped.ID+"/ack", "user-jwt",
 		`{"machine_id":"host-1","outcome":"dropped","reason":"state-done"}`)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("dropped ack = %d %s, want 200", rec.Code, rec.Body.String())
@@ -919,7 +919,7 @@ func TestRoomDecisionAckResolvesOnlyOnAppliedAndOnlyOnce(t *testing.T) {
 		{"a second dropped ack", dropped.ID, `{"machine_id":"host-1","outcome":"dropped","reason":"state-done"}`},
 		{"an id that was never here", "d1e0d3c2-3333-4333-8333-00000000000f", `{"machine_id":"host-1","outcome":"applied"}`},
 	} {
-		if rec := f.do(http.MethodPost, "/api/v2/openrig/decisions/"+tc.id+"/ack", "user-jwt", tc.body); rec.Code != http.StatusConflict {
+		if rec := f.do(http.MethodPost, "/api/v2/decisions/"+tc.id+"/ack", "user-jwt", tc.body); rec.Code != http.StatusConflict {
 			t.Errorf("%s = %d %s, want 409", tc.name, rec.Code, rec.Body.String())
 		}
 	}
@@ -932,7 +932,7 @@ func TestRoomDecisionAckResolvesOnlyOnAppliedAndOnlyOnce(t *testing.T) {
 		{"a drop with a reason nobody defined", `{"machine_id":"host-1","outcome":"dropped","reason":"because"}`},
 		{"a misspelled field", `{"machine_id":"host-1","outcome":"applied","outcom":"typo"}`},
 	} {
-		if rec := f.do(http.MethodPost, "/api/v2/openrig/decisions/"+untouched.ID+"/ack", "user-jwt", tc.body); rec.Code != http.StatusBadRequest {
+		if rec := f.do(http.MethodPost, "/api/v2/decisions/"+untouched.ID+"/ack", "user-jwt", tc.body); rec.Code != http.StatusBadRequest {
 			t.Errorf("%s = %d %s, want 400", tc.name, rec.Code, rec.Body.String())
 		}
 	}
@@ -949,7 +949,7 @@ func TestRoomDecisionStatePushNamesTheStateItRefused(t *testing.T) {
 	other := answeredDecision("d1e0d3c2-3333-4333-8333-000000000002", roomDecisionTestNow)
 	f := newRoomDecisionFixture(t).withRows(row, other).mount()
 
-	rec := f.do(http.MethodPost, "/api/v2/openrig/decisions/"+row.ID+"/state", "user-jwt",
+	rec := f.do(http.MethodPost, "/api/v2/decisions/"+row.ID+"/state", "user-jwt",
 		`{"machine_id":"host-1","state":"superseded","reason":"slack-first"}`)
 	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"state":"superseded"`) {
 		t.Fatalf("state push = %d %s, want 200 superseded", rec.Code, rec.Body.String())
@@ -959,7 +959,7 @@ func TestRoomDecisionStatePushNamesTheStateItRefused(t *testing.T) {
 	}
 
 	// The same decision again: the row is over, so the push is refused with the state it is in.
-	rec = f.do(http.MethodPost, "/api/v2/openrig/decisions/"+row.ID+"/state", "user-jwt",
+	rec = f.do(http.MethodPost, "/api/v2/decisions/"+row.ID+"/state", "user-jwt",
 		`{"machine_id":"host-1","state":"resolved"}`)
 	if rec.Code != http.StatusConflict || !strings.Contains(rec.Body.String(), `"detail":"state-superseded"`) {
 		t.Fatalf("push onto a superseded row = %d %s, want 409 state-superseded", rec.Code, rec.Body.String())
@@ -967,7 +967,7 @@ func TestRoomDecisionStatePushNamesTheStateItRefused(t *testing.T) {
 
 	// A state the daemon may not write is a malformed push rather than a transition it got wrong, and
 	// it writes nothing.
-	rec = f.do(http.MethodPost, "/api/v2/openrig/decisions/"+other.ID+"/state", "user-jwt",
+	rec = f.do(http.MethodPost, "/api/v2/decisions/"+other.ID+"/state", "user-jwt",
 		`{"machine_id":"host-1","state":"pending"}`)
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("push of a cloud-only state = %d %s, want 400", rec.Code, rec.Body.String())
@@ -977,7 +977,7 @@ func TestRoomDecisionStatePushNamesTheStateItRefused(t *testing.T) {
 	}
 
 	// An id that is not there at all is the unknown decision.
-	rec = f.do(http.MethodPost, "/api/v2/openrig/decisions/d1e0d3c2-3333-4333-8333-00000000000f/state", "user-jwt",
+	rec = f.do(http.MethodPost, "/api/v2/decisions/d1e0d3c2-3333-4333-8333-00000000000f/state", "user-jwt",
 		`{"machine_id":"host-1","state":"resolved"}`)
 	if rec.Code != http.StatusNotFound {
 		t.Fatalf("push onto an unknown id = %d %s, want 404", rec.Code, rec.Body.String())

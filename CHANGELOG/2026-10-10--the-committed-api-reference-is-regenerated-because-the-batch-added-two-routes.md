@@ -2,7 +2,7 @@
 
 ### Fixed
 
-- `agenthub-frontend/src/docs/apiReference.ts` — regenerated with its **PRODUCER**, `go run ./cmd/apirefgen` from `agenthub_go`, which reported **146 routes, 10 tools**. The seat-message batch added two routes and left the generated artefact behind, so `go test ./internal/apiref/...` failed `TestTheCommittedArtefactMatchesTheProducer` in **DIRECTION 1** — a route the code registers and the page does not show: `GET /api/v2/openrig/rooms/{room}/seats/{seat}/messages` and `POST /api/v2/openrig/rooms/{room}/seats/{seat}/messages/{id}/ack`. The diff is **21 insertions and nothing else**, the two routes with their path params. **The file is never hand-edited**: it is generated, and the gate holds the producer and the artefact to each other in both directions, so editing it by hand would have made the test agree with a lie.
+- `agenthub-frontend/src/docs/apiReference.ts` — regenerated with its **PRODUCER**, `go run ./cmd/apirefgen` from `agenthub_go`, which reported **146 routes, 10 tools**. The seat-message batch added two routes and left the generated artefact behind, so `go test ./internal/apiref/...` failed `TestTheCommittedArtefactMatchesTheProducer` in **DIRECTION 1** — a route the code registers and the page does not show: `GET /api/v2/rooms/{room}/seats/{seat}/messages` and `POST /api/v2/rooms/{room}/seats/{seat}/messages/{id}/ack`. The diff is **21 insertions and nothing else**, the two routes with their path params. **The file is never hand-edited**: it is generated, and the gate holds the producer and the artefact to each other in both directions, so editing it by hand would have made the test agree with a lie.
 
 ### The consequence this repair carries, stated rather than compensated
 

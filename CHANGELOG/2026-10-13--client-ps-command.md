@@ -1,7 +1,7 @@
-# `4genteam ps`: native room view without the OpenRig daemon
+# `4genteam ps`: native room view without the 4genteam daemon
 
 ### Added
-- `agenthub_client/internal/clientps/ps.go`: `4genteam ps [RIG]` (rollup banner + rig table), `--nodes`, `--compact`, `--grid` (card view with context meter and quota/error line), `--json`. Seats come from `tmux list-sessions` (`<rig>-<member>@<rig>`); a seat whose transcript tail (`~/.openrig/transcripts/<rig>/`) shows a quota or credit message is `quota` and counts as needing attention.
+- `agenthub_client/internal/clientps/ps.go`: `4genteam ps [RIG]` (rollup banner + rig table), `--nodes`, `--compact`, `--grid` (card view with context meter and quota/error line), `--json`. Seats come from `tmux list-sessions` (`<rig>-<member>@<rig>`); a seat whose transcript tail (`~/.config/4genthub/transcripts/<rig>/`) shows a quota or credit message is `quota` and counts as needing attention.
 - `agenthub_client/internal/clientwatch/snapshot.go`: `SeatSnapshot` exports the existing log/runtime/model/context-token reads so `ps` and `watch` agree.
 - `agenthub_client/internal/clientps/ps_test.go`: session-name parsing, quota detection, rollup.
 

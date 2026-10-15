@@ -1,8 +1,8 @@
 ## Topology reaches the server: a report carries `edges`, and `GET /machines` returns them
 
 ### Added
-- `POST /api/v2/openrig/seat-status` accepts `"edges":[{"room","from","to","kind"}]` — one directed link per entry, `kind` one of OpenRig's five (`commpolicy.ValidKind`, so the vocabulary has one home rather than a third copy), `room`/`from`/`to` under the same name rule as room slugs and seat keys, capped at **1000**. A report **replaces** the machine's edge set, like its seats and agents, so a report carrying no `edges` key is accepted and stores the empty set — which is the shape the bridge in flight sends.
-- `GET /api/v2/openrig/machines`: every machine body carries `"edges"`, always present (empty when the machine reported none), in the order reported. The wire names the two ends `from` and `to`.
+- `POST /api/v2/seat-status` accepts `"edges":[{"room","from","to","kind"}]` — one directed link per entry, `kind` one of the client's five (`commpolicy.ValidKind`, so the vocabulary has one home rather than a third copy), `room`/`from`/`to` under the same name rule as room slugs and seat keys, capped at **1000**. A report **replaces** the machine's edge set, like its seats and agents, so a report carrying no `edges` key is accepted and stores the empty set — which is the shape the bridge in flight sends.
+- `GET /api/v2/machines`: every machine body carries `"edges"`, always present (empty when the machine reported none), in the order reported. The wire names the two ends `from` and `to`.
 - `machine_edges` (`user_id`, `machine_id`, `room`, `from_seat`, `to_seat`, `kind`; all six are the primary key), registered in `seat_tables.go` and in `seat_management_postgresql.sql`, with `ck_machine_edges_kind` and the distinctness CHECK its sibling `seat_links` carries. The columns are `from_seat`/`to_seat` because `from` and `to` are SQL keywords. **No CASCADE**: `DeleteRoom` removes the room's edges explicitly, and the deletion-paths scenario counts the new table.
 
 ### Fixed

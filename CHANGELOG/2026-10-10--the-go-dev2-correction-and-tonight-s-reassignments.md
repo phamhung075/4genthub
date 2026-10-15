@@ -21,12 +21,12 @@
   names `go-dev2`. Measured, `:277`-`:281` name go-dev (three rows), web-dev and writer, and `go-dev2` appears
   nowhere in that table — recorded as a non-reproduction rather than filled in.
 - **A measurement note beside G3's box (`:404`-`:405`), because the box's text is checkable and the check
-  disagreed.** The box states that direct `rig send`, `rig queue`, `rig broadcast` and tmux "are denied in the
-  seat's settings". **On this rig's omp seats they are not:** `rig send 4genthub-min-lead@4genthub-min` delivered
+  disagreed.** The box states that direct `4genteam send`, `the task queue`, `rig broadcast` and tmux "are denied in the
+  seat's settings". **On this rig's omp seats they are not:** `4genteam send 4genthub-min-lead@4genthub-min` delivered
   twice from the writer seat at 21:00Z, while `seatcheck send` — the tool the comm-guard fragment allows —
   **exits 2 before it can decide anything**, on a policy path resolved one tree too deep
-  (`~/.openrig/state/omp/<session>/.openrig/agenthub-seats/<rig>/<seat>/policy.json`, while the real file is
-  `~/.openrig/agenthub-seats/<rig>/<seat>/policy.json` and reads `{"Links": [], "Seat": "writer"}`), and **no audit
+  (`~/.config/4genthub/state/omp/<session>/.config/4genthub/agenthub-seats/<rig>/<seat>/policy.json`, while the real file is
+  `~/.config/4genthub/agenthub-seats/<rig>/<seat>/policy.json` and reads `{"Links": [], "Seat": "writer"}`), and **no audit
   line is written for those failures** — the seat's `audit.jsonl` still holds only the earlier, correctly-resolved
   refusal `writer -> lead Allowed:false Reason:"no link"`. So the guard's own tool cannot read the policy, and the
   bypass-detection half of the check records none of the attempts it should. The enforcement that exists is the

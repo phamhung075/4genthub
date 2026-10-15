@@ -20,7 +20,7 @@ const ConnectMachine = ({ expandedSections, toggleSection }: ConnectMachineProps
     content: (
       <div className="space-y-6">
         <p className="text-base leading-relaxed">
-          Your seats run on your own machine, in OpenRig. The <strong>4genteam</strong> client dials <em>out</em> to
+          Your seats run on your own machine, in 4genteam. The <strong>4genteam</strong> client dials <em>out</em> to
           4genthub, so the server never connects into your machine and you open no inbound port. A session
           appears on the <a href="/sessions" className="underline font-semibold">Sessions</a> page only after
           the client has sent it.

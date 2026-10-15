@@ -4,12 +4,12 @@ Date: 2026-10-12
 Scope: `agenthub_go/fastmcp/room_decisions` (service, repository contract, ORM), `agenthub_go/fastmcp/server/httpapp/room_decisions_mount.go`, the three DDL homes, `agenthub_go/fastmcp/seat_management/infrastructure/database/ensure_seat_columns.go`, `agenthub-frontend/src/docs/apiReference.ts`
 
 ## Summary
-Four routes under `/api/v2/openrig/decisions`, the machine half of the room decision channel whose panel half S1 shipped:
+Four routes under `/api/v2/decisions`, the machine half of the room decision channel whose panel half S1 shipped:
 
-- `POST /api/v2/openrig/decisions` - the daemon mirrors one ask up. The body names the rig and may name the room; the room resolves inside the CALLER's tenant, and a slug that resolves to nothing is the pinned 404. The response is `{success, created, decision}`, where `created` is true only for the call that stored the row and false when an earlier attempt already had - and a `created:false` always carries the row.
-- `GET /api/v2/openrig/decisions/answers?rig=&after=&limit=` - the pull the daemon drives: that rig's `answered`, un-acked rows, oldest first, each with the room's SLUG beside it.
-- `POST /api/v2/openrig/decisions/{id}/ack` - the delivery record. `applied` also resolves the row; `dropped` records the ack and leaves the state alone. Both outcomes make the answer final, so a dropped answer is never handed out again.
-- `POST /api/v2/openrig/decisions/{id}/state` - the daemon's state push, the only way a row becomes `superseded` or `closed`. The cloud never resolves a decision on its own: only the daemon's own report does, which is what makes a stale panel answer a refusal rather than a second application.
+- `POST /api/v2/decisions` - the daemon mirrors one ask up. The body names the rig and may name the room; the room resolves inside the CALLER's tenant, and a slug that resolves to nothing is the pinned 404. The response is `{success, created, decision}`, where `created` is true only for the call that stored the row and false when an earlier attempt already had - and a `created:false` always carries the row.
+- `GET /api/v2/decisions/answers?rig=&after=&limit=` - the pull the daemon drives: that rig's `answered`, un-acked rows, oldest first, each with the room's SLUG beside it.
+- `POST /api/v2/decisions/{id}/ack` - the delivery record. `applied` also resolves the row; `dropped` records the ack and leaves the state alone. Both outcomes make the answer final, so a dropped answer is never handed out again.
+- `POST /api/v2/decisions/{id}/state` - the daemon's state push, the only way a row becomes `superseded` or `closed`. The cloud never resolves a decision on its own: only the daemon's own report does, which is what makes a stale panel answer a refusal rather than a second application.
 
 ## The cursor is a keyset over answered_at, and the ack is the delivery record
 The pull pages `(answered_at, id)` ascending and renders the position as `<RFC3339Nano>|<uuid>` - the shipped message pull's own format and separator, so one daemon-side parser serves both - and the cursor is opaque by contract. Minting it from the ask's `created_at` would be a keyset over the wrong key: that is the shipped message store's column, and nothing in this repository ordered by `answered_at` before this change.
@@ -42,6 +42,6 @@ From `agenthub_go`, with `AGENTHUB_TEST_PG_URL` and `SEAT_TEST_DATABASE_URL` set
 See `TEST-CHANGELOG.md` for what each case proves and for the two defects the work exposed.
 
 ## Not run / limits
-- Pushing, deploying, `POST /api/v2/openrig/seat-types/seed` and the re-pin stay the owner's.
+- Pushing, deploying, `POST /api/v2/seat-types/seed` and the re-pin stay the owner's.
 - The daemon half that would drive these routes is its own task, so nothing outside tests consumes the pull yet.
 - The DB-backed cases need a PostgreSQL, and the checked-in workflow provides none.

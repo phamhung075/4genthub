@@ -80,7 +80,7 @@ func TestResolveSeatReturnsSnapshot(t *testing.T) {
 		Files:  []repositories.ResolvedFile{{Path: "agent.yaml", Content: "name: x"}},
 		Policy: map[string]any{"Seat": "coder"},
 	}})
-	rec := doTestRequest(t, mux, http.MethodGet, "/api/v2/openrig/seats/dev/coder", "")
+	rec := doTestRequest(t, mux, http.MethodGet, "/api/v2/seats/dev/coder", "")
 	if rec.Code != http.StatusOK {
 		t.Fatalf("status = %d: %s", rec.Code, rec.Body.String())
 	}
@@ -107,7 +107,7 @@ func TestResolveSeatStatusMapping(t *testing.T) {
 	}
 	for _, c := range cases {
 		mux := seatTestMux(t, &fakeSeatSource{err: c.err})
-		rec := doTestRequest(t, mux, http.MethodGet, "/api/v2/openrig/seats/dev/x", "")
+		rec := doTestRequest(t, mux, http.MethodGet, "/api/v2/seats/dev/x", "")
 		if rec.Code != c.want {
 			t.Errorf("%v: status = %d, want %d", c.err, rec.Code, c.want)
 		}
@@ -136,7 +136,7 @@ func capturedSeatMux(t *testing.T, source seatSource) (*http.ServeMux, *string) 
 
 // authedSeatRequest is a seat GET with the given public origin signals and a bearer token.
 func authedSeatRequest(host string, tlsTerminated bool, headers map[string]string) *http.Request {
-	req := httptest.NewRequest(http.MethodGet, "/api/v2/openrig/seats/dev/coder", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/v2/seats/dev/coder", nil)
 	if host != "" {
 		req.Host = host
 	}
@@ -198,11 +198,11 @@ func TestResolveSeatTrustsForwardedOrigin(t *testing.T) {
 func TestSeatRoutesDerivePublicURLAndRequireAuth(t *testing.T) {
 	t.Setenv(publicURLEnv, "")
 	mux := seatTestMux(t, &fakeSeatSource{resolved: &repositories.ResolvedSeat{Hash: "abc", Runtime: "claude-code"}})
-	if rec := doTestRequest(t, mux, http.MethodGet, "/api/v2/openrig/seats/dev/x", ""); rec.Code != http.StatusOK {
+	if rec := doTestRequest(t, mux, http.MethodGet, "/api/v2/seats/dev/x", ""); rec.Code != http.StatusOK {
 		t.Errorf("without %s: status = %d, want 200", publicURLEnv, rec.Code)
 	}
 	bare := httptest.NewRecorder()
-	mux.ServeHTTP(bare, httptest.NewRequest(http.MethodGet, "/api/v2/openrig/seats/dev/x", nil))
+	mux.ServeHTTP(bare, httptest.NewRequest(http.MethodGet, "/api/v2/seats/dev/x", nil))
 	if bare.Code == http.StatusNotFound || bare.Code == http.StatusOK {
 		t.Errorf("unauthenticated request: status = %d, want 401/403", bare.Code)
 	}
@@ -211,7 +211,7 @@ func TestSeatRoutesDerivePublicURLAndRequireAuth(t *testing.T) {
 func TestSeedSeatTypesReportsCount(t *testing.T) {
 	t.Setenv(publicURLEnv, "https://api.example.test")
 	mux := seatTestMux(t, &fakeSeatSource{seeded: 9})
-	rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/seat-types/seed", "")
+	rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/seat-types/seed", "")
 	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"seat_types":9`) {
 		t.Errorf("seed: %d %s", rec.Code, rec.Body.String())
 	}
@@ -220,7 +220,7 @@ func TestSeedSeatTypesReportsCount(t *testing.T) {
 func TestSeedSeatTypesWorksWithoutPublicURL(t *testing.T) {
 	t.Setenv(publicURLEnv, "")
 	mux := seatTestMux(t, &fakeSeatSource{seeded: 9})
-	rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/seat-types/seed", "")
+	rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/seat-types/seed", "")
 	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"seat_types":9`) {
 		t.Errorf("seed without %s: status = %d %s", publicURLEnv, rec.Code, rec.Body.String())
 	}
@@ -229,7 +229,7 @@ func TestSeedSeatTypesWorksWithoutPublicURL(t *testing.T) {
 func TestSeedSeatTypesErrorMapping(t *testing.T) {
 	t.Setenv(publicURLEnv, "")
 	mux := seatTestMux(t, &fakeSeatSource{err: errors.New("database down")})
-	rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/seat-types/seed", "")
+	rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/seat-types/seed", "")
 	if rec.Code != http.StatusInternalServerError {
 		t.Errorf("seed error: status = %d, want 500", rec.Code)
 	}
@@ -250,7 +250,7 @@ func TestSeatMessageRouteIsVerbScoped(t *testing.T) {
 
 	// POST on the room-scoped path reaches the writer, and the answer is a success carrying the stored
 	// id: the message IS held, so a refusal here would be a lie about the store.
-	rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/rooms/dev/seats/coder/messages", `{"text":"hello"}`)
+	rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/rooms/dev/seats/coder/messages", `{"text":"hello"}`)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("POST /rooms/dev/seats/coder/messages = %d, want 200: %s", rec.Code, rec.Body.String())
 	}
@@ -345,7 +345,7 @@ func TestSeatMessagePullReturnsThePendingMessages(t *testing.T) {
 		Text: "hello", CreatedAt: seatMessageTestNow,
 	}}}
 	mux := seatMessageTestMux(t, &fakeSeatSource{resolved: &repositories.ResolvedSeat{Hash: "abc", Runtime: "claude-code"}}, store)
-	path := "/api/v2/openrig/rooms/dev/seats/coder/messages"
+	path := "/api/v2/rooms/dev/seats/coder/messages"
 
 	rec := doTestRequest(t, mux, http.MethodGet, path, "")
 	if rec.Code != http.StatusOK {
@@ -366,7 +366,7 @@ func TestSeatMessageDeliveredOnceAndNotAgain(t *testing.T) {
 	t.Setenv(publicURLEnv, "https://api.example.test")
 	store := &fakeSeatMessageStore{}
 	mux := seatMessageTestMux(t, &fakeSeatSource{resolved: &repositories.ResolvedSeat{Hash: "abc", Runtime: "claude-code"}}, store)
-	path := "/api/v2/openrig/rooms/dev/seats/coder/messages"
+	path := "/api/v2/rooms/dev/seats/coder/messages"
 
 	if rec := doTestRequest(t, mux, http.MethodPost, path, `{"text":"hello"}`); rec.Code != http.StatusOK {
 		t.Fatalf("send = %d: %s", rec.Code, rec.Body.String())
@@ -409,7 +409,7 @@ func TestSeatMessageSendRefusesACredentialWithTheChannelsOwnBody(t *testing.T) {
 	store := &fakeSeatMessageStore{}
 	mux := seatMessageTestMux(t, &fakeSeatSource{resolved: &repositories.ResolvedSeat{Hash: "abc", Runtime: "claude-code"}}, store)
 
-	rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/rooms/dev/seats/coder/messages",
+	rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/rooms/dev/seats/coder/messages",
 		`{"text":"the call failed with `+secret+` in the header"}`)
 	if rec.Code != http.StatusUnprocessableEntity {
 		t.Fatalf("status = %d, want 422: %s", rec.Code, rec.Body.String())
@@ -433,7 +433,7 @@ func TestSeatMessageBothDirectionsRefuseAMissingSeatIdentically(t *testing.T) {
 	store := &fakeSeatMessageStore{}
 	source := &fakeSeatSource{err: fmt.Errorf("%w: seat %q", seatservices.ErrSeatNotFound, "ghost")}
 	mux := seatMessageTestMux(t, source, store)
-	path := "/api/v2/openrig/rooms/dev/seats/ghost/messages"
+	path := "/api/v2/rooms/dev/seats/ghost/messages"
 
 	write := doTestRequest(t, mux, http.MethodPost, path, `{"text":"hello"}`)
 	pull := doTestRequest(t, mux, http.MethodGet, path, "")
@@ -507,7 +507,7 @@ func TestSeatMessageSendRefusesAViewerAndAStrangerWithTheSame404(t *testing.T) {
 	store := &fakeSeatMessageStore{}
 	source := &sharingAwareSeatSource{ownerID: ownerID}
 	mux := seatMessageTestMux(t, source, store)
-	path := "/api/v2/openrig/rooms/dev/seats/alice/messages"
+	path := "/api/v2/rooms/dev/seats/alice/messages"
 
 	authenticateAs(t, ownerID)
 	owner := doTestRequest(t, mux, http.MethodPost, path, `{"text":"hello"}`)

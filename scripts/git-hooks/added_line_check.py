@@ -49,7 +49,7 @@ import sys
 import time
 from pathlib import Path
 
-SEAT_ENV = "OPENRIG_SESSION"
+SEAT_ENV = "AGENTHUB_SESSION_NAME"
 BASELINE_DIRNAME = "hunk-baselines"
 EXIT_MISMATCH = 3
 

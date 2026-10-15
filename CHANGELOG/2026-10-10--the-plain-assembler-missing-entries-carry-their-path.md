@@ -4,7 +4,7 @@
 - `agenthub_go/fastmcp/seat_management/domain/contextpacks/bundle.go` — `AssemblePlainFiles` reported a
   skipped member as a bare `string` in `PlainFileAssembly.MissingFiles`, while the source it ports reports
   `{ path }` objects. New `PlainFileRef{Path string}`, and the field is now `[]PlainFileRef`.
-- The entry type was found by **mirroring the source's own cases**, not by re-reading the port: openrig
+- The entry type was found by **mirroring the source's own cases**, not by re-reading the port: the reference client
   `1a05af1b`, `packages/daemon/test/context-pack-compose.test.ts:54-61` asserts
   `expect(result.missingFiles).toEqual([{ path: "absent.md" }])`. Against the port as it stood
   (`bundle.go` `f28c216d`), that assertion **did not compile**: `got.MissingFiles[0].Path undefined (type

@@ -46,5 +46,5 @@
   NOT done (`seats/4genthub-min/FINDING-F2-PORT-FIDELITY-2026-10-10.md`, addendum 19:17Z). The comparison basis
   is the source's CASES rather than a reading of CommonMark: source `…/daemon/src/domain/markdown-address.ts`
   `3cbe44d27d229277…`, `test/markdown-address.test.ts` `d133afbf3980b9a4…`,
-  `test/markdown-address-indentation.test.ts` `13aaf18ab957a3c3…`, all three clean at `openrig` `1a05af1b`;
+  `test/markdown-address-indentation.test.ts` `13aaf18ab957a3c3…`, all three clean at `the reference client` `1a05af1b`;
   port `address.go` `5dd7766f7fd2e6c2…` and `address_test.go` `afeab7e8aaaa879d…` at `4genthub` `f99d10eb`.

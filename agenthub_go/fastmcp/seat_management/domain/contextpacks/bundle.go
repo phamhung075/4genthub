@@ -88,7 +88,7 @@ func AssemblePlainFiles(files []PlainFileInput) PlainFileAssembly {
 }
 
 const (
-	packHeaderPrefix = "# OpenRig Context Pack:"
+	packHeaderPrefix = "# Context Pack:"
 	fileHeaderPrefix = "## File:"
 )
 
@@ -167,7 +167,7 @@ func isECMAScriptSpace(r rune) bool {
 
 // AssembleBundle concatenates a pack into one paste-ready string:
 //
-//	# OpenRig Context Pack: <name> v<version>
+//	# Context Pack: <name> v<version>
 //	<purpose, if any>
 //
 //	## File: <path> (role: <role>)

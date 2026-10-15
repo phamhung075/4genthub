@@ -2,32 +2,32 @@ package httpapp
 
 // seat_admin_mount.go is the REST administration surface for the seat system:
 //
-//	POST   /api/v2/openrig/rooms
-//	GET    /api/v2/openrig/rooms
-//	DELETE /api/v2/openrig/rooms/{room}
-//	PUT    /api/v2/openrig/rooms/{room}/team
-//	GET    /api/v2/openrig/seat-types
-//	POST   /api/v2/openrig/seat-types
-//	POST   /api/v2/openrig/seat-types/{slug}/versions
-//	GET    /api/v2/openrig/modules
-//	GET    /api/v2/openrig/modules/{slug}/versions/{version}
-//	PUT    /api/v2/openrig/modules/{slug}/versions/{version}
-//	POST   /api/v2/openrig/rooms/{room}/seats
-//	GET    /api/v2/openrig/rooms/{room}/seats
-//	DELETE /api/v2/openrig/rooms/{room}/seats/{seat}
-//	PUT    /api/v2/openrig/rooms/{room}/seats/{seat}/occupant
-//	PUT    /api/v2/openrig/rooms/{room}/seats/{seat}/permission-policy
-//	GET    /api/v2/openrig/overlay
-//	PUT    /api/v2/openrig/overlay
-//	GET    /api/v2/openrig/rooms/{room}/overlay
-//	PUT    /api/v2/openrig/rooms/{room}/overlay
-//	GET    /api/v2/openrig/rooms/{room}/seats/{seat}/overlay
-//	PUT    /api/v2/openrig/rooms/{room}/seats/{seat}/overlay
-//	PUT    /api/v2/openrig/rooms/{room}/seats/{seat}/links
-//	GET    /api/v2/openrig/rooms/{room}/seats/{seat}/links
-//	DELETE /api/v2/openrig/rooms/{room}/seats/{seat}/links/{to}/{kind}
-//	GET    /api/v2/openrig/settings
-//	PUT    /api/v2/openrig/settings
+//	POST   /api/v2/rooms
+//	GET    /api/v2/rooms
+//	DELETE /api/v2/rooms/{room}
+//	PUT    /api/v2/rooms/{room}/team
+//	GET    /api/v2/seat-types
+//	POST   /api/v2/seat-types
+//	POST   /api/v2/seat-types/{slug}/versions
+//	GET    /api/v2/modules
+//	GET    /api/v2/modules/{slug}/versions/{version}
+//	PUT    /api/v2/modules/{slug}/versions/{version}
+//	POST   /api/v2/rooms/{room}/seats
+//	GET    /api/v2/rooms/{room}/seats
+//	DELETE /api/v2/rooms/{room}/seats/{seat}
+//	PUT    /api/v2/rooms/{room}/seats/{seat}/occupant
+//	PUT    /api/v2/rooms/{room}/seats/{seat}/permission-policy
+//	GET    /api/v2/overlay
+//	PUT    /api/v2/overlay
+//	GET    /api/v2/rooms/{room}/overlay
+//	PUT    /api/v2/rooms/{room}/overlay
+//	GET    /api/v2/rooms/{room}/seats/{seat}/overlay
+//	PUT    /api/v2/rooms/{room}/seats/{seat}/overlay
+//	PUT    /api/v2/rooms/{room}/seats/{seat}/links
+//	GET    /api/v2/rooms/{room}/seats/{seat}/links
+//	DELETE /api/v2/rooms/{room}/seats/{seat}/links/{to}/{kind}
+//	GET    /api/v2/settings
+//	PUT    /api/v2/settings
 //
 // Every route is authed and tenant-scoped by the caller's user id.
 
@@ -314,85 +314,85 @@ func (s *seatAdminRepos) SetSettings(ctx context.Context, userID string, followL
 }
 
 func mountSeatAdminRoutes(mux *http.ServeMux, sessions *database.SessionManager) {
-	mux.HandleFunc("POST /api/v2/openrig/rooms", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+	mux.HandleFunc("POST /api/v2/rooms", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleCreateRoom(w, r, u, sessions)
 	}))
-	mux.HandleFunc("GET /api/v2/openrig/rooms", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+	mux.HandleFunc("GET /api/v2/rooms", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleListRooms(w, r, u, sessions)
 	}))
-	mux.HandleFunc("DELETE /api/v2/openrig/rooms/{room}", authed(seatMutation("room", "deleted", func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+	mux.HandleFunc("DELETE /api/v2/rooms/{room}", authed(seatMutation("room", "deleted", func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleDeleteRoom(w, r, u, sessions)
 	})))
-	mux.HandleFunc("PUT /api/v2/openrig/rooms/{room}/team", authed(seatMutation("room", "updated", func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+	mux.HandleFunc("PUT /api/v2/rooms/{room}/team", authed(seatMutation("room", "updated", func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleSetRoomTeam(w, r, u, sessions)
 	})))
-	mux.HandleFunc("GET /api/v2/openrig/seat-types", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+	mux.HandleFunc("GET /api/v2/seat-types", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleListSeatTypes(w, r, u, sessions)
 	}))
-	mux.HandleFunc("POST /api/v2/openrig/seat-types", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+	mux.HandleFunc("POST /api/v2/seat-types", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleCreateSeatType(w, r, u, sessions)
 	}))
-	mux.HandleFunc("POST /api/v2/openrig/seat-types/{slug}/versions", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+	mux.HandleFunc("POST /api/v2/seat-types/{slug}/versions", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleCreateSeatTypeVersion(w, r, u, sessions)
 	}))
-	mux.HandleFunc("GET /api/v2/openrig/modules", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+	mux.HandleFunc("GET /api/v2/modules", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleListModules(w, r, u, sessions)
 	}))
-	mux.HandleFunc("GET /api/v2/openrig/modules/{slug}/versions/{version}", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+	mux.HandleFunc("GET /api/v2/modules/{slug}/versions/{version}", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleGetModuleVersion(w, r, u, sessions)
 	}))
-	mux.HandleFunc("PUT /api/v2/openrig/modules/{slug}/versions/{version}", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+	mux.HandleFunc("PUT /api/v2/modules/{slug}/versions/{version}", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handlePutModuleVersion(w, r, u, sessions)
 	}))
-	mux.HandleFunc("POST /api/v2/openrig/rooms/{room}/seats", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+	mux.HandleFunc("POST /api/v2/rooms/{room}/seats", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleCreateSeat(w, r, u, sessions)
 	}))
-	mux.HandleFunc("GET /api/v2/openrig/rooms/{room}/seats", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+	mux.HandleFunc("GET /api/v2/rooms/{room}/seats", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleListSeats(w, r, u, sessions)
 	}))
-	mux.HandleFunc("DELETE /api/v2/openrig/rooms/{room}/seats/{seat}", authed(seatMutation("seat", "deleted", func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+	mux.HandleFunc("DELETE /api/v2/rooms/{room}/seats/{seat}", authed(seatMutation("seat", "deleted", func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleRemoveSeat(w, r, u, sessions)
 	})))
-	mux.HandleFunc("PUT /api/v2/openrig/rooms/{room}/seats/{seat}/occupant", authed(seatMutation("seat", "updated", func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+	mux.HandleFunc("PUT /api/v2/rooms/{room}/seats/{seat}/occupant", authed(seatMutation("seat", "updated", func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleSetSeatOccupant(w, r, u, sessions)
 	})))
-	mux.HandleFunc("PUT /api/v2/openrig/rooms/{room}/seats/{seat}/permission-policy", authed(seatMutation("seat", "updated", func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+	mux.HandleFunc("PUT /api/v2/rooms/{room}/seats/{seat}/permission-policy", authed(seatMutation("seat", "updated", func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleSetSeatPermissionPolicy(w, r, u, sessions)
 	})))
-	mux.HandleFunc("PUT /api/v2/openrig/rooms/{room}/seats/{seat}/pin", authed(seatMutation("seat", "updated", func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+	mux.HandleFunc("PUT /api/v2/rooms/{room}/seats/{seat}/pin", authed(seatMutation("seat", "updated", func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleSetSeatPin(w, r, u, sessions)
 	})))
-	mux.HandleFunc("PUT /api/v2/openrig/rooms/{room}/overlay", authed(seatMutation("room", "updated", func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+	mux.HandleFunc("PUT /api/v2/rooms/{room}/overlay", authed(seatMutation("room", "updated", func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleRoomOverlay(w, r, u, sessions)
 	})))
-	mux.HandleFunc("GET /api/v2/openrig/overlay", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+	mux.HandleFunc("GET /api/v2/overlay", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleGetCompanyOverlay(w, r, u, sessions)
 	}))
-	mux.HandleFunc("PUT /api/v2/openrig/overlay", authed(seatMutation("room", "updated", func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+	mux.HandleFunc("PUT /api/v2/overlay", authed(seatMutation("room", "updated", func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleCompanyOverlay(w, r, u, sessions)
 	})))
-	mux.HandleFunc("GET /api/v2/openrig/rooms/{room}/overlay", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+	mux.HandleFunc("GET /api/v2/rooms/{room}/overlay", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleGetRoomOverlay(w, r, u, sessions)
 	}))
-	mux.HandleFunc("PUT /api/v2/openrig/rooms/{room}/seats/{seat}/overlay", authed(seatMutation("seat", "updated", func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+	mux.HandleFunc("PUT /api/v2/rooms/{room}/seats/{seat}/overlay", authed(seatMutation("seat", "updated", func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleSeatOverlay(w, r, u, sessions)
 	})))
-	mux.HandleFunc("GET /api/v2/openrig/rooms/{room}/seats/{seat}/overlay", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+	mux.HandleFunc("GET /api/v2/rooms/{room}/seats/{seat}/overlay", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleGetSeatOverlay(w, r, u, sessions)
 	}))
-	mux.HandleFunc("PUT /api/v2/openrig/rooms/{room}/seats/{seat}/links", authed(seatMutation("seat", "updated", func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+	mux.HandleFunc("PUT /api/v2/rooms/{room}/seats/{seat}/links", authed(seatMutation("seat", "updated", func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleUpsertSeatLink(w, r, u, sessions)
 	})))
-	mux.HandleFunc("GET /api/v2/openrig/rooms/{room}/seats/{seat}/links", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+	mux.HandleFunc("GET /api/v2/rooms/{room}/seats/{seat}/links", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleListSeatLinks(w, r, u, sessions)
 	}))
-	mux.HandleFunc("DELETE /api/v2/openrig/rooms/{room}/seats/{seat}/links/{to}/{kind}", authed(seatMutation("seat", "updated", func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+	mux.HandleFunc("DELETE /api/v2/rooms/{room}/seats/{seat}/links/{to}/{kind}", authed(seatMutation("seat", "updated", func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleDeleteSeatLink(w, r, u, sessions)
 	})))
-	mux.HandleFunc("GET /api/v2/openrig/settings", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+	mux.HandleFunc("GET /api/v2/settings", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleGetSettings(w, r, u, sessions)
 	}))
-	mux.HandleFunc("PUT /api/v2/openrig/settings", authed(seatMutation("room", "updated", func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+	mux.HandleFunc("PUT /api/v2/settings", authed(seatMutation("room", "updated", func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handlePutSettings(w, r, u, sessions)
 	})))
 }
@@ -1660,7 +1660,7 @@ func seatAdminRoomBody(room *repositories.Room, callerID string) *entities.Order
 	body.Set("role", seatAdminRoomRole(room, callerID))
 	// team_id is the sharing state of the room: empty while the room is private to its owner.
 	// The raw id is emitted rather than the slug so a list stays one query; the palette already
-	// reads GET /api/v2/openrig/teams for the slugs.
+	// reads GET /api/v2/teams for the slugs.
 	body.Set("team_id", room.TeamID)
 	return body
 }
