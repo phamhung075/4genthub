@@ -1,12 +1,22 @@
 # Syncing local 4genteam seats with the 4genthub cloud
 
-The cloud owns what a seat is and resolves it to a snapshot named by a hash. The local client
-compares each seat's pinned hash with the cloud's, adopts a newer snapshot, and can restart the
-seat so it loads it. Tool: `agenthub_client/internal/clientseat/` (`seat.go` holds `Commands` at `:52`) — **CORRECTED 2026-10-10 (writer seat, at the pinned client commit `eaa6ba7`): this named `agenthub_client/src/agenthub_client/seat_client.py`, which the client's Go port retired** — run as
-`4genteam seat` (it calls `4genteam sync rig ROOM --update` to adopt, so the pinning rules live in
-one place: never fall back to another snapshot; a missing pin is an error).
+The cloud owns what a seat is and resolves it to a snapshot named by a hash. The local client pulls
+and materializes a snapshot, and a seat loads what it has at launch. Tool:
+`agenthub_client/internal/clientseat/` — **CORRECTED 2026-10-10 (writer seat, at the pinned client
+commit `eaa6ba7`): this named `agenthub_client/src/agenthub_client/seat_client.py`, which the
+client's Go port retired.**
+
+**THE COMPARISON HALF IS GONE (2026-10-15); the rest of this document is the record of what it
+measured.** `4genteam seat status`, `4genteam seat sync` and `4genteam seat watch` compared each
+seat's pinned hash with the hash the cloud would serve now and adopted the newer snapshot. The route
+they read, `GET /api/v2/rooms/{room}/rigspec`, was deleted server-side (cbc51bae), and the three
+verbs went with it rather than being kept to refuse - a verb kept only to fail is a deprecation shim.
+`4genteam seat reseat ROOM --seat NAME` is the restart step that remains, and it needs no pin: it
+restarts the named seats at their own quiet point, whatever their pin says. The client's CHANGELOG
+carries the removal.
 
 ```
+# the shape before 2026-10-15, recorded as measured
 cloud room  --hash per seat-->  4genteam seat  --4genteam sync rig ROOM --update-->  <store>/<room>/rig
                                       |                                                      |
                                       +-- relaunch (when quiet) -->  seat loads it at start
@@ -20,8 +30,10 @@ committed, so `git show HEAD:scripts/seat_client.py` still resolves while the fi
 does not). The console script is `4genteam` (also installed as `agenthub-client`), which runs
 `agenthub_client.cli:main`. **Two older instructions are therefore dead and must not be followed:**
 `python3 scripts/seat_client.py …`, and `agenthub-client sync status <room>` — the latter
-was never a verb, because `sync` is `seat_sync` (`pull`, `rig`, `bundle`, `offline-install`,
-`respawn`, `install-checker`, `switch`), while per-seat `status` lives under `4genteam seat`.
+was never a verb, because `sync` is `seat_sync` (`pull`, `messages`, `connector`, `bundle`,
+`offline-install`, `respawn`, `install-checker`, `switch`), while per-seat `status` lived under
+`4genteam seat` - and that verb is itself gone since 2026-10-15, with the rest of the comparison half
+named at the top of this document.
 
 Environment: `AGENTHUB_URL` (for production `https://api.4genthub.com`) and `AGENTHUB_TOKEN`. The
 token is passed on in the environment and never printed or written. The store is
@@ -30,18 +42,20 @@ token is passed on in the environment and never printed or written. The store is
 ## Commands
 
 ```bash
-4genteam seat status 4genthub-dev                    # pinned vs cloud, per seat
-4genteam seat sync 4genthub-dev                      # adopt newer snapshots only
-4genteam seat sync 4genthub-dev --relaunch quiet     # adopt, then restart changed seats
-4genteam seat watch 4genthub-dev --interval 60 --relaunch quiet
-4genteam sync rig 4genthub-dev --update              # materialize the room: rig.yaml plus links
+4genteam sync pull 4genthub-dev go-dev                 # pull one seat's snapshot, and move its pin to it
+4genteam sync bundle 4genthub-dev go-dev --rig-yaml P --rig-root DIR   # build the seat's .rigbundle
+4genteam sync offline-install TARGET                   # a bundle's pinned policy into the store
 4genteam seat reseat 4genthub-min --seat go-dev --seat lead   # restart live seats at their quiet point
 4genteam send [--from NAME] 4genthub-min lead "text"          # one signed message to one seat
+4genteam ps 4genthub-min --nodes                      # one row per seat, with lifecycle and activity
 ```
 
-`--seat NAME` (repeatable) limits the work; `--rig NAME` when the rig name differs from the room.
-`4genteam seat sync` is the per-seat loop; `4genteam sync` is the module that pulls, pins and
-materializes (`--help` lists its seven subcommands).
+The per-seat commands this section used to list - `4genteam seat status`, `seat sync` (with
+`--relaunch none|quiet`) and `seat watch` - were the comparison half and are gone; the `--relaunch`
+table below is kept as the record of the modes they carried.
+
+`--seat NAME` (repeatable) limits the work. `4genteam sync` is the module that pulls, pins and moves
+what was pulled (`--help` lists its eight verbs).
 
 | Mode | Effect |
 |---|---|
@@ -50,22 +64,24 @@ materializes (`--help` lists its seven subcommands).
 
 `seat reseat RIG --seat NAME...` restarts each named seat once it is quiet, one after the other, whatever its
 pin says. Use it when a seat has to load something that is not part of its snapshot: a new skill, a new cwd, a
-changed guide in the repo. `seat sync --relaunch quiet` cannot do that, because a seat whose pin is already
-current is reported "in sync" and is never restarted. The DeepSeek peak gate applies (`--allow-peak` skips it).
+changed guide in the repo. The removed `seat sync --relaunch quiet` could not do that: a seat whose pin was
+already current was reported "in sync" and was never restarted. The DeepSeek peak gate applies (`--allow-peak` skips it).
 `--force` skips the quiet wait. Before each restart the client also replaces the omp seat's own skill directory
-(`~/.config/4genthub/state/omp/<session>/agent/skills`) with the skills `sync rig` built for it, because nothing else copies
+(`~/.config/4genthub/state/omp/<session>/agent/skills`) with the skills the rig root holds for that seat
+(`<store>/<room>/rig/agents/<seat>/skills`, which the removed `sync room` built), because nothing else copies
 them there. A `rig launch` whose reply times out counts as done when the seat's tmux session comes up within 3 minutes.
 
 `send` puts `From NAME:` in front of the text (default `owner session`) because `4genteam send` does not carry the
 sender outside a seat shell, and it passes the text to `rig` as one argument, so a shell expands nothing in it.
 
-Exit codes: 0 ok (`status`: all in sync), 2 usage or environment, 3 a cloud, sync or relaunch step
-failed, 4 `status` found a seat behind or not pulled.
+Exit codes: 0 ok, 2 usage or environment, 3 a cloud, sync or relaunch step
+failed. (4 belonged to the removed `seat status`, which reported a seat behind or not pulled.)
 
 ## Know before you use it
 
 - **Only cloud rooms sync.** The cloud has the rooms `4genthub-dev` and `smoke`. A rig that exists
-  only locally (the `4genthub-min` team) has no room, so `status 4genthub-min` answers `room not found`.
+  only locally (the `4genthub-min` team) has no room, so the removed `status 4genthub-min` answered
+  `room not found`.
   It becomes syncable once the cloud has a room for it, which is part of
   `SEAT-CONTEXT-AS-BLOCKS.md`.
 - **A running seat never changes live.** Adopting changes the files; the seat reads them at launch.
@@ -121,7 +137,8 @@ failed, 4 `status` found a seat behind or not pulled.
   from the served body in **two** hunks (the `PROJECT.` line and the LAYOUT bullet)
   while **what a seat reads** still carries all **three**. The remaining chain is two
   applies, as the disposition ruled: the armed 1.0.1 run, then a second publish of
-  1.0.2 plus a re-resolve and `4genteam sync rig --update`. The publish and the
+  1.0.2 plus a re-resolve and `4genteam sync rig --update` (that verb is itself gone since
+  2026-10-15, with the route). The publish and the
   re-resolve need the principal's production token; a seat does not start them.
 
   **A method note for the next reader of the three census instruments, because getting
@@ -134,4 +151,4 @@ failed, 4 `status` found a seat behind or not pulled.
   0 (it takes no argument; with none it defaults to `rev=HEAD base=a7990665`),
   `COUNTS-AUDIT.py` exit 0, `CITATION-AUDIT.py` `rows 145  stale 0  unresolved 0`.
 - **Not yet built:** the frontend "Apply" button. When the cloud records apply requests, `watch`
-  will act on them; today `watch` compares hashes by polling.
+  will act on them; today the removed `seat watch` compared hashes by polling.

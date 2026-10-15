@@ -31,7 +31,7 @@ lists the doctor's rows.
 - Escalation route: a seat blocked for N minutes tells the lead, then the owner. Exists, inside the stuck alerts (`4fa2c7c`): the same finding is re-sent to the lead and then written to the owner's queue row.
 
 ### 1.4 Environment and onboarding
-- `up` for the whole room, `seat sync`, `seat reseat`, skills delivery. Exists.
+- `up` for the whole room, `seat reseat`, skills delivery. Exists. (`seat sync`, listed here until 2026-10-15, went with the deleted rigspec route.)
 - Seat doctor: cwd, branch, skills, guide version, tool access. Exists (`4genteam doctor <rig>`, `9182f13`): one line per safeguard row (compact, watchdog, bridge, rigd, seats, identity, worktrees, clone, hooks, orphan_handoffs), then the per-seat findings - F1 a seat whose cwd is not its worktree, F2 a skill delivered but not declared by the client's tree, F3 a skill in the seat's set that its runtime did not load. Read-only; it exits 3 and names every row that is not running. The repair verb is `up`.
 - Fresh-seat orientation pack: repo map, rules, current board. Partly in skills.
 
@@ -129,7 +129,7 @@ A per-seat check finds each of these in seconds. None of them was two seats edit
 | Handoff note at reseat or compaction | **Defer, then fold into the seat doctor** | The compaction supervisor already sends `/compact` and a resume message. The doctor's launch check is the place to add the note. |
 | Escalation route (seat, then lead, then owner) | **Build, inside the stuck alerts** | It is the same timer with a second, longer threshold. |
 | **1.4 Environment** | | |
-| `up`, `seat sync`, `seat reseat`, skills delivery | Exists | Nothing to do. |
+| `up`, `seat reseat`, skills delivery | Exists | Nothing to do. (`seat sync` was listed here until 2026-10-15 and went with the deleted rigspec route.) |
 | Seat doctor (cwd, branch, skills, tool access) | **Build (1st)** | It finds all four of the day's failures. |
 | Fresh-seat orientation pack | **Defer** | Skills deliver it today. The doctor checks the skill version, which covers "is the pack current". |
 | **1.5 Quality and safety** | | |

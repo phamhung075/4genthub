@@ -22,8 +22,8 @@ restore, before concluding anything about where you are.
 - **The work queue** — `4genteam room queue` (`list` / `show` / `create` / `update` / `claim` / `close`;
   owned work, handoffs, block/wake state).
 - **The board and decisions** — `NEXT-GEN2.md` (repo root).
-- **Project skills** — one source: `agenthub_client/skills/` (`share/` and `rooms/<room>/` are delivered to seats
-  by `4genteam sync room`; `client/` is for the LLM running the client, e.g. `install`, `rig-runtime-switch`,
+- **Project skills** — one source: `agenthub_client/skills/` (`share/` and `rooms/<room>/` reach a seat when
+  its restart delivers them — `4genteam seat reseat`; `client/` is for the LLM running the client, e.g. `install`, `rig-runtime-switch`,
   `seat-runtime-switch`, `spawn-team`, `watch-team`). Ruling: `ai_docs/core-architecture/seat-skills.md`.
   `.agents/skills` is being retired; do not add skills there.
 - **4genthub's own records** — tasks and context go into 4genthub itself through the `agenthub_http` MCP
