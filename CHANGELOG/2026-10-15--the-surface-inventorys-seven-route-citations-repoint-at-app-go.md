@@ -10,8 +10,12 @@ unresolved 0` and exited `1`. Every one of the seven is in the projects/health b
 reported `unresolved 0` — so this is drift, not a route that went away.
 
 **One defect, two red legs, and the second one is the reason this was worth chasing.** `pytest
-scripts/tests -q` was `1 failed, 90 passed` in a clean worktree at `80e51824` (`2 failed, 89 passed` at
-`ddfa5f51`), and the two failures have the same cause. The leg that runs each instrument against a
+scripts/tests -q` is `2 failed, 89 passed` at `80e51824` in a clean worktree, and the same at `ddfa5f51`
+(the two commits differ in no `scripts/` or `ai_docs/` byte). An earlier draft of this entry printed
+`1 failed, 90 passed` for `80e51824`; that reading belongs to a worktree with this fix PRESENT BUT
+UNCOMMITTED, because the clean-at-HEAD leg audits a detached export of the COMMITTED revision while
+`--self-test` perturbs the worktree's own copy of the inventory. The reviewer's gate caught the
+misattribution. The two failing legs have one cause. The leg that runs each instrument against a
 detached export of the committed revision is red because the committed document is stale. The
 `CITATION-AUDIT.py --self-test` leg is red for a subtler reason: the self-test perturbs the FIRST
 citation row, which is line 76 — one of the seven — so perturbing it by `+7` leaves it exactly as stale
@@ -31,7 +35,28 @@ Resolved from the source, not from the tool's report: `app.go:151` is
 `POST "+base+"/{id}/health-check"` registration. The new numbers are the registrations, which is what
 the inventory's route table cites.
 
+## The prose the instrument cannot see, amended in the same commit
+
+`scripts/CITATION-AUDIT.py` reads one file (`INV`) and only its **table rows** — its own docstring names
+the shape it parses. Four more citations in that same file, in ordinary paragraphs, were stale by the
+same movement and `--write` could not have reached them: `:84`'s four-number clause
+(`:170`/`:175`/`:176`/`:180` -> `:179`/`:184`/`:185`/`:189`), `:86` (`App.Handler`, `:139`/`:140` ->
+`:148`/`:149`), `:441` (`DatabaseAvailable: true`, `:71` -> `:99`) and `:563` (`:79-83` -> `:88-92`).
+`:441` moved `+28` while the other three moved `+9`, so each of the four was opened in the source rather
+than incremented — the whole reason `app.go:71` could not be guessed from `app.go:170`'s shift. Left
+alone, `:84` would have stated the project-creation contract two ways seven lines apart in the file whose
+subject is citation accuracy, which is how the reviewer's gate found them; all four keep their dated
+re-resolution notes and gain a `2026-10-15` one.
+
+`ai_docs/setup-guides/complete-setup-guide.md:559-561` carries the same four citations inside a snippet
+and is repointed the same way (`:146`/`:151`/`:152-155`/`:156` -> `:179`/`:184`/`:185-186`/`:189`).
+
+**Recorded, not fixed here:** a checker that reads table rows reports `stale 0` on a document whose prose
+citations are wrong, and this file is the proof. Extending it to the prose class needs the document's own
+rule at `:735` (a citation asserts what the code says now; a quotation asserts what a document said then)
+turned into something a checker can apply, which is a different change from this one.
+
 ## Not in this change
 
-No code, no route table, no test and no instrument changed. The seven rows moved and nothing else did;
-the census's counts and the suite's expectations are untouched.
+No code, no route table, no test and no instrument changed — the eleven citations moved, in the two files
+that carried them, and nothing else did. The census's counts and the suite's expectations are untouched.
