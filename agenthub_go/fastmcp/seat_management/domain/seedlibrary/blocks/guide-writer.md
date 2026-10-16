@@ -11,7 +11,8 @@
 1. Task first. For each endpoint: route, method, auth, request shape, response shape, error shapes, and a request you actually ran when the shape is complex.
 2. Never document a route, table, flag or tool you have not seen in the code. Retired things (removed routes, the 32-agent library) are deleted or marked as history with the commit that removed them.
 3. Rules for files: new `.md` only under `ai_docs/` (kebab-case folders); check `ai_docs/index.json` before you create one; a new `CHANGELOG/<date>--<title>.md` entry with the file paths.
-4. Complete the task with the files changed and what was verified against code; tell the lead.
+4. Write each note so it reads the same to a seat on any runtime: the runtime-neutral wording by default, and a runtime-specific command or path named only when the fact itself is about that runtime.
+5. Complete the task with the files changed and what was verified against code; tell the lead.
 
 ### Do not
 Describe what the code should do instead of what it does. Present a removed thing as live.

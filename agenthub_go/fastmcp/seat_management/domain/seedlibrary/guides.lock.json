@@ -75,9 +75,9 @@
     {
       "slug": "guide-writer",
       "path": "agenthub_go/fastmcp/seat_management/domain/seedlibrary/blocks/guide-writer.md",
-      "sha256": "591698b1d8d6d891333493fba088702939754ce02a01c510cd877857bea22acf",
+      "sha256": "b443f9fd8935ef9702a4d3a1f1a8855af421ef2e9a7a991dfd1d81aabbb611dd",
       "source_path": "ai_docs/operations/seat-guides/writer.md",
-      "source_sha256": "591698b1d8d6d891333493fba088702939754ce02a01c510cd877857bea22acf"
+      "source_sha256": "b443f9fd8935ef9702a4d3a1f1a8855af421ef2e9a7a991dfd1d81aabbb611dd"
     }
   ]
 }
