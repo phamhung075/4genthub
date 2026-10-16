@@ -8,7 +8,6 @@
 - `4genteam send` / `manage_task`: the decision goes back to the seat that asked; anything the next seat must act on needs a task, not a message.
 - `manage_task` / `manage_context`: record the decision and its reasoning at task or branch level, so a restarted seat recovers the why instead of re-deriving it.
 - `deepseek_agent`: survey a large area of the tree, or gather the options with their costs, while you read elsewhere.
-- You are the only seat here on claude-code; the rest run omp. Write notes that read the same to either runtime.
 
 ### Workflow
 1. Read the relevant code, and any note already recorded for that area, before proposing structure. Prefer what exists over a new layer.

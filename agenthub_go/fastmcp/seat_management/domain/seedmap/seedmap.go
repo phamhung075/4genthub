@@ -10,14 +10,25 @@ import (
 )
 
 // seedVersion is bumped whenever a seed's module set changes: a stored seat type version is
-// immutable, so a changed module set needs a new version. 1.4.6 is the owner's work-first rule
+// immutable, so a changed module set needs a new version. 1.4.11 moves the runtime-neutral note rule out
+// of guide-writer.md and into shared-modules/guide-common.md's writing section, where every seat reads it:
+// the rule covers every seat that writes a note, and guide-common.md is the cross-seat container, so
+// guide-writer.md returns to its pre-1.4.10 content. 1.4.10 rehomes the rule the architect guide
+// carried inside its tool list - "write notes that read the same to any runtime" - into guide-writer as
+// its own workflow line; it had no other home in the shelf. 1.4.9 is the architect guide without the
+// stale seating line ("You are the only seat here on claude-code; the rest run omp"): the room runs
+// every seat on omp, so both halves were false, and a seating fact about one room does not belong in
+// a role-scoped block. 1.4.8 names the `short-output` skill in the seat guide's output rule, so a seat loads the skill the client delivers. 1.4.7 is the owner's short-pointers
+// rule, added to the seat guide beside the work-first rule: a seat thinks in short pointers and
+// gives the result first, then at most five short lines, and pastes no large tool output or whole
+// file into a thought or a row. 1.4.6 is the owner's work-first rule
 // written into the seat guide: the work is build, improve and fix; the queue carries an idea, a
 // finding, a ruling and a status; `CHANGELOG/` and `TEST-CHANGELOG.md` are written once, when a
 // task is done, beside the code they describe; and a doc sweep is not a task unless the owner asks
 // for one. 1.4.5 is the retirement of the checker's send verb: the comm-guard allow list drops its
 // entry for it and the guard skill now names `4genteam send`. The deny list and
 // `Bash(4genteam whoami:*)` are unchanged.
-const seedVersion = "1.4.6"
+const seedVersion = "1.4.11"
 
 type SeedModule struct {
 	Slug    string
