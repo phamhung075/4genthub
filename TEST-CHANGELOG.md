@@ -2,6 +2,15 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-16 - seat guard, typed queue rows, room report, short seat guide
+
+- `agenthub_client/rust/agenthub-runtime/tests/seat_guard.rs`: new. Runs `node assets/seat-guard.ts --agy-hook pre` and requires each refusal to be logged `blocked` with its rule: `hook-bypass`, `git-destructive`, `process-kill`, `frozen-paths`/`protected-paths`, `worktree-scope`; the existing four rules keep a case. With the old guard the four new-rule cases fail.
+- `agenthub_client/rust/agenthub-runtime/src/queue/mod.rs`: one unit test per typed-row rule (priority enum, `high` needs `prod-break`, 120-char summary, 600-char body, tag set, list rate limit); one existing test's `urgent` tag changed to a valid one.
+- `agenthub_client/internal/clientruntime`, `internal/clientroom`: the queue list frame now carries `requester_session` (one expected frame changed); usage text states the queue rules.
+- `agenthub_client/internal/clientroom/report_test.go`: new. Classifiers, window, git parser, stale tasks counted from `created_at` (a fresh `updated_at` must not hide an old task; a task with no `created_at` is an error), an unreadable queue, and the whole verb through a fake daemon, including that no queue body is printed and `--json`.
+- `agenthub_go/.../guide_commit_form_test.go`, `guide_script_tests_test.go`, `seatrenderer/library_guide_render_test.go`: assert the new short guide (own worktree and staged commit, reviewer verdict in the task, no `GATE-*.md`, no `vite build`) instead of the removed shared-tree text. `seedcontent.lock.json` and `guides.lock.json` re-recorded for seedVersion 1.4.12.
+- Deleting the unused Rust `PolicyEngine` (`src/rules/mod.rs`) removed its 2 unit tests; nothing else referenced it.
+
 ## 2026-10-15 - the client pin carries the reseat announcements and the dead-publisher correction
 
 - `agenthub_client/internal/clientseat/quiet_test.go`: added `TestWaitUntilQuietNamesTheWordOnItsFirstReading` and `TestWaitUntilQuietNamesAnUnreadableActivityOnItsFirstReading` — a wait that meets an unrecognized activity word, or no readable activity at all, says so on the FIRST reading and once per reason, instead of staying silent until its deadline.
