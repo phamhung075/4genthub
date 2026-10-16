@@ -517,8 +517,10 @@ test.describe('Decision Requests panel on production', () => {
     await expect(panel, 'the failed read names its status').toContainText(/(?<!\d)503(?!\d)/, {
       timeout: 30_000,
     })
+    // Hyphen, not a space: evidence.go reads a line matching /^FAILED\s+(\S+)/ as a pytest failure and
+    // would store "READ" as the failed test name for a run whose tests all passed.
     console.log(
-      'FAILED READ ' + JSON.stringify({ status: 503, text: (await panel.innerText()).replace(/\s+/g, ' ') })
+      'FAILED-READ ' + JSON.stringify({ status: 503, text: (await panel.innerText()).replace(/\s+/g, ' ') })
     )
   })
 })
