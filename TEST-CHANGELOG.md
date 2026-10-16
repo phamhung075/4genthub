@@ -2,6 +2,23 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-16 - the by-id task node's criteria fields
+
+- `agenthub_go/fastmcp/types/dto_test.go`: `TestTaskToDTODict` and `TestTaskToDTOEntity` cover
+  `acceptance_criteria` and `scope` in both branches, and the pinned `ModelDump` key order is updated
+  to `...,progress_percentage,acceptance_criteria,scope,subtasks`. Before this change the DTO had no
+  such fields at all, which is why the served by-id node's key list omitted both.
+- At this change: `go test ./fastmcp/...` = 0 failures; `go build ./...` clean.
+- Driven over the route's own serializer (`PyJSONDumpsCompact`, `server/httpapp/http.go:26`):
+  `TaskResponse.ToDict` -> `types.TaskToDTO` -> `ModelDump` prints
+  `"acceptance_criteria":["the by-id node carries the criteria","and the scope"],"scope":["agenthub_go/fastmcp/types/**"]`,
+  and `[]`/`[]` for a task that has none (so a task without criteria still reads as `uncertain`).
+
+## 2026-10-16 - seat guard worktree scope and the beat match
+
+- `agenthub_client/rust/agenthub-runtime/tests/seat_guard.rs`: `a_seat_writes_its_own_worktrees_under_the_room_and_no_other_seats` (fails on the old guard) plus the destructive-write and config-edit cases; `cargo test --offline` = 130 unit + 10 `seat_guard` + 1, 0 failed.
+- `agenthub_client/internal/clientservices/services_test.go`: "two live matches and the beat names the second" reads running on the beating pid.
+
 ## 2026-10-16 - session tail and older-page reads
 
 - `agenthub_go/fastmcp/server/httpapp/ws_session_viewer_test.go`: `TestSessionViewerTailReplaysOnlyTheNewestEvents` (a `tail=2` viewer of 5 events gets seqs 4 and 5, then live seq 6). Passes.
