@@ -508,9 +508,18 @@ test.describe('Decision Requests panel on production', () => {
     await expect(panel, 'the panel rendered its failed-read branch').toContainText('Could not read', {
       timeout: 30_000,
     })
-    const failure = (await panel.innerText()).replace(/\s+/g, ' ')
-    console.log('FAILED READ ' + JSON.stringify({ status: 503, text: failure }))
-    expect(failure, 'the failed read names its status').toMatch(/\b503\b/)
+    // The status is asserted with Playwright's own retrying matcher, not a one-shot innerText() sample:
+    // branch and status must both hold of the rendered region, and a sample taken once cannot tell a
+    // settled render from one still settling. The matcher reads textContent, where the status runs
+    // straight into the next element's label ("HTTP 503Send request to lead"), so the token's boundary
+    // is a non-digit, not \b: /\b503\b/ fails there while the panel renders the status correctly.
+    // Digit bounds keep the token honest (a 599 reds) without pinning the words around it.
+    await expect(panel, 'the failed read names its status').toContainText(/(?<!\d)503(?!\d)/, {
+      timeout: 30_000,
+    })
+    console.log(
+      'FAILED READ ' + JSON.stringify({ status: 503, text: (await panel.innerText()).replace(/\s+/g, ' ') })
+    )
   })
 })
 
