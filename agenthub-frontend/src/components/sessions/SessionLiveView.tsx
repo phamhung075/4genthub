@@ -1,8 +1,10 @@
 /**
  * SessionLiveView - the live event stream of one session.
  *
- * Renders the events replayed and streamed by useSessionStream; each frame the
- * server sent is already a {seq, type, payload, ts} object.
+ * Renders the events replayed and streamed by useSessionStream as steps (sessionSteps):
+ * the user's message, the assistant's text, its thinking, each tool call with its
+ * arguments and each tool result, in the order they happened. Long bodies and
+ * arguments are collapsed, and older history loads on request.
  *
  * NO CHAT INPUT HERE, DELIBERATELY: phase 1 of the rigd slice ships none, and the ruled boundaries
  * (`ai_docs/core-architecture/rigd-boundaries.md`, section 3) make commands a phase-2 surface with
@@ -14,18 +16,35 @@
  * @version 1.0.0
  */
 
-import React from 'react';
-import { AlertCircle, Loader2, Radio, ShieldAlert } from 'lucide-react';
+import React, { useEffect, useMemo, useRef } from 'react';
+import {
+  AlertCircle,
+  Brain,
+  ChevronRight,
+  Info,
+  Loader2,
+  Radio,
+  ShieldAlert,
+  SquareTerminal,
+  Terminal,
+  User,
+  Bot,
+} from 'lucide-react';
 import { Badge } from '../ui/badge';
+import { Button } from '../ui/button';
 import { cn } from '../../lib/utils';
 import type { SessionEvent } from '../../types/sessionTypes';
 import type { SessionStreamStatus } from '../../hooks/useSessions';
+import { sessionSteps, type SessionStep, type SessionStepKind } from '../../utils/sessionSteps';
 
 interface SessionLiveViewProps {
   sessionName: string | null;
   events: SessionEvent[];
   status: SessionStreamStatus;
   error: string | null;
+  hasOlder: boolean;
+  loadingOlder: boolean;
+  onLoadOlder: () => void;
 }
 
 const STATUS_LABEL: Record<SessionStreamStatus, string> = {
@@ -38,29 +57,147 @@ const STATUS_LABEL: Record<SessionStreamStatus, string> = {
   error: 'error',
 };
 
-// Payloads are connector-defined JSON; show strings verbatim and objects as JSON.
-function formatPayload(payload: unknown): string {
-  if (payload === null || payload === undefined) return '';
-  if (typeof payload === 'string') return payload;
-  try {
-    return JSON.stringify(payload, null, 2);
-  } catch {
-    return String(payload);
-  }
-}
-
 function statusBadgeVariant(status: SessionStreamStatus): 'default' | 'secondary' | 'destructive' {
   if (status === 'live') return 'default';
   if (status === 'error' || status === 'not-found') return 'destructive';
   return 'secondary';
 }
 
+const KIND_STYLE: Record<SessionStepKind, { icon: React.ElementType; rail: string; label: string }> = {
+  user: { icon: User, rail: 'border-l-blue-500', label: 'text-blue-600 dark:text-blue-400' },
+  assistant: { icon: Bot, rail: 'border-l-emerald-500', label: 'text-emerald-600 dark:text-emerald-400' },
+  thinking: { icon: Brain, rail: 'border-l-violet-400', label: 'text-violet-600 dark:text-violet-400' },
+  tool_call: { icon: Terminal, rail: 'border-l-amber-500', label: 'text-amber-600 dark:text-amber-400' },
+  tool_result: { icon: SquareTerminal, rail: 'border-l-slate-400', label: 'text-base-secondary' },
+  meta: { icon: Info, rail: 'border-l-transparent', label: 'text-base-secondary' },
+  withheld: { icon: ShieldAlert, rail: 'border-l-amber-500', label: 'text-amber-600 dark:text-amber-500' },
+  text: { icon: Terminal, rail: 'border-l-slate-400', label: 'text-base-secondary' },
+};
+
+// A body longer than this many lines opens collapsed behind its first lines.
+const PREVIEW_LINES = 8;
+
+function formatTime(ts: string | null): string {
+  if (!ts) return '';
+  const date = new Date(ts.endsWith('Z') || /[+-]\d\d:?\d\d$/.test(ts) ? ts : `${ts}Z`);
+  return Number.isNaN(date.getTime()) ? ts : date.toLocaleTimeString();
+}
+
+const Body: React.FC<{ text: string; mono?: boolean }> = ({ text, mono }) => {
+  const lines = text.split('\n');
+  const long = lines.length > PREVIEW_LINES;
+  const className = cn(
+    'whitespace-pre-wrap break-words text-sm text-base-primary',
+    mono && 'font-mono text-xs',
+  );
+  if (!long) return <pre className={className}>{text}</pre>;
+  return (
+    <details className="group">
+      <summary className="cursor-pointer list-none">
+        <pre className={cn(className, 'group-open:hidden')}>{lines.slice(0, PREVIEW_LINES).join('\n')}</pre>
+        <span className="text-xs text-base-secondary group-open:hidden">
+          … {lines.length - PREVIEW_LINES} more lines
+        </span>
+        <span className="hidden text-xs text-base-secondary group-open:inline">Collapse</span>
+      </summary>
+      <pre className={className}>{text}</pre>
+    </details>
+  );
+};
+
+const StepCard: React.FC<{ step: SessionStep }> = ({ step }) => {
+  const style = KIND_STYLE[step.kind];
+  const Icon = style.icon;
+
+  // Session bookkeeping (model change, title, …) is one muted line, not a card.
+  if (step.kind === 'meta') {
+    return (
+      <li className="flex items-center gap-2 px-4 py-1 text-xs text-base-secondary">
+        <Icon className="h-3 w-3 shrink-0" />
+        <span className="capitalize">{step.title}</span>
+        {step.body && <span className="truncate font-mono">{step.body}</span>}
+        <span className="ml-auto shrink-0">{formatTime(step.ts)}</span>
+      </li>
+    );
+  }
+
+  return (
+    <li className="px-3 py-1.5">
+      <div
+        className={cn(
+          'rounded-md border border-l-4 border-surface-border-hover bg-surface px-3 py-2',
+          style.rail,
+          step.isError && 'border-l-red-500',
+        )}
+      >
+        <div className="mb-1 flex items-center gap-2 text-xs">
+          <Icon className={cn('h-3.5 w-3.5 shrink-0', style.label)} />
+          <span className={cn('font-medium', style.label, step.isError && 'text-red-500')}>
+            {step.title}
+          </span>
+          {step.kind === 'tool_call' && step.body && (
+            <span className="truncate text-base-secondary">{step.body}</span>
+          )}
+          {step.isError && <Badge variant="destructive">error</Badge>}
+          <span className="ml-auto shrink-0 text-base-secondary">
+            {formatTime(step.ts)} · #{step.seq}
+          </span>
+        </div>
+
+        {step.kind === 'withheld' ? (
+          <p className="text-sm text-amber-600 dark:text-amber-500">
+            Content withheld on the machine that ran it{step.body ? `: ${step.body}` : ''}.
+          </p>
+        ) : step.kind === 'thinking' ? (
+          <details>
+            <summary className="flex cursor-pointer list-none items-center gap-1 text-xs text-base-secondary">
+              <ChevronRight className="h-3 w-3" /> Show reasoning
+            </summary>
+            <div className="mt-1 italic text-base-secondary">
+              <Body text={step.body} />
+            </div>
+          </details>
+        ) : step.kind === 'tool_call' ? (
+          step.detail ? (
+            <details>
+              <summary className="flex cursor-pointer list-none items-center gap-1 text-xs text-base-secondary">
+                <ChevronRight className="h-3 w-3" /> Arguments
+              </summary>
+              <div className="mt-1">
+                <Body text={step.detail} mono />
+              </div>
+            </details>
+          ) : null
+        ) : step.kind === 'tool_result' ? (
+          step.body ? <Body text={step.body} mono /> : <p className="text-xs text-base-secondary">No output.</p>
+        ) : (
+          <Body text={step.body} />
+        )}
+      </div>
+    </li>
+  );
+};
+
 export const SessionLiveView: React.FC<SessionLiveViewProps> = ({
   sessionName,
   events,
   status,
   error,
+  hasOlder,
+  loadingOlder,
+  onLoadOlder,
 }) => {
+  const steps = useMemo(() => sessionSteps(events), [events]);
+  const scroller = useRef<HTMLDivElement>(null);
+  const stickToBottom = useRef(true);
+  const newestSeq = events.length > 0 ? events[events.length - 1].seq : 0;
+  const oldestSeq = events.length > 0 ? events[0].seq : 0;
+
+  // Follow the newest step while the reader is at the bottom; reading history leaves the scroll alone.
+  useEffect(() => {
+    const node = scroller.current;
+    if (node && stickToBottom.current) node.scrollTop = node.scrollHeight;
+  }, [newestSeq, oldestSeq === 0]);
 
   if (status === 'idle') {
     return (
@@ -78,7 +215,7 @@ export const SessionLiveView: React.FC<SessionLiveViewProps> = ({
         />
         <div className="min-w-0">
           <p className="truncate font-medium text-base-primary">{sessionName ?? 'Session'}</p>
-          <p className="truncate text-xs text-base-secondary">{STATUS_LABEL[status]}</p>
+          <p className="truncate text-xs text-base-secondary">{steps.length} steps shown</p>
         </div>
         <Badge variant={statusBadgeVariant(status)} className="ml-auto shrink-0">
           {STATUS_LABEL[status]}
@@ -88,7 +225,7 @@ export const SessionLiveView: React.FC<SessionLiveViewProps> = ({
       {(status === 'connecting' || status === 'reconnecting') && events.length === 0 && (
         <div className="flex items-center gap-2 p-4 text-sm text-base-secondary">
           <Loader2 className="h-4 w-4 animate-spin" />
-          Loading stored events…
+          Loading recent events…
         </div>
       )}
 
@@ -99,44 +236,32 @@ export const SessionLiveView: React.FC<SessionLiveViewProps> = ({
         </div>
       )}
 
-      <div className="min-h-0 flex-1 overflow-y-auto">
+      <div
+        ref={scroller}
+        className="min-h-0 flex-1 overflow-y-auto"
+        onScroll={(event) => {
+          const node = event.currentTarget;
+          stickToBottom.current = node.scrollHeight - node.scrollTop - node.clientHeight < 80;
+        }}
+      >
         {events.length === 0 && status !== 'connecting' && status !== 'reconnecting' ? (
           <p className="p-4 text-sm text-base-secondary">No events stored for this session yet.</p>
         ) : (
-          <ul role="list">
-            {events.map((event) => {
-              // A withheld event arrives as {type: "redaction_withheld", payload: {reason, bytes}} and
-              // carries no content and no hash of it (rigd-boundaries.md 4.4). It is rendered as the
-              // GAP it is rather than as an event whose payload merely looks empty.
-              const reason =
-                event.type === 'redaction_withheld' &&
-                event.payload !== null &&
-                typeof event.payload === 'object' &&
-                'reason' in event.payload &&
-                typeof event.payload.reason === 'string'
-                  ? event.payload.reason
-                  : null;
-              return (
-                <li key={event.seq} className="border-b border-surface-border-hover px-4 py-2">
-                  <div className="flex items-center gap-2 text-xs text-base-secondary">
-                    <span className="font-mono">#{event.seq}</span>
-                    <Badge variant="outline">{event.type}</Badge>
-                    {event.ts && <span className="ml-auto truncate">{event.ts}</span>}
-                  </div>
-                  {reason === null ? (
-                    <pre className="mt-1 whitespace-pre-wrap break-words font-mono text-sm text-base-primary">
-                      {formatPayload(event.payload)}
-                    </pre>
-                  ) : (
-                    <p className="mt-1 flex items-center gap-2 text-sm text-amber-600 dark:text-amber-500">
-                      <ShieldAlert className="h-4 w-4 shrink-0" />
-                      withheld locally: {reason}
-                    </p>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
+          <>
+            {hasOlder && (
+              <div className="flex justify-center p-2">
+                <Button variant="outline" size="sm" onClick={onLoadOlder} disabled={loadingOlder}>
+                  {loadingOlder ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : null}
+                  Load older events
+                </Button>
+              </div>
+            )}
+            <ul role="list">
+              {steps.map((step) => (
+                <StepCard key={step.key} step={step} />
+              ))}
+            </ul>
+          </>
         )}
       </div>
     </div>

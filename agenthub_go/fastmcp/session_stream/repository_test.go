@@ -325,6 +325,24 @@ func TestRepositoryPostgres(t *testing.T) {
 		t.Fatalf("after_seq events = %d, want 2", len(after))
 	}
 
+	// before_seq pages backwards, oldest first; the tail start leaves the newest n after it.
+	before, err := ListEventsBefore(ctx, sessions, user, sid, 3, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(before) != 1 {
+		t.Fatalf("before_seq events = %d, want 1", len(before))
+	}
+	if v, _ := before[0].Get("seq"); v != int64(2) {
+		t.Errorf("before seq 3, limit 1 = %v, want 2", v)
+	}
+	if tail, err := TailAfterSeq(ctx, sessions, user, sid, 2); err != nil || tail != 1 {
+		t.Errorf("tail of 2 of 3 = %d, %v, want 1", tail, err)
+	}
+	if tail, err := TailAfterSeq(ctx, sessions, user, sid, 10); err != nil || tail != 0 {
+		t.Errorf("tail of 10 of 3 = %d, %v, want 0", tail, err)
+	}
+
 	got, err := GetSessionForUser(ctx, sessions, user, sid)
 	if err != nil || got == nil {
 		t.Fatalf("get session = %v, %v", got, err)

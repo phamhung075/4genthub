@@ -1,15 +1,14 @@
 /**
  * Session Hooks - the session list and the live session stream.
  *
- * The stream replays every stored event the server holds for the session before
- * following the live ones, so it is the only source the live view needs; the
- * REST events route is not used (it pages oldest-first).
+ * Opening a session replays only its newest TAIL_EVENTS stored events, then follows
+ * the live ones; older history is fetched a page at a time through loadOlder.
  *
  * @module hooks/useSessions
  * @version 1.0.0
  */
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { sessionApi } from '../services/sessionApi';
 import type { SessionEvent } from '../types/sessionTypes';
@@ -51,7 +50,16 @@ export interface SessionStreamState {
   events: SessionEvent[];
   status: SessionStreamStatus;
   error: string | null;
+  /** True while stored events older than the first one held remain to be fetched. */
+  hasOlder: boolean;
+  loadingOlder: boolean;
+  loadOlder: () => void;
 }
+
+/** How many of the newest stored events a session opens with. */
+const TAIL_EVENTS = 200;
+/** How many older events one loadOlder adds. */
+const OLDER_PAGE = 200;
 
 /** Bounded so a long-lived stream cannot grow memory without limit. */
 const MAX_STREAM_EVENTS = 2000;
@@ -86,8 +94,12 @@ export function useSessionStream(sessionId: string | null, token: string | null)
   const [events, setEvents] = useState<SessionEvent[]>([]);
   const [status, setStatus] = useState<SessionStreamStatus>('idle');
   const [error, setError] = useState<string | null>(null);
+  const [exhausted, setExhausted] = useState(false);
+  const [loadingOlder, setLoadingOlder] = useState(false);
 
   useEffect(() => {
+    setExhausted(false);
+    setLoadingOlder(false);
     if (!sessionId || !token) {
       setEvents([]);
       setStatus('idle');
@@ -109,7 +121,8 @@ export function useSessionStream(sessionId: string | null, token: string | null)
       if (stopped) return;
       const url =
         `${WS_URL}/ws/sessions/${encodeURIComponent(sessionId)}` +
-        `?token=${encodeURIComponent(token)}&after_seq=${lastSeq}`;
+        `?token=${encodeURIComponent(token)}&after_seq=${lastSeq}` +
+        (lastSeq === 0 ? `&tail=${TAIL_EVENTS}` : '');
       socket = new WebSocket(url);
       setStatus(attempts === 0 ? 'connecting' : 'reconnecting');
 
@@ -170,5 +183,27 @@ export function useSessionStream(sessionId: string | null, token: string | null)
     };
   }, [sessionId, token]);
 
-  return { events, status, error };
+  const oldestSeq = events.length > 0 ? events[0].seq : null;
+  const hasOlder = !exhausted && oldestSeq !== null && oldestSeq > 1;
+
+  const loadOlder = useCallback(() => {
+    if (!sessionId || oldestSeq === null || loadingOlder) return;
+    setLoadingOlder(true);
+    sessionApi
+      .listEventsBefore(sessionId, oldestSeq, OLDER_PAGE)
+      .then((response) => {
+        const older = response.events ?? [];
+        if (older.length < OLDER_PAGE) setExhausted(true);
+        setEvents((prev) => {
+          const first = prev.length > 0 ? prev[0].seq : Infinity;
+          return [...older.filter((event) => event.seq < first), ...prev];
+        });
+      })
+      .catch((err: unknown) => {
+        setError(err instanceof Error ? err.message : 'Could not load older events');
+      })
+      .finally(() => setLoadingOlder(false));
+  }, [sessionId, oldestSeq, loadingOlder]);
+
+  return { events, status, error, hasOlder, loadingOlder, loadOlder };
 }

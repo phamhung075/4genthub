@@ -152,7 +152,7 @@ describe('SessionsPage', () => {
 
     renderPage('/sessions/s1');
 
-    expect(screen.getByText('withheld locally: env_file')).toBeInTheDocument();
+    expect(screen.getByText('Content withheld on the machine that ran it: env_file.')).toBeInTheDocument();
     // The control: the ordinary event in the same render is still shown as its content.
     expect(screen.getByText('hello from alpha')).toBeInTheDocument();
     // The placeholder is a GAP, not a payload dump: the generic renderer would print the JSON.

@@ -1,0 +1,25 @@
+#!/bin/sh
+# Refuses a seat's commit message that has no `Task: <hub task uuid>` trailer.
+#
+# WHY: a seat commit must name its hub task so the task can be closed from the commit.
+#
+# WHO: only a seat. AGENTHUB_SESSION_NAME is exported to seats and unset on the owner's host (same
+# convention as docs-only-guard). Merge commits are exempt.
+#
+# Argument: the commit message file (pre-commit passes it for the commit-msg stage). Shape check only.
+
+set -eu
+
+[ -n "${AGENTHUB_SESSION_NAME:-}" ] || exit 0
+[ -f "${1:-}" ] || exit 0
+
+case "$(sed -n '1p' "$1")" in
+    "Merge "*) exit 0 ;;
+esac
+
+if git interpret-trailers --parse "$1" | grep -Eqi '^Task: [0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}[[:space:]]*$'; then
+    exit 0
+fi
+
+echo "task trailer missing: add 'Task: <hub task id>' ; close it with 4genteam complete --task <id>" >&2
+exit 1

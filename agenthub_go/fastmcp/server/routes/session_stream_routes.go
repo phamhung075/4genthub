@@ -39,8 +39,9 @@ func ListSessions(ctx context.Context, currentUser *authdomain.User, sessions *d
 	return res, nil
 }
 
-// GetSessionEvents returns events for a session after afterSeq with limit.
-func GetSessionEvents(ctx context.Context, sessionID string, afterSeq, limit int, currentUser *authdomain.User, sessions *database.SessionManager) ([]*entities.OrderedMap[any], error) {
+// GetSessionEvents returns events for a session after afterSeq with limit, or, when beforeSeq is set,
+// the newest limit events before it (oldest first).
+func GetSessionEvents(ctx context.Context, sessionID string, afterSeq, beforeSeq, limit int, currentUser *authdomain.User, sessions *database.SessionManager) ([]*entities.OrderedMap[any], error) {
 	uid := currentUserID(currentUser)
 	if uid == "" {
 		return nil, httpErr(401, "Authentication required")
@@ -52,6 +53,9 @@ func GetSessionEvents(ctx context.Context, sessionID string, afterSeq, limit int
 	}
 	if session == nil {
 		return nil, httpErr(404, "Session not found")
+	}
+	if beforeSeq > 0 {
+		return session_stream.ListEventsBefore(ctx, sessions, uid, sessionID, int64(beforeSeq), int64(limit))
 	}
 	return session_stream.ListEvents(ctx, sessions, uid, sessionID, int64(afterSeq), int64(limit))
 }
