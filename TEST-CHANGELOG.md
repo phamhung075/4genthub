@@ -2,6 +2,59 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-17 - the pending row renders its attention state, injected because no room holds one (frontend, fe-decisions-route)
+
+- `agenthub-frontend/e2e/room-decision-panel.spec.ts` (+244, no deletions): two tests appended under
+  `Decision Requests panel: the pending row, rendered by an injected read`. The panel's own decisions GET is
+  FULFILLED in the browser with one pending decision, so the read never reaches production, and the answer
+  endpoint is intercepted and ABORTED with the attempted calls counted and asserted empty - a click cannot
+  write even by accident. Asserted on the REAL row element: `animate-pulse-glow` computes to
+  `pulseGlow / 2.5s / infinite`, the row's dot to `pulse`, the header ping dot renders and runs `ping`, the
+  count badge reads `1`, the state chip reads `waiting for you`, and 0 of the row's 18 elements clip their
+  content box. The second test takes an explicit `reducedMotion: 'reduce'` context and asserts the row, its
+  dot and the ping dot all compute `animationName: none`, with the class probe agreeing for all three
+  utilities.
+- The row's border and tint are RECORDED, not asserted: the theme registers its custom colours as plain
+  `var(--color-*)` strings, so Tailwind emits no rule for the opacity-modified utilities built on them
+  (`border-accent/40`, `bg-accent/[0.03]`, `bg-accent/15`). That is the project-wide colour-registration
+  finding (F1, task 470c7439 Q1, parked with the owner), and asserting the indigo border would red a spec
+  that is measuring the product honestly.
+- At this change, from the changed tree against production (`agenthub-frontend/node_modules/.bin/playwright
+  test --config=agenthub-frontend/playwright.config.ts room-decision-panel --workers=1 --project=chromium`):
+  6 passed, 29.2s - the four existing tests untouched and green, the two new ones green.
+- BOTH NEW TESTS PROVEN ABLE TO FAIL, on scratch copies under the gitignored `test-results/` that were then
+  moved out of the checkout: with the injected decision's `state` changed to `answered`, both tests RED at
+  `the injected row carries the pending label` while the four existing tests still pass - so the row-level
+  assertions read a real pending subject instead of passing vacuously; with the expected animation name
+  changed to `glowLoop`, the first test REDS at `Expected "glowLoop" / Received "pulseGlow"` - so the
+  animation assertion reads the rendered row's own computed style.
+- `tsc --noEmit -p tsconfig.json` rc 0 over the changed project, 0 errors naming the spec.
+- LIMIT, carried in the spec's own header comment: this proves the panel RENDERS a pending decision and what
+  its attention state computes to; it does NOT prove that production's data carries a pending decision, which
+  is a property of the tenant's queue, not of the panel.
+
+## 2026-10-17 - an empty room skips the row measurement, and the shape stays red (frontend, fe-decisions-route)
+
+- `agenthub-frontend/e2e/room-decision-panel.spec.ts`: both row-count guards became
+  `test.skip(reading.rows.length === 0, 'no open decision to measure: the room rendered no row')` - a room
+  holding no open decision is the absence of a subject, not a product failure, and a red row said the
+  opposite. In the clipping test the guard moved to the head of the body with the SHAPE asserted first and
+  RED-able (`reading.found === true`, `Array.isArray(reading.rows)`), and the `NOT OBSERVABLE` tail it made
+  unreachable went with it. In the live-route test the three row measurements (the open-label set, the API's
+  row states, per-element clipping) moved to the END of the body, past every check that does not depend on
+  how many rows the room holds, and the same skip guards them; the `labels.length > 0` assertion it replaces
+  is implied by that guard, because `labels` is `rows.map(state)`.
+- At this change, from the changed tree against production (`agenthub-frontend/node_modules/.bin/playwright
+  test --config=agenthub-frontend/playwright.config.ts room-decision-panel --workers=1 --project=chromium`):
+  4 passed, 20.4s - the room holds 4 answered rows, so nothing skipped and the measurements ran unchanged.
+- The skip was proven on the real spec bytes twice, from throwaway copies that were then deleted: with an
+  empty `decisions` array fulfilled in the browser, tests 1 and 3 report SKIPPED while tests 4 and 5 pass
+  (2 skipped, 2 passed) - the panel's own read is then empty and the row measurement has nothing to read;
+  with the decisions GET answered `599`, test 1 FAILS at `expect(read!.status, 'the decision read answers
+  200').toBe(200)` and does not skip, so the shape check stays red-able and the skip cannot swallow a real
+  regression.
+- `tsc --noEmit -p tsconfig.json` rc 0 over the changed project.
+
 ## 2026-10-17 - the switch verb reads the machine, not only the cloud (client, main)
 
 - `agenthub_client/internal/clientsync/switchverb_test.go`: `TestSwitchRuntimeTheCloudAlreadyRecordsStillSkipsTheSeat` - the 2026-10-16 22:47Z incident, pinned: the cloud's occupant record says `agy` while the RUNTIME reports the seat on `omp`, and `--runtime agy --model gemini-3.8-flash-low --apply restart` must make NO runtime call at all and answer `applied=manual`. On the pre-fix code it records `set-model` then `restart-fresh` and answers `applied=restart` - the restart that killed the seat (measured by removing the fix and running the one test). `TestSwitchRestartStillRunsOnTheRuntimeTheMachineNames` is the boundary the fix must not cross: the runtime names the requested runtime, so `--apply restart` still sets the model and restarts fresh, as it always did. The `switchSeatStub` harness took a third seam, `switchRoomSeats`, so a test drives the machine's own reading beside the cloud's.
