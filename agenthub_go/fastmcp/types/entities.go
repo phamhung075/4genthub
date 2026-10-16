@@ -30,6 +30,8 @@ type TaskDTO struct {
 	Labels             []string
 	Details            *string
 	ProgressPercentage *int
+	AcceptanceCriteria []string
+	Scope              []string
 	Subtasks           []*SubtaskDTO
 }
 
@@ -58,6 +60,8 @@ func (d *TaskDTO) ModelDump() *entities.OrderedMap[any] {
 		"labels", dtoStrList(d.Labels),
 		"details", dtoOpt(d.Details),
 		"progress_percentage", dtoInt(d.ProgressPercentage),
+		"acceptance_criteria", dtoStrList(d.AcceptanceCriteria),
+		"scope", dtoStrList(d.Scope),
 		"subtasks", dtoModelList(d.Subtasks),
 	)
 }

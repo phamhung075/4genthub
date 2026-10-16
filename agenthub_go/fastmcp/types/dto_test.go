@@ -1,6 +1,7 @@
 package types
 
 import (
+	"reflect"
 	"strings"
 	"testing"
 
@@ -30,6 +31,8 @@ func TestTaskToDTODict(t *testing.T) {
 		"project_id", "p-1",
 		"subtask_count", 3,
 		"created_at", "2025-01-02T03:04:05+00:00",
+		"acceptance_criteria", []string{"the criteria reach the node", "and are counted"},
+		"scope", []string{"internal/**"},
 		"labels", []string{"x"},
 	)
 	dto, err := TaskToDTO(task, false)
@@ -69,12 +72,20 @@ func TestTaskToDTODict(t *testing.T) {
 	if dto.Labels == nil || len(dto.Labels) != 1 {
 		t.Fatalf("labels: %+v", dto.Labels)
 	}
+	// 8bd075eb: the by-id node dropped both fields, so `4genteam complete` could never judge a task -
+	// fetchCriteria reads this node, an empty slice reads as uncertain and the gate exits 6.
+	if strings.Join(dto.AcceptanceCriteria, "|") != "the criteria reach the node|and are counted" {
+		t.Fatalf("acceptance_criteria: %+v", dto.AcceptanceCriteria)
+	}
+	if strings.Join(dto.Scope, "|") != "internal/**" {
+		t.Fatalf("scope: %+v", dto.Scope)
+	}
 
 	dump := dto.ModelDump()
 	wantKeys := "id,title,description,status,priority,assignees,assignees_count,subtask_count," +
 		"has_dependencies,dependency_count,dependencies,has_context,context_id,context_data," +
 		"git_branch_id,project_id,created_at,updated_at,due_date,estimated_effort,labels,details," +
-		"progress_percentage,subtasks"
+		"progress_percentage,acceptance_criteria,scope,subtasks"
 	if got := strings.Join(dump.Keys(), ","); got != wantKeys {
 		t.Fatalf("key order:\n got %s\nwant %s", got, wantKeys)
 	}
@@ -83,6 +94,12 @@ func TestTaskToDTODict(t *testing.T) {
 	}
 	if v, _ := dump.Get("description"); v != "desc" {
 		t.Fatalf("dump description: %v", v)
+	}
+	if v, _ := dump.Get("acceptance_criteria"); !reflect.DeepEqual(v, []string{"the criteria reach the node", "and are counted"}) {
+		t.Fatalf("dump acceptance_criteria: %#v", v)
+	}
+	if v, _ := dump.Get("scope"); !reflect.DeepEqual(v, []string{"internal/**"}) {
+		t.Fatalf("dump scope: %#v", v)
 	}
 }
 
@@ -110,6 +127,8 @@ func TestTaskToDTOEntity(t *testing.T) {
 	task.Subtasks = []string{"s1", "s2"}
 	task.Assignees = []string{"a"}
 	task.Dependencies = []value_objects.TaskId{id}
+	task.AcceptanceCriteria = []string{"entity criteria"}
+	task.Scope = []string{"internal/**"}
 
 	dto, err := TaskToDTO(task, false)
 	if err != nil {
@@ -140,6 +159,9 @@ func TestTaskToDTOEntity(t *testing.T) {
 	}
 	if dto.ProgressPercentage != nil {
 		t.Fatalf("progress_percentage should be None: %+v", dto.ProgressPercentage)
+	}
+	if strings.Join(dto.AcceptanceCriteria, "|") != "entity criteria" || strings.Join(dto.Scope, "|") != "internal/**" {
+		t.Fatalf("criteria/scope from the entity: %+v %+v", dto.AcceptanceCriteria, dto.Scope)
 	}
 }
 
