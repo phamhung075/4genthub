@@ -5741,3 +5741,7 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
 - `agenthub_client/internal/clientlifecycle/idleguard_test.go`: added idle-room Jev decision, low-confidence, working-seat and stuck-seat cases; `doctor_test.go`, `rigd_test.go` and `clientservices/services_test.go` list the new `roomguard` safeguard.
 - `agenthub_client/internal/clientwatch/view_test.go`: added `TestAChangeOfToolKindGetsALabelledRule`.
 - `agenthub_client/internal/clientsync/connector_test.go`: added `TestSetDeadlineBoundsReadsOnlyAndLeavesWritesOpen`.
+
+## 2026-10-16
+- `agenthub_client/rust/agenthub-runtime/src/pty/mod.rs`: added `launch_env_tests::the_server_is_not_the_process_that_carries_the_seats_environment` — it launches a real session under a private tmux root, then reads the SERVER's `/proc/<pid>/cmdline` and asserts no `(TOKEN|KEY|SECRET|PASSWORD)=` pair and not the seat's own value is on it, while the pane's delivery of the same value is asserted intact. Red first: with the new `ensure_server()` call removed the case fails on `DEEPSEEK_API_KEY=sk-the-owner-would-grep-this`; `cargo test` at the tip is 118 passed / 0 failed.
+- `agenthub_client/rust/agenthub-runtime/src/pty/mod.rs`: `pty::test_servers::own` returns a `Server` guard whose `Drop` kills the test's scratch tmux server and removes its root (the five call sites follow), because `ensure_server` now sets `exit-empty off` and a scratch server no longer exits with its last session — an unguarded run would leave one live server and its directory per pane test.
