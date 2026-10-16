@@ -77,35 +77,35 @@
       "seat_type": "lead",
       "runtime": "omp",
       "model": "deepseek/deepseek-flash",
-      "pinned_version": "1.4.3"
+      "pinned_version": "1.4.12"
     },
     {
       "seat_key": "go-dev",
       "seat_type": "developer",
       "runtime": "omp",
       "model": "deepseek/deepseek-flash",
-      "pinned_version": "1.4.3"
+      "pinned_version": "1.4.12"
     },
     {
       "seat_key": "fe-dev",
       "seat_type": "developer",
       "runtime": "omp",
       "model": "deepseek/deepseek-flash",
-      "pinned_version": "1.4.3"
+      "pinned_version": "1.4.12"
     },
     {
       "seat_key": "reviewer",
       "seat_type": "reviewer",
       "runtime": "omp",
       "model": "deepseek/deepseek-flash",
-      "pinned_version": "1.4.3"
+      "pinned_version": "1.4.12"
     },
     {
       "seat_key": "architect",
       "seat_type": "architect",
       "runtime": "omp",
       "model": "deepseek/deepseek-flash",
-      "pinned_version": "1.4.3"
+      "pinned_version": "1.4.12"
     }
   ],
   "links": [
