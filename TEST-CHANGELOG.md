@@ -2,6 +2,36 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-16 - the evidence verb's failing names (client, branch 4genthub-min/evidence-names)
+
+- `agenthub_client/internal/clientevidence/evidence_test.go`: `TestExtractFailedTestsIsHeuristicAndNamesOnly`
+  gains two cases - a program's own line that merely starts with FAILED names nothing, and Playwright's
+  list-reporter output (measured on `agenthub-frontend/playwright.config.ts`) names both failing tests by
+  their location and title path while the passing line names nothing. `TestEvidencePassingRunNamesNoFailures`
+  and `TestEvidenceFailingRunWithNoNamedTestSaysSo` pin the exit-code gate and the explicit marker at the
+  verb's own entry point, through the same seams the other verb tests use.
+- Red first, measured against the previous parser: `extractFailedTests("FAILED READ {\"status\":503}")`
+  returned `[READ]` - the name task `c67f9ce6`'s evidence seq 26 still carries - the Playwright lines named
+  nothing, and a failing run that named no test stored `[]`.
+- At this change: `go test ./...` in `agenthub_client` = 0 failures (32 packages, re-measured by the lead at
+  the branch tip `5aeb223`; the parked line said 26); `gofmt -l internal/clientevidence/` empty.
+
+## 2026-10-16 - the ceiling a seat may not raise (client, pin 5bf9570)
+
+- `agenthub_client/internal/clientroom/limits_test.go` (+105 in `b86549d`, `git diff --numstat bf43cce 5bf9570 -- internal/clientroom/limits_test.go` = `105 0`): two new cases. `TestASeatDoesNotRaiseTheCeilingThatBoundsIt` - a seat's `--usd 999`, `--usd 25.01`, `--calls 301`, `--off` and a pair at once are refused, each naming the marker and the OWNER, printing nothing and leaving the file unchanged, and then a lower USD ceiling, a lower call ceiling and `--on` are allowed. `TestTheOwnerRaisesTheCeilingAndAnAlreadyOffCeilingIsNotARaise` - with the variable unset (the owner's shell) the raise is written, and `--off` from a seat on a room already off passes, because nothing in force is lost. Red first on the binary before the rule, measured: `[--usd 999] exited 0, want 3`, `left {Enabled:true USDPerSeat24h:999 CallsPerSeatMin:300}, want the ceilings unchanged at {...25...}`.
+- `agenthub_client/internal/clientroom/limits_test.go`: `TestRoomLimitsWritesKeepsAndTurnsOff` now pins `$AGENTHUB_SESSION_NAME` empty. It asserts the OWNER's writes (25 -> 40 is a raise) and inherited the caller's identity from the shell before this change, so it failed from a seat's shell and passed in a bare one.
+- At this change: `go test ./...` = 32 packages ok, run from a seat's shell; the real binary was driven for both halves (raise and `--off` refused at exit 3; a lower number accepted and written). The suite cannot drive the UNSET case through a seat's own shell - the guard refuses `env -u AGENTHUB_SESSION_NAME` as a hook bypass, measured - so that case is pinned with `t.Setenv` and the real-binary run covers the seat half.
+- `internal/clientservices/services_test.go` +10 in the same merge is NOT this lane: it is `f14f037`, recorded under "seat guard worktree scope and the beat match" above.
+
+## 2026-10-16 - the budget safeguard's clauses and a non-hermetic queue test (client, pin 5bf9570)
+
+- `agenthub_client/internal/roombudget/roombudget_test.go` (new): the file's meaning - no file is limits-off rather than an error, Save/Load round trips at 0600, Measure counts only the assistant turns inside 24h and the calls inside the minute (each planted line has a reason to be skipped), Breach names the ceiling and stays silent when the limits are off, and a corrupt park record is not a parked seat.
+- `agenthub_client/internal/clientlifecycle/budgetguard_test.go` (new): the guard's decision through its seams - a seat over its USD ceiling is stopped, recorded and named on ONE row (the row's source, destination and both numbers asserted, and its length under the rail's caps); a rate breach is held for a second pass; OFF measures nothing and logs its state once; a stop the runtime refused is neither recorded nor filed; a room whose seats cannot be listed measures nothing.
+- `agenthub_client/internal/clientroom/limits_test.go` (new): a read writes nothing (the file must not exist afterwards), `--on` writes the agreed ceilings, a later `--usd` keeps the call ceiling, `--off` keeps both numbers, a zero ceiling and `--on --off` are refused without writing, and `room status` names a parked seat with its reason while the other seat's row carries no segment.
+- `agenthub_client/internal/clientlifecycle/agent_test.go`, `doctor_test.go`, `internal/clientservices/services_test.go`: the four list-pinning tests (the child argv and its threshold, doctor's rows, the silence table, the report's order) name the new `budget` safeguard.
+- `agenthub_client/internal/clientroom/queue_test.go`: `TestRoomQueueListOnAnEmptyRailSaysSo` now clears `AGENTHUB_SESSION_NAME`, the env every sibling in the file already cleared; it was non-hermetic (run from a seat's shell the frame carried `requester_session`, so the suite failed in a seat's environment and passed in a bare one). Red first under a seat's shell: `got {"filter":{"requester_session":"agenthub--4genthub-min--go-dev"}}`; green with the line.
+- At this change: `go test ./...` from a seat's shell = 31 packages ok, 0 failed; `cargo test --offline` in `rust/agenthub-runtime` = 125 unit + 8 `seat_guard` + 1 `umask_at_the_entry`, 0 failed.
+
 ## 2026-10-16 - the by-id task node's criteria fields
 
 - `agenthub_go/fastmcp/types/dto_test.go`: `TestTaskToDTODict` and `TestTaskToDTOEntity` cover
