@@ -6,6 +6,7 @@ Track test suite changes, fixes, and improvements for agenthub.
 
 - `agenthub-frontend/e2e/room-decision-panel.spec.ts`: new, three tests against the deployed app (`baseURL` defaults to `https://www.4genthub.com`, `E2E_BASE_URL` overrides it). `lists the room open decisions on the live route, unclipped, with the attention animation` asserts the open list is served by `/api/v2/rooms/<room>/decisions` with no `/api/v2/openrig` among the requests and no row text clipped; `the room rows and the room Select are not vertically clipped` measures each rendered element's `scrollHeight` against its `clientHeight`; `switches the attention animation off` re-reads the classes under `(prefers-reduced-motion: reduce)`. Read-only: it answers no decision and sends no message, and the only non-GET the page makes is the login and the app's own read path.
 - At this change: `./node_modules/.bin/playwright test e2e/room-decision-panel.spec.ts --workers=1 --project=chromium` = 3 passed, 15.0s, run twice against production on 2026-10-16. Frontend e2e only; no other suite is affected.
+- After the gate's findings: the rendered panel Select is asserted to carry its own class (`h-auto min-h-[2.25rem]`, no fixed height) — the served-bytes check alone tests select-simple, not the panel's picker — and the clipping test requires at least one row, so neither check can pass vacuously; `npx tsc --strict` reports no error in the file (the two nested-CSS-rule casts). Re-run at the amendment: 3 passed, 15.3s.
 
 ## 2026-10-16 - seat guard, typed queue rows, room report, short seat guide
 

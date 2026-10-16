@@ -207,16 +207,21 @@ function attentionCssInPage() {
       // A style rule is decided by selectorText first: a modern Chrome CSSStyleRule also exposes
       // an (empty) cssRules through CSS nesting, so "has cssRules" alone misclassifies it.
       if ('selectorText' in rule && typeof rule.selectorText === 'string') {
-        if (/animate-(pulse-glow|ping|pulse)\b/.test(rule.selectorText)) {
-          hits.push({ sheet, media, selector: rule.selectorText, animation: rule.style.animation })
+        const styleRule = rule as CSSStyleRule
+        if (/animate-(pulse-glow|ping|pulse)\b/.test(styleRule.selectorText)) {
+          hits.push({ sheet, media, selector: styleRule.selectorText, animation: styleRule.style.animation })
         }
         continue
       }
       if ('conditionText' in rule && 'cssRules' in rule) {
-        walk(rule.cssRules, rule.conditionText, sheet)
+        const nested = rule as CSSMediaRule
+        walk(nested.cssRules, nested.conditionText, sheet)
         continue
       }
-      if ('name' in rule && typeof rule.name === 'string') keyframes.push(rule.name)
+      if ('name' in rule) {
+        const frames = rule as CSSKeyframesRule
+        if (typeof frames.name === 'string') keyframes.push(frames.name)
+      }
     }
   }
 
@@ -402,6 +407,14 @@ test.describe('Decision Requests panel on production', () => {
       'the served select chunk carries the min-h-[2.5rem] height fix'
     ).toBe(true)
 
+    // That chunk is select-simple, not this panel's picker: the panel renders its own Select
+    // (h-auto min-h-[2.25rem]), so a regression in the panel's class would leave the check above green.
+    // Assert the panel's own class where it is visible - on the rendered element.
+    const panelSelectClass = reading.select?.className ?? ''
+    expect(panelSelectClass, 'the panel Select renders its own h-auto').toContain('h-auto')
+    expect(panelSelectClass, 'the panel Select renders its own min-h-[2.25rem]').toContain('min-h-[2.25rem]')
+    expect(panelSelectClass, 'the panel Select carries no fixed height class').not.toMatch(/\bh-(8|9|10|11|12)\b/)
+
     // The attention loop the pending row's class carries is wired in the served CSS and would run.
     expect(probe.pulseGlow.animationName, 'animate-pulse-glow starts the pulseGlow loop').toBe('pulseGlow')
     expect(probe.pulseGlow.animationDuration).toBe('2.5s')
@@ -422,6 +435,10 @@ test.describe('Decision Requests panel on production', () => {
     await openPanelForRoom(page)
 
     const reading = await page.evaluate(readPanelInPage)
+    expect(
+      reading.rows.length,
+      'the room has at least one open decision: with zero rows the clipping check below measures nothing'
+    ).toBeGreaterThan(0)
     const evidenceFile = writeEvidence('clipping', reading)
     console.log('EVIDENCE ' + evidenceFile)
     console.log(
