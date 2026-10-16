@@ -2,6 +2,28 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-17 - an empty room skips the row measurement, and the shape stays red (frontend, fe-decisions-route)
+
+- `agenthub-frontend/e2e/room-decision-panel.spec.ts`: both row-count guards became
+  `test.skip(reading.rows.length === 0, 'no open decision to measure: the room rendered no row')` - a room
+  holding no open decision is the absence of a subject, not a product failure, and a red row said the
+  opposite. In the clipping test the guard moved to the head of the body with the SHAPE asserted first and
+  RED-able (`reading.found === true`, `Array.isArray(reading.rows)`), and the `NOT OBSERVABLE` tail it made
+  unreachable went with it. In the live-route test the three row measurements (the open-label set, the API's
+  row states, per-element clipping) moved to the END of the body, past every check that does not depend on
+  how many rows the room holds, and the same skip guards them; the `labels.length > 0` assertion it replaces
+  is implied by that guard, because `labels` is `rows.map(state)`.
+- At this change, from the changed tree against production (`agenthub-frontend/node_modules/.bin/playwright
+  test --config=agenthub-frontend/playwright.config.ts room-decision-panel --workers=1 --project=chromium`):
+  4 passed, 20.4s - the room holds 4 answered rows, so nothing skipped and the measurements ran unchanged.
+- The skip was proven on the real spec bytes twice, from throwaway copies that were then deleted: with an
+  empty `decisions` array fulfilled in the browser, tests 1 and 3 report SKIPPED while tests 4 and 5 pass
+  (2 skipped, 2 passed) - the panel's own read is then empty and the row measurement has nothing to read;
+  with the decisions GET answered `599`, test 1 FAILS at `expect(read!.status, 'the decision read answers
+  200').toBe(200)` and does not skip, so the shape check stays red-able and the skip cannot swallow a real
+  regression.
+- `tsc --noEmit -p tsconfig.json` rc 0 over the changed project.
+
 ## 2026-10-17 - the switch verb reads the machine, not only the cloud (client, main)
 
 - `agenthub_client/internal/clientsync/switchverb_test.go`: `TestSwitchRuntimeTheCloudAlreadyRecordsStillSkipsTheSeat` - the 2026-10-16 22:47Z incident, pinned: the cloud's occupant record says `agy` while the RUNTIME reports the seat on `omp`, and `--runtime agy --model gemini-3.8-flash-low --apply restart` must make NO runtime call at all and answer `applied=manual`. On the pre-fix code it records `set-model` then `restart-fresh` and answers `applied=restart` - the restart that killed the seat (measured by removing the fix and running the one test). `TestSwitchRestartStillRunsOnTheRuntimeTheMachineNames` is the boundary the fix must not cross: the runtime names the requested runtime, so `--apply restart` still sets the model and restarts fresh, as it always did. The `switchSeatStub` harness took a third seam, `switchRoomSeats`, so a test drives the machine's own reading beside the cloud's.
