@@ -2,6 +2,11 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-17 - the switch verb reads the machine, not only the cloud (client, main)
+
+- `agenthub_client/internal/clientsync/switchverb_test.go`: `TestSwitchRuntimeTheCloudAlreadyRecordsStillSkipsTheSeat` - the 2026-10-16 22:47Z incident, pinned: the cloud's occupant record says `agy` while the RUNTIME reports the seat on `omp`, and `--runtime agy --model gemini-3.8-flash-low --apply restart` must make NO runtime call at all and answer `applied=manual`. On the pre-fix code it records `set-model` then `restart-fresh` and answers `applied=restart` - the restart that killed the seat (measured by removing the fix and running the one test). `TestSwitchRestartStillRunsOnTheRuntimeTheMachineNames` is the boundary the fix must not cross: the runtime names the requested runtime, so `--apply restart` still sets the model and restarts fresh, as it always did. The `switchSeatStub` harness took a third seam, `switchRoomSeats`, so a test drives the machine's own reading beside the cloud's.
+- Run at the client tip `dde9561` from `wt/go-dev-scope`: `go vet ./internal/clientsync/` rc 0; `go test -count=1 ./internal/clientsync/` ok (16 `TestSwitch*` cases, all passing); the acceptance command `go test -count=1 ./...` green across 32 packages (this section first said 31; re-measured uncached in the client main worktree at `dde9561`, 32 `ok` lines, 0 fail).
+
 ## 2026-10-16 - the guarded seat cannot raise its own budget (client, patch parked for the owner)
 
 - `agenthub_client/rust/agenthub-runtime/tests/seat_guard.rs`: `a_seat_cannot_raise_its_own_budget` - the file's 12th case, appended after `a_guard_with_no_list_allows_only_the_seat_directory_and_the_temp_dir` - pins six write shapes as `budget-ceiling` (`4genteam room limits <rig> --usd 999`, `--calls 1000000`, `--off`, `--on`, the `env -u TMUX`-prefixed form, and the `/opt/4gh/bin/`-prefixed one) and four reads as allowed (`room limits <rig>`, `--json`, `room status <rig>`, and a quoted mention of the write). WHY IT EXISTS: the verb writes the room's ceiling THROUGH the client and never names a file, so every path rule missed it - measured at `6492b77`, `--usd 999` answered `allow` while `rm`, `sed -i`, `truncate -s 0`, `dd` and the write tool against the same record were all refused. A ceiling a seat can raise is not a ceiling.
