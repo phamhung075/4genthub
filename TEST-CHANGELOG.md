@@ -2,6 +2,12 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-16 - the guarded seat cannot raise its own budget (client, patch parked for the owner)
+
+- `agenthub_client/rust/agenthub-runtime/tests/seat_guard.rs`: `a_seat_cannot_raise_its_own_budget` - the file's 12th case, appended after `a_guard_with_no_list_allows_only_the_seat_directory_and_the_temp_dir` - pins six write shapes as `budget-ceiling` (`4genteam room limits <rig> --usd 999`, `--calls 1000000`, `--off`, `--on`, the `env -u TMUX`-prefixed form, and the `/opt/4gh/bin/`-prefixed one) and four reads as allowed (`room limits <rig>`, `--json`, `room status <rig>`, and a quoted mention of the write). WHY IT EXISTS: the verb writes the room's ceiling THROUGH the client and never names a file, so every path rule missed it - measured at `6492b77`, `--usd 999` answered `allow` while `rm`, `sed -i`, `truncate -s 0`, `dd` and the write tool against the same record were all refused. A ceiling a seat can raise is not a ceiling.
+- Verified at client `484bf8e`, from a pristine tree in `wt/architect-client`: `git apply --check` clean, then `cargo test --offline` = 133 unit + 12 `seat_guard` + 1 `umask_at_the_entry` passed, 0 failed (`seat_guard.rs` 11 -> 12); the worktree was then restored clean and nothing was committed.
+- WAITING FOR ITS CARRIER: the rule lives in `assets/seat-guard.ts`, which the guard refuses a seat to write (`protected-paths`), so the case ships in `seats/architect/PARKED-outcome4-guard-budget-ceiling.patch` (sha256 `efd1cdb71cc34a5012eaed0edfce6c5f91bf7eb26618c45e7903309fa6dabe6a`), re-cut at `484bf8e` and applied by the owner. This section rides a hub commit that touches a non-doc file, or the owner's `OWNER_DOCS_COMMIT=1`: `scripts/git-hooks/docs-only-guard` refuses a commit whose staged files are all documentation - a pin bump does not save it, because pre-commit passes no submodule - and the seat guard refuses both `OWNER_DOCS_COMMIT=` and `--no-verify` (`hook-bypass`).
+
 ## 2026-10-16 - the evidence verb's failing names (client, branch 4genthub-min/evidence-names)
 
 - `agenthub_client/internal/clientevidence/evidence_test.go`: `TestExtractFailedTestsIsHeuristicAndNamesOnly`
