@@ -5,9 +5,9 @@
     {
       "slug": "guide-common",
       "path": "agenthub_go/fastmcp/seat_management/domain/seedlibrary/shared-modules/guide-common.md",
-      "sha256": "9bf5345698121596c073f01ebd02f7b01172df86e8f3c57790549c0118ac3507",
+      "sha256": "30d0af1f7d81a8a665ce3458d153ba3d010adb2534c0570560d015bae777e091",
       "source_path": "ai_docs/operations/seat-guides/_common.md",
-      "source_sha256": "9bf5345698121596c073f01ebd02f7b01172df86e8f3c57790549c0118ac3507"
+      "source_sha256": "30d0af1f7d81a8a665ce3458d153ba3d010adb2534c0570560d015bae777e091"
     },
     {
       "slug": "guide-architect",
@@ -75,9 +75,9 @@
     {
       "slug": "guide-writer",
       "path": "agenthub_go/fastmcp/seat_management/domain/seedlibrary/blocks/guide-writer.md",
-      "sha256": "b443f9fd8935ef9702a4d3a1f1a8855af421ef2e9a7a991dfd1d81aabbb611dd",
+      "sha256": "591698b1d8d6d891333493fba088702939754ce02a01c510cd877857bea22acf",
       "source_path": "ai_docs/operations/seat-guides/writer.md",
-      "source_sha256": "b443f9fd8935ef9702a4d3a1f1a8855af421ef2e9a7a991dfd1d81aabbb611dd"
+      "source_sha256": "591698b1d8d6d891333493fba088702939754ce02a01c510cd877857bea22acf"
     }
   ]
 }
