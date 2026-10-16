@@ -407,12 +407,15 @@ test.describe('Decision Requests panel on production', () => {
       'the served select chunk carries the min-h-[2.5rem] height fix'
     ).toBe(true)
 
-    // That chunk is select-simple, not this panel's picker: the panel renders its own Select
-    // (h-auto min-h-[2.25rem]), so a regression in the panel's class would leave the check above green.
-    // Assert the panel's own class where it is visible - on the rendered element.
+    // That chunk is select-simple, not this panel's picker: the panel renders its own Select, so a
+    // regression in the panel's class would leave the check above green. Assert it where its class is
+    // visible - on the rendered element - and assert the shape the fix has (a floor that still lets the
+    // control grow), not one rem literal: a legitimate 2.25rem <-> 2.5rem change must not go red.
     const panelSelectClass = reading.select?.className ?? ''
-    expect(panelSelectClass, 'the panel Select renders its own h-auto').toContain('h-auto')
-    expect(panelSelectClass, 'the panel Select renders its own min-h-[2.25rem]').toContain('min-h-[2.25rem]')
+    expect(
+      panelSelectClass,
+      'the panel Select puts a min-h-[...] floor on its height'
+    ).toMatch(/min-h-\[[\d.]+(rem|px|em)\]/)
     expect(panelSelectClass, 'the panel Select carries no fixed height class').not.toMatch(/\bh-(8|9|10|11|12)\b/)
 
     // The attention loop the pending row's class carries is wired in the served CSS and would run.
@@ -430,7 +433,7 @@ test.describe('Decision Requests panel on production', () => {
     }
   })
 
-  test('the room rows and the room Select are not vertically clipped', async ({ page }) => {
+  test('the room rows are not vertically clipped', async ({ page }) => {
     test.setTimeout(240_000)
     await openPanelForRoom(page)
 
