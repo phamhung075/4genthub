@@ -1,5 +1,5 @@
 # Pre-commit hooks configuration for CI/CD and local development
-# Install: pre-commit install -c scripts/git-hooks/pre-commit-config.yaml --hook-type pre-commit --hook-type prepare-commit-msg --hook-type post-commit --hook-type pre-push
+# Install: pre-commit install -c scripts/git-hooks/pre-commit-config.yaml --hook-type pre-commit --hook-type prepare-commit-msg --hook-type commit-msg --hook-type post-commit --hook-type pre-push
 #
 # NOTE: Hooks run on STAGED files only and automatically re-stage formatted files
 
@@ -41,6 +41,15 @@ repos:
         language: script
         stages: [pre-commit]
         always_run: false
+
+  # A seat's commit message must carry `Task: <hub task uuid>` so the task can be closed. Seats only, merges exempt.
+  - repo: local
+    hooks:
+      - id: task-trailer-guard
+        name: "seat commit names its hub task"
+        entry: scripts/git-hooks/task-trailer-guard
+        language: script
+        stages: [commit-msg]
 
   # After a commit, every running seat is told which commit landed and which files it touched, so a seat
   # that is about to edit one of them reads it again. The script never fails a commit.
