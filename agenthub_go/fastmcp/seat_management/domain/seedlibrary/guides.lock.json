@@ -5,9 +5,9 @@
     {
       "slug": "guide-common",
       "path": "agenthub_go/fastmcp/seat_management/domain/seedlibrary/shared-modules/guide-common.md",
-      "sha256": "30d0af1f7d81a8a665ce3458d153ba3d010adb2534c0570560d015bae777e091",
+      "sha256": "54be8b47461e5f474b511f613bbfde61e7e29d7f9008ea0c115a4a5d1ecf32e1",
       "source_path": "ai_docs/operations/seat-guides/_common.md",
-      "source_sha256": "30d0af1f7d81a8a665ce3458d153ba3d010adb2534c0570560d015bae777e091"
+      "source_sha256": "54be8b47461e5f474b511f613bbfde61e7e29d7f9008ea0c115a4a5d1ecf32e1"
     },
     {
       "slug": "guide-architect",
@@ -47,16 +47,16 @@
     {
       "slug": "guide-lead",
       "path": "agenthub_go/fastmcp/seat_management/domain/seedlibrary/blocks/guide-lead.md",
-      "sha256": "78deeae33726650db8e586b827c4f559515afa6d993e9b200aa775fe2cf05297",
+      "sha256": "9bddcf719718620b91cb506cc4ee9ff975a32f898ab1d16bb81dc4c18bac09ab",
       "source_path": "ai_docs/operations/seat-guides/lead.md",
-      "source_sha256": "78deeae33726650db8e586b827c4f559515afa6d993e9b200aa775fe2cf05297"
+      "source_sha256": "9bddcf719718620b91cb506cc4ee9ff975a32f898ab1d16bb81dc4c18bac09ab"
     },
     {
       "slug": "guide-reviewer",
       "path": "agenthub_go/fastmcp/seat_management/domain/seedlibrary/blocks/guide-reviewer.md",
-      "sha256": "5baa65bbe30bd207ea5d055e884a1982037f35303e79dd45df09c933a6c5f342",
+      "sha256": "ff0f35c0c988357e6a26f3792a2a010925409513b364234738c0317c0ca877fd",
       "source_path": "ai_docs/operations/seat-guides/reviewer.md",
-      "source_sha256": "5baa65bbe30bd207ea5d055e884a1982037f35303e79dd45df09c933a6c5f342"
+      "source_sha256": "ff0f35c0c988357e6a26f3792a2a010925409513b364234738c0317c0ca877fd"
     },
     {
       "slug": "guide-skills-dev",

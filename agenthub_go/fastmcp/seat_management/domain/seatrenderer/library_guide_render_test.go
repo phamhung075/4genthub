@@ -57,7 +57,7 @@ func TestTheLibrarysOwnSharedGuideRendersIntoAgentsMD(t *testing.T) {
 	}
 	// Two headings that exist in the shipped file and nowhere in a fixture, so this cannot pass by
 	// rendering an empty or invented block.
-	for _, want := range []string{"Working procedure", "How to call a tool", "The loop, in order"} {
+	for _, want := range []string{"Working procedure", "How to call a tool", "The loop"} {
 		if !strings.Contains(agents, want) {
 			t.Errorf("AGENTS.md lacks %q, which the shipped guide carries", want)
 		}

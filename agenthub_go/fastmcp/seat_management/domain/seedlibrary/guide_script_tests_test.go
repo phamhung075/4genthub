@@ -97,7 +97,7 @@ func documentedPath(t *testing.T, text, where string) string {
 // directory left behind with no tracked test in it cannot keep the guide green.
 func TestGuidesNameTheScriptTestPathThatExists(t *testing.T) {
 	root := repoRoot(t)
-	for _, file := range []string{guideCommonFile, guideReviewerFile} {
+	for _, file := range []string{guideReviewerFile} {
 		text := readEmbeddedGuide(t, file)
 
 		// (a) the stale-path class: the command it documents, and the path out of that command.
@@ -122,11 +122,11 @@ func TestGuidesNameTheScriptTestPathThatExists(t *testing.T) {
 // this is the other half, and it is the one a reviewer was bitten by tonight - a pipe reports the LAST
 // command's status, so `... | tail` reads 0 whatever pytest said.
 func TestGuidesStateTheNoPipeRuleBesideTheCommand(t *testing.T) {
-	text := readEmbeddedGuide(t, guideCommonFile)
+	text := readEmbeddedGuide(t, guideReviewerFile)
 	if !strings.Contains(text, noPipeRule) {
 		t.Errorf(
 			"%s documents the script-test command without stating %q: a seat may pipe the run, and a pipeline reports the LAST command's status, so the failure reads as a clean summary",
-			guideCommonFile, noPipeRule,
+			guideReviewerFile, noPipeRule,
 		)
 	}
 }
