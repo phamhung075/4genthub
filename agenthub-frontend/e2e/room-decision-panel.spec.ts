@@ -572,3 +572,247 @@ test.describe('Decision Requests panel under prefers-reduced-motion: reduce', ()
     }
   })
 })
+
+/**
+ * THE PENDING ROW, MANUFACTURED IN THE BROWSER.
+ *
+ * The attention state has no live subject: the panel's own Room picker offers one room and every row
+ * that room holds is answered (measured 2026-10-16), so no production read can render a pending row.
+ * These two tests FULFIL the panel's own decisions GET inside the browser with one pending decision -
+ * the request never reaches production - and intercept the answer endpoint to ABORT it, asserting that
+ * no answer call was attempted, so a click cannot write even by accident.
+ *
+ * WHAT THIS PROVES AND WHAT IT DOES NOT, named: it proves the panel RENDERS a pending decision and what
+ * that row's attention state computes to, which is the half no room could show; it does NOT prove that
+ * production's data carries a pending decision - that is a property of the tenant's queue, not of the
+ * panel.
+ *
+ * The row's border and tint are RECORDED, not asserted: the theme registers its custom colours as plain
+ * `var(--color-*)` strings, so Tailwind emits no rule at all for the opacity-modified utilities built on
+ * them (`border-accent/40`, `bg-accent/[0.03]`, `bg-accent/15`) - finding F1 in task 6f461321, a
+ * project-wide colour-registration call and not this file's to make. Asserting the indigo border here
+ * would red a spec that is measuring the product honestly.
+ */
+
+/** The one pending decision the injected read answers with. Its summary names the injection. */
+const INJECTED_ROW_TOKEN = 'PROBE (injected in the browser, no production row exists)'
+
+const pendingPayload = {
+  decisions: [
+    {
+      id: 'e2e-pending-0001',
+      qitem_id: 'qitem-e2e-pending-0001',
+      author_seat_key: 'lead',
+      summary: `${INJECTED_ROW_TOKEN}: a pending ask whose summary is long enough to wrap in the sidebar`,
+      detail:
+        'Injected by the spec so the pending state has a rendered subject. Nothing was written, and the read never reached production.',
+      questions: [
+        {
+          id: 'q1',
+          question: 'Probe question: which way?',
+          options: [
+            { id: 'o1', label: 'The first option' },
+            { id: 'o2', label: 'The second option', recommended: true },
+          ],
+        },
+      ],
+      answers: {},
+      state: 'pending',
+      created_at: '2026-10-16T17:00:00Z',
+      answered_at: null,
+    },
+  ],
+}
+
+/**
+ * Answer the panel's decisions GET in the browser and refuse the answer write.
+ *
+ * The answer route is both counted and ABORTED: `answerCalls` must stay empty, and an accidental click
+ * must be unable to reach production.
+ */
+async function injectPendingDecision(page: Page, answerCalls: string[]): Promise<void> {
+  await page.route('**/api/v2/rooms/**/decisions', (route) =>
+    route.request().method() === 'GET'
+      ? route.fulfill({
+          status: 200,
+          headers: {
+            'content-type': 'application/json',
+            'access-control-allow-origin': '*',
+            'access-control-allow-headers': '*',
+          },
+          body: JSON.stringify(pendingPayload),
+        })
+      : route.continue()
+  )
+  await page.route('**/api/v2/rooms/**/decisions/**', (route) => {
+    const request = route.request()
+    if (request.method() === 'GET') return route.continue()
+    answerCalls.push(`${request.method()} ${request.url()}`)
+    return route.abort()
+  })
+}
+
+/** Open the dashboard and wait for the injected pending row to render. */
+async function openInjectedPendingRow(page: Page): Promise<void> {
+  // The route above is registered before this call, so the panel's first read is the fulfilled one.
+  const opened = await openPanelForRoom(page)
+  expect(opened.panelVisible, 'the panel renders').toBe(true)
+
+  const panel = page.getByRole('region', { name: 'Room decision requests' })
+  // The row renders as soon as the fulfilled read resolves, so assert on the row itself rather than
+  // sampling the panel at a fixed moment.
+  await expect(panel, 'the injected pending row rendered').toContainText(INJECTED_ROW_TOKEN, {
+    timeout: 30_000,
+  })
+  await expect(panel, 'the injected row carries the pending label').toContainText('waiting for you', {
+    timeout: 30_000,
+  })
+}
+
+/** The pending row's rendered attention state, read out of the page. */
+function readPendingRowInPage() {
+  const section = document.querySelector<HTMLElement>('[aria-label="Room decision requests"]')
+  const articles = section ? Array.from(section.querySelectorAll<HTMLElement>('article')) : []
+  const row = articles.find((a) => (a.textContent ?? '').includes('PROBE')) ?? articles[0] ?? null
+
+  const motion = (el: Element | null) => {
+    if (!el) return null
+    const cs = getComputedStyle(el)
+    return {
+      className: el.getAttribute('class'),
+      animationName: cs.animationName,
+      animationDuration: cs.animationDuration,
+      animationIterationCount: cs.animationIterationCount,
+    }
+  }
+
+  const measure = (el: HTMLElement) => {
+    const cs = getComputedStyle(el)
+    const lineHeight = parseFloat(cs.lineHeight) || parseFloat(cs.fontSize) * 1.2
+    const needed = Math.round(lineHeight + parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom) + 2)
+    const overflows = el.scrollHeight > el.clientHeight + 1
+    return {
+      tag: el.tagName.toLowerCase(),
+      text: (el.textContent ?? '').trim().replace(/\s+/g, ' ').slice(0, 60),
+      clientHeight: el.clientHeight,
+      scrollHeight: el.scrollHeight,
+      overflowY: cs.overflowY,
+      neededHeight: needed,
+      clipped: overflows && cs.overflowY !== 'visible',
+      spilling: overflows && cs.overflowY === 'visible',
+      shortForOwnLineBox: el.clientHeight + 1 < needed,
+    }
+  }
+
+  const chip = row?.querySelector<HTMLElement>('span.uppercase') ?? null
+  const chipStyle = chip ? getComputedStyle(chip) : null
+  const rowStyle = row ? getComputedStyle(row) : null
+  const badgeText = section
+    ? Array.from(section.querySelectorAll<HTMLElement>('span'))
+        .map((span) => (span.textContent ?? '').trim())
+        .filter((text) => /^\d+$/.test(text))
+    : []
+
+  return {
+    found: Boolean(section),
+    prefersReducedMotion: window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+    articleCount: articles.length,
+    rowFound: Boolean(row),
+    rowText: (row?.innerText ?? '').replace(/\s+/g, ' ').slice(0, 240),
+    stateLabel: chip?.textContent?.trim() ?? null,
+    pendingClassOnRow: Boolean(row?.className.includes('animate-pulse-glow')),
+    rowMotion: motion(row),
+    rowPulseDot: motion(row?.querySelector('span.animate-pulse') ?? null),
+    pingDots: section ? section.querySelectorAll('span.animate-ping').length : 0,
+    pingDotMotion: motion(section?.querySelector('span.animate-ping') ?? null),
+    badgeText,
+    /** Recorded, never asserted: F1, the accent border and tint emit no rule (task 6f461321). */
+    rowBorderTopColor: rowStyle?.borderTopColor ?? null,
+    rowBackgroundColor: rowStyle?.backgroundColor ?? null,
+    chipColor: chipStyle?.color ?? null,
+    chipBackground: chipStyle?.backgroundColor ?? null,
+    rowElements: row ? [row, ...Array.from(row.querySelectorAll<HTMLElement>('*'))].map(measure) : [],
+  }
+}
+
+test.describe('Decision Requests panel: the pending row, rendered by an injected read', () => {
+  test('renders the pending row with its attention animation running', async ({ page }) => {
+    test.setTimeout(240_000)
+
+    const answerCalls: string[] = []
+    await injectPendingDecision(page, answerCalls)
+    await openInjectedPendingRow(page)
+
+    const reading = await page.evaluate(readPendingRowInPage)
+    const evidenceFile = writeEvidence('pending-row', reading)
+    console.log('EVIDENCE ' + evidenceFile)
+    console.log(
+      'PENDING-ROW ' +
+        JSON.stringify({ ...reading, rowElements: reading.rowElements.length }, null, 2)
+    )
+
+    expect(reading.found, 'the panel section was found').toBe(true)
+    expect(reading.articleCount, 'exactly the injected row is listed').toBe(1)
+    expect(reading.pendingClassOnRow, 'the pending row carries the attention class').toBe(true)
+    expect(reading.rowMotion?.animationName, 'the row runs the pulseGlow loop').toBe('pulseGlow')
+    expect(reading.rowMotion?.animationDuration, 'the row loops at 2.5s').toBe('2.5s')
+    expect(reading.rowMotion?.animationIterationCount, 'the loop does not stop').toBe('infinite')
+    expect(reading.pingDots, 'the header ping dot is rendered').toBeGreaterThan(0)
+    expect(reading.rowPulseDot?.animationName, 'the row dot pulses').toBe('pulse')
+    expect(reading.badgeText, 'the pending count badge is rendered').toEqual(['1'])
+    expect(reading.stateLabel, 'the state chip names the pending state').toBe('waiting for you')
+
+    const clipped = reading.rowElements.filter((el) => el.clipped).map((el) => `${el.tag} ${el.text}`)
+    expect(clipped, 'no element of the pending row clips its own content box').toHaveLength(0)
+
+    expect(answerCalls, 'no answer write was attempted').toHaveLength(0)
+  })
+
+  test('switches the animation off under prefers-reduced-motion', async ({ browser }) => {
+    test.setTimeout(240_000)
+
+    // An explicit context, as the live reduce test uses: the preference must be a measured fact of
+    // THIS page rather than a property the spec assumes it passed down.
+    const context = await browser.newContext({ reducedMotion: 'reduce' })
+    const page = await context.newPage()
+    try {
+      const answerCalls: string[] = []
+      await injectPendingDecision(page, answerCalls)
+      await openInjectedPendingRow(page)
+
+      const reading = await page.evaluate(readPendingRowInPage)
+      const probe = await page.evaluate(attentionProbeInPage)
+      const evidenceFile = writeEvidence('pending-row-reduced-motion', { reading, attentionProbe: probe })
+      console.log('EVIDENCE ' + evidenceFile)
+      console.log('PENDING-ROW-REDUCE ' + JSON.stringify({ ...reading, rowElements: reading.rowElements.length }, null, 2))
+      // The still cue, recorded rather than asserted: with every animation off, what still marks the
+      // row (the chip, the dots, the badge) - and that the intended accent border is NOT part of it (F1).
+      console.log(
+        'PENDING-ROW-STILL-CUE ' +
+          JSON.stringify({
+            stateLabel: reading.stateLabel,
+            badge: reading.badgeText,
+            chipColor: reading.chipColor,
+            chipBackground: reading.chipBackground,
+            rowBorderTopColor: reading.rowBorderTopColor,
+            rowBackgroundColor: reading.rowBackgroundColor,
+          })
+      )
+
+      expect(reading.found, 'the panel section was found').toBe(true)
+      expect(reading.prefersReducedMotion, 'the page really reports prefers-reduced-motion: reduce').toBe(true)
+      expect(reading.articleCount, 'exactly the injected row is listed').toBe(1)
+      expect(reading.rowMotion?.animationName, 'the row animation is off').toBe('none')
+      expect(reading.rowPulseDot?.animationName, 'the row dot is off').toBe('none')
+      expect(reading.pingDotMotion?.animationName, 'the ping dot is off').toBe('none')
+      for (const [label, probeReading] of Object.entries(probe)) {
+        if (typeof probeReading === 'string' || typeof probeReading === 'boolean') continue
+        expect(probeReading.animationName, `${label} is switched off under reduce`).toBe('none')
+      }
+
+      expect(answerCalls, 'no answer write was attempted').toHaveLength(0)
+    } finally {
+      await context.close()
+    }
+  })
+})

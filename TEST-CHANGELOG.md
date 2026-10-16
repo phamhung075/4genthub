@@ -2,6 +2,37 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-17 - the pending row renders its attention state, injected because no room holds one (frontend, fe-decisions-route)
+
+- `agenthub-frontend/e2e/room-decision-panel.spec.ts` (+244, no deletions): two tests appended under
+  `Decision Requests panel: the pending row, rendered by an injected read`. The panel's own decisions GET is
+  FULFILLED in the browser with one pending decision, so the read never reaches production, and the answer
+  endpoint is intercepted and ABORTED with the attempted calls counted and asserted empty - a click cannot
+  write even by accident. Asserted on the REAL row element: `animate-pulse-glow` computes to
+  `pulseGlow / 2.5s / infinite`, the row's dot to `pulse`, the header ping dot renders and runs `ping`, the
+  count badge reads `1`, the state chip reads `waiting for you`, and 0 of the row's 18 elements clip their
+  content box. The second test takes an explicit `reducedMotion: 'reduce'` context and asserts the row, its
+  dot and the ping dot all compute `animationName: none`, with the class probe agreeing for all three
+  utilities.
+- The row's border and tint are RECORDED, not asserted: the theme registers its custom colours as plain
+  `var(--color-*)` strings, so Tailwind emits no rule for the opacity-modified utilities built on them
+  (`border-accent/40`, `bg-accent/[0.03]`, `bg-accent/15`). That is the project-wide colour-registration
+  finding (F1, task 470c7439 Q1, parked with the owner), and asserting the indigo border would red a spec
+  that is measuring the product honestly.
+- At this change, from the changed tree against production (`agenthub-frontend/node_modules/.bin/playwright
+  test --config=agenthub-frontend/playwright.config.ts room-decision-panel --workers=1 --project=chromium`):
+  6 passed, 29.2s - the four existing tests untouched and green, the two new ones green.
+- BOTH NEW TESTS PROVEN ABLE TO FAIL, on scratch copies under the gitignored `test-results/` that were then
+  moved out of the checkout: with the injected decision's `state` changed to `answered`, both tests RED at
+  `the injected row carries the pending label` while the four existing tests still pass - so the row-level
+  assertions read a real pending subject instead of passing vacuously; with the expected animation name
+  changed to `glowLoop`, the first test REDS at `Expected "glowLoop" / Received "pulseGlow"` - so the
+  animation assertion reads the rendered row's own computed style.
+- `tsc --noEmit -p tsconfig.json` rc 0 over the changed project, 0 errors naming the spec.
+- LIMIT, carried in the spec's own header comment: this proves the panel RENDERS a pending decision and what
+  its attention state computes to; it does NOT prove that production's data carries a pending decision, which
+  is a property of the tenant's queue, not of the panel.
+
 ## 2026-10-17 - an empty room skips the row measurement, and the shape stays red (frontend, fe-decisions-route)
 
 - `agenthub-frontend/e2e/room-decision-panel.spec.ts`: both row-count guards became
