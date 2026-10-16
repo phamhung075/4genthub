@@ -23,7 +23,9 @@ const account = readTestAccount()
  *    with `min-h-[2.5rem] py-2 px-3 leading-normal`;
  *  - the served select-simple chunk carries that fix (class string read out of the served bytes);
  *  - no request goes to the retired /api/v2/openrig route;
- *  - the pending row's attention animation runs, and prefers-reduced-motion switches it off.
+ *  - the pending row's attention animation runs, and prefers-reduced-motion switches it off;
+ *  - a FAILED decisions read renders its failure with the status (the failure is injected in the
+ *    browser, so the request never reaches production and no server state is touched).
  *
  * The panel is mounted in the DASHBOARD's sidebar (`App.tsx`, `Dashboard()`), not on
  * `/seats/:room/:seat` - that route renders `AppLayout`, which carries no sidebar - so the
@@ -474,6 +476,41 @@ test.describe('Decision Requests panel on production', () => {
         'NOT OBSERVABLE: the room rendered no row, so a row-text clipping measurement had no subject'
       )
     }
+  })
+
+  /**
+   * A failed read names its own status. The failure is INJECTED in the browser - the intercepted
+   * request never reaches production and nothing on the server is touched - because a healthy route
+   * cannot be made to fail on demand. It proves the client's failure rendering for a status the route
+   * returns; it does NOT prove that production's route ever fails.
+   *
+   * The status TOKEN is asserted, not one phrase: the criterion is "shows a failed read with its
+   * status", so a reworded message that still names 503 passes, while a message that hides the status
+   * fails. The panel's failed-read branch itself must still say it could not read.
+   */
+  test('a failed decisions read names its status', async ({ page }) => {
+    test.setTimeout(180_000)
+
+    // Registered before the panel mounts: the read must fail on its first call.
+    await page.route('**/api/v2/rooms/**/decisions', (route) =>
+      route.request().method() === 'GET'
+        ? route.fulfill({ status: 503, contentType: 'text/plain', body: 'gateway down' })
+        : route.continue()
+    )
+
+    await signIn(page)
+    await page.goto(PAGE_PATH)
+
+    const panel = page.getByRole('region', { name: 'Room decision requests' })
+    await expect(panel).toBeVisible({ timeout: 45_000 })
+    // The hook settles into its failure branch only after the rejected read, so assert on that branch
+    // rather than sampling the panel's loading text a fixed moment later.
+    await expect(panel, 'the panel rendered its failed-read branch').toContainText('Could not read', {
+      timeout: 30_000,
+    })
+    const failure = (await panel.innerText()).replace(/\s+/g, ' ')
+    console.log('FAILED READ ' + JSON.stringify({ status: 503, text: failure }))
+    expect(failure, 'the failed read names its status').toMatch(/\b503\b/)
   })
 })
 
