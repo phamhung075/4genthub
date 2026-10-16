@@ -492,19 +492,54 @@ func GetSessionForUser(ctx context.Context, sessions *database.SessionManager, u
 
 // ListEvents is list_events; the page limit is clamped to 1000.
 func ListEvents(ctx context.Context, sessions *database.SessionManager, userID, sessionID string, afterSeq, limit int64) ([]*entities.OrderedMap[any], error) {
+	return queryEvents(ctx, sessions,
+		"SELECT id, session_id, user_id, seq, type, payload, ts FROM agent_session_events "+
+			"WHERE user_id = $1 AND session_id = $2 AND seq > $3 ORDER BY seq LIMIT $4",
+		userID, sessionID, afterSeq, clampEventLimit(limit))
+}
+
+// ListEventsBefore returns the newest limit events with seq < beforeSeq, oldest first: the page
+// of history that lies before what a viewer already holds.
+func ListEventsBefore(ctx context.Context, sessions *database.SessionManager, userID, sessionID string, beforeSeq, limit int64) ([]*entities.OrderedMap[any], error) {
+	return queryEvents(ctx, sessions,
+		"SELECT id, session_id, user_id, seq, type, payload, ts FROM ("+
+			"SELECT id, session_id, user_id, seq, type, payload, ts FROM agent_session_events "+
+			"WHERE user_id = $1 AND session_id = $2 AND seq < $3 ORDER BY seq DESC LIMIT $4) newest ORDER BY seq",
+		userID, sessionID, beforeSeq, clampEventLimit(limit))
+}
+
+// TailAfterSeq is the after_seq that leaves the newest n events of a session after it, 0 when the
+// session holds n or fewer. Replaying from it sends a viewer the tail rather than the whole history.
+func TailAfterSeq(ctx context.Context, sessions *database.SessionManager, userID, sessionID string, n int64) (int64, error) {
+	sessions, err := resolveSessions(sessions)
+	if err != nil {
+		return 0, err
+	}
+	var after int64
+	err = sessions.WithSession(ctx, func(ctx context.Context, s database.DBTX) error {
+		return s.QueryRowContext(ctx,
+			"SELECT COALESCE(MIN(seq) - 1, 0) FROM (SELECT seq FROM agent_session_events "+
+				"WHERE user_id = $1 AND session_id = $2 ORDER BY seq DESC LIMIT $3) newest",
+			userID, sessionID, n).Scan(&after)
+	})
+	return after, err
+}
+
+func clampEventLimit(limit int64) int64 {
+	if limit > 1000 {
+		return 1000
+	}
+	return limit
+}
+
+func queryEvents(ctx context.Context, sessions *database.SessionManager, query string, args ...any) ([]*entities.OrderedMap[any], error) {
 	sessions, err := resolveSessions(sessions)
 	if err != nil {
 		return nil, err
 	}
-	if limit > 1000 {
-		limit = 1000
-	}
 	out := []*entities.OrderedMap[any]{}
 	err = sessions.WithSession(ctx, func(ctx context.Context, s database.DBTX) error {
-		rows, err := s.QueryContext(ctx,
-			"SELECT id, session_id, user_id, seq, type, payload, ts FROM agent_session_events "+
-				"WHERE user_id = $1 AND session_id = $2 AND seq > $3 ORDER BY seq LIMIT $4",
-			userID, sessionID, afterSeq, limit)
+		rows, err := s.QueryContext(ctx, query, args...)
 		if err != nil {
 			return err
 		}

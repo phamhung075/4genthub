@@ -2,8 +2,8 @@
  * Sessions Page - the signed-in user's sessions and one live event stream.
  *
  * The list comes from GET /api/v2/sessions; selecting a session opens
- * /ws/sessions/{id} through useSessionStream, which replays the stored events
- * before following the live ones. The raw-terminal (xterm) tab C3 marks
+ * /ws/sessions/{id} through useSessionStream, which replays the newest stored
+ * events before following the live ones; older ones load on request. The raw-terminal (xterm) tab C3 marks
  * optional is not built: it would add a dependency the app does not carry.
  *
  * @module pages/SessionsPage
@@ -84,6 +84,9 @@ export const SessionsPage: React.FC = () => {
               events={stream.events}
               status={stream.status}
               error={stream.error}
+              hasOlder={stream.hasOlder}
+              loadingOlder={stream.loadingOlder}
+              onLoadOlder={stream.loadOlder}
             />
           </CardContent>
         </Card>

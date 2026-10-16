@@ -80,6 +80,16 @@ func (s *viewerStore) ListEvents(_ context.Context, userID, sessionID string, af
 	return out, nil
 }
 
+func (s *viewerStore) TailAfterSeq(_ context.Context, userID, sessionID string, n int64) (int64, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.owner[sessionID] != userID || int64(len(s.events)) <= n {
+		return 0, nil
+	}
+	seq, _ := s.events[int64(len(s.events))-n].Get("seq")
+	return int64(seq.(int)) - 1, nil
+}
+
 func (s *viewerStore) openGate() { s.gateOnce.Do(func() { close(s.gate) }) }
 
 // viewerServer serves the viewer handler over store.
@@ -154,6 +164,19 @@ func TestSessionViewerReplaysAfterSeqThenFollowsLiveEvents(t *testing.T) {
 	session_stream.Hub.Publish(viewerSID, []any{viewerEvent(3), viewerEvent(4)})
 	if seq := readEventSeq(t, br); seq != 4 {
 		t.Fatalf("live seq = %d, want 4 (seq 3 was already replayed)", seq)
+	}
+}
+
+func TestSessionViewerTailReplaysOnlyTheNewestEvents(t *testing.T) {
+	_, br := dialViewer(t, newViewerStore(5), viewerSID, "&tail=2")
+
+	if got := []int{readEventSeq(t, br), readEventSeq(t, br)}; got[0] != 4 || got[1] != 5 {
+		t.Fatalf("replayed seqs = %v, want [4 5]", got)
+	}
+	waitFor(t, "the viewer to follow the hub", func() bool { return session_stream.Hub.Subscribers(viewerSID) == 1 })
+	session_stream.Hub.Publish(viewerSID, []any{viewerEvent(6)})
+	if seq := readEventSeq(t, br); seq != 6 {
+		t.Fatalf("live seq = %d, want 6 right after the tail", seq)
 	}
 }
 

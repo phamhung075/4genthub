@@ -53,7 +53,7 @@ describe('useSessionStream', () => {
 
     expect(MockSocket.instances).toHaveLength(1);
     expect(MockSocket.instances[0].url).toBe(
-      'ws://test/ws/sessions/session%207?token=tok%20en&after_seq=0'
+      'ws://test/ws/sessions/session%207?token=tok%20en&after_seq=0&tail=200'
     );
 
     unmount();

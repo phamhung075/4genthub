@@ -2,6 +2,13 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-16 - session tail and older-page reads
+
+- `agenthub_go/fastmcp/server/httpapp/ws_session_viewer_test.go`: `TestSessionViewerTailReplaysOnlyTheNewestEvents` (a `tail=2` viewer of 5 events gets seqs 4 and 5, then live seq 6). Passes.
+- `agenthub_go/fastmcp/session_stream/repository_test.go`: `ListEventsBefore` and `TailAfterSeq` cases added to the Postgres repository test; skipped without `AGENTHUB_TEST_PG_URL`, so NOT run here.
+- `agenthub-frontend/src/tests/utils/sessionSteps.test.ts`: new, four cases (assistant turn split into steps, tool result error flag, verbatim line and withheld gap, meta line). Not run: no local frontend test run; `tsc --noEmit` passes.
+- `agenthub-frontend/src/tests/hooks/useSessionStream.test.tsx` (socket URL now carries `&tail=200`) and `tests/pages/SessionsPage.test.tsx` (the withheld sentence) updated to the new behaviour. Not run.
+
 ## 2026-10-16 - the park gate: six client cases and five runtime cases
 
 - `agenthub_client/internal/seatpark`, `internal/clientroom`, `internal/clientseat`, `internal/clientrestore`: six cases added for a parked seat. `seatpark.Refuse` refuses a client route that would hand a parked seat work (send's two shapes, the restore brief, the room revive), and `clientroom.parkNote` renders the park on the seat row that `status` and `reseat` share. Red first: with the two predicates returning nil/`""` the six fail on behaviour - `Sent to ...` for a parked seat, the brief delivered, the row without the park segment, the revive that restarted the seat.

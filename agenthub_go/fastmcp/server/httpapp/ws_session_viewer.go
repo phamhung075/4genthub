@@ -27,6 +27,7 @@ const (
 type sessionViewerStore interface {
 	GetSessionForUser(ctx context.Context, userID, sessionID string) (*entities.OrderedMap[any], error)
 	ListEvents(ctx context.Context, userID, sessionID string, afterSeq, limit int64) ([]*entities.OrderedMap[any], error)
+	TailAfterSeq(ctx context.Context, userID, sessionID string, n int64) (int64, error)
 }
 
 type sessionStreamStore struct{ sessions *database.SessionManager }
@@ -37,6 +38,10 @@ func (s sessionStreamStore) GetSessionForUser(ctx context.Context, userID, sessi
 
 func (s sessionStreamStore) ListEvents(ctx context.Context, userID, sessionID string, afterSeq, limit int64) ([]*entities.OrderedMap[any], error) {
 	return session_stream.ListEvents(ctx, s.sessions, userID, sessionID, afterSeq, limit)
+}
+
+func (s sessionStreamStore) TailAfterSeq(ctx context.Context, userID, sessionID string, n int64) (int64, error) {
+	return session_stream.TailAfterSeq(ctx, s.sessions, userID, sessionID, n)
 }
 
 // handleSessionViewer authenticates from ?token=, then answers a session that is
@@ -66,7 +71,7 @@ func handleSessionViewer(store sessionViewerStore) http.HandlerFunc {
 			return
 		}
 		ctx := context.Background()
-		code, reason := serveSessionViewer(ctx, conn, store, *result.UserID, r.PathValue("id"), afterSeqParam(r))
+		code, reason := serveSessionViewer(ctx, conn, store, *result.UserID, r.PathValue("id"), afterSeqParam(r), tailParam(r))
 		_ = conn.Close(ctx, code, reason)
 	}
 }
@@ -80,9 +85,18 @@ func afterSeqParam(r *http.Request) int {
 	return n
 }
 
+// tailParam is int(query["tail"]), 0 (the whole history) when absent or not a positive integer.
+func tailParam(r *http.Request) int {
+	n, err := strconv.Atoi(r.URL.Query().Get("tail"))
+	if err != nil || n < 0 {
+		return 0
+	}
+	return n
+}
+
 // serveSessionViewer streams the session to conn and returns the close code and
 // reason to end the socket with.
-func serveSessionViewer(ctx context.Context, conn *wsConn, store sessionViewerStore, userID, sessionID string, after int) (int, string) {
+func serveSessionViewer(ctx context.Context, conn *wsConn, store sessionViewerStore, userID, sessionID string, after, tail int) (int, string) {
 	row, err := store.GetSessionForUser(ctx, userID, sessionID)
 	if err != nil {
 		return wsCloseInternal, "internal error"
@@ -96,6 +110,14 @@ func serveSessionViewer(ctx context.Context, conn *wsConn, store sessionViewerSt
 	defer session_stream.Hub.Unsubscribe(sessionID, q)
 
 	last := after
+	if after == 0 && tail > 0 {
+		// A first connection asking for the tail replays only the newest events; older ones are paged on request.
+		start, err := store.TailAfterSeq(ctx, userID, sessionID, int64(tail))
+		if err != nil {
+			return wsCloseInternal, "internal error"
+		}
+		last = int(start)
+	}
 	for {
 		batch, err := store.ListEvents(ctx, userID, sessionID, int64(last), wsReplayPage)
 		if err != nil {

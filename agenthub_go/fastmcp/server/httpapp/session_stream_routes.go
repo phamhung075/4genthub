@@ -30,7 +30,13 @@ func (a *App) registerSessionStreamRoutes(mux *http.ServeMux) {
 				limit = n
 			}
 		}
-		res, err := routes.GetSessionEvents(r.Context(), sessionID, afterSeq, limit, u, a.Sessions)
+		beforeSeq := 0
+		if q := r.URL.Query().Get("before_seq"); q != "" {
+			if n, err := strconv.Atoi(q); err == nil {
+				beforeSeq = n
+			}
+		}
+		res, err := routes.GetSessionEvents(r.Context(), sessionID, afterSeq, beforeSeq, limit, u, a.Sessions)
 		writeKeyedSliceResult(w, "events", res, err)
 	}))
 }
