@@ -12,9 +12,9 @@
     {
       "slug": "guide-architect",
       "path": "agenthub_go/fastmcp/seat_management/domain/seedlibrary/blocks/guide-architect.md",
-      "sha256": "2a9b494078b3536159facfb956fce7908426f9ee3e2f6a9c6ddbcecdce71f52c",
+      "sha256": "e52f9b4571d18ce45d45f4f9e28c55bd61bdd3974074152ece33ddb5d067f8bd",
       "source_path": "ai_docs/operations/seat-guides/architect.md",
-      "source_sha256": "2a9b494078b3536159facfb956fce7908426f9ee3e2f6a9c6ddbcecdce71f52c"
+      "source_sha256": "e52f9b4571d18ce45d45f4f9e28c55bd61bdd3974074152ece33ddb5d067f8bd"
     },
     {
       "slug": "guide-context-dev",

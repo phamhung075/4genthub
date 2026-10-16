@@ -10,7 +10,10 @@ import (
 )
 
 // seedVersion is bumped whenever a seed's module set changes: a stored seat type version is
-// immutable, so a changed module set needs a new version. 1.4.8 names the `short-output` skill in the seat guide's output rule, so a seat loads the skill the client delivers. 1.4.7 is the owner's short-pointers
+// immutable, so a changed module set needs a new version. 1.4.9 is the architect guide without the
+// stale seating line ("You are the only seat here on claude-code; the rest run omp"): the room runs
+// every seat on omp, so both halves were false, and a seating fact about one room does not belong in
+// a role-scoped block. 1.4.8 names the `short-output` skill in the seat guide's output rule, so a seat loads the skill the client delivers. 1.4.7 is the owner's short-pointers
 // rule, added to the seat guide beside the work-first rule: a seat thinks in short pointers and
 // gives the result first, then at most five short lines, and pastes no large tool output or whole
 // file into a thought or a row. 1.4.6 is the owner's work-first rule
@@ -20,7 +23,7 @@ import (
 // for one. 1.4.5 is the retirement of the checker's send verb: the comm-guard allow list drops its
 // entry for it and the guard skill now names `4genteam send`. The deny list and
 // `Bash(4genteam whoami:*)` are unchanged.
-const seedVersion = "1.4.8"
+const seedVersion = "1.4.9"
 
 type SeedModule struct {
 	Slug    string
