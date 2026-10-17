@@ -55,6 +55,142 @@ Track test suite changes, fixes, and improvements for agenthub.
   regression.
 - `tsc --noEmit -p tsconfig.json` rc 0 over the changed project.
 
+## 2026-10-17 - an agy seat mounts the agenthub MCP server (client, branch 4genthub-min/agy-mcp)
+Hub task `223f8b12`. The client entry that rides with the code is
+`agenthub_client/CHANGELOG/2026-10-17--an-agy-seat-mounts-the-agenthub-mcp-server.md`.
+
+- `agenthub_client/rust/agenthub-runtime/src/supervisor/mod.rs::tests::the_agy_mcp_server_joins_the_global_file_and_leaves_the_rest`
+  (new): the entry the runtime owns in agy's GLOBAL `~/.gemini/config/mcp_config.json`, and everything about it
+  that can go wrong, in one case - it is added BESIDE another tool's server (the owner's own `deepseek` stdio
+  entry, in the fixture as it is on the machine) and that entry is untouched; the entry's own shape
+  (`command: "sh"`, `disabled: false`, `args[1]` carrying `mcp-proxy --transport streamablehttp`,
+  `"$AGENTHUB_URL/mcp"`, `Bearer $AGENTHUB_TOKEN`, and the `[ -n "$AGENTHUB_SEAT" ]` gate that keeps a
+  non-seat session from starting a bridge); a second install does not rewrite the file; and both refusals leave
+  the file alone byte for byte (a file that is not a JSON object, and an `mcpServers` that is not one).
+  RED FIRST, measured at the base `f5f102d` with ONLY the tests applied: 6 compile errors, all of them missing
+  new symbols - 4 × `cannot find function install_agy_mcp_server`, 1 × `install_agy_start_files`, 1 ×
+  `cannot find value AGY_MCP_SERVER`. Mutations on the fixed tree, each caught by a NAMED assertion: dropping
+  `disabled: false` → `left: Null, right: false`; `--transport sse` → the transport assertion; `if true`
+  instead of the seat check → the seat-check assertion.
+- `...::tests::an_agy_start_installs_the_guard_hook_and_the_mcp_server` (new): the PAIRING - an agy start
+  installs BOTH of agy's own files, so a seat cannot come up guarded but unable to call the cloud. This is the
+  only test that bites when `install_agy_mcp_server` is removed from `install_agy_start_files` (measured: that
+  mutation leaves the entry test green and fails this one with `no MCP server was installed`).
+- NOT COVERED, named rather than implied: the `Agy` arm's one-line call of `install_agy_start_files` has no test
+  of its own - covering it means starting a real agy pane inside the suite (a 220 MB CLI that can spend the
+  owner's quota), and `start_seat` reads `HOME` from the process environment, so a test would have to move
+  `HOME` for every test in the process. The same gap exists for the guard hook's install, added 2026-10-15.
+- Run at the tip (branch `4genthub-min/agy-mcp`, base `f5f102d`, from `wt/go-dev-client`): `cargo test
+  --offline` = 145 unit + 15 `seat_guard` + 1 `umask` = 161 passed, 0 failed; `go vet ./...` rc 0;
+  `gofmt -l internal/ cmd/` clean; `go test -count=1 ./...` = 32 packages ok, 0 FAIL.
+- SMOKE, both halves, with the string the code itself builds (extracted from the const in the source, not
+  retyped): `HOME=<scratch> agy mcp list` reads the entry back as
+  `agenthub_http  stdio  enabled  sh -c if [ -n "$AGENTHUB_SEAT" ]; …`, i.e. agy accepts the document; and the
+  same line, run with this seat's own environment, answered an MCP `initialize` with
+  `agenthub - AI Orchestration Platform 1.22.0` and `tools/list` with the NINE agenthub tools (`manage_task`,
+  `manage_subtask`, `manage_context`, `manage_project`, `manage_git_branch`, `manage_seat`, `call_seat`,
+  `submit_feedback`, `manage_connection`). What a live agy seat adds is that agy hands its environment to the
+  spawned server and speaks stdio to it - that is AC1, and it needs the owner's agy seat.
+
+## 2026-10-17 - the held text names its sender and goes back to them (client, branch 4genthub-min/send-held)
+Hub task `c94cecfc`. The client entry that rides with the code is
+`agenthub_client/CHANGELOG/2026-10-17--the-held-text-names-its-sender-and-goes-back-to-them.md`.
+
+- `agenthub_client/rust/agenthub-runtime/tests/held_send.rs` (new file, Linux):
+  `a_text_sent_to_a_seat_that_is_mid_turn_is_delivered_when_the_turn_ends` - the whole path through the REAL
+  binary: a real mailbox socket (`replyTo` and all), a real runner, and a child on PATH (`omp`) that opens a
+  turn, refuses what arrives inside it, and ends that turn when the probe says so. It asserts the refusal is
+  HELD AND PUBLISHED (the state file reads `working` with `held: the text from <session> (send) waits for the
+  next free turn`), that the text reaches the agent after the turn ends under a `runner-held-<pid>-<n>` id with
+  its body unchanged, that the seat log's delivery line names the sender's session and the verb, and that the
+  seat is not left `blocked`. RED FIRST, measured in a detached worktree at this branch's base `131796e`
+  (`/tmp/redcheck-held`, the case copied in, `cargo test --test held_send`): it FAILS on the publication (`the
+  runner published the open turn` - the state file stays `idle` while a text waits, which is the silence the 19
+  measured give-up lines left behind) and, with that one assertion removed, on the origin naming
+  (`delivering the text send-probe-2 refused (attempt 1/3)` where the fix names
+  `agenthub--demo--lead (send)`). Green at the fix: 1 passed. Two traps this case documents in place: the
+  runner's `get_state` answer writes `idle` AFTER a `turn_start` printed during the handshake (so the probe
+  waits for the handshake before it sends anything - only a bare-socket write can race it, no live sender can),
+  and a red-check that points `CARGO_TARGET_DIR` at the shared `target/` makes cargo read the unfixed build as
+  fresh.
+- `agenthub_client/rust/agenthub-runtime/src/runner/mod.rs::tests::a_held_text_past_its_own_bound_goes_back_to_its_sender`
+  (new): the TEXT's own count reaches the bound - not the resume ladder's, which is what dropped a text on its
+  first offer once three unrelated attempts had been spent on that seat - and the sender's mailbox receives it
+  whole with the reason.
+- `agenthub_client/rust/agenthub-runtime/src/runner/mod.rs::tests::a_hand_back_with_no_addressable_sender_keeps_the_text_held`
+  (new): an `Origin` with no session publishes and re-queues the text at the FRONT with its count reset; the
+  text is never the price of a sender this runtime cannot address.
+- `agenthub_client/rust/agenthub-runtime/src/runner/mod.rs::tests::a_held_delivery_that_cannot_reach_the_agent_keeps_the_text`
+  (new): a channel that is gone leaves the text held and the pending slot clear, where the old code cleared the
+  pending slot and let the text fall out of the queue.
+- `agenthub_client/rust/agenthub-runtime/src/runner/mod.rs::tests::a_refused_prompt_is_held_and_delivered_when_the_turn_ends`
+  and `the_held_queue_is_bounded_and_names_the_depth_it_refused` (updated to the `HeldText`/`Origin` shape):
+  their published sentences now have to name the origin, and the queue's own bound and order are unchanged.
+- `agenthub_client/internal/clientruntime/sendseam_test.go::TestSendTextArgsNamesTheOriginAndOmitsAnUnknownSender`
+  (new): the request one message travels in carries `from`/`verb` when the caller has a session, and no `from`
+  key at all when it does not - a blank name is not a name.
+- `agenthub_client/internal/clientseat/send_transport_test.go::TestSendGoesThroughTheRuntimeSocket` (extended):
+  the payload a seat's send puts on the runtime socket names the origin beside the target and the body.
+- THE REVIEWER'S GATE (its verdict is `seats/reviewer/GATE-send-held-6977495.md`) PASSED with one required
+  before merge, and the tip commit carries it - the tip is now `191fbc9`, on `b812c7b`, on main `46b8b6e`
+  (it was `9f67088` on `f5f102d`, and `47c9176` / `03f3544` / `6977495` before the two re-cuts; the reviewer
+  passed `03f3544` at `158/0`, `9f67088` at `164/0`, and `191fbc9` at `166/0`, the last count PREDICTED
+  before it ran): the daemon->runner
+  STAMPING was asserted
+  nowhere - deleting the two lines in `supervisor::deliver_text` that stamp `from`/`verb` onto the frame left
+  the whole suite green (157/0) - so
+  `agenthub_client/rust/agenthub-runtime/src/supervisor/mod.rs::tests::a_multi_line_message_reaches_a_runner_seat_as_one_text_frame`
+  now asserts `frame["from"]`/`frame["verb"]` (re-measured RED with the two lines deleted:
+  `left: Null, right: "agenthub--demo--principal"`), and the CLI's own origin is a pure function
+  `main::send_origin_from` with both no-session cases pinned by
+  `main::tests::the_cli_send_stamps_this_shells_session_and_the_send_verb` (new).
+- Also in the tip commit: each client carrier names the verb that CARRIED its frame - `SendOptions.Verb`,
+  `Client.SendText`/`SendTextToSeat` and `DeliverToSession` take it, and the rig's `say`/`abort`, the `wake`,
+  `messages` and the restore `brief` pass their own word instead of every one of them claiming to be `send`.
+  `internal/clientlifecycle/supervisor_test.go` pins the two rig verbs beside their text.
+- At this change, from `wt/go-dev-scope` (client branch `4genthub-min/send-held`, tip `191fbc9`, on
+  `b812c7b`, on main `46b8b6e`): `cargo test` in `rust/agenthub-runtime` = **166 passed, 0 failed** (149 unit
+  + 17 across `tests/`: 1 `held_send`, 15 `seat_guard`, 1 `umask_at_the_entry`; the 2 extra unit tests are
+  the new base's own agy-mount tests); `go vet ./...` rc 0; `gofmt -l internal/ cmd/` clean;
+  `go test -count=1 ./...` = 32 packages ok, 0 fail. The client entry that rides with the code and the
+  commit's own message both name THIS base and THIS measurement.
+  The code is provably the gated code: the patch multisets `f5f102d..ae2b815` vs `46b8b6e..b812c7b` are
+  IDENTICAL (1318 +/- lines), and `ae2b815..9f67088` vs `b812c7b..191fbc9` have the same line count (177) with
+  only 2 differing lines, both doc text (the base name and the count).
+  `cargo fmt --check` is dirty across this crate BEFORE this change too (pre-change blobs and files this branch
+  never touched are listed), so it is not a signal for this lane.
+
+## 2026-10-17 - the pane pid that was never read, and the refusal that named no kind (client, branch 4genthub-min/lane-rebase)
+- `agenthub_client/rust/agenthub-runtime/src/pty/mod.rs`, `supervisor/mod.rs`, `hooks/mod.rs` (commit
+  `dce05c8`): `pty::pane_pid_tests` (5 cases) - `an_unparsable_answer_is_a_failed_read_not_a_pid_of_zero`,
+  `a_failed_read_becomes_words_and_a_successful_one_becomes_a_pid`, `an_unknown_pid_describes_its_failure`,
+  `a_session_that_is_not_there_is_refused_in_tmuxs_own_words`, `a_live_session_answers_a_pid_and_the_record_describes_it`
+  - plus `supervisor::tests::a_transient_session_read_does_not_kill_the_seat` (new, forces the race with a
+  `tmux` shim that fails the FIRST `has-session` for its test's session only) and two assertions added to
+  `a_dead_non_omp_seat_is_refused_by_its_real_cause` (the refusal names TWO AGREEING READS and no longer says
+  `waited up to`, the wait being measured from a monotonic `Instant`).
+- `agenthub_client/internal/clientseat/sendpolicy_test.go`, `internal/commpolicy/policy_test.go` (commit
+  `f5f102d`): `TestASendNoLinkAuthorizesIsRefusedAndNotDelivered` and
+  `TestASendWithNoIntentIsRefusedByADelegatesToLink` now require the refusal to name the kind that would have
+  licensed the send (`collaborates_with`, `declares no link to`, `task (delegates_to)`), and `policy_test.go`
+  carries `wantLicense` per case.
+- Both commits are the LANE REBASED ONTO MAIN (`131796e`) from its pre-rebase shas `4ada3a4` / `8ba0f7d`: the
+  rebase resolved one additive `pty/mod.rs` conflict (main's `ensure_server` and the lane's `PaneRecord` both
+  kept) and needed three adaptations the textual auto-merge could not see - `pid: Some(1)` at main's new
+  `hooks/mod.rs` call site (a compile error otherwise), and the lane's race test now takes main's two new
+  guards: `seat_worktree()` (the seat-cwd rule: a seat with no directory of its own does not start) and
+  `pty::test_servers::own()` (`TMUX_TMPDIR` is process-wide and pane tests take the root in turn - without it
+  the case failed at the 1500 ms deadline under the full suite and passed alone).
+- Red first, measured by go-dev at the rebased tip `f5f102d` from `wt/go-dev-client` (2026-10-17):
+  `cargo test --offline` = 143 unit + 15 `seat_guard` + 1 `umask_at_the_entry` passed, 0 failed; `go vet ./...`
+  clean; `gofmt -l internal/ cmd/` clean; `go test -count=1 ./...` = 32 packages ok, 0 FAIL. FALSIFIED:
+  with the re-read disabled (`if false &&` at `supervisor/mod.rs:755`) the transient-read case fails - a seat
+  killed ~11 ms after launch by ONE failed read - and restored it passes with the file's blob and the tree
+  matching the commit; with a `go test -overlay` carrying `f5f102d^:internal/clientseat/sendpolicy.go` both
+  refusal cases fail on the absent `collaborates_with` / `declares no link to` / `task (delegates_to)`, the
+  pre-fix message reading `... may not send a notice to reviewer (no link). The room's own declared links are
+  what license a send`.
+
 ## 2026-10-17 - the switch verb reads the machine, not only the cloud (client, main)
 
 - `agenthub_client/internal/clientsync/switchverb_test.go`: `TestSwitchRuntimeTheCloudAlreadyRecordsStillSkipsTheSeat` - the 2026-10-16 22:47Z incident, pinned: the cloud's occupant record says `agy` while the RUNTIME reports the seat on `omp`, and `--runtime agy --model gemini-3.8-flash-low --apply restart` must make NO runtime call at all and answer `applied=manual`. On the pre-fix code it records `set-model` then `restart-fresh` and answers `applied=restart` - the restart that killed the seat (measured by removing the fix and running the one test). `TestSwitchRestartStillRunsOnTheRuntimeTheMachineNames` is the boundary the fix must not cross: the runtime names the requested runtime, so `--apply restart` still sets the model and restarts fresh, as it always did. The `switchSeatStub` harness took a third seam, `switchRoomSeats`, so a test drives the machine's own reading beside the cloud's.
