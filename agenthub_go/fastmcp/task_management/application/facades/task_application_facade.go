@@ -1300,6 +1300,13 @@ func (f *TaskApplicationFacade) DeleteTask(ctx context.Context, taskID string, u
 
 // CompleteTask is complete_task.
 func (f *TaskApplicationFacade) CompleteTask(ctx context.Context, taskID string, completionSummary, testingNotes *string, userID *string) *entities.OrderedMap[any] {
+	return f.CompleteTaskWithCorrection(ctx, taskID, completionSummary, testingNotes, userID, false)
+}
+
+// CompleteTaskWithCorrection is CompleteTask with the caller's explicit statement that it is
+// REPLACING a result line it does not own. Only `manage_task` carries the flag; every other entry
+// point completes without it, which is the rule the already-done branch enforces.
+func (f *TaskApplicationFacade) CompleteTaskWithCorrection(ctx context.Context, taskID string, completionSummary, testingNotes *string, userID *string, correction bool) *entities.OrderedMap[any] {
 	fail := func(err error) *entities.OrderedMap[any] {
 		if facadeIsTaskNotFound(err) || facadeIsValueError(err) {
 			return facadeFail("complete", err.Error())
@@ -1309,7 +1316,7 @@ func (f *TaskApplicationFacade) CompleteTask(ctx context.Context, taskID string,
 	if strings.TrimSpace(taskID) == "" {
 		return fail(value_objects.ValueErrorf("Task ID is required"))
 	}
-	result, err := f.deps.CompleteTask.Execute(ctx, taskID, completionSummary, testingNotes, nil)
+	result, err := f.deps.CompleteTask.ExecuteWithCorrection(ctx, taskID, completionSummary, testingNotes, nil, correction)
 	if err != nil {
 		return fail(err)
 	}

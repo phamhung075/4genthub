@@ -363,6 +363,13 @@ func (r *ORMTaskRepository) taskRepoModelToEntity(ctx context.Context, s databas
 		cs := row.CompletionSummary
 		entity.CompletionSummary = &cs
 	}
+	// WHO completed the task and WHEN. Empty is "no recorded author" - a row completed before the
+	// column existed - and stays nil so the entity can tell it from an author named "".
+	entity.CompletedAt = row.CompletedAt
+	if row.CompletedBy != "" {
+		cb := row.CompletedBy
+		entity.CompletedBy = &cb
+	}
 	return entity, nil
 }
 
@@ -399,6 +406,14 @@ func (r *ORMTaskRepository) taskRepoEntityToModelDict(task *entities.Task) Kwarg
 	m.Set("progress_percentage", taskRepoOverallProgressValue(task))
 	if task.CompletionSummary != nil {
 		m.Set("completion_summary", *task.CompletionSummary)
+	}
+	// completed_at and completed_by are written only when the entity carries them, so a save that
+	// touched neither (every field update) leaves the recorded attribution where it is.
+	if task.CompletedAt != nil {
+		m.Set("completed_at", *task.CompletedAt)
+	}
+	if task.CompletedBy != nil {
+		m.Set("completed_by", *task.CompletedBy)
 	}
 	return m
 }

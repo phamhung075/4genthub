@@ -157,10 +157,16 @@ func (f *OperationFactory) handleCRUDOperation(ctx context.Context, operation st
 		return result
 
 	case "complete":
-		allowed := stringSet("task_id", "completion_summary", "testing_notes")
+		allowed := stringSet("task_id", "completion_summary", "testing_notes", "correction")
 		filtered := filterKeys(kwargs, allowed)
+		// `correction` is an explicit statement, so only a real boolean is one: a string "true" is
+		// not, and is treated as absent.
+		var correction *bool
+		if v, ok := filtered["correction"].(bool); ok {
+			correction = &v
+		}
 		return f.crudHandler.CompleteTask(ctx, facade, kwStringValue(filtered, "task_id"),
-			kwString(filtered, "completion_summary"), kwString(filtered, "testing_notes"))
+			kwString(filtered, "completion_summary"), kwString(filtered, "testing_notes"), correction)
 
 	case "resume":
 		// resume takes one input - the task the brief is about - and returns the brief the facade

@@ -41,6 +41,10 @@ func (noopRecorder) RecordGateVerdict(context.Context, string, map[string]any) (
 	return &entities.TaskEvent{Kind: entities.TaskEventKindGateVerdict}, nil
 }
 
+func (noopRecorder) ActorOf(context.Context) (entities.TaskEventActorKind, string, bool) {
+	return entities.TaskEventActorHuman, "test-user", true
+}
+
 // TestAStatusWriteWithoutALedgerIsRefused is the acceptance for the optional-ledger defect: the
 // silent path must be impossible. A use case built without WithLedger does not save and does not
 // succeed - it fails, naming the seam.

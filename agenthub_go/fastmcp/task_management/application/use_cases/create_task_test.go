@@ -52,7 +52,7 @@ func createTaskMustID(t *testing.T, value string) value_objects.TaskId {
 
 func createTaskResponseKeys() []string {
 	return []string{"id", "title", "description", "status", "priority", "details",
-		"completion_summary", "testing_notes", "estimatedEffort",
+		"completion_summary", "testing_notes", "completed_at", "completed_by", "estimatedEffort",
 		"assignees", "acceptance_criteria", "scope", "labels", "dependencies", "subtasks", "dueDate", "created_at", "updated_at",
 		"git_branch_id", "project_id", "context_id", "context_data", "dependency_relationships",
 		"progress_percentage", "subtask_count", "completed_subtasks"}

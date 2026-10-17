@@ -158,6 +158,12 @@
      "title": "Testing Notes",
      "type": "string"
     },
+    "correction": {
+     "default": null,
+     "description": "[OPTIONAL] Replace the result line of a task that is ALREADY done, when the caller is not the seat that wrote it. The previous line is kept as a superseded progress entry, attributed and timed. Optional for 'complete' action. Default: false",
+     "title": "Correction",
+     "type": "boolean"
+    },
     "query": {
      "default": null,
      "description": "[OPTIONAL] Search terms for finding tasks. Required for 'search' action. Searches in title, description, and labels. Example: 'authentication jwt'. Note: DEPRECATED for dependency operations - use 'dependency_id' instead.",

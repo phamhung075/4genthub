@@ -106,6 +106,19 @@ func (uc *CompleteTaskUseCase) Execute(
 	testingNotes *string,
 	nextRecommendations any,
 ) (*entities.OrderedMap[any], error) {
+	return uc.ExecuteWithCorrection(ctx, taskID, completionSummary, testingNotes, nextRecommendations, false)
+}
+
+// ExecuteWithCorrection is Execute with the one decision the already-done branch needs: whether the
+// caller has said, explicitly, that it is REPLACING the result line another caller wrote.
+func (uc *CompleteTaskUseCase) ExecuteWithCorrection(
+	ctx context.Context,
+	taskID any,
+	completionSummary *string,
+	testingNotes *string,
+	nextRecommendations any,
+	correction bool,
+) (*entities.OrderedMap[any], error) {
 	taskIDStr := value_objects.PyStr(taskID)
 
 	domainTaskID, err := value_objects.NewTaskId(taskIDStr)
@@ -122,7 +135,7 @@ func (uc *CompleteTaskUseCase) Execute(
 	}
 
 	if task.Status.IsDone() {
-		return uc.completeAlreadyDoneTask(ctx, task, taskIDStr, completionSummary, testingNotes, nextRecommendations)
+		return uc.completeAlreadyDoneTask(ctx, task, taskIDStr, completionSummary, testingNotes, nextRecommendations, correction)
 	}
 
 	response, early, err := uc.executeCore(ctx, task, taskIDStr, completionSummary, testingNotes, nextRecommendations)
@@ -212,7 +225,21 @@ func (uc *CompleteTaskUseCase) Execute(
 	return response, nil
 }
 
-// completeAlreadyDoneTask mirrors the `task.status.is_done()` branch.
+// completeAlreadyDoneTask is the `task.status.is_done()` branch.
+//
+// IT DOES NOT QUIETLY REWRITE THE RESULT LINE (board task ca541a97). The completion summary IS the
+// ledger's result line - a task with no recorded result is not done - so a second `complete` that
+// replaced it let any caller holding an id overwrite another seat's evidence, with no record of who
+// wrote it or when. The write itself is defensible (correcting a bad line is reasonable); the
+// SILENCE was the defect. Three rules now hold:
+//
+//   - Nothing new is a NO-OP: a complete that carries no summary, or the summary the row already
+//     holds, writes nothing - the old code saved and moved updated_at anyway, which told every
+//     reader the task had changed.
+//   - A REPLACEMENT is allowed only for the caller the line is attributed to, or with the explicit
+//     correction flag. Anyone else is refused, and the refusal names the author.
+//   - A replacement KEEPS the old line: it is written as a `progress` ledger entry, attributed to
+//     the seat that made the replacement, carrying the previous text, its author and its time.
 func (uc *CompleteTaskUseCase) completeAlreadyDoneTask(
 	ctx context.Context,
 	task *entities.Task,
@@ -220,38 +247,124 @@ func (uc *CompleteTaskUseCase) completeAlreadyDoneTask(
 	completionSummary *string,
 	testingNotes *string,
 	nextRecommendations any,
+	correction bool,
 ) (*entities.OrderedMap[any], error) {
-	if completeTaskNonEmpty(completionSummary) {
-		task.CompletionSummary = completionSummary
+	stored := ""
+	if task.CompletionSummary != nil {
+		stored = *task.CompletionSummary
+	}
+	requested := ""
+	if completionSummary != nil {
+		requested = *completionSummary
+	}
 
-		if fac := uc.newFacade(task.GitBranchID, nil); fac != nil {
-			completionTime := time.Now().UTC()
-			lastUpdate := value_objects.IsoFormat(completionTime)
-			fac.UpdateContext("task", taskIDStr,
-				completeTaskCompletionContextUpdate(*completionSummary, nextRecommendations, testingNotes, &lastUpdate),
-				true)
+	// Nothing to say, or the same thing again: no write at all.
+	if strings.TrimSpace(requested) == "" || requested == stored {
+		return completeTaskAlreadyDoneResponse(task, taskIDStr, "Task already completed"), nil
+	}
+
+	actorKind, actorID, hasActor := uc.actorOf(ctx)
+	if !hasActor {
+		return nil, errors.New("completion: no actor to attribute the result line to - the request named no seat and the ledger has no user")
+	}
+	_ = actorKind
+
+	owner := ""
+	if task.CompletedBy != nil {
+		owner = *task.CompletedBy
+	}
+	if owner == "" {
+		// A row completed before attribution was recorded. No caller can prove it wrote the line,
+		// so replacing it needs the explicit flag rather than a guess.
+		if !correction {
+			return nil, value_objects.ValueErrorf(
+				"Task %s is already done and its result line has no recorded author (it predates completion attribution); pass correction=true to replace it - the previous line is kept as a superseded ledger entry",
+				taskIDStr)
 		}
+	} else if owner != actorID && !correction {
+		return nil, value_objects.ValueErrorf(
+			"Task %s is already done and its result line is attributed to %s; pass correction=true to replace it - the previous line is kept as a superseded ledger entry",
+			taskIDStr, owner)
 	}
 
-	if err := task.Touch("task_completed_with_summary"); err != nil {
-		return nil, err
+	previousBy := ""
+	if task.CompletedBy != nil {
+		previousBy = *task.CompletedBy
 	}
-	if _, err := uc.taskRepository.Save(ctx, task); err != nil {
-		return nil, err
-	}
-
-	message := "Task already completed"
-	if completeTaskNonEmpty(completionSummary) {
-		message = "Task already completed, summary updated"
+	previousAt := ""
+	if task.CompletedAt != nil {
+		previousAt = value_objects.IsoFormat(*task.CompletedAt)
 	}
 
+	if fac := uc.newFacade(task.GitBranchID, nil); fac != nil {
+		completionTime := time.Now().UTC()
+		lastUpdate := value_objects.IsoFormat(completionTime)
+		fac.UpdateContext("task", taskIDStr,
+			completeTaskCompletionContextUpdate(requested, nextRecommendations, testingNotes, &lastUpdate),
+			true)
+	}
+
+	task.CompletionSummary = completionSummary
+	task.CompletedBy = &actorID
+	completedAt := time.Now().UTC().Truncate(time.Microsecond)
+	task.CompletedAt = &completedAt
+
+	// The superseded line, attributed and timed, rides the same transaction as the row it stopped
+	// describing: a note recorded separately could outlive, or precede, a save that rolled back.
+	note := completeTaskSupersededNote(previousBy, previousAt, stored, actorID)
+	save := func(ctx context.Context) error {
+		_, err := uc.taskRepository.Save(ctx, task)
+		return err
+	}
+	if uc.ledger.Enabled() {
+		if err := uc.ledger.Save(ctx, save, taskIDStr, []LedgerProgress{
+			{Content: note, Timestamp: value_objects.IsoFormat(completedAt)},
+		}); err != nil {
+			return nil, err
+		}
+	} else {
+		return nil, ErrLedgerNotWired
+	}
+
+	return completeTaskAlreadyDoneResponse(task, taskIDStr, "Task already completed, summary updated"), nil
+}
+
+// completeTaskSupersededNote is the ledger entry a replaced result line leaves behind. The actor and
+// the entry's own timestamp say WHO replaced it and WHEN; the text says what it replaced, whose it
+// was, and when that line was written - so the previous line is legible after it is gone from the
+// column.
+func completeTaskSupersededNote(previousBy, previousAt, previousSummary, replacedBy string) string {
+	author := previousBy
+	if author == "" {
+		author = "an unrecorded caller"
+	}
+	when := previousAt
+	if when == "" {
+		when = "an unrecorded time"
+	}
+	return fmt.Sprintf("completion summary superseded by %s: previous line (%s, %s): %s",
+		replacedBy, author, when, previousSummary)
+}
+
+// completeTaskAlreadyDoneResponse is the answer both the no-op and the replacement give.
+func completeTaskAlreadyDoneResponse(task *entities.Task, taskIDStr, message string) *entities.OrderedMap[any] {
 	response := entities.NewOrderedMap[any]()
 	response.Set("success", true)
 	response.Set("task_id", taskIDStr)
 	response.Set("message", message)
 	response.Set("status", task.Status.String())
 	response.Set("was_already_completed", true)
-	return response, nil
+	return response
+}
+
+// actorOf names who this request is attributed to, from the ledger recorder that settles attribution
+// for every other write in this flow. Without a wired ledger there is no authority to name anyone,
+// and the completion gate refuses rather than guessing.
+func (uc *CompleteTaskUseCase) actorOf(ctx context.Context) (entities.TaskEventActorKind, string, bool) {
+	if !uc.ledger.Enabled() || uc.ledger.Ledger == nil {
+		return "", "", false
+	}
+	return uc.ledger.Ledger.ActorOf(ctx)
 }
 
 // executeCore is the body of Python's outer try block; `early` reports a direct
@@ -425,6 +538,15 @@ func (uc *CompleteTaskUseCase) executeCore(
 		}
 		return nil, false, err
 	}
+
+	// WHO wrote the result line and WHEN. Recorded here, on the transition into done, so a later
+	// complete of the same task has an author to compare the caller against - the row had the
+	// completed_at column all along and nothing wrote it (board task ca541a97).
+	if _, actorID, ok := uc.actorOf(ctx); ok {
+		task.CompletedBy = &actorID
+	}
+	completedAt := time.Now().UTC().Truncate(time.Microsecond)
+	task.CompletedAt = &completedAt
 
 	// Update context with completion information.
 	if completeTaskNonEmpty(completionSummary) {

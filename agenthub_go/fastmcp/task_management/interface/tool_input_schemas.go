@@ -37,6 +37,7 @@ var toolParamSpecs = map[string][]toolParam{
 		{"context_id", "[OPTIONAL] ", `{"type":"string"}`},
 		{"completion_summary", "[OPTIONAL] ", `{"type":"string"}`},
 		{"testing_notes", "[OPTIONAL] ", `{"type":"string"}`},
+		{"correction", "[OPTIONAL] ", `{"type":"boolean"}`},
 		{"query", "[OPTIONAL] ", `{"type":"string"}`},
 		{"limit", "[OPTIONAL] ", `{"type":"integer"}`},
 		{"offset", "[OPTIONAL] ", `{"type":"integer"}`},

@@ -101,6 +101,10 @@ func (unmovedLedgerRecorder) RecordGateVerdict(context.Context, string, map[stri
 	return &entities.TaskEvent{Kind: entities.TaskEventKindGateVerdict}, nil
 }
 
+func (unmovedLedgerRecorder) ActorOf(context.Context) (entities.TaskEventActorKind, string, bool) {
+	return entities.TaskEventActorHuman, "test-user", true
+}
+
 type passThroughTx struct{}
 
 func (passThroughTx) Transaction(ctx context.Context, fn func(context.Context) error) error {

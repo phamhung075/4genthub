@@ -96,6 +96,7 @@ var ManageTaskParametersDescription = map[string]string{
 	"context_id":            "Context identifier for task. Optional for 'update' action. Usually same as task_id. Used for context synchronization and validation. Auto-created during task creation.",
 	"completion_summary":    "DETAILED summary of what was accomplished. Highly recommended for 'complete' action. Example: 'Implemented JWT auth with 2FA support, added password reset flow, integrated with existing user service'",
 	"testing_notes":         "Description of testing performed. Optional for 'complete' action. Example: 'Added unit tests for auth service, manual testing of login/logout flows, verified token expiry'",
+	"correction":            "Replace the result line of a task that is ALREADY done, when the caller is not the seat that wrote it. The previous line is kept as a superseded progress entry, attributed and timed. Optional for 'complete' action. Default: false",
 	"include_context":       "Include vision insights and recommendations (true/false). Optional for 'get' and 'next' actions. Default: false. Set true for AI guidance.",
 	"limit":                 "Maximum number of results. Optional for 'list' and 'search'. Default: 50. Range: 1-100",
 	"query":                 "Search terms for finding tasks. Required for 'search' action. Searches in title, description, and labels. Example: 'authentication jwt'. Note: DEPRECATED for dependency operations - use 'dependency_id' instead.",
@@ -148,6 +149,7 @@ func GetManageTaskParameters() *entities.OrderedMap[any] {
 	properties.Set("context_id", stringProp("context_id"))
 	properties.Set("completion_summary", stringProp("completion_summary"))
 	properties.Set("testing_notes", stringProp("testing_notes"))
+	properties.Set("correction", boolProp("correction"))
 	properties.Set("query", stringProp("query"))
 	properties.Set("limit", intProp("limit"))
 	properties.Set("offset", intProp("offset"))
