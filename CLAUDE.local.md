@@ -180,34 +180,18 @@ GLOBAL (per-user) → PROJECT → BRANCH → TASK
 ### Core Principle
 > **AI documentation should be curated, not cluttered.** Every document must provide clear value - teaching architecture, solving problems, or guiding decisions. Anything else degrades AI performance.
 
-### ai_docs Structure (17 Standard Folders)
-```
-ai_docs/
-├── _absolute_docs/          # File-specific docs (marks importance)
-├── _obsolete_docs/          # Auto-archived when source deleted
-├── index.json               # Auto-generated index (by hooks)
-├── api-integration/         # API docs
-├── authentication/          # Auth system docs
-├── claude-code/             # Claude Code specific
-├── context-system/          # Context management
-├── core-architecture/       # System architecture
-├── development-guides/      # Developer resources
-├── issues/                  # Issue tracking
-├── keycloak/                # Keycloak integration
-├── migration-guides/        # Version migrations
-├── operations/              # Deployment & config
-├── reports-status/          # Status reports
-├── setup-guides/            # Setup instructions
-├── testing-qa/              # Testing docs
-└── troubleshooting-guides/  # Problem resolution
-```
+### ai_docs/ Structure
+Two commands are the layout, so this file copies nothing that can age:
+- Folders: `git ls-tree --name-only HEAD:ai_docs`
+- Documents: `git ls-files 'ai_docs/**/*.md'`
+
+Kebab-case is the one rule the tree cannot restate: every ai_docs subfolder is lowercase-with-dashes.
 
 ### Key Features for AI Agents
 
 **1. Fast Context Access**
-- **index.json**: Machine-readable index with metadata, hashes, timestamps
-- **Automatic updates**: Hooks update index.json when docs change
-- **Quick lookup**: Find relevant documentation via index
+- **The tracked tree is the index**: the documentation index is retired (`ai_docs/index.json`, 2026-10-17) - the two commands above list every folder and document that exists.
+- **Quick lookup**: find relevant documentation with those two commands, not a stored index.
 
 **2. Selective Documentation Enforcement**
 - **_absolute_docs pattern**: `ai_docs/_absolute_docs/path/to/file.ext.md` documents `/path/to/file.ext`
@@ -216,7 +200,7 @@ ai_docs/
 - **f_index.md**: Mark entire folders as important
 
 **3. Automatic Management**
-- **Post-tool hook**: Updates index.json after ai_docs changes
+- **Post-tool hook**: the external 4genthub-hooks client writes its own untracked `index.json` after ai_docs changes; nothing in this tree reads or tracks it.
 - **Obsolete tracking**: Moves docs to _obsolete_docs when source deleted
 - **Warning system**: Non-blocking warnings for missing documentation
 
@@ -228,7 +212,7 @@ ai_docs/
 | **Document files** | Must be in `ai_docs/` (except 4 allowed root files) |
 | **Kebab-case folders** | All ai_docs subfolders use lowercase-with-dashes |
 | **Root .md files** | ONLY 4 allowed: README.md, TEST-CHANGELOG.md, AGENTS.md, CLAUDE.local.md |
-| **Index files** | Auto-generated index.json (not index.md) |
+| **Index files** | The tracked tree is the index; `ai_docs/index.json` is retired (2026-10-17) |
 
 ---
 
