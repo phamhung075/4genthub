@@ -27,9 +27,10 @@ import (
 
 const (
 	// The message itself: long enough for a real instruction, short enough that a seat's prompt and a
-	// page can each hold one. The bound is the FRICTION CHANNEL'S OWN, so the two seat-keyed channels
-	// do not answer differently about what a seat-size text is.
-	SeatMessageMaxText = 2000
+	// page can each hold one. This bound was tied to the friction channel's own until 2026-10-17, when
+	// the owner's send to a seat was refused at 2000: the message path moved and the friction channel
+	// (SeatFeedbackMaxText) did not, so the two seat-keyed channels answer independently now.
+	SeatMessageMaxText = 10000
 
 	// The pull's page: the default a caller gets when it names no limit, and the hard clamp that
 	// stops any caller taking a whole backlog in one call.
