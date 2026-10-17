@@ -35,7 +35,12 @@ import { Button } from '../ui/button';
 import { cn } from '../../lib/utils';
 import type { SessionEvent } from '../../types/sessionTypes';
 import type { SessionStreamStatus } from '../../hooks/useSessions';
-import { sessionSteps, type SessionStep, type SessionStepKind } from '../../utils/sessionSteps';
+import {
+  sessionSteps,
+  type LogicSchema,
+  type SessionStep,
+  type SessionStepKind,
+} from '../../utils/sessionSteps';
 
 interface SessionLiveViewProps {
   sessionName: string | null;
@@ -105,6 +110,23 @@ const Body: React.FC<{ text: string; mono?: boolean }> = ({ text, mono }) => {
   );
 };
 
+// The four fields a thinking step carries, in the schema's pinned order. Compact on purpose: one row
+// per field, the key in mono, the value in the reading face.
+const LOGIC_FIELDS: Array<keyof LogicSchema> = ['facts', 'rule', 'decision', 'next'];
+
+const LogicSchemaView: React.FC<{ schema: LogicSchema }> = ({ schema }) => (
+  <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1">
+    {LOGIC_FIELDS.map((field) => (
+      <React.Fragment key={field}>
+        <dt className="font-mono text-xs leading-5 text-violet-600 dark:text-violet-400">{field}</dt>
+        <dd className="whitespace-pre-wrap break-words text-sm leading-5 text-base-primary">
+          {schema[field]}
+        </dd>
+      </React.Fragment>
+    ))}
+  </dl>
+);
+
 const StepCard: React.FC<{ step: SessionStep }> = ({ step }) => {
   const style = KIND_STYLE[step.kind];
   const Icon = style.icon;
@@ -149,14 +171,17 @@ const StepCard: React.FC<{ step: SessionStep }> = ({ step }) => {
             Content withheld on the machine that ran it{step.body ? `: ${step.body}` : ''}.
           </p>
         ) : step.kind === 'thinking' ? (
-          <details>
-            <summary className="flex cursor-pointer list-none items-center gap-1 text-xs text-base-secondary">
-              <ChevronRight className="h-3 w-3" /> Show reasoning
-            </summary>
-            <div className="mt-1 italic text-base-secondary">
-              <Body text={step.body} />
-            </div>
-          </details>
+          <>
+            {step.logic && <LogicSchemaView schema={step.logic} />}
+            <details className={step.logic ? 'mt-1' : undefined}>
+              <summary className="flex cursor-pointer list-none items-center gap-1 text-xs text-base-secondary">
+                <ChevronRight className="h-3 w-3" /> Show reasoning
+              </summary>
+              <div className="mt-1 italic text-base-secondary">
+                <Body text={step.body} />
+              </div>
+            </details>
+          </>
         ) : step.kind === 'tool_call' ? (
           step.detail ? (
             <details>

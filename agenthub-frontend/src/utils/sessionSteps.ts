@@ -21,6 +21,18 @@ export type SessionStepKind =
   | 'withheld'
   | 'text';
 
+/**
+ * The four fields the queue-row schema fixes, in the order it pins: a row's body is exactly
+ * `facts:`, `rule:`, `decision:`, `next:`, one occurrence each, and a thinking step that ends
+ * with those four lines carries the same schema.
+ */
+export interface LogicSchema {
+  facts: string;
+  rule: string;
+  decision: string;
+  next: string;
+}
+
 export interface SessionStep {
   /** Unique within a session: the event seq plus the step's index inside the event. */
   key: string;
@@ -34,9 +46,46 @@ export interface SessionStep {
   /** Collapsed by default: tool arguments, or the reason a line was withheld. */
   detail?: string;
   isError?: boolean;
+  /** On a thinking step: the four fields, when the step carries them. */
+  logic?: LogicSchema;
 }
 
 type Json = Record<string, unknown>;
+
+// Per-field caps from the schema, in its pinned order; a value longer than its cap is not a row
+// the schema allows, so the step is read as raw reasoning instead.
+const LOGIC_FIELD_CAPS = [
+  ['facts', 280],
+  ['rule', 110],
+  ['decision', 100],
+  ['next', 78],
+] as const;
+
+/**
+ * The four fields a thinking step ends with, or null when it does not carry them.
+ *
+ * Only the LAST four lines are read, and they must match the schema exactly: the literal key,
+ * `: `, then a value of 1..cap chars. Reasoning above the four lines is allowed - it is the raw
+ * thinking shown collapsed beneath the schema - while a step that merely mentions a key, or
+ * orders them differently, stays raw text.
+ */
+export function logicSchema(text: string): LogicSchema | null {
+  const lines = text.replace(/\r\n?/g, '\n').trimEnd().split('\n');
+  if (lines.length < LOGIC_FIELD_CAPS.length) return null;
+  const tail = lines.slice(-LOGIC_FIELD_CAPS.length);
+  const values: string[] = [];
+  for (let i = 0; i < LOGIC_FIELD_CAPS.length; i += 1) {
+    const [key, cap] = LOGIC_FIELD_CAPS[i];
+    const prefix = `${key}: `;
+    if (!tail[i].startsWith(prefix)) return null;
+    const value = tail[i].slice(prefix.length);
+    const length = [...value].length;
+    if (length < 1 || length > cap) return null;
+    values.push(value);
+  }
+  const [facts, rule, decision, next] = values;
+  return { facts, rule, decision, next };
+}
 
 const isObject = (value: unknown): value is Json =>
   value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -107,7 +156,15 @@ function messageSteps(base: Omit<SessionStep, 'kind' | 'title' | 'body'>, line: 
       const key = `${base.key}.${index}`;
       const blockType = asString(block.type);
       if (blockType === 'thinking') {
-        steps.push({ ...base, key, kind: 'thinking', title: 'Thinking', body: asString(block.thinking) });
+        const thinking = asString(block.thinking);
+        steps.push({
+          ...base,
+          key,
+          kind: 'thinking',
+          title: 'Thinking',
+          body: thinking,
+          logic: logicSchema(thinking) ?? undefined,
+        });
       } else if (blockType === 'text') {
         steps.push({ ...base, key, kind: 'assistant', title: 'Assistant', body: asString(block.text) });
       } else if (blockType === 'toolCall') {
