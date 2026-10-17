@@ -79,18 +79,22 @@ The reason is measured. The architect ran it on scratch repositories on 2026-10-
 
 **Client changes** land the same way one level down. A seat's client commits are on `<rig>/<seat>` in the shared client repository. The parent commit that moves the `agenthub_client` gitlink is an ordinary commit on the same seat branch, gated with it.
 
-## (c) Staging instead of pathspec commits
+## (c) The commit form is pathspec, fleet-wide
 
-The pathspec commit existed to keep one seat's commit from taking another seat's changes out of the shared index. With a private index per worktree, that reason is gone.
+The old reading here was that a private worktree makes the pathspec form unnecessary. The owner's ruling
+(2026-10-17, `CHANGELOG/2026-10-17--the-commit-form-is-pathspec-fleet-wide.md`) restores it fleet-wide: the
+index is shared with every other seat working in this tree, so a staged line can be taken by another seat's
+commit. The commit therefore names its paths and nothing is staged first.
 
 | Rule | Now |
 |---|---|
-| Stage by explicit path: `git add -- <paths>`, and `git add -N` for a new file | **stays** |
-| Before every commit: `git diff --cached --stat` lists only your own paths | **new** |
-| `git add -A`, `git add .`, `commit -a` | **forbidden, unchanged** |
+| Commit by pathspec: `git commit -m "<type(scope): subject>" -- <paths>` | **required** |
+| A new file: `git add -N -- <new>` (intent-to-add, nothing enters the index) before the same pathspec commit | **the one exception** |
+| `git add -- <paths>` followed by a bare `git commit` | **dropped**: the retired staged form |
+| `git add -A`, `git add .`, `git commit -a`, `--amend` | **forbidden, unchanged** |
+| Before committing: read `git status --porcelain -- <paths>` and `git diff HEAD -- <paths>`, and name every line; a line that is not yours means the file is held, not committed | **required** |
 | `CLAUDE.md`, `.claude`, `agenthub_go/seatcheck` and any gitlink you were not asked to move stay out of commits | **stays** |
-| `git commit -- <paths>` as the isolation tool | **no longer required.** A plain `git commit` after the staging check is allowed. |
-| "Do not name a shared file that carries another seat's uncommitted change" | **dropped**: no other seat has changes in your tree |
+| "Do not name a shared file that carries another seat's uncommitted change" | **stays**, as the per-line read above |
 | No push, no `--amend`, no rebase of a branch that is not yours | **unchanged** |
 
 ## Composition with 7.8 and the CLI
