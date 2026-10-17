@@ -32,6 +32,10 @@ RUN pnpm install --frozen-lockfile
 # Copy source code
 COPY agenthub-frontend/ .
 
+# The /docs site's markdown (src/docs/docsSite.ts reads ../../../ai_docs/public-docs). Placing it at
+# /ai_docs keeps that relative path the same as in a checkout, one level above /build.
+COPY ai_docs/public-docs/ /ai_docs/public-docs/
+
 # ========================================
 # OPTIMIZED: Declare all ARGs in minimal statements
 # ========================================

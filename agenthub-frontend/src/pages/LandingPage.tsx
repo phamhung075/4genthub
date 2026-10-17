@@ -237,7 +237,7 @@ export const LandingPage: React.FC = () => {
 
             {/* Navigation Links */}
             <div className="hidden md:flex items-center space-x-8">
-              <Link to="/help-setup" className="text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
+              <Link to="/docs" className="text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
                 Documentation
               </Link>
               <a href="https://github.com/phamhung075/4genthub-hooks" target="_blank" rel="noopener noreferrer" className="text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
@@ -296,7 +296,7 @@ export const LandingPage: React.FC = () => {
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
-              <Link to="/help-setup">
+              <Link to="/docs">
                 <Button size="lg" variant="outline" className="px-8 py-6 text-lg">
                   View Documentation
                 </Button>
@@ -595,7 +595,7 @@ export const LandingPage: React.FC = () => {
                   <span className="text-gray-700 dark:text-gray-300">The same definitions as the managed path</span>
                 </li>
               </ul>
-              <Link to="/help-setup">
+              <Link to="/docs">
                 <Button variant="outline" className="w-full">
                   View Setup Guide
                 </Button>
@@ -838,14 +838,14 @@ export const LandingPage: React.FC = () => {
             <div>
               <h4 className="text-white dark:text-gray-100 font-semibold mb-4">Product</h4>
               <ul className="space-y-2 text-sm">
-                <li><Link to="/help-setup" className="hover:text-white dark:hover:text-gray-100 transition-colors">Features</Link></li>
-                <li><Link to="/help-setup" className="hover:text-white dark:hover:text-gray-100 transition-colors">Documentation</Link></li>
+                <li><Link to="/docs" className="hover:text-white dark:hover:text-gray-100 transition-colors">Features</Link></li>
+                <li><Link to="/docs" className="hover:text-white dark:hover:text-gray-100 transition-colors">Documentation</Link></li>
               </ul>
             </div>
             <div>
               <h4 className="text-white dark:text-gray-100 font-semibold mb-4">Resources</h4>
               <ul className="space-y-2 text-sm">
-                <li><Link to="/help-setup" className="hover:text-white dark:hover:text-gray-100 transition-colors">Getting Started</Link></li>
+                <li><Link to="/docs" className="hover:text-white dark:hover:text-gray-100 transition-colors">Getting Started</Link></li>
                 <li><a href="https://docs.4genthub.com" target="_blank" rel="noopener noreferrer" className="hover:text-white dark:hover:text-gray-100 transition-colors">API Docs</a></li>
                 <li><a href="https://github.com/phamhung075/4genthub-hooks" target="_blank" rel="noopener noreferrer" className="hover:text-white dark:hover:text-gray-100 transition-colors">GitHub</a></li>
               </ul>

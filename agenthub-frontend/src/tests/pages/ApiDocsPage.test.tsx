@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor } from './../test-utils';
-import { ApiDocsPage, applyTokens, slugifyHeading } from '../../pages/ApiDocsPage';
+import { ApiDocsPage } from '../../pages/ApiDocsPage';
+import { applyTokens } from '../../lib/docTokens';
+import { slugifyHeading } from '../../lib/headingToc';
 import { toSanitizedHtml } from '../../lib/markdownHtml';
 import { API_BASE_URL } from '../../config/environment';
 

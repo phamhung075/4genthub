@@ -2,6 +2,201 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-17 - the /docs site's tests replace the /help-setup test (frontend)
+
+- NEW `agenthub-frontend/src/tests/docs/docsSite.test.ts`: `stripOrder`; `buildSections` orders sections and pages by number and titles a page by its first `# ` heading; the real `ai_docs/public-docs` glob is not empty and opens on `quickstart/overview`; `resolveDocHref` maps relative `.md` links (including `../` and `#hash`) to `/docs` routes and images to asset URLs, and leaves absolute, external, anchor and unresolvable paths as written.
+- NEW `agenthub-frontend/src/tests/pages/DocsPage.test.tsx`: `/docs` opens Overview, with every subject and the API reference in the sidebar; a rewritten page link is followed in-app; an unknown path shows not found with the sidebar still present.
+- `agenthub-frontend/src/tests/pages/ApiDocsPage.test.tsx`: `slugifyHeading` and `applyTokens` are imported from `lib/headingToc` and `lib/docTokens`; the assertions are unchanged.
+- REMOVED `agenthub-frontend/src/tests/pages/HelpSetup.test.tsx`, with the page it tested. Its token lines are now in `ai_docs/public-docs/01-quickstart/04-connect-your-machine.md`.
+- NOT RUN: local frontend test runs are not allowed. `tsc --noEmit` is clean.
+
+
+## 2026-10-17 - the client report's tests follow the ruled metrics: per-seat targets, an edit yield, a ratchet (client, branches 4genthub-min/fe-dev-code-edit-target and -edit-yield)
+
+- `agenthub_client/internal/clientroom/report_test.go`: `TestAReadThenEditTurnCountsAsCodeEdit` (new) reads the
+  transcript-level reading rather than the rendered report: a read-then-edit turn is 60% of a window where the
+  SAME turns score 0% under the first-call rule and the read-then-write-docs turn keeps its first-call class
+  (`read`). Red: deleting `turnClasses`' any-call branch fails it on `share 0, want 60`.
+- `.../report_test.go`: `TestTheRoomCodeEditLineIsDiagnosticWhileEachEditingSeatIsGated` and
+  `TestOneSeatsCodeEditTargetDoesNotMoveWithTheOthers` (new) assert the room line never carries PASS/FAIL while
+  each `developer` seat does, and that raising one seat's share leaves the other's line byte-identical. The
+  first also pins the rendered floor (`(want > 25, cap 40)`, the replay line, the yield's inputs and drops).
+- `.../report_test.go`: `TestParseGitLogReadsSeatTrailerAndDocsOnly` became
+  `TestParseGitLogReadsSeatTrailerDocsOnlyAndPinOnly` because `parseGitLog` now reads `git log --raw`: the
+  fixture writes raw mode lines, and the gitlink commit (mode 160000) must land `PinOnly` and not `DocsOnly`.
+- `.../report_test.go`: `TestGatePassedCommitsCreditOnlyTheSeatTheGatePassed` (new) pins the edit-yield join on
+  synthetic rows and commits: a commit whose `Task:` names a task a reviewer-closed gate row names counts for
+  the row's SOURCE seat; a row closed by the lead is not a pass; a row that speaks in a tip sha passes through
+  the commit's `Task:` trailer; one task passed for another seat credits nobody; a pin-only commit never
+  counts; every drop bucket is counted. Red twice: deleting the `Seat:` join gives fe-dev a second commit
+  (`OtherSeat` 1 -> 0), and accepting any closer makes the lead-closed task passed.
+- `.../report_test.go`: `TestTheCodeEditFloorRatchetsAndAFailingSeatHoldsIt` (new): no records -> 25 with
+  `> 25, cap 40`; two passing days -> 35 with `> 30, cap 40`; the third day's failing seat holds 35; seven
+  passing days cap at 40; a seat at 26% fails a floor of 30.
+- At this change: `go test -count=1 ./...` in `agenthub_client` from a seat's shell = 32 packages ok, 0 failed;
+  `go vet ./...` and `gofmt -l .` clean. Live report run (room 4genthub-min, `--since 24h`, new binary):
+  `code-edit floor: 25 ... replayed 7 days, stepped 0`; `edit yield` go-dev 5 commits / 0.8448 USD, fe-dev 2 /
+  0.2525 USD; drops `no Task: 16, task not gate-passed 22, gate passed for another seat 11, pin-only 2`.
+- KNOWN and not papered over: the parent repository's seat marker is often in the SUBJECT (`- Merge ... Seat:
+  ...`), not a `Seat:` trailer, so those commits fall to `other` and can never join a yield. The client's
+  fixtures use real trailers; if the hooks change, the fixtures must follow the hooks, not the reverse.
+
+## 2026-10-17 - the rail resolves a destination at write time, in the daemon (client, branch 4genthub-min/seat-key-destination, daemon half)
+
+- `agenthub_client/rust/agenthub-runtime/src/supervisor/mod.rs` (tests, commit `1e0d6f0`):
+  `a_queue_destination_resolves_to_the_session_name_or_refuses_by_name` drives `resolve_queue_destination`
+  over the four spellings that name one seat (session name, `<room>-<seat>@<room>`, `<seat>@<room>`, the
+  bare key) and asserts the refusals by name - an unknown value, another room's address and
+  `principal@<room>` - each with the room's seats listed and nothing written. The `addressed_names` join
+  case asserts a row stored in any of the four spellings counts as waiting for that seat
+  (`waiting.len() == 4`), so the 32 backlog rows alert and nudge instead of reading as nothing waiting.
+- The client-side cases added in `b57e72d` (four `TestRoomQueueCreate*` over `createDestination` in
+  `internal/clientroom/queue_test.go`) are REMOVED with the client half: the verb now sends what the
+  caller typed and renders the daemon's refusal, so the resolution has one home and one owner.
+- At the merged tip: `cargo test --offline` 158 unit + 1 + 15 + 1 green, `go test -count=1 ./...` 32
+  packages green.
+
+## 2026-10-17 - one log home under the resolved root (client, branch 4genthub-min/fe-dev-loghome)
+
+- `agenthub_client/internal/clientlifecycle/lifecycle_test.go`: `TestEveryLogPathIsUnderTheResolvedRoot`
+  (new) pins the supervisor, messages, bridge and idle-guard paths under a NON-default root, so a
+  default-root pass is impossible; `TestLogDirIsTheClientservicesComputation` is deleted with the global
+  it tested.
+- `agenthub_client/internal/clientservices/services_test.go`: the harness points at `<root>/logs` and the
+  `LogDir` global seam is gone - `HeartbeatPath(root, ...)`, `WriteHeartbeat(root, ...)` and `Env` carry
+  the root instead, so a heartbeat cannot be written to a different home than the one under test.
+- The seam changes reach `agent_test`, `doctor_test`, `budgetguard_test`, `idleguard_test`,
+  `offpeak_gate_test`, `lifecycle_test`, `clientbridge`'s four test files, `watchdog_test` and
+  `messagesverb_test`; the cases themselves are unchanged.
+- Suite at the merged tip: `go test -count=1 ./...` 32 packages green, `go vet ./...` rc 0, `gofmt -l`
+  silent.
+
+## 2026-10-17 - the nudge pass wakes a silent seat, and a status read writes no death (client, branch 4genthub-min/nudge-pass-wakes-silent-seat)
+
+- `agenthub_client/rust/agenthub-runtime/src/supervisor/mod.rs` (tests): the agy-relaunch case - a seat whose
+  only document is the previous generation's `agent_socket_closed` is selected and `nudge_pass` records
+  attempt 1; the four busy words (`Working`, `NeedsInput`, ...) skip the seat and idle then selects it; a
+  document without the word selects it. `seat_is_idle` is deleted, so these cases read the word the status
+  already parsed.
+- Same file: a status read over a seat that never ran and whose pane is not up creates no
+  `run/<seat>.state.json` (RED with the reader's `write_state` reinstated), while the detail still reports
+  `agent_socket_closed` with its sentence.
+- `runner::nudge_seat` routes mailbox-vs-pane by `has_runner`; the mailbox route records `prompt`, the pane
+  route records `submitted`/`unconfirmed` - the attempt log names the evidence it has instead of renaming a
+  pane read as a relay. Measured on the lane: `cargo test --offline` 157 unit + 17 integration green,
+  `go test ./...` 32 packages green.
+
+## 2026-10-17 - one state root per verb, and an absent tmux server is no seats (client, branch 4genthub-min/fe-dev-client)
+
+- `agenthub_client/internal/clientps/ps_test.go`: `TestListSessionsReadsAnAbsentServerAsNoSessions` (new) - a
+  freshly created state root has no tmux server, and tmux answers
+  `error connecting to ... (No such file or directory)`, not `no server running`; the read must mean "no
+  sessions", not a failed verb (the rule `continue` and `watchdog` already took). Before the fix `ps` exited 3
+  there.
+- `agenthub_client/internal/clientwatch/watch_test.go`: `TestGridReadsAnAbsentServerAsNoSeats` (new) - the grid
+  opens with zero seats on that same read instead of refusing. The feed case now pins
+  `clientenv.TmuxRoot(root)` rather than the default root, so a root that never reaches the tmux seam cannot
+  pass.
+- `agenthub_client/internal/clientrestore/continue_test.go` and `watchdog_test.go`: the seams take the resolved
+  root (`tmuxRead(root)`, `sessionNames(root)`, `newRestorer(..., root)`, `watchWall(..., root)`), so a case can
+  no longer exercise the default root while the verb under test resolved another; the cases' assertions are
+  unchanged. Measured on the lane: `go test ./...` green (20 files `+338/-211`).
+- This file is the only test record for the lane: the client repo carries no TEST-CHANGELOG of its own.
+
+## 2026-10-17 - the send says which of three things happened, and a hold audits unconfirmed (client, branch 4genthub-min/send-reply-race)
+
+- `agenthub_client/internal/clientseat/sendfailure_test.go` (new): `TestTheSendFailureSentenceSeparatesARefusalFromAHold` - a daemon refusal, an unframable request or no daemon at the socket says nothing was sent, while the runner's silence carries its own sentence and only adds `; the delivery is unconfirmed`; `TestSendToAHeldFrameSaysTheTextMayBeHeld`; `TestAHeldSendIsAuditedUnconfirmedAndARefusalFailed` - the outcome line is `delivery_unconfirmed` for a held send and `delivery_failed` for a refusal, so a hold is no longer audited as a loss.
+- `agenthub_client/rust/agenthub-runtime/src/runner/mod.rs` (mod tests): `send_to_a_mailbox_that_never_answers_ends_in_the_named_sentence` - the silence leg measured at the real daemon seam, bounded by the 8 s reply timeout (the reply socket is unique per call, so two overlapping deliveries each get their own answer).
+- NOT MEASURED: the held sentence end-to-end against a live daemon - a forced hold needs a seat mid-turn; both string ends and the audit mapping are pinned by the tests above.
+
+## 2026-10-17 - the park names its way back, and its row asks why the seat returned (client, branch 4genthub-min/park-way-back)
+
+The lane landed as the re-cut `8a90b22` + `e9fdada`, whose park half the reviewer measured byte-identical to
+the HOLDed `d5c9b5d` + `54a56e4` (same blobs for the four park files and the park changelog).
+
+- `agenthub_client/internal/roombudget/roombudget_test.go` (re-cut `8a90b22`): added
+  `TestTheParkRecordNamesTheWayBack` - the record is written through `WriteParked`, read back off disk, and must
+  carry the concrete exit command (`room reseat room-a dev`), so a reader holding only the file learns the way
+  back; `ReadParked` must return the field rather than dropping it. The pinned literal carries the ORDER
+  (`remove this file FIRST`, `a reseat before the removal leaves the seat stopped`).
+- `agenthub_client/internal/clientlifecycle/budgetguard_test.go` (re-cut `e9fdada`):
+  `TestASeatOverItsUSDBudgetIsParkedOnceAndNamedOnce` gained the close request (`CLOSE THIS ROW` ...
+  `why it came back`), the record-equals-`ParkExit` assertion, and a pin on the row's ORDER
+  (`Remove the record FIRST, then` ... `a reseat before the removal stops the seat`) which is RED under
+  `d5c9b5d`'s row text and green at `54a56e4`.
+  `TestTheParkRowFitsTheRailsCapsAtItsWorstCase` (the rail refuses a body over 600) still passes at its
+  production-length seat dir; measured at THIS room's own names and root (`4genthub-min` / `architect`) the row
+  is 91/120 summary and 561/600 body.
+- Red first, measured by go-dev at `d5c9b5d` from `wt/go-dev-client` (2026-10-17): `go build ./...` and
+  `go vet ./...` clean; `go test -count=1 ./...` = 32 packages ok, 0 FAIL. FALSIFIED with a `go test -overlay`
+  carrying `a2c1df3:internal/clientlifecycle/budgetguard.go` (the pre-change guard): the new assertions fail -
+  `want it to ask the reader to close this row with why the seat came back` and
+  `want Exit = "remove this file, then ... 4genteam room reseat room-a dev ..."`; restored, the package is green.
+- The ORDER fix's own red, measured at 54a56e4: with `d5c9b5d`'s `budgetguard.go` stashed the new order pin
+  fails twice on the row's old sentence (`want "Remove the record FIRST, then"` and
+  `want "a reseat before the removal stops the seat"`, the body quoted in full in the failure); restored, the
+  package is green. `go build ./...`, `go vet ./...`, `gofmt -l` clean; `go test -count=1 ./...` = 32 packages
+  ok, 0 FAIL. Smoke of the real guard at this room's own names: the record prints
+  `remove this file FIRST, then 4genteam room reseat 4genthub-min architect ... a reseat before the removal
+  leaves the seat stopped` and the row carries the same order.
+- Merged into main as `ca8f5f5` and measured on the merged tip: 32 packages ok / 0 FAIL, `go vet` rc 0.
+
+## 2026-10-17 - the activity filter keeps the gate's fourth verdict (client, branch 4genthub-min/gate-verdict-consumers)
+
+The register gate's `unjudgeable` verdict had no consumer in `4genteam activity --problems`: the filter kept
+`reject` and dropped the new outcome, so a task the enforced gate refused was invisible in the one view an
+operator uses to ask why a task did not close (the reviewer's finding F1 on the register lane).
+
+- `internal/clientactivity/activity_test.go`: `TestProblemsKeepsAnUnjudgeableGateAndDropsAnAcceptingOne` - the
+  three gate rows are serialised from `clientjev.LogEntry` (the writer's own type, so the fixture cannot drift
+  from `complete.go`'s append), and the case asserts both refusing verdicts are kept, the acceptance is not, and
+  the kept row renders as one line naming the verdict and the task. Red at the lane's base revision via
+  `-overlay` (only the rejecting row survives), green in the tree.
+- `internal/clientcomplete/complete_test.go`: `TestTheRegisterFindsAWholeNumberAndNotASubstring` - pins
+  `containsInteger`'s precision, the helper the reviewer's mutation M3 showed no test bound: `0` is not found
+  inside `10` or inside `0.98`, while the trailing dot of "exit code 0." still counts as this run's exit code.
+
+## 2026-10-17 - the gate refuses a criterion its bundle cannot carry (client, branch 4genthub-min/gate-register)
+
+- `agenthub_client/internal/clientcomplete/complete_test.go` (commit `02bffb1`): five new cases -
+  `TestTheMeasuredRegisterIsJudgedAndAccepted` (the lead's calibration run 3 criteria verbatim: ACCEPT, and the
+  judge asked exactly those five, captured from its own request body);
+  `TestOutcomeOnesCriteriaAreUnjudgeableWithNoJudgeCall` (task c916e113's three criteria: `unjudgeable`, each
+  one named in the refusal, the register printed, and ZERO calls to the judge route);
+  `TestACriterionIsJudgedOnlyWhenTheBundleCarriesItsFact` (the necessary-condition pair: a numstat path the
+  bundle lists is judged, one it does not list is refused); `TestABaseShaPrefixAloneIsJudged` (plus the control:
+  a sha this bundle does not name is refused); and
+  `TestOneRefusedCriterionRefusesTheCompletionEvenWhenTheOthersWouldAccept`.
+- Three existing cases moved to criteria that carry register facts (`["it works"]` -> "the acceptance command
+  `git --version` exits 0") and `TestCriteriaVerdicts` likewise: their subject is the flow (evidence stored then
+  completed, the enforced refusal before any write, the shadow log line) and the judge's verdict mapping, none
+  of which changes. `TestDeterministicChecksRejectWithoutCallingJev` is untouched - the register gate sits after
+  the deterministic checks.
+- Red first, measured by go-dev at `02bffb1` from `wt/4genthub-min/gd-gateregister` (2026-10-17): `go build ./...`,
+  `go vet ./...` and `gofmt -l` clean; `go test -count=1 ./...` = 32 packages ok, 0 FAIL. FALSIFIED with a
+  `go test -overlay` carrying `a2c1df3:internal/clientcomplete/gate.go`: four of the five new cases fail on their
+  assertions - Outcome 1's criteria answered `accept` at 0.99/0.99/0.99 with the judge called, a numstat path the
+  bundle does not carry judged, a sha the bundle does not name judged, and one refused criterion scored as
+  `uncertain` ("Jev answered 2 of 3 criteria") instead of refusing the task. Restored, the package is green.
+- Smoke of the BUILT binary against a stub server: Outcome 1's criteria -> exit 6 and
+  `{"verdict":"unjudgeable",...}` with the judge route called zero times and no other write; the measured
+  register's own shape -> exit 0 after one judge call, evidence + completion posted.
+
+## 2026-10-16 - the criteria request's shape is pinned, and the wording that decides (client, commit 11a77ca)
+
+- `agenthub_client/internal/clientjev/jev_test.go`: `TestTheCriteriaRequestCarriesTheEvidenceAndNothingElse`
+  decodes the `/systemone` request body - the three top-level keys (`model`, `questions`, `state`), `state`'s
+  key set compared against the evidence body's OWN encoding (`base_sha`, `head_sha`, `numstat`,
+  `test{command,exit_code,failed}`), and `criterion_1..N` each `{"type":"noul","instructions":<the criterion
+  text verbatim>}`. `TestTheCriterionWordingDecidesAndTheRefusalNamesIt` pins the ruling's vocabulary: a
+  mechanical criterion answers high while a content-shaped one answers low, the refusal names `criterion_2`
+  and carries every answer, and both instructions reach the judge byte for byte.
+- FALSIFIED: with `state` wrapped as `{"evidence": …}` (route (a)) and a fourth top-level key added, the pin
+  fails on three assertions - the top-level key set, `state`'s key set, and the nested `test` lookup; both
+  mutations were reverted and `internal/clientjev/jev.go` is byte-identical to its commit.
+- MEASURED: `go test -count=1 ./internal/clientjev/` ok; the whole client suite is 32 packages ok, 0 failed,
+  at client `9209ea1` + `11a77ca`.
+
 ## 2026-10-17 - the comm guard's expectations bind unaudited routes only (hub, branch 4genthub-min/comm-guard-unaudited-routes)
 
 - CHANGED `agenthub_go/fastmcp/seat_management/domain/seedlibrary/seedlibrary_test.go`:
@@ -440,6 +635,7 @@ Hub task `c94cecfc`. The client entry that rides with the code is
 
 - ADDED `scripts/tests/test_notify_seats_behind_note.py`: four cases over the real `scripts/git-hooks/notify-seats`, with `tmux` (the pane path) and `4genteam` (one running seat, the message captured) stubbed and `GIT_DIR` exported as a post-commit hook receives it - a seat one commit behind ITS OWN `main` is warned with its own revision, the committer's own tree and a path that is not a repository stay silent while the plain notice is still sent, and the `GIT_DIR` leak that made the old reading possible is pinned, so the leading case cannot pass by reading the wrong repository.
 - MEASURED: `python3 -m pytest scripts/tests -q` -> 95 passed, 3 warnings (91 before, 4 added); the warning case is RED against the pre-fix script and green after.
+
 ## 2026-10-15 - legacy rig-client purge and `/api/v2` route rename
 
 - CHANGED route literals from the old client sub-prefix to `/api/v2/...` across the Go tests under `agenthub_go/`, `agenthub-frontend` tests and `agenthub_client` tests; index-based path parsing in `agenthub_client/internal/clientteam/{fake,importproject,publish}_test.go` shifted by one segment.
@@ -455,6 +651,7 @@ Hub task `c94cecfc`. The client entry that rides with the code is
 - CHANGED `TestTaskLifecycle` in `agenthub_go/fastmcp/task_management/domain/entities/task_test.go`: blocking a `todo` task succeeds and leaves it `blocked`, and `blocked -> archived` is the move the entity still refuses.
 - ADDED the pin in `TestTaskStatusTransitions` (`domain/value_objects/value_objects_test.go`): `todo`/`in_progress`/`review`/`testing` can reach `blocked`; `done`/`cancelled`/`archived` cannot.
 - MEASURED: `go test -count=1 ./...` rc 0 and `go vet ./fastmcp/task_management/... ./cmd/...` clean (`agenthub_go`, no database).
+
 ## 2026-10-15 - six safeguards, one scope rule, the message field
 
 - ADDED `TestValidateStatesTheSixNamesAndTheirScopes` in `agenthub_go/fastmcp/rig_safeguard/infrastructure/repositories/orm/rig_safeguard_repository_test.go`: the six names with their scope's rig, the four refusals, the retired `rigd` name, an unknown name and an unknown state, with no database in the way.
@@ -763,8 +960,6 @@ Hub task `c94cecfc`. The client entry that rides with the code is
   it: marking the shared `postgres` database cannot reach these fixtures because each creates its own
   database, so that experiment was aimed at the wrong database and was undone.
 
-
-
 ## 2026-10-11 - the two schema guards build together again, by naming only
 
 - FIXED a build break at the assembled tip: `migration_baseline_parity_test.go` (the release line's) and the
@@ -827,6 +1022,7 @@ Hub task `c94cecfc`. The client entry that rides with the code is
   `CHANGELOG/2026-10-11--the-script-suites-git-fixtures-cannot-write-the-callers-repository.md` with the
   command, the tree and the result that replace it. The hostile run's `30 failed, 42 passed, 4 skipped`,
   the six staged paths and the two shared-repository digests are untouched.
+
 ## 2026-10-11 - the assembly merge's three cases meet the entity and the table the ledger line left
 
 - THIS SECTION RECORDS THE MERGE'S OWN TEST CHANGE, not a new test. Merging `4genthub-min/batch-0.0.37` (`0e9746c0`) into `4genthub-min/fe-dev` conflicted on four paths; once the two Go files were resolved, two of the BATCH's cases still constructed entities with the progress column this branch removed, so `go vet` failed on both packages while `go build ./...` passed - a build does not compile test files, which is why only vet surfaced it.
@@ -1009,7 +1205,6 @@ Hub task `c94cecfc`. The client entry that rides with the code is
 - MEASURED, in `wt/fe-dev`: `gofmt -l` empty on the touched files; `go build ./...` rc 0; `go vet ./...` clean; `go test -count=1 ./fastmcp/task_management/...` every package `ok`; `go test ./... -count=1` every package `ok` with no `FAIL` line in the run.
 - NOT RUN, named: the `AGENTHUB_TEST_PG_URL`-gated cases - including the ledger's real-Postgres negative case - need a live cluster and are not part of what this run proved. Nothing here weakens them; they were left untouched.
 
-
 ## 2026-10-11 - the script suite's git fixtures cannot write the caller's repository
 
 - ADDED `scripts/tests/gitfixture.py`: `environment()`, the caller's environment minus every variable
@@ -1139,6 +1334,7 @@ Hub task `c94cecfc`. The client entry that rides with the code is
   RAN rather than skipping - `TestLedgerIntentsRecordsOfflineFactsUnchangedInArrivalOrder` 4.31s,
   `TestLedgerIntentsRefusesASubtaskThatIsNotThisTasksOwn` 1.53s, `TestLedgerIntentsRefusesABodyThatIsNotAList`
   3.38s - and a skip would have printed `SKIPPED` rather than these times.
+
 ## 2026-10-11 - the seat detail standing gets its third state, and three cases pin it
 
 - ADDED, three cases in a new describe in the existing file `agenthub-frontend/src/tests/pages/SeatDetailPage.test.tsx`, one per way the rooms list can fail to answer: the list in flight (`listRooms` returns a promise that never settles), the list failing (`listRooms` rejects), and the list settling WITHOUT naming this room (`rooms: []`).
@@ -1154,6 +1350,7 @@ Hub task `c94cecfc`. The client entry that rides with the code is
 - THE CLASS WAS ALREADY ON THIS FILE: `src/tests/e2e/live-websocket.test.ts` carries the same exclusion, and the comment beside it claimed the repo has no Playwright config, which stopped being true when `playwright.config.ts` landed. The comment now states the real rule - Playwright owns both directories and `npx playwright test` is how they run.
 - VERIFIED, in `wt/fe-dev`, from `agenthub-frontend`: `npx vitest run` -> **rc=0, Test Files 122 passed (122), Tests 1881 passed (1881)**; the same command before the change -> **rc=1, 1 failed | 122 passed**, failing only on that unloadable file. The test total is IDENTICAL on both sides, which is the point: this change removes a load error, not a test.
 - NOT RUN, named: no Playwright invocation - the excluded spec is unchanged and is run by `npx playwright test`, whose own result (1 passed, 4.4s, against the deployed app) is recorded in the entry below.
+
 ## 2026-10-11 - the init SQL's two new gates: a name created twice, and the asset run on an empty database
 
 - THE DEFECT BOTH GATES PIN: `init_schema_postgresql.sql` created 13 names twice - a
@@ -1194,7 +1391,6 @@ Hub task `c94cecfc`. The client entry that rides with the code is
   the same columns. The scratch database was dropped.
 - NOT RUN, named: nothing in this package skips under the DSN above. The frontend suite was not run (no
   frontend file changed), and no production database was contacted.
-
 
 ## 2026-10-11 - the fold's parity guard, four gate cases, and the red the guard actually shows
 
@@ -1772,7 +1968,6 @@ Hub task `c94cecfc`. The client entry that rides with the code is
 - THE ROW'S PREMISE WAS MEASURED FALSE, and the report carries file:line rather than an opinion: `sessionRow` already sets both keys, `sessionCols` selects them, `scanAgentSession` scans them, and the route serializes that map verbatim - the row's `-S room_slug` searched `fastmcp/server`, while the DTO lives in the sibling package `fastmcp/session_stream`. Nothing was added to the response, because the response already carried it; what was missing was a case that drives the wire.
 - WITH A REAL POSTGRES (`tools/testpg/start.sh`, port 55432, `AGENTHUB_TEST_PG_URL`): the two cases pass - `ok agenthub/fastmcp/server/httpapp 1.113s` for that selection alone; `go test ./fastmcp/session_stream/... ./fastmcp/server/httpapp/...` -> `ok 1.169s` and `ok 12.838s` (whole packages, no skips). `gofmt -l` on the touched file printed nothing; `go vet ./fastmcp/server/httpapp/... ./fastmcp/session_stream/...` clean.
 
-
 ## 2026-10-10 - the server-side seatcheck copy is removed with its 3 test files; the client module's copy is the guard's canonical source
 
 - DELETED, tracked and staged by explicit path: `agenthub_go/cmd/seatcheck/main.go`, `main_test.go` (695 lines) and `exec_test.go` (246) - 1371 lines. Row `37dd5c78`. The copy that stays is `agenthub_client/cmd/seatcheck`, whose suite (`main_test.go` 714 + `exec_test.go` 246) is now the tree's ONLY seatcheck suite and is strictly larger than the one that left.
@@ -2138,7 +2333,6 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
 - Commands: `go build ./...` → exit 0; `go test -count=1 ./fastmcp/task_management/application/use_cases/` → **ok**; `go test -count=1 ./...` → **ok, every package**; `go vet ./...` → clean; `gofmt -l` over the tracked `.go` files → prints nothing.
 - **NOT RUN, and it cannot be:** no case replays the deleted functions' behaviour — there is no implementation left to exercise, and re-asserting a deleted table's values would be the re-pin the project rule forbids.
 
-
 ## 2026-10-09 - the shipped inventory's digests are watched by the suite, and the guard was seen red before green
 
 - `agenthub_client/tests/test_team_setup.py` (new cases) — the guard for `ai_docs/agent-system/skill-library.json`, whose only former enforcer was `publish-skills`, a networked action. Both cases recompute **through `skill_library_modules()`** (`team_setup.py:709`) and copy no verification logic:
@@ -2482,8 +2676,6 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
 - Commands and results, from the repository root: `python3 -m pytest --noconftest -p no:cacheprovider scripts/tests -q` -> **319 passed, 9 warnings in 70.08s**; the same command with NO flags -> 319 passed and no `.pytest_cache` created, which is the config's `-p no:cacheprovider` applying; `cd agenthub_go && go test ./fastmcp/seat_management/domain/seedlibrary/... ./fastmcp/seat_management/domain/seatrenderer/...` -> `ok`, `ok`.
 - **319 against the move's 315 baseline, and the four are attributed rather than merely reported as different**: `test_compact_supervisor.py` 7 -> 9 (from `1a1ae32c`, `7c1270d3`) and `test_seat_policy.py` 12 -> 14 (from `db9d2bc3`); every other file is unchanged, `test_team_roster.py`'s four included, so the move added and removed nothing.
 - `grep -rn 'agenthub_main\|src/tests' scripts/tests/` -> nothing. The new files are named in the commit with `git add -N` first (they are brand new) and the commit names the old directory too, so `git` reports the twelve as renames rather than as a delete plus twelve adds.
-
-
 
 ## 2026-10-08 - seat config pins the compaction tail and the thinking trial
 
@@ -2970,7 +3162,6 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
   `ValidateSearchRequest` → `validation_factory.go:164` → the validator; and the consumer at `handler_adapters.go:73,:94`
   (`adapterKwInt`) already coerces int, int64, float64 and string - so the newly accepted value is usable downstream
   and no silent misread replaces the refusal.
-
 
 ## 2026-10-07 - no test changed for the dependency upgrades; the suite is what verified them
 
@@ -3496,7 +3687,6 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
 - Commands: `go test -count=1 ./fastmcp/seat_management/...` → 18 packages ok; `gofmt -l` on the
   package → empty; `go vet` → exit 0.
 
-
 ## 2026-10-06 - the kind set gets a guard on the axis that drifts: the DDL against the enum (Go, found by fe-dev while checking a gate)
 
 - New `TestSeatKindConstraintTracksTheAcceptedKinds` (`infrastructure/database`): each DDL source's
@@ -3517,7 +3707,6 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
   `./fastmcp/seat_management/infrastructure/database/`, `./fastmcp/seat_management/domain/modulecontent/`
   and `./fastmcp/seat_management/domain/resolver/`.
 
-
 ## 2026-10-06 - the provenance checker's panic, found by its own assertion (Go, packet 6)
 
 - `verifyGuideLocks` sliced `got[:12]` to name a digest in its refusal, so a caller handing a value
@@ -3536,7 +3725,6 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
   fix commit records it.
 - Commands: `go test -count=1 ./fastmcp/seat_management/...` → 18 packages ok; the package alone run
   five times → ok each time; `gofmt -l` on the package → empty; `go vet` → exit 0.
-
 
 ## 2026-10-06 - block provenance: computed on the library side, recorded for the migration (Go, packet 6)
 
@@ -3565,7 +3753,6 @@ The guard itself is `agenthub_client` commit **2cf5f75** (`fix(team): publish-sk
   migration window has to have the pairing RECORDED, not computed.
 - Commands: `gofmt -l` on the package → empty; `go vet ./fastmcp/seat_management/domain/seedlibrary/`
   → exit 0; `go test -count=1 ./fastmcp/seat_management/domain/seedlibrary/` → ok.
-
 
 ## 2026-10-06 - the fold and the two emissions: one parse feeds the runtime document and the seat's words (Go, packet 6 step 2, second slice)
 

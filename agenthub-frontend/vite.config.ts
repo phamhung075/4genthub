@@ -194,6 +194,11 @@ export default defineConfig(({ mode }) => {
   server: {
     host: '0.0.0.0',
     port: 3800,
+    // The dev server serves only the app's own tree unless told otherwise; the /docs site reads
+    // ai_docs/public-docs from beside it (src/docs/docsSite.ts).
+    fs: {
+      allow: [__dirname, path.resolve(__dirname, '../ai_docs/public-docs')]
+    },
     hmr: {
       protocol: 'ws',
       host: 'localhost',
