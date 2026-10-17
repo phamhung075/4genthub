@@ -30,6 +30,13 @@ LIMIT, STATED SO IT IS NOT MISTAKEN FOR COVERAGE. The framework never touches UN
 window cannot lose them either; they are not captured here because capturing their contents on every
 commit is its own cost. Untracked work is therefore out of scope, not covered.
 
+AND THE MIRROR LIMIT, which no wrapper can close: `git commit -- <path>` takes the WORKTREE content of
+the path it names, so an UNCOMMITTED edit by another seat to that path rides the committer's commit, with the
+committer's message as its only attribution (measured: `f344a64f`, CHANGELOG.md numstat 15/1 - the committer's
+14-line entry plus a peer's 1 line). This file preserves the BYTES of such an edit; it cannot stop the
+attribution moving and it cannot tell the victim. A seat whose `git diff HEAD -- <path>` goes EMPTY while it
+still expects an edit has had that edit taken; `git log -1 --numstat -S'<the line>' -- <path>` names the commit.
+
 USAGE. python3 scripts/git-hooks/git_commit_capture.py -- <the arguments you would give git commit>
         python3 scripts/git-hooks/git_commit_capture.py --list
         python3 scripts/git-hooks/git_commit_capture.py --sweep [--keep-days 7]
