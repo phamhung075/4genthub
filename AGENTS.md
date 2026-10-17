@@ -17,17 +17,21 @@ restore, before concluding anything about where you are.
 
 ## 2. Where context lives
 
-- **Your seat's role** — `agents/<seat>/agent.yaml` and `guidance/role.md`, written into the launch
-  directory by the launch.
+- **Your seat's role** — the seat tier's skill,
+  `agenthub_client/skills/rooms/<room>/<seat>/<seat>-role/SKILL.md`, which the runtime installs into
+  the seat's own `skills/` at every start (`install_seat_skills`, in
+  `rust/agenthub-runtime/src/supervisor/mod.rs`; the same start writes `<seat dir>/mcp.json`). The
+  renderer's file half (`agents/<seat>/agent.yaml`, `guidance/role.md`, `startup.files`) is retired and
+  nothing writes it.
 - **The work queue** — `4genteam room queue` (`list` / `show` / `create` / `update` / `claim` / `close`;
   owned work, handoffs, block/wake state).
 - **The board and decisions** — `NEXT-GEN2.md` (repo root).
-- **Project skills** — one source: `agenthub_client/skills/`. A seat's restart (`4genteam seat reseat`, through
-  the runtime's relaunch path) replaces the seat's own skills directory
-  `<state-root>/rooms/<room>/seats/<seat>/skills` with a copy of the store's
-  `<store>/<room>/rig/agents/<seat>/skills` (`clientseat/deliverSkills`, covered by `skills_test.go`).
-  Nothing writes the store side any more - the removed `sync room` did, until 2026-10-15 - and the
-  seat's `agent.yaml` has no writer at all today; that model question is the architect's.
+- **Project skills** — one source: `agenthub_client/skills/`. The runtime installs it: every seat start
+  resolves the tree (share → room → seat, never `client/`) and writes it under the seat's own
+  `<state-root>/rooms/<room>/seats/<seat>/skills`, replacing what was there, so a change reaches a seat
+  at its next start and a skill removed from the tree does not linger. The client delivers nothing:
+  `clientseat/deliverSkills` is deleted, the store side (`<store>/<room>/rig/agents/<seat>/skills`) has
+  no writer (`sync room` was its last, until 2026-10-15), and `agent.yaml` has none either.
   `client/` is for the LLM running the client, e.g. `install`, `rig-runtime-switch`,
   `seat-runtime-switch`, `spawn-team`, `watch-team`. Ruling: `ai_docs/core-architecture/seat-skills.md`.
   `.agents/skills` is being retired; do not add skills there.
@@ -98,6 +102,14 @@ These are pointers; never copy their content into this file.
   `submit_feedback`). `manage_agent` is not one of them: it was retired 2026-10-10 with the `agents` table
   and the 32-role registry, and `fastmcp/server/httpapp/manage_agent_absent_test.go` fails the build if it
   is published again. `manage_seat` is how a seat is read, and `@<seat_key>` is the only assignee identity.
+- **Which verb writes which surface.** Progress, notes and status of a task go through `manage_task`
+  `update` with `details` - that is the surface the board item shows. `details` APPENDS: send the new
+  section only, one `=== Progress N ===` per call; resending the whole field stores it a second time
+  (measured 2026-10-17, an item holding 41k chars of its own history). `manage_context` carries context
+  (global / project / branch / task tier); a task-level note written through `manage_context add_progress`
+  does NOT reach the board item's Details (measured, hub task `4138904d`). Acceptance criteria are the proof
+  surface: they must be settleable from the evidence the completion gate's judge is shown, and the
+  vocabulary is in `ai_docs/agent-system/task-workflow-and-reporting.md`.
 - **Record as you go rather than at the end.** A task carries a state and an owner, and a row written after
   the work is a row nobody acted on.
 - **IF THE TOOL IS NOT THERE, SAY SO RATHER THAN CONCLUDING IT DOES NOT EXIST.** A call that answers

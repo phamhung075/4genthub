@@ -6,6 +6,20 @@ Architect ruling, 2026-10-11, on the owner's rule that seats use skills from `ag
 - **Ruling row:** `718778c1`.
 - **Composes with:** `seat-worktrees.md`, the worktree ruling.
 
+**DATED NOTE, 2026-10-17 (architect): the delivery this ruling names is gone; the runtime installs the tree.**
+`4genteam sync rig` no longer exists — the `sync` group is `pull`, `messages`, `connector`, `bundle`, `switch`,
+`install-checker`, `offline-install` and `respawn`, and `sync room`, the store side's last writer, was removed on
+2026-10-15. At every seat start the runtime resolves the client tree (`clientskills`: `share`, then
+`rooms/<room>`, then `rooms/<room>/<seat>`, never `client/`) and writes it under the seat's own `skills/`,
+replacing what was there, so a removed skill does not linger. The client's `clientseat/deliverSkills` — which
+copied the store's `agents/<seat>/skills` on reseat and treated a missing store as a refusal — is deleted with
+its test, so `4genteam seat reseat` delivers nothing and cannot fail at that step. The store side and
+`agent.yaml` have no writer: the renderer's file half (`agent.yaml`, `startup.files`, `skills/`,
+`guidance/role.md`) is retired, and a seat's role is now the seat-tier skill
+`rooms/<room>/<seat>/<seat>-role/SKILL.md`. **Read sections 2, 3, 5, 6, the two `sync rig` rows of the tests
+table and the "six stale materialized seats" paragraph as history; section 1's levels rule and section 5's
+launch configuration still hold.**
+
 **The problem, measured.** A seat can take skills from six places today:
 - the seat's cloud snapshot;
 - the client tree;
