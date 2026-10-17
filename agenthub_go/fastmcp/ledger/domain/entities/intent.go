@@ -17,34 +17,30 @@ package entities
 
 // IntentKind is one kind a client may push through the outbox. It is the same string the ledger
 // stores as `task_events.kind`; what makes it an INTENT is that a client writes it, which is why the
-// list below is smaller than the table's vocabulary: `delivered`, `escalated` and `context_updated`
-// are written by the server (the wake loop, the gate, the context path) and a client that sent one
-// would be inventing history it did not make.
+// list below is smaller than the table's vocabulary: `context_updated` is written by the server (the
+// context path) and a client that sent one would be inventing history it did not make. (The comment
+// this replaces named `delivered` and `escalated` as server-written; the ledger measured that
+// NEITHER had a writer anywhere - handoffs between seats are queue rows and an escalation is a
+// task_audit_records row - and the ruling that closed the handover payload deleted both from the
+// vocabulary rather than keeping a kind nothing writes.)
 type IntentKind string
 
 const (
 	// Decisions: each owes a base_seq, and the server refuses one whose base is behind.
-	IntentKindClaimed       IntentKind = "claimed"
 	IntentKindStatusChanged IntentKind = "status_changed"
 	IntentKindGateVerdict   IntentKind = "gate_verdict"
-	IntentKindAssigned      IntentKind = "assigned"
-	IntentKindHumanDecision IntentKind = "human_decision"
 	// Facts: append-only observations the client may record offline.
 	IntentKindProgress          IntentKind = "progress"
 	IntentKindEvidenceSubmitted IntentKind = "evidence_submitted"
 	IntentKindHandover          IntentKind = "handover"
-	IntentKindContextLoaded     IntentKind = "context_loaded"
 )
 
 // DecisionKinds is D9's decision list (architecture agenthub-system-architecture.md, the
 // "*Decisions* are ..." bullet): the intents that claim, transition or judge, and so
 // cannot commute and cannot be applied out of order.
 var DecisionKinds = []IntentKind{
-	IntentKindClaimed,
 	IntentKindStatusChanged,
 	IntentKindGateVerdict,
-	IntentKindAssigned,
-	IntentKindHumanDecision,
 }
 
 // FactKinds is D9's fact list (architecture agenthub-system-architecture.md, the "*Facts* are ..."
@@ -54,19 +50,14 @@ var FactKinds = []IntentKind{
 	IntentKindProgress,
 	IntentKindEvidenceSubmitted,
 	IntentKindHandover,
-	IntentKindContextLoaded,
 }
 
 // IntentKinds is every kind a client may send, in database-declaration order.
 var IntentKinds = []IntentKind{
-	IntentKindAssigned,
-	IntentKindClaimed,
-	IntentKindContextLoaded,
 	IntentKindProgress,
 	IntentKindStatusChanged,
 	IntentKindEvidenceSubmitted,
 	IntentKindGateVerdict,
-	IntentKindHumanDecision,
 	IntentKindHandover,
 }
 
@@ -84,7 +75,8 @@ func FactKindStrings() []string {
 }
 
 // IsIntentKind reports whether s is a kind a client may push. A kind that is in the table's
-// vocabulary but not in this list (the server's own three) is deliberately NOT one.
+// vocabulary but not in this list (`context_updated`, the server's own write) is deliberately NOT
+// one.
 func IsIntentKind(s string) bool {
 	for _, k := range IntentKinds {
 		if string(k) == s {

@@ -160,7 +160,7 @@ func TestSubmitLedgerIntentsEncodesTheTwoAnswerShapesDisjointly(t *testing.T) {
 	}}
 	intents := []ledgerentities.Intent{
 		{ClientEventID: "c1", TaskID: "t1", Kind: ledgerentities.IntentKindProgress},
-		{ClientEventID: "c2", TaskID: "t1", Kind: ledgerentities.IntentKindClaimed, BaseSeq: new(1)},
+		{ClientEventID: "c2", TaskID: "t1", Kind: ledgerentities.IntentKindStatusChanged, BaseSeq: new(1)},
 	}
 
 	body, err := SubmitLedgerIntents(context.Background(), intents, ledgerTestUser(), writer)

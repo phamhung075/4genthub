@@ -1020,3 +1020,127 @@ func TestALedgerBatchThatAcceptedNothingNudgesNobody(t *testing.T) {
 	t.Logf("OBSERVED refused batch: rows %d tip %d unchanged and no frame -> then the commit's user_seq=%d arrived as %v",
 		rows, tip, *accepted.UserSeq, nudge["user_seq"])
 }
+
+// ledgerPgLatestEventID is the newest entry's id for one task, which is the `evt:` ref a handover
+// cites. It reads the row rather than assuming the seed's generated id.
+func ledgerPgLatestEventID(t *testing.T, sm *database.SessionManager, userID, taskID string) string {
+	t.Helper()
+	id := ""
+	if err := sm.WithSession(context.Background(), func(ctx context.Context, s database.DBTX) error {
+		return s.QueryRowContext(ctx,
+			`SELECT id::text FROM task_events WHERE "user_id" = $1::varchar AND "task_id" = $2::uuid ORDER BY "seq" DESC LIMIT 1`,
+			userID, taskID).Scan(&id)
+	}); err != nil {
+		t.Fatalf("reading the latest entry id: %v", err)
+	}
+	return id
+}
+
+// TestLedgerHandoverPayloadRidesTheRuledGate is 2/8's acceptance through the production seam: ONE
+// handover the real outbox writes end to end (accepted, and read back by resume), and one of each
+// refusal - a missing key, an unknown key, a fact without evidence, and an `evt:` naming ANOTHER
+// task's entry. The batch's row count proves the refusals wrote nothing.
+func TestLedgerHandoverPayloadRidesTheRuledGate(t *testing.T) {
+	app, sm := evidenceApp(t)
+	token, user := evidenceUser(t, ledgerPgSubjectB)
+	first := ledgerPgTask(t, app, sm, token, user, "handover task one")
+	second := ledgerPgTask(t, app, sm, token, user, "handover task two")
+
+	ledgerPgSeedEvent(t, sm, user, first, "progress")
+	ledgerPgSeedEvent(t, sm, user, second, "progress")
+	firstEntry := ledgerPgLatestEventID(t, sm, user, first)
+	secondEntry := ledgerPgLatestEventID(t, sm, user, second)
+
+	handover := func(payload map[string]any) map[string]any {
+		return map[string]any{
+			"client_event_id": value_objects.NewUUIDv4(),
+			"task_id":         first,
+			"kind":            "handover",
+			"payload":         payload,
+		}
+	}
+	fact := func(claim, evidence string) map[string]any {
+		return map[string]any{"claim": claim, "evidence": evidence}
+	}
+	accepted := handover(map[string]any{
+		"decision":    "continue",
+		"next_action": "review the parse",
+		"facts":       []any{fact("the run is green", "evt:"+firstEntry)},
+		"constraints": []any{"context:" + first},
+	})
+	missingKey := handover(map[string]any{
+		"decision":    "continue",
+		"next_action": "go",
+	})
+	unknownKey := handover(map[string]any{
+		"decision":    "continue",
+		"next_action": "go",
+		"facts":       []any{fact("the run is green", "sha:8e706e18")},
+		"owner":       "me",
+	})
+	noEvidence := handover(map[string]any{
+		"decision":    "continue",
+		"next_action": "go",
+		"facts":       []any{map[string]any{"claim": "a fact"}},
+	})
+	otherTask := handover(map[string]any{
+		"decision":    "continue",
+		"next_action": "go",
+		"facts":       []any{fact("another task's entry", "evt:"+secondEntry)},
+	})
+
+	batch, err := json.Marshal([]map[string]any{accepted, missingKey, unknownKey, noEvidence, otherTask})
+	if err != nil {
+		t.Fatalf("building the batch: %v", err)
+	}
+	before := ledgerPgRowCount(t, sm, user)
+	code, body := ledgerPgPostIntents(t, app, token, string(batch))
+	if code != http.StatusOK {
+		t.Fatalf("POST /api/v2/ledger/intents = %d, want 200: %s", code, body)
+	}
+	answers := ledgerPgDecodeAnswers(t, body)
+	if len(answers) != 5 {
+		t.Fatalf("the route must answer per item: got %d for 5 items: %s", len(answers), body)
+	}
+	if answers[0].Accepted == nil || !*answers[0].Accepted {
+		t.Fatalf("the ruled handover must be accepted, got %s", body)
+	}
+	wantReasons := []string{
+		"handover_malformed",
+		"handover_malformed",
+		"handover_fact_without_evidence",
+		"handover_fact_without_evidence",
+	}
+	for i, want := range wantReasons {
+		if answers[i+1].Rejected == nil || !*answers[i+1].Rejected {
+			t.Fatalf("item %d must be rejected, got %s", i+1, body)
+		}
+		if answers[i+1].Reason == nil || *answers[i+1].Reason != want {
+			t.Fatalf("item %d reason = %v, want %q", i+1, answers[i+1].Reason, want)
+		}
+	}
+	if after := ledgerPgRowCount(t, sm, user); after-before != 1 {
+		t.Fatalf("the batch must write exactly ONE row (the accepted handover); it wrote %d", after-before)
+	}
+
+	// resume reads the payload VERBATIM: the entry the outbox wrote is the brief's last_handover.
+	req := httptest.NewRequest(http.MethodGet, "/api/v2/tasks/"+first+"/resume", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	rec := httptest.NewRecorder()
+	app.Handler().ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("GET resume = %d: %s", rec.Code, rec.Body.String())
+	}
+	var brief struct {
+		LastHandover map[string]any `json:"last_handover"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &brief); err != nil {
+		t.Fatalf("decoding the brief: %v (%s)", err, rec.Body.String())
+	}
+	if brief.LastHandover["decision"] != "continue" {
+		t.Fatalf("the brief's last_handover is not the written payload: %v", brief.LastHandover)
+	}
+	if facts, ok := brief.LastHandover["facts"].([]any); !ok || len(facts) != 1 {
+		t.Fatalf("the brief's last_handover lost its facts: %v", brief.LastHandover)
+	}
+}
