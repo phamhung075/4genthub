@@ -179,8 +179,12 @@ func TestLoadEmbeddedSeedsCarryCommGuard(t *testing.T) {
 		if err := json.Unmarshal([]byte(tool.content), &settings); err != nil {
 			t.Fatalf("%s: comm-guard is not valid JSON: %v", seed.SeatTypeSlug, err)
 		}
-		wantDeny := []string{"Bash(4genteam send:*)", "Bash(4genteam input:*)", "Bash(tmux send-keys:*)", "Bash(tmux paste-buffer:*)"}
-		if strings.Join(settings.Permissions.Deny, "|") != strings.Join(wantDeny, "|") || strings.Join(settings.Permissions.Allow, "|") != "Bash(4genteam whoami:*)" {
+		// THE DENY LIST BINDS UNAUDITED ROUTES ONLY, and the audited one is ALLOWED by name: `4genteam
+		// send` builds the sender's policy, writes the decision line, delivers and writes the outcome line
+		// (internal/clientseat/sendpolicy.go), so a deny of it denied the only route the guard skill names.
+		wantDeny := []string{"Bash(4genteam input:*)", "Bash(tmux send-keys:*)", "Bash(tmux paste-buffer:*)"}
+		wantAllow := "Bash(4genteam whoami:*)|Bash(4genteam send:*)"
+		if strings.Join(settings.Permissions.Deny, "|") != strings.Join(wantDeny, "|") || strings.Join(settings.Permissions.Allow, "|") != wantAllow {
 			t.Fatalf("%s: permissions = %+v", seed.SeatTypeSlug, settings.Permissions)
 		}
 		// The codes are the client's own: a policy denial and a usage error are 2, an unreadable

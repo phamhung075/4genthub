@@ -2,6 +2,32 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-17 - the comm guard's expectations bind unaudited routes only (hub, branch 4genthub-min/comm-guard-unaudited-routes)
+
+- CHANGED `agenthub_go/fastmcp/seat_management/domain/seedlibrary/seedlibrary_test.go`:
+  `TestLoadEmbeddedSeedsCarryCommGuard` requires the deny list `Bash(4genteam input:*)`,
+  `Bash(tmux send-keys:*)`, `Bash(tmux paste-buffer:*)` and the allow list
+  `Bash(4genteam whoami:*)|Bash(4genteam send:*)` - the audited send path is allowed by name, and the entry
+  it replaced (`Bash(4genteam send:*)` in deny) is what the row measured as the defect.
+- CHANGED `.../domain/seatrenderer/renderer_test.go`: `TestRenderSeatKeepsCommGuardNextToAnotherToolModule`
+  joins the 3 seeded denies with the injected `Bash(rm:*)` and the 2 allows with `Read`;
+  `TestRenderSeatSameModulesOnBothRuntimes` still counts 5 `Bash(` entries in the claude-code fragment (it
+  was 4 denies + 1 allow) and its codex half requires 3 `forbidden` rules and asserts NO
+  `pattern = ["4genteam", "send"]`; `TestRenderSeatCodexRulesDenyTheDirectSendSurface`'s fixture carries the
+  new lists, its deny-only check looks for `4genteam input`, and its claude half parses the fragment and
+  compares both lists instead of matching pretty-printed JSON text.
+- CHANGED `.../domain/seedmap/seedmap.go`: `seedVersion` 1.4.15 with its sentence; no test file changed
+  there, but the package's instrument wrote the record -
+  `go test ./fastmcp/seat_management/domain/seedlibrary/ -run TestSeedVersionNamesOneContentSet -args
+  -update-seedcontent-lock` appended the 1.4.15 entry (26 files) to `seedcontent.lock.json` (32 insertions,
+  0 deletions; 1.4.14's record untouched).
+- RED FIRST: the flipped seedlibrary and renderer expectations failed on the old `comm-guard.json`
+  (`permissions = {Deny:[Bash(4genteam send:*) ...] Allow:[Bash(4genteam whoami:*)]}`) before the JSON was
+  edited.
+- MEASURED: `cd agenthub_go && go build ./... && go test ./...` rc 0; `gofmt -l agenthub_go` empty. The
+  client half of the ruling changed `agenthub_client/internal/commpolicy/policy_test.go` and is recorded in
+  that repo's own changelog.
+
 ## 2026-10-17 - the census runtime record carries the room's `agy` seat (hub, branch 4genthub-min/fe-decisions-route)
 
 - `scripts/tests/test_team_definition.py`: `ROOM_RUNTIMES["4genthub-min"]` records `{"agy", "omp"}`.
