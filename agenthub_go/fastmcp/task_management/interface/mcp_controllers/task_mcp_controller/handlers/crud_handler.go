@@ -284,12 +284,12 @@ func enrichTaskInheritedContext(ctx context.Context, result, taskData *entities.
 // the brief back as the response's payload. It is a READ, so it follows get's shape - a success flag
 // beside the payload under its own key - and a failure (no such task, no ledger read) is reported
 // through the response formatter rather than dressed up as an empty brief.
+//
+// taskID EMPTY IS A SUPPORTED REQUEST (4/8): the service resolves the caller seat's current task and
+// answers ErrNoTaskForSeat, with the token and the two fixes in its text, when there is none. This
+// handler does not pre-empt that answer with a generic "task_id is required", because the seat that
+// needs the fallback is exactly the one that cannot supply an id.
 func (h *CRUDHandler) ResumeTask(ctx context.Context, facade TaskFacade, taskID string) *entities.OrderedMap[any] {
-
-	if taskID == "" {
-		return h.createStandardizedError("resume_task", "task_id", "A valid task_id string",
-			"Include 'task_id' in your request")
-	}
 
 	brief, err := facade.ResumeBrief(ctx, taskID)
 	if err != nil {

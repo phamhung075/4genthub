@@ -54,6 +54,11 @@ func (r *zpUpdateRepo) FindByCriteria(context.Context, map[string]any, *int) ([]
 	return nil, nil
 }
 
+// LatestInProgressByAssignee is the resume-by-seat read; these cases name their task explicitly.
+func (r *zpUpdateRepo) LatestInProgressByAssignee(context.Context, string) (*entities.Task, error) {
+	return nil, nil
+}
+
 func (r *zpUpdateRepo) FindByID(context.Context, value_objects.TaskId) (*entities.Task, error) {
 	cp := *r.task
 	return &cp, nil

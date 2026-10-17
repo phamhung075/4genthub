@@ -2,6 +2,21 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-17 - resume resolves the caller's seat and the ladder hears the handover (hub)
+
+- `agenthub_go/fastmcp/task_management/application/services/task_resume_service_test.go`: the empty-task_id
+  resolution asks for `@<the request's seat>` and equals the explicit brief; no actor, a non-seat actor and a
+  seat without a task answer `no_task_for_seat` with the two fixes; a blocked handover outranks a REJECT
+  verdict, `continue` leaves the ladder alone, `escalate` names its row and degrades without one.
+- `agenthub_go/fastmcp/task_management/infrastructure/repositories/task_repository_test.go`
+  `TestTaskRepoLatestInProgressByAssigneeIsTheRuledResumeRead` (new, PostgreSQL): updated_at beats created_at,
+  a tie is broken by id ascending, and another status/seat/tenant is never a candidate.
+- `agenthub_go/fastmcp/server/mcptoolpath/resume_by_seat_tool_path_pg_test.go` (new, PostgreSQL): through the
+  real MCP route, the seat's own header resolves its task with no task_id; another seat and a header-less call
+  answer `no_task_for_seat`.
+- RUN: `cd agenthub_go && go test -count=1 ./...` = all packages ok; the two PostgreSQL cases run with
+  `AGENTHUB_TEST_PG_URL` from `tools/testpg/start.sh`.
+
 ## 2026-10-17 - the ledger vocabulary shrinks to six kinds (frontend)
 
 - `agenthub-frontend/src/tests/lib/taskTimeline.test.ts`: the phase-fold case now surrounds the single

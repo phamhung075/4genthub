@@ -770,6 +770,51 @@ func (r *ORMTaskRepository) ListTasks(ctx context.Context, status, priority, ass
 	return out, err
 }
 
+// LatestInProgressByAssignee is the resume-by-seat fallback (4/8): the task the seat holds
+// in_progress that moved most recently, ties broken by id ascending so the answer is stable.
+//
+// It is the ruled resolution - `status = 'in_progress' AND assignee = @<seat>` ordered by
+// `updated_at DESC, id ASC` limited to one - executed as ONE read rather than a list the caller
+// re-sorts, because a caller's own sort is a second place the rule could drift. The scope is the
+// repository's (the user's tree and, when set, the branch), exactly as ListTasks's is: a seat key
+// is unique per room, not per database, so the user scope is what keeps two rooms' @go-dev apart.
+func (r *ORMTaskRepository) LatestInProgressByAssignee(ctx context.Context, assignee string) (*entities.Task, error) {
+	assignee = strings.TrimSpace(assignee)
+	if assignee == "" {
+		return nil, nil
+	}
+	var out *entities.Task
+	err := r.GetDBSession(ctx, func(ctx context.Context, s database.DBTX) error {
+		args := []any{assignee}
+		conds := []string{
+			`"status" = 'in_progress'`,
+			fmt.Sprintf(`EXISTS (SELECT 1 FROM task_assignees ta WHERE ta.task_id = tasks.id AND ta.assignee_id = $%d)`, len(args)),
+		}
+		r.taskRepoUserCondition(&args, &conds)
+		if r.GitBranchID != nil && *r.GitBranchID != "" {
+			args = append(args, *r.GitBranchID)
+			conds = append(conds, fmt.Sprintf(`"git_branch_id" = $%d::uuid`, len(args)))
+		}
+		rows, err := r.selectRows(ctx, s,
+			" WHERE "+strings.Join(conds, " AND ")+` ORDER BY "updated_at" DESC, "id" ASC LIMIT 1`, args...)
+		if err != nil {
+			return err
+		}
+		for _, row := range rows {
+			e, err := r.taskRepoModelToEntity(ctx, s, row)
+			if err != nil {
+				return err
+			}
+			out = e
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ListTasksOptimized is list_tasks_optimized (the dead raw SQL is dropped; the ORM query
 // is identical to list_tasks apart from the limit default).
 func (r *ORMTaskRepository) ListTasksOptimized(ctx context.Context, status, priority, assigneeID *string, limit, offset int) ([]*entities.Task, error) {

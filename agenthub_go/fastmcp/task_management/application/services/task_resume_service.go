@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -21,11 +22,19 @@ import (
 // silent-degradation failure this ledger exists to make impossible.
 const resumeBriefTokenBudget = 4000
 
-// TaskResumeTaskRead reads the task a brief is about. It is FindByID alone because every fact the
-// brief needs of the task - status, acceptance criteria, dependency ids, the context document id -
-// is carried by the Task entity itself.
+// ErrNoTaskForSeat is the resume-by-seat refusal (4/8, the 1/8 ruling): the caller named no
+// task_id and this seat holds no in_progress task. It is a TOKEN rather than prose because a client
+// branches on it, and its text names the two fixes - the ruling's own two - so a seat that reads
+// only the message knows what to do next.
+var ErrNoTaskForSeat = errors.New("no_task_for_seat: no in_progress task is assigned to this seat - claim a queue item, or pass task_id")
+
+// TaskResumeTaskRead reads the task a brief is about. FindByID is what the explicit-task_id path
+// needs; LatestInProgressByAssignee is the resume-by-seat fallback, kept HERE in the read interface
+// because the rule (which task counts as the seat's current one) is the service's, not the
+// repository's: the repository executes the ruled query, the service decides when to ask it.
 type TaskResumeTaskRead interface {
 	FindByID(ctx context.Context, taskID value_objects.TaskId) (*entities.Task, error)
+	LatestInProgressByAssignee(ctx context.Context, assignee string) (*entities.Task, error)
 }
 
 // TaskResumeSubtaskRead lists the task's subtasks. WHICH of them count as open is the service's
@@ -82,19 +91,25 @@ func NewTaskResumeService(tasks TaskResumeTaskRead, subtasks TaskResumeSubtaskRe
 // open_subtasks and blockers, (5) last_evidence, (6) context and last_handover, then budget - so a
 // consumer that reads only its first three sections still has the criteria, the last rejection's
 // reasons and the next action. A future budget policy would cut against that order; nothing cuts now.
+//
+// taskID EMPTY IS THE SEAT LOOKUP, not a usage error: the brief is then the seat's own current task,
+// resolved by the ruled rule (in_progress, assigned to @<the request's seat>, most recently updated,
+// id ascending). The seat key is read from the request's actor and is NEVER a parameter, so a seat
+// cannot resume another seat's item by naming it; a caller with no seat attribution, or a seat with
+// no in_progress item, gets ErrNoTaskForSeat. The brief names the task it resolved in its own `task`
+// section, which is how a seat that got an unexpected item passes task_id explicitly instead.
 func (s *TaskResumeService) Resume(ctx context.Context, taskID string) (*entities.OrderedMap[any], error) {
-	id, err := value_objects.NewTaskId(taskID)
+	task, err := s.resumeTask(ctx, taskID)
 	if err != nil {
 		return nil, err
 	}
-
-	task, err := s.tasks.FindByID(ctx, id)
-	if err != nil {
-		return nil, err
+	if task.ID == nil {
+		return nil, ErrNoTaskForSeat
 	}
-	if task == nil {
-		return nil, exceptions.NewTaskNotFoundError(fmt.Sprintf("Task %s not found", taskID))
-	}
+	// The rest of the brief is keyed by the task's OWN id, so an empty request and an explicit one
+	// produce byte-identical links and reads once the same task is chosen.
+	taskID = task.ID.String()
+	id := *task.ID
 
 	subtasks, err := s.subtasks.FindByParentTaskID(ctx, id)
 	if err != nil {
@@ -146,7 +161,7 @@ func (s *TaskResumeService) Resume(ctx context.Context, taskID string) (*entitie
 	brief.Set("task", resumeTaskFacts(task))
 	brief.Set("acceptance_criteria", resumeStrings(task.AcceptanceCriteria))
 	brief.Set("last_verdict", resumeVerdictSection(verdict))
-	brief.Set("next_action", resumeNextAction(verdict, evidence, len(openSubtasks), blockers))
+	brief.Set("next_action", resumeNextAction(verdict, evidence, handover, len(openSubtasks), blockers))
 	brief.Set("open_subtasks", openSubtasks)
 	brief.Set("blockers", blockers)
 	brief.Set("last_evidence", resumeEvidenceSection(evidence, taskID))
@@ -169,6 +184,55 @@ func (s *TaskResumeService) Resume(ctx context.Context, taskID string) (*entitie
 	brief.Set("budget", budget)
 
 	return brief, nil
+}
+
+// resumeTask picks the task the brief is about: the explicit id, validated; or, when the caller named
+// none, the seat's current task under the ruled rule. The two paths converge on one Task because
+// everything after this point is a function of the task, not of how it was named.
+func (s *TaskResumeService) resumeTask(ctx context.Context, taskID string) (*entities.Task, error) {
+	if strings.TrimSpace(taskID) == "" {
+		seat, ok := resumeSeatKey(ctx)
+		if !ok {
+			return nil, ErrNoTaskForSeat
+		}
+		task, err := s.tasks.LatestInProgressByAssignee(ctx, "@"+seat)
+		if err != nil {
+			return nil, err
+		}
+		if task == nil {
+			return nil, ErrNoTaskForSeat
+		}
+		return task, nil
+	}
+	id, err := value_objects.NewTaskId(strings.TrimSpace(taskID))
+	if err != nil {
+		return nil, err
+	}
+	task, err := s.tasks.FindByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if task == nil {
+		return nil, exceptions.NewTaskNotFoundError(fmt.Sprintf("Task %s not found", strings.TrimSpace(taskID)))
+	}
+	return task, nil
+}
+
+// resumeSeatKey is the seat the REQUEST named, read from the same actor context the ledger's writes
+// are attributed through (services.WithActor). It is the only source of the seat for the resolution:
+// a task_id is a parameter, a seat key is not, which is what stops a seat resuming another seat's
+// item by naming it. No actor, or an actor that is not a seat, has no key to resolve with.
+func resumeSeatKey(ctx context.Context) (string, bool) {
+	actor, ok := ActorFromContext(ctx)
+	if !ok || actor.Kind != entities.TaskEventActorSeat {
+		return "", false
+	}
+	_, seat, found := strings.Cut(actor.ID, "/")
+	seat = strings.TrimSpace(seat)
+	if !found || seat == "" {
+		return "", false
+	}
+	return seat, true
 }
 
 // resumeLastEvent is the most recent ledger entry of a kind, by the sequence the ledger assigned. A
@@ -261,10 +325,28 @@ func resumeHandoverSection(event *entities.TaskEvent) any {
 	return event.Payload
 }
 
-// resumeNextAction is the DETERMINISTIC ladder over the facts, most recent blocking fact first: a
-// REJECT verdict, then a failing evidence run, then open subtasks, then blocking dependencies, then
-// no evidence at all, then continue. It reads nothing but its arguments.
-func resumeNextAction(verdict, evidence *entities.TaskEvent, openSubtasks int, blockers []string) string {
+// resumeNextAction is the DETERMINISTIC ladder over the facts, most recent blocking fact first: the
+// seat's own blocked/escalate handover, then a REJECT verdict, then a failing evidence run, then open
+// subtasks, then blocking dependencies, then no evidence at all, then continue. It reads nothing but
+// its arguments.
+//
+// THE HANDOVER RANKS FIRST (the 1/8 ruling's one ladder input) because a seat that read the latest
+// rejection and STILL wrote `blocked`/`escalate` is the more recent fact; the verdict it read is
+// older. A `continue`/`done` handover adds nothing to the ladder and falls through to it - the
+// brief's next_action stays the deterministic answer, while last_handover carries the seat's own
+// line, so the two can be read side by side rather than one overwriting the other.
+func resumeNextAction(verdict, evidence, handover *entities.TaskEvent, openSubtasks int, blockers []string) string {
+	if handover != nil {
+		decision := strings.ToLower(resumeString(handover.Payload["decision"]))
+		if decision == "blocked" || decision == "escalate" {
+			if on := strings.TrimSpace(resumeString(handover.Payload["blocked_on"])); on != "" {
+				return decision + ": " + on
+			}
+			// A payload written before 2/8's gate, or truncated by hand: the decision still ranks,
+			// and the line does not dangle a colon with nothing after it.
+			return decision
+		}
+	}
 	if verdict != nil && strings.ToLower(resumeString(verdict.Payload["verdict"])) == "reject" {
 		return "fix: " + resumeOrFallback(resumeStrings(verdict.Payload["reasons"]), "rejected")
 	}

@@ -30,6 +30,11 @@ import (
 type FacadeTaskRepository interface {
 	repositories.TaskRepository
 	use_cases.ListTasksTaskRepository
+	// LatestInProgressByAssignee is the resume-by-seat fallback (4/8): the most recently updated
+	// task the seat holds in_progress, id ascending on a tie. It is on this surface rather than on
+	// the domain port because the ruling makes it a read of the SAME task tree the facade already
+	// reads, not a new store.
+	LatestInProgressByAssignee(ctx context.Context, assignee string) (*entities.Task, error)
 }
 
 // TaskFacadeContextService is the hierarchical (unified) context service.

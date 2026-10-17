@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"errors"
 	"reflect"
 	"strings"
 	"testing"
@@ -15,10 +16,20 @@ import (
 type resumeFakeTaskRead struct {
 	task *entities.Task
 	err  error
+	// latest is what the resume-by-seat read answers; askedFor records the assignee it was asked
+	// for, which is how a test proves the seat key came from the request and not from a parameter.
+	latest    *entities.Task
+	latestErr error
+	askedFor  string
 }
 
 func (f *resumeFakeTaskRead) FindByID(context.Context, value_objects.TaskId) (*entities.Task, error) {
 	return f.task, f.err
+}
+
+func (f *resumeFakeTaskRead) LatestInProgressByAssignee(_ context.Context, assignee string) (*entities.Task, error) {
+	f.askedFor = assignee
+	return f.latest, f.latestErr
 }
 
 type resumeFakeSubtaskRead struct {
@@ -414,5 +425,148 @@ func TestResumeBriefIsFunctionOfInputsOnly(t *testing.T) {
 	if strings.Contains(firstJSON, "room-a") || strings.Contains(firstJSON, "seat-one") ||
 		strings.Contains(firstJSON, "room-b") || strings.Contains(firstJSON, "seat-two") {
 		t.Fatalf("the brief carries caller identity: %s", firstJSON)
+	}
+}
+
+func resumeTestHandover(seq int, decision, blockedOn string) *entities.TaskEvent {
+	payload := map[string]any{
+		"decision":    decision,
+		"next_action": "go",
+		"facts":       []any{map[string]any{"claim": "a fact", "evidence": "sha:8e706e18"}},
+	}
+	if blockedOn != "" {
+		payload["blocked_on"] = blockedOn
+	}
+	return &entities.TaskEvent{Seq: seq, Kind: entities.TaskEventKindHandover, Payload: payload}
+}
+
+// TestResumeWithoutTaskIDResolvesTheCallersSeatTask is 4/8's rule at the service: an empty task_id
+// asks the read for `@<the request's seat key>` - never for a seat a parameter names - and the brief
+// is the same document an explicit call for that task produces.
+func TestResumeWithoutTaskIDResolvesTheCallersSeatTask(t *testing.T) {
+	task := resumeTestTask(t)
+	reader := &resumeFakeTaskRead{task: task, latest: task}
+	svc := NewTaskResumeService(reader, &resumeFakeSubtaskRead{}, &resumeFakeDependencyRead{},
+		&resumeFakeContextRead{}, &resumeFakeEventRead{})
+
+	ctx := WithActor(context.Background(), SeatActor("4genthub-min/go-dev"))
+	resolved, err := svc.Resume(ctx, "")
+	if err != nil {
+		t.Fatalf("Resume with no task_id: %v", err)
+	}
+	if reader.askedFor != "@go-dev" {
+		t.Fatalf("the read was asked for %q, want the request's own seat key as @go-dev", reader.askedFor)
+	}
+
+	explicit, err := svc.Resume(ctx, resumeTestTaskID)
+	if err != nil {
+		t.Fatalf("Resume with the explicit id: %v", err)
+	}
+	if resumeJSON(t, resolved) != resumeJSON(t, explicit) {
+		t.Fatalf("the resolved brief differs from the explicit one:\nresolved = %s\nexplicit = %s",
+			resumeJSON(t, resolved), resumeJSON(t, explicit))
+	}
+	if got := resumeMustSection(t, resolved, "task"); resumeMustString(t, got, "id") != resumeTestTaskID {
+		t.Fatalf("the resolved brief names task %q, want %s",
+			resumeMustString(t, got, "id"), resumeTestTaskID)
+	}
+}
+
+// TestResumeWithoutTaskIDRefusesNoTaskForSeat pins the refusal's token and its two fixes: no seat
+// attribution, an actor that is not a seat, and a seat with no in_progress item all answer the same
+// error, and the read is never asked with a guessed key.
+func TestResumeWithoutTaskIDRefusesNoTaskForSeat(t *testing.T) {
+	cases := map[string]context.Context{
+		"no actor":         context.Background(),
+		"not a seat actor": WithActor(context.Background(), Actor{Kind: entities.TaskEventActorClient, ID: "machine-1"}),
+		"seat without a task": WithActor(context.Background(),
+			SeatActor("4genthub-min/go-dev")),
+	}
+	for name, ctx := range cases {
+		t.Run(name, func(t *testing.T) {
+			reader := &resumeFakeTaskRead{task: resumeTestTask(t)}
+			svc := NewTaskResumeService(reader, &resumeFakeSubtaskRead{}, &resumeFakeDependencyRead{},
+				&resumeFakeContextRead{}, &resumeFakeEventRead{})
+
+			_, err := svc.Resume(ctx, "")
+			if !errors.Is(err, ErrNoTaskForSeat) {
+				t.Fatalf("err = %v, want ErrNoTaskForSeat", err)
+			}
+			if !strings.Contains(err.Error(), "no_task_for_seat") ||
+				!strings.Contains(err.Error(), "claim a queue item") ||
+				!strings.Contains(err.Error(), "pass task_id") {
+				t.Fatalf("the refusal does not carry the token and the two fixes: %q", err.Error())
+			}
+			if name != "seat without a task" && reader.askedFor != "" {
+				t.Fatalf("no seat key was named, yet the read was asked for %q", reader.askedFor)
+			}
+		})
+	}
+}
+
+// TestResumeBlockedHandoverRanksAboveTheRejectVerdict is the ladder's new first arm: the seat's own
+// blocked decision is more recent than the verdict it read, so it wins the next_action - and the
+// handover itself still travels verbatim in last_handover.
+func TestResumeBlockedHandoverRanksAboveTheRejectVerdict(t *testing.T) {
+	svc := resumeTestService(resumeTestTask(t), nil, nil, nil, []*entities.TaskEvent{
+		resumeTestVerdict(1, "reject", []string{"criterion two unmet"}),
+		resumeTestHandover(2, "blocked", "qitem-20261017141553-8649056138ec"),
+	})
+
+	brief, err := svc.Resume(context.Background(), resumeTestTaskID)
+	if err != nil {
+		t.Fatalf("Resume: %v", err)
+	}
+	if got := resumeMustString(t, brief, "next_action"); got != "blocked: qitem-20261017141553-8649056138ec" {
+		t.Fatalf("next_action = %q, want the seat's blocked row", got)
+	}
+	handover, ok := resumeMustGet(t, brief, "last_handover").(map[string]any)
+	if !ok {
+		t.Fatalf("last_handover = %#v, want the payload object", resumeMustGet(t, brief, "last_handover"))
+	}
+	if got, _ := handover["decision"].(string); got != "blocked" {
+		t.Fatalf("last_handover.decision = %q, want blocked", got)
+	}
+	if got, _ := handover["blocked_on"].(string); got != "qitem-20261017141553-8649056138ec" {
+		t.Fatalf("last_handover.blocked_on = %q, want the row id verbatim", got)
+	}
+}
+
+// TestResumeContinueHandoverLeavesTheLadderAlone is the other half of the rule: a `continue` or
+// `done` handover adds no arm, so the deterministic ladder still answers.
+func TestResumeContinueHandoverLeavesTheLadderAlone(t *testing.T) {
+	svc := resumeTestService(resumeTestTask(t), nil, nil, nil, []*entities.TaskEvent{
+		resumeTestVerdict(1, "reject", []string{"criterion two unmet"}),
+		resumeTestHandover(2, "continue", ""),
+	})
+
+	brief, err := svc.Resume(context.Background(), resumeTestTaskID)
+	if err != nil {
+		t.Fatalf("Resume: %v", err)
+	}
+	if got := resumeMustString(t, brief, "next_action"); got != "fix: criterion two unmet" {
+		t.Fatalf("next_action = %q, want the reject verdict's reasons", got)
+	}
+}
+
+// TestResumeEscalateHandoverNamesItsRow is the escalate spelling, and the fallback for a payload
+// with no blocked_on (a row written before 2/8's gate): the decision ranks, and the line does not
+// dangle a colon.
+func TestResumeEscalateHandoverNamesItsRow(t *testing.T) {
+	for _, blockedOn := range []string{"qitem-20261017141553-8649056138ec", ""} {
+		svc := resumeTestService(resumeTestTask(t), nil, nil, nil, []*entities.TaskEvent{
+			resumeTestHandover(1, "escalate", blockedOn),
+		})
+		brief, err := svc.Resume(context.Background(), resumeTestTaskID)
+		if err != nil {
+			t.Fatalf("Resume: %v", err)
+		}
+		want := "escalate"
+		if blockedOn != "" {
+			want += ": " + blockedOn
+		}
+		if got := resumeMustString(t, brief, "next_action"); got != want {
+			t.Fatalf("next_action = %q, want %q", got, want)
+		}
 	}
 }
