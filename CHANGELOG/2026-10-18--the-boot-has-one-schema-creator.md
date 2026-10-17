@@ -64,8 +64,8 @@ differed from the registry's could leave the two disagreeing with nothing to rep
 ## Checks
 
 - `go build ./...`, `gofmt -l .`, `go vet ./...`: clean, no output.
-- `go test ./... -count=1` with `AGENTHUB_TEST_PG_URL` set: **136 packages ok, 3 packages FAIL**. All
-  three failures reproduce in a `git worktree` of the unmodified HEAD `8f053e8c`, so none is from this
+- `go test ./... -count=1` with `AGENTHUB_TEST_PG_URL` set: **138 packages exercised, 136 ok, 2 FAIL**.
+  Both failures reproduce in a `git worktree` of the unmodified HEAD `8f053e8c`, so neither is from this
   change:
   - `fastmcp/server/httpapp`: `TestLedgerIntentsOneBatchDecidesEachItemAndAnswersTheResendFromItsRow`
     (`unsupported_kind`) and `TestLedgerIntentsRecordsOfflineFactsUnchangedInArrivalOrder`
