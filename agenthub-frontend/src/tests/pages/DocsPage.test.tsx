@@ -48,6 +48,13 @@ describe('DocsPage', () => {
     expect((await screen.findByTestId('docs-body')).querySelector('h1')?.textContent).toBe('Prerequisites');
   });
 
+  it('renders the API reference inside the same layout at /docs/api-reference', async () => {
+    renderAt('/docs/api-reference');
+
+    expect(await screen.findByTestId('api-docs-page')).toBeInTheDocument();
+    expect(screen.getByTestId('docs-sidebar').textContent).toContain('API reference');
+  });
+
   it('shows not found for a path with no page, and keeps the sidebar', () => {
     renderAt('/docs/quickstart/no-such-page');
 

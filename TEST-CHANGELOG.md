@@ -8,9 +8,13 @@ Track test suite changes, fixes, and improvements for agenthub.
   pushes `/help-setup`, then asserts the docs body opens on `Overview` and the URL ends at
   `/docs/quickstart/overview` (DocsPage canonicalises `/docs` to its first page). Red before the route
   existed: the catch-all sent the path to `/`.
+- `agenthub-frontend/src/tests/pages/DocsPage.test.tsx` `renders the API reference inside the same layout at
+  /docs/api-reference` (new): the lazy route renders `api-docs-page` and the sidebar is still there - the one
+  route the /docs commit left without a test.
 - RUN, which the /docs entry below could not do: `npx vitest run src/tests/App.test.tsx
   src/tests/docs/docsSite.test.ts src/tests/pages/DocsPage.test.tsx src/tests/pages/ApiDocsPage.test.tsx` =
-  4 files, 36 tests, 0 failed. `npx tsc --noEmit` exits 0. The earlier "NOT RUN" line records that commit's
+  4 files, 37 tests, 0 failed (36 before the API-reference route case was added). `npx tsc --noEmit` exits 0.
+  The earlier "NOT RUN" line records that commit's
   state and stands; this run is the owner's instruction on task b6a8d202, and the rule it cites is the 3 GB
   vite build, not vitest (`npx vitest run` is on the seat guard's allow list and the guard passed it).
 
