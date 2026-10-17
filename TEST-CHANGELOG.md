@@ -13,6 +13,19 @@ Track test suite changes, fixes, and improvements for agenthub.
   `language-python`, and no raw `| Action |` text is left.
 - NOT RUN locally (local frontend runs are not allowed); `npx tsc --noEmit` is clean.
 
+## 2026-10-17 - the U3 harness install path has its refusals pinned (scripts)
+
+- NEW `scripts/tests/test_u3_apply_harness.py` for `scripts/u3-apply-harness.sh`: refuses a missing `--live`,
+  a missing `--expect-sha`, bytes that moved after the announcement, a no-op install and a `bash -n`
+  failure; on the happy path it proves the live file equals the staged bytes, mode 0755, the predecessor
+  aside under its own sha, the one `APPLY-LOG` line and the announcement; it also pins that a second install
+  of the same bytes refuses, that `--dry-run` leaves the directory byte-identical, and that `--current` /
+  `--log` read what the install wrote. Each refusal asserts the live file did not change.
+- RUN: `python3 -m pytest --noconftest -p no:cacheprovider scripts/tests/test_u3_apply_harness.py -q` =
+  10 passed. Smoke on the real bytes, outside the test suite: the staged `fe-stage15.sh`
+  (`f3bbd72d…`, 182,238 B) installed over a copy of the live `b9127abb…` harness (177,919 B) in a scratch
+  dir — aside, log line and announcement as designed, and the installed copy answers `--list`.
+
 ## 2026-10-17 - the retired /help-setup route is pinned, and the /docs tests were run (frontend)
 
 - `agenthub-frontend/src/tests/App.test.tsx` `sends the retired /help-setup route to the docs site` (new):
