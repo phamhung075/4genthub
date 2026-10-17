@@ -1,11 +1,8 @@
 package seatrenderer
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"os"
-	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
@@ -13,26 +10,9 @@ import (
 	"agenthub/fastmcp/seat_management/domain/mcpblock"
 	"agenthub/fastmcp/seat_management/domain/resolver"
 	"agenthub/fastmcp/seat_management/domain/seedlibrary"
-
-	"gopkg.in/yaml.v3"
 )
 
 const testMCPURL = "https://mcp.4genthub.test/mcp"
-
-// skillBlock builds the content of one skill module: the SKILL.md text plus its source
-// provenance, the block shape the renderer unwraps.
-func skillBlock(text, sourcePath string) string {
-	sum := sha256.Sum256([]byte(text))
-	encoded, err := json.Marshal(map[string]string{
-		"content":     text,
-		"source_path": sourcePath,
-		"sha256":      hex.EncodeToString(sum[:]),
-	})
-	if err != nil {
-		panic(err)
-	}
-	return string(encoded)
-}
 
 func seatFixture(runtime string) resolver.ResolvedSeat {
 	return resolver.ResolvedSeat{
@@ -44,7 +24,10 @@ func seatFixture(runtime string) resolver.ResolvedSeat {
 		Modules: []resolver.ResolvedModule{
 			{Slug: "instr.base", Version: "1.0.0", Kind: resolver.KindInstruction, Content: "Base instruction."},
 			{Slug: "doc.guide", Version: "2.0.0", Kind: resolver.KindDocument, Content: "Guide document."},
-			{Slug: "skill.alpha", Version: "1.0.0", Kind: resolver.KindSkill, Content: skillBlock("# Alpha skill\n", "skills/_canonical/process/alpha-skill/SKILL.md")},
+			// A skill module keeps its kind in the fixture even though the render writes no skill file:
+			// the client tree delivers skills now, and a render that quietly emitted one again would
+			// reintroduce a second source for the same text.
+			{Slug: "skill.alpha", Version: "1.0.0", Kind: resolver.KindSkill, Content: "# Alpha skill\n"},
 			{Slug: "mem.gamma", Version: "1.0.0", Kind: resolver.KindMemory, Content: "Gamma memory."},
 		},
 		Hash: "a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90",
@@ -159,9 +142,9 @@ func guideModule(slug, content string) resolver.ResolvedModule {
 
 // Packet 6, step 1: the guides are library blocks, and the render writes them where omp reads them.
 //
-// THE SPLIT IS THE TEST: a guide block goes to AGENTS.md and NOT to the guidance channel, so the same
-// text is delivered once; a non-guide instruction module keeps its place in guidance/role.md, which
-// shows the split is by the guide naming rather than by kind.
+// THE ONE DESTINATION IS THE TEST: a guide block goes to AGENTS.md, and the guidance channel it used to
+// also reach (`guidance/role.md`) is retired with the rest of the file half, so the text is delivered
+// once and there is no second place for it to appear.
 func TestRenderSeatWritesTheGuidesIntoAgentsMDOnce(t *testing.T) {
 	seat := withMCP(seatFixture("omp"),
 		guideModule("guide-common", "## Guide: every seat\n\nshared words\n"),
@@ -183,15 +166,11 @@ func TestRenderSeatWritesTheGuidesIntoAgentsMDOnce(t *testing.T) {
 	if got := strings.Count(agents, "## Guide: go-dev"); got != 1 {
 		t.Errorf("the guide heading appears %d times, want the block's own heading exactly once", got)
 	}
-
-	guidance := fileContent(t, spec, "guidance/role.md")
-	for _, absent := range []string{"## Guide: every seat", "shared words", "its own words"} {
-		if strings.Contains(guidance, absent) {
-			t.Errorf("guidance/role.md carries %q: a guide has ONE destination", absent)
-		}
-	}
-	if !strings.Contains(guidance, "Base instruction.") {
-		t.Error("a non-guide instruction module must keep its place in the guidance channel")
+	// One destination, and it is the WHOLE render: this seat resolves a guide and no server, so
+	// AGENTS.md is the only file. A runtime file here would mean an mcp document appeared for a seat
+	// that mounts none.
+	if got := filePaths(spec); !reflect.DeepEqual(got, []string{"AGENTS.md"}) {
+		t.Errorf("a guide-only omp seat rendered %v, want just AGENTS.md", got)
 	}
 }
 
@@ -220,48 +199,6 @@ func fileContent(t *testing.T, spec *SeatSpec, path string) string {
 	return ""
 }
 
-type parsedAgentYAML struct {
-	Name     string `yaml:"name"`
-	Version  string `yaml:"version"`
-	Defaults struct {
-		Runtime string `yaml:"runtime"`
-	} `yaml:"defaults"`
-	Profiles map[string]struct {
-		Uses struct {
-			Skills           []string `yaml:"skills"`
-			RuntimeResources []string `yaml:"runtime_resources"`
-		} `yaml:"uses"`
-	} `yaml:"profiles"`
-	Resources struct {
-		Skills []struct {
-			ID   string `yaml:"id"`
-			Path string `yaml:"path"`
-		} `yaml:"skills"`
-		RuntimeResources []struct {
-			ID      string `yaml:"id"`
-			Path    string `yaml:"path"`
-			Runtime string `yaml:"runtime"`
-			Type    string `yaml:"type"`
-		} `yaml:"runtime_resources"`
-	} `yaml:"resources"`
-	Startup struct {
-		Files []struct {
-			Path         string `yaml:"path"`
-			DeliveryHint string `yaml:"delivery_hint"`
-			Required     bool   `yaml:"required"`
-		} `yaml:"files"`
-	} `yaml:"startup"`
-}
-
-func parseAgentYAML(t *testing.T, spec *SeatSpec) parsedAgentYAML {
-	t.Helper()
-	var parsed parsedAgentYAML
-	if err := yaml.Unmarshal([]byte(fileContent(t, spec, agentYAMLPath)), &parsed); err != nil {
-		t.Fatalf("parse agent.yaml: %v", err)
-	}
-	return parsed
-}
-
 // assertNoSecret fails if any rendered file carries a literal bearer credential;
 // the spec may only reference the token through its environment variable.
 func assertNoSecret(t *testing.T, spec *SeatSpec) {
@@ -287,34 +224,10 @@ func TestRenderSeatClaudeCode(t *testing.T) {
 		t.Fatalf("identity = %q/%q, want seat.standard/1.2.0", spec.Slug, spec.Version)
 	}
 	wantPaths := []string{
-		"agent.yaml",
-		"guidance/role.md",
-		"skills/skill.alpha/SKILL.md",
 		"runtime/claude-mcp.fragment.json",
 	}
 	if got := filePaths(spec); !reflect.DeepEqual(got, wantPaths) {
 		t.Fatalf("file paths = %v, want %v", got, wantPaths)
-	}
-	// A skill module's content is a block; the renderer writes only its text to SKILL.md.
-	if got := fileContent(t, spec, "skills/skill.alpha/SKILL.md"); got != "# Alpha skill\n" {
-		t.Fatalf("skill file = %q, want the block's content", got)
-	}
-
-	guidance := fileContent(t, spec, guidancePath)
-	if !strings.HasPrefix(guidance, "<!-- seat-hash: "+seat.Hash+" -->\n") {
-		t.Fatalf("guidance does not start with the seat hash comment:\n%s", guidance)
-	}
-	if !strings.Contains(guidance, "<!-- seat-type-version: 1.2.0 -->") {
-		t.Fatalf("guidance missing seat type version:\n%s", guidance)
-	}
-	instr := strings.Index(guidance, "## instr.base")
-	doc := strings.Index(guidance, "## Document: doc.guide")
-	mem := strings.Index(guidance, "## Memory: mem.gamma")
-	if instr < 0 || doc < instr || mem < doc {
-		t.Fatalf("guidance ordering wrong (instruction=%d document=%d memory=%d):\n%s", instr, doc, mem, guidance)
-	}
-	if !strings.Contains(guidance, "Base instruction.") || !strings.Contains(guidance, "Guide document.") || !strings.Contains(guidance, "Gamma memory.") {
-		t.Fatalf("guidance missing module content:\n%s", guidance)
 	}
 
 	mcp := fileContent(t, spec, mcpFragmentPath)
@@ -329,31 +242,6 @@ func TestRenderSeatClaudeCode(t *testing.T) {
 		t.Fatalf("mcp fragment is not JSON: %v", err)
 	}
 	assertNoSecret(t, spec)
-
-	parsed := parseAgentYAML(t, spec)
-	if parsed.Name != "seat.standard" || parsed.Version != "1.2.0" {
-		t.Fatalf("agent.yaml name/version = %q/%q", parsed.Name, parsed.Version)
-	}
-	if parsed.Defaults.Runtime != "claude-code" {
-		t.Fatalf("defaults.runtime = %q, want claude-code", parsed.Defaults.Runtime)
-	}
-	if len(parsed.Resources.Skills) != 1 || parsed.Resources.Skills[0].ID != "skill.alpha" || parsed.Resources.Skills[0].Path != "skills/skill.alpha" {
-		t.Fatalf("skills resources = %+v", parsed.Resources.Skills)
-	}
-	if len(parsed.Resources.RuntimeResources) != 1 {
-		t.Fatalf("runtime resources = %+v", parsed.Resources.RuntimeResources)
-	}
-	res := parsed.Resources.RuntimeResources[0]
-	if res.ID != "claude-mcp" || res.Path != mcpFragmentPath || res.Runtime != "claude-code" || res.Type != "claude_mcp_fragment" {
-		t.Fatalf("mcp runtime resource = %+v", res)
-	}
-	uses := parsed.Profiles["default"].Uses
-	if !reflect.DeepEqual(uses.Skills, []string{"skill.alpha"}) || !reflect.DeepEqual(uses.RuntimeResources, []string{"claude-mcp"}) {
-		t.Fatalf("uses = skills %v runtime_resources %v", uses.Skills, uses.RuntimeResources)
-	}
-	if len(parsed.Startup.Files) != 1 || parsed.Startup.Files[0].Path != guidancePath || parsed.Startup.Files[0].DeliveryHint != "send_text" || !parsed.Startup.Files[0].Required {
-		t.Fatalf("startup files = %+v", parsed.Startup.Files)
-	}
 }
 
 func TestRenderSeatCodex(t *testing.T) {
@@ -362,11 +250,7 @@ func TestRenderSeatCodex(t *testing.T) {
 	if err != nil {
 		t.Fatalf("RenderSeat: %v", err)
 	}
-	wantPaths := []string{
-		"agent.yaml",
-		"guidance/role.md",
-		"skills/skill.alpha/SKILL.md",
-	}
+	wantPaths := []string{}
 	if got := filePaths(spec); !reflect.DeepEqual(got, wantPaths) {
 		t.Fatalf("file paths = %v, want %v", got, wantPaths)
 	}
@@ -375,19 +259,7 @@ func TestRenderSeatCodex(t *testing.T) {
 			t.Fatalf("codex seat rendered runtime fragment %q", path)
 		}
 	}
-	guidance := fileContent(t, spec, guidancePath)
-	if !strings.HasPrefix(guidance, "<!-- seat-hash: "+seat.Hash+" -->") {
-		t.Fatalf("guidance missing seat hash:\n%s", guidance)
-	}
 	assertNoSecret(t, spec)
-
-	parsed := parseAgentYAML(t, spec)
-	if parsed.Defaults.Runtime != "codex" {
-		t.Fatalf("defaults.runtime = %q, want codex", parsed.Defaults.Runtime)
-	}
-	if len(parsed.Resources.RuntimeResources) != 0 || len(parsed.Profiles["default"].Uses.RuntimeResources) != 0 {
-		t.Fatalf("codex seat has runtime resources: %+v / %v", parsed.Resources.RuntimeResources, parsed.Profiles["default"].Uses.RuntimeResources)
-	}
 }
 
 func TestRenderSeatUnsupportedRuntimeError(t *testing.T) {
@@ -423,8 +295,6 @@ func TestRenderSeatToolModulesMerge(t *testing.T) {
 		t.Fatalf("RenderSeat: %v", err)
 	}
 	wantPaths := []string{
-		"agent.yaml",
-		"guidance/role.md",
 		"runtime/claude-mcp.fragment.json",
 		"runtime/claude-settings.fragment.json",
 	}
@@ -435,17 +305,6 @@ func TestRenderSeatToolModulesMerge(t *testing.T) {
 	wantSettings := "{\n  \"a\": 3,\n  \"b\": 1\n}\n"
 	if settings != wantSettings {
 		t.Fatalf("settings fragment = %q, want %q", settings, wantSettings)
-	}
-	parsed := parseAgentYAML(t, spec)
-	if len(parsed.Resources.RuntimeResources) != 2 {
-		t.Fatalf("runtime resources = %+v", parsed.Resources.RuntimeResources)
-	}
-	settingsRes := parsed.Resources.RuntimeResources[1]
-	if settingsRes.ID != "claude-settings" || settingsRes.Type != "claude_settings_fragment" || settingsRes.Runtime != "claude-code" {
-		t.Fatalf("settings runtime resource = %+v", settingsRes)
-	}
-	if !reflect.DeepEqual(parsed.Profiles["default"].Uses.RuntimeResources, []string{"claude-mcp", "claude-settings"}) {
-		t.Fatalf("uses.runtime_resources = %v", parsed.Profiles["default"].Uses.RuntimeResources)
 	}
 }
 
@@ -523,9 +382,6 @@ func TestRenderSeatKeepsCommGuardNextToAnotherToolModule(t *testing.T) {
 	if strings.Join(settings.Permissions.Deny, "|") != wantDeny || strings.Join(settings.Permissions.Allow, "|") != "Bash(4genteam whoami:*)|Read" {
 		t.Fatalf("permissions = %+v", settings.Permissions)
 	}
-	if skill := fileContent(t, spec, "skills/comm-guard-skill/SKILL.md"); !strings.Contains(skill, "4genteam send") {
-		t.Fatalf("skill does not name 4genteam send:\n%s", skill)
-	}
 }
 
 func TestRenderSeatToolModuleInvalidJSONError(t *testing.T) {
@@ -538,8 +394,9 @@ func TestRenderSeatToolModuleInvalidJSONError(t *testing.T) {
 }
 
 // A seat can switch runtime while its pinned seat type version keeps the seeded modules, so
-// the same modules must render on every runtime: claude-code applies the tool module, codex
-// and agy skip it (a tool module is a Claude settings fragment) and keep the skill.
+// the same modules must render on every runtime: claude-code applies the tool module as a settings
+// fragment and codex as an execpolicy rules file, agy gets no rendered file at all (its skills are the
+// client tree's), and omp takes only the MCP documents.
 func TestRenderSeatSameModulesOnBothRuntimes(t *testing.T) {
 	seeds, err := seedlibrary.Load()
 	if err != nil {
@@ -579,11 +436,13 @@ func TestRenderSeatSameModulesOnBothRuntimes(t *testing.T) {
 	if strings.Contains(rules, "claude") {
 		t.Fatalf("codex rules mention claude:\n%s", rules)
 	}
-	if skill := fileContent(t, codex, "skills/comm-guard-skill/SKILL.md"); !strings.Contains(skill, "4genteam send") {
-		t.Fatalf("codex skill does not name 4genteam send:\n%s", skill)
-	}
+	// No skill-file assertion here any more: a seat's skills are the client skill tree's now (R1), so
+	// the comm-guard-skill text is not part of any runtime's render. What the render still carries for
+	// this module per runtime is asserted around this line: the codex rules above, the claude settings
+	// fragment in TestRenderSeatToolModulesMerge, and the omp files below.
 
-	// agy has neither a fragment type nor an MCP mechanism: guidance and skills only, no runtime file.
+	// agy has neither a fragment type nor an MCP mechanism: its seat carries NO rendered file at all,
+	// and what a seat reads is the client tree's skills plus the runtime's own mcp.json.
 	agy, err := RenderSeat(withModules(seatFixture("agy"), modules), testMCPURL)
 	if err != nil {
 		t.Fatalf("agy: %v", err)
@@ -592,9 +451,6 @@ func TestRenderSeatSameModulesOnBothRuntimes(t *testing.T) {
 		if strings.HasPrefix(path, "runtime/") {
 			t.Errorf("agy seat has a runtime file %q", path)
 		}
-	}
-	if skill := fileContent(t, agy, "skills/comm-guard-skill/SKILL.md"); !strings.Contains(skill, "4genteam send") {
-		t.Fatalf("agy skill does not name 4genteam send:\n%s", skill)
 	}
 
 	// omp gets the seat's MCP servers as TWO files in the render — the server document and the
@@ -613,9 +469,6 @@ func TestRenderSeatSameModulesOnBothRuntimes(t *testing.T) {
 	}
 	if len(found) != 2 || !found[ompMCPPath] || !found[ompConfigPath] {
 		t.Errorf("omp runtime files = %v, want exactly %q and %q", filePaths(omp), ompMCPPath, ompConfigPath)
-	}
-	if skill := fileContent(t, omp, "skills/comm-guard-skill/SKILL.md"); !strings.Contains(skill, "4genteam send") {
-		t.Fatalf("omp skill does not name 4genteam send:\n%s", skill)
 	}
 }
 
@@ -791,23 +644,13 @@ func TestRenderSeatOmpWithoutMCPBlocksRendersNoMCPFile(t *testing.T) {
 	}
 }
 
-// TestRenderSeatGuidanceNamesTheMCPTools is step E of the packet-5 dispatch: the seat's startup
-// guidance tells it to call the platform's MCP tools by name. The text comes from the catalog (the
-// shared `mcp-usage` instruction module), not from a string in the renderer, so this asserts BOTH:
-// the tools are named AND the section is the module's.
-func TestRenderSeatGuidanceNamesTheMCPTools(t *testing.T) {
-	spec, err := RenderSeat(withModules(seatFixture("omp"), seedModules(t, "lead")), testMCPURL)
-	if err != nil {
-		t.Fatalf("RenderSeat(omp): %v", err)
-	}
-	guidance := fileContent(t, spec, guidancePath)
-	for _, want := range []string{"## mcp-usage", "manage_context", "call_seat"} {
-		if !strings.Contains(guidance, want) {
-			t.Fatalf("seat guidance does not carry %q:\n%s", want, guidance)
-		}
-	}
-}
-
+// TestRenderSeatGuidanceNamesTheMCPTools is GONE with the guidance channel. Its subject was the shared
+// `mcp-usage` instruction module arriving in `guidance/role.md`; the file half is retired, and a module
+// that is not a `guide-` block has no destination in the render any more (a guide's destination is
+// AGENTS.md, and the role/rule texts are the client tree's seat tier). Whether the mcp-usage words should
+// be delivered from the client tree is a content question for the lead, not something this lane can
+// answer by inventing a destination.
+//
 // TestRenderSeatOmpWaitsForMCPConnections PINS THE SETTING THAT MAKES THE MCP ENTRY MOUNT, so a
 // future change cannot quietly drop it or change its value. Measured root cause (2026-10-06,
 // owner-found): `mcp.startupTimeoutMs` defaults to 250 ms, a LOCAL stdio server connects inside that
@@ -936,21 +779,17 @@ func TestRenderSeatMCPBlocksMountEveryServer(t *testing.T) {
 	}
 }
 
-// No mcp block mounts NO server: no fragment file, no claude_mcp runtime resource, and no
+// No mcp block mounts NO server: no fragment file, no runtime resource declaration and no
 // dependency on the mcp url at all. A hidden default is exactly what this pins against.
 func TestRenderSeatWithoutMCPBlocksMountsNoServer(t *testing.T) {
 	spec, err := RenderSeat(seatFixture("claude-code"), testMCPURL)
 	if err != nil {
 		t.Fatalf("RenderSeat(no mcp blocks): %v", err)
 	}
-	for _, path := range filePaths(spec) {
-		if path == mcpFragmentPath {
-			t.Fatalf("a seat with no mcp block rendered %q", path)
-		}
-	}
-	parsed := parseAgentYAML(t, spec)
-	if len(parsed.Resources.RuntimeResources) != 0 || len(parsed.Profiles["default"].Uses.RuntimeResources) != 0 {
-		t.Fatalf("a seat with no mcp block declared runtime resources: %+v", parsed.Resources.RuntimeResources)
+	// The fixture carries no guide and no policy block, so this seat's render has a reader for
+	// nothing at all: an empty file set IS the absence rule, and a fragment would appear here.
+	if got := filePaths(spec); len(got) != 0 {
+		t.Fatalf("a seat with no mcp block and no guide rendered %v, want no files", got)
 	}
 	if _, err := RenderSeat(seatFixture("claude-code"), ""); err != nil {
 		t.Fatalf("no mcp block must not need an mcp url: %v", err)
@@ -987,24 +826,11 @@ func TestRenderSeatMCPBlockInvalidError(t *testing.T) {
 	}
 }
 
-// A skill module's content is validated at render time, which also covers an overlay override:
-// a plain-text or malformed block fails naming the module rather than writing it into SKILL.md.
-func TestRenderSeatSkillBlockInvalidError(t *testing.T) {
-	cases := map[string]struct{ content, want string }{
-		"plain text":         {`# Alpha skill` + "\n", "not one JSON value"},
-		"missing provenance": {`{"content":"# Alpha skill\n","source_path":"skills/x","sha256":"not-a-digest"}`, "sha256"},
-		"no content":         {`{"source_path":"skills/x","sha256":"` + strings.Repeat("a", 64) + `"}`, "field content is required"},
-		"unknown field":      {`{"content":"x","source_path":"skills/x","sha256":"` + strings.Repeat("a", 64) + `","extra":1}`, "unknown field"},
-	}
-	for name, c := range cases {
-		seat := withMCP(seatFixture("claude-code"), resolver.ResolvedModule{
-			Slug: "skill.bad", Version: "1.0.0", Kind: resolver.KindSkill, Content: c.content,
-		})
-		if _, err := RenderSeat(seat, testMCPURL); err == nil || !strings.Contains(err.Error(), "skill.bad") || !strings.Contains(err.Error(), c.want) {
-			t.Errorf("%s: err = %v, want skill.bad and %q", name, err, c.want)
-		}
-	}
-}
+// TestRenderSeatSkillBlockInvalidError is GONE with the skill files. It pinned the render-time
+// validation of a skill module's JSON block (provenance, content, unknown fields), which existed so a
+// malformed block could not be written into `skills/<slug>/SKILL.md`. The render writes no skill file
+// now - the client tree delivers the seat's skills - so there is nothing for this shape to protect,
+// and keeping a validator for an unwritten file would keep a second source of truth alive.
 
 // A tool module narrows permissions inside a mounted server and never mounts one: its JSON
 // goes only into the settings fragment, so a server it names cannot reappear through it.
@@ -1077,46 +903,19 @@ func TestRenderSeatSeededTypesMountDifferentServerSets(t *testing.T) {
 	}
 }
 
-func writeSpecFiles(t *testing.T, dir string, spec *SeatSpec) {
-	t.Helper()
-	for _, f := range spec.Files {
-		path := filepath.Join(dir, filepath.FromSlash(f.Path))
-		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-			t.Fatalf("mkdir %s: %v", filepath.Dir(path), err)
-		}
-		if err := os.WriteFile(path, []byte(f.Content), 0o644); err != nil {
-			t.Fatalf("write %s: %v", path, err)
-		}
-	}
-}
-
+// An agy seat takes none of the Claude fragments, and since the file half is retired it takes no file
+// at all: its skills and its guidance come from the client tree, whose `share`/`task` tiers are the
+// delivery for text no runtime of this renderer reads. The assertion is therefore the ABSENCE - a
+// fragment, a `runtime/` file, an `AGENTS.md` or any other path appearing here would be a second source
+// for text the client already delivers.
 func TestRenderSeatAgy(t *testing.T) {
 	seat := seatFixture("agy")
 	spec, err := RenderSeat(seat, testMCPURL)
 	if err != nil {
 		t.Fatalf("RenderSeat: %v", err)
 	}
-	wantPaths := []string{
-		"agent.yaml",
-		"guidance/role.md",
-		"skills/skill.alpha/SKILL.md",
-	}
-	if got := filePaths(spec); !reflect.DeepEqual(got, wantPaths) {
-		t.Fatalf("file paths = %v, want %v", got, wantPaths)
-	}
-	for _, path := range filePaths(spec) {
-		if strings.HasPrefix(path, "runtime/") {
-			t.Fatalf("agy seat rendered runtime fragment %q", path)
-		}
-	}
-	guidance := fileContent(t, spec, guidancePath)
-	if !strings.HasPrefix(guidance, "<!-- seat-hash: "+seat.Hash+" -->") {
-		t.Fatalf("guidance missing seat hash:\n%s", guidance)
+	if got := filePaths(spec); len(got) != 0 {
+		t.Fatalf("file paths = %v, want none for an agy seat", got)
 	}
 	assertNoSecret(t, spec)
-
-	parsed := parseAgentYAML(t, spec)
-	if parsed.Defaults.Runtime != "agy" {
-		t.Fatalf("runtime = %q, want agy", parsed.Defaults.Runtime)
-	}
 }

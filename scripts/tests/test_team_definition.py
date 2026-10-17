@@ -131,7 +131,11 @@ ROOM_RUNTIMES = {
     # replaced that seat on 2026-10-14 20:21Z. The entry said {"claude-code", "omp"} and the
     # definition said `claude-code`/`opus`; both were stale, and this table is what turns the stale
     # pair into a red suite rather than a room that rebuilds the wrong runtime.
-    "4genthub-min": {"omp"},
+    # EXTENDED 2026-10-17: owner brief item 5 moves the reviewer onto `agy`, and the definition
+    # ships it (0332df80). The room's shipped runtimes are therefore both; the LIVE rig is a
+    # separate record, measured in test_team_roster.OMP_SEATS, which stays all-omp until the
+    # owner applies the move to the live spec and reseats the seat.
+    "4genthub-min": {"agy", "omp"},
 }
 
 

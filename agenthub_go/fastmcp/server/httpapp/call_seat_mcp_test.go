@@ -85,7 +85,7 @@ func TestMCPCallSeatResolvesASeat(t *testing.T) {
 	resolved := &repositories.ResolvedSeat{
 		Hash:    "abc123",
 		Runtime: "omp",
-		Files:   []repositories.ResolvedFile{{Path: "guidance/role.md", Content: "You are the lead."}},
+		Files:   []repositories.ResolvedFile{{Path: "AGENTS.md", Content: "You are the lead."}},
 	}
 	app := newCallSeatTestApp(t, resolved)
 
@@ -119,7 +119,7 @@ func TestMCPCallSeatResolvesASeat(t *testing.T) {
 	if !result.Success || result.Room != "4genthub-dev" || result.Seat != "lead" || result.Hash != "abc123" || result.Runtime != "omp" {
 		t.Errorf("result = %+v", result)
 	}
-	if len(result.Files) != 1 || result.Files[0]["path"] != "guidance/role.md" {
+	if len(result.Files) != 1 || result.Files[0]["path"] != "AGENTS.md" {
 		t.Errorf("files = %+v", result.Files)
 	}
 }

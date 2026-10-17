@@ -90,6 +90,11 @@ func TaskToDTO(task any, includeSubtasks bool) (*TaskDTO, error) {
 			Labels:             labels,
 			Details:            optStrAny(pyDictGetDefault(task, "details", nil)),
 			ProgressPercentage: optIntAny(pyDictGetDefault(task, "progress_percentage", nil)),
+			// The facade's task map carries both since TaskResponse.ModelDump sets them; the API DTO
+			// dropped them, which left the by-id node without them and made the closure gate answer
+			// uncertain for every task (hub task 8bd075eb).
+			AcceptanceCriteria: listOrEmpty(pyDictGetDefault(task, "acceptance_criteria", nil)),
+			Scope:              listOrEmpty(pyDictGetDefault(task, "scope", nil)),
 		}
 		if includeSubtasks && len(subtasks) > 0 {
 			converted := make([]*SubtaskDTO, 0, len(subtasks))
@@ -147,6 +152,8 @@ func TaskToDTO(task any, includeSubtasks bool) (*TaskDTO, error) {
 		Labels:             labels,
 		Details:            optStrAny(pyGetattr(task, "details", nil)),
 		ProgressPercentage: optIntAny(pyGetattr(task, "progress_percentage", nil)),
+		AcceptanceCriteria: listOrEmpty(pyGetattr(task, "acceptance_criteria", nil)),
+		Scope:              listOrEmpty(pyGetattr(task, "scope", nil)),
 	}
 	if includeSubtasks && len(subtasks) > 0 {
 		converted := make([]*SubtaskDTO, 0, len(subtasks))

@@ -2,9 +2,10 @@ package seedlibrary
 
 // Packet 6 step 1 (b): the ten overlay ops a room creation would carry are `add guide-<seat>@1.0.0`,
 // one per seat. This measures the EFFECT of each one with the library's own block - the seat's
-// rendered AGENTS.md carries that seat's guide, verbatim and exactly once, and the guidance channel
-// does not carry it at all - so the payload is proven without a room, without a cloud and without a
-// hand-built fixture. The renderer's fixtures pin the SPLIT; this pins that the real shelf feeds it.
+// rendered AGENTS.md carries that seat's guide, verbatim, exactly once, and in no other rendered file
+// (the guidance channel it used to also reach is retired with the render's file half) - so the payload
+// is proven without a room, without a cloud and without a hand-built fixture. The renderer's fixtures
+// pin the one destination; this pins that the real shelf feeds it.
 //
 // It lives in package seedlibrary because the per-seat blocks are reachable only through the shelf's
 // own loader; the loader must never import anything that reaches seatrenderer, which is why the
@@ -50,13 +51,15 @@ func TestEverySeatGuideBlockRendersIntoTheSeatsAgentsMD(t *testing.T) {
 			continue
 		}
 
-		var agents, guidance string
+		var agents string
+		guideHeading := "## Guide: " + seat
+		carriers := 0
 		for _, f := range spec.Files {
-			switch f.Path {
-			case "AGENTS.md":
+			if f.Path == "AGENTS.md" {
 				agents = f.Content
-			case "guidance/role.md":
-				guidance = f.Content
+			}
+			if strings.Contains(f.Content, guideHeading) {
+				carriers++
 			}
 		}
 		if agents == "" {
@@ -67,11 +70,14 @@ func TestEverySeatGuideBlockRendersIntoTheSeatsAgentsMD(t *testing.T) {
 		if want := strings.TrimRight(block.Content, "\n"); !strings.Contains(agents, want) {
 			t.Errorf("%s: AGENTS.md does not carry the block's own text verbatim", slug)
 		}
-		if got := strings.Count(agents, "## Guide: "+seat); got != 1 {
+		if got := strings.Count(agents, guideHeading); got != 1 {
 			t.Errorf("%s: its own heading appears %d times, want exactly 1", slug, got)
 		}
-		if strings.Contains(guidance, "## Guide: "+seat) {
-			t.Errorf("%s: the guide also reached guidance/role.md - a guide has ONE destination", slug)
+		// ONE destination, counted across the WHOLE render rather than against one retired path: the
+		// guidance channel is gone, so a check only for `guidance/role.md` would pass vacuously and
+		// would miss a second file carrying the same guide text.
+		if carriers != 1 {
+			t.Errorf("%s: the guide reaches %d rendered files, want exactly one (AGENTS.md)", slug, carriers)
 		}
 	}
 }

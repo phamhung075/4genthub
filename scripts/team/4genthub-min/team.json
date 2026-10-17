@@ -96,8 +96,8 @@
     {
       "seat_key": "reviewer",
       "seat_type": "reviewer",
-      "runtime": "omp",
-      "model": "deepseek/deepseek-flash",
+      "runtime": "agy",
+      "model": "gemini-3.8-flash-low",
       "pinned_version": "1.4.12"
     },
     {
@@ -109,42 +109,121 @@
     }
   ],
   "links": [
-    {"from": "lead", "to": "architect", "kind": "delegates_to"},
-    {"from": "lead", "to": "go-dev", "kind": "delegates_to"},
-    {"from": "lead", "to": "fe-dev", "kind": "delegates_to"},
-    {"from": "lead", "to": "reviewer", "kind": "delegates_to"},
-    {"from": "architect", "to": "go-dev", "kind": "delegates_to"},
-    {"from": "architect", "to": "fe-dev", "kind": "delegates_to"},
-    {"from": "architect", "to": "reviewer", "kind": "delegates_to"},
-    {"from": "reviewer", "to": "go-dev", "kind": "delegates_to"},
-    {"from": "reviewer", "to": "fe-dev", "kind": "delegates_to"},
-    {"from": "lead", "to": "architect", "kind": "collaborates_with"},
-    {"from": "lead", "to": "go-dev", "kind": "collaborates_with"},
-    {"from": "lead", "to": "fe-dev", "kind": "collaborates_with"},
-    {"from": "lead", "to": "reviewer", "kind": "collaborates_with"},
-    {"from": "architect", "to": "lead", "kind": "collaborates_with"},
-    {"from": "architect", "to": "go-dev", "kind": "collaborates_with"},
-    {"from": "architect", "to": "fe-dev", "kind": "collaborates_with"},
-    {"from": "architect", "to": "reviewer", "kind": "collaborates_with"},
-    {"from": "go-dev", "to": "lead", "kind": "collaborates_with"},
-    {"from": "go-dev", "to": "architect", "kind": "collaborates_with"},
-    {"from": "go-dev", "to": "fe-dev", "kind": "collaborates_with"},
-    {"from": "go-dev", "to": "reviewer", "kind": "collaborates_with"},
-    {"from": "fe-dev", "to": "lead", "kind": "collaborates_with"},
-    {"from": "fe-dev", "to": "architect", "kind": "collaborates_with"},
-    {"from": "fe-dev", "to": "go-dev", "kind": "collaborates_with"},
-    {"from": "fe-dev", "to": "reviewer", "kind": "collaborates_with"},
-    {"from": "reviewer", "to": "lead", "kind": "collaborates_with"},
-    {"from": "reviewer", "to": "architect", "kind": "collaborates_with"},
-    {"from": "reviewer", "to": "go-dev", "kind": "collaborates_with"},
-    {"from": "reviewer", "to": "fe-dev", "kind": "collaborates_with"},
-    {"from": "go-dev", "to": "lead", "kind": "escalates_to"},
-    {"from": "fe-dev", "to": "lead", "kind": "escalates_to"},
-    {"from": "reviewer", "to": "lead", "kind": "escalates_to"},
-    {"from": "architect", "to": "lead", "kind": "escalates_to"},
-    {"from": "go-dev", "to": "architect", "kind": "escalates_to"},
-    {"from": "fe-dev", "to": "architect", "kind": "escalates_to"},
-    {"from": "reviewer", "to": "architect", "kind": "escalates_to"}
+    {
+      "from": "lead",
+      "to": "architect",
+      "kind": "delegates_to"
+    },
+    {
+      "from": "lead",
+      "to": "go-dev",
+      "kind": "delegates_to"
+    },
+    {
+      "from": "lead",
+      "to": "fe-dev",
+      "kind": "delegates_to"
+    },
+    {
+      "from": "go-dev",
+      "to": "reviewer",
+      "kind": "delegates_to"
+    },
+    {
+      "from": "fe-dev",
+      "to": "reviewer",
+      "kind": "delegates_to"
+    },
+    {
+      "from": "go-dev",
+      "to": "fe-dev",
+      "kind": "collaborates_with"
+    },
+    {
+      "from": "architect",
+      "to": "go-dev",
+      "kind": "can_observe"
+    },
+    {
+      "from": "architect",
+      "to": "fe-dev",
+      "kind": "can_observe"
+    },
+    {
+      "from": "architect",
+      "to": "lead",
+      "kind": "escalates_to"
+    },
+    {
+      "from": "go-dev",
+      "to": "lead",
+      "kind": "escalates_to"
+    },
+    {
+      "from": "fe-dev",
+      "to": "lead",
+      "kind": "escalates_to"
+    },
+    {
+      "from": "reviewer",
+      "to": "lead",
+      "kind": "escalates_to"
+    },
+    {
+      "from": "reviewer",
+      "to": "go-dev",
+      "kind": "delegates_to"
+    },
+    {
+      "from": "reviewer",
+      "to": "fe-dev",
+      "kind": "delegates_to"
+    },
+    {
+      "from": "lead",
+      "to": "architect",
+      "kind": "collaborates_with"
+    },
+    {
+      "from": "lead",
+      "to": "go-dev",
+      "kind": "collaborates_with"
+    },
+    {
+      "from": "lead",
+      "to": "fe-dev",
+      "kind": "collaborates_with"
+    },
+    {
+      "from": "lead",
+      "to": "reviewer",
+      "kind": "collaborates_with"
+    },
+    {
+      "from": "architect",
+      "to": "lead",
+      "kind": "collaborates_with"
+    },
+    {
+      "from": "architect",
+      "to": "go-dev",
+      "kind": "collaborates_with"
+    },
+    {
+      "from": "architect",
+      "to": "reviewer",
+      "kind": "collaborates_with"
+    },
+    {
+      "from": "go-dev",
+      "to": "architect",
+      "kind": "collaborates_with"
+    },
+    {
+      "from": "reviewer",
+      "to": "architect",
+      "kind": "collaborates_with"
+    }
   ],
   "company_overlay": [],
   "seat_overlays": {

@@ -31,10 +31,11 @@ import (
 // this package exists to close.
 var ErrNoRule = errors.New("no content rule for this module kind")
 
-// Validate reports whether content is what kind's renderer can read. A skill is a skill block, an
+// Validate reports whether content is what kind's consumer can read. A skill is a skill block, an
 // mcp module is one server object, a tool module is the settings object the runtime's fragment
-// merges; instruction, document and memory render as text and accept any content. The caller
-// writes the returned error to the publisher; it names the kind and the rule that failed.
+// merges, and a policy module is the document the fold parses; instruction, document and memory are
+// text and accept any content. The caller writes the returned error to the publisher; it names the
+// kind and the rule that failed.
 func Validate(kind resolver.ModuleKind, content string) error {
 	switch kind {
 	case resolver.KindSkill:
@@ -54,8 +55,10 @@ func Validate(kind resolver.ModuleKind, content string) error {
 			return fmt.Errorf("policy content: %w", err)
 		}
 	case resolver.KindInstruction, resolver.KindDocument, resolver.KindMemory:
-		// Rendered verbatim into the seat's guidance, so any text renders. The publish route
-		// already refuses an empty content, which is the only shape rule these kinds have.
+		// Text kinds, so any text is valid: a `guide-<seat>` instruction module's words reach the
+		// seat's AGENTS.md, and the other text modules are the seat's record rather than bytes the
+		// render writes (R1 retired the render's file half). The publish route already refuses an
+		// empty content, which is the only shape rule these kinds have.
 	default:
 		return fmt.Errorf("%w: %q", ErrNoRule, kind)
 	}

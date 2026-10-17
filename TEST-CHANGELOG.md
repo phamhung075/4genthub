@@ -2,6 +2,314 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-17 - the census runtime record carries the room's `agy` seat (hub, branch 4genthub-min/fe-decisions-route)
+
+- `scripts/tests/test_team_definition.py`: `ROOM_RUNTIMES["4genthub-min"]` records `{"agy", "omp"}`.
+  Owner brief item 5 moves the reviewer onto `agy` and the room's definition ships it (`0332df80`,
+  `scripts/team/4genthub-min/team.json`), while this table still said `{"omp"}` — the case reported
+  `4genthub-min ships ['agy', 'omp'], the expectation says ['omp']`. The table is the record of what a
+  room ships, so it follows the definition.
+- NOT changed, and the suite stays one red by design: `scripts/tests/test_team_roster.py`'s
+  `OMP_SEATS` is the MEASURED live split (all five seats on `omp`), and the live `spec.json` still runs
+  the reviewer on `omp` — the owner's pending act is to write the move into the live spec and reseat.
+  Until then `test_the_rooms_omp_seats_are_the_rigs_omp_seats` fails naming the reviewer, which is
+  the guard doing its job, not staleness to paper over. Measured at `d7b8f495` after the change:
+  `python3 -m pytest scripts/tests -q` = 96 passed / 1 failed (that case), before = 95 / 2.
+
+## 2026-10-17 - the render's file half is retired, and the absence is what the suite asserts (hub, branch 4genthub-min/render-file-half)
+
+- `agenthub_go/fastmcp/seat_management/domain/seatrenderer/retired_file_half_absent_test.go` (new):
+  `TestRenderSeatWritesNoRetiredFileHalf` renders claude-code, codex, omp and agy with a guide, a tool
+  module and an mcp block; it requires each runtime's LIVE files first — `AGENTS.md` with the guide's own
+  words in it, the claude fragments, the codex rules, the omp MCP document and its config — then fails on
+  any `agent.yaml`, `startup.files`, `guidance/` or `skills/` path. The landmark half is the vacuity
+  guard (a render that produced nothing would pass the absence for the wrong reason); the shape is
+  `manage_agent_absent_test.go`'s.
+- `.../seatrenderer/renderer_test.go`: `TestRenderSeatGuidanceNamesTheMCPTools` and
+  `TestRenderSeatSkillBlockInvalidError` deleted with their subjects (the guidance channel is retired; a
+  skill module is no longer rendered or validated). `TestRenderSeatWritesTheGuidesIntoAgentsMDOnce` keeps
+  the one-destination half and now asserts the file set is exactly `AGENTS.md`; `TestRenderSeatAgy` is the
+  absence (no file at all); `TestRenderSeatWithoutMCPBlocksMountsNoServer` asserts the empty file set
+  instead of the retired `agent.yaml`; the dead `parsedAgentYAML`/`parseAgentYAML`, `skillBlock` and
+  `writeSpecFiles` helpers plus four imports are gone.
+- `.../seatrenderer/library_guide_render_test.go` and `.../seedlibrary/guides_render_test.go`: both
+  one-destination checks now COUNT the files carrying the guide across the whole render, because the old
+  form read `guidance/role.md` and would pass vacuously against a path that no longer exists.
+- `.../application/services/seat_resolution_service_test.go`: the version-pinning case observes a
+  `guide-rules` module in `AGENTS.md` (a guide is the one kind whose text reaches a file).
+  `seat_resolution_integration_test.go` (DB-gated) drops its two `guidance/role.md` reads for a new
+  `assertNoRetiredPaths` helper that checks every snapshot's file list.
+- `.../server/httpapp/seat_admin_mount_test.go`: the create-route KEY ACCEPTANCE authors a guide beside
+  the role module, asserts the guide reaches `AGENTS.md` and fails on any retired path.
+  `seat_admin_module_content_test.go`: the published-module case publishes a guide for the same reason.
+  `call_seat_mcp_test.go`, `seat_mount_test.go` and `.../mcp_controllers/call_seat_controller_test.go`
+  rename their pass-through fixtures from `guidance/role.md`/`agent.yaml` to `AGENTS.md`.
+- At this change: `go vet` clean and `go test -count=1` green for `./fastmcp/seat_management/...` and
+  `./fastmcp/server/httpapp/...`; `gofmt -l` prints nothing.
+
+## 2026-10-17 - the five seat roles resolve in the seat tier, and no seat sees another's (client, pin 9ecfcf32 = a2c1df3)
+
+- `agenthub_client/rust/agenthub-runtime/src/skills/mod.rs`:
+  `skills::tests::a_seat_resolves_its_own_role_skill_and_no_other_seats` reads the SHIPPED tree through
+  `SkillResolver::resolve_for_seat` and asserts, for all five `4genthub-min` seats, that `<seat>-role`
+  resolves at tier `Seat` from `rooms/4genthub-min/<seat>/<seat>-role/SKILL.md`, that its frontmatter parses
+  and names the seed version, that the body carries the type's role text, one of its rule names and its
+  output format, and that NO other seat's role skill is in the set. Landmarks beside the assertion: the share
+  tier resolves in the same call, `fe-dev`'s `taste-skill` stays theirs and `go-dev`'s set does not carry it,
+  because a resolver handed one directory could show the absence for free.
+- Its first red was a real defect and not a fixture: a colon in an unquoted frontmatter scalar made
+  `parse_skill_file` return `Ok((None, content))`, so the skill resolved with no metadata and nothing
+  complained; the case failed with `lead-role carries no frontmatter`.
+- At this change (client): `cargo` suite green for `agenthub-runtime`; `go test -count=1 ./...` over
+  `agenthub_client` all packages ok, 0 FAIL.
+
+## 2026-10-17 - the pending row renders its attention state, injected because no room holds one (frontend, fe-decisions-route)
+
+- `agenthub-frontend/e2e/room-decision-panel.spec.ts` (+244, no deletions): two tests appended under
+  `Decision Requests panel: the pending row, rendered by an injected read`. The panel's own decisions GET is
+  FULFILLED in the browser with one pending decision, so the read never reaches production, and the answer
+  endpoint is intercepted and ABORTED with the attempted calls counted and asserted empty - a click cannot
+  write even by accident. Asserted on the REAL row element: `animate-pulse-glow` computes to
+  `pulseGlow / 2.5s / infinite`, the row's dot to `pulse`, the header ping dot renders and runs `ping`, the
+  count badge reads `1`, the state chip reads `waiting for you`, and 0 of the row's 18 elements clip their
+  content box. The second test takes an explicit `reducedMotion: 'reduce'` context and asserts the row, its
+  dot and the ping dot all compute `animationName: none`, with the class probe agreeing for all three
+  utilities.
+- The row's border and tint are RECORDED, not asserted: the theme registers its custom colours as plain
+  `var(--color-*)` strings, so Tailwind emits no rule for the opacity-modified utilities built on them
+  (`border-accent/40`, `bg-accent/[0.03]`, `bg-accent/15`). That is the project-wide colour-registration
+  finding (F1, task 470c7439 Q1, parked with the owner), and asserting the indigo border would red a spec
+  that is measuring the product honestly.
+- At this change, from the changed tree against production (`agenthub-frontend/node_modules/.bin/playwright
+  test --config=agenthub-frontend/playwright.config.ts room-decision-panel --workers=1 --project=chromium`):
+  6 passed, 29.2s - the four existing tests untouched and green, the two new ones green.
+- BOTH NEW TESTS PROVEN ABLE TO FAIL, on scratch copies under the gitignored `test-results/` that were then
+  moved out of the checkout: with the injected decision's `state` changed to `answered`, both tests RED at
+  `the injected row carries the pending label` while the four existing tests still pass - so the row-level
+  assertions read a real pending subject instead of passing vacuously; with the expected animation name
+  changed to `glowLoop`, the first test REDS at `Expected "glowLoop" / Received "pulseGlow"` - so the
+  animation assertion reads the rendered row's own computed style.
+- `tsc --noEmit -p tsconfig.json` rc 0 over the changed project, 0 errors naming the spec.
+- LIMIT, carried in the spec's own header comment: this proves the panel RENDERS a pending decision and what
+  its attention state computes to; it does NOT prove that production's data carries a pending decision, which
+  is a property of the tenant's queue, not of the panel.
+
+## 2026-10-17 - an empty room skips the row measurement, and the shape stays red (frontend, fe-decisions-route)
+
+- `agenthub-frontend/e2e/room-decision-panel.spec.ts`: both row-count guards became
+  `test.skip(reading.rows.length === 0, 'no open decision to measure: the room rendered no row')` - a room
+  holding no open decision is the absence of a subject, not a product failure, and a red row said the
+  opposite. In the clipping test the guard moved to the head of the body with the SHAPE asserted first and
+  RED-able (`reading.found === true`, `Array.isArray(reading.rows)`), and the `NOT OBSERVABLE` tail it made
+  unreachable went with it. In the live-route test the three row measurements (the open-label set, the API's
+  row states, per-element clipping) moved to the END of the body, past every check that does not depend on
+  how many rows the room holds, and the same skip guards them; the `labels.length > 0` assertion it replaces
+  is implied by that guard, because `labels` is `rows.map(state)`.
+- At this change, from the changed tree against production (`agenthub-frontend/node_modules/.bin/playwright
+  test --config=agenthub-frontend/playwright.config.ts room-decision-panel --workers=1 --project=chromium`):
+  4 passed, 20.4s - the room holds 4 answered rows, so nothing skipped and the measurements ran unchanged.
+- The skip was proven on the real spec bytes twice, from throwaway copies that were then deleted: with an
+  empty `decisions` array fulfilled in the browser, tests 1 and 3 report SKIPPED while tests 4 and 5 pass
+  (2 skipped, 2 passed) - the panel's own read is then empty and the row measurement has nothing to read;
+  with the decisions GET answered `599`, test 1 FAILS at `expect(read!.status, 'the decision read answers
+  200').toBe(200)` and does not skip, so the shape check stays red-able and the skip cannot swallow a real
+  regression.
+- `tsc --noEmit -p tsconfig.json` rc 0 over the changed project.
+
+## 2026-10-17 - an agy seat mounts the agenthub MCP server (client, branch 4genthub-min/agy-mcp)
+Hub task `223f8b12`. The client entry that rides with the code is
+`agenthub_client/CHANGELOG/2026-10-17--an-agy-seat-mounts-the-agenthub-mcp-server.md`.
+
+- `agenthub_client/rust/agenthub-runtime/src/supervisor/mod.rs::tests::the_agy_mcp_server_joins_the_global_file_and_leaves_the_rest`
+  (new): the entry the runtime owns in agy's GLOBAL `~/.gemini/config/mcp_config.json`, and everything about it
+  that can go wrong, in one case - it is added BESIDE another tool's server (the owner's own `deepseek` stdio
+  entry, in the fixture as it is on the machine) and that entry is untouched; the entry's own shape
+  (`command: "sh"`, `disabled: false`, `args[1]` carrying `mcp-proxy --transport streamablehttp`,
+  `"$AGENTHUB_URL/mcp"`, `Bearer $AGENTHUB_TOKEN`, and the `[ -n "$AGENTHUB_SEAT" ]` gate that keeps a
+  non-seat session from starting a bridge); a second install does not rewrite the file; and both refusals leave
+  the file alone byte for byte (a file that is not a JSON object, and an `mcpServers` that is not one).
+  RED FIRST, measured at the base `f5f102d` with ONLY the tests applied: 6 compile errors, all of them missing
+  new symbols - 4 × `cannot find function install_agy_mcp_server`, 1 × `install_agy_start_files`, 1 ×
+  `cannot find value AGY_MCP_SERVER`. Mutations on the fixed tree, each caught by a NAMED assertion: dropping
+  `disabled: false` → `left: Null, right: false`; `--transport sse` → the transport assertion; `if true`
+  instead of the seat check → the seat-check assertion.
+- `...::tests::an_agy_start_installs_the_guard_hook_and_the_mcp_server` (new): the PAIRING - an agy start
+  installs BOTH of agy's own files, so a seat cannot come up guarded but unable to call the cloud. This is the
+  only test that bites when `install_agy_mcp_server` is removed from `install_agy_start_files` (measured: that
+  mutation leaves the entry test green and fails this one with `no MCP server was installed`).
+- NOT COVERED, named rather than implied: the `Agy` arm's one-line call of `install_agy_start_files` has no test
+  of its own - covering it means starting a real agy pane inside the suite (a 220 MB CLI that can spend the
+  owner's quota), and `start_seat` reads `HOME` from the process environment, so a test would have to move
+  `HOME` for every test in the process. The same gap exists for the guard hook's install, added 2026-10-15.
+- Run at the tip (branch `4genthub-min/agy-mcp`, base `f5f102d`, from `wt/go-dev-client`): `cargo test
+  --offline` = 145 unit + 15 `seat_guard` + 1 `umask` = 161 passed, 0 failed; `go vet ./...` rc 0;
+  `gofmt -l internal/ cmd/` clean; `go test -count=1 ./...` = 32 packages ok, 0 FAIL.
+- SMOKE, both halves, with the string the code itself builds (extracted from the const in the source, not
+  retyped): `HOME=<scratch> agy mcp list` reads the entry back as
+  `agenthub_http  stdio  enabled  sh -c if [ -n "$AGENTHUB_SEAT" ]; …`, i.e. agy accepts the document; and the
+  same line, run with this seat's own environment, answered an MCP `initialize` with
+  `agenthub - AI Orchestration Platform 1.22.0` and `tools/list` with the NINE agenthub tools (`manage_task`,
+  `manage_subtask`, `manage_context`, `manage_project`, `manage_git_branch`, `manage_seat`, `call_seat`,
+  `submit_feedback`, `manage_connection`). What a live agy seat adds is that agy hands its environment to the
+  spawned server and speaks stdio to it - that is AC1, and it needs the owner's agy seat.
+
+## 2026-10-17 - the held text names its sender and goes back to them (client, branch 4genthub-min/send-held)
+Hub task `c94cecfc`. The client entry that rides with the code is
+`agenthub_client/CHANGELOG/2026-10-17--the-held-text-names-its-sender-and-goes-back-to-them.md`.
+
+- `agenthub_client/rust/agenthub-runtime/tests/held_send.rs` (new file, Linux):
+  `a_text_sent_to_a_seat_that_is_mid_turn_is_delivered_when_the_turn_ends` - the whole path through the REAL
+  binary: a real mailbox socket (`replyTo` and all), a real runner, and a child on PATH (`omp`) that opens a
+  turn, refuses what arrives inside it, and ends that turn when the probe says so. It asserts the refusal is
+  HELD AND PUBLISHED (the state file reads `working` with `held: the text from <session> (send) waits for the
+  next free turn`), that the text reaches the agent after the turn ends under a `runner-held-<pid>-<n>` id with
+  its body unchanged, that the seat log's delivery line names the sender's session and the verb, and that the
+  seat is not left `blocked`. RED FIRST, measured in a detached worktree at this branch's base `131796e`
+  (`/tmp/redcheck-held`, the case copied in, `cargo test --test held_send`): it FAILS on the publication (`the
+  runner published the open turn` - the state file stays `idle` while a text waits, which is the silence the 19
+  measured give-up lines left behind) and, with that one assertion removed, on the origin naming
+  (`delivering the text send-probe-2 refused (attempt 1/3)` where the fix names
+  `agenthub--demo--lead (send)`). Green at the fix: 1 passed. Two traps this case documents in place: the
+  runner's `get_state` answer writes `idle` AFTER a `turn_start` printed during the handshake (so the probe
+  waits for the handshake before it sends anything - only a bare-socket write can race it, no live sender can),
+  and a red-check that points `CARGO_TARGET_DIR` at the shared `target/` makes cargo read the unfixed build as
+  fresh.
+- `agenthub_client/rust/agenthub-runtime/src/runner/mod.rs::tests::a_held_text_past_its_own_bound_goes_back_to_its_sender`
+  (new): the TEXT's own count reaches the bound - not the resume ladder's, which is what dropped a text on its
+  first offer once three unrelated attempts had been spent on that seat - and the sender's mailbox receives it
+  whole with the reason.
+- `agenthub_client/rust/agenthub-runtime/src/runner/mod.rs::tests::a_hand_back_with_no_addressable_sender_keeps_the_text_held`
+  (new): an `Origin` with no session publishes and re-queues the text at the FRONT with its count reset; the
+  text is never the price of a sender this runtime cannot address.
+- `agenthub_client/rust/agenthub-runtime/src/runner/mod.rs::tests::a_held_delivery_that_cannot_reach_the_agent_keeps_the_text`
+  (new): a channel that is gone leaves the text held and the pending slot clear, where the old code cleared the
+  pending slot and let the text fall out of the queue.
+- `agenthub_client/rust/agenthub-runtime/src/runner/mod.rs::tests::a_refused_prompt_is_held_and_delivered_when_the_turn_ends`
+  and `the_held_queue_is_bounded_and_names_the_depth_it_refused` (updated to the `HeldText`/`Origin` shape):
+  their published sentences now have to name the origin, and the queue's own bound and order are unchanged.
+- `agenthub_client/internal/clientruntime/sendseam_test.go::TestSendTextArgsNamesTheOriginAndOmitsAnUnknownSender`
+  (new): the request one message travels in carries `from`/`verb` when the caller has a session, and no `from`
+  key at all when it does not - a blank name is not a name.
+- `agenthub_client/internal/clientseat/send_transport_test.go::TestSendGoesThroughTheRuntimeSocket` (extended):
+  the payload a seat's send puts on the runtime socket names the origin beside the target and the body.
+- THE REVIEWER'S GATE (its verdict is `seats/reviewer/GATE-send-held-6977495.md`) PASSED with one required
+  before merge, and the tip commit carries it - the tip is now `191fbc9`, on `b812c7b`, on main `46b8b6e`
+  (it was `9f67088` on `f5f102d`, and `47c9176` / `03f3544` / `6977495` before the two re-cuts; the reviewer
+  passed `03f3544` at `158/0`, `9f67088` at `164/0`, and `191fbc9` at `166/0`, the last count PREDICTED
+  before it ran): the daemon->runner
+  STAMPING was asserted
+  nowhere - deleting the two lines in `supervisor::deliver_text` that stamp `from`/`verb` onto the frame left
+  the whole suite green (157/0) - so
+  `agenthub_client/rust/agenthub-runtime/src/supervisor/mod.rs::tests::a_multi_line_message_reaches_a_runner_seat_as_one_text_frame`
+  now asserts `frame["from"]`/`frame["verb"]` (re-measured RED with the two lines deleted:
+  `left: Null, right: "agenthub--demo--principal"`), and the CLI's own origin is a pure function
+  `main::send_origin_from` with both no-session cases pinned by
+  `main::tests::the_cli_send_stamps_this_shells_session_and_the_send_verb` (new).
+- Also in the tip commit: each client carrier names the verb that CARRIED its frame - `SendOptions.Verb`,
+  `Client.SendText`/`SendTextToSeat` and `DeliverToSession` take it, and the rig's `say`/`abort`, the `wake`,
+  `messages` and the restore `brief` pass their own word instead of every one of them claiming to be `send`.
+  `internal/clientlifecycle/supervisor_test.go` pins the two rig verbs beside their text.
+- At this change, from `wt/go-dev-scope` (client branch `4genthub-min/send-held`, tip `191fbc9`, on
+  `b812c7b`, on main `46b8b6e`): `cargo test` in `rust/agenthub-runtime` = **166 passed, 0 failed** (149 unit
+  + 17 across `tests/`: 1 `held_send`, 15 `seat_guard`, 1 `umask_at_the_entry`; the 2 extra unit tests are
+  the new base's own agy-mount tests); `go vet ./...` rc 0; `gofmt -l internal/ cmd/` clean;
+  `go test -count=1 ./...` = 32 packages ok, 0 fail. The client entry that rides with the code and the
+  commit's own message both name THIS base and THIS measurement.
+  The code is provably the gated code: the patch multisets `f5f102d..ae2b815` vs `46b8b6e..b812c7b` are
+  IDENTICAL (1318 +/- lines), and `ae2b815..9f67088` vs `b812c7b..191fbc9` have the same line count (177) with
+  only 2 differing lines, both doc text (the base name and the count).
+  `cargo fmt --check` is dirty across this crate BEFORE this change too (pre-change blobs and files this branch
+  never touched are listed), so it is not a signal for this lane.
+
+## 2026-10-17 - the pane pid that was never read, and the refusal that named no kind (client, branch 4genthub-min/lane-rebase)
+- `agenthub_client/rust/agenthub-runtime/src/pty/mod.rs`, `supervisor/mod.rs`, `hooks/mod.rs` (commit
+  `dce05c8`): `pty::pane_pid_tests` (5 cases) - `an_unparsable_answer_is_a_failed_read_not_a_pid_of_zero`,
+  `a_failed_read_becomes_words_and_a_successful_one_becomes_a_pid`, `an_unknown_pid_describes_its_failure`,
+  `a_session_that_is_not_there_is_refused_in_tmuxs_own_words`, `a_live_session_answers_a_pid_and_the_record_describes_it`
+  - plus `supervisor::tests::a_transient_session_read_does_not_kill_the_seat` (new, forces the race with a
+  `tmux` shim that fails the FIRST `has-session` for its test's session only) and two assertions added to
+  `a_dead_non_omp_seat_is_refused_by_its_real_cause` (the refusal names TWO AGREEING READS and no longer says
+  `waited up to`, the wait being measured from a monotonic `Instant`).
+- `agenthub_client/internal/clientseat/sendpolicy_test.go`, `internal/commpolicy/policy_test.go` (commit
+  `f5f102d`): `TestASendNoLinkAuthorizesIsRefusedAndNotDelivered` and
+  `TestASendWithNoIntentIsRefusedByADelegatesToLink` now require the refusal to name the kind that would have
+  licensed the send (`collaborates_with`, `declares no link to`, `task (delegates_to)`), and `policy_test.go`
+  carries `wantLicense` per case.
+- Both commits are the LANE REBASED ONTO MAIN (`131796e`) from its pre-rebase shas `4ada3a4` / `8ba0f7d`: the
+  rebase resolved one additive `pty/mod.rs` conflict (main's `ensure_server` and the lane's `PaneRecord` both
+  kept) and needed three adaptations the textual auto-merge could not see - `pid: Some(1)` at main's new
+  `hooks/mod.rs` call site (a compile error otherwise), and the lane's race test now takes main's two new
+  guards: `seat_worktree()` (the seat-cwd rule: a seat with no directory of its own does not start) and
+  `pty::test_servers::own()` (`TMUX_TMPDIR` is process-wide and pane tests take the root in turn - without it
+  the case failed at the 1500 ms deadline under the full suite and passed alone).
+- Red first, measured by go-dev at the rebased tip `f5f102d` from `wt/go-dev-client` (2026-10-17):
+  `cargo test --offline` = 143 unit + 15 `seat_guard` + 1 `umask_at_the_entry` passed, 0 failed; `go vet ./...`
+  clean; `gofmt -l internal/ cmd/` clean; `go test -count=1 ./...` = 32 packages ok, 0 FAIL. FALSIFIED:
+  with the re-read disabled (`if false &&` at `supervisor/mod.rs:755`) the transient-read case fails - a seat
+  killed ~11 ms after launch by ONE failed read - and restored it passes with the file's blob and the tree
+  matching the commit; with a `go test -overlay` carrying `f5f102d^:internal/clientseat/sendpolicy.go` both
+  refusal cases fail on the absent `collaborates_with` / `declares no link to` / `task (delegates_to)`, the
+  pre-fix message reading `... may not send a notice to reviewer (no link). The room's own declared links are
+  what license a send`.
+
+## 2026-10-17 - the switch verb reads the machine, not only the cloud (client, main)
+
+- `agenthub_client/internal/clientsync/switchverb_test.go`: `TestSwitchRuntimeTheCloudAlreadyRecordsStillSkipsTheSeat` - the 2026-10-16 22:47Z incident, pinned: the cloud's occupant record says `agy` while the RUNTIME reports the seat on `omp`, and `--runtime agy --model gemini-3.8-flash-low --apply restart` must make NO runtime call at all and answer `applied=manual`. On the pre-fix code it records `set-model` then `restart-fresh` and answers `applied=restart` - the restart that killed the seat (measured by removing the fix and running the one test). `TestSwitchRestartStillRunsOnTheRuntimeTheMachineNames` is the boundary the fix must not cross: the runtime names the requested runtime, so `--apply restart` still sets the model and restarts fresh, as it always did. The `switchSeatStub` harness took a third seam, `switchRoomSeats`, so a test drives the machine's own reading beside the cloud's.
+- Run at the client tip `dde9561` from `wt/go-dev-scope`: `go vet ./internal/clientsync/` rc 0; `go test -count=1 ./internal/clientsync/` ok (16 `TestSwitch*` cases, all passing); the acceptance command `go test -count=1 ./...` green across 32 packages (this section first said 31; re-measured uncached in the client main worktree at `dde9561`, 32 `ok` lines, 0 fail).
+
+## 2026-10-16 - the guarded seat cannot raise its own budget (client, patch parked for the owner)
+
+- `agenthub_client/rust/agenthub-runtime/tests/seat_guard.rs`: `a_seat_cannot_raise_its_own_budget` - the file's 12th case, appended after `a_guard_with_no_list_allows_only_the_seat_directory_and_the_temp_dir` - pins six write shapes as `budget-ceiling` (`4genteam room limits <rig> --usd 999`, `--calls 1000000`, `--off`, `--on`, the `env -u TMUX`-prefixed form, and the `/opt/4gh/bin/`-prefixed one) and four reads as allowed (`room limits <rig>`, `--json`, `room status <rig>`, and a quoted mention of the write). WHY IT EXISTS: the verb writes the room's ceiling THROUGH the client and never names a file, so every path rule missed it - measured at `6492b77`, `--usd 999` answered `allow` while `rm`, `sed -i`, `truncate -s 0`, `dd` and the write tool against the same record were all refused. A ceiling a seat can raise is not a ceiling.
+- Verified at client `484bf8e`, from a pristine tree in `wt/architect-client`: `git apply --check` clean, then `cargo test --offline` = 133 unit + 12 `seat_guard` + 1 `umask_at_the_entry` passed, 0 failed (`seat_guard.rs` 11 -> 12); the worktree was then restored clean and nothing was committed.
+- WAITING FOR ITS CARRIER: the rule lives in `assets/seat-guard.ts`, which the guard refuses a seat to write (`protected-paths`), so the case ships in `seats/architect/PARKED-outcome4-guard-budget-ceiling.patch` (sha256 `efd1cdb71cc34a5012eaed0edfce6c5f91bf7eb26618c45e7903309fa6dabe6a`), re-cut at `484bf8e` and applied by the owner. This section rides a hub commit that touches a non-doc file, or the owner's `OWNER_DOCS_COMMIT=1`: `scripts/git-hooks/docs-only-guard` refuses a commit whose staged files are all documentation - a pin bump does not save it, because pre-commit passes no submodule - and the seat guard refuses both `OWNER_DOCS_COMMIT=` and `--no-verify` (`hook-bypass`).
+
+## 2026-10-16 - the evidence verb's failing names (client, branch 4genthub-min/evidence-names)
+
+- `agenthub_client/internal/clientevidence/evidence_test.go`: `TestExtractFailedTestsIsHeuristicAndNamesOnly`
+  gains two cases - a program's own line that merely starts with FAILED names nothing, and Playwright's
+  list-reporter output (measured on `agenthub-frontend/playwright.config.ts`) names both failing tests by
+  their location and title path while the passing line names nothing. `TestEvidencePassingRunNamesNoFailures`
+  and `TestEvidenceFailingRunWithNoNamedTestSaysSo` pin the exit-code gate and the explicit marker at the
+  verb's own entry point, through the same seams the other verb tests use.
+- Red first, measured against the previous parser: `extractFailedTests("FAILED READ {\"status\":503}")`
+  returned `[READ]` - the name task `c67f9ce6`'s evidence seq 26 still carries - the Playwright lines named
+  nothing, and a failing run that named no test stored `[]`.
+- At this change: `go test ./...` in `agenthub_client` = 0 failures (32 packages, re-measured by the lead at
+  the branch tip `5aeb223`; the parked line said 26); `gofmt -l internal/clientevidence/` empty.
+
+## 2026-10-16 - the ceiling a seat may not raise (client, pin 5bf9570)
+
+- `agenthub_client/internal/clientroom/limits_test.go` (+105 in `b86549d`, `git diff --numstat bf43cce 5bf9570 -- internal/clientroom/limits_test.go` = `105 0`): two new cases. `TestASeatDoesNotRaiseTheCeilingThatBoundsIt` - a seat's `--usd 999`, `--usd 25.01`, `--calls 301`, `--off` and a pair at once are refused, each naming the marker and the OWNER, printing nothing and leaving the file unchanged, and then a lower USD ceiling, a lower call ceiling and `--on` are allowed. `TestTheOwnerRaisesTheCeilingAndAnAlreadyOffCeilingIsNotARaise` - with the variable unset (the owner's shell) the raise is written, and `--off` from a seat on a room already off passes, because nothing in force is lost. Red first on the binary before the rule, measured: `[--usd 999] exited 0, want 3`, `left {Enabled:true USDPerSeat24h:999 CallsPerSeatMin:300}, want the ceilings unchanged at {...25...}`.
+- `agenthub_client/internal/clientroom/limits_test.go`: `TestRoomLimitsWritesKeepsAndTurnsOff` now pins `$AGENTHUB_SESSION_NAME` empty. It asserts the OWNER's writes (25 -> 40 is a raise) and inherited the caller's identity from the shell before this change, so it failed from a seat's shell and passed in a bare one.
+- At this change: `go test ./...` = 32 packages ok, run from a seat's shell; the real binary was driven for both halves (raise and `--off` refused at exit 3; a lower number accepted and written). The suite cannot drive the UNSET case through a seat's own shell - the guard refuses `env -u AGENTHUB_SESSION_NAME` as a hook bypass, measured - so that case is pinned with `t.Setenv` and the real-binary run covers the seat half.
+- `internal/clientservices/services_test.go` +10 in the same merge is NOT this lane: it is `f14f037`, recorded under "seat guard worktree scope and the beat match" above.
+
+## 2026-10-16 - the budget safeguard's clauses and a non-hermetic queue test (client, pin 5bf9570)
+
+- `agenthub_client/internal/roombudget/roombudget_test.go` (new): the file's meaning - no file is limits-off rather than an error, Save/Load round trips at 0600, Measure counts only the assistant turns inside 24h and the calls inside the minute (each planted line has a reason to be skipped), Breach names the ceiling and stays silent when the limits are off, and a corrupt park record is not a parked seat.
+- `agenthub_client/internal/clientlifecycle/budgetguard_test.go` (new): the guard's decision through its seams - a seat over its USD ceiling is stopped, recorded and named on ONE row (the row's source, destination and both numbers asserted, and its length under the rail's caps); a rate breach is held for a second pass; OFF measures nothing and logs its state once; a stop the runtime refused is neither recorded nor filed; a room whose seats cannot be listed measures nothing.
+- `agenthub_client/internal/clientroom/limits_test.go` (new): a read writes nothing (the file must not exist afterwards), `--on` writes the agreed ceilings, a later `--usd` keeps the call ceiling, `--off` keeps both numbers, a zero ceiling and `--on --off` are refused without writing, and `room status` names a parked seat with its reason while the other seat's row carries no segment.
+- `agenthub_client/internal/clientlifecycle/agent_test.go`, `doctor_test.go`, `internal/clientservices/services_test.go`: the four list-pinning tests (the child argv and its threshold, doctor's rows, the silence table, the report's order) name the new `budget` safeguard.
+- `agenthub_client/internal/clientroom/queue_test.go`: `TestRoomQueueListOnAnEmptyRailSaysSo` now clears `AGENTHUB_SESSION_NAME`, the env every sibling in the file already cleared; it was non-hermetic (run from a seat's shell the frame carried `requester_session`, so the suite failed in a seat's environment and passed in a bare one). Red first under a seat's shell: `got {"filter":{"requester_session":"agenthub--4genthub-min--go-dev"}}`; green with the line.
+- At this change: `go test ./...` from a seat's shell = 31 packages ok, 0 failed; `cargo test --offline` in `rust/agenthub-runtime` = 125 unit + 8 `seat_guard` + 1 `umask_at_the_entry`, 0 failed.
+
+## 2026-10-16 - the by-id task node's criteria fields
+
+- `agenthub_go/fastmcp/types/dto_test.go`: `TestTaskToDTODict` and `TestTaskToDTOEntity` cover
+  `acceptance_criteria` and `scope` in both branches, and the pinned `ModelDump` key order is updated
+  to `...,progress_percentage,acceptance_criteria,scope,subtasks`. Before this change the DTO had no
+  such fields at all, which is why the served by-id node's key list omitted both.
+- At this change: `go test ./fastmcp/...` = 0 failures; `go build ./...` clean.
+- Driven over the route's own serializer (`PyJSONDumpsCompact`, `server/httpapp/http.go:26`):
+  `TaskResponse.ToDict` -> `types.TaskToDTO` -> `ModelDump` prints
+  `"acceptance_criteria":["the by-id node carries the criteria","and the scope"],"scope":["agenthub_go/fastmcp/types/**"]`,
+  and `[]`/`[]` for a task that has none (so a task without criteria still reads as `uncertain`).
+
+## 2026-10-16 - seat guard worktree scope and the beat match
+
+- `agenthub_client/rust/agenthub-runtime/tests/seat_guard.rs`: `a_seat_writes_its_own_worktrees_under_the_room_and_no_other_seats` (fails on the old guard) plus the destructive-write and config-edit cases; `cargo test --offline` = 130 unit + 10 `seat_guard` + 1, 0 failed.
+- `agenthub_client/internal/clientservices/services_test.go`: "two live matches and the beat names the second" reads running on the beating pid.
+
 ## 2026-10-16 - session tail and older-page reads
 
 - `agenthub_go/fastmcp/server/httpapp/ws_session_viewer_test.go`: `TestSessionViewerTailReplaysOnlyTheNewestEvents` (a `tail=2` viewer of 5 events gets seqs 4 and 5, then live seq 6). Passes.

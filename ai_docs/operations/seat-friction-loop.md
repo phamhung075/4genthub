@@ -22,8 +22,9 @@ worked. So the set shrinks: **1 merge, 1 extend-and-merge, 4 new, and 1 that is 
 From the seat-skills ruling (`ai_docs/core-architecture/seat-skills.md` §1–§2): a skill used by more than one room
 goes in `share/`; more than one seat of one room goes in `rooms/<room>/`; exactly one seat goes in
 `rooms/<room>/<seat>/`. A copy at two levels is not allowed. `client/` skills are for the LLM running the client and
-are **never delivered to a seat**. One source under `agenthub_client/skills`; `4genteam sync rig` is the only
-delivery; the loader resolves share → room → seat, never `client/`.
+are **never delivered to a seat**. One source under `agenthub_client/skills`; the runtime installs the
+resolved tree under the seat's own `skills/` at every seat start, so a change reaches a seat at its next
+start; the loader resolves share → room → seat, never `client/`.
 
 The format (`agenthub_client/internal/clientskills/tree.go:1-12`): a directory that holds `SKILL.md` **is** a skill; a
 directory without one is a seat folder. A skill's id is its front-matter `name` (`name` and `description` required;

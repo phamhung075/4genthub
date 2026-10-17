@@ -7,14 +7,14 @@ Write a JSON object to the device path `xd://mcp__<server>_<tool>`. Read the pat
 1. **Claim the task contract.** `manage_task` `{"action":"list","status":"todo","assignee":"@<your-seat>"}` or `{"action":"next","git_branch_id":"<uuid>"}`; read its description and acceptance criteria. Search before you create. `details` (10+ characters) is mandatory on a status or progress update.
 2. **Work in your own worktree** (skill `seat-worktree`): edit only there, never in the main checkout. Main changes only by the lead's gated merge. Nobody pushes; the owner pushes.
 3. **Test once**: run the checks that match the change, one time, and keep the output.
-4. **Close the task** with `{"action":"complete","task_id":"<uuid>","completion_summary":"<what changed, files, commit hash>","testing_notes":"<exact commands and their results>"}`. Report only what you ran. Commit on your branch: `git add -- <paths>` (`git add -N -- <new>` for a new file), check `git diff --cached --stat`, then `git commit`. Never `git add .` or `-A`, never `commit -a`, never `--amend`. Add ONE new file `CHANGELOG/<date>--<title>.md` in the same commit (`ls CHANGELOG | tail` lists the newest; do not read the whole directory).
+4. **Close the task** with `{"action":"complete","task_id":"<uuid>","completion_summary":"<what changed, files, commit hash>","testing_notes":"<exact commands and their results>"}`. Report only what you ran. Commit on your branch by pathspec and do not stage first: `git commit -m "<type(scope): subject>" -- <paths>` (a new file: `git add -N -- <new>` first, then the same pathspec commit). Never `git add .` or `-A`, never `commit -a`, never `--amend`. Add ONE new file `CHANGELOG/<date>--<title>.md` in the same commit (`ls CHANGELOG | tail` lists the newest; do not read the whole directory).
 5. **Hand off.** Tell the lead your tip as `<rig>/<seat>=<sha>`.
 
 ### The five rules
 1. **Author:** write and run the tests once, and put the exact commands and their output in the task.
 2. **Reviewer:** judge the diff using the author's output. No fresh sweep; run a check only for a claim the output does not cover.
 3. **Lead:** does not re-verify a PASS.
-4. **Queue rows** (`4genteam room queue create`): one line plus the commit sha, at most 600 characters. Priority `high` only for a production break. Talk through the queue; a doc is not the place for an idea, finding or status.
+4. **Queue rows** (`4genteam room queue create`): the summary is one line of at most 120 characters and the body at most 600; the row names the commit sha. Priority `high` only for a production break. Talk through the queue; a doc is not the place for an idea, finding or status.
 5. **Measuring:** no measuring script that prints more than 30 lines, and no polling of the queue. **Docs** change once, when the task is done, in the same commit as the code: no commit hash, count, line number or measured-on date in a doc; point to the command that prints it.
 
 ### Offloading with deepseek_agent
