@@ -10,7 +10,7 @@ import (
 )
 
 // seedVersion is bumped whenever a seed's module set changes: a stored seat type version is
-// immutable, so a changed module set needs a new version. 1.4.12 cuts shared-modules/guide-common.md to a short index (the loop, the five rules, stuck handling), drops its shared-tree commit, approval-gate, pytest and task-ritual sections, and moves the reviewer verdict into the task or queue row (no GATE file, no vite build). 1.4.11 moves the runtime-neutral note rule out
+// immutable, so a changed module set needs a new version. 1.4.13 restores guide-common.md's loop step 4 to the commit form the owner ruled fleet-wide: commit by pathspec and do not stage first, with git add -N only for a new file. 1.4.12 cuts shared-modules/guide-common.md to a short index (the loop, the five rules, stuck handling), drops its shared-tree commit, approval-gate, pytest and task-ritual sections, and moves the reviewer verdict into the task or queue row (no GATE file, no vite build). 1.4.11 moves the runtime-neutral note rule out
 // of guide-writer.md and into shared-modules/guide-common.md's writing section, where every seat reads it:
 // the rule covers every seat that writes a note, and guide-common.md is the cross-seat container, so
 // guide-writer.md returns to its pre-1.4.10 content. 1.4.10 rehomes the rule the architect guide

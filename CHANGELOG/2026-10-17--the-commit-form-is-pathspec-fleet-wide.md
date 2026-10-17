@@ -19,6 +19,9 @@ commit retires.
   The guide's bytes moved, so the pairing's `sha256` and `source_sha256` carry the new digest (the
   shape `270765d1` used) and the content set is recorded under the raised version; the record was
   appended with the package's own `-update-seedcontent-lock` flag, not by hand.
+- **`seedmap.go`'s version ledger gains the 1.4.13 sentence** the gate nit found missing: the ledger
+  describes each version's change and 1.4.13 had no line, so the comment now names the restored step-4
+  commit form beside 1.4.12's.
 
 ## Evidence
 
@@ -27,6 +30,8 @@ commit retires.
 - `go test` the same three packages, `-count=1`: all ok.
 - `TestGuideCommonPrescribesTheCurrentCommitForm`, `TestGuidePairingRefusesTheGuideChangedUnderTheOldLock`
   and `TestSeedVersionNamesOneContentSet` pass with the re-recorded lock and content set.
+- The same three checks re-ran at the tip that carries the ledger sentence: `gofmt -l` empty, `go vet` rc 0,
+  `go test -count=1` all ok.
 
 ## Not mine to move
 
