@@ -2,6 +2,17 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-17 - docs diagrams and MCP tool descriptions render (frontend)
+
+- `agenthub-frontend/src/tests/lib/mermaidDiagrams.test.ts` (new, `mermaid` mocked): a fence is drawn
+  beside its hidden source with the strict security level and the requested theme; a redraw replaces
+  rather than stacks; a fence that does not parse stays visible as code; a document without a fence
+  never loads mermaid.
+- `agenthub-frontend/src/tests/components/ApiReferenceView.test.tsx` `renders a tool description as
+  markdown` (new): a description's table renders as a table with its header and cell, its fence keeps
+  `language-python`, and no raw `| Action |` text is left.
+- NOT RUN locally (local frontend runs are not allowed); `npx tsc --noEmit` is clean.
+
 ## 2026-10-17 - the retired /help-setup route is pinned, and the /docs tests were run (frontend)
 
 - `agenthub-frontend/src/tests/App.test.tsx` `sends the retired /help-setup route to the docs site` (new):

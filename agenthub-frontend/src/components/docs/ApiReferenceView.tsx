@@ -22,6 +22,7 @@
 
 import React from 'react';
 import { Badge } from '../ui/badge';
+import Markdown from '../Markdown';
 import type { ApiReference } from '../../types/apiReference';
 
 export interface ApiReferenceViewProps {
@@ -113,9 +114,8 @@ export const ApiReferenceView: React.FC<ApiReferenceViewProps> = ({ reference })
               >
                 {tool.name}
               </h3>
-              {tool.description && (
-                <p className="mt-1 text-sm text-base-secondary">{tool.description}</p>
-              )}
+              {/* The server writes its tool descriptions in markdown (action tables, examples). */}
+              {tool.description && <Markdown source={tool.description} className="mt-1 overflow-x-auto text-base-secondary" />}
               {/* Absent when the tool takes no action parameter: no badges are rendered at all. */}
               {tool.actions.length > 0 && (
                 <div className="mt-2 flex flex-wrap items-center gap-2">

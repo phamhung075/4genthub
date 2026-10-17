@@ -162,6 +162,20 @@ describe('ApiReferenceView', () => {
     ]);
   });
 
+  // The server writes tool descriptions in markdown; printed as text, the action table and the
+  // examples collapsed into one paragraph of pipes and fences.
+  it('renders a tool description as markdown, so its action table and examples keep their shape', () => {
+    const description = '\nTASKS\n\n| Action | Required |\n|---|---|\n| create | title |\n\n```python\nmanage_task(action="get")\n```\n';
+    renderView({ routes: [], tools: [{ ...reference.tools[0], description }] });
+
+    const article = within(toolsRegion()).getByRole('article', { name: 'manage_project' });
+    const table = article.querySelector('table') as HTMLElement;
+    expect(within(table).getByRole('columnheader', { name: 'Action' })).toBeInTheDocument();
+    expect(within(table).getByRole('cell', { name: 'create' })).toBeInTheDocument();
+    expect(article.querySelector('code.language-python')?.textContent).toBe('manage_task(action="get")\n');
+    expect(within(article).queryByText(/\| Action \|/)).toBeNull();
+  });
+
   it('renders a reference with no routes and no tools as empty sections rather than as a failure', () => {
     renderView({ routes: [], tools: [] });
 
