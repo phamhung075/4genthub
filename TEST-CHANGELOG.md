@@ -2,6 +2,18 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-18 - the same-instant pair's order is the fixture's, not a coin flip (hub)
+
+- `agenthub_go/fastmcp/seat_management/infrastructure/repositories/orm/seat_message_repository_integration_test.go`:
+  `TestSeatMessageRepositoryIntegration` re-seats its two same-instant ids (`00000000-0000-4000-8000-000000000001`,
+  `...0002`) through a new `reseat` helper right after `store`, so "first" sorts before "tie" by
+  construction. `Create` mints a random v4 id, so the `order =` assertion held only when the coin
+  landed that way; the repository's keyset order is untouched. Reproduced before the fix: 1 of 6 runs
+  failed on the clean cluster.
+- RUN: `cd agenthub_go && SEAT_TEST_DATABASE_URL=postgresql://agenthub_user@127.0.0.1:55439/postgres go
+  test ./fastmcp/seat_management/infrastructure/repositories/orm/ -run TestSeatMessageRepositoryIntegration
+  -count=6 -v` = 6 PASS; `go test ./fastmcp/seat_management/...` on the same cluster = all packages ok.
+
 ## 2026-10-18 - one create-path context write, and add_progress on the board (hub)
 
 - `agenthub_go/fastmcp/task_management/application/services/create_context_single_write_test.go` (new):

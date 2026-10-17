@@ -61,9 +61,15 @@ func TestSeatMessageRepositoryIntegration(t *testing.T) {
 	}
 
 	// TWO MESSAGES IN THE SAME INSTANT: the id tiebreak is what keeps the page stable, so this is the
-	// case an ORDER BY created_at alone would answer non-deterministically.
+	// case an ORDER BY created_at alone would answer non-deterministically. THE IDS ARE THE FIXTURE'S,
+	// not the store's: Create mints a random v4, so two rows at one instant would order by a coin flip
+	// and the assertion below would be a flake (2 of 3 identical runs, 2026-10-17 23:08Z). The
+	// fixture re-seats its two same-instant ids so "first" sorts before "tie"; the repository's keyset
+	// order is the thing under test and it stays.
 	first := store(userID, "dev", "coder", "first", base)
 	tie := store(userID, "dev", "coder", "tie", base)
+	first.ID = reseat(ctx, t, db, first.ID, "00000000-0000-4000-8000-000000000001")
+	tie.ID = reseat(ctx, t, db, tie.ID, "00000000-0000-4000-8000-000000000002")
 	third := store(userID, "dev", "coder", "third", base.Add(time.Second))
 	// Another seat and another tenant, both of which every read below must leave alone.
 	store(userID, "dev", "reviewer", "other seat", base)
@@ -162,4 +168,15 @@ func TestSeatMessageRepositoryIntegration(t *testing.T) {
 		t.Fatalf("DeleteForRoom crossed the tenant boundary: %d rows left for the other user (%v)", len(kept), err)
 	}
 	_ = third
+}
+
+// reseat rewrites one stored row's id, so a fixture can make the id tiebreak deterministic: the
+// store mints random v4 ids, and two rows created in the same instant are otherwise ordered by
+// whichever UUID came out. Returns the new id.
+func reseat(ctx context.Context, t *testing.T, db *sql.DB, from, to string) string {
+	t.Helper()
+	if _, err := db.ExecContext(ctx, `UPDATE "seat_messages" SET "id" = $1 WHERE "id" = $2`, to, from); err != nil {
+		t.Fatalf("re-seat %s as %s: %v", from, to, err)
+	}
+	return to
 }
