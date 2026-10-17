@@ -2,6 +2,16 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-17 - the session viewer tests wait for each viewer to leave the hub (agenthub_go)
+
+- `agenthub_go/fastmcp/server/httpapp/ws_session_viewer_test.go`: `dialViewer` and `dialViewerToken` close the socket and then wait until `Hub.Subscribers(sessionID)` is 0 (new `releaseOnCleanup`). The hub is process-wide and every test uses `viewerSID`, so a handler still unwinding from one test was counted by the next ("1 hub subscriptions for an unauthenticated caller", CI run 39016892762).
+- RUN: `go test ./fastmcp/server/httpapp -run TestSessionViewer -count=30` (also with GOMAXPROCS=1, count 40) and the package: ok. The CI failure did not reproduce locally before or after.
+
+## 2026-10-17 - the sitemap route check accepts a splat route (frontend)
+
+- `agenthub-frontend/src/tests/pages/LandingPage.head.test.tsx` `lists only routes that exist in the app`: a sitemap path is served when `App.tsx` has `path="<loc>"` or `path="<loc>/*"`. `/docs` is served by `/docs/*`, and CI run 39016709369 failed on the exact-path match.
+- NOT RUN locally: frontend test runs are not allowed. `tsc --noEmit` is checked below.
+
 ## 2026-10-17 - the session viewer replay test waits for the last page read (agenthub_go)
 
 - `agenthub_go/fastmcp/server/httpapp/ws_session_viewer_test.go` `TestSessionViewerReplaysInPagesOf500`: it waited on `Hub.Subscribers == 1`, which is already true during the replay (the viewer subscribes first), so the empty last page could be read after the count. It now waits until the store has seen the expected number of page reads. CI run 39015693990 failed on "2 page reads, want 3".

@@ -109,9 +109,20 @@ func dialViewer(t *testing.T, store sessionViewerStore, sessionID, query string)
 	server := viewerServer(t, store)
 	token := wsTestToken(t, nil)
 	conn, br := wsTestDial(t, server.URL, "/ws/sessions/"+sessionID+"?token="+url.QueryEscape(token)+query)
-	t.Cleanup(func() { _ = conn.Close() })
+	releaseOnCleanup(t, conn, sessionID)
 	_ = conn.SetReadDeadline(time.Now().Add(5 * time.Second))
 	return conn, br
+}
+
+// releaseOnCleanup closes the client socket at the end of the test and then waits until the viewer
+// has dropped its hub subscription. The hub is process-wide and every test uses viewerSID, so a
+// handler still unwinding from this test would otherwise be counted by the next one.
+func releaseOnCleanup(t *testing.T, conn net.Conn, sessionID string) {
+	t.Helper()
+	t.Cleanup(func() {
+		waitFor(t, "the viewer to release its hub subscription", func() bool { return session_stream.Hub.Subscribers(sessionID) == 0 })
+	})
+	t.Cleanup(func() { _ = conn.Close() })
 }
 
 // dialViewerToken is dialViewer with a caller-supplied credential, for the auth tests.
@@ -119,7 +130,7 @@ func dialViewerToken(t *testing.T, store sessionViewerStore, sessionID, token st
 	t.Helper()
 	server := viewerServer(t, store)
 	conn, br := wsTestDial(t, server.URL, "/ws/sessions/"+sessionID+"?token="+url.QueryEscape(token))
-	t.Cleanup(func() { _ = conn.Close() })
+	releaseOnCleanup(t, conn, sessionID)
 	_ = conn.SetReadDeadline(time.Now().Add(5 * time.Second))
 	return conn, br
 }

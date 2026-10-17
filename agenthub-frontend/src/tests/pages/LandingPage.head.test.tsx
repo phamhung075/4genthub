@@ -74,8 +74,9 @@ describe('the static head and the page agree', () => {
 
     expect(locs.length).toBeGreaterThan(0);
     for (const loc of locs) {
-      const path = loc === '/' ? '"/"' : `"${loc}"`;
-      expect(appSource).toContain(`path=${path}`);
+      // A section served by a splat route (`/docs/*`) answers its own base path too.
+      const served = loc === '/' ? ['"/"'] : [`"${loc}"`, `"${loc}/*"`];
+      expect(served.some((path) => appSource.includes(`path=${path}`))).toBe(true);
     }
     // The route that produced this check stays out of the ENTRIES. The comment
     // above the urlset names it deliberately, as the reason the file changed.
