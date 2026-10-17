@@ -877,6 +877,46 @@ func (r *ORMTaskRepository) GetTaskCountOptimized(ctx context.Context, status, p
 
 // ---- list_tasks_minimal --------------------------------------------------------
 
+// CountTasksMinimal counts the rows ListTasksMinimal's filters select - the same predicates, so a
+// page's total is the set the page was taken from.
+func (r *ORMTaskRepository) CountTasksMinimal(ctx context.Context, status, priority, assigneeID, gitBranchID *string) (int, error) {
+	effectiveBranch := r.GitBranchID
+	if gitBranchID != nil {
+		effectiveBranch = gitBranchID
+	}
+	total := 0
+	err := r.GetDBSession(ctx, func(ctx context.Context, s database.DBTX) error {
+		args := []any{}
+		conds := []string{}
+		r.taskRepoUserConditionOn(`t."user_id"`, &args, &conds)
+		if effectiveBranch != nil && *effectiveBranch != "" {
+			args = append(args, *effectiveBranch)
+			conds = append(conds, fmt.Sprintf(`t."git_branch_id" = $%d::uuid`, len(args)))
+		}
+		if status != nil && *status != "" {
+			args = append(args, *status)
+			conds = append(conds, fmt.Sprintf(`t."status" = $%d`, len(args)))
+		}
+		if priority != nil && *priority != "" {
+			args = append(args, *priority)
+			conds = append(conds, fmt.Sprintf(`t."priority" = $%d`, len(args)))
+		}
+		join := ""
+		if assigneeID != nil && *assigneeID != "" {
+			args = append(args, *assigneeID)
+			join = ` LEFT JOIN task_assignees ta ON t.id = ta.task_id`
+			conds = append(conds, fmt.Sprintf(`ta."assignee_id" = $%d`, len(args)))
+		}
+		where := ""
+		if len(conds) > 0 {
+			where = " WHERE " + strings.Join(conds, " AND ")
+		}
+		row := s.QueryRowContext(ctx, `SELECT COUNT(DISTINCT t.id) FROM tasks t`+join+where, args...)
+		return row.Scan(&total)
+	})
+	return total, err
+}
+
 // ListTasksMinimal is list_tasks_minimal. limit nil / <= 0 becomes 20 and is capped at 1000;
 // offset nil / < 0 becomes 0. The result dicts keep Python insertion order. On any query
 // failure the method degrades to an empty list, as in Python.
@@ -1111,7 +1151,7 @@ func taskRepoInClause(column string, ids []string, args *[]any, cast string) str
 // ---- search_tasks --------------------------------------------------------------
 
 // SearchTasks is search_tasks: ANY word matches ANY of title/description/label name.
-func (r *ORMTaskRepository) SearchTasks(ctx context.Context, query string, filters map[string]any, limit int) ([]*entities.Task, error) {
+func (r *ORMTaskRepository) SearchTasks(ctx context.Context, query string, filters map[string]any, limit, offset int) ([]*entities.Task, error) {
 	out := []*entities.Task{}
 	searchWords := []string{}
 	for _, w := range value_objects.PySplit(query) {
@@ -1177,8 +1217,12 @@ func (r *ORMTaskRepository) SearchTasks(ctx context.Context, query string, filte
 		}
 		conds = append(conds, "("+strings.Join(wordConds, " OR ")+")")
 		suffix := " WHERE " + strings.Join(conds, " AND ")
-		suffix += ` ORDER BY "created_at" DESC`
+		// The id tiebreaker keeps consecutive pages disjoint when two matches share created_at.
+		suffix += ` ORDER BY "created_at" DESC, "id" ASC`
 		suffix += fmt.Sprintf(" LIMIT %d", limit)
+		if offset > 0 {
+			suffix += fmt.Sprintf(" OFFSET %d", offset)
+		}
 		rows, err := r.selectRows(ctx, s, suffix, args...)
 		if err != nil {
 			return err
@@ -1540,8 +1584,8 @@ func (r *ORMTaskRepository) FindByLabels(ctx context.Context, labels []string) (
 }
 
 // Search is search (Python default limit 10).
-func (r *ORMTaskRepository) Search(ctx context.Context, query string, filters map[string]any, limit int) ([]*entities.Task, error) {
-	return r.SearchTasks(ctx, query, filters, limit)
+func (r *ORMTaskRepository) Search(ctx context.Context, query string, filters map[string]any, limit, offset int) ([]*entities.Task, error) {
+	return r.SearchTasks(ctx, query, filters, limit, offset)
 }
 
 // Delete is delete.
@@ -1615,70 +1659,23 @@ func taskRepoEnumValue(v any) any {
 	return v
 }
 
-// FindByCriteria is find_by_criteria.
-func (r *ORMTaskRepository) FindByCriteria(ctx context.Context, filters map[string]any, limit *int) ([]*entities.Task, error) {
+// FindByCriteria is find_by_criteria: the page query. The count and the page read the SAME
+// WHERE clause (taskRepoCriteriaWhere), because a total computed from a different set than the page
+// is a number a caller cannot act on.
+func (r *ORMTaskRepository) FindByCriteria(ctx context.Context, filters map[string]any, query domainrepos.ListQuery) ([]*entities.Task, error) {
+	orderBy, err := taskRepoOrderBy(query)
+	if err != nil {
+		return nil, err
+	}
 	out := []*entities.Task{}
-	err := r.GetDBSession(ctx, func(ctx context.Context, s database.DBTX) error {
-		args := []any{}
-		conds := []string{}
-		r.taskRepoUserCondition(&args, &conds)
-
-		gitBranchFilter := r.GitBranchID
-		if gitBranchFilter == nil {
-			if v, ok := filters["git_branch_id"]; ok {
-				if sv, ok := v.(string); ok {
-					gitBranchFilter = &sv
-				} else if svp, ok := v.(*string); ok {
-					gitBranchFilter = svp
-				}
-			}
+	err = r.GetDBSession(ctx, func(ctx context.Context, s database.DBTX) error {
+		where, args := r.taskRepoCriteriaWhere(filters)
+		suffix := where + orderBy
+		if query.Limit != nil && *query.Limit != 0 {
+			suffix += fmt.Sprintf(" LIMIT %d", *query.Limit)
 		}
-		if gitBranchFilter != nil {
-			args = append(args, *gitBranchFilter)
-			conds = append(conds, fmt.Sprintf(`"git_branch_id" = $%d::uuid`, len(args)))
-		}
-		if v, ok := filters["status"]; ok {
-			sv := taskRepoEnumValue(v)
-			if sv == nil {
-				conds = append(conds, `"status" IS NULL`)
-			} else {
-				args = append(args, value_objects.PyStr(sv))
-				conds = append(conds, fmt.Sprintf(`"status" = $%d`, len(args)))
-			}
-		}
-		if v, ok := filters["priority"]; ok {
-			pv := taskRepoEnumValue(v)
-			if pv == nil {
-				conds = append(conds, `"priority" IS NULL`)
-			} else {
-				args = append(args, value_objects.PyStr(pv))
-				conds = append(conds, fmt.Sprintf(`"priority" = $%d`, len(args)))
-			}
-		}
-		if v, ok := filters["assignees"]; ok && value_objects.PyTruthy(v) {
-			assignees := taskRepoStringList(v)
-			if len(assignees) > 0 {
-				in := taskRepoInClause("ta.assignee_id", assignees, &args, "")
-				conds = append(conds, `EXISTS (SELECT 1 FROM task_assignees ta WHERE ta.task_id = tasks.id AND `+in+`)`)
-			}
-		} else if v, ok := filters["assignee"]; ok && value_objects.PyTruthy(v) {
-			args = append(args, value_objects.PyStr(v))
-			conds = append(conds, fmt.Sprintf(`EXISTS (SELECT 1 FROM task_assignees ta WHERE ta.task_id = tasks.id AND ta.assignee_id = $%d)`, len(args)))
-		}
-		if v, ok := filters["labels"]; ok && value_objects.PyTruthy(v) {
-			labels := taskRepoStringList(v)
-			if len(labels) > 0 {
-				in := taskRepoInClause("l.name", labels, &args, "")
-				conds = append(conds, `EXISTS (SELECT 1 FROM task_labels tl JOIN labels l ON tl.label_id = l.id WHERE tl.task_id = tasks.id AND `+in+`)`)
-			}
-		}
-		suffix := ""
-		if len(conds) > 0 {
-			suffix = " WHERE " + strings.Join(conds, " AND ")
-		}
-		suffix += ` ORDER BY "updated_at" DESC`
-		if limit != nil && *limit != 0 {
-			suffix += fmt.Sprintf(" LIMIT %d", *limit)
+		if query.Offset != nil && *query.Offset != 0 {
+			suffix += fmt.Sprintf(" OFFSET %d", *query.Offset)
 		}
 		rows, err := r.selectRows(ctx, s, suffix, args...)
 		if err != nil {
@@ -1694,6 +1691,105 @@ func (r *ORMTaskRepository) FindByCriteria(ctx context.Context, filters map[stri
 		return nil
 	})
 	return out, err
+}
+
+// CountByCriteria counts the rows FindByCriteria would page through.
+func (r *ORMTaskRepository) CountByCriteria(ctx context.Context, filters map[string]any) (int, error) {
+	total := 0
+	err := r.GetDBSession(ctx, func(ctx context.Context, s database.DBTX) error {
+		where, args := r.taskRepoCriteriaWhere(filters)
+		row := s.QueryRowContext(ctx, fmt.Sprintf(`SELECT COUNT(*) FROM %s%s`, quoteIdent(r.Table.Name), where), args...)
+		return row.Scan(&total)
+	})
+	return total, err
+}
+
+// taskRepoCriteriaWhere builds the WHERE clause ("" when there are no conditions) and its
+// arguments for the list/count pair.
+func (r *ORMTaskRepository) taskRepoCriteriaWhere(filters map[string]any) (string, []any) {
+	args := []any{}
+	conds := []string{}
+	r.taskRepoUserCondition(&args, &conds)
+
+	gitBranchFilter := r.GitBranchID
+	if gitBranchFilter == nil {
+		if v, ok := filters["git_branch_id"]; ok {
+			if sv, ok := v.(string); ok {
+				gitBranchFilter = &sv
+			} else if svp, ok := v.(*string); ok {
+				gitBranchFilter = svp
+			}
+		}
+	}
+	if gitBranchFilter != nil {
+		args = append(args, *gitBranchFilter)
+		conds = append(conds, fmt.Sprintf(`"git_branch_id" = $%d::uuid`, len(args)))
+	}
+	if v, ok := filters["status"]; ok {
+		sv := taskRepoEnumValue(v)
+		if sv == nil {
+			conds = append(conds, `"status" IS NULL`)
+		} else {
+			args = append(args, value_objects.PyStr(sv))
+			conds = append(conds, fmt.Sprintf(`"status" = $%d`, len(args)))
+		}
+	}
+	if v, ok := filters["priority"]; ok {
+		pv := taskRepoEnumValue(v)
+		if pv == nil {
+			conds = append(conds, `"priority" IS NULL`)
+		} else {
+			args = append(args, value_objects.PyStr(pv))
+			conds = append(conds, fmt.Sprintf(`"priority" = $%d`, len(args)))
+		}
+	}
+	if v, ok := filters["assignees"]; ok && value_objects.PyTruthy(v) {
+		assignees := taskRepoStringList(v)
+		if len(assignees) > 0 {
+			in := taskRepoInClause("ta.assignee_id", assignees, &args, "")
+			conds = append(conds, `EXISTS (SELECT 1 FROM task_assignees ta WHERE ta.task_id = tasks.id AND `+in+`)`)
+		}
+	} else if v, ok := filters["assignee"]; ok && value_objects.PyTruthy(v) {
+		args = append(args, value_objects.PyStr(v))
+		conds = append(conds, fmt.Sprintf(`EXISTS (SELECT 1 FROM task_assignees ta WHERE ta.task_id = tasks.id AND ta.assignee_id = $%d)`, len(args)))
+	}
+	if v, ok := filters["labels"]; ok && value_objects.PyTruthy(v) {
+		labels := taskRepoStringList(v)
+		if len(labels) > 0 {
+			in := taskRepoInClause("l.name", labels, &args, "")
+			conds = append(conds, `EXISTS (SELECT 1 FROM task_labels tl JOIN labels l ON tl.label_id = l.id WHERE tl.task_id = tasks.id AND `+in+`)`)
+		}
+	}
+	if len(conds) == 0 {
+		return "", args
+	}
+	return " WHERE " + strings.Join(conds, " AND "), args
+}
+
+// taskRepoOrderBy is the ORDER BY for a page. The id tiebreaker is load-bearing, not decoration:
+// updated_at ties are common (a sweep touches many rows at once), and without a total order
+// Postgres may place two tied rows in either order per query - so a caller paging with OFFSET would
+// receive one row twice and miss another. An ordering the repository cannot serve is an error, never
+// a silent fallback to the default: a caller that believes its sort was applied reads the rows as
+// ordered.
+func taskRepoOrderBy(query domainrepos.ListQuery) (string, error) {
+	column := "updated_at"
+	switch query.SortBy {
+	case "", "updated_at":
+	case "created_at", "priority", "status", "title":
+		column = query.SortBy
+	default:
+		return "", fmt.Errorf("unsupported sort_by %q: allowed updated_at, created_at, priority, status, title", query.SortBy)
+	}
+	direction := "DESC"
+	switch strings.ToLower(query.SortOrder) {
+	case "", "desc":
+	case "asc":
+		direction = "ASC"
+	default:
+		return "", fmt.Errorf("unsupported sort_order %q: allowed asc, desc", query.SortOrder)
+	}
+	return fmt.Sprintf(` ORDER BY %s %s, "id" ASC`, quoteIdent(column), direction), nil
 }
 
 // taskRepoStringList converts a Python list-like value to []string.

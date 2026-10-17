@@ -51,8 +51,12 @@ func (r *draftPortTaskRepo) FindAll(ctx context.Context) ([]*entities.Task, erro
 func (r *draftPortTaskRepo) FindByGitBranchID(ctx context.Context, branchID string) ([]*entities.Task, error) {
 	return r.all, nil
 }
-func (r *draftPortTaskRepo) FindByCriteria(ctx context.Context, filters map[string]any, limit *int) ([]*entities.Task, error) {
+func (r *draftPortTaskRepo) FindByCriteria(ctx context.Context, filters map[string]any, query repositories.ListQuery) ([]*entities.Task, error) {
 	return r.criteria, nil
+}
+
+func (r *draftPortTaskRepo) CountByCriteria(ctx context.Context, filters map[string]any) (int, error) {
+	return len(r.criteria), nil
 }
 func (r *draftPortTaskRepo) GetCompletedSubtaskCounts(ctx context.Context, taskIDs []string) (map[string]int, error) {
 	if r.completedCounts == nil {

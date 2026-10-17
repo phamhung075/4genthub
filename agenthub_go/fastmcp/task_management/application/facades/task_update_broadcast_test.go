@@ -50,8 +50,13 @@ type zpUpdateRepo struct {
 
 // FindByCriteria is declared by BOTH embedded interfaces with the same signature, so the fake
 // states it once; the update path never calls it.
-func (r *zpUpdateRepo) FindByCriteria(context.Context, map[string]any, *int) ([]*entities.Task, error) {
+func (r *zpUpdateRepo) FindByCriteria(context.Context, map[string]any, repositories.ListQuery) ([]*entities.Task, error) {
 	return nil, nil
+}
+
+// CountByCriteria is declared by both embedded interfaces too; the fake states both explicitly.
+func (r *zpUpdateRepo) CountByCriteria(context.Context, map[string]any) (int, error) {
+	return 0, nil
 }
 
 // LatestInProgressByAssignee is the resume-by-seat read; these cases name their task explicitly.

@@ -5,6 +5,7 @@ type SearchTasksRequest struct {
 	Query       string
 	GitBranchID *string
 	Limit       int
+	Offset      int
 	Status      *string
 	Priority    *string
 	Assignees   []string

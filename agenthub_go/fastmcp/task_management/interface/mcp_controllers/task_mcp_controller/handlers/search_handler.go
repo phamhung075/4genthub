@@ -45,11 +45,11 @@ func NewSearchHandler(responseFormatter SearchResponseFormatter) *SearchHandler 
 	return &SearchHandler{responseFormatter: responseFormatter}
 }
 
-// ListTasks ports list_tasks.
+// ListTasks ports list_tasks. limit/offset page the set and sortBy/sortOrder order it: all four
+// travel to the repository, because a page that ignores them is a page the caller cannot enumerate
+// with (page 2 came back as page 1, and an unsupported ordering silently became updated_at DESC).
 func (h *SearchHandler) ListTasks(ctx context.Context, facade TaskSearchFacade, status, priority, assignee, tag, gitBranchID *string,
 	limit, offset *int, sortBy, sortOrder *string) (result *entities.OrderedMap[any]) {
-	_ = sortBy
-	_ = sortOrder
 
 	defer func() {
 		if r := recover(); r != nil {
@@ -78,6 +78,9 @@ func (h *SearchHandler) ListTasks(ctx context.Context, facade TaskSearchFacade, 
 		Assignees:   assignees,
 		Labels:      labels,
 		Limit:       &effectiveLimit,
+		Offset:      offset,
+		SortBy:      sortBy,
+		SortOrder:   sortOrder,
 	}
 
 	result = facade.ListTasks(ctx, request)
@@ -108,14 +111,22 @@ func (h *SearchHandler) ListTasks(ctx context.Context, facade TaskSearchFacade, 
 	result.Set("tasks", minimalTasks)
 
 	pagination := entities.NewOrderedMap[any]()
-	pagination.Set("total", len(minimalTasks))
-	pagination.Set("limit", effectiveLimit)
 	offsetValue := 0
 	if offset != nil {
 		offsetValue = *offset
 	}
+	// total is the repository's count of the rows the filters select, not the page length: a caller
+	// that reads total as the board size must be able to trust it.
+	total := len(minimalTasks)
+	if totalVal, ok := result.Get("total"); ok {
+		if n, isInt := searchHandlerInt(totalVal); isInt {
+			total = n
+		}
+	}
+	pagination.Set("total", total)
+	pagination.Set("limit", effectiveLimit)
 	pagination.Set("offset", offsetValue)
-	pagination.Set("has_more", len(minimalTasks) == effectiveLimit)
+	pagination.Set("has_more", offsetValue+len(minimalTasks) < total)
 	pagination.Set("tip", "Use manage_task(action='get', task_id='...') for full details")
 	result.Set("pagination", pagination)
 
@@ -125,7 +136,6 @@ func (h *SearchHandler) ListTasks(ctx context.Context, facade TaskSearchFacade, 
 // SearchTasks ports search_tasks.
 func (h *SearchHandler) SearchTasks(ctx context.Context, facade TaskSearchFacade, query, status, priority, assignee, tag, gitBranchID *string,
 	limit, offset *int) (result *entities.OrderedMap[any]) {
-	_ = offset
 
 	if query == nil || !value_objects.PyTruthy(*query) {
 		metadata := entities.NewOrderedMap[any]()
@@ -143,7 +153,12 @@ func (h *SearchHandler) SearchTasks(ctx context.Context, facade TaskSearchFacade
 		}
 	}()
 
+	offsetValue := 0
+	if offset != nil {
+		offsetValue = *offset
+	}
 	request := task.NewSearchTasksRequest(*query, gitBranchID, limit)
+	request.Offset = offsetValue
 	request.Status = status
 	request.Priority = priority
 	if assignee != nil {
@@ -181,6 +196,18 @@ func (h *SearchHandler) SearchTasks(ctx context.Context, facade TaskSearchFacade
 	searchMetadata.Set("total_results", len(minimalTasks))
 	searchMetadata.Set("tip", "Use manage_task(action='get', task_id='...') for full details")
 	result.Set("search_metadata", searchMetadata)
+	// Search pages the same way list does: the window is what offset/limit asked for and has_more
+	// says whether another page exists, so a caller never reads a full page as the whole answer.
+	effectiveLimit := 10
+	if limit != nil {
+		effectiveLimit = *limit
+	}
+	pagination := entities.NewOrderedMap[any]()
+	pagination.Set("total_results", len(minimalTasks))
+	pagination.Set("limit", effectiveLimit)
+	pagination.Set("offset", offsetValue)
+	pagination.Set("has_more", len(minimalTasks) == effectiveLimit)
+	result.Set("pagination", pagination)
 
 	return result
 }
@@ -423,4 +450,18 @@ func omList(v any) []any {
 		return out
 	}
 	return nil
+}
+
+// searchHandlerInt coerces a facade count to int: the value arrives as int from the SQL path and as
+// float64 when it has been through JSON-shaped maps.
+func searchHandlerInt(v any) (int, bool) {
+	switch x := v.(type) {
+	case int:
+		return x, true
+	case int64:
+		return int(x), true
+	case float64:
+		return int(x), true
+	}
+	return 0, false
 }
