@@ -34,6 +34,31 @@ var docsOnlyGuardArgs = []string{
 	"CHANGELOG/2026-10-16--the-criteria-vocabulary-a-seat-can-settle.md",
 }
 
+// stageForGuard makes dir a repository with exactly paths staged: the guard judges the staged commit
+// (`git diff --cached`), not an argument list, so the harness has to hand it a real index.
+func stageForGuard(t *testing.T, dir string, paths []string) {
+	t.Helper()
+	run := func(name string, args ...string) {
+		cmd := exec.Command(name, args...)
+		cmd.Dir = dir
+		cmd.Env = []string{"PATH=" + os.Getenv("PATH"), "HOME=" + dir}
+		if out, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("%s %v: %v\n%s", name, args, err, out)
+		}
+	}
+	run("git", "init", "-q")
+	for _, p := range paths {
+		full := filepath.Join(dir, p)
+		if err := os.MkdirAll(filepath.Dir(full), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(full, []byte("x\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	run("git", append([]string{"add", "--"}, paths...)...)
+}
+
 // runDocsOnlyGuard runs the shipped guard with the given staged paths and environment, and returns its exit
 // code and stderr. The environment is built from scratch, like the trailer guard's harness: an inherited
 // OWNER_DOCS_COMMIT would silently exempt every case.
@@ -41,7 +66,8 @@ func runDocsOnlyGuard(t *testing.T, paths []string, env map[string]string) (int,
 	t.Helper()
 	dir := t.TempDir()
 	script := filepath.Join(repoRoot(t), "scripts", "git-hooks", "docs-only-guard")
-	cmd := exec.Command("sh", append([]string{script}, paths...)...)
+	stageForGuard(t, dir, paths)
+	cmd := exec.Command("sh", script)
 	cmd.Dir = dir
 	cmd.Env = []string{"PATH=" + os.Getenv("PATH"), "HOME=" + dir}
 	for k, v := range env {
