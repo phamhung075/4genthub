@@ -23,8 +23,8 @@ const guideCommonFile = "shared-modules/guide-common.md"
 // keeps the backticks so it matches the prescription itself rather than any bare mention of the
 // command: the guide may still name `git add` for the new-file exception.
 const (
-	newCommitRule = "git diff --cached --stat"
-	oldCommitForm = "do not stage first"
+	newCommitRule = "do not stage first"
+	oldCommitForm = "`git add -- <path>` then"
 )
 
 func TestGuideCommonPrescribesTheCurrentCommitForm(t *testing.T) {
@@ -34,14 +34,14 @@ func TestGuideCommonPrescribesTheCurrentCommitForm(t *testing.T) {
 	}
 	text := string(data)
 
-	// A1: the worktree form's rule is present: a seat stages its paths and checks the staged diff.
+	// A1: the new form's rule is present, so a seat is told not to stage before committing.
 	if !strings.Contains(text, newCommitRule) {
-		t.Errorf("%s does not say %q; the seats would commit without checking what they staged", guideCommonFile, newCommitRule)
+		t.Errorf("%s does not say %q; the seats would still stage before committing", guideCommonFile, newCommitRule)
 	}
-	// A2: the shared-index prescription is gone: each seat owns its worktree and index, so it contradicts
-	// the seat-worktree skill.
+	// A2: the OLD prescription is gone. The shared index is the reason: a staged line can be taken
+	// by another seat's commit, so the guide must not tell a seat to run `git add` and then commit.
 	if strings.Contains(text, oldCommitForm) {
-		t.Errorf("%s still prescribes the shared-index form (%q): every seat commits in its own worktree (skill seat-worktree), where staging normally is correct", guideCommonFile, oldCommitForm)
+		t.Errorf("%s still prescribes the old form (%q): the index is shared, so a staged path can be taken by another seat's commit", guideCommonFile, oldCommitForm)
 	}
 }
 
