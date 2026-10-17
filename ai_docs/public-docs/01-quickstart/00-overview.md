@@ -41,7 +41,7 @@ The full walkthrough is in [Prerequisites](01-prerequisites.md) and [Five-Minute
 
 ## Architecture: the 3-tier model
 
-![Multi-Agent Orchestration Architecture: Cloud Brain, 4genteam Client, Local Runtime](architecture.png)
+![4genthub architecture: cloud brain, 4genteam client, local runtime](architecture.svg)
 
 ```
 [ Tier 1: Cloud Brain ]
