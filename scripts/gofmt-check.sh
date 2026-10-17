@@ -7,7 +7,8 @@
 # for a reason that is not formatting. Neither may be renamed - both are load-bearing by name, and
 # .gofmt-excludes records why beside each path. That file is the ONE place the sweep learns them.
 #
-# Exit: 0 clean | 1 unformatted files listed | 2 the instrument itself is misconfigured.
+# Exit: 0 clean | 1 unformatted files listed | 2 the instrument could not measure (a misconfigured
+# or stale exclusion, zero coverage, or gofmt itself failing).
 set -eu
 cd "$(git rev-parse --show-toplevel)"
 
@@ -32,16 +33,24 @@ checked=$(printf '%s\n' "$list" | grep -vxF -f "$patterns" || true)
 n_skipped=$(printf '%s\n' "$skipped" | grep -c . || true)
 if [ "$n_skipped" -gt 0 ]; then
 	echo "gofmt-check: skipped $n_skipped named non-Go path(s), from .gofmt-excludes:" >&2
-	printf '  %s\n' "$skipped" >&2
+	printf '%s\n' "$skipped" | sed 's/^/  /' >&2
 fi
 
 n_checked=$(printf '%s\n' "$checked" | grep -c . || true)
-[ "$n_checked" -gt 0 ] || { echo "gofmt-check: nothing left to check" >&2; exit 0; }
-
-findings=$(printf '%s\n' "$checked" | xargs gofmt -l) || {
-	echo "gofmt-check: gofmt itself failed over the checked set (a parse error in a checked file?)" >&2
-	exit 1
+# Zero coverage is not a green: an exclusion that swallows every tracked .go file measured nothing,
+# which is the same misconfiguration as an empty file list above.
+[ "$n_checked" -gt 0 ] || {
+	echo "gofmt-check: .gofmt-excludes covers every tracked .go file - nothing was measured" >&2
+	exit 2
 }
+
+if ! findings=$(printf '%s\n' "$checked" | xargs gofmt -l); then
+	# gofmt could not complete the sweep (a parse error in a checked file). Whatever it did list is
+	# shown, but this is an instrument failure, not a finding.
+	printf '%s\n' "$findings" >&2
+	echo "gofmt-check: gofmt failed over the checked set (a parse error in a checked file?)" >&2
+	exit 2
+fi
 if [ -n "$findings" ]; then
 	echo "gofmt-check: $n_checked checked, unformatted:" >&2
 	printf '%s\n' "$findings" >&2

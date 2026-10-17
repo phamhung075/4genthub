@@ -13,10 +13,12 @@ pair had been recorded in a dozen changelog entries as a "decoy" without ever ha
   mechanism that makes the name load-bearing, so the exclusion is a recorded fact rather than
   folklore. The sweep's consumer is `scripts/gofmt-check.sh`.
 - **`scripts/gofmt-check.sh` (new) - the sweep itself.** It reads the exclusion, checks every other
-  tracked `.go` file, and makes three things visible that the raw sweep hid: the skipped paths and
-  their count (the green is not vacuous), a rotting exclusion (a named path that is no longer a
-  tracked `.go` file exits 2), and a gofmt failure that is not a formatting finding (a parse error
-  in a checked file exits 1, never 0). Exit: 0 clean / 1 findings listed / 2 misconfigured.
+  tracked `.go` file, and makes visible what the raw sweep hid: the skipped paths and their count
+  (the green is not vacuous), a rotting exclusion (a named path that is no longer a tracked `.go`
+  file), **zero coverage** (an exclusion that swallows every tracked `.go` file measured nothing -
+  the architect's pre-merge finding, fixed here: the first cut returned 0), and a gofmt failure
+  that is not a formatting finding (a parse error in a checked file). Exit: 0 clean, 1 unformatted
+  files listed, 2 the instrument could not measure.
 
 ## Why the two names stay (acceptance route (a): quote the mechanism)
 
@@ -40,6 +42,11 @@ Neither file is renamed, because both are referenced by NAME and a rename is a d
   -> `1253 checked, unformatted: probe_unformatted.go`, `rc=1`; probe removed, tree clean.
 - Cannot rot: a fake name appended to `.gofmt-excludes` -> `names a path that is not a tracked
   .go file: no-such-file.go`, `rc=2`; restored -> green again.
+- Cannot cover nothing: the architect's pre-merge repro - a throwaway repo with two `.go` files,
+  both excluded -> `covers every tracked .go file - nothing was measured`, `rc=2` (the first cut
+  returned 0); the same repo with one of the two excluded -> `clean over 1`, `rc=0`. A
+  syntactically invalid checked file -> `gofmt failed over the checked set`, `rc=2`, with gofmt's
+  own parse error shown.
 
 ## Limits
 
