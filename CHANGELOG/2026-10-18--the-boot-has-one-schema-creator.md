@@ -32,6 +32,11 @@ differed from the registry's could leave the two disagreeing with nothing to rep
 - **`0006_task_event_vocabularies.sql`** holds the two re-created CHECKs, a separate step because the
   former ensurer deliberately committed them separately: a legacy database whose rows carry a deleted
   kind is REPORTED with its count (the six removed kinds are named) instead of failing on a constraint.
+- **`one_schema_creator_integration_test.go`** pins it by BEHAVIOUR, not by reading source: on a
+  catalogue that already holds tables (the state where `0001` is skipped), `labels` - a registry table
+  only `0001` creates - is dropped and the boot must NOT put it back. `createAll` does; the steps do
+  not. Red before: on a `worktree` of HEAD `8f053e8c` the same case fails with "the boot recreated a
+  table only 0001_baseline defines".
 - **`ResetDatabase`** drops `applied_migrations` with the tables and calls `CreateTables`, so the next
   Apply runs every step from an empty catalogue instead of skipping a ledger whose rows outlived the
   schema.

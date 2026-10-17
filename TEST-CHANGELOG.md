@@ -25,6 +25,11 @@ Track test suite changes, fixes, and improvements for agenthub.
 - `schema_matches_definitions_test.go`: indexes are compared per table as a SET, not a list, because
   `0001` and `0005` both carry `CREATE INDEX IF NOT EXISTS` for the columns `0005` adds. The index axis
   still catches a missing index; it no longer counts a second mention of the same one.
+- `agenthub_go/fastmcp/task_management/infrastructure/database/one_schema_creator_integration_test.go`
+  (new): `TestTheBootDoesNotRecreateAMissingTable` is the pin that the deleted creator cannot come
+  back. Fresh boot, `DROP TABLE labels CASCADE` (a registry table only `0001_baseline` creates), boot
+  again: the boot must succeed with the table ABSENT. Red before, on a `worktree` of `8f053e8c` with
+  the old boot ritual: "the boot recreated a table only 0001_baseline defines".
 - `agenthub_go/fastmcp/session_stream/testdb/testdb.go`: `CreateSchema` is ONE boot again. It used to
   assert that the first boot refused for the missing `0001_baseline` mark and then record the mark as
   an operator would; a fresh database now applies and records `0001` itself, so a refusal here is a
