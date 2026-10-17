@@ -8,6 +8,7 @@ import logger from "../../utils/logger";
 // React Query hooks
 import { useQueryClient } from '@tanstack/react-query';
 import { useTasks, useTaskMutations } from "../../hooks/useTasks";
+import { useTaskFilters } from "../../hooks/useTaskFilters";
 import { useWebSocket } from "../../hooks/useWebSocketV2";
 import { useRealtimeSync } from "../../hooks/useRealtimeSync";
 
@@ -18,6 +19,7 @@ import { useDialogManager } from "./hooks/useDialogManager";
 import { TaskListHeader, TaskListContent, TaskSearchSection, DialogSection } from "./components";
 
 // Types
+import type { TaskSummary } from "../../types/taskTypes";
 import { LazyTaskListProps, TASKS_PER_PAGE, TaskActiveDialog } from "../../types/taskTypes";
 
 const LazyTaskListRefactored: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTasksChanged }) => {
@@ -228,14 +230,15 @@ const LazyTaskListRefactored: React.FC<LazyTaskListProps> = ({ projectId, taskTr
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Display tasks with pagination
-  const displayTasks = useMemo(() => {
+  // Every task on the board as a summary, BEFORE the page cap: the seat filter selects from all
+  // of them, so a seat whose work starts past the first page is still reachable.
+  const taskSummaries = useMemo<TaskSummary[]>(() => {
     if (!tasks || !Array.isArray(tasks)) {
       return [];
     }
 
     // Convert full tasks to summaries for display
-    return tasks.slice(0, TASKS_PER_PAGE).map(task => ({
+    return tasks.map(task => ({
       id: task.id,
       title: task.title,
       status: task.status,
@@ -249,6 +252,22 @@ const LazyTaskListRefactored: React.FC<LazyTaskListProps> = ({ projectId, taskTr
       created_at: task.created_at
     }));
   }, [tasks]);
+
+  const { filters, setAssigneeFilter, applyFilters, filteredTaskCount } = useTaskFilters(taskSummaries);
+
+  // The seats the board may be filtered by are the ones its own rows name, in the same
+  // '@<seat_key>' form the assignment dialog offers.
+  const seatOptions = useMemo(() => {
+    const seats = new Set<string>();
+    taskSummaries.forEach(task => task.assignees?.forEach(assignee => seats.add(assignee)));
+    return [...seats].sort((a, b) => a.localeCompare(b));
+  }, [taskSummaries]);
+
+  // The page cap applies AFTER the filter, not before it.
+  const displayTasks = useMemo(
+    () => applyFilters(taskSummaries).slice(0, TASKS_PER_PAGE),
+    [applyFilters, taskSummaries]
+  );
 
   // Build fullTasks map from loaded tasks
   const fullTasks = useMemo(() => {
@@ -277,7 +296,11 @@ const LazyTaskListRefactored: React.FC<LazyTaskListProps> = ({ projectId, taskTr
       />
 
       <TaskListHeader
-        totalTasks={tasks.length}
+        totalTasks={taskSummaries.length}
+        visibleTasks={filteredTaskCount}
+        seatFilter={filters.assignee}
+        seatOptions={seatOptions}
+        onSeatFilterChange={setAssigneeFilter}
         isConnected={isConnected}
         loading={loading}
         onRefresh={async () => { await loadTaskSummaries(); }}

@@ -2,6 +2,16 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-17 - the board filters by seat, before the page cap (frontend)
+
+- `agenthub-frontend/src/tests/components/LazyTaskListSeatFilter.test.tsx` (new): the real board with 21
+  tasks, the 21st - past `TASKS_PER_PAGE` (20) - owned by `@fe-dev`. Unfiltered that row is absent
+  (`Tasks (21)`); selecting the seat shows it (`Tasks (1 of 21)`); `All seats` restores the capped page.
+  The select offers `all`, `@fe-dev`, `@lead` - the seats the rows carry. Red-proved by filtering after
+  the slice.
+- RUN: 4 files / 13 tests, 0 failed (this file, `LazyTaskListAgentLoading`, `LazyTaskListDialogOpen`,
+  `useTaskFilters`); `npx tsc --noEmit -p .` clean.
+
 ## 2026-10-17 - the real-artefact schema test reads the schema block, not the first code block (frontend)
 
 - `agenthub-frontend/src/tests/components/ApiReferenceView.real.test.tsx` `renders the real schema verbatim for every tool that carries parameters`: tool descriptions now render as markdown and can hold `<pre>` blocks, so the first `<pre>` of an article is no longer the schema. The test takes the last `<pre>` (the schema follows the description). CI run on `0ffb258e` failed with `"# ❌ WRONG" is not valid JSON`.
