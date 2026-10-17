@@ -2,6 +2,19 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-18 - the task-count animation's equal-but-new input settles (frontend)
+
+- `agenthub-frontend/src/tests/components/ProjectList/useProjectAnimations.test.tsx` (NEW, 3 cases): the
+  equal-but-new-input case mounts a probe that hands the hook a fresh `{}` per render (what
+  `useBranchSummaries` returns while its query has no data) and asserts the consumer renders fewer than 5
+  times; the input turns stable after 20 renders so the pre-fix loop ends on its own and the assertion is the
+  failure rather than an OOM of the vitest worker. The other two cases pin the behaviour the fix must keep:
+  a change animates `up` and clears after 600 ms of fake timers, a decrease reports `down`.
+- RED FIRST, measured against the old hook: 1 file / 1 failed | 2 passed (21 renders). After the change:
+  1 file / 3 passed.
+- At this change: `npx vitest run src/tests/components/ProjectList src/tests/App.test.tsx` = 7 files /
+  108 tests, 0 failed; `npx tsc --noEmit` exits 0.
+
 ## 2026-10-17 - the component timeline names only the six kinds (frontend)
 
 - `agenthub-frontend/src/tests/components/TaskEventTimeline.test.tsx`: the label case still fed the removed
