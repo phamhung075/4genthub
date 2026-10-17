@@ -101,8 +101,8 @@ export function statusChangedTo(event: TaskEvent): TaskStatus | null {
  * The phase the sequence ends in, read oldest-first (`seq` ascending, which is the order the route
  * returns). One rule, tied to the kind that carries a status:
  * - `status_changed` carries the status the task reached, so it sets the phase.
- * - EVERY OTHER KIND DELIBERATELY DOES NOT MOVE IT - a claim, a delivery, a progress note, a verdict.
- *   `unopened` is an empty ledger: silence, not `todo`.
+ * - EVERY OTHER KIND DELIBERATELY DOES NOT MOVE IT - a progress note, a verdict, a handover, a
+ *   context update. `unopened` is an empty ledger: silence, not `todo`.
  */
 export function deriveLedgerPhase(events: readonly TaskEvent[]): LedgerPhase {
   let phase: LedgerPhase = 'unopened';
@@ -137,7 +137,7 @@ export function describeEvent(event: TaskEvent): string {
 }
 
 /**
- * A kind's display name for a value off the WIRE, which may be one this build does not know: the twelve
+ * A kind's display name for a value off the WIRE, which may be one this build does not know: the six
  * are the whole vocabulary today, and a kind the server adds tomorrow is still what happened, so it
  * prints as itself rather than as nothing.
  */

@@ -14,27 +14,25 @@ export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent' | 'critical';
 // ============================================
 
 /**
- * The kinds this client renders: the ledger's kinds that have a writer of their own. The server's list
- * is `ck_task_event_kind` in `agenthub_go/fastmcp/task_management/infrastructure/database/task_event_tables.go`
- * (the table's single DDL string), mirrored by `TaskEventKindValues` in
- * `agenthub_go/fastmcp/task_management/domain/entities/task_event.go`; until `48c96fdd` lands it still
- * carries six kinds more, none of which any writer emits (see the counts below).
+ * The kinds the ledger records, in the DDL's declaration order: `ck_task_event_kind` in
+ * `agenthub_go/fastmcp/task_management/infrastructure/database/task_event_tables.go` (the table's
+ * single DDL string), mirrored by `TaskEventKindValues` in
+ * `agenthub_go/fastmcp/task_management/domain/entities/task_event.go` and by the ensurer's
+ * `taskEventKindVocabulary`. All four name these six and nothing else (`a373feec`), so this array is
+ * an exact mirror rather than a subset: a kind added on either side must be added on the other.
  *
- * THE SIX THAT REMAIN, each with the writer a search of the hub finds (counted on main, 2026-10-17):
- * `status_changed` (RecordStatusChange), `progress` (RecordProgress and the entity's progress payload),
- * `gate_verdict` (RecordGateVerdict), `evidence_submitted` (task_event_controller's evidence route and
- * the sweeper), `context_updated` (update_context and the unified context service) and `handover` -
- * the one kind of the six still without a writer: resume READS it, and its writer is queued on
- * bb5e5022.
+ * EACH ONE HAS A WRITER. `status_changed` is RecordStatusChange, `progress` RecordProgress (plus the
+ * entity's progress payload), `gate_verdict` RecordGateVerdict, `evidence_submitted` the
+ * task_event_controller evidence route and the sweeper, `context_updated` update_context and the
+ * unified context service, and `handover` the ledger outbox - its payload is gated by
+ * ValidateHandoverPayload in `ledger/application/services/ledger_service.go`, and resume is its reader
+ * (`resumeLastEvent(events, TaskEventKindHandover)`).
  *
  * The six the vocabulary used to carry - `assigned`, `claimed`, `delivered`, `context_loaded`,
- * `escalated`, `human_decision` - are dropped here because the same search finds zero emitters for
- * each, and every fact they named has a single home already (assignment is the task's assignees
- * column, a claim is the `status_changed` write, a delivery is a queue row, an escalation is a
- * `task_audit_records` row, an owner decision is a queue row). The hub's CHECK still accepts all
- * twelve until `48c96fdd` narrows it; a row of a dropped kind cannot arrive in between, because no
- * writer emits one - which is why this mirror can be narrower than the DDL without lying about a
- * payload it renders.
+ * `escalated`, `human_decision` - are gone from the DDL and from this mirror for the same reason: no
+ * writer emitted them, and every fact they named has a single home already (assignment is the task's
+ * assignees column, a claim is the `status_changed` write, a delivery is a queue row, an escalation is
+ * a `task_audit_records` row, an owner decision is a queue row, and no hub path loads context).
  *
  * READ THIS BEFORE TREATING A KIND AS CARRYING A STATUS: `status_changed` is the only kind whose
  * payload defines one - `{ old, new }`. The other five carry payloads of other shapes, so a `new` on
