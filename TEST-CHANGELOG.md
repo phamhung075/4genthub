@@ -2,6 +2,18 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-17 - the retired /help-setup route is pinned, and the /docs tests were run (frontend)
+
+- `agenthub-frontend/src/tests/App.test.tsx` `sends the retired /help-setup route to the docs site` (new):
+  pushes `/help-setup`, then asserts the docs body opens on `Overview` and the URL ends at
+  `/docs/quickstart/overview` (DocsPage canonicalises `/docs` to its first page). Red before the route
+  existed: the catch-all sent the path to `/`.
+- RUN, which the /docs entry below could not do: `npx vitest run src/tests/App.test.tsx
+  src/tests/docs/docsSite.test.ts src/tests/pages/DocsPage.test.tsx src/tests/pages/ApiDocsPage.test.tsx` =
+  4 files, 36 tests, 0 failed. `npx tsc --noEmit` exits 0. The earlier "NOT RUN" line records that commit's
+  state and stands; this run is the owner's instruction on task b6a8d202, and the rule it cites is the 3 GB
+  vite build, not vitest (`npx vitest run` is on the seat guard's allow list and the guard passed it).
+
 ## 2026-10-17 - the session viewer tests wait for each viewer to leave the hub (agenthub_go)
 
 - `agenthub_go/fastmcp/server/httpapp/ws_session_viewer_test.go`: `dialViewer` and `dialViewerToken` close the socket and then wait until `Hub.Subscribers(sessionID)` is 0 (new `releaseOnCleanup`). The hub is process-wide and every test uses `viewerSID`, so a handler still unwinding from one test was counted by the next ("1 hub subscriptions for an unauthenticated caller", CI run 39016892762).

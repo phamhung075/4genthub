@@ -263,6 +263,9 @@ function App() {
               <EmailVerification />
             </Suspense>
           } />
+          {/* /help-setup was linked from the header, the landing page and the sitemap for months, so a
+              bookmark lands on the page that replaced it, not on the landing page. It is not linked. */}
+          <Route path="/help-setup" element={<Navigate to="/docs" replace />} />
           {/* The docs site is public: it renders ai_docs/public-docs and the API reference,
               documents the deployment and names nothing, so a reader needs no account. */}
           <Route path="/docs/*" element={
