@@ -318,7 +318,7 @@ Follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/):
 
 ### MANDATORY Behaviors
 1. ✅ **ADD ONE `CHANGELOG/<date>--<title>.md` FILE** for ALL project changes (NOT CLAUDE.local.md)
-2. ✅ **CHECK ai_docs/index.json** for existing documentation before creating
+2. ✅ **CHECK `git ls-files 'ai_docs/**/*.md'`** for existing documentation before creating
 3. ✅ **FOLLOW DDD patterns** in codebase
 4. ✅ **TEST code examples** before documenting
 5. ✅ **USE existing libraries** - check package.json/requirements first
@@ -437,7 +437,7 @@ The schema is the Go server's `init_schema_postgresql.sql`; change it together w
 
 ## 📚 KNOWLEDGE MANAGEMENT
 
-- **AI Docs**: `ai_docs/` folder | **Index**: `ai_docs/index.json` for quick lookup
+- **AI Docs**: `ai_docs/` folder | **Index**: `git ls-files 'ai_docs/**/*.md'` for quick lookup
 - Search existing docs before creating new ones
 - Use kebab-case for folder names
 

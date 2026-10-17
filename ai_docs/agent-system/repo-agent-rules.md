@@ -131,7 +131,7 @@ the model → yes: fix the test to match the model.
 ## Docs conventions
 
 - Project documentation lives in `ai_docs/` (kebab-case folders, one topic per folder).
-- `ai_docs/index.json` is machine-generated — never hand-edit it.
+- `git ls-files 'ai_docs/**/*.md'` lists every document — there is no index to hand-edit.
 - Search existing docs before creating new ones.
 - **Seat reports live in `ai_docs/reports-status/`.** Findings, gate docs, verdicts and status reports
   go there, one file per report (`<KIND>-<subject>-<date>.md`) — not in a repo root. The 4genthub root
