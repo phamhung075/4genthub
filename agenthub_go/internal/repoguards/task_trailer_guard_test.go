@@ -108,6 +108,26 @@ func TestASeatCommitCarriesTheFullTaskIdTrailer(t *testing.T) {
 	}
 }
 
+// TestAMissingMessageFileIsExempt pins the guard's third early exit: a git hook is handed a message
+// file, and a caller that hands it a path that is not one (a hand run, a hook installed at the wrong
+// stage) is answered 0 rather than a refusal about a file it was never given.
+func TestAMissingMessageFileIsExempt(t *testing.T) {
+	dir := t.TempDir()
+	if err := exec.Command("git", "-C", dir, "init", "-q").Run(); err != nil {
+		t.Fatalf("git init in the scratch repo: %v", err)
+	}
+	cmd := exec.Command("sh", filepath.Join(repoRoot(t), "scripts", "git-hooks", "task-trailer-guard"),
+		filepath.Join(dir, "no-such-message"))
+	cmd.Dir = dir
+	cmd.Env = []string{"PATH=" + os.Getenv("PATH"), "HOME=" + dir,
+		"AGENTHUB_SESSION_NAME=agenthub--room--seat"}
+	var stderr strings.Builder
+	cmd.Stderr = &stderr
+	if err := cmd.Run(); err != nil {
+		t.Fatalf("a missing message file was refused: %v (stderr %q)", err, stderr.String())
+	}
+}
+
 // TestAMergeAndTheOwnersHostAreExempt pins the two exemptions the guard's own header states: a merge
 // commit needs no trailer (it carries no authored change), and the owner's host has no
 // AGENTHUB_SESSION_NAME, so nothing is refused there.
