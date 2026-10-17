@@ -2,6 +2,11 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-17 - the real-artefact schema test reads the schema block, not the first code block (frontend)
+
+- `agenthub-frontend/src/tests/components/ApiReferenceView.real.test.tsx` `renders the real schema verbatim for every tool that carries parameters`: tool descriptions now render as markdown and can hold `<pre>` blocks, so the first `<pre>` of an article is no longer the schema. The test takes the last `<pre>` (the schema follows the description). CI run on `0ffb258e` failed with `"# ❌ WRONG" is not valid JSON`.
+- NOT RUN locally: frontend test runs are not allowed. `tsc --noEmit` is clean.
+
 ## 2026-10-17 - docs diagrams and MCP tool descriptions render (frontend)
 
 - `agenthub-frontend/src/tests/lib/mermaidDiagrams.test.ts` (new, `mermaid` mocked): a fence is drawn

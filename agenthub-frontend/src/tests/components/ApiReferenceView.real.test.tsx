@@ -86,7 +86,10 @@ describe('ApiReferenceView <-> the generated artefact', () => {
 
     for (const tool of apiReference.tools) {
       const article = within(toolsRegion()).getByRole('article', { name: tool.name });
-      const block = article.querySelector('pre') as HTMLElement;
+      // The tool description is rendered markdown and may hold its own code blocks; the schema block
+      // is the last <pre> of the article, after the description.
+      const blocks = article.querySelectorAll('pre');
+      const block = blocks[blocks.length - 1] as HTMLElement;
       expect(JSON.parse(block.textContent ?? '')).toEqual(tool.parameters);
     }
   });
