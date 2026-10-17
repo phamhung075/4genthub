@@ -6,9 +6,8 @@
 // so a task whose stored status and ledger disagree cannot make the timeline claim the stored one.
 //
 // THE PHASE MOVES ON `status_changed` AND ON NOTHING ELSE, and that is the VOCABULARY's shape rather
-// than this file's limit: of the six kinds the ledger's CHECK constraint enforces
-// (`ck_task_event_kind`, `.../infrastructure/database/task_event_tables.go`, mirrored by
-// `TaskEventKindValues` in `domain/entities/task_event.go`), only `status_changed` carries a
+// than this file's limit: of the kinds this file's mirror carries (`TASK_EVENT_KINDS` in
+// `../types/taskTypes.ts` - the six that have writers of their own), only `status_changed` carries a
 // status - `{ old, new }`, the pair the server's own parity check reads against `tasks.status`. The
 // other five say that something HAPPENED - a progress note, a verdict, a handover - not which phase
 // the task is in, so folding a phase out of one would read a meaning out of a payload of another shape.
