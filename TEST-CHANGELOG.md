@@ -2,6 +2,18 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-17 - the roster test records the reviewer on agy (hub)
+
+- `scripts/tests/test_team_roster.py`: `OMP_SEATS` drops `reviewer`. Measured 2026-10-17 22:22Z with
+  `4genteam ps 4genthub-min --nodes --json`: architect, fe-dev, go-dev and lead run
+  `omp`/`deepseek-flash`; reviewer runs `agy`/`gemini-3.8-flash-low` (its seat moved at the 17:18Z
+  restart). Before the change the set comparison failed naming `reviewer` (room off-omp vs roster
+  omp); after it the pair is consistent. `team.json` already declared the same split - architect
+  `omp`/`deepseek/deepseek-flash:high`, reviewer `agy` - so the definition needed no change, and
+  `rig.yaml` does not exist in this repository (the 2026-10-09 note in this file).
+- Before: `python3 -m pytest scripts/tests/test_team_roster.py -q` = 1 failed, 2 passed. After:
+  3 passed.
+
 ## 2026-10-17 - the component timeline names only the six kinds (frontend)
 
 - `agenthub-frontend/src/tests/components/TaskEventTimeline.test.tsx`: the label case still fed the removed

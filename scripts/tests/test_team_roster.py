@@ -30,14 +30,15 @@ pytestmark = pytest.mark.unit
 REPO_ROOT = Path(__file__).resolve().parents[2]
 TEAM_JSON = REPO_ROOT / "scripts" / "team" / "4genthub-min" / "team.json"
 
-# The team the rig is RUNNING. RE-MEASURED 2026-10-15: ALL FIVE SEATS RUN `omp` - the owner replaced
-# the architect seat on 2026-10-14 20:21Z, and the room's `spec.json`, `4genteam ps --nodes --json` and
-# the cloud now all report `omp` for every seat - and the room's `team.json` declares exactly those
-# five, so the two writes agree at five. The 2026-10-11 reading this comment used to carry (one
-# `claude-code` architect and four `omp`) was true when taken and is exactly what the definition
-# drifted from: the file went on saying `claude-code`/`opus` for two more days, and the case that
-# asserted that runtime string from memory is DELETED rather than re-pointed - asserting a runtime
-# string is how it drifted, and the pair of set comparisons below already carries its intent.
+# The team the rig is RUNNING. RE-MEASURED 2026-10-17 22:22Z: five seats - four `omp` and one `agy`.
+# `4genteam ps 4genthub-min --nodes --json` reports `omp`/`deepseek-flash` for architect, fe-dev,
+# go-dev and lead, and `agy`/`gemini-3.8-flash-low` for reviewer (the reviewer's seat moved at the
+# 17:18Z restart), and the room's `spec.json` and `team.json` name the same five with the same split.
+# The earlier readings - one `claude-code` architect and four `omp`, then all five on `omp` from
+# 2026-10-14 20:21Z - were true when taken and are exactly what the definition drifted from: the file
+# went on saying `claude-code`/`opus` for two days after the rig stopped running it, and the case that
+# asserted a runtime string from memory is DELETED rather than re-pointed - asserting a runtime string
+# is how it drifted, and the pair of set comparisons below already carries its intent.
 LIVE_SEATS = [
     "architect",
     "fe-dev",
@@ -46,16 +47,15 @@ LIVE_SEATS = [
     "reviewer",
 ]
 
-# WHICH of those seats run omp, measured the same way and on the same day as `LIVE_SEATS` above: all
-# five, since 2026-10-15. Recorded rather than recomputed for the reason the pair exists - a set
-# derived from `team.json` agrees with `team.json` by construction, and this pair exists because the
-# room and the rig disagreed for two days.
+# WHICH of those seats run omp, measured the same way and on the same day as `LIVE_SEATS` above: four,
+# since the reviewer moved to `agy` at 2026-10-17 17:18Z. Recorded rather than recomputed for the
+# reason the pair exists - a set derived from `team.json` agrees with `team.json` by construction, and
+# this pair exists because the room and the rig disagreed for two days.
 OMP_SEATS = [
     "architect",
     "fe-dev",
     "go-dev",
     "lead",
-    "reviewer",
 ]
 
 
