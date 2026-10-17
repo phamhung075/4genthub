@@ -22,8 +22,9 @@ differed from the registry's could leave the two disagreeing with nothing to rep
 ## What changed
 
 - **`CreateTables` is the migration set, and nothing else.** `createAll`, the critical-table re-check
-  and `RunColumnEnsurers` are deleted; `EnsureAIColumnsExist` becomes a READBACK (`ensure_ai_columns.go`,
-  48 lines) that reports the columns the steps create and no longer writes them.
+  and `RunColumnEnsurers` are deleted, and `ensure_ai_columns.go` with them: once it stopped writing
+  columns its only caller was a test, so that test counts the `ai_*` columns from
+  `information_schema` itself.
 - **The ensurers' statements are steps.** `0005_patch_columns_the_boot_added.sql` carries the column
   work verbatim (`acceptance_criteria`, `scope`, `completed_by`, the `ai_*` set, `agent_sessions`'
   identity/cursor/state and its both-or-neither CHECK, `rooms.team_id`, `room_decisions.acked_at`,
@@ -62,9 +63,14 @@ differed from the registry's could leave the two disagreeing with nothing to rep
 
 ## Checks
 
-- `go build ./...`, `gofmt -l`, `go vet ./...`: clean.
+- `go build ./...`, `gofmt -l .`, `go vet ./...`: clean, no output.
+- `go test ./... -count=1` with `AGENTHUB_TEST_PG_URL` set: **136 packages ok, 3 packages FAIL**. All
+  three failures reproduce in a `git worktree` of the unmodified HEAD `8f053e8c`, so none is from this
+  change:
+  - `fastmcp/server/httpapp`: `TestLedgerIntentsOneBatchDecidesEachItemAndAnswersTheResendFromItsRow`
+    (`unsupported_kind`) and `TestLedgerIntentsRecordsOfflineFactsUnchangedInArrivalOrder`
+    (`handover_malformed`).
+  - `internal/apiref`: `TestTheCommittedArtefactMatchesTheProducer` (the committed `manage_task`
+    artefact's description differs from the server's).
 - `go test ./fastmcp/task_management/... ./fastmcp/seat_management/... ./fastmcp/session_stream/... -count=1`
   against the local cluster: all packages ok.
-- `go test ./fastmcp/server/httpapp/ -count=1`: one failure,
-  `TestLedgerIntentsRecordsOfflineFactsUnchangedInArrivalOrder` (`handover_malformed`). **Pre-existing**:
-  the same case, run in a `git worktree` of the unmodified HEAD (`8f053e8c`), fails identically.

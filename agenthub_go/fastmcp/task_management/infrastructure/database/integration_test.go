@@ -15,7 +15,6 @@ import (
 	"time"
 
 	"agenthub/fastmcp/session_stream/testdb"
-	"agenthub/fastmcp/task_management/domain/entities"
 	"agenthub/fastmcp/task_management/infrastructure/database"
 )
 
@@ -99,14 +98,12 @@ func TestRealPostgresCreateTablesAndSessions(t *testing.T) {
 	if err := db.QueryRowContext(ctx, "SELECT string_agg(enumlabel, ',' ORDER BY enumsortorder) FROM pg_enum e JOIN pg_type t ON t.oid=e.enumtypid WHERE t.typname='progressstate'").Scan(&labels); err != nil || labels != "INITIAL,IN_PROGRESS,COMPLETE" {
 		t.Fatalf("enum labels %q %v", labels, err)
 	}
-	// The ai_* columns are the schema's own now (0001, or 0005 on a database that predates them),
-	// so the readback is the assertion: there is no separate creator left to run.
-	status := database.VerifyAIColumns(ctx, db)
-	entry, ok := status.Get("tasks")
-	if !ok {
-		t.Fatalf("verify: %v", status.Keys())
-	}
-	if count, _ := entry.(*entities.OrderedMap[any]).Get("ai_columns_count"); count != 7 {
-		t.Fatalf("tasks carries %v ai_* columns, want 7: %v", count, status.Keys())
+	// The ai_* columns are the schema's own now (0001, or 0005 on a database that predates them), so
+	// the catalogue is the assertion: there is no separate creator left to run.
+	var aiColumns int
+	if err := db.QueryRowContext(ctx, `SELECT count(*) FROM information_schema.columns
+			WHERE table_schema = current_schema() AND table_name = 'tasks' AND column_name ~ '^ai_'`).
+		Scan(&aiColumns); err != nil || aiColumns != 7 {
+		t.Fatalf("tasks carries %d ai_* columns, want 7: %v", aiColumns, err)
 	}
 }
