@@ -455,7 +455,7 @@ CREATE TABLE task_events (
 	CONSTRAINT uq_task_event_seq UNIQUE (task_id, seq),
 	CONSTRAINT uq_task_event_user_seq UNIQUE (user_id, user_seq),
 	CONSTRAINT uq_task_event_client_event UNIQUE (user_id, client_event_id),
-	CONSTRAINT ck_task_event_kind CHECK (kind IN ('assigned', 'claimed', 'delivered', 'context_loaded', 'progress', 'status_changed', 'evidence_submitted', 'gate_verdict', 'escalated', 'human_decision', 'handover', 'context_updated')),
+	CONSTRAINT ck_task_event_kind CHECK (kind IN ('progress', 'status_changed', 'evidence_submitted', 'gate_verdict', 'handover', 'context_updated')),
 	CONSTRAINT ck_task_event_actor_kind CHECK (actor_kind IN ('seat', 'client', 'gate', 'human')),
 	FOREIGN KEY(task_id) REFERENCES tasks (id)
 );

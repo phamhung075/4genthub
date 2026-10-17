@@ -9,14 +9,13 @@ import { renderWithQuery } from '../query-utils';
 import type { RoomDecision } from '../../types/seatTypes';
 
 /**
- * The panel's contract, from the frozen lane-1 design (2026-10-12): options are rendered from the
- * stored questions verbatim, one answer is posted per question, a row that is only `answered` stays
- * in the list because the daemon has not applied it, a closed row does not, and both a refusal and
- * an unreadable list are shown rather than swallowed.
+ * The panel's contract, from the room decision channel (`room_decisions_mount.go`): options are
+ * rendered from the stored questions verbatim, one answer is posted per question, a row that is
+ * only `answered` stays in the list because the daemon has not applied it, a closed row does not,
+ * and both a refusal and an unreadable list are shown rather than swallowed.
  *
  * The SERVICES are mocked, so the real hooks (query keys, `enabled`, invalidation) run: what this
  * file pins is the panel's behaviour and the (room, decision, question, option) payload it sends.
- * The route itself is verified against the running server when go-dev's slice lands.
  */
 
 vi.mock('../../services/seatApi', () => ({
@@ -64,7 +63,7 @@ const renderPanel = () =>
 
 beforeEach(() => {
   vi.clearAllMocks();
-  listRooms.mockResolvedValue({ rooms: [{ id: 'r1', slug: 'dev', name: 'Dev', team_id: '', role: 'owner' }] });
+  listRooms.mockResolvedValue({ rooms: [{ id: 'r1', slug: 'dev', name: 'Dev', team_id: '', role: 'owner' }] } as never);
   listRoomDecisions.mockResolvedValue({ decisions: [decision()] });
   answerRoomDecision.mockResolvedValue({ state: 'answered', answers: { q1: 'no' }, complete: false });
 });
@@ -120,26 +119,28 @@ it('shows a refused answer instead of a silent no-op', async () => {
 });
 
 it("shows why the room's list could not be read", async () => {
-  // The message the browser really produced on the OF4 local stack for the absent route: the status
-  // is part of it now, so the operator can tell a missing route from a refused answer.
   listRoomDecisions.mockRejectedValue(new Error('Request failed: HTTP 404'));
   renderPanel();
 
   expect(await screen.findByRole('alert')).toHaveTextContent('Request failed: HTTP 404');
 });
 
-it('allows sending request to room lead', async () => {
-  seatApi.sendSeatMessage = vi.fn().mockResolvedValue({ success: true } as any);
-  renderPanel();
+it('reads the picked room when the page names none', async () => {
+  listRooms.mockResolvedValue({
+    rooms: [
+      { id: 'r1', slug: 'dev', name: 'Dev', team_id: '', role: 'owner' },
+      { id: 'r2', slug: 'ops', name: 'Ops', team_id: '', role: 'owner' },
+    ],
+  } as never);
+  renderWithQuery(
+    <MemoryRouter initialEntries={['/dashboard']}>
+      <RoomDecisionPanel />
+    </MemoryRouter>
+  );
 
-  const input = await screen.findByLabelText(/send request to lead/i);
-  fireEvent.change(input, { target: { value: 'Please prioritize S2 testing' } });
+  await screen.findByText('Ship the sidebar now?');
+  expect(listRoomDecisions).toHaveBeenCalledWith('dev');
 
-  const sendBtn = screen.getByRole('button', { name: /^send$/i });
-  expect(sendBtn).toBeEnabled();
-  fireEvent.click(sendBtn);
-
-  await waitFor(() => {
-    expect(seatApi.sendSeatMessage).toHaveBeenCalledWith('dev', 'lead', { text: 'Please prioritize S2 testing' });
-  });
+  fireEvent.change(screen.getByLabelText('Room'), { target: { value: 'ops' } });
+  await waitFor(() => expect(listRoomDecisions).toHaveBeenCalledWith('ops'));
 });

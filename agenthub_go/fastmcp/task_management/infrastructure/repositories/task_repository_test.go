@@ -639,3 +639,106 @@ func TestTaskRepoCreateDuplicateOptionalStepsKeepsTask(t *testing.T) {
 		t.Fatalf("GetTask: %v %v", err, got)
 	}
 }
+
+// TestTaskRepoLatestInProgressByAssigneeIsTheRuledResumeRead pins 4/8's resolution against the real
+// schema: the most recently UPDATED in_progress item assigned to the seat, id ascending on a tie, and
+// never a row in another status, for another seat, or in another tenant.
+func TestTaskRepoLatestInProgressByAssigneeIsTheRuledResumeRead(t *testing.T) {
+	sessions := newTestRepoEnv(t)
+	ctx := context.Background()
+	branchID := taskRepoTestBranch(t, sessions, taskRepoTestUserA)
+	repo := taskRepoTestNewRepo(t, sessions, taskRepoTestUserA, branchID, false)
+
+	mk := func(title string, assignees []string, statusRaw string) *entities.Task {
+		t.Helper()
+		id := tmvo.GenerateNewTaskId()
+		branch := branchID
+		status := tmvo.TaskStatus{Value: statusRaw}
+		task, err := entities.NewTask(entities.Task{
+			ID: &id, Title: title, Description: "D", GitBranchID: &branch,
+			Assignees: assignees, Status: &status,
+		})
+		if err != nil {
+			t.Fatalf("NewTask(%s): %v", title, err)
+		}
+		saved, err := repo.Save(ctx, task)
+		if err != nil {
+			t.Fatalf("Save(%s): %v", title, err)
+		}
+		return saved
+	}
+
+	mk("older", []string{"@go-dev"}, "in_progress")
+	time.Sleep(3 * time.Millisecond)
+	newer := mk("newer", []string{"@go-dev"}, "in_progress")
+	mk("todo", []string{"@go-dev"}, "todo")
+	mk("other seat", []string{"@fe-dev"}, "in_progress")
+
+	got, err := repo.LatestInProgressByAssignee(ctx, "@go-dev")
+	if err != nil {
+		t.Fatalf("LatestInProgressByAssignee: %v", err)
+	}
+	if got == nil || got.Title != newer.Title {
+		t.Fatalf("resolved %v, want the most recently updated in_progress @go-dev task %q", got, newer.Title)
+	}
+
+	// A later UPDATE of the older row outranks the newer row's creation: the rule is updated_at, not
+	// created_at.
+	older := mk("older again", []string{"@go-dev"}, "in_progress")
+	time.Sleep(3 * time.Millisecond)
+	older.Title = "older, touched last"
+	if _, err := repo.Save(ctx, older); err != nil {
+		t.Fatalf("re-Save(older): %v", err)
+	}
+	got, err = repo.LatestInProgressByAssignee(ctx, "@go-dev")
+	if err != nil || got == nil || got.Title != "older, touched last" {
+		t.Fatalf("after the update, resolved %v (%v), want the last-touched row", got, err)
+	}
+
+	// A tie on updated_at is broken by id ascending, which makes the answer stable rather than
+	// dependent on the scan order.
+	tieA := mk("tie a", []string{"@go-dev"}, "in_progress")
+	time.Sleep(3 * time.Millisecond)
+	tieB := mk("tie b", []string{"@go-dev"}, "in_progress")
+	tieStamp := time.Now().UTC()
+	if err := sessions.WithSession(ctx, func(ctx context.Context, s database.DBTX) error {
+		_, err := s.ExecContext(ctx, `UPDATE tasks SET updated_at = $1 WHERE id = $2::uuid OR id = $3::uuid`,
+			tieStamp, tieA.ID.Value, tieB.ID.Value)
+		return err
+	}); err != nil {
+		t.Fatalf("forcing the tie: %v", err)
+	}
+	wantTitle := tieA.Title
+	if tieB.ID.Value < tieA.ID.Value {
+		wantTitle = tieB.Title
+	}
+	got, err = repo.LatestInProgressByAssignee(ctx, "@go-dev")
+	if err != nil || got == nil || got.Title != wantTitle {
+		t.Fatalf("tie resolved %v (%v), want the lower id %q", got, err, wantTitle)
+	}
+
+	// The seat read is the repository's scope, so another tenant's @go-dev row is never a candidate.
+	branchB := taskRepoTestBranch(t, sessions, taskRepoTestUserB)
+	repoB := taskRepoTestNewRepo(t, sessions, taskRepoTestUserB, branchB, false)
+	idB := tmvo.GenerateNewTaskId()
+	branchBB := branchB
+	statusB := tmvo.TaskStatus{Value: "in_progress"}
+	taskB, err := entities.NewTask(entities.Task{
+		ID: &idB, Title: "tenant B", Description: "D", GitBranchID: &branchBB,
+		Assignees: []string{"@go-dev"}, Status: &statusB,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := repoB.Save(ctx, taskB); err != nil {
+		t.Fatalf("tenant B save: %v", err)
+	}
+	gotA, err := repo.LatestInProgressByAssignee(ctx, "@go-dev")
+	if err != nil || gotA == nil || gotA.Title == "tenant B" {
+		t.Fatalf("tenant A resolved %v (%v), want a row of its own tree", gotA, err)
+	}
+	gotB, err := repoB.LatestInProgressByAssignee(ctx, "@go-dev")
+	if err != nil || gotB == nil || gotB.Title != "tenant B" {
+		t.Fatalf("tenant B resolved %v (%v), want its own row", gotB, err)
+	}
+}

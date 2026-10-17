@@ -44,24 +44,18 @@ describe('deriveLedgerPhase', () => {
   });
 
   it('moves only on `status_changed`, never on a kind whose payload defines no status', () => {
-    // EVERY OTHER KIND IS PRESENT ON PURPOSE: each says that something HAPPENED - a claim, a delivery, a
-    // progress note, a verdict - and none of them says which phase the task is in, so the fold must take
+    // EVERY OTHER KIND IS PRESENT ON PURPOSE: each says that something HAPPENED - a progress note, a
+    // verdict, a handover - and none of them says which phase the task is in, so the fold must take
     // none of them for the phase. `evidence_submitted` carries a `new` on purpose too: a field name that
     // looks like a status on the WRONG kind is exactly what must not be read.
     expect(
       deriveLedgerPhase([
-        ev(1, 'assigned'),
-        ev(2, 'claimed'),
-        ev(3, 'context_loaded'),
-        ev(4, 'status_changed', { old: 'todo', new: 'in_progress' }),
-        ev(5, 'progress', { note: 'tests written' }),
-        ev(6, 'evidence_submitted', { new: 'done' }),
-        ev(7, 'gate_verdict', { verdict: 'ACCEPT' }),
-        ev(8, 'delivered'),
-        ev(9, 'human_decision'),
-        ev(10, 'handover'),
-        ev(11, 'context_updated'),
-        ev(12, 'escalated'),
+        ev(1, 'progress', { note: 'tests written' }),
+        ev(2, 'status_changed', { old: 'todo', new: 'in_progress' }),
+        ev(3, 'evidence_submitted', { new: 'done' }),
+        ev(4, 'gate_verdict', { verdict: 'ACCEPT' }),
+        ev(5, 'handover'),
+        ev(6, 'context_updated'),
       ]),
     ).toBe('in_progress');
   });
@@ -131,11 +125,11 @@ describe('describeEvent', () => {
   });
 
   it('labels the non-status kinds in words rather than with the kind itself', () => {
-    expect(describeEvent(ev(1, 'assigned'))).toBe('Assigned');
     expect(describeEvent(ev(1, 'progress'))).toBe('Progress reported');
     expect(describeEvent(ev(1, 'evidence_submitted'))).toBe('Evidence submitted');
     expect(describeEvent(ev(1, 'gate_verdict'))).toBe('Gate verdict');
-    expect(describeEvent(ev(1, 'human_decision'))).toBe('Human decision');
+    expect(describeEvent(ev(1, 'handover'))).toBe('Handover');
+    expect(describeEvent(ev(1, 'context_updated'))).toBe('Context updated');
   });
 
   it('prints a status this build does not know as itself rather than hiding it', () => {

@@ -47,6 +47,13 @@ overrides:
   ws: '^8.21.0'
   minimatch: '^9.0.7'
   glob: '^12.0.0'
+  # GHSA-238p-pmpm-9mq7: katex < 0.18.2 lets an existing prototype pollution bypass its
+  # trust restrictions; patched in 0.18.2. This one is PRODUCTION (dev: false), reached only
+  # through mermaid 12.1.0, whose declared range is ^0.16.47 - so rule 79's override is the
+  # route. mermaid touches only the public katex.render / katex.renderToString pair, which
+  # 0.18 keeps; the override outranks the declared range, so the lockfile is where the fix
+  # has to be read.
+  katex: '^0.18.2'
   # mermaid's types reach @types/d3-dispatch, whose 3.0.7 uses `const` type parameters
   # (TypeScript 5.0) and fails to parse under this app's TypeScript 4.9. 3.0.6 declares
   # the same API for TypeScript 4.5+. Types only: nothing in the bundle changes.

@@ -550,20 +550,21 @@ export interface MachinesResponse {
 }
 
 // =============================================================================
-// Room decision requests
+// Room decision requests (the owner's side of a room lead's ask)
 // =============================================================================
 
 /**
- * The four states the cloud row moves through (`room_decisions.state`, frozen 2026-10-12, lane 1).
- * `pending` is open; `answered` means the owner has chosen and the room has NOT closed the question
- * yet ("awaiting the room"); `resolved` and `superseded` are closed and leave the panel.
+ * The four states a decision row moves through (`room_decisions.state` in the hub,
+ * `room_decisions/domain/decisions`). `pending` is open; `answered` means the owner has chosen and
+ * the room has NOT closed the question yet ("awaiting the room"); `resolved` and `superseded` are
+ * closed.
  */
-export type DecisionState = "pending" | "answered" | "resolved" | "superseded";
+export type DecisionState = 'pending' | 'answered' | 'resolved' | 'superseded';
 
 /**
- * One clickable choice. Field names and limits mirror the daemon's `HumanQuestionOption` verbatim
- * (ids `^[A-Za-z0-9_-]{1,40}$`, label <= 75) so the panel renders the stored value, never a
- * re-spelled copy of it.
+ * One clickable choice. Field names mirror the stored `HumanQuestionOption` verbatim so the panel
+ * renders the stored value, never a re-spelled copy of it. `recommended` is present only when the
+ * ask carried it.
  */
 export interface HumanQuestionOption {
   id: string;
@@ -571,16 +572,16 @@ export interface HumanQuestionOption {
   recommended?: boolean;
 }
 
-/** One question of an ask, verbatim from the daemon's `HumanQuestion` (1-4 questions, 2-4 options). */
+/** One question of an ask, verbatim from the stored `HumanQuestion`. */
 export interface HumanQuestion {
   id: string;
   question: string;
   options: HumanQuestionOption[];
 }
 
-/** A whole thread reply rather than a button choice (the daemon's `TypedHumanReply`). */
+/** A whole-thread reply rather than a button choice. */
 export interface TypedHumanReply {
-  kind: "typed-reply";
+  kind: 'typed-reply';
   text: string;
 }
 
@@ -601,18 +602,19 @@ export interface RoomDecision {
   answered_at: string | null;
 }
 
+/** GET /api/v2/rooms/{room}/decisions - one Decisions array, never a missing key. */
 export interface RoomDecisionsResponse {
   decisions: RoomDecision[];
 }
 
-/** One click per call, as the Slack option button is. */
+/** One click per call. */
 export interface AnswerRoomDecisionRequest {
   question_id: string;
   option_id: string;
   idempotency_key?: string;
 }
 
-/** Mirrors the recorded branch of the daemon's `RecordHumanAnswerResult`. */
+/** POST /api/v2/rooms/{room}/decisions/{id}/answer - the recorded state after this click. */
 export interface AnswerRoomDecisionResponse {
   state: DecisionState;
   answers: HumanAnswers;

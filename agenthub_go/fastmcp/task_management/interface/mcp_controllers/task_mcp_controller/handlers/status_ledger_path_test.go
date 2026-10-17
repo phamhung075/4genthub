@@ -39,6 +39,11 @@ func (r *ledgerPathRepo) FindByID(context.Context, value_objects.TaskId) (*entit
 	return &cp, nil
 }
 
+// LatestInProgressByAssignee is the resume-by-seat read; these cases name their task explicitly.
+func (r *ledgerPathRepo) LatestInProgressByAssignee(context.Context, string) (*entities.Task, error) {
+	return nil, nil
+}
+
 func (r *ledgerPathRepo) Save(_ context.Context, task *entities.Task) (*entities.Task, error) {
 	r.saves++
 	r.rows[task.ID.Value] = task.Status.Value

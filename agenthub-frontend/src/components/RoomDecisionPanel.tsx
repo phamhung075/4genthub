@@ -3,15 +3,15 @@ import { useLocation } from "react-router-dom";
 import { Button } from "./ui/button";
 import { RefreshButton } from "./ui/refresh-button";
 import { Select } from "./ui/select-simple";
-import { useAnswerRoomDecision, useRoomDecisions, useRooms, useSendSeatMessage } from "../hooks/useSeats";
+import { useAnswerRoomDecision, useRoomDecisions, useRooms } from "../hooks/useSeats";
 import type { DecisionState, HumanAnswers, HumanQuestion, RoomDecision } from "../types/seatTypes";
 
 /**
  * Room decision requests - the sidebar's lower half.
  *
- * A room lead's ask is mirrored up to the cloud; the owner answers here, one click per question,
- * and the daemon applies the answer and closes the row. Three consequences, from the frozen
- * contract of 2026-10-12 (lane 1):
+ * A room lead's ask is mirrored up to the cloud by that rig's daemon; the owner answers here, one
+ * click per question, and the daemon applies the answer and closes the row. Three consequences,
+ * from the room decision channel's contract:
  *
  * - The stored `questions` are rendered VERBATIM - the panel never re-spells an option.
  * - A row that is `answered` stays in the list. It is still with the room; only the daemon's
@@ -122,9 +122,6 @@ export const RoomDecisionPanel: React.FC = () => {
   const room = pickedRoom || roomFromPath(pathname) || rooms[0]?.slug || "";
   const { decisions, isLoading, error, refetch } = useRoomDecisions(room);
   const answer = useAnswerRoomDecision(room);
-  const sendLeadMessage = useSendSeatMessage(room, "lead");
-  const [leadRequestText, setLeadRequestText] = useState("");
-  const [leadRequestSent, setLeadRequestSent] = useState(false);
 
   const open = decisions.filter(
     (decision: RoomDecision) => decision.state === "pending" || decision.state === "answered"
@@ -140,7 +137,7 @@ export const RoomDecisionPanel: React.FC = () => {
 
   return (
     <section
-      className="mt-3 space-y-2.5 border-t border-surface-border-hover pt-3"
+      className="space-y-2.5"
       aria-label="Room decision requests"
     >
       <div className="flex items-center justify-between gap-2">
@@ -149,13 +146,8 @@ export const RoomDecisionPanel: React.FC = () => {
             Decision requests
           </h2>
           {pendingCount > 0 ? (
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-accent"></span>
-            </span>
-          ) : null}
-          {pendingCount > 0 ? (
-            <span className="inline-flex items-center rounded-full bg-accent/15 px-1.5 py-0.5 text-[10px] font-semibold text-accent">
+            <span className="inline-flex items-center gap-1 rounded-full bg-accent/15 px-1.5 py-0.5 text-[10px] font-semibold text-accent">
+              <span className="h-1.5 w-1.5 rounded-full bg-accent animate-pulse" />
               {pendingCount}
             </span>
           ) : null}
@@ -169,7 +161,7 @@ export const RoomDecisionPanel: React.FC = () => {
         />
       </div>
 
-      {rooms.length > 0 ? (
+      {rooms.length > 1 ? (
         <Select
           value={room}
           aria-label="Room"
@@ -202,9 +194,9 @@ export const RoomDecisionPanel: React.FC = () => {
           return (
             <article
               key={decision.id}
-              className={`space-y-2 rounded-lg border p-2.5 transition-all duration-300 ${
+              className={`space-y-2 rounded-lg border p-2.5 ${
                 isPendingValidation
-                  ? "border-accent/40 bg-accent/[0.03] animate-pulse-glow shadow-sm"
+                  ? "border-accent/40 bg-accent/[0.03] shadow-sm"
                   : "border-surface-border-hover bg-surface/40"
               }`}
             >
@@ -269,69 +261,8 @@ export const RoomDecisionPanel: React.FC = () => {
           All questions answered - waiting for the room to apply it.
         </p>
       ) : null}
-
-      {/* Human request input to room lead */}
-      {room ? (
-        <div className="mt-3 border-t border-surface-border-hover/60 pt-2.5">
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              const trimmed = leadRequestText.trim();
-              if (!trimmed || sendLeadMessage.isPending) return;
-              sendLeadMessage.mutate(
-                { text: trimmed },
-                {
-                  onSuccess: () => {
-                    setLeadRequestText("");
-                    setLeadRequestSent(true);
-                    setTimeout(() => setLeadRequestSent(false), 3000);
-                  },
-                }
-              );
-            }}
-            className="space-y-1.5"
-          >
-            <div className="flex items-center justify-between">
-              <label
-                htmlFor="human-lead-request-input"
-                className="text-[11px] font-semibold text-base-secondary uppercase tracking-wider"
-              >
-                Send request to lead
-              </label>
-              {leadRequestSent ? (
-                <span className="text-[10px] text-accent font-medium animate-fade-in">
-                  Sent to lead ✓
-                </span>
-              ) : null}
-            </div>
-            <div className="flex gap-1.5">
-              <input
-                id="human-lead-request-input"
-                type="text"
-                value={leadRequestText}
-                onChange={(e) => setLeadRequestText(e.target.value)}
-                placeholder="Send instruction or request to lead..."
-                className="theme-input min-h-[2rem] flex-1 px-2.5 py-1 text-xs rounded-md bg-surface/90 border-surface-border-hover focus:border-accent"
-                disabled={sendLeadMessage.isPending}
-              />
-              <Button
-                type="submit"
-                size="sm"
-                variant="secondary"
-                className="h-auto min-h-[2rem] px-2.5 py-1 text-xs shrink-0"
-                disabled={!leadRequestText.trim() || sendLeadMessage.isPending}
-              >
-                {sendLeadMessage.isPending ? "Sending..." : "Send"}
-              </Button>
-            </div>
-            {sendLeadMessage.isError ? (
-              <p className="text-[11px] text-destructive" role="alert">
-                Could not reach lead: {sendLeadMessage.error.message}
-              </p>
-            ) : null}
-          </form>
-        </div>
-      ) : null}
     </section>
   );
 };
+
+export default RoomDecisionPanel;

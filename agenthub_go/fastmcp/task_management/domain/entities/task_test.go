@@ -120,10 +120,10 @@ func TestProgressTextWithRendersALedgerNoteOnce(t *testing.T) {
 	}
 
 	// A kind that is not `progress` is not a note, whatever its payload happens to carry. This input
-	// holds only the later ledger note and the claimed event, so the render is that one note: the
-	// assertion is that the claimed event contributed nothing, not that a note it never received
+	// holds only the later ledger note and a status_changed event, so the render is that one note:
+	// the assertion is that the other event contributed nothing, not that a note it never received
 	// appears.
-	notANote := &TaskEvent{Kind: TaskEventKindClaimed, Payload: map[string]any{
+	notANote := &TaskEvent{Kind: TaskEventKindStatusChanged, Payload: map[string]any{
 		"content": "nope", "progress_number": float64(3),
 	}}
 	if got := task.ProgressTextWith([]*TaskEvent{laterNoteOnlyInTheLedger, notANote}); got != laterNoteOnlyInTheLedger.Payload["content"] {

@@ -284,12 +284,9 @@ func (c *TaskMCPController) validateRequest(action string, taskID *string, kwarg
 		}
 		return true, nil
 	case "resume":
-		// The brief is about ONE task, so resume has get's requirement and nothing else: the other
-		// fields it might carry are dropped by the factory's allowed set.
-		if taskID == nil {
-			return false, c.responseFormatter.CreateErrorResponse("resume", "task_id is required",
-				factories.ErrorCodeValidation, nil)
-		}
+		// task_id is OPTIONAL for resume: absent/empty resolves the CALLER SEAT's current
+		// in_progress task on the server (4/8, the 1/8 ruling), and the seat key is the request's
+		// own, never a parameter. The other fields are dropped by the factory's allowed set.
 		return true, nil
 	case "add_dependency", "remove_dependency":
 		if taskID == nil {

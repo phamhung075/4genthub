@@ -35,7 +35,7 @@ AI RULES: Create before work (>1 file edit) | Use 'next' for recommendations | U
 | next                | git_branch_id                     | include_context                    | Get recommended task               |
 | add_dependency      | task_id, dependency_id            |                                    | Add dependency                     |
 | remove_dependency   | task_id, dependency_id            |                                    | Remove dependency                  |
-| resume              | task_id                           |                                    | Resume brief from the ledger       |
+| resume              |                                   | task_id (optional: empty resolves this seat's current task) | Resume brief from the ledger |
 | ai_plan             | requirements, title, git_branch_id| description, context, auto_create_tasks | AI task plan                       |
 | ai_create           | title, git_branch_id              | enable_ai_breakdown, enable_smart_assignment, ai_requirements | AI-enhanced task                   |
 | ai_enhance          | task_id                           | analyze_complexity, suggest_optimizations, identify_risks | AI insights                        |

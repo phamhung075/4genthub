@@ -2,6 +2,76 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-17 - resume resolves the caller's seat and the ladder hears the handover (hub)
+
+- `agenthub_go/fastmcp/task_management/application/services/task_resume_service_test.go`: the empty-task_id
+  resolution asks for `@<the request's seat>` and equals the explicit brief; no actor, a non-seat actor and a
+  seat without a task answer `no_task_for_seat` with the two fixes; a blocked handover outranks a REJECT
+  verdict, `continue` leaves the ladder alone, `escalate` names its row and degrades without one.
+- `agenthub_go/fastmcp/task_management/infrastructure/repositories/task_repository_test.go`
+  `TestTaskRepoLatestInProgressByAssigneeIsTheRuledResumeRead` (new, PostgreSQL): updated_at beats created_at,
+  a tie is broken by id ascending, and another status/seat/tenant is never a candidate.
+- `agenthub_go/fastmcp/server/mcptoolpath/resume_by_seat_tool_path_pg_test.go` (new, PostgreSQL): through the
+  real MCP route, the seat's own header resolves its task with no task_id; another seat and a header-less call
+  answer `no_task_for_seat`.
+- RUN: `cd agenthub_go && go test -count=1 ./...` = all packages ok; the two PostgreSQL cases run with
+  `AGENTHUB_TEST_PG_URL` from `tools/testpg/start.sh`.
+
+## 2026-10-17 - the ledger vocabulary shrinks to six kinds (frontend)
+
+- `agenthub-frontend/src/tests/lib/taskTimeline.test.ts`: the phase-fold case now surrounds the single
+  `status_changed` with every surviving non-status kind (`progress`, `evidence_submitted` carrying a
+  `new` on purpose, `gate_verdict`, `handover`, `context_updated`) instead of five deleted ones; the
+  label case asserts `handover`/`context_updated` in place of `assigned`/`human_decision`.
+- RUN: `npx vitest run src/tests/lib/taskTimeline.test.ts` = 1 file / 20 tests, 0 failed;
+  `npx tsc --noEmit -p .` exits 0.
+
+## 2026-10-17 - the sidebar answers room decisions (frontend)
+
+- `agenthub-frontend/src/tests/components/RoomDecisionPanel.test.tsx` (new, 6 cases): services mocked,
+  real hooks and query keys, so what is pinned is the panel's behaviour and the payload. The room is
+  read from `/seats/:room/:seat`; stored questions and options render verbatim; a choice posts
+  `{question_id, option_id}` for the clicked option; an `answered` row stays while a `resolved` one is
+  dropped and its "Answer recorded" button is disabled; a refused answer (403) and an unreadable list
+  (404) each render their message in `role=alert`; a page naming no room reads the first room and
+  follows the picker to another.
+- RUN: `npx vitest run src/tests/App.test.tsx src/tests/components/RoomDecisionPanel.test.tsx` = 2
+  files / 24 tests, 0 failed; `npx tsc --noEmit -p .` exits 0.
+- NOT RUN: the live round trip against a running hub (needs an authenticated session and a room with a
+  pending ask); the panel's shapes are read from `room_decisions_mount.go`.
+
+## 2026-10-17 - the ledger's handover payload and the six-kind vocabulary (hub)
+
+- `agenthub_go/fastmcp/server/httpapp/ledger_pg_test.go` `TestLedgerHandoverPayloadRidesTheRuledGate` (new):
+  through the production seam one handover is accepted and read back by resume verbatim, while a missing key, an
+  unknown key, a fact without evidence and an `evt:` belonging to another task each answer their ruled token;
+  the row count proves exactly one row was written.
+- `agenthub_go/fastmcp/ledger/domain/entities/handover_test.go` (new): one accepted payload per decision value,
+  24 malformed cases, 12 evidence cases including a false-resolving `evt:`, resolver-failure propagation, and
+  the 2048-byte serialized cap.
+- `agenthub_go/fastmcp/task_management/infrastructure/database/task_event_ensurer_test.go`: a legacy row
+  carrying one of the six deleted kinds is reported by count before the CHECK is re-added.
+- `agenthub_go/fastmcp/task_management/infrastructure/database/fakedriver_test.go`: the fake answers the
+  ensurer's legacy-kind count (0), so the startup path can be tested without a database.
+- `agenthub_go/fastmcp/ledger/domain/entities/intent_test.go`, `task_test.go`, `ledger_routes_test.go`: fixtures
+  moved off the six deleted kinds.
+- RUN: `cd agenthub_go && go test -count=1 ./...` = 140 packages ok, 0 failed.
+
+## 2026-10-17 - the board filters by seat, before the page cap (frontend)
+
+- `agenthub-frontend/src/tests/components/LazyTaskListSeatFilter.test.tsx` (new): the real board with 21
+  tasks, the 21st - past `TASKS_PER_PAGE` (20) - owned by `@fe-dev`. Unfiltered that row is absent
+  (`Tasks (21)`); selecting the seat shows it (`Tasks (1 of 21)`); `All seats` restores the capped page.
+  The select offers `all`, `@fe-dev`, `@lead` - the seats the rows carry. Red-proved by filtering after
+  the slice.
+- RUN: 4 files / 13 tests, 0 failed (this file, `LazyTaskListAgentLoading`, `LazyTaskListDialogOpen`,
+  `useTaskFilters`); `npx tsc --noEmit -p .` clean.
+
+## 2026-10-17 - the real-artefact schema test reads the schema block, not the first code block (frontend)
+
+- `agenthub-frontend/src/tests/components/ApiReferenceView.real.test.tsx` `renders the real schema verbatim for every tool that carries parameters`: tool descriptions now render as markdown and can hold `<pre>` blocks, so the first `<pre>` of an article is no longer the schema. The test takes the last `<pre>` (the schema follows the description). CI run on `0ffb258e` failed with `"# ❌ WRONG" is not valid JSON`.
+- NOT RUN locally: frontend test runs are not allowed. `tsc --noEmit` is clean.
+
 ## 2026-10-17 - docs diagrams and MCP tool descriptions render (frontend)
 
 - `agenthub-frontend/src/tests/lib/mermaidDiagrams.test.ts` (new, `mermaid` mocked): a fence is drawn
@@ -12,6 +82,19 @@ Track test suite changes, fixes, and improvements for agenthub.
   markdown` (new): a description's table renders as a table with its header and cell, its fence keeps
   `language-python`, and no raw `| Action |` text is left.
 - NOT RUN locally (local frontend runs are not allowed); `npx tsc --noEmit` is clean.
+
+## 2026-10-17 - the U3 harness install path has its refusals pinned (scripts)
+
+- NEW `scripts/tests/test_u3_apply_harness.py` for `scripts/u3-apply-harness.sh`: refuses a missing `--live`,
+  a missing `--expect-sha`, bytes that moved after the announcement, a no-op install and a `bash -n`
+  failure; on the happy path it proves the live file equals the staged bytes, mode 0755, the predecessor
+  aside under its own sha, the one `APPLY-LOG` line and the announcement; it also pins that a second install
+  of the same bytes refuses, that `--dry-run` leaves the directory byte-identical, and that `--current` /
+  `--log` read what the install wrote. Each refusal asserts the live file did not change.
+- RUN: `python3 -m pytest --noconftest -p no:cacheprovider scripts/tests/test_u3_apply_harness.py -q` =
+  10 passed. Smoke on the real bytes, outside the test suite: the staged `fe-stage15.sh`
+  (`f3bbd72d…`, 182,238 B) installed over a copy of the live `b9127abb…` harness (177,919 B) in a scratch
+  dir — aside, log line and announcement as designed, and the installed copy answers `--list`.
 
 ## 2026-10-17 - the retired /help-setup route is pinned, and the /docs tests were run (frontend)
 
@@ -6555,3 +6638,10 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
 - `agenthub_go/internal/repoguards/task_trailer_guard_test.go` (new): `TestASeatCommitCarriesTheFullTaskIdTrailer`, `TestAMergeAndTheOwnersHostAreExempt` and `TestAMissingMessageFileIsExempt` run the SHIPPED `scripts/git-hooks/task-trailer-guard` over one message file each, inside a scratch repository, and pin the six answers the guard's header states: the full task uuid passes, its eight-character prefix is refused (the guard refused this lane's own `Task: 5ac4a259` on 2026-10-17), a message with no trailer is refused, a merge commit is exempt, the owner's host (no `AGENTHUB_SESSION_NAME`) is exempt, and a message path that is not a file is answered 0. The script is executed, never re-implemented - a copy of its regexp would agree with itself.
 - Both refusal directions were seen failing against a MUTATED COPY of the guard (the shipped file is owner-protected): a regexp that accepts the eight-character prefix exits 0 on that case, and a copy with the merge exemption removed exits 1 on the merge case; against the shipped script both are green.
 - At this change: `go test ./internal/repoguards/` ok; `go build ./...` and `go test ./...` over `agenthub_go` green.
+
+## 2026-10-17 - the thinking step's four-field view has a witness (frontend, branch 4genthub-min/fe-decisions-route)
+
+- `agenthub-frontend/src/tests/utils/sessionSteps.test.ts`: new `logicSchema` describe. A step ending with the four ruled lines yields the values with the reasoning above kept in `body`; exactly four lines and trailing blank lines are accepted; out-of-order fields, a missing field, a mid-prose mention and `next : ` are refused; and each field's cap (280/110/100/78) is accepted at the limit and refused one past it.
+- `agenthub-frontend/src/tests/components/SessionLiveView.test.tsx` (new): ONE render with a schema step and a raw step. It asserts the four keys in the ruled order with their values, the raw thinking present and collapsed (`<details>` without `open`), and that the control card renders no schema - so the branch cannot pass by painting every thinking step.
+- Red first: with the parser wired as `logic: undefined`, the parser case fails on `expected undefined to deeply equal {...}` and the component case fails on the missing `<dl>`; restored, both pass (2 files / 9 tests).
+- At this change: `npx vitest run` on the two files = 9 passed, 0 failed; `npx tsc --noEmit -p .` = 0 `error TS`; `npx tsc --noEmit -p tsconfig.tests.json` = 200 (the pre-existing baseline on this tree; none of the 200 is in the two touched files).

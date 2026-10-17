@@ -8,7 +8,6 @@ import './styles/task-animations.css';
 import './styles/subtask-animations.css';
 import './styles/branch-animations.css';
 import './styles/seat-animations.css';
-import './styles/project-animations.css';
 import { Header } from './components/Header';
 import { ShimmerButton } from './components/ui/shimmer-button';
 import { ToastProvider } from './components/ui/toast';
@@ -117,29 +116,29 @@ function Dashboard() {
         md:translate-x-0
         shadow-xl md:shadow-none
       `}>
-        {/* Upper half: the Project & Branch hierarchy, unchanged, in its own scroll area. */}
-        <div className="min-h-0 flex-1 overflow-y-auto">
-        <ProjectList
-          onSelect={(projectId: string, branchId: string) => {
-            navigate(`/dashboard/project/${projectId}/branch/${branchId}`);
-            // Auto-close sidebar on mobile after selection
-            if (!isLargeScreen) {
-              setSidebarOpen(false);
-            }
-          }}
-          selectedProjectId={projectId}
-          selectedBranchId={branchId}
-          onShowGlobalContext={() => setShowGlobalContext(true)}
-          onShowProjectDetails={(project) => setShowProjectDetails(project)}
-          onShowBranchDetails={(project, branch) => setShowBranchDetails({ project, branch })} />
-        </div>
+        {/* Upper half: the Project & Branch hierarchy, behaviour unchanged */}
+        <section className="min-h-0 flex-1 overflow-y-auto" aria-label="Projects and branches">
+          <ProjectList
+            onSelect={(projectId: string, branchId: string) => {
+              navigate(`/dashboard/project/${projectId}/branch/${branchId}`);
+              // Auto-close sidebar on mobile after selection
+              if (!isLargeScreen) {
+                setSidebarOpen(false);
+              }
+            }}
+            selectedProjectId={projectId}
+            selectedBranchId={branchId}
+            onShowGlobalContext={() => setShowGlobalContext(true)}
+            onShowProjectDetails={(project) => setShowProjectDetails(project)}
+            onShowBranchDetails={(project, branch) => setShowBranchDetails({ project, branch })} />
+        </section>
 
-        {/* Lower half: this room's decision requests, from the cloud row the daemon mirrors up. */}
-        <div className="max-h-[45%] shrink-0 overflow-y-auto">
+        {/* Lower half: this room's decision requests - the owner answers a lead's ask here */}
+        <section className="mt-3 min-h-0 max-h-[45%] shrink-0 overflow-y-auto border-t border-surface-border-hover pt-3">
           <Suspense fallback={null}>
             <RoomDecisionPanel />
           </Suspense>
-        </div>
+        </section>
       </aside>
 
       {/* Mobile overlay */}

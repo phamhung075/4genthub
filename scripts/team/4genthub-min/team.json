@@ -76,21 +76,21 @@
       "seat_key": "lead",
       "seat_type": "lead",
       "runtime": "omp",
-      "model": "deepseek/deepseek-flash",
+      "model": "deepseek/deepseek-flash:low",
       "pinned_version": "1.4.12"
     },
     {
       "seat_key": "go-dev",
       "seat_type": "developer",
       "runtime": "omp",
-      "model": "deepseek/deepseek-flash",
+      "model": "deepseek/deepseek-flash:low",
       "pinned_version": "1.4.12"
     },
     {
       "seat_key": "fe-dev",
       "seat_type": "developer",
       "runtime": "omp",
-      "model": "deepseek/deepseek-flash",
+      "model": "deepseek/deepseek-flash:low",
       "pinned_version": "1.4.12"
     },
     {
@@ -104,7 +104,7 @@
       "seat_key": "architect",
       "seat_type": "architect",
       "runtime": "omp",
-      "model": "deepseek/deepseek-flash",
+      "model": "deepseek/deepseek-flash:high",
       "pinned_version": "1.4.12"
     }
   ],

@@ -9,8 +9,8 @@
  */
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { seatApi } from '../services/seatApi';
 import { decisionApi } from '../services/decisionApi';
+import { seatApi } from '../services/seatApi';
 import { useSuccessToast } from '../components/ui/toast';
 import { parseMcpBlock, type McpBlockParse } from '../lib/mcpBlock';
 import type {
@@ -74,11 +74,11 @@ export function useRooms() {
 // ---------------------------------------------------------------------------
 
 /**
- * One room's open asks - `pending` and `answered`, as the route returns them.
+ * One room's asks, as the route returns them: scoped server-side to the caller's tenant, so a
+ * viewer of a shared room reads an empty list rather than the owner's asks.
  *
  * Callers must not treat their own POST as closure: `answered` means "the room has not applied it
- * yet", and a row leaves the list only when the daemon's apply turns it `resolved`/`superseded`
- * (frozen contract 2026-10-12, lane 1).
+ * yet", and a row leaves the list only when the daemon's apply turns it `resolved`/`superseded`.
  */
 export function useRoomDecisions(room: string, enabled = true) {
   const query = useQuery({
@@ -94,7 +94,8 @@ export function useRoomDecisions(room: string, enabled = true) {
 
 /**
  * Record ONE click of one option. The server refuses an unknown option (422), a row that is not
- * pending (409) and a caller that is not the asked human (403); the panel renders that reason.
+ * pending (409) and a caller that is not the asked human (403); the panel renders that reason, so
+ * nothing is toasted here.
  */
 export function useAnswerRoomDecision(room: string) {
   const queryClient = useQueryClient();
