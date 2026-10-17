@@ -15,16 +15,22 @@ export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent' | 'critical';
 
 /**
  * The kinds the ledger's CHECK constraint enforces: `ck_task_event_kind` in
- * `agenthub_go/fastmcp/task_management/infrastructure/database/task_event_tables.go:40` (the table's
+ * `agenthub_go/fastmcp/task_management/infrastructure/database/task_event_tables.go` (the table's
  * single DDL string), whose list `TaskEventKindValues` mirrors in
- * `agenthub_go/fastmcp/task_management/domain/entities/task_event.go:56-68`.
+ * `agenthub_go/fastmcp/task_management/domain/entities/task_event.go`.
  *
- * READ THIS BEFORE TREATING A KIND AS LIVE: the twelve ARE the closed vocabulary, but `status_changed`
- * is the only kind any writer emits today (`RecordStatusChange`,
- * `application/services/task_event_recorder.go:74`), and it is the only kind whose payload shape is
- * defined - `{ old, new }`. The other eleven carry no payload shape yet, so a payload for them must be
- * treated as unknown rather than assumed - the timeline says so on screen (`LEDGER_NOT_RECORDED`)
- * instead of inventing a reason for the row.
+ * THE SIX THAT REMAIN, each with the writer the entity file names: `status_changed`
+ * (RecordStatusChange), `progress` (RecordProgress), `gate_verdict` (RecordGateVerdict),
+ * `evidence_submitted` (the evidence route), `context_updated` (the seat-attributed context path) and
+ * `handover` (the ledger outbox's handover payload). The six the vocabulary used to carry - `assigned`,
+ * `claimed`, `delivered`, `context_loaded`, `escalated`, `human_decision` - were deleted because
+ * nothing writes them and every one of their facts already has a single home (assignment is the task's
+ * assignees column, a claim is the `status_changed` write, a delivery is a queue row, an escalation is a
+ * `task_audit_records` row, an owner decision is a queue row).
+ *
+ * READ THIS BEFORE TREATING A KIND AS CARRYING A STATUS: `status_changed` is the only kind whose
+ * payload defines one - `{ old, new }`. The other five carry payloads of other shapes, so a `new` on
+ * one of them must be treated as unknown rather than read as a phase.
  *
  * THE TYPE IS DERIVED FROM THE ARRAY BELOW so this file holds ONE source for the vocabulary: adding a
  * member here makes every `Record<TaskEventKind, string>` label map fail to compile until it covers the
@@ -32,16 +38,10 @@ export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent' | 'critical';
  * time.
  */
 export const TASK_EVENT_KINDS = [
-  'assigned',
-  'claimed',
-  'delivered',
-  'context_loaded',
   'progress',
   'status_changed',
   'evidence_submitted',
   'gate_verdict',
-  'escalated',
-  'human_decision',
   'handover',
   'context_updated',
 ] as const;

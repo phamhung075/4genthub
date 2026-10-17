@@ -2,6 +2,15 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-17 - the ledger vocabulary shrinks to six kinds (frontend)
+
+- `agenthub-frontend/src/tests/lib/taskTimeline.test.ts`: the phase-fold case now surrounds the single
+  `status_changed` with every surviving non-status kind (`progress`, `evidence_submitted` carrying a
+  `new` on purpose, `gate_verdict`, `handover`, `context_updated`) instead of five deleted ones; the
+  label case asserts `handover`/`context_updated` in place of `assigned`/`human_decision`.
+- RUN: `npx vitest run src/tests/lib/taskTimeline.test.ts` = 1 file / 20 tests, 0 failed;
+  `npx tsc --noEmit -p .` exits 0.
+
 ## 2026-10-17 - the sidebar answers room decisions (frontend)
 
 - `agenthub-frontend/src/tests/components/RoomDecisionPanel.test.tsx` (new, 6 cases): services mocked,

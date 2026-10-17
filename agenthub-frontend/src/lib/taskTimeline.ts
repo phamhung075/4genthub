@@ -6,17 +6,17 @@
 // so a task whose stored status and ledger disagree cannot make the timeline claim the stored one.
 //
 // THE PHASE MOVES ON `status_changed` AND ON NOTHING ELSE, and that is the VOCABULARY's shape rather
-// than this file's limit: of the twelve kinds the ledger's CHECK constraint enforces
-// (`ck_task_event_kind`, `.../infrastructure/database/task_event_tables.go:40`, mirrored by
-// `TaskEventKindValues` in `domain/entities/task_event.go:56-68`), only `status_changed` carries a
+// than this file's limit: of the six kinds the ledger's CHECK constraint enforces
+// (`ck_task_event_kind`, `.../infrastructure/database/task_event_tables.go`, mirrored by
+// `TaskEventKindValues` in `domain/entities/task_event.go`), only `status_changed` carries a
 // status - `{ old, new }`, the pair the server's own parity check reads against `tasks.status`. The
-// other eleven say that something HAPPENED - a claim, a delivery, a verdict - not which phase the task
-// is in, so folding a phase out of one would read a meaning out of a payload shape nothing defines.
+// other five say that something HAPPENED - a progress note, a verdict, a handover - not which phase
+// the task is in, so folding a phase out of one would read a meaning out of a payload of another shape.
 //
-// WHAT THE LEDGER CANNOT YET SAY, THE UI SAYS: `evidence_submitted` and `gate_verdict` ARE in the
-// vocabulary, but no writer emits them yet - `status_changed` is still the only emitted kind
-// (`RecordStatusChange`, `application/services/task_event_recorder.go:74`). `LEDGER_NOT_RECORDED`
-// below is what the timeline shows instead of letting a status move read as a passing test.
+// A STEP HERE IS NOT A TEST VERDICT: `gate_verdict` and `evidence_submitted` are kinds with writers of
+// their own, and they are separate rows - a `status_changed` to `testing` or `review` still says only
+// that the task moved. `LEDGER_NOT_RECORDED` below is what the timeline says so the two are not read as
+// one.
 
 import type { TaskEvent, TaskEventActorKind, TaskEventKind, TaskStatus } from '../types/taskTypes';
 import { cleanProgressText } from '../utils/progressHistoryUtils';
@@ -40,8 +40,8 @@ const STATUSES: readonly string[] = [
  * test passed, and the timeline must not read as if it were.
  */
 export const LEDGER_NOT_RECORDED =
-  'The ledger has a gate-verdict kind and an evidence kind, but no writer emits them yet, so a step ' +
-  'here means the task moved - not that its tests passed.';
+  'A step here means the task moved, not that its tests passed: a pass is a gate_verdict or ' +
+  'evidence_submitted row of its own.';
 
 /** Human labels for the phase badge. Kept beside the phase type so the two cannot drift apart. */
 export const PHASE_LABELS: Record<LedgerPhase, string> = {
@@ -63,16 +63,10 @@ export const PHASE_LABELS: Record<LedgerPhase, string> = {
  * fallback `describeEvent` uses for a row whose payload defines no transition.
  */
 export const KIND_LABELS: Record<TaskEventKind, string> = {
-  assigned: 'Assigned',
-  claimed: 'Claimed',
-  delivered: 'Delivered',
-  context_loaded: 'Context loaded',
   progress: 'Progress reported',
   status_changed: 'Status changed',
   evidence_submitted: 'Evidence submitted',
   gate_verdict: 'Gate verdict',
-  escalated: 'Escalated',
-  human_decision: 'Human decision',
   handover: 'Handover',
   context_updated: 'Context updated',
 };
