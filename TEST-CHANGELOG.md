@@ -2,6 +2,21 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-18 - the deletion-path test seeds the topology it claims to count (hub)
+
+- `agenthub_go/fastmcp/seat_management/application/services/deletion_paths_integration_test.go`:
+  CLAIM 4 counted `machine_edges` but the fixture never wrote one, so the row could not move and the
+  room-scoped `DeleteMachineEdgesForRoom` added in `02bfd416` was untested by the very test cited for
+  it. The fixture now calls `ReplaceSnapshot` once with two edges on `probe` and one on `keeper`;
+  CLAIM 4's expectation becomes `rooms 2->1, overlays 2->1, seat_status 2->1, machine_edges 3->1` and
+  the keeper-count loop gains `machine_edges`.
+- Negative control, measured at HEAD `bdda3c90` against scratch Postgres `127.0.0.1:55461`: with the
+  `DeleteMachineEdgesForRoom` call deleted the case fails `CLAIM 4 FAILED: ... want ... machine_edges
+  3->1`; with it restored it passes. Before this change the same deletion passed either way.
+- RUN: `SEAT_TEST_DATABASE_URL=postgresql://agenthub_user@127.0.0.1:55461/postgres go test
+  ./fastmcp/seat_management/application/services/ -run TestDeletionPathsIntegration -count=1 -v` =
+  PASS, 0 skips.
+
 ## 2026-10-17 - the component timeline names only the six kinds (frontend)
 
 - `agenthub-frontend/src/tests/components/TaskEventTimeline.test.tsx`: the label case still fed the removed
