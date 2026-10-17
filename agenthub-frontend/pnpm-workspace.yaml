@@ -47,3 +47,7 @@ overrides:
   ws: '^8.21.0'
   minimatch: '^9.0.7'
   glob: '^12.0.0'
+  # mermaid's types reach @types/d3-dispatch, whose 3.0.7 uses `const` type parameters
+  # (TypeScript 5.0) and fails to parse under this app's TypeScript 4.9. 3.0.6 declares
+  # the same API for TypeScript 4.5+. Types only: nothing in the bundle changes.
+  '@types/d3-dispatch': '3.0.6'

@@ -8,13 +8,15 @@ This system maintains lean, high-performance sessions using an **Automated Compa
 
 ## 1. The Token Compaction Limits
 
-The supervisor monitors context usage against three configurable tiers:
+On every pass the supervisor reads each seat's newest session log and checks its context size against three limits. The numbers below are the ones this team runs with:
 
-| Tier | Default Limit | Action |
-|---|---|---|
-| **Soft Limit** | 150,000 tokens | Compaction triggers when the seat completes its current job turn |
-| **Warning Limit** | 250,000 tokens | Feed displays amber warnings; urges seat to complete turn |
-| **Hard Limit** | 300,000 tokens | Immediate pause; compacts as soon as command returns |
+| Tier | Limit | Variable | Action |
+|---|---|---|---|
+| **Soft** | 150,000 tokens | `COMPACT_LIMIT_TOKENS` | The seat is told once to find its own safe point and compact |
+| **Urgent** | 200,000 tokens | `COMPACT_WARN_TOKENS` | The seat is compacted now, without waiting for it to go quiet |
+| **Hard** | 250,000 tokens | `COMPACT_HARD_TOKENS` | The running turn is aborted and compaction is forced |
+
+Set the variables in `~/.config/4genthub/.env`. A variable that is unset or blank uses the client's built-in default: 150,000, 250,000 and 300,000.
 
 ---
 

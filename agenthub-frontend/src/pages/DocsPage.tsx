@@ -6,6 +6,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { DOCS_BASE, docAssets, docSections, resolveDocHref, type DocPage } from '../docs/docsSite';
 import { applyTokens, useDocTokenValues } from '../lib/docTokens';
 import { collectHeadings, type TocItem } from '../lib/headingToc';
+import { renderMermaidBlocks } from '../lib/mermaidDiagrams';
 
 // The API reference carries the generated route and tool tables, so it loads only when opened.
 const ApiDocsPage = lazy(() => import('./ApiDocsPage').then((m) => ({ default: m.ApiDocsPage })));
@@ -73,6 +74,7 @@ function DocsSidebar({ activeId, onNavigate }: { activeId: string; onNavigate: (
 
 function DocArticle({ page }: { page: DocPage }) {
   const navigate = useNavigate();
+  const { theme } = useTheme();
   const bodyRef = useRef<HTMLElement | null>(null);
   const [toc, setToc] = useState<TocItem[]>([]);
   const tokenValues = useDocTokenValues();
@@ -88,6 +90,16 @@ function DocArticle({ page }: { page: DocPage }) {
     if (!container) return;
     setToc(collectHeadings(container));
   }, [body]);
+
+  useEffect(() => {
+    const container = bodyRef.current;
+    if (!container) return;
+    let cancelled = false;
+    void renderMermaidBlocks(container, theme === 'dark', () => cancelled);
+    return () => {
+      cancelled = true;
+    };
+  }, [body, theme]);
 
   // A resolved link between pages is a plain <a href="/docs/..."> inside injected HTML, so the
   // router never sees it; this hands same-site paths to the router instead of reloading the app.

@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" role="img" aria-labelledby="title desc">
+  <title id="title">4genthub architecture: the 3-tier model</title>
+  <desc id="desc">The 4genthub cloud brain talks to the 4genteam machine client over outbound HTTPS only. The client drives the agenthub-runtime local runtime over local sockets.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#7dd3fc"/>
+    </marker>
+  </defs>
+  <style>
+    .bg { fill: #0f172a; }
+    .tier { fill: #111c33; stroke-width: 1.5; }
+    .t1 { stroke: #a78bfa; }
+    .t2 { stroke: #38bdf8; }
+    .t3 { stroke: #34d399; }
+    .box { fill: #1e293b; stroke: #334155; }
+    .label { fill: #94a3b8; font: 600 12px system-ui, sans-serif; letter-spacing: 1.5px; }
+    .name { fill: #f1f5f9; font: 700 20px system-ui, sans-serif; }
+    .item { fill: #e2e8f0; font: 600 14px system-ui, sans-serif; }
+    .sub { fill: #94a3b8; font: 12px ui-monospace, monospace; }
+    .edge { stroke: #7dd3fc; stroke-width: 2; }
+    .edge-text { fill: #7dd3fc; font: 600 12px system-ui, sans-serif; }
+  </style>
+
+  <rect class="bg" width="960" height="600" rx="12"/>
+
+  <!-- Tier 1 -->
+  <rect class="tier t1" x="24" y="24" width="912" height="140" rx="10"/>
+  <text class="label" x="44" y="50">TIER 1 · CLOUD BRAIN</text>
+  <text class="name" x="44" y="80">4genthub — web UI and MCP server</text>
+  <rect class="box" x="44" y="96" width="280" height="48" rx="6"/>
+  <text class="item" x="184" y="125" text-anchor="middle">Tasks and boards</text>
+  <rect class="box" x="340" y="96" width="280" height="48" rx="6"/>
+  <text class="item" x="480" y="125" text-anchor="middle">Roles and portfolio</text>
+  <rect class="box" x="636" y="96" width="280" height="48" rx="6"/>
+  <text class="item" x="776" y="125" text-anchor="middle">Cost telemetry</text>
+
+  <!-- Tier 1 <-> Tier 2 -->
+  <line class="edge" x1="480" y1="170" x2="480" y2="220" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+  <text class="edge-text" x="494" y="200">outbound HTTPS only · zero inbound ports</text>
+
+  <!-- Tier 2 -->
+  <rect class="tier t2" x="24" y="226" width="912" height="160" rx="10"/>
+  <text class="label" x="44" y="252">TIER 2 · MACHINE CLIENT</text>
+  <text class="name" x="44" y="282">4genteam — CLI and background services (Go)</text>
+  <rect class="box" x="44" y="298" width="208" height="68" rx="6"/>
+  <text class="item" x="148" y="326" text-anchor="middle">Worktree per seat</text>
+  <text class="sub" x="148" y="348" text-anchor="middle">wt/&lt;seat&gt;</text>
+  <rect class="box" x="268" y="298" width="208" height="68" rx="6"/>
+  <text class="item" x="372" y="326" text-anchor="middle">Compaction</text>
+  <text class="sub" x="372" y="348" text-anchor="middle">token supervisor</text>
+  <rect class="box" x="492" y="298" width="208" height="68" rx="6"/>
+  <text class="item" x="596" y="326" text-anchor="middle">Live feeds</text>
+  <text class="sub" x="596" y="348" text-anchor="middle">watch · feed</text>
+  <rect class="box" x="716" y="298" width="200" height="68" rx="6"/>
+  <text class="item" x="816" y="326" text-anchor="middle">Jev</text>
+  <text class="sub" x="816" y="348" text-anchor="middle">decisions · task gate</text>
+
+  <!-- Tier 2 -> Tier 3 -->
+  <line class="edge" x1="480" y1="392" x2="480" y2="436" marker-end="url(#arrow)"/>
+  <text class="edge-text" x="494" y="418">local sockets</text>
+
+  <!-- Tier 3 -->
+  <rect class="tier t3" x="24" y="442" width="912" height="134" rx="10"/>
+  <text class="label" x="44" y="468">TIER 3 · LOCAL RUNTIME</text>
+  <text class="name" x="44" y="498">agenthub-runtime (Rust) + agent runtimes</text>
+  <rect class="box" x="44" y="512" width="280" height="48" rx="6"/>
+  <text class="item" x="184" y="534" text-anchor="middle">Seats in headless PTYs</text>
+  <text class="sub" x="184" y="552" text-anchor="middle">Claude Code, omp, …</text>
+  <rect class="box" x="340" y="512" width="280" height="48" rx="6"/>
+  <text class="item" x="480" y="534" text-anchor="middle">Durable queue</text>
+  <text class="sub" x="480" y="552" text-anchor="middle">queue.sqlite</text>
+  <rect class="box" x="636" y="512" width="280" height="48" rx="6"/>
+  <text class="item" x="776" y="534" text-anchor="middle">Message routing</text>
+  <text class="sub" x="776" y="552" text-anchor="middle">tmux only for attaching</text>
+</svg>

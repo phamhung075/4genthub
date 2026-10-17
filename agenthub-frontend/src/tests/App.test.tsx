@@ -170,6 +170,17 @@ describe('App', () => {
     expect(await screen.findByText('Email Verification')).toBeInTheDocument();
   });
 
+  it('sends the retired /help-setup route to the docs site', async () => {
+    window.history.pushState({}, '', '/help-setup');
+
+    render(<App />);
+
+    const body = await screen.findByTestId('docs-body');
+    expect(body.querySelector('h1')?.textContent).toBe('Overview');
+    // DocsPage canonicalises /docs to its first page, so the redirect's destination is visible there.
+    await waitFor(() => expect(window.location.pathname).toBe('/docs/quickstart/overview'));
+  });
+
   it('renders dashboard with header and project list on /dashboard route', async () => {
     window.history.pushState({}, '', '/dashboard');
 
