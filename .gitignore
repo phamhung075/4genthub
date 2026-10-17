@@ -565,3 +565,7 @@ rig.yaml
 
 # Frontend e2e test account credentials (USERNAME/PASSWORD); never commit
 /e2e-test-account
+
+# the external hook client (4genthub-hooks) still writes this name; the retired index must not return as an
+# untracked change. The tracked tree is the index.
+/ai_docs/index.json

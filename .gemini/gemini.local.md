@@ -304,8 +304,8 @@ Follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/):
 
 ### Quick Reference Commands
 ```bash
-# Update documentation index manually
-python .claude/hooks/utils/docs_indexer.py
+# The documentation index is retired (`ai_docs/index.json`, 2026-10-17) - the tracked tree is the index:
+git ls-files 'ai_docs/**/*.md'
 
 # Check allowed root files
 cat .allowed_root_files
