@@ -2,6 +2,43 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-18 - the boot has one schema creator, and its guards say so (hub, branch 4genthub-min/docs-index-guard)
+
+- `agenthub_go/fastmcp/task_management/infrastructure/database/schema_upgrade_path_test.go` (new):
+  `TestALegacyDatabaseGainsThePatchedColumnsFromTheSteps` builds a catalogue that holds only the
+  pre-`0005` columns (`tasks` slimmed to the columns an old boot left), seeds one task with three
+  ledger events carrying no `user_seq`, then runs the real `CreateTables`. The columns
+  (`acceptance_criteria`, `scope`, `completed_by`, the seven `ai_*` on `tasks`/`subtasks`,
+  `task_events.user_seq`) must be back, the sequence must read 1,2,3 in `(created_at, id)` order, both
+  uniques must exist, and a SECOND boot must apply nothing.
+- Deleted with the code they guarded: `create_tables_guard_test.go`, `column_paths_test.go`, the three
+  `task_event_ensurer*_test.go` files, `ensure_seat_columns_test.go`, `acceptance_scope_ensurer_test.go`,
+  and the ensurer half of `auto_migrate_gate_test.go` (the gate itself stays: `CreateTables` still runs
+  the steps only under `AUTO_MIGRATE`).
+- `progress_history_drop_integration_test.go`:
+  `TestTheBootRefusesTheCarryStepOnAPopulatedDatabaseWithoutTheMark` rebuilt its premise. It used to
+  call `CreateTables` on an empty database and rely on `createAll` having built the catalogue WITHOUT
+  recording `0001`; that creator is gone, so it now builds a fresh boot, restores the four pre-drop
+  columns and clears `applied_migrations` - the exact state every old-boot database is in - and only
+  then asserts the boot refuses at `0003`, names `0001_baseline`, keeps all four columns and records no
+  row for the refused step.
+- `schema_matches_definitions_test.go`: indexes are compared per table as a SET, not a list, because
+  `0001` and `0005` both carry `CREATE INDEX IF NOT EXISTS` for the columns `0005` adds. The index axis
+  still catches a missing index; it no longer counts a second mention of the same one.
+- `agenthub_go/fastmcp/session_stream/testdb/testdb.go`: `CreateSchema` is ONE boot again. It used to
+  assert that the first boot refused for the missing `0001_baseline` mark and then record the mark as
+  an operator would; a fresh database now applies and records `0001` itself, so a refusal here is a
+  real failure.
+- `integration_test.go`: the table count is no longer `len(database.Tables)+1`. The embedded steps
+  create the migrations' own tables (`applied_migrations`, `agent_sessions`, `machines`, …), so the
+  case asserts the registry's tables are all present plus the ledger, which is the claim that matters.
+- RUN: `cd agenthub_go && AGENTHUB_TEST_PG_URL=postgresql://agenthub_user@127.0.0.1:55439/postgres go
+  test ./fastmcp/task_management/... ./fastmcp/seat_management/... ./fastmcp/session_stream/... -count=1`
+  = all packages ok. `go test ./fastmcp/server/httpapp/ -count=1` = one failure,
+  `TestLedgerIntentsRecordsOfflineFactsUnchangedInArrivalOrder` (`handover_malformed`), which fails
+  identically in a `worktree` of the unmodified HEAD, so it is not from this change.
+
+
 ## 2026-10-18 - the same-instant pair's order is the fixture's, not a coin flip (hub)
 
 - `agenthub_go/fastmcp/seat_management/infrastructure/repositories/orm/seat_message_repository_integration_test.go`:

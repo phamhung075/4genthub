@@ -247,7 +247,8 @@ func (d *DatabaseInitializer) CheckAndInit() bool {
 	return true
 }
 
-// ResetDatabase drops and recreates every table when confirm is true.
+// ResetDatabase drops and recreates every table when confirm is true: the migrations are the one
+// creator, so the ledger goes too and the next Apply runs every step from an empty catalogue.
 func (d *DatabaseInitializer) ResetDatabase(confirm bool) bool {
 	if !confirm {
 		return false
@@ -255,7 +256,10 @@ func (d *DatabaseInitializer) ResetDatabase(confirm bool) bool {
 	if err := dropAllSchemaTables(d.ctx, d.cfg.Engine.DB); err != nil {
 		return false
 	}
-	if err := createAll(d.ctx, d.cfg.Engine.DB); err != nil {
+	if _, err := d.cfg.Engine.DB.ExecContext(d.ctx, "DROP TABLE IF EXISTS applied_migrations CASCADE"); err != nil {
+		return false
+	}
+	if err := d.cfg.CreateTables(d.ctx); err != nil {
 		return false
 	}
 	d.CreateDefaultData()
