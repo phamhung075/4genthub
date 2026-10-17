@@ -19,8 +19,6 @@ import (
 	"context"
 	"errors"
 	"math/rand"
-	"os"
-	"strings"
 	"sync"
 	"time"
 
@@ -287,37 +285,37 @@ func LogAuthorizationFailure(websocket wslib.WebSocket, userID, entityType, enti
 }
 
 // CheckResourceOwnership mirrors _check_resource_ownership.
+//
+// THE ANSWER IS THE CHECKER'S OR IT IS NO. There is no environment branch: a nil checker (nothing wired)
+// and an ownership query that errored both DENY, in every environment. The branch this replaces read
+// ENVIRONMENT and delivered to every connection when the value was exactly "development", so a STRING
+// decided an authorization outcome whenever the database could not be asked - a fallback, which this
+// project's rules forbid (owner ruling R1, 2026-10-17). A refusal is louder than a delivery: the caller
+// answers the frame with authorization_denied instead of broadcasting it.
 func CheckResourceOwnership(ctx context.Context, connectionUserID, entityType, entityID string, metadata *entities.OrderedMap[any]) bool {
-	if Ownership != nil {
-		var (
-			owned bool
-			err   error
-		)
-		switch entityType {
-		case "task":
-			owned, err = Ownership.TaskOwnedBy(ctx, entityID, connectionUserID)
-		case "subtask":
-			parentTaskID := wrStr(wrGet(metadata, "parent_task_id"))
-			if parentTaskID != "" {
-				owned, err = Ownership.TaskOwnedBy(ctx, parentTaskID, connectionUserID)
-			} else {
-				owned, err = Ownership.SubtaskParentOwnedBy(ctx, entityID, connectionUserID)
-			}
-		case "branch":
-			owned, err = Ownership.BranchOwnedBy(ctx, entityID, connectionUserID)
-		case "project":
-			owned, err = Ownership.ProjectOwnedBy(ctx, entityID, connectionUserID)
-		default:
-			return false
-		}
-		if err == nil {
-			return owned
-		}
+	if Ownership == nil {
+		return false
 	}
-
-	// Failure mode: development fails open, production fails closed.
-	environment := strings.ToLower(wrEnv("ENVIRONMENT", "production"))
-	return environment == "development"
+	switch entityType {
+	case "task":
+		owned, err := Ownership.TaskOwnedBy(ctx, entityID, connectionUserID)
+		return err == nil && owned
+	case "subtask":
+		parentTaskID := wrStr(wrGet(metadata, "parent_task_id"))
+		if parentTaskID != "" {
+			owned, err := Ownership.TaskOwnedBy(ctx, parentTaskID, connectionUserID)
+			return err == nil && owned
+		}
+		owned, err := Ownership.SubtaskParentOwnedBy(ctx, entityID, connectionUserID)
+		return err == nil && owned
+	case "branch":
+		owned, err := Ownership.BranchOwnedBy(ctx, entityID, connectionUserID)
+		return err == nil && owned
+	case "project":
+		owned, err := Ownership.ProjectOwnedBy(ctx, entityID, connectionUserID)
+		return err == nil && owned
+	}
+	return false
 }
 
 // IsUserAuthorizedForMessage mirrors is_user_authorized_for_message.
@@ -781,13 +779,6 @@ func wrPow(base, exp int) float64 {
 		result *= float64(base)
 	}
 	return result
-}
-
-func wrEnv(name, def string) string {
-	if v, ok := os.LookupEnv(name); ok {
-		return v
-	}
-	return def
 }
 
 // Ensure the injected interfaces are referenced even when nil.
