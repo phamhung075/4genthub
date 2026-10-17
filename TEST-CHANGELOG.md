@@ -2,6 +2,18 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-17 - the component timeline names only the six kinds (frontend)
+
+- `agenthub-frontend/src/tests/components/TaskEventTimeline.test.tsx`: the label case still fed the removed
+  `assigned` kind and asserted the `Assigned` label, so CI on main `794b71b9` failed with
+  `Unable to find an element with the text: Assigned` (128/129 files green). It now feeds one row per
+  surviving kind - `evidence_submitted`, `progress`, `status_changed`, `gate_verdict`, `handover`,
+  `context_updated` - with each actor class exactly once, asserts `Evidence submitted` and `Context updated`,
+  and the module header drops the twelve-kind claim for the six the server keeps.
+- Red first, measured on main `794b71b9`: 1 file / 1 failed | 5 passed. After the change: 1 file / 6 passed.
+- At this change: `npx vitest run src/tests/components/TaskEventTimeline.test.tsx` = 1 file / 6 tests, 0 failed;
+  `npx tsc --noEmit -p .` exits 0 with 0 `error TS` lines.
+
 ## 2026-10-17 - resume resolves the caller's seat and the ladder hears the handover (hub)
 
 - `agenthub_go/fastmcp/task_management/application/services/task_resume_service_test.go`: the empty-task_id
