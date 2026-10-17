@@ -82,6 +82,10 @@ RUN pnpm add -g serve
 # Copy frontend source code
 COPY agenthub-frontend/ .
 
+# The /docs site's markdown (src/docs/docsSite.ts reads ../../../ai_docs/public-docs). Placing it at
+# /ai_docs keeps that relative path the same as in a checkout, one level above /app.
+COPY ai_docs/public-docs/ /ai_docs/public-docs/
+
 # Create a development startup script
 RUN cat <<'EOF' > /app/start-dev.sh
 #!/bin/sh

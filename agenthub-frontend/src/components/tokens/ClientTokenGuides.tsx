@@ -1,7 +1,7 @@
 import React from 'react';
 import { API_BASE_URL } from '../../config/environment';
 import { Card } from '../ui/card';
-import CommandBox from '../help/shared/CommandBox';
+import CommandBox from './CommandBox';
 
 // The scope that opens the connector websocket and publishes terminal sessions. A token holding only this
 // scope is a "Client connector" token; every other token is the MCP key.

@@ -47,3 +47,22 @@ export function toSanitizedHtml(source: string): string {
   // async: false keeps marked.parse synchronous, so the return type is string.
   return DOMPurify.sanitize(marked.parse(source, { async: false }), SANITIZE_CONFIG);
 }
+
+/**
+ * Rewrite every link href and image src of already-sanitized HTML. The HTML is
+ * parsed in an inert <template>, so no image is requested before its URL is
+ * rewritten. The rewrite runs AFTER sanitizing and only replaces URLs, so it
+ * cannot bring markup the sanitizer refused.
+ */
+export function rewriteUrls(html: string, rewrite: (url: string) => string): string {
+  if (!html) return html;
+  const template = document.createElement('template');
+  template.innerHTML = html;
+  template.content.querySelectorAll('a[href]').forEach((link) => {
+    link.setAttribute('href', rewrite(link.getAttribute('href') ?? ''));
+  });
+  template.content.querySelectorAll('img[src]').forEach((image) => {
+    image.setAttribute('src', rewrite(image.getAttribute('src') ?? ''));
+  });
+  return template.innerHTML;
+}

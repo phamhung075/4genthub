@@ -1,1 +1,1 @@
-{"permissions":{"deny":["Bash(4genteam send:*)","Bash(4genteam input:*)","Bash(tmux send-keys:*)","Bash(tmux paste-buffer:*)"],"allow":["Bash(4genteam whoami:*)"]}}
+{"permissions":{"deny":["Bash(4genteam input:*)","Bash(tmux send-keys:*)","Bash(tmux paste-buffer:*)"],"allow":["Bash(4genteam whoami:*)","Bash(4genteam send:*)"]}}

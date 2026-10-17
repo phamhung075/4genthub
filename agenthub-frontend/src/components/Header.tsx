@@ -1,4 +1,4 @@
-import { Armchair, BookOpen, HelpCircle, Home, Key, Menu, Moon, Network, Settings, Sun, Terminal, X } from 'lucide-react';
+import { Armchair, BookOpen, Home, Key, Menu, Moon, Network, Settings, Sun, Terminal, X } from 'lucide-react';
 import React, { useContext, useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../contexts/AuthContext';
@@ -56,7 +56,7 @@ export const Header: React.FC = () => {
     { icon: Armchair, label: "Seats", href: "/seats" },
     { icon: Terminal, label: "Sessions", href: "/sessions" },
     { icon: Network, label: "Topology", href: "/topology" },
-    { icon: HelpCircle, label: "Help & Setup", href: "/help-setup" },
+    { icon: BookOpen, label: "Docs", href: "/docs" },
     { icon: Settings, label: "Settings", href: "/profile" },
     {
       icon: theme === 'dark' ? Sun : Moon,
@@ -167,16 +167,9 @@ export const Header: React.FC = () => {
                     <Network className="h-5 w-5" />
                   </Link>
                   <Link
-                    to="/help-setup"
-                    className="flex items-center p-2 rounded-lg theme-nav-item transition-all duration-200 hover:bg-primary/10 hover:text-primary"
-                    title="Help & Setup"
-                  >
-                    <HelpCircle className="h-5 w-5" />
-                  </Link>
-                  <Link
                     to="/docs"
                     className="flex items-center p-2 rounded-lg theme-nav-item transition-all duration-200 hover:bg-primary/10 hover:text-primary"
-                    title="API reference"
+                    title="Docs"
                   >
                     <BookOpen className="h-5 w-5" />
                   </Link>

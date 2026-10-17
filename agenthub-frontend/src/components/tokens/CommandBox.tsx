@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Button } from '../../ui/button';
+import { Button } from '../ui/button';
 import { CheckCircle, Copy } from 'lucide-react';
 
 interface CommandBoxProps {

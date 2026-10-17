@@ -77,6 +77,46 @@ mcp__agenthub_http__manage_task(
 )
 ```
 
+### Which verb writes which surface
+
+- **Progress, notes and status of a TASK**: `manage_task(action="update", details="...")`. That is the
+  surface the task's board item shows.
+- **Context** (global, project, branch or task tier): `manage_context`. It carries the background a later
+  reader needs; a task-level note written through `manage_context add_progress` does NOT reach the board
+  item's Details (measured, hub task `4138904d-b8e6-43a1-8c84-55e84e44b9b0`), so progress goes through
+  `manage_task`.
+
+## Acceptance criteria: what the judge can settle
+
+`4genteam complete` runs a gate whose judge is shown the EVIDENCE and the criteria text, and nothing else:
+the acceptance command line, its exit code, the failing test names, the `git diff --numstat` paths and line
+counts, and the base and head SHAs. There is no field for a file's contents and none for a command's output
+- that is the payload's own rule and it is pinned (`agenthub_client/internal/clientevidence/evidence.go`;
+`evidence_test.go`'s `assertKeys` fails on an extra field) - and the client's request shape is pinned too
+(`agenthub_client/internal/clientjev/jev_test.go`, `TestTheCriteriaRequestCarriesTheEvidenceAndNothingElse`).
+So a criterion that asks for content can only be answered low: the wording is the instrument, not the
+evidence.
+
+A criterion is well-formed when (i) it names the acceptance command it is settled by, (ii) that command is
+NARROW enough that the command line itself names what it proves, and (iii) everything else it asserts is a
+path, a line count or a sha.
+
+- GOOD: "the acceptance command `cargo test --test seat_guard a_seat_cannot_raise_its_own_budget` exits 0
+  and the numstat names rust/agenthub-runtime/tests/seat_guard.rs"
+- GOOD: "the change is measured from base 99cdc0ef to head 0c53c313, `go test -count=1 ./fastmcp/...` exits
+  0, and the numstat names agenthub_go/fastmcp/types/entities.go and
+  agenthub_go/fastmcp/types/converters.go"
+- GOOD: "the acceptance command exits 0 and the numstat names exactly one path under CHANGELOG/"
+- BAD: "the response keys are shown" / "a test in agenthub_go pins the node" - each needs a file's contents.
+- BAD: "a real closure is demonstrated from a seat" - a process claim, not a measurement: it belongs in the
+  completion summary, not in a criterion.
+
+MEASURED, on one task's own evidence and its own command (hub task `8bd075eb`, 2026-10-16): the four
+criteria as written answered .57/.42/.41/.49 -> uncertain, exit 6; the same claims re-worded into this
+vocabulary answered .97/.96/.96 -> accept. A criterion naming a path the numstat does not carry is a
+criterion the judge can only answer low. The ruling, its measurements and the instrument that re-runs them:
+`seats/architect/RULING-outcome2-proof-shape.md` (room 4genthub-min).
+
 ## Subtasks
 
 Use subtasks for multi-step work. `progress_notes` is mandatory for update; `completion_summary`
