@@ -62,6 +62,10 @@ type Ledger interface {
 	// TaskVisible reports whether the task exists AND belongs to this repository's user. A ledger
 	// entry is never appended to a task its writer cannot see.
 	TaskVisible(ctx context.Context, taskID string) (bool, error)
+	// EventInTask reports whether an entry id names a row OF taskID that this repository's user can
+	// see. It is the same table the handover is appended to, so an `evt:` ref naming another task's
+	// entry is a lie the server catches inside its own transaction, with no cross-store read.
+	EventInTask(ctx context.Context, taskID, eventID string) (bool, error)
 	// SubtaskInTask reports whether the subtask exists, belongs to this repository's user, AND
 	// belongs to taskID. An intent may name a subtask, and task_events' only foreign key is on
 	// task_id, so this is the check that keeps a row from attaching to another user's subtask - or
@@ -184,6 +188,24 @@ func (s *Service) submitOne(ctx context.Context, actorKind taskentities.TaskEven
 		if !visible {
 			answer = ledgerentities.Refusal(ledgerentities.ReasonUnknownTask, 0)
 			return nil
+		}
+
+		// THE HANDOVER PAYLOAD IS PART OF THE KIND GATE. It runs here rather than in the route for the
+		// reason the kind check does: the outbox and any future writer pass through this one place,
+		// so no writer can append a decision record that skips the shape. The task identity is
+		// already resolved above, which is what makes the evt: check a same-task check.
+		if in.Kind == ledgerentities.IntentKindHandover {
+			reason, err := ledgerentities.ValidateHandoverPayload(in.Payload,
+				func(eventID string) (bool, error) {
+					return s.ledger.EventInTask(ctx, taskID, eventID)
+				})
+			if err != nil {
+				return err
+			}
+			if reason != "" {
+				answer = ledgerentities.Refusal(reason, 0)
+				return nil
+			}
 		}
 
 		subtaskID := ""

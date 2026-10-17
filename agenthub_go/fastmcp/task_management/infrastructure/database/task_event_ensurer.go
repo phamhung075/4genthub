@@ -11,7 +11,7 @@ package database
 //
 //  1. user_seq BIGINT NOT NULL with uq_task_event_user_seq UNIQUE (user_id, user_seq)
 //  2. client_event_id UUID, nullable, with uq_task_event_client_event UNIQUE (user_id, client_event_id)
-//  3. ck_task_event_kind widened to the twelve-kind vocabulary
+//  3. ck_task_event_kind narrowed to the six-kind vocabulary
 //  4. ck_task_event_actor_kind widened to seat|client|gate|human
 //
 // Parts 1 and 2 are now DERIVED from the task_events TableDef's ColumnDefs (EnsureTableColumns), so
@@ -51,14 +51,47 @@ package database
 import (
 	"context"
 	"database/sql"
+	"fmt"
+	"strconv"
+	"strings"
 )
 
 // The two vocabularies, verbatim from the TableDef's CHECK clauses. TestEnsureTaskEventColumnsMatch-
 // TheDefinition fails if they stop agreeing with task_event_tables.go.
 const (
-	taskEventKindVocabulary      = "'assigned', 'claimed', 'delivered', 'context_loaded', 'progress', 'status_changed', 'evidence_submitted', 'gate_verdict', 'escalated', 'human_decision', 'handover', 'context_updated'"
+	taskEventKindVocabulary      = "'progress', 'status_changed', 'evidence_submitted', 'gate_verdict', 'handover', 'context_updated'"
 	taskEventActorKindVocabulary = "'seat', 'client', 'gate', 'human'"
 )
+
+// deletedTaskEventKinds are the six kinds the handover ruling removed: they had no writer anywhere,
+// and each of their facts has a single home elsewhere (see task_event.go). The migration that
+// narrows the CHECK must REPORT a database still carrying one rather than let the re-add fail with a
+// constraint error that names no count.
+var deletedTaskEventKinds = []string{"assigned", "claimed", "delivered", "context_loaded", "escalated", "human_decision"}
+
+// assertNoDeletedTaskEventKinds counts the rows carrying a kind the narrowed vocabulary drops and
+// fails naming the count. The assert runs BEFORE the CHECK is re-added: dropping a value deletes no
+// rows, so the honest report is the number an operator has to migrate deliberately - not the
+// driver's constraint message, which cannot say how many rows are affected.
+func assertNoDeletedTaskEventKinds(ctx context.Context, db *sql.DB) error {
+	placeholders := make([]string, 0, len(deletedTaskEventKinds))
+	args := make([]any, 0, len(deletedTaskEventKinds))
+	for i, kind := range deletedTaskEventKinds {
+		placeholders = append(placeholders, "$"+strconv.Itoa(i+1))
+		args = append(args, kind)
+	}
+	count := 0
+	if err := db.QueryRowContext(ctx,
+		`SELECT count(*) FROM task_events WHERE kind IN (`+strings.Join(placeholders, ", ")+`)`,
+		args...).Scan(&count); err != nil {
+		return err
+	}
+	if count > 0 {
+		return fmt.Errorf("task_events: %d row(s) carry a deleted kind (%s); the narrowed CHECK cannot be added until they are migrated",
+			count, strings.Join(deletedTaskEventKinds, ", "))
+	}
+	return nil
+}
 
 // backfillTaskEventUserSeq numbers every row that has no user_seq yet, per user, in (created_at, id)
 // order, ABOVE that user's current maximum, inside the derived step's transaction. The numbering must
@@ -119,6 +152,12 @@ func EnsureTaskEventColumns(ctx context.Context, db *sql.DB) error {
 	if err := EnsureTableColumns(ctx, db, taskEventDatabaseTables[0], map[string]ColumnDataMove{
 		"user_seq": backfillTaskEventUserSeq,
 	}, taskEventUniqueStatements); err != nil {
+		return err
+	}
+	// THE ASSERT RUNS BEFORE THE CHECK, in its own read outside the DDL transaction: a database still
+	// carrying a deleted kind gets a count an operator can act on, and no constraint re-add is
+	// attempted over it.
+	if err := assertNoDeletedTaskEventKinds(ctx, db); err != nil {
 		return err
 	}
 	return applyTaskEventStatements(ctx, db, taskEventVocabularyStatements)

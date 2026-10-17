@@ -16,6 +16,23 @@ Track test suite changes, fixes, and improvements for agenthub.
 - NOT RUN: the live round trip against a running hub (needs an authenticated session and a room with a
   pending ask); the panel's shapes are read from `room_decisions_mount.go`.
 
+## 2026-10-17 - the ledger's handover payload and the six-kind vocabulary (hub)
+
+- `agenthub_go/fastmcp/server/httpapp/ledger_pg_test.go` `TestLedgerHandoverPayloadRidesTheRuledGate` (new):
+  through the production seam one handover is accepted and read back by resume verbatim, while a missing key, an
+  unknown key, a fact without evidence and an `evt:` belonging to another task each answer their ruled token;
+  the row count proves exactly one row was written.
+- `agenthub_go/fastmcp/ledger/domain/entities/handover_test.go` (new): one accepted payload per decision value,
+  24 malformed cases, 12 evidence cases including a false-resolving `evt:`, resolver-failure propagation, and
+  the 2048-byte serialized cap.
+- `agenthub_go/fastmcp/task_management/infrastructure/database/task_event_ensurer_test.go`: a legacy row
+  carrying one of the six deleted kinds is reported by count before the CHECK is re-added.
+- `agenthub_go/fastmcp/task_management/infrastructure/database/fakedriver_test.go`: the fake answers the
+  ensurer's legacy-kind count (0), so the startup path can be tested without a database.
+- `agenthub_go/fastmcp/ledger/domain/entities/intent_test.go`, `task_test.go`, `ledger_routes_test.go`: fixtures
+  moved off the six deleted kinds.
+- RUN: `cd agenthub_go && go test -count=1 ./...` = 140 packages ok, 0 failed.
+
 ## 2026-10-17 - the board filters by seat, before the page cap (frontend)
 
 - `agenthub-frontend/src/tests/components/LazyTaskListSeatFilter.test.tsx` (new): the real board with 21

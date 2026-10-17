@@ -160,6 +160,9 @@ func (s *fakeStmt) Query(args []driver.Value) (driver.Rows, error) {
 			}
 		}
 		return &fakeRows{cols: []string{"attname", "format_type", "attnotnull"}, rows: rows}, nil
+	case strings.Contains(s.q, "SELECT count(*) FROM task_events WHERE kind IN"):
+		// The narrowed vocabulary's pre-check: a fake database has no legacy rows to migrate.
+		return &fakeRows{cols: []string{"count"}, rows: [][]driver.Value{{int64(0)}}}, nil
 	case s.q == "SELECT version()":
 		return &fakeRows{cols: []string{"version"}, rows: [][]driver.Value{{"PostgreSQL 16 fake"}}}, nil
 	case s.q == "SELECT current_database()":

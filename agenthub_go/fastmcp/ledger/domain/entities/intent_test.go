@@ -32,11 +32,11 @@ func TestFactAndDecisionKindsPartitionTheIntentKinds(t *testing.T) {
 			t.Fatalf("the decision %q is not in the intent vocabulary", k)
 		}
 	}
-	// D9's two lists are five and four, and the count is worth pinning: a sixth "decision" added
-	// without a thought would silently put every client that has not read the new contract at risk
-	// of a refusal it cannot act on.
-	if len(DecisionKinds) != 5 || len(FactKinds) != 4 {
-		t.Fatalf("D9 names five decisions and four facts, got %d and %d", len(DecisionKinds), len(FactKinds))
+	// The two lists are two and three, and the count is worth pinning: a decision added without a
+	// thought would silently put every client that has not read the new contract at risk of a
+	// refusal it cannot act on.
+	if len(DecisionKinds) != 2 || len(FactKinds) != 3 {
+		t.Fatalf("the ledger names two decisions and three facts, got %d and %d", len(DecisionKinds), len(FactKinds))
 	}
 }
 
@@ -66,14 +66,27 @@ func TestEveryIntentKindIsATableKind(t *testing.T) {
 	}
 }
 
-// TestTheServersOwnKindsAreNotIntents pins the boundary the other way: delivered, escalated and
-// context_updated are in the table's vocabulary and are NOT things a client may push. A client that
-// could send `escalated` would be recording a decision the gate made, and one that could send
-// `context_updated` would be claiming a context version it never read.
+// TestTheServersOwnKindsAreNotIntents pins the boundary the other way: context_updated is in the
+// table's vocabulary and is NOT something a client may push. A client that could send it would be
+// claiming a context version it never read. The six kinds the handover ruling deleted are neither
+// intents nor table kinds at all: they carry no writer, and a table that still accepted one would be
+// widening a vocabulary nothing writes.
 func TestTheServersOwnKindsAreNotIntents(t *testing.T) {
-	for _, kind := range []string{"delivered", "escalated", "context_updated", "planned", ""} {
+	for _, kind := range []string{"context_updated", "planned", ""} {
 		if IsIntentKind(kind) {
 			t.Fatalf("%q must not be a kind a client can push", kind)
+		}
+	}
+	table := map[string]bool{}
+	for _, k := range taskentities.TaskEventKindValues {
+		table[string(k)] = true
+	}
+	for _, kind := range []string{"assigned", "claimed", "delivered", "context_loaded", "escalated", "human_decision"} {
+		if IsIntentKind(kind) {
+			t.Fatalf("the deleted kind %q must not be a kind a client can push", kind)
+		}
+		if table[kind] {
+			t.Fatalf("the deleted kind %q is still in task_events' vocabulary", kind)
 		}
 	}
 	for _, k := range IntentKinds {

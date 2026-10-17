@@ -32,20 +32,23 @@ type TaskEvent struct {
 // that NO queued item writes is dead vocabulary - a CHECK widened to values nothing writes fails
 // the same way a fallback that never fires does. `planned` is therefore NOT here: no O/P item
 // writes it, and when a creation emit is queued it comes back with its owner and one word of DDL.
-// The owners of the twelve that remain are named in the changelog entry that landed this list.
+//
+// THE SIX KINDS THAT REMAIN, each with its writer: `status_changed` (RecordStatusChange),
+// `progress` (RecordProgress), `gate_verdict` (RecordGateVerdict), `evidence_submitted` (the
+// evidence route), `context_updated` (the seat-attributed context path), and `handover` (the ledger
+// outbox's handover payload). The ruling that closed the handover payload (task 31b72a0d) deleted
+// the other six - assigned, claimed, delivered, context_loaded, escalated, human_decision - because
+// the ledger measured that nothing writes them and every one of their facts already has a single
+// home: assignment is the task's assignees column, a claim is the status_changed write, a delivery
+// is a queue row, an escalation is a task_audit_records row, an owner decision is a queue row, and
+// nothing loads context through the hub.
 type TaskEventKind string
 
 const (
-	TaskEventKindAssigned          TaskEventKind = "assigned"
-	TaskEventKindClaimed           TaskEventKind = "claimed"
-	TaskEventKindDelivered         TaskEventKind = "delivered"
-	TaskEventKindContextLoaded     TaskEventKind = "context_loaded"
 	TaskEventKindProgress          TaskEventKind = "progress"
 	TaskEventKindStatusChanged     TaskEventKind = "status_changed"
 	TaskEventKindEvidenceSubmitted TaskEventKind = "evidence_submitted"
 	TaskEventKindGateVerdict       TaskEventKind = "gate_verdict"
-	TaskEventKindEscalated         TaskEventKind = "escalated"
-	TaskEventKindHumanDecision     TaskEventKind = "human_decision"
 	TaskEventKindHandover          TaskEventKind = "handover"
 	TaskEventKindContextUpdated    TaskEventKind = "context_updated"
 )
@@ -54,16 +57,10 @@ const (
 // CHECK constraint in the table's DDL lists: the two must not drift, because a value the Go side
 // offers and the database refuses fails where the bytes land rather than where they are chosen.
 var TaskEventKindValues = []TaskEventKind{
-	TaskEventKindAssigned,
-	TaskEventKindClaimed,
-	TaskEventKindDelivered,
-	TaskEventKindContextLoaded,
 	TaskEventKindProgress,
 	TaskEventKindStatusChanged,
 	TaskEventKindEvidenceSubmitted,
 	TaskEventKindGateVerdict,
-	TaskEventKindEscalated,
-	TaskEventKindHumanDecision,
 	TaskEventKindHandover,
 	TaskEventKindContextUpdated,
 }

@@ -401,6 +401,31 @@ func TestTaskEventEnsurerNamesTheValueMigrationAPopulatedOldTableNeeds(t *testin
 	}
 }
 
+// (i) A ROW CARRYING A DELETED KIND IS REPORTED, BY COUNT, BEFORE THE CHECK IS RE-ADDED. The
+// narrowing drops a value and deletes no rows, so the honest report is the number an operator has to
+// migrate deliberately; the driver's constraint error cannot say it. The fixture is the pre-change
+// shape, whose CHECK still accepted the twelve kinds.
+func TestTaskEventEnsurerReportsRowsCarryingADeletedKind(t *testing.T) {
+	db := newEnsurerTestDB(t)
+	ctx := context.Background()
+	if _, err := db.ExecContext(ctx, oldShapeDDL(t, "")); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.ExecContext(ctx,
+		`INSERT INTO task_events (id, task_id, user_id, seq, kind, actor_kind, actor_id) VALUES
+		 ('aaaaaaaa-1111-1111-1111-111111111111', 'aaaaaaaa-0000-0000-0000-000000000011', 'user-1', 1, 'claimed', 'seat', 'room/one'),
+		 ('bbbbbbbb-2222-2222-2222-222222222222', 'aaaaaaaa-0000-0000-0000-000000000011', 'user-1', 2, 'delivered', 'seat', 'room/one')`); err != nil {
+		t.Fatal(err)
+	}
+	err := database.EnsureTaskEventColumns(ctx, db)
+	if err == nil {
+		t.Fatal("the ensurer narrowed the CHECK over two rows carrying deleted kinds")
+	}
+	if !strings.Contains(err.Error(), "2 row(s) carry a deleted kind") {
+		t.Errorf("the failure must name the count an operator has to migrate, got: %v", err)
+	}
+}
+
 // normaliseType maps the one alias pair PostgreSQL and the TableDef spell differently, which is all the
 // verify pass has to normalise for this table.
 func normaliseType(s string) string {

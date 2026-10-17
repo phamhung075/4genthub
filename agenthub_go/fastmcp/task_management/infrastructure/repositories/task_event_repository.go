@@ -588,6 +588,26 @@ func (r *TaskEventRepository) TaskVisible(ctx context.Context, taskID string) (b
 	return visible, nil
 }
 
+// EventInTask reports whether an entry id names a row OF taskID that this repository's user can see.
+//
+// It is the handover payload's `evt:` check, and it is ONE query over the SAME table the handover is
+// appended to: an entry id naming another task's entry satisfies no foreign key this table has and
+// is a lie the server can catch without a cross-store read. Scoped by user as well as task so a ref
+// can never cite a row the writer cannot see.
+func (r *TaskEventRepository) EventInTask(ctx context.Context, taskID, eventID string) (bool, error) {
+	found := false
+	err := r.sessions.WithSession(ctx, func(ctx context.Context, s database.DBTX) error {
+		return s.QueryRowContext(ctx,
+			`SELECT EXISTS(SELECT 1 FROM task_events
+				WHERE "user_id" = $1 AND "task_id" = $2::uuid AND "id" = $3::uuid)`,
+			r.userID, taskID, eventID).Scan(&found)
+	})
+	if err != nil {
+		return false, err
+	}
+	return found, nil
+}
+
 // SubtaskInTask reports whether the subtask exists, belongs to this repository's user, AND belongs to
 // taskID.
 //
