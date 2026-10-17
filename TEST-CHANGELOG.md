@@ -2,6 +2,20 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-17 - the census runtime record carries the room's `agy` seat (hub, branch 4genthub-min/fe-decisions-route)
+
+- `scripts/tests/test_team_definition.py`: `ROOM_RUNTIMES["4genthub-min"]` records `{"agy", "omp"}`.
+  Owner brief item 5 moves the reviewer onto `agy` and the room's definition ships it (`0332df80`,
+  `scripts/team/4genthub-min/team.json`), while this table still said `{"omp"}` — the case reported
+  `4genthub-min ships ['agy', 'omp'], the expectation says ['omp']`. The table is the record of what a
+  room ships, so it follows the definition.
+- NOT changed, and the suite stays one red by design: `scripts/tests/test_team_roster.py`'s
+  `OMP_SEATS` is the MEASURED live split (all five seats on `omp`), and the live `spec.json` still runs
+  the reviewer on `omp` — the owner's pending act is to write the move into the live spec and reseat.
+  Until then `test_the_rooms_omp_seats_are_the_rigs_omp_seats` fails naming the reviewer, which is
+  the guard doing its job, not staleness to paper over. Measured at `d7b8f495` after the change:
+  `python3 -m pytest scripts/tests -q` = 96 passed / 1 failed (that case), before = 95 / 2.
+
 ## 2026-10-17 - the render's file half is retired, and the absence is what the suite asserts (hub, branch 4genthub-min/render-file-half)
 
 - `agenthub_go/fastmcp/seat_management/domain/seatrenderer/retired_file_half_absent_test.go` (new):
