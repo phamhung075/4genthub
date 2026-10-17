@@ -2,6 +2,11 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-17 - the session viewer replay test waits for the last page read (agenthub_go)
+
+- `agenthub_go/fastmcp/server/httpapp/ws_session_viewer_test.go` `TestSessionViewerReplaysInPagesOf500`: it waited on `Hub.Subscribers == 1`, which is already true during the replay (the viewer subscribes first), so the empty last page could be read after the count. It now waits until the store has seen the expected number of page reads. CI run 39015693990 failed on "2 page reads, want 3".
+- RUN: `go test ./fastmcp/server/httpapp -run TestSessionViewer -count=30` and the whole package: ok.
+
 ## 2026-10-17 - the /docs site's tests replace the /help-setup test (frontend)
 
 - NEW `agenthub-frontend/src/tests/docs/docsSite.test.ts`: `stripOrder`; `buildSections` orders sections and pages by number and titles a page by its first `# ` heading; the real `ai_docs/public-docs` glob is not empty and opens on `quickstart/overview`; `resolveDocHref` maps relative `.md` links (including `../` and `#hash`) to `/docs` routes and images to asset URLs, and leaves absolute, external, anchor and unresolvable paths as written.

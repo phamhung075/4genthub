@@ -281,10 +281,16 @@ func TestSessionViewerReplaysInPagesOf500(t *testing.T) {
 					t.Fatalf("seq = %d, want %d", got, want)
 				}
 			}
-			waitFor(t, "the replay to finish", func() bool { return session_stream.Hub.Subscribers(viewerSID) == 1 })
-			store.mu.Lock()
-			limits := append([]int64(nil), store.limits...)
-			store.mu.Unlock()
+			// The viewer subscribes BEFORE it replays, so the subscriber count is 1 from the start and
+			// proves nothing; the replay is finished when its last page read has been made, and that
+			// read (the empty page after a full one) can land after the final event is delivered.
+			var limits []int64
+			waitFor(t, "the replay to read its last page", func() bool {
+				store.mu.Lock()
+				defer store.mu.Unlock()
+				limits = append(limits[:0], store.limits...)
+				return len(limits) >= tc.pages
+			})
 			if len(limits) != tc.pages {
 				t.Fatalf("%d page reads, want %d", len(limits), tc.pages)
 			}
