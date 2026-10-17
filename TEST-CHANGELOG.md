@@ -2,6 +2,24 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-18 - the /dashboard update-depth instrument lives outside the tree (frontend)
+
+- `.gitignore`: a scoped `/agenthub-frontend/audit-runs/` entry under Test artifacts, so a later sweep
+  cannot take 24 MB of run output that also carries account-name screenshots. This entry is the only
+  artifact that commits; `agenthub-frontend/e2e/ws-discriminator.spec.ts` is restored on disk and
+  stays UNTRACKED, as the board record requires.
+- The untracked spec holds one measurement definition - sign in, land on `/dashboard`, watch a fixed
+  4 s window, count console errors and page errors matching React's `Maximum update depth exceeded`
+  or its production form `Minified React error #185` - over desktop/tablet/mobile live, desktop with
+  every WebSocket closed, and desktop with `branches/summaries/bulk` aborted (the loop's precondition,
+  constructed without a build). It prints `DEPTH vp=… ws=… count=… errors=… summaries=…` per pass.
+- RUN against the CURRENT deployed build (nothing from this branch is deployed):
+  `E2E_ACCOUNT_FILE=/home/daihu/__projects__/4genthub/e2e-test-account npx playwright test
+  e2e/ws-discriminator.spec.ts` = 4 passed (22.0 s), counts 0/0/0/0, summaries 200 every pass; the
+  summaries-aborted pass also read 0, so that build does not contain the loop and cannot be the before
+  half of a pair. The account file is named because `e2e/account.ts`'s default path does not resolve
+  in this worktree.
+
 ## 2026-10-18 - the task-count animation's equal-but-new input settles (frontend)
 
 - `agenthub-frontend/src/tests/components/ProjectList/useProjectAnimations.test.tsx` (NEW, 4 cases): the
