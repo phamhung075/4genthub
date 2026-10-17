@@ -23,6 +23,13 @@ export const useProjectAnimations = ({
    */
   const previousTaskCounts = useRef<Record<string, number>>({});
 
+  /**
+   * One removal timer per branch. Keyed rather than cleared per effect run: the effect re-runs on
+   * every `taskCounts` change, and a cleanup tied to the run would cancel an earlier branch's
+   * pending removal the moment a second branch changed, leaving the first animating forever.
+   */
+  const removalTimers = useRef<Map<string, number>>(new Map());
+
   // Detect task count changes and trigger animations
   useEffect(() => {
     const changedBranches = new Map<string, 'up' | 'down'>();
@@ -52,17 +59,26 @@ export const useProjectAnimations = ({
     // Add branches to animating map with direction
     setAnimatingCounts(prev => new Map([...prev, ...changedBranches]));
 
-    // Remove from animating set after animation completes
-    const timer = setTimeout(() => {
-      setAnimatingCounts(prev => {
-        const newMap = new Map(prev);
-        changedBranches.forEach((_, id) => newMap.delete(id));
-        return newMap;
-      });
-    }, 600); // Animation duration
-
-    return () => clearTimeout(timer);
+    // Each branch removes itself when its own animation completes; a repeat change restarts it.
+    changedBranches.forEach((_, branchId) => {
+      const running = removalTimers.current.get(branchId);
+      if (running !== undefined) window.clearTimeout(running);
+      removalTimers.current.set(branchId, window.setTimeout(() => {
+        removalTimers.current.delete(branchId);
+        setAnimatingCounts(prev => {
+          const newMap = new Map(prev);
+          newMap.delete(branchId);
+          return newMap;
+        });
+      }, 600)); // Animation duration
+    });
   }, [taskCounts]);
+
+  // Unmount only: an effect cleanup tied to `taskCounts` would cancel another branch's removal.
+  useEffect(() => () => {
+    removalTimers.current.forEach(handle => window.clearTimeout(handle));
+    removalTimers.current.clear();
+  }, []);
 
   return {
     animatingCounts,

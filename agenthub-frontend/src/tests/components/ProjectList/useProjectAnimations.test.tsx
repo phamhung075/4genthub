@@ -59,4 +59,25 @@ describe('useProjectAnimations', () => {
     rerender(<Probe counts={{ branch1: 4 }} />);
     expect(getByTestId('animating').textContent).toBe('[["branch1","down"]]');
   });
+
+  it('clears an earlier branch when a second one changes mid-animation', () => {
+    vi.useFakeTimers();
+    const { rerender, getByTestId } = render(<Probe counts={{ branch1: 3, branch2: 0 }} />);
+
+    rerender(<Probe counts={{ branch1: 5, branch2: 0 }} />);
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+
+    rerender(<Probe counts={{ branch1: 5, branch2: 2 }} />);
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+    expect(getByTestId('animating').textContent).toBe('[["branch2","up"]]');
+
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+    expect(getByTestId('animating').textContent).toBe('[]');
+  });
 });
