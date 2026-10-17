@@ -2,6 +2,19 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-18 - the SQLite port's test file goes with the code it tested (hub)
+
+- Deleted `agenthub_go/fastmcp/task_management/infrastructure/database/database_source_manager_test.go`
+  with `database_source_manager.go` (hub task `a47e0da5`): the file pinned only that dead manager's own
+  path arithmetic, and no other test or package referenced it.
+- `agenthub_go/fastmcp/task_management/infrastructure/repositories/subtask_repository_support_test.go`:
+  `TestSubtaskRepositoryFactory` loses its `MCP_DB_PATH` setenv and its two `GetSubtaskDBPath`
+  assertions plus the `CreateSQLiteSubtaskRepository` call, all of which tested methods now deleted;
+  the factory's live assertions (backend delegation, required project_id, ORM create, default user id)
+  are untouched.
+- RUN: `cd agenthub_go && go test ./fastmcp/task_management/infrastructure/... ./fastmcp/task_management/infrastructure/repositories/ -count=1`
+  = 18 packages ok, 0 failures.
+
 ## 2026-10-18 - the deletion-path test seeds the topology it claims to count (hub)
 
 - `agenthub_go/fastmcp/seat_management/application/services/deletion_paths_integration_test.go`:
