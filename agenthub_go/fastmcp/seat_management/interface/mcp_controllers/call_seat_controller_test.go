@@ -32,7 +32,7 @@ func TestCallSeatResolvesTheSeat(t *testing.T) {
 		Runtime: "omp",
 		Policy:  map[string]any{"permission_policy": "yolo"},
 		Files: []repositories.ResolvedFile{
-			{Path: "guidance/role.md", Content: "You are the lead."},
+			{Path: "AGENTS.md", Content: "You are the lead."},
 		},
 	}
 	c, resolver := newCallSeatControllerForTest(&fakeAuth{id: "u"}, resolved, nil)
@@ -55,7 +55,7 @@ func TestCallSeatResolvesTheSeat(t *testing.T) {
 		t.Fatalf("files = %v", field(t, resp, "files"))
 	}
 	first := files[0].(*tmentities.OrderedMap[any])
-	if field(t, first, "path") != "guidance/role.md" || field(t, first, "content") != "You are the lead." {
+	if field(t, first, "path") != "AGENTS.md" || field(t, first, "content") != "You are the lead." {
 		t.Errorf("first file = %v", first)
 	}
 	if resolver.gotRoom != "4genthub-dev" || resolver.gotSeat != "lead" {

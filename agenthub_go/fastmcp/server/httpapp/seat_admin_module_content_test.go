@@ -113,7 +113,9 @@ func TestSeatAdminPutModuleVersionAcceptsRenderableContentPerKind(t *testing.T) 
 }
 
 // The positive path end to end: a module published through the route, added by a seat overlay,
-// resolves and renders — the read that used to fail when the content was unrenderable.
+// resolves and renders. It is a GUIDE module because a guide is the one module kind whose text still
+// reaches a rendered FILE (AGENTS.md) - since R1 retired the render's file half, a skill or a document
+// module has no destination at all, so an assertion on one of those could only compare a hash.
 func TestSeatAdminPublishedModuleResolvesInASeat(t *testing.T) {
 	fake := newFakeSeatAdmin()
 	fake.seedSeatType("coder", "1.0.0")
@@ -129,15 +131,15 @@ func TestSeatAdminPublishedModuleResolvesInASeat(t *testing.T) {
 	})
 	mux := seatAdminTestMux(t, fake)
 
-	const markdown = "# Good skill\n\nrendered from the module version\n"
-	rec := doTestRequest(t, mux, http.MethodPut, "/api/v2/modules/good-skill/versions/1.0.0",
-		testModuleBody(t, "skill", testSkillBlock(t, markdown)))
+	const guideText = "## Guide: coder\n\nrendered from the module version\n"
+	rec := doTestRequest(t, mux, http.MethodPut, "/api/v2/modules/guide-coder/versions/1.0.0",
+		testModuleBody(t, "instruction", guideText))
 	if rec.Code != http.StatusOK {
 		t.Fatalf("publish: %d %s", rec.Code, rec.Body.String())
 	}
 
 	rec = doTestRequest(t, mux, http.MethodPut, "/api/v2/rooms/dev/seats/alice/overlay",
-		`{"ops":[{"kind":"add","slug":"good-skill","version":"1.0.0"}]}`)
+		`{"ops":[{"kind":"add","slug":"guide-coder","version":"1.0.0"}]}`)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("overlay add: %d %s", rec.Code, rec.Body.String())
 	}
@@ -148,11 +150,11 @@ func TestSeatAdminPublishedModuleResolvesInASeat(t *testing.T) {
 	}
 	rendered := ""
 	for _, f := range resolved.Files {
-		if f.Path == "skills/good-skill/SKILL.md" {
+		if f.Path == "AGENTS.md" {
 			rendered = f.Content
 		}
 	}
-	if strings.TrimSpace(rendered) != strings.TrimSpace(markdown) {
-		t.Errorf("rendered SKILL.md = %q, want the module version's content %q", rendered, markdown)
+	if !strings.Contains(rendered, strings.TrimSpace(guideText)) {
+		t.Errorf("rendered AGENTS.md = %q, want the module version's content %q", rendered, guideText)
 	}
 }

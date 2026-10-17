@@ -89,11 +89,10 @@ func TestSeatResolutionEndToEnd(t *testing.T) {
 	if first.Hash != again.Hash || first.ID != again.ID {
 		t.Fatalf("same definition produced two snapshots: %s vs %s", first.Hash, again.Hash)
 	}
-	guidance := fileContent(t, first, "guidance/role.md")
-	t.Logf("guidance head: %.300q", guidance)
-	if !strings.Contains(guidance, "## developer-role") {
-		t.Errorf("role guidance missing the role module")
-	}
+	// R1: the render is a resolution RECORD, not a delivery. The paths it used to write are gone from
+	// every snapshot, and the role's substance is delivered by the client tree's seat tier
+	// (`skills/rooms/<room>/<seat>/<seat>-role`) - which is why nothing here reads a rendered role file.
+	assertNoRetiredPaths(t, first)
 	if first.Runtime != "claude-code" {
 		t.Errorf("runtime = %s", first.Runtime)
 	}
@@ -109,9 +108,7 @@ func TestSeatResolutionEndToEnd(t *testing.T) {
 	if changed.Hash == first.Hash {
 		t.Fatal("overlay did not change the snapshot")
 	}
-	if strings.Contains(fileContent(t, changed, "guidance/role.md"), "Document: developer-output-format") {
-		t.Error("removed module still rendered")
-	}
+	assertNoRetiredPaths(t, changed)
 
 	// A link changes the policy and therefore the snapshot; the policy parses strictly.
 	_, err = links.Upsert(ctx, user, repositories.SeatLink{FromSeatID: coder.ID, ToSeatID: reviewer.ID, Kind: "escalates_to", Allow: true})
@@ -223,6 +220,20 @@ func mustSeat(t *testing.T, ctx context.Context, seats repositories.SeatReposito
 	})
 	must(t, err)
 	return seat
+}
+
+// assertNoRetiredPaths fails when a snapshot carries any path the render no longer writes (R1: the
+// render's file half is retired and gets no writer back). Stating the absence here is what keeps a
+// re-appearing path from passing unnoticed: no reader of the record would notice a file nothing
+// installs.
+func assertNoRetiredPaths(t *testing.T, seat *repositories.ResolvedSeat) {
+	t.Helper()
+	for _, f := range seat.Files {
+		if f.Path == "agent.yaml" || f.Path == "startup.files" ||
+			strings.HasPrefix(f.Path, "guidance/") || strings.HasPrefix(f.Path, "skills/") {
+			t.Errorf("snapshot %s carries the retired path %q", seat.Hash, f.Path)
+		}
+	}
 }
 
 func fileContent(t *testing.T, seat *repositories.ResolvedSeat, path string) string {

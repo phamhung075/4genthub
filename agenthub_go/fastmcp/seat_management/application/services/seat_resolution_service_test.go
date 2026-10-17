@@ -150,9 +150,11 @@ func (moduleCatalog) Err() error { return nil }
 func TestResolveSeatModulesMoveOnlyWithANewSeatTypeVersion(t *testing.T) {
 	pinned := "1.0.0"
 	catalog := moduleCatalog{}
-	catalog.publish("rules", "1.0.0", "rules text v1")
+	// The observable is a GUIDE module: it is the one module kind whose text reaches a rendered FILE
+	// (AGENTS.md), so a version move is visible as text and not only as a hash.
+	catalog.publish("guide-rules", "1.0.0", "rules text v1")
 	seatTypes := &resolutionSeatTypes{versions: []*repositories.SeatTypeVersion{
-		{Slug: "coder", Version: "1.0.0", DefaultRuntime: "claude-code", ModuleRefs: []resolver.ModuleRef{{Slug: "rules", Version: "1.0.0"}}},
+		{Slug: "coder", Version: "1.0.0", DefaultRuntime: "claude-code", ModuleRefs: []resolver.ModuleRef{{Slug: "guide-rules", Version: "1.0.0"}}},
 	}}
 	svc := &SeatResolutionService{
 		SeatTypes: seatTypes, Rooms: resolutionRooms{}, Overlays: resolutionOverlays{}, Links: resolutionLinks{},
@@ -171,7 +173,7 @@ func TestResolveSeatModulesMoveOnlyWithANewSeatTypeVersion(t *testing.T) {
 			t.Fatalf("ResolveSeat(%s): %v", seatKey, err)
 		}
 		for _, f := range resolved.Files {
-			if f.Path == "guidance/role.md" {
+			if f.Path == "AGENTS.md" {
 				guidance = f.Content
 			}
 		}
@@ -183,7 +185,7 @@ func TestResolveSeatModulesMoveOnlyWithANewSeatTypeVersion(t *testing.T) {
 		t.Fatalf("pinned guidance lacks the v1 module:\n%s", pinnedGuidance)
 	}
 
-	catalog.publish("rules", "1.1.0", "rules text v1.1")
+	catalog.publish("guide-rules", "1.1.0", "rules text v1.1")
 	for seat, before := range map[string]string{"pinned": pinnedHash, "latest": latestHash} {
 		if hash, _ := resolve(seat); hash != before {
 			t.Errorf("%s seat changed when only a module version was published", seat)
@@ -191,7 +193,7 @@ func TestResolveSeatModulesMoveOnlyWithANewSeatTypeVersion(t *testing.T) {
 	}
 
 	seatTypes.versions = append(seatTypes.versions, &repositories.SeatTypeVersion{
-		Slug: "coder", Version: "1.0.1", DefaultRuntime: "claude-code", ModuleRefs: []resolver.ModuleRef{{Slug: "rules", Version: "1.1.0"}},
+		Slug: "coder", Version: "1.0.1", DefaultRuntime: "claude-code", ModuleRefs: []resolver.ModuleRef{{Slug: "guide-rules", Version: "1.1.0"}},
 	})
 	if hash, guidance := resolve("pinned"); hash != pinnedHash || !strings.Contains(guidance, "rules text v1") || strings.Contains(guidance, "v1.1") {
 		t.Errorf("pinned seat moved to a new seat type version (hash %s, want %s)", hash, pinnedHash)

@@ -1,9 +1,17 @@
-// Package seatrenderer renders a resolved seat snapshot into a deterministic
-// AgentSpec directory.
+// Package seatrenderer renders a resolved seat snapshot into a deterministic document set: the seat's
+// runtime fragments, its guide and limits document (AGENTS.md), and the limits' own config document.
+//
+// THE HUB'S FILE HALF IS RETIRED (ruling RULING-seat-context-delivery-model.md, R1). This package used to
+// also emit `agent.yaml` (with a skills list and a runtime-resource declaration), `startup.files` and
+// `guidance/role.md`. Nothing wrote any of them into a seat's launch directory - measured on all five seat
+// dirs of this room - and two of the three had no reader anywhere: the seat's role is the client skill
+// tree's seat tier (`skills/rooms/<room>/<seat>/<seat>-role`), the seat's skills are installed by the
+// runtime (`install_seat_skills`), and the seat's `mcp.json` is written by the runtime at start. What the
+// hub still says about a seat is its POLICY: runtime, permission policy, MCP blocks, module refs, and the
+// resolution record with its hash (R4: a record, never a delivery check).
 package seatrenderer
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"slices"
@@ -11,14 +19,9 @@ import (
 
 	"agenthub/fastmcp/seat_management/domain/mcpblock"
 	"agenthub/fastmcp/seat_management/domain/resolver"
-	"agenthub/fastmcp/seat_management/domain/skillblock"
-
-	"gopkg.in/yaml.v3"
 )
 
 const (
-	agentYAMLPath = "agent.yaml"
-	guidancePath  = "guidance/role.md"
 	// agentsMDPath is the seat's guide document, the file omp loads into every session from the
 	// agent directory. Packet 6 step 1 moved the guides out of a script that wrote it by hand and
 	// into library blocks, so the render writes it from those blocks; a seat whose resolution carries
@@ -28,88 +31,16 @@ const (
 	// `guide-common` and `guide-<seat>`, and their destination is AGENTS.md rather than the guidance
 	// channel. One destination per module - a guide in both places would be the same text twice.
 	guideSlugPrefix      = "guide-"
-	skillFileName        = "SKILL.md"
 	mcpFragmentPath      = "runtime/claude-mcp.fragment.json"
 	settingsFragmentPath = "runtime/claude-settings.fragment.json"
 	codexRulesPath       = "runtime/codex.rules"
 	ompMCPPath           = "runtime/omp-mcp.json"
 	ompConfigPath        = "runtime/omp-config.yml"
-	roleResourceID       = "role"
-	mcpResourceID        = "claude-mcp"
-	settingsResourceID   = "claude-settings"
-	deliveryHintSendText = "send_text"
-	typeClaudeMCP        = "claude_mcp_fragment"
-	typeClaudeSettings   = "claude_settings_fragment"
 )
 
-// quotedString forces double-quoted YAML so versions such as "1.0" stay strings.
-type quotedString string
-
-func (q quotedString) MarshalYAML() (any, error) {
-	return &yaml.Node{Kind: yaml.ScalarNode, Tag: "!!str", Style: yaml.DoubleQuotedStyle, Value: string(q)}, nil
-}
-
-type agentYAML struct {
-	Name      string        `yaml:"name"`
-	Version   quotedString  `yaml:"version"`
-	Defaults  defaultsYAML  `yaml:"defaults"`
-	Profiles  profilesYAML  `yaml:"profiles"`
-	Resources resourcesYAML `yaml:"resources"`
-	Startup   startupYAML   `yaml:"startup"`
-}
-
-type defaultsYAML struct {
-	Runtime string `yaml:"runtime"`
-}
-
-type profilesYAML struct {
-	Default profileYAML `yaml:"default"`
-}
-
-type profileYAML struct {
-	Uses usesYAML `yaml:"uses"`
-}
-
-type usesYAML struct {
-	Skills           []string `yaml:"skills"`
-	Guidance         []string `yaml:"guidance"`
-	Subagents        []string `yaml:"subagents"`
-	Plugins          []string `yaml:"plugins"`
-	RuntimeResources []string `yaml:"runtime_resources"`
-}
-
-type resourcesYAML struct {
-	Skills           []pathResourceYAML    `yaml:"skills"`
-	Guidance         []pathResourceYAML    `yaml:"guidance"`
-	RuntimeResources []runtimeResourceYAML `yaml:"runtime_resources"`
-}
-
-type pathResourceYAML struct {
-	ID   string `yaml:"id"`
-	Path string `yaml:"path"`
-}
-
-type runtimeResourceYAML struct {
-	ID      string `yaml:"id"`
-	Path    string `yaml:"path"`
-	Runtime string `yaml:"runtime"`
-	Type    string `yaml:"type"`
-}
-
-type startupYAML struct {
-	Files   []startupFileYAML `yaml:"files"`
-	Actions []string          `yaml:"actions"`
-}
-
-type startupFileYAML struct {
-	Path         string `yaml:"path"`
-	DeliveryHint string `yaml:"delivery_hint"`
-	Required     bool   `yaml:"required"`
-}
-
-// RenderSeat renders a resolved seat as an AgentSpec: agent.yaml, the
-// seat guidance, one SKILL.md per skill module, and the runtime fragments the
-// seat's runtime supports.
+// RenderSeat renders a resolved seat as a SeatSpec: the runtime fragments the
+// seat's runtime supports, the seat's guide and limits document, and the config
+// document the client installs.
 func RenderSeat(seat resolver.ResolvedSeat, mcpURL string) (*SeatSpec, error) {
 	if err := resolver.CheckRuntime(seat.Runtime); err != nil {
 		return nil, err
@@ -122,26 +53,20 @@ func RenderSeat(seat resolver.ResolvedSeat, mcpURL string) (*SeatSpec, error) {
 	// a seat with none mounts no server and no fragment is rendered.
 	mcpModules := modulesOfKind(seat.Modules, resolver.KindMCP)
 
-	runtimeResources := make([]runtimeResourceYAML, 0, 2)
 	var mcpFragment, settingsFragment string
-	// ONE MCP DOCUMENT, TWO DESTINATIONS. claude-code takes it as a runtime resource; omp takes it as
-	// a plain file the client installs, for the same reason the codex seat gets a rules file below:
-	// the client has no omp MCP fragment type. omp DOES read an MCP document — measured 2026-10-06 on the
-	// real runtime: it reads a project `.mcp.json` at startup, expands ${VAR} in a header and in a
-	// stdio server's `env`, and reads `$PI_CODING_AGENT_DIR/.mcp.json` for the agent itself, which is
-	// where the client installs this file so each seat carries its own server set without a per-seat
-	// cwd and without touching the operator's rig-root file.
+	// ONE MCP DOCUMENT, TWO DESTINATIONS, and neither is a declaration any more: claude-code and omp
+	// each get the fragment as a plain FILE, and the client has no reason to be told a path twice. omp
+	// DOES read an MCP document — measured 2026-10-06 on the real runtime: it reads a project
+	// `.mcp.json` at startup, expands ${VAR} in a header and in a stdio server's `env`, and reads
+	// `$PI_CODING_AGENT_DIR/.mcp.json` for the agent itself, which is where the client installs this
+	// file so each seat carries its own server set without a per-seat cwd and without touching the
+	// operator's rig-root file.
 	if len(mcpModules) > 0 && (receivesClaudeFragments(seat.Runtime) || seat.Runtime == resolver.RuntimeOmp) {
 		fragment, err := renderMCPFragment(seat, mcpURL)
 		if err != nil {
 			return nil, err
 		}
 		mcpFragment = fragment
-		if receivesClaudeFragments(seat.Runtime) {
-			runtimeResources = append(runtimeResources, runtimeResourceYAML{
-				ID: mcpResourceID, Path: mcpFragmentPath, Runtime: resolver.RuntimeClaudeCode, Type: typeClaudeMCP,
-			})
-		}
 	}
 	if receivesClaudeFragments(seat.Runtime) && len(toolModules) > 0 {
 		settings, err := mergeToolModules(toolModules)
@@ -152,9 +77,6 @@ func RenderSeat(seat resolver.ResolvedSeat, mcpURL string) (*SeatSpec, error) {
 		if err != nil {
 			return nil, err
 		}
-		runtimeResources = append(runtimeResources, runtimeResourceYAML{
-			ID: settingsResourceID, Path: settingsFragmentPath, Runtime: resolver.RuntimeClaudeCode, Type: typeClaudeSettings,
-		})
 	}
 
 	// A codex seat gets the seat's Bash deny list as a codex execpolicy rules file. the client has no
@@ -171,10 +93,6 @@ func RenderSeat(seat resolver.ResolvedSeat, mcpURL string) (*SeatSpec, error) {
 		codexRules = renderCodexRules(merged)
 	}
 
-	agentYAML, err := renderAgentYAML(seat, runtimeResources)
-	if err != nil {
-		return nil, err
-	}
 	// ONE FOLD, TWO EMISSIONS: the same parsed set produces the document the runtime reads and the
 	// words the seat reads, so a rule and its plain-language line cannot drift apart.
 	policySet, err := FoldPolicies(seat.Modules)
@@ -182,23 +100,11 @@ func RenderSeat(seat resolver.ResolvedSeat, mcpURL string) (*SeatSpec, error) {
 		return nil, err
 	}
 
-	files := []SeatSpecFile{
-		{Path: agentYAMLPath, Content: agentYAML},
-		{Path: guidancePath, Content: renderGuidance(seat)},
-	}
-	for _, m := range modulesOfKind(seat.Modules, resolver.KindSkill) {
-		// A skill module is a block carrying the SKILL.md text plus its source provenance; a
-		// module whose content is not a valid block fails here, naming it, rather than writing
-		// JSON or untraceable text into the seat's skill file.
-		block, err := skillblock.Parse(m.Content)
-		if err != nil {
-			return nil, fmt.Errorf("skill %q: %w", m.Slug, err)
-		}
-		files = append(files, SeatSpecFile{
-			Path:    "skills/" + m.Slug + "/" + skillFileName,
-			Content: block.Content,
-		})
-	}
+	// WHAT IS LEFT IS WHAT HAS A READER: the seat's guide and limits document, the runtime fragments
+	// and the client's config document. `agent.yaml`, `startup.files`, the `skills/<slug>/SKILL.md`
+	// list and `guidance/role.md` are retired (R1): the skill files existed to be reached through
+	// `agent.yaml`'s declaration, which is gone with them.
+	var files []SeatSpecFile
 	if len(guideModules(seat)) > 0 || policySet.Role != "" {
 		// The guides AND the limits text, in the one document omp loads into a session. A seat with
 		// limits but no guide gets it too: the limits are words the seat must read, not a decoration
@@ -251,56 +157,11 @@ func RenderSeat(seat resolver.ResolvedSeat, mcpURL string) (*SeatSpec, error) {
 }
 
 // receivesClaudeFragments reports whether a runtime takes the Claude MCP and settings fragments.
-// Only claude-code does; codex, agy and omp get guidance and skills only. Stated positively so a
-// runtime added later defaults to no Claude fragment instead of silently receiving one.
+// Only claude-code does; codex takes a rules file, omp takes the MCP document and its config, and agy
+// takes no rendered file at all (its skills and its guidance come from the client tree). Stated
+// positively so a runtime added later defaults to no Claude fragment instead of silently receiving one.
 func receivesClaudeFragments(runtime string) bool {
 	return runtime == resolver.RuntimeClaudeCode
-}
-
-func renderAgentYAML(seat resolver.ResolvedSeat, runtimeResources []runtimeResourceYAML) (string, error) {
-	skillResources := make([]pathResourceYAML, 0)
-	skillUses := make([]string, 0)
-	for _, m := range modulesOfKind(seat.Modules, resolver.KindSkill) {
-		skillResources = append(skillResources, pathResourceYAML{ID: m.Slug, Path: "skills/" + m.Slug})
-		skillUses = append(skillUses, m.Slug)
-	}
-	runtimeUses := make([]string, 0, len(runtimeResources))
-	for _, r := range runtimeResources {
-		runtimeUses = append(runtimeUses, r.ID)
-	}
-
-	spec := agentYAML{
-		Name:     seat.SeatType,
-		Version:  quotedString(seat.SeatTypeVersion),
-		Defaults: defaultsYAML{Runtime: seat.Runtime},
-		Profiles: profilesYAML{Default: profileYAML{Uses: usesYAML{
-			Skills:           skillUses,
-			Guidance:         []string{},
-			Subagents:        []string{},
-			Plugins:          []string{},
-			RuntimeResources: runtimeUses,
-		}}},
-		Resources: resourcesYAML{
-			Skills:           skillResources,
-			Guidance:         []pathResourceYAML{{ID: roleResourceID, Path: guidancePath}},
-			RuntimeResources: runtimeResources,
-		},
-		Startup: startupYAML{
-			Files:   []startupFileYAML{{Path: guidancePath, DeliveryHint: deliveryHintSendText, Required: true}},
-			Actions: []string{},
-		},
-	}
-
-	var buf bytes.Buffer
-	enc := yaml.NewEncoder(&buf)
-	enc.SetIndent(2)
-	if err := enc.Encode(spec); err != nil {
-		return "", fmt.Errorf("encode agent.yaml: %w", err)
-	}
-	if err := enc.Close(); err != nil {
-		return "", fmt.Errorf("encode agent.yaml: %w", err)
-	}
-	return buf.String(), nil
 }
 
 // guideModules returns the seat's guide blocks, in resolution order.
@@ -335,38 +196,6 @@ func renderAgentsMD(seat resolver.ResolvedSeat, policySet *PolicySet) string {
 		b.WriteString(RenderPolicyLimits(policySet))
 	}
 	return b.String()
-}
-
-// renderGuidance writes the startup prompt: the seat hash and version stamp,
-// then instruction, document, and memory modules under per-kind headings. A guide block is NOT
-// written here: its destination is AGENTS.md, so the same text is never delivered twice.
-func renderGuidance(seat resolver.ResolvedSeat) string {
-	var b strings.Builder
-	fmt.Fprintf(&b, "<!-- seat-hash: %s -->\n", seat.Hash)
-	fmt.Fprintf(&b, "<!-- seat-type-version: %s -->\n", seat.SeatTypeVersion)
-	for _, m := range modulesOfKind(seat.Modules, resolver.KindInstruction) {
-		if strings.HasPrefix(m.Slug, guideSlugPrefix) {
-			continue // a guide's destination is AGENTS.md; see guideSlugPrefix
-		}
-		writeGuidanceSection(&b, "## "+m.Slug, m.Content)
-	}
-	for _, m := range modulesOfKind(seat.Modules, resolver.KindDocument) {
-		writeGuidanceSection(&b, "## Document: "+m.Slug, m.Content)
-	}
-	for _, m := range modulesOfKind(seat.Modules, resolver.KindMemory) {
-		writeGuidanceSection(&b, "## Memory: "+m.Slug, m.Content)
-	}
-	return b.String()
-}
-
-func writeGuidanceSection(b *strings.Builder, heading, content string) {
-	b.WriteString("\n")
-	b.WriteString(heading)
-	b.WriteString("\n\n")
-	b.WriteString(content)
-	if !strings.HasSuffix(content, "\n") {
-		b.WriteByte('\n')
-	}
 }
 
 // permissionListKeys are the permissions lists that tool modules add to rather than replace,

@@ -1,12 +1,12 @@
 package seatrenderer
 
-// Packet 6, step 1: the fixtures in renderer_test.go pin the SPLIT (a guide goes to AGENTS.md, not
-// to the guidance channel). This pins the other half - that what the split delivers is the text the
-// LIBRARY actually ships, not a fixture that happens to look like it. A render path tested only
-// against hand-built blocks cannot tell you the real guide survives being parsed, resolved and
-// rendered.
+// Packet 6, step 1: the fixtures in renderer_test.go pin that a guide goes to AGENTS.md and to nothing
+// else. This pins the other half - that what that document delivers is the text the LIBRARY actually
+// ships, not a fixture that happens to look like it. A render path tested only against hand-built blocks
+// cannot tell you the real guide survives being parsed, resolved and rendered.
 
 import (
+	"reflect"
 	"strings"
 	"testing"
 
@@ -66,9 +66,16 @@ func TestTheLibrarysOwnSharedGuideRendersIntoAgentsMD(t *testing.T) {
 	if !strings.Contains(agents, "Write a JSON object to the device path") {
 		t.Error("AGENTS.md does not carry the shipped guide's own sentence about calling a tool")
 	}
-	// And the one-destination rule survives the real content.
-	guidance := fileContent(t, spec, "guidance/role.md")
-	if strings.Contains(guidance, "Working procedure") {
-		t.Error("guidance/role.md carries the shared guide too: a guide has ONE destination")
+	// And the one-destination rule survives the real content: the shipped guide lands in the one
+	// document and in NO other file at all, which is what the retired guidance channel leaves behind.
+	for _, f := range spec.Files {
+		if f.Path != "AGENTS.md" && strings.Contains(f.Content, "Working procedure") {
+			t.Errorf("%s carries the shared guide too: a guide has ONE destination", f.Path)
+		}
+	}
+	// The guide is also the whole render for this seat: it carries no server block, so a runtime file
+	// appearing here would be an mcp document for a seat that mounts none.
+	if got := filePaths(spec); !reflect.DeepEqual(got, []string{"AGENTS.md"}) {
+		t.Errorf("a seat carrying only the shared guide rendered %v, want just AGENTS.md", got)
 	}
 }

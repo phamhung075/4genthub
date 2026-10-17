@@ -1980,13 +1980,19 @@ func TestSeatAdminCreatedSeatTypeVersionRouteAcceptsTheSlug(t *testing.T) {
 	}
 }
 
-// KEY ACCEPTANCE: a seat type a user creates through the new route renders exactly like a
-// seeded one. The type is created, its role is authored as an instruction module, the version
-// is added through the existing version route, a seat is created and resolved through the real
-// resolver and renderer; the rendered guidance/role.md must carry the authored role text.
+// KEY ACCEPTANCE: a seat type a user creates through the new route resolves and renders exactly like a
+// seeded one. The type is created, its role is authored as an instruction module AND its guide as a
+// guide module, the version is added through the existing version route, a seat is created and resolved
+// through the real resolver and renderer.
+//
+// WHAT THE RENDER OWES THE SEAT IS THE GUIDE, not the role text: since R1 the render is a resolution
+// record, so the role module - a plain instruction module - reaches no file, while the guide reaches
+// AGENTS.md. The role's substance is delivered by the client tree's seat tier
+// (`skills/rooms/<room>/<seat>/<seat>-role`), which is L-1's lane and no part of this route.
 func TestSeatAdminCreatedSeatTypeResolvesAndRenders(t *testing.T) {
 	t.Setenv(publicURLEnv, "https://api.example.test")
 	const roleText = "You are the custom coder: keep the acceptance test honest."
+	const guideText = "## Guide: custom-coder\n\nRead the acceptance test before trusting it.\n"
 	fake := newFakeSeatAdmin()
 	fake.seedRoom("dev")
 	mux := seatAdminTestMux(t, fake)
@@ -2000,10 +2006,13 @@ func TestSeatAdminCreatedSeatTypeResolvesAndRenders(t *testing.T) {
 	if rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/seat-types", `{"slug":"custom-coder","name":"Custom Coder","description":"Made by a user"}`); rec.Code != http.StatusOK {
 		t.Fatalf("create type: %d %s", rec.Code, rec.Body.String())
 	}
-	if rec := doTestRequest(t, mux, http.MethodPut, "/api/v2/modules/custom-role/versions/1.0.0", `{"kind":"instruction","content":"`+roleText+`"}`); rec.Code != http.StatusOK {
+	if rec := doTestRequest(t, mux, http.MethodPut, "/api/v2/modules/custom-role/versions/1.0.0", testModuleBody(t, "instruction", roleText)); rec.Code != http.StatusOK {
 		t.Fatalf("author role module: %d %s", rec.Code, rec.Body.String())
 	}
-	if rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/seat-types/custom-coder/versions", `{"module_refs":["custom-role@1.0.0"],"default_runtime":"claude-code"}`); rec.Code != http.StatusOK {
+	if rec := doTestRequest(t, mux, http.MethodPut, "/api/v2/modules/guide-custom-coder/versions/1.0.0", testModuleBody(t, "instruction", guideText)); rec.Code != http.StatusOK {
+		t.Fatalf("author guide module: %d %s", rec.Code, rec.Body.String())
+	}
+	if rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/seat-types/custom-coder/versions", `{"module_refs":["custom-role@1.0.0","guide-custom-coder@1.0.0"],"default_runtime":"claude-code"}`); rec.Code != http.StatusOK {
 		t.Fatalf("add version: %d %s", rec.Code, rec.Body.String())
 	}
 	if rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/rooms/dev/seats", `{"seat_key":"alice","seat_type":"custom-coder","runtime":"claude-code"}`); rec.Code != http.StatusOK {
@@ -2029,20 +2038,23 @@ func TestSeatAdminCreatedSeatTypeResolvesAndRenders(t *testing.T) {
 	if wire.ResolvedSeat.Runtime != "claude-code" {
 		t.Errorf("resolved runtime = %q", wire.ResolvedSeat.Runtime)
 	}
-	var guidance string
+	var agents string
 	for _, f := range wire.ResolvedSeat.Files {
-		if f.Path == "guidance/role.md" {
-			guidance = f.Content
+		// The retired file half must not come back through the create route: a `guidance/role.md`, an
+		// `agent.yaml` or a `skills/` file here would be a second source for text the client tree owns.
+		if f.Path == "agent.yaml" || f.Path == "startup.files" ||
+			strings.HasPrefix(f.Path, "guidance/") || strings.HasPrefix(f.Path, "skills/") {
+			t.Errorf("snapshot carries the retired path %q", f.Path)
+		}
+		if f.Path == "AGENTS.md" {
+			agents = f.Content
 		}
 	}
-	if guidance == "" {
-		t.Fatalf("render has no guidance/role.md: %s", rec.Body.String())
+	if agents == "" {
+		t.Fatalf("render has no AGENTS.md for a seat whose type carries a guide: %s", rec.Body.String())
 	}
-	if !strings.Contains(guidance, roleText) {
-		t.Errorf("rendered guidance/role.md does not carry the created role text:\n%s", guidance)
-	}
-	if !strings.Contains(guidance, "## custom-role") {
-		t.Errorf("the created instruction module is not under its own heading:\n%s", guidance)
+	if !strings.Contains(agents, strings.TrimSpace(guideText)) {
+		t.Errorf("rendered AGENTS.md does not carry the created guide text:\n%s", agents)
 	}
 }
 

@@ -2,6 +2,53 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-17 - the render's file half is retired, and the absence is what the suite asserts (hub, branch 4genthub-min/render-file-half)
+
+- `agenthub_go/fastmcp/seat_management/domain/seatrenderer/retired_file_half_absent_test.go` (new):
+  `TestRenderSeatWritesNoRetiredFileHalf` renders claude-code, codex, omp and agy with a guide, a tool
+  module and an mcp block; it requires each runtime's LIVE files first — `AGENTS.md` with the guide's own
+  words in it, the claude fragments, the codex rules, the omp MCP document and its config — then fails on
+  any `agent.yaml`, `startup.files`, `guidance/` or `skills/` path. The landmark half is the vacuity
+  guard (a render that produced nothing would pass the absence for the wrong reason); the shape is
+  `manage_agent_absent_test.go`'s.
+- `.../seatrenderer/renderer_test.go`: `TestRenderSeatGuidanceNamesTheMCPTools` and
+  `TestRenderSeatSkillBlockInvalidError` deleted with their subjects (the guidance channel is retired; a
+  skill module is no longer rendered or validated). `TestRenderSeatWritesTheGuidesIntoAgentsMDOnce` keeps
+  the one-destination half and now asserts the file set is exactly `AGENTS.md`; `TestRenderSeatAgy` is the
+  absence (no file at all); `TestRenderSeatWithoutMCPBlocksMountsNoServer` asserts the empty file set
+  instead of the retired `agent.yaml`; the dead `parsedAgentYAML`/`parseAgentYAML`, `skillBlock` and
+  `writeSpecFiles` helpers plus four imports are gone.
+- `.../seatrenderer/library_guide_render_test.go` and `.../seedlibrary/guides_render_test.go`: both
+  one-destination checks now COUNT the files carrying the guide across the whole render, because the old
+  form read `guidance/role.md` and would pass vacuously against a path that no longer exists.
+- `.../application/services/seat_resolution_service_test.go`: the version-pinning case observes a
+  `guide-rules` module in `AGENTS.md` (a guide is the one kind whose text reaches a file).
+  `seat_resolution_integration_test.go` (DB-gated) drops its two `guidance/role.md` reads for a new
+  `assertNoRetiredPaths` helper that checks every snapshot's file list.
+- `.../server/httpapp/seat_admin_mount_test.go`: the create-route KEY ACCEPTANCE authors a guide beside
+  the role module, asserts the guide reaches `AGENTS.md` and fails on any retired path.
+  `seat_admin_module_content_test.go`: the published-module case publishes a guide for the same reason.
+  `call_seat_mcp_test.go`, `seat_mount_test.go` and `.../mcp_controllers/call_seat_controller_test.go`
+  rename their pass-through fixtures from `guidance/role.md`/`agent.yaml` to `AGENTS.md`.
+- At this change: `go vet` clean and `go test -count=1` green for `./fastmcp/seat_management/...` and
+  `./fastmcp/server/httpapp/...`; `gofmt -l` prints nothing.
+
+## 2026-10-17 - the five seat roles resolve in the seat tier, and no seat sees another's (client, pin 9ecfcf32 = a2c1df3)
+
+- `agenthub_client/rust/agenthub-runtime/src/skills/mod.rs`:
+  `skills::tests::a_seat_resolves_its_own_role_skill_and_no_other_seats` reads the SHIPPED tree through
+  `SkillResolver::resolve_for_seat` and asserts, for all five `4genthub-min` seats, that `<seat>-role`
+  resolves at tier `Seat` from `rooms/4genthub-min/<seat>/<seat>-role/SKILL.md`, that its frontmatter parses
+  and names the seed version, that the body carries the type's role text, one of its rule names and its
+  output format, and that NO other seat's role skill is in the set. Landmarks beside the assertion: the share
+  tier resolves in the same call, `fe-dev`'s `taste-skill` stays theirs and `go-dev`'s set does not carry it,
+  because a resolver handed one directory could show the absence for free.
+- Its first red was a real defect and not a fixture: a colon in an unquoted frontmatter scalar made
+  `parse_skill_file` return `Ok((None, content))`, so the skill resolved with no metadata and nothing
+  complained; the case failed with `lead-role carries no frontmatter`.
+- At this change (client): `cargo` suite green for `agenthub-runtime`; `go test -count=1 ./...` over
+  `agenthub_client` all packages ok, 0 FAIL.
+
 ## 2026-10-17 - the pending row renders its attention state, injected because no room holds one (frontend, fe-decisions-route)
 
 - `agenthub-frontend/e2e/room-decision-panel.spec.ts` (+244, no deletions): two tests appended under

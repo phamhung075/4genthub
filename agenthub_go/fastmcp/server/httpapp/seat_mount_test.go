@@ -77,14 +77,14 @@ func TestResolveSeatReturnsSnapshot(t *testing.T) {
 	t.Setenv(publicURLEnv, "https://api.example.test")
 	mux := seatTestMux(t, &fakeSeatSource{resolved: &repositories.ResolvedSeat{
 		Hash: "abc", Runtime: "claude-code",
-		Files:  []repositories.ResolvedFile{{Path: "agent.yaml", Content: "name: x"}},
+		Files:  []repositories.ResolvedFile{{Path: "AGENTS.md", Content: "## Guide: coder\n"}},
 		Policy: map[string]any{"Seat": "coder"},
 	}})
 	rec := doTestRequest(t, mux, http.MethodGet, "/api/v2/seats/dev/coder", "")
 	if rec.Code != http.StatusOK {
 		t.Fatalf("status = %d: %s", rec.Code, rec.Body.String())
 	}
-	for _, want := range []string{`"hash":"abc"`, `"room":"dev"`, `"seat":"coder"`, `"path":"agent.yaml"`, `"Seat":"coder"`} {
+	for _, want := range []string{`"hash":"abc"`, `"room":"dev"`, `"seat":"coder"`, `"path":"AGENTS.md"`, `"Seat":"coder"`} {
 		if !strings.Contains(rec.Body.String(), want) {
 			t.Errorf("body missing %s: %s", want, rec.Body.String())
 		}
