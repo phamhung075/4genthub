@@ -40,10 +40,11 @@ const (
 // strings, not as a regexp, so the wording that was removed is the wording the test refuses.
 var retiredIndexClaims = []string{
 	"├── index.json",                       // the hand-drawn tree entry
+	"**index.json**",                       // the machine-readable-index bullet
 	"Hooks update index.json",              // "automatic updates" while the hooks were live
 	"Post-tool hook**: Updates index.json", // the post-tool hook's claim
 	"via index",                            // quick lookup through a stored index
-	"| **Index files** | Auto-generated",   // the rules-table row
+	"Auto-generated index",                 // the tree entry's and rules row's wording
 }
 
 // retirementNote is the one sentence allowed to name the file: it says the index is retired.

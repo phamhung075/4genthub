@@ -20,15 +20,21 @@
 
 - `agenthub_go/internal/repoguards/agent_docs_block_test.go`: three assertions, each the ruling's table
   rather than a new opinion - (a) the two guides' documentation blocks are byte-identical, (b) neither
-  guide carries any of the five deleted index claims and both carry the retirement note, (c) each docs
-  chapter names the two layout commands and draws no folder tree. It reuses `repoRoot(t)` from
-  `task_trailer_guard_test.go`; no new harness.
+  guide carries any of the six measured index claim forms (the tree entry, the machine-readable bullet,
+  `Hooks update index.json`, `Post-tool hook**: Updates index.json`, `via index`, `Auto-generated
+  index`), matched as exact strings and never as the bare word "index", and both carry the retirement
+  note, (c) each docs chapter names the two layout commands and draws no folder tree. It reuses
+  `repoRoot(t)` from `task_trailer_guard_test.go`; no new harness.
 
 ### Testing
 
 - Red before the rewrite, green after: `go test ./internal/repoguards/ -run
-  'AgentGuide|DocsChapter|RetiredIndex' -count=1` reported all five forbidden claims in both guides
+  'AgentGuide|DocsChapter|RetiredIndex' -count=1` reported all five claim sentences then in both guides
   against the pre-rewrite files, and passes on this commit.
+- Mutation proof, one per assertion: adding `├── stale-folder/` to `CLAUDE.local.md`'s chapter fires (a)
+  and (c) with the drawn tree named; adding `Hooks update index.json` to the gemini guide fires (b) with
+  the claim named. Both mutations were reverted and the package passes (`go test ./internal/repoguards/
+  -count=1`).
 - The two blocks were compared with `cmp` before and after the edit: byte-identical today, and the test
   now refuses the next divergence.
 - This commit carries a non-doc path (`*_test.go`), so the docs-only guard accepts the mixed set.
