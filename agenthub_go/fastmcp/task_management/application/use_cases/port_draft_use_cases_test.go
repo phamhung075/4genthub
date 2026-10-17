@@ -97,35 +97,6 @@ func (r *draftPortProjectRepo) FindByID(ctx context.Context, projectID string) (
 	return r.project, nil
 }
 
-type draftPortAIService struct {
-	enhance *entities.OrderedMap[any]
-	plan    *entities.OrderedMap[any]
-}
-
-func (s *draftPortAIService) EnhanceTaskCreation(ctx context.Context, request *dtostask.CreateTaskRequest,
-	enableAIBreakdown, enableSmartAssignment bool) (*entities.OrderedMap[any], error) {
-	return s.enhance, nil
-}
-func (s *draftPortAIService) CreateAIEnhancedTaskPlan(ctx context.Context, requirements, title, description,
-	gitBranchID, planningContext string, autoCreateTasks bool, userID *string) (*entities.OrderedMap[any], error) {
-	return s.plan, nil
-}
-func (s *draftPortAIService) AddAIInsightsToTaskResponse(ctx context.Context,
-	taskResponse *entities.OrderedMap[any], action string) (*entities.OrderedMap[any], error) {
-	return nil, nil
-}
-func (s *draftPortAIService) GenerateTaskInsights(ctx context.Context, title, description,
-	action string) (*entities.OrderedMap[any], error) {
-	return nil, nil
-}
-
-type draftPortAIFacade struct{}
-
-func (f *draftPortAIFacade) GetTask(ctx context.Context, taskID string,
-	includeContext bool) (*entities.OrderedMap[any], error) {
-	return nil, nil
-}
-
 // --- helpers -----------------------------------------------------------
 
 func draftPortKeys(t *testing.T, m *entities.OrderedMap[any]) []string {
@@ -359,20 +330,6 @@ func TestDraftPortDeleteProjectNotFound(t *testing.T) {
 	if err.Error() != "Project missing not found" {
 		t.Fatalf("message = %v", err.Error())
 	}
-}
-
-func TestDraftPortAITaskCreation(t *testing.T) {
-	result := entities.NewOrderedMap[any]()
-	result.Set("success", true)
-	service := &draftPortAIService{enhance: result}
-	uc := NewAITaskCreationUseCase(nil, &draftPortAIFacade{}, service)
-	request := NewAITaskCreationRequest("Title", "Desc", "branch-1")
-	out := uc.Execute(context.Background(), request)
-	draftPortAssertKeys(t, out, []string{"success", "ai_enhanced_features"})
-	featuresValue, _ := out.Get("ai_enhanced_features")
-	features := featuresValue.(*entities.OrderedMap[any])
-	draftPortAssertKeys(t, features, []string{"breakdown_enabled", "smart_assignment_enabled",
-		"auto_subtasks_enabled", "ai_requirements_provided"})
 }
 
 func TestDraftPortNextTaskNoTasks(t *testing.T) {

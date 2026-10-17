@@ -6,7 +6,7 @@ Python module (the bounded context), across ALL slices. Only touch rows you own.
 | Team | Seats | Owns (Python module first segment) | Todo rows |
 |---|---|---|---|
 | Claude | dev-owner / dev-check @4genthub-go | Paused due to session limit (resets 11:20 AM) | Handed over to Agy |
-| Agy | agy-owner / agy-check @4genthub-go | ALL contexts: `task_management` (takeover), `agent_management`, `ai_task_planning`, `auth`, `connection_management`, `middleware`, `prompts`, `resources`, `server`, `tools`, `websocket` | 112 remaining (`task_management`) |
+| Agy | agy-owner / agy-check @4genthub-go | ALL contexts: `task_management` (takeover), `agent_management`, `auth`, `connection_management`, `middleware`, `prompts`, `resources`, `server`, `tools`, `websocket` | 112 remaining (`task_management`) |
 
 Rules
 - Claude team is rate-limited until 11:20 AM. Agy team has taken over all remaining `task_management` rows.

@@ -49,7 +49,6 @@ type OperationFactory struct {
 	crudHandler     *handlers.CRUDHandler
 	searchHandler   TaskSearchHandler
 	workflowHandler TaskWorkflowHandler
-	aiHandler       *handlers.AIHandler
 }
 
 // NewOperationFactory ports __init__(response_formatter, context_facade_factory=None).
@@ -60,7 +59,6 @@ func NewOperationFactory(responseFormatter ResponseFormatter, contextFacadeFacto
 		crudHandler:          handlers.NewCRUDHandler(responseFormatter),
 		searchHandler:        NewSearchHandler(responseFormatter),
 		workflowHandler:      NewWorkflowHandler(responseFormatter, contextFacadeFactory),
-		aiHandler:            handlers.NewAIHandler(responseFormatter),
 	}
 }
 
@@ -72,9 +70,6 @@ func (f *OperationFactory) GetSearchHandler() TaskSearchHandler { return f.searc
 
 // GetWorkflowHandler ports get_workflow_handler.
 func (f *OperationFactory) GetWorkflowHandler() TaskWorkflowHandler { return f.workflowHandler }
-
-// GetAiHandler ports get_ai_handler.
-func (f *OperationFactory) GetAiHandler() *handlers.AIHandler { return f.aiHandler }
 
 // HandleOperation ports handle_operation. The defer mirrors `except Exception`.
 func (f *OperationFactory) HandleOperation(ctx context.Context, operation string,
@@ -95,8 +90,6 @@ func (f *OperationFactory) HandleOperation(ctx context.Context, operation string
 		return f.handleWorkflowOperation(ctx, operation, facade, kwargs)
 	case "add_dependency", "remove_dependency":
 		return f.handleDependencyOperation(ctx, operation, facade, kwargs)
-	case "ai_plan", "ai_create", "ai_enhance", "ai_analyze", "ai_suggest_agents":
-		return f.handleAIOperation(ctx, operation, facade, kwargs)
 	default:
 		return f.responseFormatter.CreateErrorResponse(operation,
 			"Unknown operation: "+operation, "UNKNOWN_OPERATION", nil)
@@ -251,38 +244,6 @@ func (f *OperationFactory) handleDependencyOperation(ctx context.Context, operat
 		return facade.RemoveDependency(ctx, taskID, dependencyID)
 	}
 	panic(&value_objects.ValueError{Msg: "Unknown dependency operation: " + operation})
-}
-
-func (f *OperationFactory) handleAIOperation(ctx context.Context, operation string,
-	facade handlers.TaskFacade, kwargs map[string]any) (result *entities.OrderedMap[any]) {
-	defer func() {
-		if r := recover(); r != nil {
-			result = f.responseFormatter.CreateErrorResponse(operation,
-				"AI operation failed: "+panicMessage(r), ErrorCodeOperationFailed, nil)
-		}
-	}()
-
-	switch operation {
-	case "ai_plan":
-		allowed := stringSet("requirements", "title", "description", "git_branch_id", "context",
-			"auto_create_tasks", "user_id")
-		return f.aiHandler.AIPlan(ctx, facade, filterKeys(kwargs, allowed))
-	case "ai_create":
-		allowed := stringSet("title", "description", "git_branch_id", "priority", "assignees",
-			"estimated_effort", "labels", "dependencies", "user_id", "enable_ai_breakdown",
-			"enable_smart_assignment", "enable_auto_subtasks", "ai_requirements", "planning_context")
-		return f.aiHandler.AICreate(ctx, facade, filterKeys(kwargs, allowed))
-	case "ai_enhance":
-		allowed := stringSet("task_id", "analyze_complexity", "suggest_optimizations", "identify_risks")
-		return f.aiHandler.AIEnhance(ctx, facade, filterKeys(kwargs, allowed))
-	case "ai_analyze":
-		allowed := stringSet("requirements", "context")
-		return f.aiHandler.AIAnalyze(ctx, facade, filterKeys(kwargs, allowed))
-	case "ai_suggest_agents":
-		allowed := stringSet("requirements", "available_agents")
-		return f.aiHandler.AISuggestAgents(ctx, facade, filterKeys(kwargs, allowed))
-	}
-	panic(&value_objects.ValueError{Msg: "Unknown AI operation: " + operation})
 }
 
 // --- helpers ---
