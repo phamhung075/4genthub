@@ -1,4 +1,4 @@
-DOCS. Documentation lives in ai_docs/. Check ai_docs/index.json for an existing document before writing; hooks regenerate it.
+DOCS. Documentation lives in ai_docs/. Check `git ls-files 'ai_docs/**/*.md'` for an existing document before writing; the tracked tree is the index.
 
 Rules:
 - ai_docs subfolders use kebab-case (api-integration, setup-guides); _absolute_docs and _obsolete_docs excepted.

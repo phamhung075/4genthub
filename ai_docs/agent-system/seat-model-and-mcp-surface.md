@@ -78,5 +78,5 @@ per-tool arguments.
 ## Knowledge management
 
 - Project documentation: `ai_docs/` (kebab-case folders, one topic per folder).
-- Index: `ai_docs/index.json` — machine-generated, never hand-edit.
+- Index: `git ls-files 'ai_docs/**/*.md'` — the tracked tree is the index; nothing to hand-edit.
 - Search existing docs before creating new ones.

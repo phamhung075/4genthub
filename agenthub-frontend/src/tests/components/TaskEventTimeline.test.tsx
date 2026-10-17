@@ -3,22 +3,19 @@
  * the ledger writes.
  *
  * WHAT THE FOUR-STEP CASE IS, AND WHAT IT CANNOT BE: NEXT_GEN O8's timeline acceptance names a
- * TEST-fail -> FIX -> TEST-pass -> ACCEPT sequence. The ledger's CHECK constraint carries the TWELVE
- * kinds (`ck_task_event_kind`, task_event_tables.go:40), `status_changed` is the only kind any writer
- * emits today, and it is the only kind with a defined payload, `{ old, new }`. So each step is
- * expressed as the nearest real shape and the MAPPING IS REPORTED IN THE CHANGELOG, not dressed up
- * here:
+ * TEST-fail -> FIX -> TEST-pass -> ACCEPT sequence. The ledger's vocabulary is the six kinds the
+ * server keeps (`TASK_EVENT_KINDS`, mirroring `task_event.go:46-53`), and of them only
+ * `status_changed` carries a status - `{ old, new }`. So each step is expressed as the nearest real
+ * shape and the MAPPING IS REPORTED IN THE CHANGELOG, not dressed up here:
  *
  *   TEST-fail -> status_changed {in_progress -> testing}
  *   FIX       -> status_changed {testing -> in_progress}   (FIX has NO dedicated kind at all)
  *   TEST-pass -> status_changed {in_progress -> review}
- *   ACCEPT    -> status_changed {review -> done}           (`gate_verdict` IS in the vocabulary now
- *                                                           and no writer emits it yet)
+ *   ACCEPT    -> status_changed {review -> done}           (`gate_verdict` is a kind of its own)
  *
- * The distinction the vocabulary CANNOT make YET is that a test failed or passed: `evidence_submitted`
- * is in the vocabulary and has no writer. The component therefore says so on screen
- * (`LEDGER_NOT_RECORDED`) and this file asserts that sentence is present - the forward-looking half
- * is marked NOT IMPLEMENTED rather than claimed by a green case.
+ * The distinction the vocabulary CANNOT make is that a test failed or passed: a status change to
+ * `testing` or `review` says only that the task moved. The component therefore says so on screen
+ * (`LEDGER_NOT_RECORDED`) and this file asserts that sentence is present.
  */
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -125,21 +122,23 @@ describe('TaskEventTimeline', () => {
   });
 
   it('labels every kind in the vocabulary, and never shows the raw class string', async () => {
-    // The kinds here are the ones nothing writes YET plus the one that does, and every actor class the
-    // CHECK constraint allows except `seat`, which the case above covers.
+    // One row per kind the server keeps - all six - and every actor class exactly once across the
+    // rows: `seat` on progress, `gate`, `human` on the verdict, `client` on the handover.
     renderTimeline([
-      row(1, 'assigned', null, 'gate'),
+      row(1, 'evidence_submitted', null, 'gate'),
       row(2, 'progress', { progress_number: 2 }),
       row(3, 'status_changed', { old: 'todo', new: 'in_progress' }),
       row(4, 'gate_verdict', { verdict: 'ACCEPT' }, 'human'),
       row(5, 'handover', null, 'client'),
+      row(6, 'context_updated', null),
     ]);
 
-    await waitFor(() => expect(screen.getByText('Assigned')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('Evidence submitted')).toBeInTheDocument());
     expect(screen.getByText('Progress reported')).toBeInTheDocument();
     expect(screen.getByText('Status: Todo to In progress')).toBeInTheDocument();
     expect(screen.getByText('Gate verdict')).toBeInTheDocument();
     expect(screen.getByText('Handover')).toBeInTheDocument();
+    expect(screen.getByText('Context updated')).toBeInTheDocument();
 
     // THE PHASE DOES NOT MOVE ON ANY OF THEM: only `status_changed` carries a status, so the badge is the
     // one the status change named rather than the last row's kind.

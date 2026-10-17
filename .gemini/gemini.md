@@ -756,16 +756,16 @@ Focus on lines 28-30 in User.js where email regex needs updating.
 
 ### AI Documentation System
 **Location**: `ai_docs/` folder
-**Index**: `ai_docs/index.json` - Machine-readable documentation index
+**Index**: the tracked tree - `git ls-files 'ai_docs/**/*.md'` lists it
 **Purpose**: Central knowledge repository for all agents
 **Usage**:
-- Check index.json first for quick lookup
+- Run `git ls-files 'ai_docs/**/*.md'` for quick lookup
 - Primary search location before creating new docs
 - Share knowledge between agents
 
 ### Documentation Best Practices
 - Search existing docs before creating new ones
-- Update index.json when adding documentation
+- A new doc is listed by `git ls-files 'ai_docs/**/*.md'` - there is no index to update
 - Use kebab-case for folder names
 - Place docs in appropriate subfolders
 

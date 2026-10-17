@@ -100,7 +100,7 @@ graph TD
     A[👨‍💻 Human User] --> B[🪝 Claude Hook Client<br/>Python Enforcement System]
     B --> C[🌐 Web Dashboard<br/>React + TypeScript]
     B --> D[📁 File System<br/>Protection & Validation]
-    B --> E[📚 Documentation<br/>ai_docs/ + index.json]
+    B --> E[📚 Documentation<br/>ai_docs/ - the tree is the index]
     B --> F[⏱️ Session Tracking<br/>2-hour Work Sessions]
 
     C --> G[🔗 MCP Server<br/>Go (agenthub_go)]
