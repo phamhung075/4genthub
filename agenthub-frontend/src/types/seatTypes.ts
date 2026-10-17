@@ -548,3 +548,75 @@ export interface MachinesResponse {
   success: boolean;
   machines: MachineStatus[];
 }
+
+// =============================================================================
+// Room decision requests (the owner's side of a room lead's ask)
+// =============================================================================
+
+/**
+ * The four states a decision row moves through (`room_decisions.state` in the hub,
+ * `room_decisions/domain/decisions`). `pending` is open; `answered` means the owner has chosen and
+ * the room has NOT closed the question yet ("awaiting the room"); `resolved` and `superseded` are
+ * closed.
+ */
+export type DecisionState = 'pending' | 'answered' | 'resolved' | 'superseded';
+
+/**
+ * One clickable choice. Field names mirror the stored `HumanQuestionOption` verbatim so the panel
+ * renders the stored value, never a re-spelled copy of it. `recommended` is present only when the
+ * ask carried it.
+ */
+export interface HumanQuestionOption {
+  id: string;
+  label: string;
+  recommended?: boolean;
+}
+
+/** One question of an ask, verbatim from the stored `HumanQuestion`. */
+export interface HumanQuestion {
+  id: string;
+  question: string;
+  options: HumanQuestionOption[];
+}
+
+/** A whole-thread reply rather than a button choice. */
+export interface TypedHumanReply {
+  kind: 'typed-reply';
+  text: string;
+}
+
+/** questionId -> chosen optionId, or a typed reply the panel shows as its own text. */
+export type HumanAnswers = Record<string, string | TypedHumanReply>;
+
+/** One mirrored ask. The local queue row (`qitem_id`) stays the authority; this is its projection. */
+export interface RoomDecision {
+  id: string;
+  qitem_id: string;
+  author_seat_key: string;
+  summary: string | null;
+  detail: string | null;
+  questions: HumanQuestion[];
+  answers: HumanAnswers;
+  state: DecisionState;
+  created_at: string;
+  answered_at: string | null;
+}
+
+/** GET /api/v2/rooms/{room}/decisions - one Decisions array, never a missing key. */
+export interface RoomDecisionsResponse {
+  decisions: RoomDecision[];
+}
+
+/** One click per call. */
+export interface AnswerRoomDecisionRequest {
+  question_id: string;
+  option_id: string;
+  idempotency_key?: string;
+}
+
+/** POST /api/v2/rooms/{room}/decisions/{id}/answer - the recorded state after this click. */
+export interface AnswerRoomDecisionResponse {
+  state: DecisionState;
+  answers: HumanAnswers;
+  complete: boolean;
+}

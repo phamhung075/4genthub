@@ -2,6 +2,20 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-17 - the sidebar answers room decisions (frontend)
+
+- `agenthub-frontend/src/tests/components/RoomDecisionPanel.test.tsx` (new, 6 cases): services mocked,
+  real hooks and query keys, so what is pinned is the panel's behaviour and the payload. The room is
+  read from `/seats/:room/:seat`; stored questions and options render verbatim; a choice posts
+  `{question_id, option_id}` for the clicked option; an `answered` row stays while a `resolved` one is
+  dropped and its "Answer recorded" button is disabled; a refused answer (403) and an unreadable list
+  (404) each render their message in `role=alert`; a page naming no room reads the first room and
+  follows the picker to another.
+- RUN: `npx vitest run src/tests/App.test.tsx src/tests/components/RoomDecisionPanel.test.tsx` = 2
+  files / 24 tests, 0 failed; `npx tsc --noEmit -p .` exits 0.
+- NOT RUN: the live round trip against a running hub (needs an authenticated session and a room with a
+  pending ask); the panel's shapes are read from `room_decisions_mount.go`.
+
 ## 2026-10-17 - the board filters by seat, before the page cap (frontend)
 
 - `agenthub-frontend/src/tests/components/LazyTaskListSeatFilter.test.tsx` (new): the real board with 21

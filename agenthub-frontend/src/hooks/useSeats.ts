@@ -9,10 +9,12 @@
  */
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { decisionApi } from '../services/decisionApi';
 import { seatApi } from '../services/seatApi';
 import { useSuccessToast } from '../components/ui/toast';
 import { parseMcpBlock, type McpBlockParse } from '../lib/mcpBlock';
 import type {
+  AnswerRoomDecisionRequest,
   CreateSeatTypeVersionRequest,
   ModuleSummary,
   CreateRoomRequest,
@@ -37,6 +39,7 @@ export type { SeatOverlays };
 
 export const seatKeys = {
   rooms: ['seatRooms'] as const,
+  roomDecisions: (room: string) => ['roomDecisions', room] as const,
   teams: ['seatTeams'] as const,
   seatTypes: ['seatTypes'] as const,
   settings: ['seatSettings'] as const,
@@ -64,6 +67,45 @@ export function useRooms() {
     },
   });
   return { rooms: query.data ?? [], isLoading: query.isLoading, error: query.error, refetch: query.refetch };
+}
+
+// ---------------------------------------------------------------------------
+// Decision requests
+// ---------------------------------------------------------------------------
+
+/**
+ * One room's asks, as the route returns them: scoped server-side to the caller's tenant, so a
+ * viewer of a shared room reads an empty list rather than the owner's asks.
+ *
+ * Callers must not treat their own POST as closure: `answered` means "the room has not applied it
+ * yet", and a row leaves the list only when the daemon's apply turns it `resolved`/`superseded`.
+ */
+export function useRoomDecisions(room: string, enabled = true) {
+  const query = useQuery({
+    queryKey: seatKeys.roomDecisions(room),
+    queryFn: async () => {
+      const response = await decisionApi.listRoomDecisions(room);
+      return response.decisions ?? [];
+    },
+    enabled: enabled && !!room,
+  });
+  return { decisions: query.data ?? [], isLoading: query.isLoading, error: query.error, refetch: query.refetch };
+}
+
+/**
+ * Record ONE click of one option. The server refuses an unknown option (422), a row that is not
+ * pending (409) and a caller that is not the asked human (403); the panel renders that reason, so
+ * nothing is toasted here.
+ */
+export function useAnswerRoomDecision(room: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ decisionId, answer }: { decisionId: string; answer: AnswerRoomDecisionRequest }) =>
+      decisionApi.answerRoomDecision(room, decisionId, answer),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: seatKeys.roomDecisions(room) });
+    },
+  });
 }
 
 export function useCreateRoom() {

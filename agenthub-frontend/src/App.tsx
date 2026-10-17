@@ -26,6 +26,7 @@ const BranchDetailsDialog = lazy(() => import('./components/BranchDetailsDialog'
 const GlobalContextDialog = lazy(() => import('./components/GlobalContextDialog'));
 const ProjectDetailsDialog = lazy(() => import('./components/ProjectDetailsDialog'));
 const ProjectList = lazy(() => import('./components/ProjectList'));
+const RoomDecisionPanel = lazy(() => import('./components/RoomDecisionPanel').then(m => ({ default: m.RoomDecisionPanel })));
 const WebSocketStatusBadge = lazy(() => import('./components/WebSocketStatusBadge').then(m => ({ default: m.WebSocketStatusBadge })));
 const LazyTaskList = lazy(() => import('./components/LazyTaskList'));
 
@@ -107,26 +108,37 @@ function Dashboard() {
         left-0
         w-full sm:w-80 md:w-1/3 md:min-w-[320px] md:max-w-[400px]
         h-full
-        border-r border-surface-border-hover p-3 md:p-4 overflow-y-auto
+        flex flex-col
+        border-r border-surface-border-hover p-3 md:p-4
         bg-surface/95 backdrop-blur-xl
         transition-transform duration-300 ease-in-out
         z-30
         md:translate-x-0
         shadow-xl md:shadow-none
       `}>
-        <ProjectList
-          onSelect={(projectId: string, branchId: string) => {
-            navigate(`/dashboard/project/${projectId}/branch/${branchId}`);
-            // Auto-close sidebar on mobile after selection
-            if (!isLargeScreen) {
-              setSidebarOpen(false);
-            }
-          }}
-          selectedProjectId={projectId}
-          selectedBranchId={branchId}
-          onShowGlobalContext={() => setShowGlobalContext(true)}
-          onShowProjectDetails={(project) => setShowProjectDetails(project)}
-          onShowBranchDetails={(project, branch) => setShowBranchDetails({ project, branch })} />
+        {/* Upper half: the Project & Branch hierarchy, behaviour unchanged */}
+        <section className="min-h-0 flex-1 overflow-y-auto" aria-label="Projects and branches">
+          <ProjectList
+            onSelect={(projectId: string, branchId: string) => {
+              navigate(`/dashboard/project/${projectId}/branch/${branchId}`);
+              // Auto-close sidebar on mobile after selection
+              if (!isLargeScreen) {
+                setSidebarOpen(false);
+              }
+            }}
+            selectedProjectId={projectId}
+            selectedBranchId={branchId}
+            onShowGlobalContext={() => setShowGlobalContext(true)}
+            onShowProjectDetails={(project) => setShowProjectDetails(project)}
+            onShowBranchDetails={(project, branch) => setShowBranchDetails({ project, branch })} />
+        </section>
+
+        {/* Lower half: this room's decision requests - the owner answers a lead's ask here */}
+        <section className="mt-3 min-h-0 max-h-[45%] shrink-0 overflow-y-auto border-t border-surface-border-hover pt-3">
+          <Suspense fallback={null}>
+            <RoomDecisionPanel />
+          </Suspense>
+        </section>
       </aside>
 
       {/* Mobile overlay */}

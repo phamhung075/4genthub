@@ -6,6 +6,8 @@ export { useTaskGrouping } from './useTaskGrouping';
 export {
   seatKeys,
   useRooms,
+  useRoomDecisions,
+  useAnswerRoomDecision,
   useCreateRoom,
   useSeatTypes,
   useModuleVersion,
