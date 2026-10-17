@@ -14,7 +14,7 @@ Write a JSON object to the device path `xd://mcp__<server>_<tool>`. Read the pat
 1. **Author:** write and run the tests once, and put the exact commands and their output in the task.
 2. **Reviewer:** judge the diff using the author's output. No fresh sweep; run a check only for a claim the output does not cover.
 3. **Lead:** does not re-verify a PASS.
-4. **Queue rows** (`4genteam room queue create`): one line plus the commit sha, at most 600 characters. Priority `high` only for a production break. Talk through the queue; a doc is not the place for an idea, finding or status.
+4. **Queue rows** (`4genteam room queue create`): the summary is one line of at most 120 characters and the body at most 600; the row names the commit sha. Priority `high` only for a production break. Talk through the queue; a doc is not the place for an idea, finding or status.
 5. **Measuring:** no measuring script that prints more than 30 lines, and no polling of the queue. **Docs** change once, when the task is done, in the same commit as the code: no commit hash, count, line number or measured-on date in a doc; point to the command that prints it.
 
 ### Offloading with deepseek_agent
