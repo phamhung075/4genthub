@@ -4,7 +4,6 @@ package use_cases
 import (
 	"context"
 	"errors"
-	"log"
 
 	task "agenthub/fastmcp/task_management/application/dtos/task"
 	"agenthub/fastmcp/task_management/domain/entities"
@@ -40,10 +39,12 @@ func (u *CreateTaskUseCase) WithLedger(l StatusLedger) *CreateTaskUseCase {
 // WebSocketPayloadBuilder. They live behind an interface because those services import
 // this package. Every method is best-effort: Python logs and continues on failure.
 type CreateTaskHooks interface {
-	TaskEventHooks
 	// CreateTaskContext creates the task-level context (context_facade.create_context) and
 	// reports whether the response was successful.
 	CreateTaskContext(ctx context.Context, task *entities.Task, userID string, projectID *string, gitBranchID string) (bool, error)
+	// NotifyTaskEvent builds the complete payload and calls sync_broadcast_task_event
+	// (user falls back to "system" when userID is nil or empty).
+	NotifyTaskEvent(ctx context.Context, eventType string, task *entities.Task, response *task.TaskResponse, userID *string, gitBranchID string)
 }
 
 // WithHooks sets the side-effect hooks (nil disables them, as in a DB-less test).
@@ -236,10 +237,10 @@ func (u *CreateTaskUseCase) autoCreateTaskContext(ctx context.Context, taskEntit
 	if _, err := u.taskRepository.Save(ctx, taskEntity); err != nil {
 		return
 	}
-	// The task context exists now, so the metadata sync mirrors the task's own fields onto it.
-	// It may not fail the create, but it is reported: silence here is what leaves a context
-	// holding the creation-time copy of the task's fields.
-	if err := u.hooks.SyncTaskMetadata(ctx, taskIDStr, taskEntity, userID); err != nil {
-		log.Printf("[create_task] the task context did not take the new task %s: %v", taskIDStr, err)
-	}
+	// NO METADATA SYNC HERE, DELIBERATELY. Creating the context is not an update, and this use case
+	// may not append a context_updated event for it: the create response's own writer is
+	// TaskApplicationFacade.CreateTask -> SyncContextAndGetTask, which writes the task's fields
+	// (task_data, metadata and objective) in ONE UpdateContext. The sync that used to run here was a
+	// second UpdateContext for the same fields in the same request, and the ledger recorded one
+	// context_updated for each - the duplicate this function's removal closes (hub task 26e857b0).
 }

@@ -2,6 +2,21 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-18 - one create-path context write, and add_progress on the board (hub)
+
+- `agenthub_go/fastmcp/task_management/application/services/create_context_single_write_test.go` (new):
+  `TestOneCreatePathWriteAppendsOneTaskContextEvent` runs the real `UnifiedContextService` and
+  `TaskContextSyncService.SyncContextAndGetTask` over an in-memory repository and a counting event
+  appender, and asserts exactly ONE append plus the fields the write must carry (`title`, `assignees`,
+  `estimated_effort`); `TestAddProgressReachesTheTaskLedger` asserts `AddProgress` appends one
+  `progress` event carrying the note and that `ProgressTextWith` renders it into details.
+- `agenthub_go/fastmcp/task_management/application/use_cases/create_task_test.go`: the expected hook
+  sequence is `[context notify]` - there is no `sync` call on the create path any more, and the
+  failed-context case is `[context notify]` too.
+- RUN: `cd agenthub_go && go test ./fastmcp/task_management/... -count=1` = all packages ok.
+- End-to-end re-measure on the running server against scratch Postgres: a create now reports
+  `context_updated=1` (it was 2), and an `add_progress` note appears in `manage_task get` details.
+
 ## 2026-10-18 - the SQLite port's test file goes with the code it tested (hub)
 
 - Deleted `agenthub_go/fastmcp/task_management/infrastructure/database/database_source_manager_test.go`

@@ -345,7 +345,7 @@ func TestCreateTaskUseCaseHooksSetContextIDAndNotify(t *testing.T) {
 	if err != nil || !resp.Success {
 		t.Fatalf("execute: %v %v", err, resp)
 	}
-	if got := fmt.Sprint(hooks.calls); got != "[context sync notify]" {
+	if got := fmt.Sprint(hooks.calls); got != "[context notify]" {
 		t.Fatalf("calls = %s", got)
 	}
 	if repo.saved.ContextID == nil || *repo.saved.ContextID != id.Value {
@@ -355,7 +355,9 @@ func TestCreateTaskUseCaseHooksSetContextIDAndNotify(t *testing.T) {
 		t.Fatalf("response context_id: %v", resp.Task.ContextID)
 	}
 
-	// failed context creation: no context_id, no sync, notification still sent.
+	// failed context creation: no context_id, notification still sent. There is no 'sync' call on
+	// this path at all: the metadata sync belongs to SyncContextAndGetTask, the create path's single
+	// context writer (hub 26e857b0).
 	hooks2 := &createTaskFakeHooks{contextOK: false}
 	repo2 := &createTaskFakeRepo{nextID: id}
 	uc = NewCreateTaskUseCase(repo2, nil).WithLedger(noopLedger()).WithHooks(hooks2)
