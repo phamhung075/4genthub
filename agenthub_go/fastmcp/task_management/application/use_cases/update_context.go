@@ -8,9 +8,12 @@ import (
 	"agenthub/fastmcp/task_management/domain/repositories"
 )
 
-// ContextEventWriter appends context events to the ledger.
+// ContextEventWriter writes the ledger entry a context update produces. The recorder settles WHO the
+// write is attributed to (the seat the request named, else the user) and builds the payload's change
+// set, so this use case never names an actor itself.
 type ContextEventWriter interface {
-	Append(ctx context.Context, in entities.AppendTaskEvent) (*entities.TaskEvent, error)
+	RecordContextUpdate(ctx context.Context, taskID, level string, version int,
+		origin string, changes []entities.ContextChange, dropped int) (*entities.TaskEvent, error)
 }
 
 // UpdateContextUseCase ports update_context.UpdateContextUseCase.
@@ -51,6 +54,11 @@ func (uc *UpdateContextUseCase) Execute(ctx context.Context, request *ctxdto.Upd
 		return ctxdto.NewContextResponseError("Context not found for task "+request.TaskID, nil), nil
 	}
 
+	// The state the ledger's change set is compared FROM: the context as it was read, before any key
+	// the request carries is applied.
+	before := entities.OrderedFromMap(taskContext.ToDict(false))
+	after := before
+
 	// Python `if request.data:` is dict truthiness: nil or an empty dict is falsy.
 	if request.Data != nil && request.Data.Len() > 0 {
 		contextDict := taskContext.ToDict(false)
@@ -58,6 +66,7 @@ func (uc *UpdateContextUseCase) Execute(ctx context.Context, request *ctxdto.Upd
 			value, _ := request.Data.Get(key)
 			contextDict[key] = value
 		}
+		after = entities.OrderedFromMap(contextDict)
 		taskContext, err = entities.TaskContextFromDict(contextDict)
 		if err != nil {
 			return ctxdto.NewContextResponseError("Failed to update context: "+err.Error(), nil), nil
@@ -78,17 +87,8 @@ func (uc *UpdateContextUseCase) Execute(ctx context.Context, request *ctxdto.Upd
 		if taskContext.Metadata != nil && taskContext.Metadata.Version != nil {
 			ver = *taskContext.Metadata.Version
 		}
-		_, _ = uc.events.Append(ctx, entities.AppendTaskEvent{
-			TaskID:    request.TaskID,
-			Kind:      entities.TaskEventKindContextUpdated,
-			ActorKind: entities.TaskEventActorSeat,
-			ActorID:   "context",
-			Payload: map[string]any{
-				"level":   "task",
-				"id":      request.TaskID,
-				"version": ver,
-			},
-		})
+		changes, dropped := entities.ContextChanges(before, after)
+		_, _ = uc.events.RecordContextUpdate(ctx, request.TaskID, "task", ver, "manage_context.update", changes, dropped)
 	}
 
 	message := "Context updated successfully"

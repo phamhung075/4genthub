@@ -27,6 +27,7 @@ package httpapp
 import (
 	"context"
 
+	"agenthub/fastmcp/task_management/application/services"
 	"agenthub/fastmcp/task_management/domain/entities"
 	"agenthub/fastmcp/task_management/infrastructure/database"
 	infrarepos "agenthub/fastmcp/task_management/infrastructure/repositories"
@@ -45,4 +46,28 @@ func (a contextLedgerAppender) Append(ctx context.Context, in entities.AppendTas
 		return nil, err
 	}
 	return infrarepos.NewTaskEventRepository(a.sessions, user, "").Append(ctx, in)
+}
+
+// RecordContextUpdate writes the context_updated entry of one context write: the payload the change
+// set and its caps are built into (entities.ContextUpdatePayload), attributed to the seat the request
+// named, else the caller - the recorder's own order (services.ActorFor), not a literal `"context"`
+// the two writers used to hardcode. Like Append it opens its own transaction, so it cannot use the
+// recorder's transaction-bound write.
+func (a contextLedgerAppender) RecordContextUpdate(ctx context.Context, taskID, level string, version int,
+	origin string, changes []entities.ContextChange, dropped int) (*entities.TaskEvent, error) {
+	user, err := auth_helper.GetAuthenticatedUserID(ctx, nil, "task context event")
+	if err != nil {
+		return nil, err
+	}
+	actor, ok := services.ActorFor(ctx, user)
+	if !ok {
+		return nil, services.ErrNoActor
+	}
+	return infrarepos.NewTaskEventRepository(a.sessions, user, "").Append(ctx, entities.AppendTaskEvent{
+		TaskID:    taskID,
+		Kind:      entities.TaskEventKindContextUpdated,
+		ActorKind: actor.Kind,
+		ActorID:   actor.ID,
+		Payload:   entities.ContextUpdatePayload(level, taskID, version, origin, changes, dropped),
+	})
 }

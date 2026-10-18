@@ -7014,6 +7014,12 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
   name `AGENTS.md:160`; with the line removed it passes in 0.04s. Two things it caught while being
   written: `git grep -f` takes every line of the data file as a pattern, so its `#` comments matched
   the whole tree (6097 hits, 30s) until the patterns were written comment-free to a scratch file.
+- `e2e/dashboard-drawer.spec.ts` (Playwright, chromium): the dashboard drawer at 375x667 and
+  320x568 under `isMobile`/`hasTouch` - opened through its toggle, first project expanded, then each
+  VISIBLE row action measured for opacity with no hover, the 40px floor and its right edge, the
+  aside scanned for an element past the viewport, and View Branch Details tapped for a
+  `[role=dialog]`. Delete Branch is optional: `BranchItem` renders it only off `main`. Live against
+  the deployed origin: 2 passed in 6.5s. `npx tsc --noEmit -p .` clean; vitest does not run e2e.
 - `TestAPrunedPathWasDeletedByACommit` joins the pruned-path guard: every entry in
   `testdata/pruned_paths.txt` must have a deletion commit in `git log --all --diff-filter=D`, because a
   typo sits in the data file matching nothing and guarding nothing while the list looks maintained.
@@ -7026,3 +7032,46 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
   runs the measured sentence (`--test "go test ./... (green at …)"`) and asserts exit 2 with no dial and
   no git call. Measured 2026-10-18: that line had reached the command as extra argv, exited non-zero and
   was read as D3 over a green tree.
+
+## 2026-10-18 - the push authority is the lead seat, held at one point per surface (hub, branch 4genthub-min/lead-push)
+
+- `scripts/tests/test_seat_policy_commit_form.py`: `test_only_the_lead_module_may_push` pins the owner's
+  2026-10-18 ruling at the policy layer - `policy-lead.json` declares the push pattern with `approval:
+  allow` in exactly one entry and the four other modules declare it with `deny` in exactly one each, so
+  "may this seat push" has one answer per seat.
+- `scripts/tests/test_git_commit_capture.py`: `test_the_lead_seat_lands_documentation_under_either_session_spelling`
+  runs real commits in a temp repository under the wrapper's entry point: a docs-only commit lands for the
+  canonical `agenthub--<room>--lead`, for a seat's canonical name whose `OPENRIG_SESSION_NAME` names the
+  lead, and for `AGENTHUB_SEAT=lead`; `agenthub--4genthub-min--lead-dev` is still refused with the
+  docs-only message. The autouse fixture now scrubs `AGENTHUB_SEAT` and `OPENRIG_SESSION_NAME` too, so
+  each case states the identity it tests. Red before the wrapper change: the three lead cases get `rc 1`.
+- Client `internal/clientguard`: five cases in `guard_test.go` (lead admitted in the checkout and in a
+  linked worktree, `lead-dev`/`lead2`/empty still refused, the lead's shared-checkout commit admitted
+  while another seat's is refused, the canonical session name parsed and five non-session names
+  rejected) and `TestTheLeadsPushAndCommitGoThrough` in `guard_e2e_test.go`, which pushes real branches
+  through the installed hooks and reads the remote's `main` back. The e2e fixture strips the canonical
+  session variable as well as the OpenRig one.
+- At this change: `14 passed` (commit wrapper), `7 passed` (policy modules), client `go test ./...` ->
+  35 packages ok, `cargo test --offline` -> 204 passed. Three `test_census_audits.py` cases are red in the
+  same run, on `S3-REDERIVE.py`'s anchors in `ai_docs/api-integration/surface-inventory.md`; this branch
+  touches neither `ai_docs/` nor the schema that instrument reads, so it is not this change's red.
+
+## 2026-10-18 - the context event's seat and change set are pinned on both writers (hub, branch 4genthub-min/context-payload)
+
+- `agenthub_go/fastmcp/task_management/domain/entities/context_change_test.go`: the builder's contract -
+  `implementation_notes.added` (add), `implementation_notes.removed` (remove), `labels` (set, both arrays
+  whole), `new_key` (add), `status` (set todo->done) in canonical order; a 522-byte value becomes
+  `{truncated, bytes, sha256}` with the true length and 64 hex; 300 changes keep a prefix of 8 KiB and
+  report `changes_truncated`; `ContextUpdatePayload` carries all six keys and serializes a nil set as `[]`.
+- `agenthub_go/fastmcp/task_management/application/services/context_update_attribution_test.go` and
+  `agenthub_go/fastmcp/task_management/application/use_cases/update_context_ledger_test.go`: each writer
+  runs through the REAL `TaskEventRecorder` over a capturing ledger - `actor_kind=seat`,
+  `actor_id=="4genthub-min/go-dev"` from `services.WithActor(SeatActor(...))`, the writer's own `origin`,
+  `level=task`, and a change whose path names the edited leaf.
+- `agenthub_go/fastmcp/server/httpapp/context_ledger_appender_test.go`:
+  `TestContextLedgerAppenderRefusesAContextUpdateWithoutAResolvedCaller` pins the empty-id rule for the
+  new method as the Append case already did.
+- `create_context_single_write_test.go`: `countingContextAppender` counts the widened seam's context
+  updates (the create path still writes exactly one); `countingCollectionAppender` records the
+  context_updated entry beside the progress note.
+- At this change: `go test ./...` in `agenthub_go` -> rc 0.

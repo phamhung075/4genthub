@@ -9,6 +9,16 @@ type OrderedMap[V any] struct {
 
 func NewOrderedMap[V any]() *OrderedMap[V] { return &OrderedMap[V]{m: map[string]V{}} }
 
+// OrderedFromMap wraps a plain map in an OrderedMap, its keys in sorted order. Where an order already
+// exists (the entity's own), keep it: this is for the places a dict crosses a boundary as a plain map.
+func OrderedFromMap(m map[string]any) *OrderedMap[any] {
+	out := NewOrderedMap[any]()
+	for _, key := range sortedMapKeys(m) {
+		out.Set(key, m[key])
+	}
+	return out
+}
+
 func (o *OrderedMap[V]) Set(k string, v V) {
 	if o.m == nil {
 		o.m = map[string]V{}

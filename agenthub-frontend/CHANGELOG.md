@@ -9,6 +9,11 @@
   - Page copy (`index.html`, `manifest.json`, landing, seats, connect-machine, prose) names the 4genteam client. NOT run (no local test run); `tsc --noEmit` is the check.
 
 ### Fixed
+- **The dashboard drawer has its own phone spec, so its two criteria are a command** - 2026-10-19
+  - `e2e/dashboard-drawer.spec.ts`: at 375x667 and 320x568 with `isMobile`/`hasTouch`, signed in, the drawer is opened through its toggle, the first project is expanded, and every VISIBLE row action is measured — opacity 1 with no hover, both sides at or above 40px, right edge inside the viewport — with the whole aside scanned for any element past the viewport. Tapping View Branch Details must open a `[role=dialog]`.
+  - Delete Branch is measured but not required: `BranchItem` renders it only when the branch is not `main`, and the seeded tree's branches are `main`.
+  - The phone walk never expands a project, which is how the 24x24 branch actions reached the deploy; this spec expands first and measures what renders.
+  - Measured on https://www.4genthub.com (the deployed 2c2164b5) at both widths: 2 passed in 6.5s. `npx tsc --noEmit -p .` clean.
 - **The drawer's branch-row actions meet the 40px touch floor too** - 2026-10-18
   - `src/components/ProjectList/components/BranchItem.tsx`: View Branch Details and Delete Branch were `h-6 w-6` with `w-3 h-3` glyphs and measured 24x24 in the live drawer; they are now `h-10 w-10` with `h-4 w-4` glyphs, the same box the project-row actions took in the 40x40 pass. The earlier pass missed these because the rows only render once a project is expanded, which the deployed phone walk never does.
   - Measured on https://www.4genthub.com at 375x667 and 320x568, signed in, drawer open, first project expanded: the live nodes are 24x24; setting exactly these classes on the live DOM makes them 40x40 and leaves the row's right edge where it was (362 in 375, 308 in 320), so the cluster still fits inside the drawer.

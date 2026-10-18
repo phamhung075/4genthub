@@ -32,9 +32,14 @@ type UnifiedContextRepository interface {
 // mirroring a47ae7b9-1d4b-4e5f-8b5a-9c3e5d2f8a1c.
 const zpUCSNamespace = "a47ae7b9-1d4b-4e5f-8b5a-9c3e5d2f8a1c"
 
-// ContextEventAppender appends context events to the ledger.
+// ContextEventAppender is the ledger seam of this service: the context_updated entry of an update,
+// and the plain append the task-level progress note still uses. The context write goes through
+// RecordContextUpdate - the recorder's method - so the seat attribution is settled in ONE place
+// (task_event_recorder.go) instead of being hardcoded by each writer.
 type ContextEventAppender interface {
 	Append(ctx context.Context, in entities.AppendTaskEvent) (*entities.TaskEvent, error)
+	RecordContextUpdate(ctx context.Context, taskID, level string, version int,
+		origin string, changes []entities.ContextChange, dropped int) (*entities.TaskEvent, error)
 }
 
 // UnifiedContextService mirrors UnifiedContextService: a single service for all
@@ -461,6 +466,7 @@ func (s *UnifiedContextService) UpdateContext(ctx context.Context, level, contex
 				ver = v
 			}
 		}
+		changes, dropped := entities.ContextChanges(existingDict, updatedData)
 		// A FAILED APPEND IS LOGGED, NOT DROPPED, and it is not returned: the context row write above
 		// has already landed, so failing here would report a saved context as a refusal, and the
 		// caller's best-effort contract (parity with the ported Python, which logs and continues) is
@@ -469,17 +475,12 @@ func (s *UnifiedContextService) UpdateContext(ctx context.Context, level, contex
 		// not land is a history the reader cannot tell apart from one that never happened - which is
 		// exactly how the 23505 of 2026-10-15 stayed hidden on the tasks whose status rows were
 		// already there (the loser of the collision was this append, and nothing said so).
-		if _, err := s.EventAppender.Append(ctx, entities.AppendTaskEvent{
-			TaskID:    contextID,
-			Kind:      entities.TaskEventKindContextUpdated,
-			ActorKind: entities.TaskEventActorSeat,
-			ActorID:   "context",
-			Payload: map[string]any{
-				"level":   level,
-				"id":      contextID,
-				"version": ver,
-			},
-		}); err != nil {
+		//
+		// WHO made the write is the recorder's decision (the seat the request named, else the user),
+		// not a literal here: `ActorID: "context"` was the defect this call replaced.
+		if _, err := s.EventAppender.RecordContextUpdate(
+			ctx, contextID, level, ver, "unified_context_service.update", changes, dropped,
+		); err != nil {
 			log.Printf("task context event NOT recorded for task %s (level %s): %v", contextID, level, err)
 		}
 	}

@@ -14,6 +14,7 @@ repository instead, and that recovery is one `git apply` away.
 from __future__ import annotations
 
 import importlib.util
+import json
 import os
 import subprocess
 import sys
@@ -310,7 +311,9 @@ def _no_ambient_seat_identity(monkeypatch: pytest.MonkeyPatch) -> None:
     """This suite runs INSIDE a seat, where AGENTHUB_SESSION_NAME is exported: inherited, every case is
     judged as a seat, and an inherited OWNER_DOCS_COMMIT would exempt them all. Each case says which."""
     monkeypatch.delenv("AGENTHUB_SESSION_NAME", raising=False)
+    monkeypatch.delenv("OPENRIG_SESSION_NAME", raising=False)
     monkeypatch.delenv("OWNER_DOCS_COMMIT", raising=False)
+    monkeypatch.delenv("AGENTHUB_SEAT", raising=False)
 
 
 def _seat_repo(tmp_path: Path) -> Path:
@@ -354,7 +357,10 @@ def test_the_check_judges_the_commits_path_set_and_not_the_index(
     assert rc == 1
     assert "docs-only commit refused" in capsys.readouterr().err
     assert _git(repo, "rev-parse", "HEAD").strip() == base, "a refused commit runs nothing"
-    assert list(_parked(repo).glob("*")) == [], "a refused commit parks nothing"
+    # Nothing is CAPTURED - but the refusal itself is recorded, which is the only trace git log can never hold.
+    assert sorted(entry.name for entry in _parked(repo).glob("*")) == ["refusals.jsonl"], (
+        "a refused commit parks no capture, only its refusal line"
+    )
 
     (repo / "AGENTS.md").write_text("three\n", encoding="utf-8")
     _git(repo, "add", "--", "AGENTS.md")  # a doc STAGED: the old hook's whole answer
@@ -415,6 +421,41 @@ def test_the_owner_host_and_the_owner_flag_are_exempt(
     assert _git(repo, "show", "HEAD:AGENTS.md") == "three\n"
 
 
+def test_the_lead_seat_lands_documentation_under_either_session_spelling(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys
+) -> None:
+    """The owner's 2026-10-18 ruling: the lead pushes and lands the docs, on both spellings a session is set in.
+    The exception is the seat KEY - a name that merely starts with it is another seat, and still refused."""
+    module = _module()
+    repo = _seat_repo(tmp_path)
+
+    # The canonical spelling alone.
+    (repo / "AGENTS.md").write_text("two\n", encoding="utf-8")
+    monkeypatch.setenv("AGENTHUB_SESSION_NAME", "agenthub--4genthub-min--lead")
+    assert _commit(module, repo, "-m", "docs: the lead's canonical", "--", "AGENTS.md") == 0, capsys.readouterr().err
+    assert _git(repo, "show", "HEAD:AGENTS.md") == "two\n"
+
+    # A seat's canonical name, with the lead in the OpenRig spelling the other runtimes set.
+    (repo / "AGENTS.md").write_text("three\n", encoding="utf-8")
+    monkeypatch.setenv("AGENTHUB_SESSION_NAME", SEAT)
+    monkeypatch.setenv("OPENRIG_SESSION_NAME", "4genthub-min-lead@4genthub-min")
+    assert _commit(module, repo, "-m", "docs: the lead's openrig", "--", "AGENTS.md") == 0, capsys.readouterr().err
+    assert _git(repo, "show", "HEAD:AGENTS.md") == "three\n"
+    monkeypatch.delenv("OPENRIG_SESSION_NAME")
+
+    # The lead's seat key is enough when it is the variable the runtime exported.
+    monkeypatch.setenv("AGENTHUB_SEAT", "lead")
+    (repo / "AGENTS.md").write_text("four\n", encoding="utf-8")
+    assert _commit(module, repo, "-m", "docs: the lead's key", "--", "AGENTS.md") == 0, capsys.readouterr().err
+
+    # Another seat's session, including one that starts with "lead", is refused as before.
+    monkeypatch.delenv("AGENTHUB_SEAT")
+    monkeypatch.setenv("AGENTHUB_SESSION_NAME", "agenthub--4genthub-min--lead-dev")
+    (repo / "AGENTS.md").write_text("five\n", encoding="utf-8")
+    assert _commit(module, repo, "-m", "docs: not the lead", "--", "AGENTS.md") == 1
+    assert "docs-only commit refused" in capsys.readouterr().err
+
+
 def test_nothing_to_commit_is_not_a_docs_refusal(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys
 ) -> None:
@@ -428,3 +469,34 @@ def test_nothing_to_commit_is_not_a_docs_refusal(
 
     assert "docs-only commit refused" not in capsys.readouterr().err
     assert rc == 1, "git's own 'nothing to commit' survives"
+
+
+def test_a_refusal_leaves_a_line_the_metrics_can_read_without_the_paths(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys
+) -> None:
+    """The metrics extractor cannot see a refused commit in `git log` - it never ran - so the wrapper
+    records it here: the rule, the path CLASSES, the seat and the session, and never the paths (O9a)."""
+    module = _module()
+    repo = _seat_repo(tmp_path)
+    monkeypatch.setenv("AGENTHUB_SESSION_NAME", SEAT)
+    monkeypatch.setenv("AGENTHUB_SEAT", "go-dev")
+    for shape in ("AGENTS.md", "TEST-CHANGELOG.md"):
+        (repo / shape).write_text("two\n", encoding="utf-8")
+
+    assert _commit(module, repo, "-m", "docs: the plan", "--", "AGENTS.md", "TEST-CHANGELOG.md") == 1
+    assert "docs-only commit refused" in capsys.readouterr().err
+    spool = _parked(repo) / "refusals.jsonl"
+    lines = [json.loads(line) for line in spool.read_text(encoding="utf-8").splitlines()]
+    assert len(lines) == 1
+    record = lines[0]
+    assert record["rule"] == "docs_only"
+    assert (record["docs"], record["code"]) == (2, 0)
+    assert (record["seat"], record["session"]) == ("go-dev", SEAT)
+    raw = spool.read_text(encoding="utf-8")
+    for path in ("AGENTS.md", "TEST-CHANGELOG.md"):
+        assert path not in raw, "a refusal records classes, never paths"
+
+    # Each refusal gets its own id, so the extractor can tell two apart.
+    assert _commit(module, repo, "-m", "docs: again", "--", "AGENTS.md") == 1
+    again = spool.read_text(encoding="utf-8").splitlines()
+    assert len(again) == 2 and json.loads(again[0])["id"] != json.loads(again[1])["id"]
