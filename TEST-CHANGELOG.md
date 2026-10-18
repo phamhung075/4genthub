@@ -6691,4 +6691,8 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
   it and says so, and the reviewer's client link is detached at the parent's gitlink. Under the old
   `Branch == ""` skip the case fails (`<<legacy>>: cleared` absent); with the skip dropped it passes.
   Real repository and real worktrees, as the package's other cases are.
+- Follow-up on the architect's guard (`70aaa0fe`): `TestEnsureRefusesToClearADetachedLegacyOnNoBranch`
+  detaches the reviewer's legacy, commits a file only that worktree holds, and pins that the migration
+  refuses and names it, keeps the legacy at that commit, places no link for the seat (blocked on the
+  create path too), and returns nil. It fails on the guardless tip `c9dfee7` and passes with the guard.
 - At this change: `go vet ./...` clean and `go test -count=1 ./...` green in `agenthub_client`.
