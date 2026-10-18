@@ -56,15 +56,19 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import json
 import os
 import re
 import shutil
 import subprocess
 import sys
 import time
+from datetime import datetime, timezone
 from pathlib import Path
 
 PARKED_DIRNAME = "parked-diffs"
+#: A refused commit never runs, so this file is the only durable trace the metrics extractor can read.
+REFUSALS_NAME = "refusals.jsonl"
 MANIFEST_NAME = "MANIFEST.txt"
 DEFAULT_KEEP_DAYS = 7.0
 #: The seam a test replaces to stage the death without killing a real process.
@@ -168,6 +172,36 @@ def docs_only_refusal(repo: Path, commit_args: list[str]) -> str | None:
     if not paths or any(not is_document(path) for path in paths):
         return None
     return DOCS_ONLY_REFUSAL
+
+
+def path_classes(paths: list[str]) -> dict[str, int]:
+    """A refused path set as its CLASSES: documents against everything else. Never the paths themselves
+    (O9a) - a review needs to tell a docs-only refusal from a code one, not which files a seat tried."""
+    docs = sum(1 for path in paths if is_document(path))
+    return {"docs": docs, "code": len(paths) - docs}
+
+
+def record_refusal(parked: Path, rule: str, paths: list[str]) -> Path:
+    """Append one line for a refusal: the only durable trace of a commit that never ran.
+
+    A refused commit leaves no `git log` entry and no run directory, so `4genteam room metrics` cannot
+    otherwise see it. The line carries the rule, the path classes, the seat and the session; it is written
+    before the refusal is printed, so a caller that reads the message can also audit the refusal.
+    """
+    stamp = datetime.now(timezone.utc)
+    line = {
+        "id": stamp.strftime("%Y%m%dT%H%M%S%f") + f"-{os.getpid()}",
+        "ts": stamp.isoformat(),
+        "seat": os.environ.get(SEAT_ENV, ""),
+        "session": os.environ.get(SEAT_SESSION_ENV, ""),
+        "rule": rule,
+        **path_classes(paths),
+    }
+    spool = parked / REFUSALS_NAME
+    descriptor = os.open(spool, os.O_APPEND | os.O_CREAT | os.O_WRONLY, 0o600)
+    with os.fdopen(descriptor, "a", encoding="utf-8") as handle:
+        handle.write(json.dumps(line, sort_keys=True) + "\n")
+    return spool
 
 
 def repo_root(start: Path) -> Path | None:
@@ -407,6 +441,7 @@ def main(argv: list[str] | None = None) -> int:
     # Before anything is parked: a refused commit runs nothing, so it has nothing to capture.
     refusal = docs_only_refusal(repo, commit_args)
     if refusal is not None:
+        record_refusal(parked, "docs_only", commit_paths(repo, commit_args))
         print(refusal, file=sys.stderr)
         return 1
 
