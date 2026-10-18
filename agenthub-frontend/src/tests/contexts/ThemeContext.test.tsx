@@ -2,12 +2,6 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from './../test-utils';
 import { vi } from 'vitest';
 import { ThemeContext, ThemeProvider } from '../../contexts/ThemeContext';
-import { applyThemeToRoot } from '../../theme/themeConfig';
-
-// Mock the theme config module
-vi.mock('../../theme/themeConfig', () => ({
-  applyThemeToRoot: vi.fn(),
-}));
 
 // Mock localStorage
 const localStorageMock = {
@@ -43,12 +37,10 @@ const TestComponent = () => {
 };
 
 describe('ThemeContext', () => {
-  const mockApplyThemeToRoot = applyThemeToRoot as ReturnType<typeof vi.fn>;
-
   beforeEach(() => {
     vi.clearAllMocks();
     document.documentElement.classList.remove('light', 'dark');
-    
+
     // Default matchMedia mock
     matchMediaMock.mockImplementation((query) => ({
       matches: false,
@@ -63,7 +55,7 @@ describe('ThemeContext', () => {
   describe('ThemeProvider', () => {
     it('provides default theme as light', () => {
       localStorageMock.getItem.mockReturnValue(null);
-      
+
       render(
         <ThemeProvider>
           <TestComponent />
@@ -75,7 +67,7 @@ describe('ThemeContext', () => {
 
     it('uses custom default theme', () => {
       localStorageMock.getItem.mockReturnValue(null);
-      
+
       render(
         <ThemeProvider defaultTheme="dark">
           <TestComponent />
@@ -87,7 +79,7 @@ describe('ThemeContext', () => {
 
     it('loads theme from localStorage', () => {
       localStorageMock.getItem.mockReturnValue('dark');
-      
+
       render(
         <ThemeProvider>
           <TestComponent />
@@ -106,7 +98,7 @@ describe('ThemeContext', () => {
         addEventListener: vi.fn(),
         removeEventListener: vi.fn(),
       }));
-      
+
       render(
         <ThemeProvider>
           <TestComponent />
@@ -118,7 +110,7 @@ describe('ThemeContext', () => {
 
     it('applies theme class to document root', () => {
       localStorageMock.getItem.mockReturnValue('dark');
-      
+
       render(
         <ThemeProvider>
           <TestComponent />
@@ -129,21 +121,9 @@ describe('ThemeContext', () => {
       expect(document.documentElement.classList.contains('light')).toBe(false);
     });
 
-    it('calls applyThemeToRoot with correct parameter', () => {
-      localStorageMock.getItem.mockReturnValue('dark');
-      
-      render(
-        <ThemeProvider>
-          <TestComponent />
-        </ThemeProvider>
-      );
-
-      expect(mockApplyThemeToRoot).toHaveBeenCalledWith(true);
-    });
-
     it('saves theme to localStorage', () => {
       localStorageMock.getItem.mockReturnValue('light');
-      
+
       render(
         <ThemeProvider>
           <TestComponent />
@@ -155,7 +135,7 @@ describe('ThemeContext', () => {
 
     it('toggles theme correctly', () => {
       localStorageMock.getItem.mockReturnValue('light');
-      
+
       render(
         <ThemeProvider>
           <TestComponent />
@@ -169,12 +149,11 @@ describe('ThemeContext', () => {
       expect(screen.getByText('Theme: dark')).toBeInTheDocument();
       expect(document.documentElement.classList.contains('dark')).toBe(true);
       expect(localStorageMock.setItem).toHaveBeenCalledWith('theme', 'dark');
-      expect(mockApplyThemeToRoot).toHaveBeenCalledWith(true);
     });
 
     it('sets theme directly', () => {
       localStorageMock.getItem.mockReturnValue('light');
-      
+
       render(
         <ThemeProvider>
           <TestComponent />
@@ -190,7 +169,7 @@ describe('ThemeContext', () => {
 
     it('removes previous theme class when changing', () => {
       localStorageMock.getItem.mockReturnValue('light');
-      
+
       render(
         <ThemeProvider>
           <TestComponent />
@@ -208,14 +187,14 @@ describe('ThemeContext', () => {
     it('listens to system theme changes', () => {
       const addEventListener = vi.fn();
       const removeEventListener = vi.fn();
-      
+
       localStorageMock.getItem.mockReturnValue(null);
       matchMediaMock.mockImplementation(() => ({
         matches: false,
         addEventListener,
         removeEventListener,
       }));
-      
+
       const { unmount } = render(
         <ThemeProvider>
           <TestComponent />
@@ -232,14 +211,14 @@ describe('ThemeContext', () => {
     it('uses fallback listeners for older browsers', () => {
       const addListener = vi.fn();
       const removeListener = vi.fn();
-      
+
       localStorageMock.getItem.mockReturnValue(null);
       matchMediaMock.mockImplementation(() => ({
         matches: false,
         addListener,
         removeListener,
       }));
-      
+
       const { unmount } = render(
         <ThemeProvider>
           <TestComponent />
@@ -258,14 +237,14 @@ describe('ThemeContext', () => {
       const addEventListener = vi.fn((event, handler) => {
         if (event === 'change') changeHandler = handler;
       });
-      
+
       localStorageMock.getItem.mockReturnValue(null);
       matchMediaMock.mockImplementation(() => ({
         matches: false,
         addEventListener,
         removeEventListener: vi.fn(),
       }));
-      
+
       render(
         <ThemeProvider>
           <TestComponent />
@@ -288,14 +267,14 @@ describe('ThemeContext', () => {
       const addEventListener = vi.fn((event, handler) => {
         if (event === 'change') changeHandler = handler;
       });
-      
+
       localStorageMock.getItem.mockReturnValue('light');
       matchMediaMock.mockImplementation(() => ({
         matches: false,
         addEventListener,
         removeEventListener: vi.fn(),
       }));
-      
+
       render(
         <ThemeProvider>
           <TestComponent />
@@ -313,7 +292,7 @@ describe('ThemeContext', () => {
 
     it('validates saved theme from localStorage', () => {
       localStorageMock.getItem.mockReturnValue('invalid-theme');
-      
+
       render(
         <ThemeProvider>
           <TestComponent />
@@ -326,7 +305,7 @@ describe('ThemeContext', () => {
 
     it('renders multiple children correctly', () => {
       localStorageMock.getItem.mockReturnValue(null);
-      
+
       render(
         <ThemeProvider>
           <div>First Child</div>
@@ -344,7 +323,7 @@ describe('ThemeContext', () => {
   describe('ThemeContext without Provider', () => {
     it('returns undefined when used outside provider', () => {
       render(<TestComponent />);
-      
+
       expect(screen.getByText('No context')).toBeInTheDocument();
     });
   });

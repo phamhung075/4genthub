@@ -1010,6 +1010,192 @@ Hub task `c94cecfc`. The client entry that rides with the code is
 - MEASURED in the fe worktree: `npx vitest run src/tests/hooks` -> 17 files, 135 tests passed (129 before, 6 added); `npx tsc --noEmit` clean.
 - MEASURED, whole suite: `npx vitest run` -> 123 files, 1 failed | 122 passed (1899 tests). The one failure is `src/tests/pages/HelpSetup.test.tsx:21` (`getMultipleElementsFoundError`) and it is PRE-EXISTING, reproduced identically in the shared checkout at main without this branch; it is reported to the lead as its own row.
 
+## 2026-10-12 - apiV2's unparseable-body failure names the status, and the panel test stubs what the browser really showed
+
+- `agenthub-frontend/src/tests/services/apiV2.test.ts`: the "response without detail" case (status 400,
+  `json()` rejects) now asserts `Request failed: HTTP 400` rather than the bare `Request failed` - it pins the
+  status in the fallback, which is the point of the change.
+- `agenthub-frontend/src/tests/components/RoomDecisionPanel.test.tsx`: the unreadable-list case stubs
+  `Request failed: HTTP 404`, the message the browser produced on the OF4 stack, and asserts that text through
+  `role="alert"`. It previously stubbed `404 page not found`, which no live response ever produced - the mux's
+  404 is not JSON, so the client's fallback, not the body, is what reaches the panel.
+- No other case asserts that message: the grep over `agenthub-frontend/src` for `Request failed` returned only
+  these two files, a stubbed error in `FeedbackPage.test.tsx` (its own mock, unaffected by the change) and a
+  debug log line in `utils/requestDeduplication.ts`.
+
+## 2026-10-12 - componentTypes.test.ts: the dangling import of a deleted component is dropped
+
+- `agenthub-frontend/src/tests/types/componentTypes.test.ts` loses the type-only `SidebarProps` import
+  from `components/ui/sidebar`, which no assertion in the file referenced. That unreferenced import is
+  exactly why the component counted as dead, and it is removed in the same change as
+  `src/components/ui/sidebar.tsx` itself, so nothing imports a module that no longer exists.
+- The same diff touches three more lines without changing a case: it trims trailing whitespace on two
+  lines (in the Toast-types and Progress-state cases) and adds the file's missing final newline. They are
+  named here because the reader checks a changelog line against the diff, and "loses one line" alone did
+  not match the file's four-line change.
+- No case is added, removed or re-pinned: the file's cases are unchanged, and the touched lines are the
+  import that no test read, two trailing-whitespace trims and the EOF newline.
+
+## 2026-10-12 - RoomDecisionPanel: the stored questions are rendered verbatim, and the answer payload is pinned
+
+- `agenthub-frontend/src/tests/components/RoomDecisionPanel.test.tsx` (new, 5 cases) covers the frozen
+  lane-1 contract at the panel: the question text and every option label render from the stored
+  `questions` verbatim, with the author seat key; a click plus "Send answer" posts exactly one
+  `{question_id, option_id}` for `d1`/`q1` to the room named by the URL; a row that is only `answered`
+  stays in the list as "awaiting the room" with its send disabled, while a `resolved` row is not
+  rendered at all; a refused POST (`not-the-asked-human`) and an unreadable list (`404 page not found`)
+  both surface through `role="alert"` instead of disappearing.
+- The SERVICES are mocked and the real hooks run (query key, `enabled`, invalidation), so the file pins
+  behaviour and payload rather than a mock echo. On the pre-change tree the suite cannot even import the
+  panel, and one case caught a real defect while being written: the send button for an
+  already-recorded question was enabled and would have posted a `409`.
+- The route itself is verified against the running server when go-dev's S1 routes land (task `df2b8cd6`);
+  until then the panel's list error IS the honest state, and the suite asserts that it is rendered.
+
+## 2026-10-11 - useBranchSummaries: the empty fallback's identity is pinned, and the /dashboard loop ends
+
+- `agenthub-frontend/src/tests/useBranchSummaries.test.tsx` gains one case: **the hook returns ONE
+  identity for its empty fallback, across renders and across instances.** It asserts `toBe` and not
+  `toEqual` - `[]` equals `[]` but is not the same array, and that difference was the defect:
+  `data?.branches ?? []` minted a fresh array on every render while `ProjectList` memoized `taskCounts`
+  on it and `useProjectAnimations` wrote that object into state while depending on it, so on a cold
+  `/dashboard` (no query cache, before the query resolves) React logged `Maximum update depth
+  exceeded` until the data arrived.
+- **The case was observed RED before it was green**, in the same worktree, by reverse-applying the hook
+  change and keeping the test: 1 failed | 4 passed, the failure exactly on
+  `expect(result.current.summaries).toBe(summaries)`; with the change restored, 1 file / 5 passed.
+  `npx tsc --noEmit -p .` -> 0 `error TS` in both states.
+- Browser side on the same tree, `check-responsive.mjs --routes /dashboard` against the local build:
+  **0 console errors and 0 failed requests at desktop, laptop and mobile**, against the unfixed arm's 11
+  (laptop, 409 characters rendered) and 15 (mobile, 214). The character counts are identical in both
+  arms, so the difference is the loop alone.
+
+## 2026-10-11 - the shell spec's band: WIDTHS gains 768 and 1023, and the theme click learns where it is
+
+- `agenthub-frontend/e2e/shell.spec.ts`, on the architect's band ruling
+  (`ARCH-RULING-768-1023-band-fit-2026-10-11.md`): `WIDTHS` is `[768, 1023, 1280, 1440]`, and the four
+  assertions the ruling names run per reading - the header's own box (`headerBox.scrollWidth <=
+  clientWidth`), the document fit it already asserted (now carried to the band), the protected structure
+  (the wordmark visible, and the tablet strip's nine controls at 768 and 1023, counted rather than
+  inferred from the fit), and the yield rule.
+- The yield rule is asserted on the profile trigger's OWN button, read twice: `textContent` as the DOM
+  holds it and `innerText` as the browser RENDERS it, whitespace stripped from both. In the band the
+  name/email block is still in the DOM and paints nothing (1 rendered character of 21); from 1024 the two
+  are equal. Two instruments were rejected first and both are recorded, because either would have passed
+  for the wrong reason: the trigger was being read as the FIRST button in the right group, which is the
+  WebSocket status ("Connected", 9 characters, at every width - the reason a 768 assertion once passed),
+  and comparing against the account's username couples the rule to a credential the test process must
+  never print. Only lengths reach a message.
+- `ensureTheme` addresses the theme control by the VISIBLE button of either band - by text (the glow
+  menu's, whose rotated back face makes its accessible name "Dark Dark") or by `title` (the tablet
+  strip's, which is icon-only: `Header.tsx:190-196`). `.first()` of a text filter bound to the glow toggle
+  at 768, which is first in the DOM and inside `div.hidden.lg:block`, so the click waited for an element
+  that could never become actionable; that is how the band first failed as a timeout instead of as a
+  measurement. The main test now caps a single action at 15s (`page.setDefaultTimeout`) while its own
+  ceiling pays for eight readings and sixteen screenshots.
+- A3 keeps its 768/900/1023 widths and its sub-label assertion, and its bound is now the strict
+  `<= innerWidth + 1` rather than parity: at 768 the document measures 768/768, where the parent `39bd2cda`
+  measured 220px of drag (988/768) and 88px at 900 (988/900). CORRECTED 2026-10-11: this line first cited
+  860/768 as the before reading, which does not reproduce from the parent.
+
+## 2026-10-11 - the shell spec gains R1/R2/A3, and the palette gets a parity test
+
+- `agenthub-frontend/e2e/shell.spec.ts` gains three cases, each named for the gate item it reads:
+  - R1 (`the login button paints --color-accent, signed out`): `page.goto('/login')` and NO credential
+    is used at all - the read is `getComputedStyle(button).backgroundColor` beside the root
+    `--color-accent`, so a colour cannot cost a login. It asserts the page is in the default light
+    theme first, because MUI's contained override names the light palette's button colour; a surprise
+    in the mode fails there rather than as a hue mismatch that would read as a palette bug.
+  - R2 (`the mobile drawer starts where the header ends`): at 390 the drawer's `top` must equal the
+    header's own rect, before and after a resize to 500. The drawer slides in (`animate-slide-in`), so
+    the read settles 500ms first, as the shell test's own colour reading already does. A first version
+    read 64px under a 73px header and the diagnostic (offsetHeight/clientHeight/rect/zoom/transform)
+    showed the header's own `offsetHeight` was 73 already: the instrument was mid-animation, not the
+    code wrong, and the settle is the fix.
+  - A3 (`the sub-label yields from md, and the tablet band does not regress`): 768/900/1023, asserting
+    the sub-label is hidden and that the document's OVERFLOW is no worse than the pre-fix baseline.
+    The lg test's strict `<= innerWidth + 1` assertion was deliberately NOT extended to these widths in
+    this change, because the baseline itself failed it at 768 (the parent `39bd2cda` measured 220px of
+    drag there, 988/768, and 88px at 900, 988/900) and parity was the honest bound for that moment, a
+    number the tablet-fit item then tightened. SUPERSEDED the same day - the band now fits, and A3 asserts
+    the strict bound (see the section above).
+    CORRECTED 2026-10-11: this bullet first cited 860/768 and called the bound "92px of overflow". 860/768
+    does not reproduce from the parent, and 92px is the ruling's content deficit against the 720px box,
+    not the document's drag. SPEC TEXT also changed the same day, with NO VALUE CHANGE: the comment above
+    A3 in `shell.spec.ts` no longer claims parity with the parent - it says the bound is deliberately
+    stricter than the parent's 220px, chosen so a regression to 150px still fails.
+- `src/tests/theme/themeConfig.test.ts` gains a token-parity case that reads `src/styles/theme.css`
+  through `readFileSync(resolve(process.cwd(), ...))` - the convention `LandingPage.head.test.ts`
+  already uses; `new URL(..., import.meta.url)` is not file-scheme under vitest and fails with
+  "The URL must be of scheme file". It asserts, for both modes, that `primary`/`primaryHover` are the
+  block's own `--color-accent`/`--color-accent-hover` and that the button and info entries follow
+  them. A literal pin cannot catch a second source; this one fails the moment the palette and the CSS
+  drift apart.
+- Two literal pins moved with the palette and are NAMED rather than re-pinned quietly:
+  `light.primary` `#2563eb` -> `#4f46e5`, `dark.primary` `#60a5fa` -> `#818cf8`, and the dark
+  `buttonPrimaryBg` pin `#3b82f6` -> `#818cf8` (the light button case was already an equality against
+  `primary`). The violet `secondary*` keys left the required-property list with the keys themselves.
+  The consistency cases (`buttonPrimaryBg === primary`, `info === primary`, `infoDark === primaryHover`)
+  were not touched: they still hold and are why those entries moved with the accent.
+- Green at the change, from `agenthub-frontend`: `npx vitest run src/tests/theme/themeConfig.test.ts`
+  -> 1 file / 12 tests passed; `npx vitest run src/tests/components/Header.test.tsx` -> 1 file / 19
+  passed; `E2E_BASE_URL=http://localhost:3800 npx playwright test e2e/shell.spec.ts --workers=1` ->
+  **4 passed (27.0s)**, which is the pre-existing lg shell test plus the three new cases.
+- ONE CASE DELETED, NOT RE-PINNED, and the FULL SUITE is what found it: `src/tests/theme/muiTheme.test.ts`
+  asserted `lightTheme.palette.secondary` against the violet keys. R1 deletes that palette entry, so the
+  case asserts a thing that no longer exists and it went - with the three dead `secondary*` keys it read
+  from the file's mocked `themeConfig`, in both modes. It was invisible to the themeConfig run because the
+  two files own different halves of the palette: themeConfig.test.ts pins the values, muiTheme.test.ts
+  pins the mapping. The primary case next to it was left alone, because it is already an equality against
+  `themeConfig` and moved with the palette for free.
+- Green after that fix, all measured: `npx vitest run src/tests/theme/muiTheme.test.ts` -> 20 passed;
+  `npx vite build` -> the production artefact (entry `assets/index-DT9_WKhP.js`, 292348 B, minified,
+  NODE_ENV production). CORRECTED 2026-10-11: this line first named `index-CGM811WN.js`, which does not
+  reproduce from a clean build - a clean build of `24c0c923` yields `index-DT9_WKhP.js` at the same
+  292348 B, so the first name came from the working tree rather than the tree. The lead's clean build at
+  the branch tip `1ebe8ae5` agrees in shape: entry `assets/index-CkVSyQOW.js`, 292.37 kB, its full suite
+  122 files / 1878 tests / 0 failed, 0 `error TS`; `npx vitest run` for the whole suite -> **122 files / 1878 tests passed,
+  0 failed, 102.8s** - one case fewer than the 1879 the failing run counted, which is exactly the
+  deletion above and not a lost assertion. The suite's stderr still prints the pre-existing
+  setState-in-passive-effect React error; it is the WS item on `qitem-20261011204043`, not a failure.
+
+## 2026-10-11 - the shell spec's fit assertion becomes geometric, and the one palette pin the AA fix moves
+
+- THE SHELL SPEC'S FIT ASSERTION, REPLACED RATHER THAN RELAXED:
+  `agenthub-frontend/e2e/shell.spec.ts` asserted `ul.scrollWidth <= ul.clientWidth + 1`, and it read
+  735 vs 732 after the rows were narrowed - the same 3px it read as 751/748 before them, for ANY
+  content. Subpixel rounding cannot distinguish a fitting list from a squeezed one, so the assertion is
+  now geometric: every item's own right edge inside the navigation's box, and consecutive items not
+  overlapping. The ratio stays in the reading, marked as a record rather than evidence.
+- ONE PIN MOVED, AND IT IS NAMED: `src/tests/theme/themeConfig.test.ts` pinned `light.primary` to
+  `#3b82f6`; the auditing contrast fix changes that value to `#2563eb`, so the literal pin moved with
+  it. The consistency cases (`buttonPrimaryBg === primary`, `buttonPrimaryHover === primaryHover`,
+  `info === primary`, `infoDark === primaryHover`) were NOT re-pinned - they still hold, and they are
+  why `info` and `infoDark` moved in the palette alongside `primary`.
+- Green at the change, from `agenthub-frontend`: `npx vitest run src/tests/theme
+  src/tests/components/ProjectList/components/BranchItem.test.tsx` -> 3 files / 49 tests passed;
+  `npx vitest run src/tests/App.test.tsx src/tests/components/ProjectList` -> 6 files / 104 tests
+  passed; `npx playwright test e2e/shell.spec.ts --workers=1` -> 1 passed.
+
+## 2026-10-11 - the shell spec, and the three theme cases that existed only for the deleted writer
+
+- ADDED `agenthub-frontend/e2e/shell.spec.ts` (Playwright; one worker; run as
+  `E2E_BASE_URL=... npx playwright test e2e/shell.spec.ts --workers=1`). It signs in, then reads the
+  shell at 1280 and 1440 in BOTH themes: every navigation item one line and 36px tall, the items' tops
+  identical, exactly one `h1` and it is the page's own title, the header's own box inside the viewport,
+  and the navigation's painted hues - each hue named by the element that painted it, so an unexpected
+  colour in a failure names its own source instead of only its value. It settles 500ms after a theme
+  change before reading: the nav faces carry a 300ms colour transition, and a reading taken mid-flight
+  reported a blend of the old and new colour that no source line could explain. It did that twice
+  before the wait went in, which is why the wait is commented rather than silent.
+- REMOVED from `src/tests/theme/themeConfig.test.ts` the `getThemeColors`, `cssVariables` and
+  `applyThemeToRoot` cases, and from `src/tests/contexts/ThemeContext.test.tsx` the module mock, the
+  handle and the two assertions on `applyThemeToRoot`. Every one of them tested the writer deleted in
+  the same commit; the palettes' own cases stay, because `muiTheme.ts` still consumes them.
+- NOT RE-PINNED: no case was edited or relaxed to keep passing, and none was deleted beyond the code it
+  tested. The touched suites green at the change: `npx vitest run
+  src/tests/theme/themeConfig.test.ts src/tests/contexts/ThemeContext.test.tsx` -> 2 files / 26 tests
+  passed.
 ## 2026-10-15 - the help page shows the connector command twice on purpose
 
 - CHANGED `agenthub-frontend/src/tests/pages/HelpSetup.test.tsx`: the connector-command assertion takes every occurrence (`getAllByText`, as the neighboring scope assertion already did) instead of demanding a unique match - the expanded section teaches that command twice, in the copyable "Step 3: Send a session" box and in the connector guide's own one-shot line, and the two strings became identical when `a98c5f41` moved the box to `<session-name>`.
@@ -6828,6 +7014,12 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
   name `AGENTS.md:160`; with the line removed it passes in 0.04s. Two things it caught while being
   written: `git grep -f` takes every line of the data file as a pattern, so its `#` comments matched
   the whole tree (6097 hits, 30s) until the patterns were written comment-free to a scratch file.
+- `e2e/dashboard-drawer.spec.ts` (Playwright, chromium): the dashboard drawer at 375x667 and
+  320x568 under `isMobile`/`hasTouch` - opened through its toggle, first project expanded, then each
+  VISIBLE row action measured for opacity with no hover, the 40px floor and its right edge, the
+  aside scanned for an element past the viewport, and View Branch Details tapped for a
+  `[role=dialog]`. Delete Branch is optional: `BranchItem` renders it only off `main`. Live against
+  the deployed origin: 2 passed in 6.5s. `npx tsc --noEmit -p .` clean; vitest does not run e2e.
 - `TestAPrunedPathWasDeletedByACommit` joins the pruned-path guard: every entry in
   `testdata/pruned_paths.txt` must have a deletion commit in `git log --all --diff-filter=D`, because a
   typo sits in the data file matching nothing and guarding nothing while the list looks maintained.

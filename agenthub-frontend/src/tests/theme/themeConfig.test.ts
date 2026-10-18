@@ -1,4 +1,6 @@
-import { themeConfig, getThemeColors, cssVariables, applyThemeToRoot } from '../../theme/themeConfig';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { themeConfig } from '../../theme/themeConfig';
 
 describe('themeConfig', () => {
   describe('theme structure', () => {
@@ -10,7 +12,6 @@ describe('themeConfig', () => {
     it('light theme has all required color properties', () => {
       const requiredProperties = [
         'primary', 'primaryHover', 'primaryLight', 'primaryDark',
-        'secondary', 'secondaryHover', 'secondaryLight', 'secondaryDark',
         'background', 'backgroundSecondary', 'backgroundTertiary', 'backgroundHover', 'backgroundActive',
         'surface', 'surfaceHover', 'surfaceBorder', 'surfaceBorderHover',
         'text', 'textSecondary', 'textTertiary', 'textDisabled', 'textInverse',
@@ -36,7 +37,7 @@ describe('themeConfig', () => {
     it('dark theme has all required color properties', () => {
       const lightKeys = Object.keys(themeConfig.light);
       const darkKeys = Object.keys(themeConfig.dark);
-      
+
       expect(darkKeys).toEqual(lightKeys);
     });
 
@@ -57,13 +58,13 @@ describe('themeConfig', () => {
     it('light theme uses appropriate light colors', () => {
       expect(themeConfig.light.background).toBe('#ffffff');
       expect(themeConfig.light.text).toBe('#111827'); // gray-900
-      expect(themeConfig.light.primary).toBe('#3b82f6'); // blue-500
+      expect(themeConfig.light.primary).toBe('#4f46e5'); // the token layer's --color-accent
     });
 
     it('dark theme uses appropriate dark colors', () => {
       expect(themeConfig.dark.background).toBe('#0f172a'); // slate-900
       expect(themeConfig.dark.text).toBe('#f1f5f9'); // slate-100
-      expect(themeConfig.dark.primary).toBe('#60a5fa'); // blue-400
+      expect(themeConfig.dark.primary).toBe('#818cf8'); // the token layer's dark --color-accent
     });
 
     it('maintains contrast between background and text', () => {
@@ -77,119 +78,6 @@ describe('themeConfig', () => {
     });
   });
 
-  describe('getThemeColors', () => {
-    it('returns light theme colors when isDark is false', () => {
-      const colors = getThemeColors(false);
-      expect(colors).toBe(themeConfig.light);
-    });
-
-    it('returns dark theme colors when isDark is true', () => {
-      const colors = getThemeColors(true);
-      expect(colors).toBe(themeConfig.dark);
-    });
-  });
-
-  describe('cssVariables', () => {
-    it('maps CSS variables to theme properties', () => {
-      expect(cssVariables['--color-primary']).toBe('primary');
-      expect(cssVariables['--color-background']).toBe('background');
-      expect(cssVariables['--color-text']).toBe('text');
-    });
-
-    it('has CSS variables for all major color categories', () => {
-      const variableKeys = Object.keys(cssVariables);
-      
-      // Check primary colors
-      expect(variableKeys).toContain('--color-primary');
-      expect(variableKeys).toContain('--color-primary-hover');
-      expect(variableKeys).toContain('--color-primary-light');
-      expect(variableKeys).toContain('--color-primary-dark');
-
-      // Check background colors
-      expect(variableKeys).toContain('--color-background');
-      expect(variableKeys).toContain('--color-background-secondary');
-      expect(variableKeys).toContain('--color-background-tertiary');
-
-      // Check text colors
-      expect(variableKeys).toContain('--color-text');
-      expect(variableKeys).toContain('--color-text-secondary');
-      expect(variableKeys).toContain('--color-text-tertiary');
-
-      // Check status colors
-      expect(variableKeys).toContain('--color-success');
-      expect(variableKeys).toContain('--color-warning');
-      expect(variableKeys).toContain('--color-error');
-      expect(variableKeys).toContain('--color-info');
-    });
-
-    it('all CSS variable values correspond to valid theme properties', () => {
-      const lightThemeKeys = Object.keys(themeConfig.light);
-      
-      Object.values(cssVariables).forEach(themeKey => {
-        expect(lightThemeKeys).toContain(themeKey);
-      });
-    });
-  });
-
-  describe('applyThemeToRoot', () => {
-    let mockSetProperty: any;
-    let originalDocumentElement: HTMLElement;
-
-    beforeEach(() => {
-      mockSetProperty = vi.fn();
-      originalDocumentElement = document.documentElement;
-      
-      // Mock document.documentElement.style.setProperty
-      Object.defineProperty(document, 'documentElement', {
-        value: {
-          style: {
-            setProperty: mockSetProperty
-          }
-        },
-        writable: true,
-        configurable: true
-      });
-    });
-
-    afterEach(() => {
-      document.documentElement = originalDocumentElement;
-    });
-
-    it('applies light theme CSS variables to root', () => {
-      applyThemeToRoot(false);
-
-      expect(mockSetProperty).toHaveBeenCalledWith('--color-primary', themeConfig.light.primary);
-      expect(mockSetProperty).toHaveBeenCalledWith('--color-background', themeConfig.light.background);
-      expect(mockSetProperty).toHaveBeenCalledWith('--color-text', themeConfig.light.text);
-    });
-
-    it('applies dark theme CSS variables to root', () => {
-      applyThemeToRoot(true);
-
-      expect(mockSetProperty).toHaveBeenCalledWith('--color-primary', themeConfig.dark.primary);
-      expect(mockSetProperty).toHaveBeenCalledWith('--color-background', themeConfig.dark.background);
-      expect(mockSetProperty).toHaveBeenCalledWith('--color-text', themeConfig.dark.text);
-    });
-
-    it('sets all CSS variables defined in cssVariables', () => {
-      applyThemeToRoot(false);
-
-      const expectedCallCount = Object.keys(cssVariables).length;
-      expect(mockSetProperty).toHaveBeenCalledTimes(expectedCallCount);
-    });
-
-    it('correctly maps CSS variable names to theme values', () => {
-      applyThemeToRoot(true);
-
-      Object.entries(cssVariables).forEach(([cssVar, themeKey]) => {
-        expect(mockSetProperty).toHaveBeenCalledWith(
-          cssVar,
-          themeConfig.dark[themeKey as keyof typeof themeConfig.dark]
-        );
-      });
-    });
-  });
-
   describe('theme consistency', () => {
     it('button colors match primary colors', () => {
       // Light theme
@@ -197,7 +85,8 @@ describe('themeConfig', () => {
       expect(themeConfig.light.buttonPrimaryHover).toBe(themeConfig.light.primaryHover);
 
       // Dark theme
-      expect(themeConfig.dark.buttonPrimaryBg).toBe('#3b82f6'); // Specific blue for dark theme
+      expect(themeConfig.dark.buttonPrimaryBg).toBe('#818cf8'); // the dark accent
+      expect(themeConfig.dark.buttonPrimaryHover).toBe(themeConfig.dark.primaryHover);
     });
 
     it('info colors relate to primary colors', () => {
@@ -217,6 +106,35 @@ describe('themeConfig', () => {
       expect(themeConfig.dark.background).toBe('#0f172a'); // slate-900
       expect(themeConfig.dark.backgroundSecondary).toBe('#1e293b'); // slate-800
       expect(themeConfig.dark.backgroundTertiary).toBe('#334155'); // slate-700
+    });
+  });
+
+  // R1: the palette must not own a brand hue. Every primary entry is the token
+  // layer's accent, read here from the CSS that actually paints the app, so a
+  // second source cannot drift back in unnoticed.
+  describe('token parity with src/styles/theme.css', () => {
+    const css = readFileSync(resolve(process.cwd(), 'src/styles/theme.css'), 'utf8');
+
+    const tokenOf = (selector: string, name: string) => {
+      const start = css.indexOf(`${selector} {`);
+      expect(start, `${selector} block`).toBeGreaterThan(-1);
+      const block = css.slice(start, css.indexOf('\n}', start));
+      const match = block.match(new RegExp(`${name}:\\s*([^;]+);`));
+      expect(match, `${name} in ${selector}`).not.toBeNull();
+      return match![1].trim();
+    };
+
+    it.each([
+      ['light', ':root'],
+      ['dark', '.dark'],
+    ])('%s palette primary is the %s accent', (mode, selector) => {
+      const palette = themeConfig[mode as 'light' | 'dark'];
+      expect(palette.primary).toBe(tokenOf(selector, '--color-accent'));
+      expect(palette.primaryHover).toBe(tokenOf(selector, '--color-accent-hover'));
+      expect(palette.buttonPrimaryBg).toBe(palette.primary);
+      expect(palette.buttonPrimaryHover).toBe(palette.primaryHover);
+      expect(palette.info).toBe(palette.primary);
+      expect(palette.infoDark).toBe(palette.primaryHover);
     });
   });
 });

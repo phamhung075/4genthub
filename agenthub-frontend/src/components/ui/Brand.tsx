@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { type ElementType } from 'react';
 import { SparklesText } from './SparklesText';
 
 // Brand component variants
@@ -7,6 +7,14 @@ type BrandVariant = 'header' | 'dashboard' | 'large';
 interface BrandProps {
   variant?: BrandVariant;
   className?: string;
+  /**
+   * The element the wordmark renders as. A brand is not a heading: it is the same
+   * string on every page, and while it rendered as `h1` it was the first heading in
+   * the document on every signed-in route, so no page identified itself and every
+   * page had two top-level headings (F-2). A caller that genuinely wants the
+   * wordmark to be a page's heading passes one explicitly.
+   */
+  as?: ElementType;
 }
 
 const brandConfig = {
@@ -27,15 +35,16 @@ const brandConfig = {
   }
 } as const;
 
-export const Brand: React.FC<BrandProps> = ({ 
-  variant = 'header', 
-  className 
+export const Brand: React.FC<BrandProps> = ({
+  variant = 'header',
+  className,
+  as = 'div'
 }) => {
   const config = brandConfig[variant];
-  
+
   return (
-    <SparklesText 
-      as="h1" 
+    <SparklesText
+      as={as}
       className={className || config.className}
       sparkleCount={config.sparkleCount}
       sparkleSize={config.sparkleSize}

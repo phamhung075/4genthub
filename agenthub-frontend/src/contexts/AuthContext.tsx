@@ -148,7 +148,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
-        credentials: 'include', // Include cookies for CORS
         body: JSON.stringify({ email, password }),
       });
 
@@ -201,7 +200,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
-        credentials: 'include', // Include cookies for CORS
         body: JSON.stringify({
           email,
           password,
@@ -301,7 +299,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
-        credentials: 'include', // Include cookies for CORS
         body: JSON.stringify({ refresh_token }),
       });
 
@@ -457,7 +454,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             'Authorization': `Bearer ${tokens.access_token}`,
             'Content-Type': 'application/json',
           },
-          credentials: 'include',
         });
       } catch (error) {
         // Don't throw - keep-alive failures shouldn't disrupt user experience

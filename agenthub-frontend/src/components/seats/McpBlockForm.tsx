@@ -202,7 +202,10 @@ export const McpBlockForm: React.FC = () => {
           </Button>
           <label className="flex items-center gap-2 text-sm">
             <FileUp className="h-4 w-4" />
-            <input type="file" accept=".json,application/json" aria-label="Upload a block file" onChange={handleFile} />
+            {/* A file input carries an intrinsic 301px - the picker button plus its filename
+                field - which set this row's min-content and dragged the whole page at 375 and
+                320. w-full caps it to the label, which the wrapping row already fits. */}
+            <input type="file" className="w-full" accept=".json,application/json" aria-label="Upload a block file" onChange={handleFile} />
           </label>
         </div>
 

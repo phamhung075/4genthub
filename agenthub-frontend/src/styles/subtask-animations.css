@@ -45,7 +45,7 @@
 }
 
 .subtaskRowCreateAnimation {
-  animation: subtaskRowSlideIn 1.0s ease-out forwards;
+  animation: subtaskRowSlideIn 0.8s ease-out forwards;
   /* Ensure starting state is set */
   transform: translateX(100%);
   opacity: 0;
@@ -79,8 +79,10 @@
   animation: subtaskRowFlash 1.7s ease-in-out;
 }
 
-/* Legacy class name for backwards compatibility */
-.subtaskUpdatingAnimation {
+/* ========================================
+   COMPLETE ANIMATION (Flash Background 3x)
+   ======================================== */
+.subtaskRowCompleteAnimation {
   animation: subtaskRowFlash 1.7s ease-in-out;
 }
 
@@ -123,7 +125,7 @@
 @media (prefers-reduced-motion: reduce) {
   .subtaskRowCreateAnimation,
   .subtaskRowUpdateAnimation,
-  .subtaskUpdatingAnimation,
+  .subtaskRowCompleteAnimation,
   .subtaskRowDeleteAnimation {
     animation: none;
   }

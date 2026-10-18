@@ -1,5 +1,4 @@
 import React, { createContext, useState, useEffect, ReactNode } from 'react';
-import { applyThemeToRoot } from '../theme/themeConfig';
 
 type Theme = 'light' | 'dark';
 
@@ -25,9 +24,9 @@ interface ThemeProviderProps {
   defaultTheme?: Theme;
 }
 
-export const ThemeProvider: React.FC<ThemeProviderProps> = ({ 
-  children, 
-  defaultTheme = 'light' 
+export const ThemeProvider: React.FC<ThemeProviderProps> = ({
+  children,
+  defaultTheme = 'light'
 }) => {
   const [theme, setThemeState] = useState<Theme>(() => {
     // Check local storage first
@@ -35,28 +34,26 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
     if (savedTheme === 'dark' || savedTheme === 'light') {
       return savedTheme;
     }
-    
+
     // Check system preference
     if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
       return 'dark';
     }
-    
+
     return defaultTheme;
   });
 
   // Apply theme to document root
   useEffect(() => {
     const root = document.documentElement;
-    
+
     // Remove previous theme class
     root.classList.remove('light', 'dark');
-    
-    // Add current theme class
+
+    // Add current theme class: this is what selects the token values, and
+    // src/styles/theme.css declares them for the bare and .dark cases.
     root.classList.add(theme);
-    
-    // Apply CSS variables for the theme
-    applyThemeToRoot(theme === 'dark');
-    
+
     // Save to local storage
     localStorage.setItem('theme', theme);
   }, [theme]);
@@ -64,7 +61,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
   // Listen for system theme changes
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    
+
     const handleChange = (e: MediaQueryListEvent) => {
       // Only apply system preference if no saved preference
       if (!localStorage.getItem('theme')) {

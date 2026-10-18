@@ -85,22 +85,22 @@ export const BranchItem: React.FC<BranchItemProps> = ({
           <ShimmerButton
             size="icon"
             variant="ghost"
-            className="h-6 w-6"
+            className="h-10 w-10"
             onClick={() => onShowDetails && onShowDetails(project, branch)}
             aria-label="View Branch Details"
             title="View Branch Details"
           >
-            <Eye className="w-3 h-3" />
+            <Eye className="w-4 h-4" />
           </ShimmerButton>
           {(branch.git_branch_name || branch.name) !== 'main' && (
             <ShimmerButton
               size="icon"
               variant="ghost"
-              className="h-6 w-6"
+              className="h-10 w-10"
               onClick={() => onDelete({ project, branch })}
               aria-label="Delete Branch"
             >
-              <Trash2 className="w-3 h-3 text-destructive" />
+              <Trash2 className="w-4 h-4 text-destructive" />
             </ShimmerButton>
           )}
         </div>

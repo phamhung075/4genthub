@@ -10,8 +10,6 @@ interface MenuItem {
   icon: LucideIcon | React.FC
   label: string
   href: string
-  gradient: string
-  iconColor: string
 }
 
 type MenuBarProps = React.ComponentPropsWithoutRef<typeof motion.nav> & {
@@ -84,7 +82,7 @@ export const MenuBar = React.forwardRef<React.ElementRef<typeof motion.nav>, Men
           } to-transparent rounded-xl z-0 pointer-events-none`}
           variants={navGlowVariants}
         />
-        <ul className="flex items-center gap-2 relative z-10">
+        <ul className="flex items-center gap-0.5 w-max relative z-10">
           {items.map((item) => {
             const Icon = item.icon
             const isActive = item.label === activeItem
@@ -106,14 +104,17 @@ export const MenuBar = React.forwardRef<React.ElementRef<typeof motion.nav>, Men
                       variants={glowVariants}
                       animate={isActive ? "hover" : "initial"}
                       style={{
-                        background: item.gradient,
+                        // One glow for every item, from the token layer. The eight
+                        // per-item hues and their radial gradients are retired (F-5):
+                        // the affordance stays, the colour family does not fork.
+                        background: "var(--nav-glow)",
                         opacity: isActive ? 1 : 0,
                         borderRadius: "16px",
                       }}
                     />
                     <motion.div
                       className={cn(
-                        "flex items-center gap-2 px-3 py-2 relative z-10 bg-transparent transition-colors rounded-lg",
+                        "flex items-center gap-1 px-2 py-2 whitespace-nowrap relative z-10 bg-transparent transition-colors rounded-lg",
                         isActive
                           ? "text-nav-text-active"
                           : "text-nav-text group-hover:text-nav-text-hover",
@@ -121,24 +122,23 @@ export const MenuBar = React.forwardRef<React.ElementRef<typeof motion.nav>, Men
                       variants={itemVariants}
                       transition={sharedTransition}
                       style={{
-                        transformStyle: "preserve-3d",
+                       transformStyle: "preserve-3d",
                         transformOrigin: "center bottom",
                       }}
                     >
                       <span
                         className={cn(
                           "transition-colors duration-300",
-                          isActive ? item.iconColor : "text-nav-text",
-                          `group-hover:${item.iconColor}`,
+                          isActive ? "text-accent" : "text-nav-text",
                         )}
                       >
-                        <Icon className="h-4 w-4" />
+                        <Icon className="h-3.5 w-3.5" />
                       </span>
                       <span className="text-sm font-medium">{item.label}</span>
                     </motion.div>
                     <motion.div
                       className={cn(
-                        "flex items-center gap-2 px-3 py-2 absolute inset-0 z-10 bg-transparent transition-colors rounded-lg",
+                        "flex items-center gap-1.5 px-2.5 py-2 whitespace-nowrap absolute inset-0 z-10 bg-transparent transition-colors rounded-lg",
                         isActive
                           ? "text-nav-text-active"
                           : "text-nav-text group-hover:text-nav-text-hover",
@@ -154,11 +154,10 @@ export const MenuBar = React.forwardRef<React.ElementRef<typeof motion.nav>, Men
                       <span
                         className={cn(
                           "transition-colors duration-300",
-                          isActive ? item.iconColor : "text-nav-text",
-                          `group-hover:${item.iconColor}`,
+                          isActive ? "text-accent" : "text-nav-text",
                         )}
                       >
-                        <Icon className="h-4 w-4" />
+                        <Icon className="h-3.5 w-3.5" />
                       </span>
                       <span className="text-sm font-medium">{item.label}</span>
                     </motion.div>

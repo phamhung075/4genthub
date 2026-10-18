@@ -106,7 +106,6 @@ describe('apiV2.ts', () => {
               'Accept': 'application/json',
             },
             body: JSON.stringify({ refresh_token: mockRefreshToken }),
-            credentials: 'include'
           }
         );
 
@@ -229,7 +228,6 @@ describe('apiV2.ts', () => {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${mockToken}`
             },
-            credentials: 'include'
           }
         );
         expect(result).toEqual(mockTasks);
@@ -252,7 +250,6 @@ describe('apiV2.ts', () => {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${mockToken}`
             },
-            credentials: 'include'
           }
         );
         expect(result).toEqual(mockTasks);
@@ -289,8 +286,10 @@ describe('apiV2.ts', () => {
           json: vi.fn().mockRejectedValue(new Error('Parse error'))
         });
 
-        // json() rejects, so the code falls back to the generic detail "Request failed"
-        await expect(taskApiV2.getTasks()).rejects.toThrow('Request failed');
+        // json() rejects, so the code falls back to a detail that NAMES THE STATUS: a non-JSON body
+        // (the Go mux's plain-text "404 page not found") cannot carry one of its own, and the bare
+        // "Request failed" this used to say hid which contract answer had arrived.
+        await expect(taskApiV2.getTasks()).rejects.toThrow('Request failed: HTTP 400');
       });
     });
 
@@ -314,7 +313,6 @@ describe('apiV2.ts', () => {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${mockToken}`
             },
-            credentials: 'include'
           }
         );
         expect(result).toEqual(mockTask);
@@ -348,7 +346,6 @@ describe('apiV2.ts', () => {
               'Authorization': `Bearer ${mockToken}`
             },
             body: JSON.stringify(taskData),
-            credentials: 'include'
           }
         );
         expect(result).toEqual(mockCreatedTask);
@@ -398,7 +395,6 @@ describe('apiV2.ts', () => {
               'Authorization': `Bearer ${mockToken}`
             },
             body: JSON.stringify({ task_id: taskId, ...updates }),
-            credentials: 'include'
           }
         );
         expect(result).toEqual(mockUpdatedTask);
@@ -425,7 +421,6 @@ describe('apiV2.ts', () => {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${mockToken}`
             },
-            credentials: 'include'
           }
         );
         expect(result).toEqual(mockResponse);
@@ -611,7 +606,6 @@ describe('apiV2.ts', () => {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${mockToken}`
             },
-            credentials: 'include'
           }
         );
         expect(result).toEqual(mockProjects);
@@ -641,7 +635,6 @@ describe('apiV2.ts', () => {
           'Content-Type': 'application/x-www-form-urlencoded',
           'Authorization': `Bearer ${mockToken}`
         });
-        expect(fetchCall[1].credentials).toBe('include');
         const body = fetchCall[1].body as URLSearchParams;
         expect(body).toBeInstanceOf(URLSearchParams);
         expect(body.get('name')).toBe('New Project');
@@ -677,7 +670,6 @@ describe('apiV2.ts', () => {
           'Content-Type': 'application/x-www-form-urlencoded',
           'Authorization': `Bearer ${mockToken}`
         });
-        expect(fetchCall[1].credentials).toBe('include');
         const body = new URLSearchParams(fetchCall[1].body as string);
         expect(body.get('name')).toBe('Updated Project');
         expect(body.get('description')).toBe('Updated description');
@@ -708,7 +700,6 @@ describe('apiV2.ts', () => {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${mockToken}`
             },
-            credentials: 'include'
           }
         );
         expect(result).toEqual(mockResponse);

@@ -33,8 +33,10 @@ module.exports = {
         surface: {
           DEFAULT: 'var(--color-surface)',
           hover: 'var(--color-surface-hover)',
+          raised: 'var(--color-surface-raised)',
           border: 'var(--color-surface-border)',
           'border-hover': 'var(--color-surface-border-hover)',
+          'border-strong': 'var(--color-surface-border-strong)',
         },
         // Text Colors
         text: {
@@ -87,6 +89,15 @@ module.exports = {
           light: 'var(--color-info-light)',
           dark: 'var(--color-info-dark)',
         },
+        // The one accent, and the source a chrome surface should paint from: the CSS
+        // token layer declares it, Tailwind names it here, and MUI's palette names the
+        // same value (R1), bound to the CSS by the token-parity test. A second hue in
+        // the shell is therefore a defect rather than a style choice.
+        accent: {
+          DEFAULT: 'var(--color-accent)',
+          hover: 'var(--color-accent-hover)',
+          contrast: 'var(--color-accent-contrast)',
+        },
         // Navigation Colors
         nav: {
           background: 'var(--color-nav-background)',
@@ -95,6 +106,19 @@ module.exports = {
           'text-active': 'var(--color-nav-text-active)',
           border: 'var(--color-nav-border)',
         },
+      },
+      // The type scale: eight steps, each a size over its own line height. The
+      // product reads at text-body-sm (13/18); pages opt into the scale as their
+      // slice lands instead of the scale changing under every page at once.
+      fontSize: {
+        'micro': ['11px', '16px'],
+        'caption': ['12px', '16px'],
+        'body-sm': ['13px', '18px'],
+        'body': ['14px', '20px'],
+        'title': ['16px', '24px'],
+        'section': ['18px', '26px'],
+        'page': ['20px', '28px'],
+        'hero': ['24px', '32px'],
       },
       backgroundColor: {
         'base': 'var(--color-background)',
@@ -130,13 +154,28 @@ module.exports = {
       borderRadius: {
         'none': '0',
         'sm': '0.125rem',
-        'DEFAULT': '0.5rem', 
+        'DEFAULT': '0.5rem',
         'md': '0.75rem',
         'lg': '1rem',
         'xl': '1.25rem',
         '2xl': '1.5rem',
         '3xl': '2rem',
         'full': '9999px',
+        // The shape system, named: controls 6, inputs 8, cards and panels 12,
+        // and pills for status only. The numbered keys above stay as they are so
+        // this lands as a system to migrate to rather than a global restyle.
+        'control': 'var(--radius-control)',
+        'input': 'var(--radius-input)',
+        'card': 'var(--radius-card)',
+        'pill': 'var(--radius-pill)',
+      },
+      transitionDuration: {
+        'fast': 'var(--motion-fast)',
+        'state': 'var(--motion-state)',
+        'panel': 'var(--motion-panel)',
+      },
+      transitionTimingFunction: {
+        'standard': 'var(--motion-curve)',
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
@@ -154,4 +193,3 @@ module.exports = {
   },
   plugins: [],
 }
-

@@ -7,7 +7,7 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
   ({ className, children, ...props }, ref) => (
     <select
       className={cn(
-        "theme-input flex h-10 w-full text-sm disabled:opacity-50 disabled:pointer-events-none",
+        "theme-input flex min-h-[2.5rem] py-2 px-3 leading-normal w-full text-sm disabled:opacity-50 disabled:pointer-events-none cursor-pointer",
         className
       )}
       ref={ref}

@@ -100,11 +100,19 @@
 }
 
 /* ========================================
+   COMPLETE ANIMATION (WS 'completed' resolves to this class)
+   ======================================== */
+.seatRowCompleteAnimation {
+  animation: seatRowFlash 1.7s ease-in-out;
+}
+
+/* ========================================
    ACCESSIBILITY
    ======================================== */
 @media (prefers-reduced-motion: reduce) {
   .seatRowCreateAnimation,
   .seatRowUpdateAnimation,
+  .seatRowCompleteAnimation,
   .seatRowDeleteAnimation {
     animation: none;
   }

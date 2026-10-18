@@ -64,6 +64,53 @@ cd agenthub-frontend && env VITE_DISABLE_AUTH=true VITE_API_URL=http://localhost
   npx vite --config vite.of4.config.mjs
 ```
 
+## 2a. The boot refusal this recipe was missing: the `0001_baseline` mark (measured 2026-10-12)
+
+`AUTO_MIGRATE=true` is **not enough** on this stack. On the existing data dir AND on a brand-new
+cluster the boot stops:
+
+```
+database: the catalogue already holds tables, so the 0001_baseline baseline is skipped without
+running it (its schema is already there); use Runner.MarkBaseline to record it
+database init: migration 0003_progress_history_carry_and_drop: the migration's SQL failed:
+ERROR: the O1c carry step runs only under the owner's 0001 baseline mark; run
+Runner.MarkBaseline('0001_baseline') first (SQLSTATE P0001)
+```
+
+**WHY, read from the code and not from the message:** `createAll` populates the catalogue **before**
+the migration runner runs, so the frozen `0001_baseline` is skipped **without being recorded**, and the
+gated carry step then refuses on a ledger that holds no `0001_baseline` row.
+`fastmcp/session_stream/testdb/testdb.go` says exactly this and does the same thing for tests
+("records that mark the way an operator does — `Runner.MarkBaseline`").
+
+**The operator step**, in order:
+
+1. `database.Runner{Sessions: database.NewSessionManager(cfg), Set: set}.MarkBaseline(ctx, "0001_baseline")`
+   with `cfg` from `database.GetInstance(ctx, database.OSDeps())` and `set` from
+   `database.LoadMigrations()`.
+2. Boot the server as §2 says.
+
+**There is no CLI verb for it** — `grep -rn 'mark-baseline' agenthub_go --include=*.go` matches no file —
+so step 1 is a short `main` package run from inside the module with the same `DATABASE_*` environment.
+Put it in a gitignored scratch directory (`.gotmp/` is one) and delete it after:
+`go run ./.gotmp/<dir>` from `agenthub_go`. It prints `marked: [0001_baseline]`.
+
+**A FRESH cluster works the same way and is the cheaper option when the old data dir's shape is not
+wanted** (measured 2026-10-12; this is the cluster the S1 room-decision routes were verified on):
+
+```bash
+PGBIN=/home/daihu/.cache/agenthub-testpg/bin; D=/tmp/of4s1; mkdir -p "$D/sock"
+"$PGBIN/initdb" -D "$D/data" -U daihu --auth=trust -E UTF8 --locale=C
+printf "listen_addresses='127.0.0.1'\nport=54332\nunix_socket_directories='%s'\nfsync=off\n" "$D/sock" \
+  >> "$D/data/postgresql.conf"
+"$PGBIN/pg_ctl" -D "$D/data" -l "$D/pg.log" -w start
+# then the mark from step 1 with DATABASE_PORT=54332, then the server from §2 with the same port
+```
+
+The fresh cluster has no `rooms` rows, so create the room the panel is to show **through the route**
+(`POST /api/v2/openrig/rooms`, body `{"slug":…,"name":…}`, `Authorization: Bearer local-dev`) rather
+than by hand.
+
 ## 3. TRAP ONE — every page renders "Not authenticated" with auth already disabled
 
 `VITE_DISABLE_AUTH=true` bypasses **only the route guard**. Verified in the code:

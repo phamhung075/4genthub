@@ -21,3 +21,10 @@
   background-size: 200% 100%;
   animation: shimmerBackground 2s linear infinite;
 }
+
+/* The updating tint stays; the loop does not survive a reduce request. */
+@media (prefers-reduced-motion: reduce) {
+  .subtaskUpdatingAnimation {
+    animation: none;
+  }
+}

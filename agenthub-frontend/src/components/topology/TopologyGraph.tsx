@@ -122,7 +122,10 @@ function RoomGroup({ entry }: { entry: RoomTopology }) {
   const { width, height } = svgSize(seats.length);
 
   return (
-    <section className="rounded-lg border border-surface-border-hover p-4">
+    /* min-w-0: a grid item's automatic minimum is its min-content width, and the graph's fixed
+       width attribute made that 618px - the track grew past the phone before overflow-x-auto
+       could scroll. Zero lets the section take the track and the graph scroll inside it. */
+    <section className="min-w-0 rounded-lg border border-surface-border-hover p-4">
       <header className="mb-2 flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1">
         <h3 className="font-semibold text-base-primary">{room.name}</h3>
         <span className="text-xs text-base-secondary">

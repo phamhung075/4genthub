@@ -18,7 +18,7 @@
   }
 }
 
-.branchCreateAnimation {
+.branchRowCreateAnimation {
   animation: branchFadeIn 0.5s ease-out;
 }
 
@@ -34,7 +34,7 @@
   }
 }
 
-.branchUpdateAnimation {
+.branchRowUpdateAnimation {
   animation: branchHighlight 0.8s ease-in-out;
 }
 
@@ -55,17 +55,25 @@
   }
 }
 
-.branchDeleteAnimation {
+.branchRowDeleteAnimation {
   animation: branchFadeOut 0.5s ease-in;
+}
+
+/* ========================================
+   COMPLETE ANIMATION (WS 'completed' resolves to this class)
+   ======================================== */
+.branchRowCompleteAnimation {
+  animation: branchHighlight 0.8s ease-in-out;
 }
 
 /* ========================================
    ACCESSIBILITY
    ======================================== */
 @media (prefers-reduced-motion: reduce) {
-  .branchCreateAnimation,
-  .branchUpdateAnimation,
-  .branchDeleteAnimation {
+  .branchRowCreateAnimation,
+  .branchRowUpdateAnimation,
+  .branchRowCompleteAnimation,
+  .branchRowDeleteAnimation {
     animation: none;
   }
 }

@@ -10,11 +10,6 @@ export const lightTheme = createTheme({
       light: themeConfig.light.primaryLight,
       dark: themeConfig.light.primaryDark,
     },
-    secondary: {
-      main: themeConfig.light.secondary,
-      light: themeConfig.light.secondaryLight,
-      dark: themeConfig.light.secondaryDark,
-    },
     background: {
       default: themeConfig.light.background,
       paper: themeConfig.light.surface,
@@ -213,11 +208,6 @@ export const darkTheme = createTheme({
       main: themeConfig.dark.primary,
       light: themeConfig.dark.primaryLight,
       dark: themeConfig.dark.primaryDark,
-    },
-    secondary: {
-      main: themeConfig.dark.secondary,
-      light: themeConfig.dark.secondaryLight,
-      dark: themeConfig.dark.secondaryDark,
     },
     background: {
       default: themeConfig.dark.background,

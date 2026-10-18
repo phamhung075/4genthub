@@ -29,6 +29,19 @@ export const ShimmerButton: React.FC<ShimmerButtonProps> = ({
         --angle: 360deg;
       }
     }
+
+    .shimmer-spin-layer {
+      animation: shimmer-spin 2.5s linear infinite;
+    }
+
+    /* The loop is decorative, so a reduce request stops it. The class, not an
+       inline style, carries the animation: an inline declaration would outrank
+       any stylesheet rule and the loop could not be switched off. */
+    @media (prefers-reduced-motion: reduce) {
+      .shimmer-spin-layer {
+        animation: none;
+      }
+    }
   `;
 
   const sizeClasses = {
@@ -70,10 +83,9 @@ export const ShimmerButton: React.FC<ShimmerButtonProps> = ({
       >
         {(variant === 'default' || variant === 'destructive') && (
           <div
-            className="absolute inset-0"
+            className="absolute inset-0 shimmer-spin-layer"
             style={{
               background: `conic-gradient(from var(--angle), transparent 25%, ${shimmerColor}, transparent 50%)`,
-              animation: 'shimmer-spin 2.5s linear infinite',
             }}
           />
         )}

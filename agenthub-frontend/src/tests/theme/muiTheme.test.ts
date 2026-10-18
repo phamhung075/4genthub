@@ -19,9 +19,6 @@ vi.mock('../../theme/themeConfig', () => ({
       primary: '#1976d2',
       primaryLight: '#42a5f5',
       primaryDark: '#1565c0',
-      secondary: '#dc004e',
-      secondaryLight: '#e33371',
-      secondaryDark: '#9a0036',
       background: '#ffffff',
       surface: '#f5f5f5',
       text: '#000000',
@@ -59,9 +56,6 @@ vi.mock('../../theme/themeConfig', () => ({
       primary: '#90caf9',
       primaryLight: '#e3f2fd',
       primaryDark: '#42a5f5',
-      secondary: '#f48fb1',
-      secondaryLight: '#ffc1e3',
-      secondaryDark: '#bf5f82',
       background: '#121212',
       surface: '#1e1e1e',
       text: '#ffffff',
@@ -114,14 +108,6 @@ describe('muiTheme', () => {
         main: themeConfig.light.primary,
         light: themeConfig.light.primaryLight,
         dark: themeConfig.light.primaryDark,
-      });
-    });
-
-    it('uses correct secondary colors from themeConfig', () => {
-      expect(lightTheme.palette.secondary).toEqual({
-        main: themeConfig.light.secondary,
-        light: themeConfig.light.secondaryLight,
-        dark: themeConfig.light.secondaryDark,
       });
     });
 

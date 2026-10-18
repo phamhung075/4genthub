@@ -1,172 +1,229 @@
 /* Global Theme CSS Variables and Styles */
 
-/* Root CSS Variables - Will be dynamically updated by JavaScript */
+/* Root CSS Variables - the single token source. Nothing writes these from JavaScript; the theme is the .light / .dark class on <html>. */
 :root {
-  /* Modern Light Theme Variables - Enhanced color palette */
-  --color-primary: #6366f1;
-  --color-primary-hover: #4f46e5;
+  /* ---------------------------------------------------------------------------
+     The product's roles, light. These are the source; the historical names
+     below alias onto them, so every existing `text-primary` / `bg-surface`
+     class picks the role up while each surface migrates in its own slice.
+
+     The prefix is `--color-`, not the bare `--accent` / `--bg` / `--border`
+     names the plan's table uses in prose: those bare names already belong to
+     the shadcn/ui layer this app also ships, and overwriting them would
+     restyle shadcn components instead of stating a product role.
+     --------------------------------------------------------------------------- */
+  --color-accent: #4f46e5;
+  --color-accent-hover: #4338ca;
+  --color-accent-contrast: #ffffff;
+  --color-accent-ring: rgba(79, 70, 229, 0.15);
+  --color-surface-raised: #f8fafc;
+  --color-surface-border-strong: #cbd5e1;
+
+  /* Motion: three durations, one curve. Anything above the product's motion
+     dial is gated by the reduced-motion block at the end of this file. */
+  --motion-fast: 120ms;
+  --motion-state: 180ms;
+  --motion-panel: 240ms;
+  --motion-curve: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  /* Shape: one system - controls, inputs, cards, and pills for status only. */
+  --radius-control: 6px;
+  --radius-input: 8px;
+  --radius-card: 12px;
+  --radius-pill: 999px;
+
+  --gutter: 24px;
+  --card-pad: 16px;
+  --section-gap: 32px;
+  --leading-body: 1.5;
+
+  /* The navigation's one glow. It is derived from --color-accent on purpose,
+     and the shell spec asserts the navigation paints exactly that colour: a
+     retuned accent that leaves this literal behind turns the spec red instead
+     of drifting quietly. */
+  --nav-glow: radial-gradient(circle, rgba(79, 70, 229, 0.16) 0%, rgba(79, 70, 229, 0.07) 50%, rgba(79, 70, 229, 0) 100%);
+
+  /* Modern Light Theme Variables - Semantic aliases onto the roles above */
+  --color-primary: var(--color-accent);
+  --color-primary-hover: var(--color-accent-hover);
   --color-primary-light: #e0e7ff;
   --color-primary-dark: #3730a3;
-  
-  --color-secondary: #0891b2;
-  --color-secondary-hover: #0e7490;
-  --color-secondary-light: #cffafe;
-  --color-secondary-dark: #155e75;
-  
+
+  --color-secondary: var(--color-accent);
+  --color-secondary-hover: var(--color-accent-hover);
+  --color-secondary-light: #e0e7ff;
+  --color-secondary-dark: #3730a3;
+
   --color-background: #ffffff;
-  --color-background-secondary: #f8fafc;
+  --color-background-secondary: var(--color-surface-raised);
   --color-background-tertiary: #f1f5f9;
-  --color-background-hover: #f8fafc;
+  --color-background-hover: var(--color-surface-raised);
   --color-background-active: #e2e8f0;
-  
+
   --color-surface: #ffffff;
-  --color-surface-hover: #f8fafc;
+  --color-surface-hover: var(--color-surface-raised);
   --color-surface-border: #e2e8f0;
-  --color-surface-border-hover: #cbd5e1;
-  
+  --color-surface-border-hover: var(--color-surface-border-strong);
+
   --color-text: #0f172a;
   --color-text-secondary: #475569;
   --color-text-tertiary: #64748b;
   --color-text-disabled: #cbd5e1;
   --color-text-inverse: #ffffff;
-  
+
   --color-input-background: #ffffff;
-  --color-input-border: #cbd5e1;
-  --color-input-border-focus: #6366f1;
+  --color-input-border: var(--color-surface-border-strong);
+  --color-input-border-focus: var(--color-accent);
   --color-input-border-error: #ef4444;
-  --color-input-text: #0f172a;
-  --color-input-placeholder: #64748b;
-  
-  --color-button-primary-bg: #6366f1;
-  --color-button-primary-hover: #4f46e5;
-  --color-button-primary-text: #ffffff;
+  --color-input-text: var(--color-text);
+  --color-input-placeholder: var(--color-text-tertiary);
+
+  --color-button-primary-bg: var(--color-accent);
+  --color-button-primary-hover: var(--color-accent-hover);
+  --color-button-primary-text: var(--color-accent-contrast);
   --color-button-secondary-bg: #e2e8f0;
   --color-button-secondary-hover: #cbd5e1;
   --color-button-secondary-text: #1e293b;
-  --color-button-outline-border: #cbd5e1;
+  --color-button-outline-border: var(--color-surface-border-strong);
   --color-button-outline-hover: #e2e8f0;
   --color-button-danger-bg: #ef4444;
   --color-button-danger-hover: #dc2626;
-  
-  --color-success: #10b981;
+
+  /* Status is status only, never decorative. */
+  --color-success: #059669;
   --color-success-light: #d1fae5;
-  --color-success-dark: #059669;
-  --color-warning: #f59e0b;
+  --color-success-dark: #047857;
+  --color-warning: #b45309;
   --color-warning-light: #fef3c7;
-  --color-warning-dark: #d97706;
-  --color-error: #ef4444;
+  --color-warning-dark: #92400e;
+  --color-error: #dc2626;
   --color-error-light: #fee2e2;
-  --color-error-dark: #dc2626;
-  --color-info: #3b82f6;
+  --color-error-dark: #b91c1c;
+  --color-info: #2563eb;
   --color-info-light: #dbeafe;
-  --color-info-dark: #2563eb;
-  
-  --color-shadow: rgba(15, 23, 42, 0.05);
-  --color-shadow-medium: rgba(15, 23, 42, 0.08);
-  --color-shadow-large: rgba(15, 23, 42, 0.12);
+  --color-info-dark: #1d4ed8;
+
+  --color-shadow: rgba(15, 23, 42, 0.06);
+  --color-shadow-medium: rgba(15, 23, 42, 0.10);
+  --color-shadow-large: rgba(15, 23, 42, 0.16);
   --color-overlay: rgba(15, 23, 42, 0.6);
-  
+
   --color-scrollbar-track: #f3f4f6;
   --color-scrollbar-thumb: #d1d5db;
   --color-scrollbar-thumb-hover: #9ca3af;
-  
+
   --color-code-background: #f3f4f6;
   --color-code-border: #e5e7eb;
   --color-code-text: #111827;
-  
+
   --color-nav-background: #ffffff;
-  --color-nav-text: #6b7280;
-  --color-nav-text-hover: #111827;
-  --color-nav-text-active: #3b82f6;
-  --color-nav-border: #e5e7eb;
+  --color-nav-text: var(--color-text-secondary);
+  --color-nav-text-hover: var(--color-text);
+  --color-nav-text-active: var(--color-accent);
+  --color-nav-border: var(--color-surface-border);
 }
 
-/* Dark Theme Variables - Applied via JavaScript when dark mode is active */
+/* Dark Theme Variables - applied by the .dark class on <html> when dark mode is active */
 .dark {
-  /* Modern Dark Theme Variables - Enhanced color palette */
-  --color-primary: #60a5fa;
-  --color-primary-hover: #3b82f6;
-  --color-primary-light: #1e3a8a;
-  --color-primary-dark: #93c5fd;
+  /* Modern Dark Theme Variables - the same roles, darker, with one hue family:
+     light primary was indigo #6366f1 while dark was blue #60a5fa, and light
+     secondary cyan while dark was violet (F-5). Both modes now take the accent
+     family, so the brand hue no longer changes with the mode. */
+  --color-accent: #818cf8;
+  --color-accent-hover: #a5b4fc;
+  --color-accent-contrast: #0b1020;
+  --color-accent-ring: rgba(129, 140, 248, 0.22);
+  --color-surface-raised: #1b2438;
+  --color-surface-border-strong: #334155;
 
-  --color-secondary: #a78bfa;
-  --color-secondary-hover: #8b5cf6;
-  --color-secondary-light: #4c1d95;
-  --color-secondary-dark: #c4b5fd;
+  --nav-glow: radial-gradient(circle, rgba(129, 140, 248, 0.20) 0%, rgba(129, 140, 248, 0.09) 50%, rgba(129, 140, 248, 0) 100%);
 
-  --color-background: #0f172a;
-  --color-background-secondary: #1e293b;
-  --color-background-tertiary: #334155;
-  --color-background-hover: #334155;
-  --color-background-active: #475569;
+  --color-primary: var(--color-accent);
+  --color-primary-hover: var(--color-accent-hover);
+  --color-primary-light: #312e81;
+  --color-primary-dark: #c7d2fe;
 
-  --color-surface: #1e293b;
-  --color-surface-hover: #334155;
-  --color-surface-border: #334155;
-  --color-surface-border-hover: #475569;
+  --color-secondary: var(--color-accent);
+  --color-secondary-hover: var(--color-accent-hover);
+  --color-secondary-light: #312e81;
+  --color-secondary-dark: #c7d2fe;
+
+  --color-background: #0b1020;
+  --color-background-secondary: #131a2b;
+  --color-background-tertiary: #1b2438;
+  --color-background-hover: #1b2438;
+  --color-background-active: #26314a;
+
+  --color-surface: #131a2b;
+  --color-surface-hover: #1b2438;
+  --color-surface-border: #26314a;
+  --color-surface-border-hover: #334155;
 
   --color-text: #f1f5f9;
   --color-text-secondary: #94a3b8;
   --color-text-tertiary: #64748b;
   --color-text-disabled: #475569;
-  --color-text-inverse: #0f172a;
+  --color-text-inverse: #0b1020;
 
-  --color-input-background: #0f172a;
+  --color-input-background: #0b1020;
   --color-input-border: #475569;
-  --color-input-border-focus: #60a5fa;
+  --color-input-border-focus: var(--color-accent);
   --color-input-border-error: #f87171;
-  --color-input-text: #f1f5f9;
-  --color-input-placeholder: #64748b;
+  --color-input-text: var(--color-text);
+  --color-input-placeholder: var(--color-text-tertiary);
 
-  --color-button-primary-bg: #3b82f6;
-  --color-button-primary-hover: #60a5fa;
-  --color-button-primary-text: #ffffff;
-  --color-button-secondary-bg: #334155;
-  --color-button-secondary-hover: #475569;
+  --color-button-primary-bg: var(--color-accent);
+  --color-button-primary-hover: var(--color-accent-hover);
+  --color-button-primary-text: var(--color-accent-contrast);
+  --color-button-secondary-bg: #1b2438;
+  --color-button-secondary-hover: #26314a;
   --color-button-secondary-text: #e2e8f0;
-  --color-button-outline-border: #475569;
-  --color-button-outline-hover: #334155;
+  --color-button-outline-border: #334155;
+  --color-button-outline-hover: #1b2438;
   --color-button-danger-bg: #dc2626;
   --color-button-danger-hover: #ef4444;
 
-  --color-success: #10b981;
+  --color-success: #34d399;
   --color-success-light: #064e3b;
-  --color-success-dark: #34d399;
-  --color-warning: #f59e0b;
+  --color-success-dark: #6ee7b7;
+  --color-warning: #fbbf24;
   --color-warning-light: #78350f;
-  --color-warning-dark: #fbbf24;
-  --color-error: #ef4444;
+  --color-warning-dark: #fcd34d;
+  --color-error: #f87171;
   --color-error-light: #7f1d1d;
-  --color-error-dark: #f87171;
-  --color-info: #3b82f6;
+  --color-error-dark: #fca5a5;
+  --color-info: #60a5fa;
   --color-info-light: #1e3a8a;
-  --color-info-dark: #60a5fa;
+  --color-info-dark: #93c5fd;
 
-  --color-shadow: rgba(0, 0, 0, 0.3);
-  --color-shadow-medium: rgba(0, 0, 0, 0.4);
-  --color-shadow-large: rgba(0, 0, 0, 0.5);
-  --color-overlay: rgba(0, 0, 0, 0.7);
+  /* Tinted toward the surface hue: pure black shadows are what F-6 measured
+     against the light mode, which already tinted its own. */
+  --color-shadow: rgba(2, 6, 23, 0.45);
+  --color-shadow-medium: rgba(2, 6, 23, 0.6);
+  --color-shadow-large: rgba(2, 6, 23, 0.72);
+  --color-overlay: rgba(2, 6, 23, 0.7);
 
-  --color-scrollbar-track: #1e293b;
-  --color-scrollbar-thumb: #475569;
-  --color-scrollbar-thumb-hover: #64748b;
+  --color-scrollbar-track: #131a2b;
+  --color-scrollbar-thumb: #334155;
+  --color-scrollbar-thumb-hover: #475569;
 
-  --color-code-background: #1e293b;
-  --color-code-border: #334155;
+  --color-code-background: #131a2b;
+  --color-code-border: #26314a;
   --color-code-text: #e2e8f0;
 
-  --color-nav-background: #1e293b;
-  --color-nav-text: #94a3b8;
-  --color-nav-text-hover: #f1f5f9;
-  --color-nav-text-active: #60a5fa;
-  --color-nav-border: #334155;
+  --color-nav-background: var(--color-surface);
+  --color-nav-text: var(--color-text-secondary);
+  --color-nav-text-hover: var(--color-text);
+  --color-nav-text-active: var(--color-accent);
+  --color-nav-border: var(--color-surface-border);
 }
 
 /* Global Base Styles */
 body {
   background-color: var(--color-background);
   color: var(--color-text);
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition: background-color var(--motion-state) var(--motion-curve),
+    color var(--motion-state) var(--motion-curve);
 }
 
 /* Scrollbar Styles */
@@ -197,66 +254,66 @@ body {
     border: 1px solid var(--color-surface-border);
     @apply rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 ease-out;
   }
-  
+
   .theme-card-elevated {
     background-color: var(--color-surface);
     @apply rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 ease-out border-0;
   }
-  
+
   /* Modern Button Components */
   .theme-btn-primary {
     background-color: var(--color-button-primary-bg);
     color: var(--color-button-primary-text);
     @apply px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-sm hover:shadow-md;
   }
-  
+
   .theme-btn-primary:hover {
     background-color: var(--color-button-primary-hover);
     @apply -translate-y-0.5;
   }
-  
+
   .theme-btn-secondary {
     background-color: var(--color-button-secondary-bg);
     color: var(--color-button-secondary-text);
     @apply px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-sm hover:shadow-md;
   }
-  
+
   .theme-btn-secondary:hover {
     background-color: var(--color-button-secondary-hover);
     @apply -translate-y-0.5;
   }
-  
+
   .theme-btn-outline {
     background-color: transparent;
     border: 1.5px solid var(--color-button-outline-border);
     @apply px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-sm hover:shadow-md;
   }
-  
+
   .theme-btn-outline:hover {
     background-color: var(--color-button-outline-hover);
     @apply -translate-y-0.5;
   }
-  
+
   /* Enhanced Ghost Button */
   .theme-btn-ghost {
     background-color: transparent;
     color: var(--color-text);
     @apply px-4 py-2 rounded-md font-medium transition-colors duration-200;
   }
-  
+
   .theme-btn-ghost:hover {
     background-color: var(--color-background-hover);
   }
-  
+
   .theme-btn-danger {
     background-color: var(--color-button-danger-bg);
     @apply text-white px-4 py-2 rounded-md font-medium transition-colors duration-200;
   }
-  
+
   .theme-btn-danger:hover {
     background-color: var(--color-button-danger-hover);
   }
-  
+
   /* Modern Input Components */
   .theme-input {
     background-color: var(--color-input-background);
@@ -264,200 +321,201 @@ body {
     color: var(--color-input-text);
     @apply px-4 py-3 rounded-xl transition-all duration-200 focus:ring-2 text-sm font-medium;
   }
-  
+
   .theme-input:focus {
     border-color: var(--color-input-border-focus);
-    --tw-ring-color: rgba(99, 102, 241, 0.15); /* updated primary with opacity */
+    /* the accent at 15%, declared once next to the role it derives from */
+    --tw-ring-color: var(--color-accent-ring);
     @apply shadow-md;
   }
-  
+
   .theme-input::placeholder {
     color: var(--color-input-placeholder);
   }
-  
+
   .theme-input-error {
     border-color: var(--color-input-border-error);
     @apply focus:ring-2;
   }
-  
+
   .theme-input-error:focus {
     border-color: var(--color-input-border-error);
     --tw-ring-color: rgba(239, 68, 68, 0.2); /* error with opacity */
   }
-  
+
   /* Table Components */
   .theme-table {
     background-color: var(--color-surface);
     border: 1px solid var(--color-surface-border);
     @apply w-full rounded-lg overflow-hidden;
   }
-  
+
   .theme-table-header {
     background-color: var(--color-background-secondary);
     border-bottom: 1px solid var(--color-surface-border);
   }
-  
+
   .theme-table-row {
     border-bottom: 1px solid var(--color-surface-border);
     @apply transition-colors duration-150;
   }
-  
+
   .theme-table-row:hover {
     background-color: var(--color-background-hover);
   }
-  
+
   .theme-table-cell {
     color: var(--color-text);
     @apply px-4 py-3;
   }
-  
+
   /* Navigation Components */
   .theme-nav {
     background-color: var(--color-nav-background);
     border-bottom: 1px solid var(--color-nav-border);
   }
-  
+
   .theme-nav-item {
     color: var(--color-nav-text);
-    @apply transition-colors duration-200;
+    transition: color var(--motion-state) var(--motion-curve);
   }
-  
+
   .theme-nav-item:hover {
     color: var(--color-nav-text-hover);
   }
-  
+
   .theme-nav-item-active {
     color: var(--color-nav-text-active);
     @apply font-medium;
   }
-  
-  /* 
+
+  /*
    * Z-Index Layering System:
    * - Base content: z-0 to z-10
    * - Dropdowns/Popovers: z-100 to z-200
    * - Modals/Dialogs: z-1000
    * - Toasts/Notifications: z-10000 (highest)
    */
-  
+
   /* Modal/Dialog Components */
   .theme-modal-overlay {
     @apply fixed inset-0 z-[1001];
     background-color: var(--color-overlay);
   }
-  
+
   .theme-modal {
     background-color: var(--color-surface);
     border: 1px solid var(--color-surface-border);
     @apply rounded-lg shadow-xl p-6 max-w-md mx-auto;
   }
-  
+
   .theme-modal-header {
     color: var(--color-text);
     @apply text-lg font-semibold mb-4;
   }
-  
+
   .theme-modal-body {
     color: var(--color-text-secondary);
     @apply mb-6;
   }
-  
+
   /* Alert Components */
   .theme-alert {
     @apply px-4 py-3 rounded-lg border;
   }
-  
+
   .theme-alert-success {
     background-color: var(--color-success-light);
     border-color: var(--color-success);
     color: var(--color-success-dark);
   }
-  
+
   .theme-alert-warning {
     background-color: var(--color-warning-light);
     border-color: var(--color-warning);
     color: var(--color-warning-dark);
   }
-  
+
   .theme-alert-error {
     background-color: var(--color-error-light);
     border-color: var(--color-error);
     color: var(--color-error-dark);
   }
-  
+
   .theme-alert-info {
     background-color: var(--color-info-light);
     border-color: var(--color-info);
     color: var(--color-info-dark);
   }
-  
+
   /* Badge Components */
   .theme-badge {
     @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
   }
-  
+
   .theme-badge-primary {
     background-color: var(--color-primary-light);
     color: var(--color-primary-dark);
   }
-  
+
   .theme-badge-secondary {
     background-color: var(--color-secondary-light);
     color: var(--color-secondary-dark);
   }
-  
+
   .theme-badge-success {
     background-color: var(--color-success-light);
     color: var(--color-success-dark);
   }
-  
+
   .theme-badge-warning {
     background-color: var(--color-warning-light);
     color: var(--color-warning-dark);
   }
-  
+
   .theme-badge-error {
     background-color: var(--color-error-light);
     color: var(--color-error-dark);
   }
-  
+
   /* Dropdown Components */
   .theme-dropdown {
     background-color: var(--color-surface);
     border: 1px solid var(--color-surface-border);
     @apply rounded-lg shadow-lg py-2;
   }
-  
+
   .theme-dropdown-item {
     color: var(--color-text);
     @apply px-4 py-2 transition-colors duration-150 cursor-pointer;
   }
-  
+
   .theme-dropdown-item:hover {
     background-color: var(--color-background-hover);
   }
-  
+
   /* Tab Components */
   .theme-tab-list {
     border-bottom: 1px solid var(--color-surface-border);
     @apply flex space-x-1;
   }
-  
+
   .theme-tab {
     color: var(--color-text-secondary);
     border-bottom: 2px solid transparent;
     @apply px-4 py-2 transition-colors duration-200;
   }
-  
+
   .theme-tab:hover {
     color: var(--color-text);
     border-color: var(--color-surface-border);
   }
-  
+
   .theme-tab-active {
     color: var(--color-primary);
     border-color: var(--color-primary);
   }
-  
+
   /* Tooltip Components */
   .theme-tooltip {
     background-color: var(--color-background-tertiary);
@@ -465,18 +523,18 @@ body {
     border: 1px solid var(--color-surface-border);
     @apply text-sm px-2 py-1 rounded shadow-lg;
   }
-  
+
   /* Progress Components */
   .theme-progress-bar {
     background-color: var(--color-background-tertiary);
     @apply w-full rounded-full h-2;
   }
-  
+
   .theme-progress-fill {
     background-color: var(--color-primary);
     @apply h-full rounded-full transition-all duration-300;
   }
-  
+
   /* Skeleton Loading */
   .theme-skeleton {
     background-color: var(--color-background-tertiary);
@@ -527,43 +585,10 @@ body {
   }
 }
 
-/* Utility Classes for Theme */
-@layer utilities {
-  /* Text Utilities */
-  .text-base-primary {
-    color: var(--color-text);
-  }
-  
-  .text-base-secondary {
-    color: var(--color-text-secondary);
-  }
-  
-  .text-base-tertiary {
-    color: var(--color-text-tertiary);
-  }
-  
-  /* Background Utilities */
-  .bg-base {
-    background-color: var(--color-background);
-  }
-  
-  .bg-base-secondary {
-    background-color: var(--color-background-secondary);
-  }
-  
-  .bg-base-tertiary {
-    background-color: var(--color-background-tertiary);
-  }
-  
-  /* Border Utilities */
-  .border-base {
-    border-color: var(--color-surface-border);
-  }
-  
-  .border-base-hover {
-    border-color: var(--color-surface-border-hover);
-  }
-}
+/* The token-to-utility aliases (.text-base-primary, .bg-base, .border-base,
+   .bg-surface, ...) are declared once, in src/index.css, next to the layer
+   directives that order them. They used to be duplicated here as well, which is
+   exactly how two definitions of one class drift apart. */
 
 /* Modern Animation Classes */
 @keyframes fadeIn {
@@ -635,15 +660,65 @@ body {
 
 .animate-shimmer {
   animation: shimmer 2s infinite linear;
-  background: linear-gradient(90deg, 
-    var(--color-background-tertiary) 0%, 
-    var(--color-surface-hover) 50%, 
+  background: linear-gradient(90deg,
+    var(--color-background-tertiary) 0%,
+    var(--color-surface-hover) 50%,
     var(--color-background-tertiary) 100%
   );
   background-size: 200px 100%;
 }
 
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0);
+    border-color: var(--color-surface-border-hover);
+  }
+  50% {
+    box-shadow: 0 0 12px 2px rgba(99, 102, 241, 0.4);
+    border-color: var(--color-accent);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 2.5s infinite ease-in-out;
+}
+
 /* Transition Classes */
 .transition-theme {
-  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+  transition: background-color var(--motion-state) var(--motion-curve),
+    color var(--motion-state) var(--motion-curve),
+    border-color var(--motion-state) var(--motion-curve);
+}
+
+/* ---------------------------------------------------------------------------
+   Reduced motion. The product's motion dial is 3, so nothing here animates on
+   scroll or repeats; what a reduce request must still switch off is the token
+   durations and the decorative loops the animation classes below run.
+   --------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-fast: 1ms;
+    --motion-state: 1ms;
+    --motion-panel: 1ms;
+  }
+
+  .animate-fade-in,
+  .animate-slide-in,
+  .animate-slide-in-right,
+  .animate-scale-in,
+  .animate-shimmer,
+  /* This file's own attention loop, so it belongs with the classes above and
+     not with the utilities below: it is what a pending decision request pulses
+     on (RoomDecisionPanel), and a reduce request has to switch it off too. */
+  .animate-pulse-glow,
+  /* Tailwind's own infinite utilities. They are emitted AFTER this file, so a
+     plain declaration here loses the cascade and the !important is what makes
+     the reduce request win (measured: a spin 1000ms infinite survived on /login
+     and /dashboard until this was added). */
+  .animate-spin,
+  .animate-pulse,
+  .animate-ping,
+  .animate-bounce {
+    animation: none !important;
+  }
 }

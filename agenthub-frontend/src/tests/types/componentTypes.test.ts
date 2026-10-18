@@ -18,7 +18,6 @@ import type {
 import type { DialogProps } from '../../components/ui/dialog';
 import type { TextareaProps } from '../../components/ui/textarea';
 import type { SelectProps } from '../../components/ui/select-simple';
-import type { SidebarProps } from '../../components/ui/sidebar';
 import type { EnhancedButtonProps } from '../../components/ui/EnhancedButton';
 import type { Task, Subtask, Project } from '../../api';
 import type { BranchSummary } from '../../types/api.types';
@@ -168,7 +167,7 @@ describe('componentTypes Type Definitions', () => {
   describe('Toast Types', () => {
     it('should define toast type variants', () => {
       const toastTypes: ToastType[] = ['success', 'error', 'warning', 'info'];
-      
+
       toastTypes.forEach(type => {
         const toast: Toast = {
           id: `toast-${type}`,
@@ -202,7 +201,7 @@ describe('componentTypes Type Definitions', () => {
   describe('Progress State', () => {
     it('should define progress state values', () => {
       const states: ProgressState[] = ['initial', 'in_progress', 'complete'];
-      
+
       states.forEach(state => {
         const validState: ProgressState = state;
         expect(['initial', 'in_progress', 'complete']).toContain(validState);

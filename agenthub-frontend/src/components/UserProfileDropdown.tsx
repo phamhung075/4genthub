@@ -177,8 +177,8 @@ const DropdownMenu = ({ children, trigger }: DropdownMenuProps) => {
       {isOpen && (
         <>
           {/* Backdrop overlay */}
-          <div 
-            className="fixed inset-0 z-[9998]" 
+          <div
+            className="fixed inset-0 z-[9998]"
             onClick={() => setIsOpen(false)}
           />
           {/* Dropdown menu with higher z-index */}
@@ -271,7 +271,11 @@ export default function UserProfileDropdown() {
           <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
             {getInitials(user.username)}
           </div>
-          <div className="text-left hidden sm:block">
+          {/* The two-line name/email block yields in 768-1023 (avatar only) so the
+              band pays for the brand and all eight destinations instead: the ruling's
+              deficit there is 92px and this block is ~200 of the ~812px of content.
+              Same pattern as the brand sub-label. The menu keeps name, email, roles. */}
+          <div className="text-left hidden sm:block md:hidden lg:block">
             <div className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
               {user.username}
             </div>

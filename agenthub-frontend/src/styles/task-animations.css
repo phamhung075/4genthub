@@ -79,6 +79,13 @@
 }
 
 /* ========================================
+   COMPLETE ANIMATION (Flash Background 3x)
+   ======================================== */
+.taskRowCompleteAnimation {
+  animation: taskRowFlash 1.7s ease-in-out;
+}
+
+/* ========================================
    DELETE ANIMATION (Slide Out to Right)
    ======================================== */
 @keyframes taskRowSlideOut {
@@ -129,6 +136,7 @@
 @media (prefers-reduced-motion: reduce) {
   .taskRowCreateAnimation,
   .taskRowUpdateAnimation,
+  .taskRowCompleteAnimation,
   .taskRowDeleteAnimation {
     animation: none;
   }
