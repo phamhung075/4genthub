@@ -6,67 +6,67 @@
   "modules": [
     {
       "slug": "guide-lead",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "kind": "instruction",
       "file": "../../../agenthub_go/fastmcp/seat_management/domain/seedlibrary/blocks/guide-lead.md"
     },
     {
       "slug": "guide-go-dev",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "kind": "instruction",
       "file": "../../../agenthub_go/fastmcp/seat_management/domain/seedlibrary/blocks/guide-go-dev.md"
     },
     {
       "slug": "guide-fe-dev",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "kind": "instruction",
       "file": "../../../agenthub_go/fastmcp/seat_management/domain/seedlibrary/blocks/guide-fe-dev.md"
     },
     {
       "slug": "guide-e2e-dev",
-      "version": "1.1.0",
+      "version": "1.1.1",
       "kind": "instruction",
       "file": "guide-e2e-dev.md"
     },
     {
       "slug": "guide-reviewer",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "kind": "instruction",
       "file": "../../../agenthub_go/fastmcp/seat_management/domain/seedlibrary/blocks/guide-reviewer.md"
     },
     {
       "slug": "guide-architect",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "kind": "instruction",
       "file": "../../../agenthub_go/fastmcp/seat_management/domain/seedlibrary/blocks/guide-architect.md"
     },
     {
       "slug": "policy-lead",
-      "version": "1.1.0",
+      "version": "1.1.1",
       "kind": "policy",
       "file": "policy-lead.json"
     },
     {
       "slug": "policy-go-dev",
-      "version": "1.1.0",
+      "version": "1.1.1",
       "kind": "policy",
       "file": "policy-go-dev.json"
     },
     {
       "slug": "policy-fe-dev",
-      "version": "1.2.0",
+      "version": "1.2.1",
       "kind": "policy",
       "file": "policy-fe-dev.json"
     },
     {
       "slug": "policy-reviewer",
-      "version": "1.1.0",
+      "version": "1.1.1",
       "kind": "policy",
       "file": "policy-reviewer.json"
     },
     {
       "slug": "policy-architect",
-      "version": "1.1.0",
+      "version": "1.1.1",
       "kind": "policy",
       "file": "policy-architect.json"
     }
@@ -168,16 +168,6 @@
       "from": "reviewer",
       "to": "lead",
       "kind": "escalates_to"
-    },
-    {
-      "from": "reviewer",
-      "to": "go-dev",
-      "kind": "delegates_to"
-    },
-    {
-      "from": "reviewer",
-      "to": "fe-dev",
-      "kind": "delegates_to"
     },
     {
       "from": "lead",

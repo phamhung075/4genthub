@@ -42,3 +42,25 @@ other seat still does not. The exception is the seat KEY `lead`, decided at one 
 passed. `scripts/tests/test_census_audits.py` has 3 red cases in the same run, on the census instrument's
 stale anchors in `ai_docs/api-integration/surface-inventory.md`; this branch touches neither `ai_docs/`
 nor the schema it reads.
+
+### Publication (`scripts/team/4genthub-min/team.json`)
+
+The render that a seat installs is the hub's fold of its policy modules, so the policy reaches a seat
+only after `4genteam team apply` publishes the module. Applying the room definition as it stood was
+refused twice: the guide modules carried a version whose stored body had already moved (HTTP 409), and
+the two `reviewer -> go-dev` / `reviewer -> fe-dev` links formed a launch cycle the hub now refuses.
+The room definition therefore takes a version for every module whose content is the tree's - guides and
+policies both, one patch step each - and drops the two cycle links. The cycle's reverse edges
+(`go-dev -> reviewer`, `fe-dev -> reviewer`) stay, as `go-dev` and `fe-dev` hand their work to the
+reviewer.
+
+Measured after the publish, same command the client installs from:
+`4genteam policy render --room 4genthub-min --seat lead` -> `git push*` is `approval: allow`, one
+entry; the four other seats' renders keep `git push*` as `deny`.
+
+### Landing
+
+- Client `main` = `2ced214` (`9d95b29` + `8b7ad75` merged `--no-ff`): 35 Go packages ok, `go vet` rc 0,
+  205 Rust tests passed.
+- Hub `main` = `06b2e35f` + pin `421d01f0` (`agenthub_client` gitlink `4b24c15 -> 2ced214`): 138 Go
+  packages ok, the two policy pytest files 19 passed.
