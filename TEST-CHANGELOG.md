@@ -6744,3 +6744,10 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
   refuses and names it, keeps the legacy at that commit, places no link for the seat (blocked on the
   create path too), and returns nil. It fails on the guardless tip `c9dfee7` and passes with the guard.
 - At this change: `go vet ./...` clean and `go test -count=1 ./...` green in `agenthub_client`.
+- Follow-up on the prune (`53b95dee`): `TestTheTwoAgentGuidesCarryOneDocsBlock` is deleted with the second
+  copy it compared. The prune removed `.gemini/`, its own changelog says "27 command files and two notes",
+  so `.gemini/gemini.local.md` is gone and the test failed on a missing file, not on copy-drift - the whole
+  `internal/repoguards` package was red at `7aa5475a` (3 failures). `agentGuides` keeps `CLAUDE.local.md`
+  alone, and the two content assertions (no retired-index claim, the docs chapter names the two layout
+  commands) still run on it. At this change: `go vet` clean and `go test -count=1 ./...` green in
+  `agenthub_go`; the three failures reproduce at `7aa5475a` without it.

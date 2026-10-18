@@ -1,20 +1,20 @@
 // Package repoguards_test is the WITNESS for the commit guards in scripts/git-hooks.
 //
-// THE RULE THIS FILE PINS: the two local agent guides (CLAUDE.local.md and .gemini/gemini.local.md) carry
-// ONE documentation block, that block names the ai_docs layout by the two git commands instead of drawing
-// it, and neither guide claims the retired index is live.
+// THE RULE THIS FILE PINS: the local agent guide (CLAUDE.local.md) carries ONE documentation block, that
+// block names the ai_docs layout by the two git commands instead of drawing it, and the guide does not
+// claim the retired index is live.
 //
 // WHY IT EXISTS, MEASURED 2026-10-17: the block listed 17 folders while the tree held 11
-// (`git ls-tree --name-only HEAD:ai_docs`) - eight listed but absent, three present but unlisted - and the
-// text is copied byte-identical into both files, so the pair produced a phantom site in the same day's grep.
-// The same false claim was hand-corrected twice in one day (c2bf3b23, e18c560d), and a hand-copied tree
-// drifts again; this test turns the next drift into a red build. The room's architect ruling,
+// (`git ls-tree --name-only HEAD:ai_docs`) - eight listed but absent, three present but unlisted. The same
+// false claim was hand-corrected twice in one day (c2bf3b23, e18c560d), and a hand-copied tree drifts
+// again; this test turns the next drift into a red build. The room's architect ruling,
 // `RULING-docs-index-retire-or-regenerate.md` (2026-10-17), is the authority: the tracked tree IS the index,
 // and the folder list must not be an enumeration that ages.
 //
-// The three assertions below are the ruling's table, not this file's opinion: (a) the two blocks are
-// byte-identical, (b) no guide asserts the index is present or updated, (c) each guide's docs chapter names
-// the two layout commands and draws no folder tree.
+// THE PAIR IS GONE, MEASURED 2026-10-18: `53b95dee` pruned `.gemini/` (its changelog lists "27 command
+// files and two notes"), so `.gemini/gemini.local.md` no longer exists and the copy-drift assertion had
+// nothing left to compare - it failed on a missing file, not on drift. The surviving guide keeps the two
+// content assertions; a second copy reintroduced later re-adds the pair test with it.
 package repoguards_test
 
 import (
@@ -24,10 +24,10 @@ import (
 	"testing"
 )
 
-// agentGuides are the two copies of one text: a correction lands in both, or the pair drifts apart.
+// agentGuides is the surviving local agent guide. `.gemini/gemini.local.md` was the second copy until
+// 53b95dee pruned `.gemini/`; the list stays a list so a reintroduced copy is one line away.
 var agentGuides = []string{
 	"CLAUDE.local.md",
-	filepath.Join(".gemini", "gemini.local.md"),
 }
 
 // The block opens at this chapter heading and closes at the chapter separator that follows the rules table.
@@ -75,17 +75,6 @@ func readGuide(t *testing.T, path string) string {
 		t.Fatalf("read %s: %v", path, err)
 	}
 	return string(body)
-}
-
-// TestTheTwoAgentGuidesCarryOneDocsBlock pins the copy-drift that cost this lane a phantom site: the two
-// guides are one text, so the block must be byte-identical, not merely equivalent in meaning.
-func TestTheTwoAgentGuidesCarryOneDocsBlock(t *testing.T) {
-	first := docsSection(t, agentGuides[0])
-	for _, path := range agentGuides[1:] {
-		if got := docsSection(t, path); got != first {
-			t.Errorf("%s and %s carry different docs blocks: the pair is one text, and copy-drift is what put a phantom site in this afternoon's grep", agentGuides[0], path)
-		}
-	}
 }
 
 // TestNoAgentGuideClaimsTheRetiredIndexIsLive pins the retirement's direction: the exact claims deleted on
