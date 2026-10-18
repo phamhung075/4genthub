@@ -7014,6 +7014,12 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
   name `AGENTS.md:160`; with the line removed it passes in 0.04s. Two things it caught while being
   written: `git grep -f` takes every line of the data file as a pattern, so its `#` comments matched
   the whole tree (6097 hits, 30s) until the patterns were written comment-free to a scratch file.
+- `e2e/dashboard-drawer.spec.ts` (Playwright, chromium): the dashboard drawer at 375x667 and
+  320x568 under `isMobile`/`hasTouch` - opened through its toggle, first project expanded, then each
+  VISIBLE row action measured for opacity with no hover, the 40px floor and its right edge, the
+  aside scanned for an element past the viewport, and View Branch Details tapped for a
+  `[role=dialog]`. Delete Branch is optional: `BranchItem` renders it only off `main`. Live against
+  the deployed origin: 2 passed in 6.5s. `npx tsc --noEmit -p .` clean; vitest does not run e2e.
 - `TestAPrunedPathWasDeletedByACommit` joins the pruned-path guard: every entry in
   `testdata/pruned_paths.txt` must have a deletion commit in `git log --all --diff-filter=D`, because a
   typo sits in the data file matching nothing and guarding nothing while the list looks maintained.
