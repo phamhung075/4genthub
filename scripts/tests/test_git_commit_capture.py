@@ -310,7 +310,9 @@ def _no_ambient_seat_identity(monkeypatch: pytest.MonkeyPatch) -> None:
     """This suite runs INSIDE a seat, where AGENTHUB_SESSION_NAME is exported: inherited, every case is
     judged as a seat, and an inherited OWNER_DOCS_COMMIT would exempt them all. Each case says which."""
     monkeypatch.delenv("AGENTHUB_SESSION_NAME", raising=False)
+    monkeypatch.delenv("OPENRIG_SESSION_NAME", raising=False)
     monkeypatch.delenv("OWNER_DOCS_COMMIT", raising=False)
+    monkeypatch.delenv("AGENTHUB_SEAT", raising=False)
 
 
 def _seat_repo(tmp_path: Path) -> Path:
@@ -413,6 +415,41 @@ def test_the_owner_host_and_the_owner_flag_are_exempt(
 
     assert _commit(module, repo, "-m", "docs: owner's flag", "--", "AGENTS.md") == 0
     assert _git(repo, "show", "HEAD:AGENTS.md") == "three\n"
+
+
+def test_the_lead_seat_lands_documentation_under_either_session_spelling(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys
+) -> None:
+    """The owner's 2026-10-18 ruling: the lead pushes and lands the docs, on both spellings a session is set in.
+    The exception is the seat KEY - a name that merely starts with it is another seat, and still refused."""
+    module = _module()
+    repo = _seat_repo(tmp_path)
+
+    # The canonical spelling alone.
+    (repo / "AGENTS.md").write_text("two\n", encoding="utf-8")
+    monkeypatch.setenv("AGENTHUB_SESSION_NAME", "agenthub--4genthub-min--lead")
+    assert _commit(module, repo, "-m", "docs: the lead's canonical", "--", "AGENTS.md") == 0, capsys.readouterr().err
+    assert _git(repo, "show", "HEAD:AGENTS.md") == "two\n"
+
+    # A seat's canonical name, with the lead in the OpenRig spelling the other runtimes set.
+    (repo / "AGENTS.md").write_text("three\n", encoding="utf-8")
+    monkeypatch.setenv("AGENTHUB_SESSION_NAME", SEAT)
+    monkeypatch.setenv("OPENRIG_SESSION_NAME", "4genthub-min-lead@4genthub-min")
+    assert _commit(module, repo, "-m", "docs: the lead's openrig", "--", "AGENTS.md") == 0, capsys.readouterr().err
+    assert _git(repo, "show", "HEAD:AGENTS.md") == "three\n"
+    monkeypatch.delenv("OPENRIG_SESSION_NAME")
+
+    # The lead's seat key is enough when it is the variable the runtime exported.
+    monkeypatch.setenv("AGENTHUB_SEAT", "lead")
+    (repo / "AGENTS.md").write_text("four\n", encoding="utf-8")
+    assert _commit(module, repo, "-m", "docs: the lead's key", "--", "AGENTS.md") == 0, capsys.readouterr().err
+
+    # Another seat's session, including one that starts with "lead", is refused as before.
+    monkeypatch.delenv("AGENTHUB_SEAT")
+    monkeypatch.setenv("AGENTHUB_SESSION_NAME", "agenthub--4genthub-min--lead-dev")
+    (repo / "AGENTS.md").write_text("five\n", encoding="utf-8")
+    assert _commit(module, repo, "-m", "docs: not the lead", "--", "AGENTS.md") == 1
+    assert "docs-only commit refused" in capsys.readouterr().err
 
 
 def test_nothing_to_commit_is_not_a_docs_refusal(
