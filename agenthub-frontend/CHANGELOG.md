@@ -9,6 +9,9 @@
   - Page copy (`index.html`, `manifest.json`, landing, seats, connect-machine, prose) names the 4genteam client. NOT run (no local test run); `tsc --noEmit` is the check.
 
 ### Fixed
+- **The ledger's context-update row names the level and version it recorded** - 2026-10-18
+  - `src/lib/taskTimeline.ts` `describeEvent`: a `context_updated` row reads the payload's `{level, version}` and prints "Context updated: task context, version 7" instead of the bare kind label; an empty level keeps "Context updated". What it may NOT print is which field changed or which seat wrote: both writers send only `{level, id, version}` with `actor_id` the literal `"context"` (`agenthub_go/.../use_cases/update_context.go:83`, `.../services/unified_context_service.go:474`), so a row claiming a field or a seat would invent it. Asked in row `qitem-20261018171212-02987299f1e2` for the payload to carry the changed keys and the acting seat key.
+  - `src/tests/lib/taskTimeline.test.ts`: four payload cases (task level with version, branch level with version 0, level only, empty level). `npx tsc --noEmit -p .` clean; the file's 21 tests pass.
 - **A long token in a setup command wraps instead of running off the box** - 2026-10-15
   - `src/components/help/shared/CommandBox.tsx`: the command text uses `break-all whitespace-pre-wrap` and the copy button stays top-aligned. The Copy button still copies the whole command on one line.
 

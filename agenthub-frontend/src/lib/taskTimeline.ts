@@ -133,6 +133,19 @@ export function describeEvent(event: TaskEvent): string {
     const content = event.payload?.['content'];
     if (typeof content === 'string' && content.trim() !== '') return cleanProgressText(content);
   }
+  // A context update's payload carries WHERE it landed and the version it reached, and nothing else:
+  // both writers send `{level, id, version}` (`update_context.go:83`,
+  // `unified_context_service.go:474`), so no field-by-field diff exists to show. The row names the
+  // level and version it does hold rather than saying only "Context updated" - a reader can at least
+  // tell a task-level write from a room-level one, and the version says a write happened at all.
+  if (event.kind === 'context_updated') {
+    const level = event.payload?.['level'];
+    const version = event.payload?.['version'];
+    if (typeof level === 'string' && level !== '') {
+      const at = typeof version === 'number' ? `, version ${version}` : '';
+      return `Context updated: ${level} context${at}`;
+    }
+  }
   return labelForKind(event.kind);
 }
 

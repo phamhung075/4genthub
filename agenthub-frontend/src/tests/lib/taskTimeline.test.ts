@@ -132,6 +132,24 @@ describe('describeEvent', () => {
     expect(describeEvent(ev(1, 'context_updated'))).toBe('Context updated');
   });
 
+  it("names the level and version a context update recorded, and invents neither", () => {
+    // The payload both writers send (`update_context.go:83`, `unified_context_service.go:474`): the
+    // level it landed at, the row's id and the version reached. There is no changed-field list to show,
+    // so the row must not imply one.
+    expect(
+      describeEvent(ev(1, 'context_updated', { level: 'task', id: 'uuid-1', version: 7 })),
+    ).toBe('Context updated: task context, version 7');
+    expect(
+      describeEvent(ev(2, 'context_updated', { level: 'branch', id: 'uuid-2', version: 0 })),
+    ).toBe('Context updated: branch context, version 0');
+    // A payload with a level but no readable version still names the level.
+    expect(describeEvent(ev(3, 'context_updated', { level: 'project' }))).toBe(
+      'Context updated: project context',
+    );
+    // An empty or unreadable payload keeps the kind's own label rather than rendering a blank level.
+    expect(describeEvent(ev(4, 'context_updated', { level: '', version: 3 }))).toBe('Context updated');
+  });
+
   it('prints a status this build does not know as itself rather than hiding it', () => {
     expect(describeEvent(ev(1, 'status_changed', { old: 'todo', new: 'quarantined' }))).toBe(
       'Status: Todo to quarantined',
