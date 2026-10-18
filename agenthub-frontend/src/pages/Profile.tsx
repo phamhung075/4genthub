@@ -74,14 +74,14 @@ export const Profile: React.FC = () => {
         {/* Profile Header Card */}
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <div className="h-20 w-20 rounded-full bg-primary flex items-center justify-center text-white text-2xl font-bold">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="flex min-w-0 items-center space-x-4">
+                <div className="h-20 w-20 shrink-0 rounded-full bg-primary flex items-center justify-center text-white text-2xl font-bold">
                   {getInitials(user.username)}
                 </div>
-                <div>
-                  <CardTitle className="text-2xl">{user.username}</CardTitle>
-                  <CardDescription className="text-base">{user.email}</CardDescription>
+                <div className="min-w-0">
+                  <CardTitle className="truncate text-2xl">{user.username}</CardTitle>
+                  <CardDescription className="truncate text-base">{user.email}</CardDescription>
                 </div>
               </div>
               {!isEditing ? (
@@ -106,23 +106,23 @@ export const Profile: React.FC = () => {
         </Card>
 
         {/* Simple Tab Navigation */}
-        <div className="flex space-x-4 border-b">
+        <div className="flex gap-4 overflow-x-auto border-b">
           <button
-            className={`pb-2 px-1 ${activeTab === 'account' ? 'border-b-2 border-primary font-semibold' : ''}`}
+            className={`shrink-0 whitespace-nowrap pb-2 px-1 ${activeTab === 'account' ? 'border-b-2 border-primary font-semibold' : ''}`}
             onClick={() => setActiveTab('account')}
           >
             <User className="inline mr-2 h-4 w-4" />
             Account
           </button>
           <button
-            className={`pb-2 px-1 ${activeTab === 'security' ? 'border-b-2 border-primary font-semibold' : ''}`}
+            className={`shrink-0 whitespace-nowrap pb-2 px-1 ${activeTab === 'security' ? 'border-b-2 border-primary font-semibold' : ''}`}
             onClick={() => setActiveTab('security')}
           >
             <Lock className="inline mr-2 h-4 w-4" />
             Security
           </button>
           <button
-            className={`pb-2 px-1 ${activeTab === 'preferences' ? 'border-b-2 border-primary font-semibold' : ''}`}
+            className={`shrink-0 whitespace-nowrap pb-2 px-1 ${activeTab === 'preferences' ? 'border-b-2 border-primary font-semibold' : ''}`}
             onClick={() => setActiveTab('preferences')}
           >
             <Settings className="inline mr-2 h-4 w-4" />
@@ -202,8 +202,8 @@ export const Profile: React.FC = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-4">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="w-full justify-start"
                   onClick={() => navigate('/tokens')}
                 >
@@ -223,18 +223,18 @@ export const Profile: React.FC = () => {
                   Manage Sessions
                 </Button>
               </div>
-              
+
               <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-950 rounded-lg">
                 <h4 className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-2 flex items-center">
                   <Key className="mr-2 h-4 w-4" />
                   About API Tokens
                 </h4>
                 <p className="text-sm text-blue-700 dark:text-blue-300">
-                  API tokens allow you to authenticate with the MCP server from external applications. 
+                  API tokens allow you to authenticate with the MCP server from external applications.
                   You can create tokens with specific scopes to limit access permissions.
                 </p>
-                <Button 
-                  variant="link" 
+                <Button
+                  variant="link"
                   className="p-0 h-auto text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 mt-2"
                   onClick={() => navigate('/tokens')}
                 >
@@ -262,8 +262,8 @@ export const Profile: React.FC = () => {
                     <button
                       onClick={() => setTheme('light')}
                       className={`p-4 rounded-lg border-2 transition-all ${
-                        theme === 'light' 
-                          ? 'border-primary bg-primary/5' 
+                        theme === 'light'
+                          ? 'border-primary bg-primary/5'
                           : 'border-gray-200 hover:border-gray-300'
                       }`}
                     >
@@ -275,12 +275,12 @@ export const Profile: React.FC = () => {
                         </div>
                       </div>
                     </button>
-                    
+
                     <button
                       onClick={() => setTheme('dark')}
                       className={`p-4 rounded-lg border-2 transition-all ${
-                        theme === 'dark' 
-                          ? 'border-primary bg-primary/5' 
+                        theme === 'dark'
+                          ? 'border-primary bg-primary/5'
                           : 'border-gray-200 hover:border-gray-300'
                       }`}
                     >
@@ -293,7 +293,7 @@ export const Profile: React.FC = () => {
                       </div>
                     </button>
                   </div>
-                  
+
                   <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-950 rounded-lg">
                     <p className="text-sm text-blue-800 dark:text-blue-200">
                       <strong>Current theme:</strong> {theme === 'light' ? 'Light' : 'Dark'} mode
