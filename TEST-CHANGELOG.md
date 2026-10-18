@@ -6662,3 +6662,19 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
   == 1`; `module ... has no attribute 'is_document'`) while the three unchanged-behaviour cases pass; with
   the change, `python3 -m pytest --noconftest -p no:cacheprovider scripts/tests/test_git_commit_capture.py -q`
   -> 13 passed.
+
+## 2026-10-18 - the legacy client worktree is identified by its path, and a kept seat gets its link
+
+- `agenthub_client/internal/clientworktree/ensure_test.go`: `TestEnsureClearsTheLegacyPathWhateverBranchItHolds`
+  replaces `TestEnsureLeavesAForeignClientWorktreeAlone` - the ruling scopes the migration by PATH, so a
+  worktree at `<seat>-client` on a lane branch is cleared and the lane branch (and its commit) survives.
+  `TestEnsureNamesAndKeepsADirtyPreDerivationClientWorktree` replaces the refusal case: an untracked file in
+  the legacy is a NOTE naming the path and seat, no link is placed, `Ensure` returns nil, and the reviewer's
+  worktree and detached link are still created - the "rest of the room is still attempted" boundary.
+  New: `TestEnsurePlacesTheKeptPathsLinkOnTheLegacyBranch` (a registered seat path whose link is missing gets
+  it on the branch the cleared legacy held, at that branch's commit, and a second run changes nothing) and
+  `TestEnsureCreatesTheKeptPathsLinkAtTheParentGitlink` (no legacy, no branch: the link is created at the
+  parent's gitlink on the derived branch). `TestEnsureNotesAKeptPathsLinkThatCannotBePlaced` pins the note
+  path: the branch is held elsewhere, the run succeeds, no link is invented. All fixtures are real
+  repositories and real worktrees, as the package's other cases are.
+- At this change: `go vet ./...` clean and `go test -count=1 ./...` green in `agenthub_client`.
