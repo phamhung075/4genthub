@@ -229,20 +229,22 @@ owner the digest.
 
 No skill text, no code, no new route, no board task. Design only — acceptance 3.
 
-## 10. Measured inventory (what "the 16 on disk" is)
+## 10. Measured inventory (what "the 20 on disk" is)
 
 - `share/` (client-owned source, `agenthub_client/skills/share/`), **11** when measured: agent-browser,
   changelog-updater, development-team, dogfood, safe-file-removal, seat-worktree, systematic-debugging,
   test-driven-development, token-economy, unused-code-cleanup, verification-before-completion. **21** on 2026-10-18:
   those plus deepseek-offload (a submodule linked into `share/`), flow-summary, friction-report, jev-decisions,
   queue-row-schema, responsible-engineer, room-decision-request, self-check-while-working, short-output, typesafe-ai -
-  43 `SKILL.md` in the client tree when counted.
+  49 `SKILL.md` in the client tree when counted on 2026-10-18.
 - `client/` (never delivered to a seat), **5** when measured: offpeak-gate, rig-runtime-switch, seat-runtime-switch,
-  spawn-team, watch-team — the seat-skills ruling §1 listed four and was one short. **6** on 2026-10-18: those plus
-  install.
+  spawn-team, watch-team — the seat-skills ruling §1 listed four and was one short. **8** on 2026-10-18: those plus
+  install, permanent-change (`122805b`) and team-benchmark (`9c2296b`).
 - `rooms/` (the room- and seat-level location): an **empty placeholder** when measured; `rooms/4genthub-min/` held
   **16** on 2026-10-18 - 15 seat-level across 5 seat dirs (architect 3, fe-dev 4, go-dev 2, lead 3, reviewer 3) plus
-  the room-level `architect-ecosystem-review` - so the set in §1 is no longer its first occupants. The layout is
+  the room-level `architect-ecosystem-review` - so the set in §1 is no longer its first occupants. A second room,
+  `rooms/pdf-awesome/fe-dev/`, adds 4 (`fe-dev-role`, `fe-dev-workflow`, `fe-pdf-awesome-driven`, `taste-skill`;
+  `c3b4d5b`, `3a6eacc`), so the level holds **20**. The layout is
   `resolve_for_seat` (`agenthub_client/rust/agenthub-runtime/src/skills/mod.rs`).
 - Delivered but not yet client-owned (cloud snapshot / 4genteam vendored), among the 18 skills in the architect's
   delivered tree: comm-guard-skill, queue-handoff, plan-review, refocusing, client-skills, plus four cloud leftovers
