@@ -42,14 +42,13 @@ Architect ruling, 2026-10-11. Requested by the owner through the lead (`qitem-20
 
 **After a land:** a seat whose tip is contained in `main` runs `git merge --ff-only main` in its own worktree before its next edit. The client never moves a seat's branch.
 
-**The submodules.** `agenthub_client` and `.claude` inside a seat's worktree are **linked worktrees of the main checkout's own submodule repositories**, never `git submodule update`.
+**The submodule.** `agenthub_client` inside a seat's worktree is a **linked worktree of the main checkout's own submodule repository**, never `git submodule update`. `.claude` is not a submodule of this hub and is never linked: measured 2026-10-18, `.gitmodules` records `claude-automation` and `agenthub_client`, `git rev-parse HEAD:.claude` answers `fatal: path '.claude' exists on disk, but not in 'HEAD'`, and the derivation links nothing there (`f8989ba`).
 
 The reason is measured. The architect ran it on scratch repositories on 2026-10-11: in a new linked worktree, `submodule update --init` clones from the submodule URL and fails on a pin that was never pushed, with `fatal: git upload-pack: not our ref`. This room never pushes, so every pin is unpushed. A `git -C <main>/agenthub_client worktree add <wt>/agenthub_client <gitlink-sha>` placed at the submodule path is accepted by the parent as the submodule. A seat's commit there lands in the shared client repository, where the lead can see it with no fetch.
 
 | Submodule | In a writing seat's worktree |
 |---|---|
-| `agenthub_client` | on branch `<rig>/<seat>` of the client repository, created at the parent's gitlink |
-| `.claude` | detached at the gitlink. It stays out of every commit, as before. |
+| `agenthub_client` | on branch `<rig>/<seat>` of the client repository: attached to when that branch already exists with no worktree holding it, else created at the parent's gitlink; detached at the pin in the reviewer's worktree |
 
 ## (b) The merge routine
 
@@ -101,12 +100,12 @@ commit. The commit therefore names its paths and nothing is staged first.
 
 - **A new `Obligatory` row, `worktrees`.** Scope `rig`; RestartBy `none`; start order `daemon`, `gate`, **`worktrees`**, `seats`, and so on, because a seat's `cwd` must exist before it launches.
   - **`Start`**, for each seat from `team.json`:
-    - create the path from `SeatWorktree` if it is missing (`git worktree add -b <branch> <path> main`, or `--detach` for the reviewer);
-    - add the two submodule worktrees;
+    - create the path from `SeatWorktree` if it is missing: `git worktree add <path> <branch>` when that branch already exists with no worktree holding it (it carries the seat's own commits; attaching re-points nothing), `git worktree add -b <branch> <path> main` when it does not, `--detach` for the reviewer;
+    - link the `agenthub_client` worktree into it (on the branch above, or detached at the pin for the reviewer), and nothing else;
     - link `.env` into it, through the existing `rigLinkProviderKey`. `.env` is ignored by `.gitignore:169`.
 
-    An existing worktree on the right branch is reused. A path that exists on another branch, or is not a worktree, is **refused and named**. Nothing is overwritten.
-  - **`Check`**: every derived path is registered in `git worktree list`, on its branch, with both submodules present.
+    A path that is already a registered worktree is **kept** - read, not re-derived: it is not moved, not refused for the branch it holds (a seat's worktree moves onto the lane it is working, and a reviewer's is detached), and its client link is not repaired - the one write it receives is its `.env` link. Only a path that exists and is not a registered worktree is **refused and named**. Nothing is overwritten.
+  - **`Check`**: every derived path is registered in `git worktree list` **whatever branch it holds**, with the `agenthub_client` link present (a `.git` under it). Wrong is "present but not a worktree, or the client link missing", never "on another branch": measured 2026-10-18, fe-dev sat on `fe-dashboard-update-depth` and the architect on `g3-drop-classification` while the reviewer was detached, and a check that called all three wrong made a room that `up` keeps read as broken.
 - **`sync rig`**: sets each member's `cwd` to `SeatWorktree(...)`. The path is deterministic, so sync can write it before the worktree exists.
 - **New verbs:**
   - `4genteam worktree list RIG` prints the derived worktrees and every other entry of `git worktree list`, labelled `foreign`.
@@ -117,7 +116,7 @@ commit. The commit therefore names its paths and nothing is staged first.
 
 ## Facts the lead should know (none are ruled here)
 
-- `.claude` is recorded at `b376accb` and checked out at `6e8bf881` in the main checkout. A new seat worktree gets the recorded hooks (`b376accb`), not the checked-out ones, until someone lands that change.
+- `.claude` is not a submodule of this hub and no derived worktree carries one (`f8989ba`). The earlier fact here - recorded at `b376accb`, checked out at `6e8bf881`, a new worktree getting the recorded hooks - described a link the derivation never places. go-dev's worktree holds an empty `.claude` directory with no `.git` under it (2026-10-18 13:52); it is a directory, not a link, and nothing links or removes it.
 - The architect seat is `claude-code` and is missing from the materialized rig (`072996ad`). Its worktree follows the same rule, and how it is launched belongs to that item.
 - An ignored file is not in a new worktree. The frontend seat installs `node_modules` in its own worktree, and the client does not.
 
@@ -127,7 +126,7 @@ commit. The commit therefore names its paths and nothing is staged first.
 |---|---|
 | `team.json` with lead, developer, reviewer and architect | four seat paths and `integration`; the reviewer has no branch |
 | `Start` run twice | the second run changes nothing |
-| a derived path that exists on another branch | refused, named, untouched |
+| a derived path that exists on another branch | kept and named `kept`, untouched |
 | prune over `/tmp/wt-x` (clean), `/tmp/gate-y` (dirty) and `/tmp/wt-z` (`HEAD` on no branch) | x removed; y and z named and kept |
 | a fixture parent repository whose submodule pin was never pushed | `Start` succeeds, and `git -C <wt> submodule status` shows the pin |
 | `sync rig` | every member's `cwd` is its derived path |
