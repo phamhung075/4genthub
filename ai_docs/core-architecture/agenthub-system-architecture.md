@@ -632,7 +632,7 @@ B fails on what the system is for. Claims, status transitions and gate verdicts 
 
 - *Facts* are `progress`, `evidence_submitted`, `handover` and `context_loaded`. They are append-only observations, and the client may record them offline. When the client reconnects, the server accepts them in arrival order and keeps the client's time in the payload. A fact is never rejected for being late.
 - *Decisions* are `claimed`, `status_changed`, `gate_verdict`, `assigned` and `human_decision`. Each carries `base_seq`, the task `seq` the client had seen. The server rejects one whose `base_seq` is behind the task's current `seq`, unless every event since then is a fact. Offline, a client cannot claim, transition or judge. It queues the intent, and the intent is decided when the client reconnects.
-- *Context changes* append a `context_updated {level, id, version}` event, so one cursor covers work and context together. A client holding an older version fetches the whole document; there are no patches.
+- *Context changes* append a `context_updated {level, id, version, origin, changes, changes_truncated}` event — WHO made it is the entry's `actor_kind`/`actor_id` (the seat the request named, else the user), never a payload key — so one cursor covers work and context together. `changes` is a bounded set of `{path, op, old, new}` leaves (8 KiB for the set, 512 B for one value; over the value cap a `{truncated, bytes, sha256}` marker). A client holding an older version fetches the whole document; there are no patches.
 
 **Interfaces and shape.**
 

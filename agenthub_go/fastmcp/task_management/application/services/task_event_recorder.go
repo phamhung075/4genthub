@@ -90,6 +90,25 @@ func (r *TaskEventRecorder) RecordStatusChange(ctx context.Context, taskID, oldS
 		map[string]any{"old": oldStatus, "new": newStatus})
 }
 
+// RecordContextUpdate writes the entry for one task-level context write: the level and version the
+// row records, the writer surface that made it (`manage_context.update` or
+// `unified_context_service.update`), and the bounded change set ContextChanges built.
+//
+// WHO made the write is settled HERE, exactly as RecordStatusChange settles it - the seat the
+// request named, else the user the recorder was built for - and never repeated in the payload: a
+// key naming the seat would be a second home for one fact, and a wrong one the moment the columns
+// were read. The two writers used to hardcode `ActorID: "context"`; this is the one path that
+// replaced them.
+func (r *TaskEventRecorder) RecordContextUpdate(ctx context.Context, taskID, level string, version int,
+	origin string, changes []entities.ContextChange, dropped int) (*entities.TaskEvent, error) {
+	actor, err := r.actorFor(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return r.Record(ctx, taskID, entities.TaskEventKindContextUpdated, actor.Kind, actor.ID,
+		entities.ContextUpdatePayload(level, taskID, version, origin, changes, dropped))
+}
+
 // RecordProgress writes the entry for one progress note: the note's text exactly as the column would
 // have stored it, the number it was written under, and the timestamp the cell would have carried.
 // That is what lets a reader merge the ledger with the column without reformatting either source, and
@@ -146,13 +165,29 @@ func (r *TaskEventRecorder) RecordGateVerdict(ctx context.Context, taskID string
 var ErrNoActor = errors.New("task_events: no actor to attribute this write to")
 
 func (r *TaskEventRecorder) actorFor(ctx context.Context) (Actor, error) {
+	actor, ok := ActorFor(ctx, r.userID)
+	if !ok {
+		return Actor{}, ErrNoActor
+	}
+	return actor, nil
+}
+
+// ActorFor settles who a write from this request is attributed to, in the ONE order the recorder
+// follows: the seat the request named through the MCP header, else the user the write belongs to.
+// ok=false when neither exists - a write with no actor, which the ledger refuses rather than
+// attribute to something anonymous.
+//
+// It is exported because a writer that cannot join the caller's transaction still has to attribute a
+// row the same way: httpapp's context appender builds the repository and opens its own transaction,
+// so it resolves the actor here instead of inventing a second order.
+func ActorFor(ctx context.Context, userID string) (Actor, bool) {
 	if actor, ok := ActorFromContext(ctx); ok {
-		return actor, nil
+		return actor, true
 	}
-	if r.userID != "" {
-		return Actor{Kind: entities.TaskEventActorHuman, ID: r.userID}, nil
+	if userID != "" {
+		return Actor{Kind: entities.TaskEventActorHuman, ID: userID}, true
 	}
-	return Actor{}, ErrNoActor
+	return Actor{}, false
 }
 
 // Actor is WHO a write is attributed to, in the two shapes a request can name: a seat, which is an

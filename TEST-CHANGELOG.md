@@ -6840,3 +6840,23 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
   runs the measured sentence (`--test "go test ./... (green at …)"`) and asserts exit 2 with no dial and
   no git call. Measured 2026-10-18: that line had reached the command as extra argv, exited non-zero and
   was read as D3 over a green tree.
+
+## 2026-10-18 - the context event's seat and change set are pinned on both writers (hub, branch 4genthub-min/context-payload)
+
+- `agenthub_go/fastmcp/task_management/domain/entities/context_change_test.go`: the builder's contract -
+  `implementation_notes.added` (add), `implementation_notes.removed` (remove), `labels` (set, both arrays
+  whole), `new_key` (add), `status` (set todo->done) in canonical order; a 522-byte value becomes
+  `{truncated, bytes, sha256}` with the true length and 64 hex; 300 changes keep a prefix of 8 KiB and
+  report `changes_truncated`; `ContextUpdatePayload` carries all six keys and serializes a nil set as `[]`.
+- `agenthub_go/fastmcp/task_management/application/services/context_update_attribution_test.go` and
+  `agenthub_go/fastmcp/task_management/application/use_cases/update_context_ledger_test.go`: each writer
+  runs through the REAL `TaskEventRecorder` over a capturing ledger - `actor_kind=seat`,
+  `actor_id=="4genthub-min/go-dev"` from `services.WithActor(SeatActor(...))`, the writer's own `origin`,
+  `level=task`, and a change whose path names the edited leaf.
+- `agenthub_go/fastmcp/server/httpapp/context_ledger_appender_test.go`:
+  `TestContextLedgerAppenderRefusesAContextUpdateWithoutAResolvedCaller` pins the empty-id rule for the
+  new method as the Append case already did.
+- `create_context_single_write_test.go`: `countingContextAppender` counts the widened seam's context
+  updates (the create path still writes exactly one); `countingCollectionAppender` records the
+  context_updated entry beside the progress note.
+- At this change: `go test ./...` in `agenthub_go` -> rc 0.
