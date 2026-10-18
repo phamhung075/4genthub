@@ -732,6 +732,15 @@ export const apiReference: ApiReference = {
       "description": ""
     },
     {
+      "method": "GET",
+      "path": "/api/v2/rooms/{room}/sync",
+      "pathParams": [
+        "room"
+      ],
+      "handler": "",
+      "description": ""
+    },
+    {
       "method": "PUT",
       "path": "/api/v2/rooms/{room}/team",
       "pathParams": [

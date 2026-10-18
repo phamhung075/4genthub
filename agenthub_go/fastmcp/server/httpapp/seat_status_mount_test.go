@@ -443,3 +443,95 @@ func TestSeatStatusPostRejectsTooManyEdges(t *testing.T) {
 		t.Fatalf("an over-cap report was stored")
 	}
 }
+
+func getRoomSync(mux *http.ServeMux, room string) *httptest.ResponseRecorder {
+	req := httptest.NewRequest(http.MethodGet, "/api/v2/rooms/"+room+"/sync", nil)
+	req.Header.Set("Authorization", "Bearer test-token")
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+	return rec
+}
+
+// TestRoomSyncReadsTheRecordAgainstTheLivePin is the one test for GET /api/v2/rooms/{room}/sync: the
+// record (the newest resolved snapshot's hash, which the repository's LEFT JOIN supplies and this fake
+// applies through expected) against the live pin a machine reports, reduced to one row per seat. Two
+// machines report room eng, so the newest-wins rule and the machine-id tie both decide a row; one of
+// them also reports room ops, whose seat must not appear. A seat no machine reports (omega) is absent:
+// absence is never in_sync.
+func TestRoomSyncReadsTheRecordAgainstTheLivePin(t *testing.T) {
+	early := seatStatusTestNow.Add(-2 * time.Minute)
+	late := seatStatusTestNow.Add(-1 * time.Minute)
+	fake := &fakeSeatStatus{
+		byUser: map[string]map[string]repositories.Machine{
+			seatStatusTestUserID: {
+				"pc-a": {MachineID: "pc-a", LastSeen: seatStatusTestNow, Seats: []repositories.SeatStatus{
+					{Room: "eng", Seat: "alpha", RunningHash: "alpha-old", ReportedAt: early},
+					{Room: "eng", Seat: "beta", RunningHash: "beta-live", ReportedAt: early},
+					{Room: "eng", Seat: "delta", RunningHash: "delta-live", ReportedAt: early},
+					{Room: "ops", Seat: "gamma", RunningHash: "gamma-live", ReportedAt: early},
+				}},
+				"pc-b": {MachineID: "pc-b", LastSeen: seatStatusTestNow, Seats: []repositories.SeatStatus{
+					{Room: "eng", Seat: "alpha", RunningHash: "alpha-live", ReportedAt: late},
+					{Room: "eng", Seat: "delta", RunningHash: "delta-live", ReportedAt: early},
+					{Room: "eng", Seat: "epsilon", RunningHash: "epsilon-live", ReportedAt: early},
+					{Room: "eng", Seat: "zeta", RunningHash: "", ReportedAt: early},
+					{Room: "eng", Seat: "eta", RunningHash: "", ReportedAt: early},
+				}},
+			},
+		},
+		expected: map[string]string{
+			"eng/alpha":   "alpha-live",  // the newer report's pin matches the record
+			"eng/beta":    "beta-record", // both known and different
+			"eng/delta":   "delta-live",  // tie on reported_at, so pc-a's row is the live one
+			"eng/epsilon": "",            // no resolution record at all
+			"eng/zeta":    "zeta-record", // nothing live reported
+			"eng/eta":     "",            // unknown on both sides
+			"ops/gamma":   "gamma-live",  // the other room's seat: must not appear
+		},
+	}
+	mux := seatStatusTestMux(t, fake)
+
+	rec := getRoomSync(mux, "eng")
+	if rec.Code != http.StatusOK {
+		t.Fatalf("GET rooms/eng/sync = %d %s", rec.Code, rec.Body.String())
+	}
+	var got struct {
+		Success bool   `json:"success"`
+		Room    string `json:"room"`
+		Seats   []struct {
+			Seat         string `json:"seat"`
+			ExpectedHash string `json:"expected_hash"`
+			PinnedHash   string `json:"pinned_hash"`
+			MachineID    string `json:"machine_id"`
+			ReportedAt   string `json:"reported_at"`
+			Sync         string `json:"sync"`
+		} `json:"seats"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &got); err != nil {
+		t.Fatalf("decode %s: %v", rec.Body.String(), err)
+	}
+	if !got.Success || got.Room != "eng" {
+		t.Fatalf("answer = %+v", got)
+	}
+	want := []struct{ seat, expected, pinned, machine, sync string }{
+		{"alpha", "alpha-live", "alpha-live", "pc-b", "in_sync"},
+		{"beta", "beta-record", "beta-live", "pc-a", "drift"},
+		{"delta", "delta-live", "delta-live", "pc-a", "in_sync"},
+		{"epsilon", "", "epsilon-live", "pc-b", "unknown"},
+		{"eta", "", "", "pc-b", "unknown"},
+		{"zeta", "zeta-record", "", "pc-b", "unknown"},
+	}
+	if len(got.Seats) != len(want) {
+		t.Fatalf("seats = %+v, want %d rows (omega has no live report and must not appear)", got.Seats, len(want))
+	}
+	for i := range want {
+		row := got.Seats[i]
+		if row.Seat != want[i].seat || row.ExpectedHash != want[i].expected || row.PinnedHash != want[i].pinned ||
+			row.MachineID != want[i].machine || row.Sync != want[i].sync {
+			t.Errorf("seat %d = %+v, want %+v", i, row, want[i])
+		}
+	}
+	if got.Seats[0].ReportedAt != late.UTC().Format(time.RFC3339) {
+		t.Errorf("alpha reported_at = %q, want the newest report %q", got.Seats[0].ReportedAt, late.UTC().Format(time.RFC3339))
+	}
+}

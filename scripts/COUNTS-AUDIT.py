@@ -46,7 +46,16 @@ GO = f"{ROOT}/agenthub_go"
 # The numbers as the surface inventory states them. Each entry names the instrument that
 # re-derives it, because a number without its instrument is the failure this file exists for.
 EXPECTED = {
-    "httpapp route registrations": 135,     # grep -rn 'mux.HandleFunc(' fastmcp/server/httpapp, minus _test.go
+    "httpapp route registrations": 136,     # grep -rn 'mux.HandleFunc(' fastmcp/server/httpapp, minus _test.go
+                                            #   135 -> 136 (2026-10-19, go-dev, at 30fa9bd9): ONE registration
+                                            #     landed - GET /api/v2/rooms/{room}/sync (handleRoomSync,
+                                            #     seat_status_mount.go:118), the record-vs-live route the owner's
+                                            #     LAND ruling asked for. Re-derived, not adjusted: the same
+                                            #     pattern returns 135 at the previous pin and 136 at HEAD.
+                                            #     The document moved with it in the same pass: §1's Reproduce
+                                            #     line heads with 156 (httpapp 136, auth 20), §1.17 gained the
+                                            #     row and its own pass record, and §4's rigspec row gained the
+                                            #     replacement note. `go run ./cmd/apirefgen` writes 156 routes.
                                             #   136 -> 135 (2026-10-15, go-dev, docs duty pass 11): cbc51bae
                                             #     ("refactor: purge the legacy rig client; client routes move to
                                             #     /api/v2") deleted seat_rigspec_mount.go - a pure delete, `0 230`
