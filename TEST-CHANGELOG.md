@@ -7033,6 +7033,14 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
   no git call. Measured 2026-10-18: that line had reached the command as extra argv, exited non-zero and
   was read as D3 over a green tree.
 
+## 2026-10-19 - the room sync verb reads the record against the live pin (agenthub_client, branch 4genthub-min/fe-dev-skill-driven)
+
+- `internal/clientroom/sync_test.go` (new, 8 tests): the verb GETs `/api/v2/rooms/{room}/sync` with the
+  bearer and renders SEAT/SYNC/EXPECTED/PINNED/MACHINE/REPORTED, exiting 0 on a drifted row; `--json`
+  prints the answer verbatim; ROOM falls back to `$AGENTHUB_ROOM`; a missing room, a second positional,
+  a missing URL, a missing token, a 404 carrying `detail`, and an empty seat set each take their named
+  exit. Measured 2026-10-19: `go test ./internal/clientroom/` passes in 0.78s.
+
 ## 2026-10-18 - the push authority is the lead seat, held at one point per surface (hub, branch 4genthub-min/lead-push)
 
 - `scripts/tests/test_seat_policy_commit_form.py`: `test_only_the_lead_module_may_push` pins the owner's
