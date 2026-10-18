@@ -6677,4 +6677,8 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
   parent's gitlink on the derived branch). `TestEnsureNotesAKeptPathsLinkThatCannotBePlaced` pins the note
   path: the branch is held elsewhere, the run succeeds, no link is invented. All fixtures are real
   repositories and real worktrees, as the package's other cases are.
+- Follow-up in the same lane (`287f7bc`), two review divergences: the dirty-legacy case now holds a LANE
+  branch with the derived branch free (the live architect/fe-dev shape), so it fails if a link is placed
+  anyway; and the clearance case's legacy now sits on a lane branch too, so it fails if the created path's
+  link attaches to the derived name instead. Both fail on `9df46df` and pass on `287f7bc`.
 - At this change: `go vet ./...` clean and `go test -count=1 ./...` green in `agenthub_client`.
