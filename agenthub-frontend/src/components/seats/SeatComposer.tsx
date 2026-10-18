@@ -214,8 +214,8 @@ export const SeatComposer: React.FC<SeatComposerProps> = ({
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="flex items-end gap-3">
-          <div className="w-48">
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="w-48 shrink-0">
             <label className="text-sm font-medium" htmlFor="composer-scope">
               Level
             </label>

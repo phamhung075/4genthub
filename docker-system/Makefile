@@ -94,7 +94,7 @@ check: validate lint
 ## permissions: Fix file permissions
 permissions:
 	@echo -e "$(BLUE)Setting correct permissions...$(NC)"
-	@chmod +x docker-cli.sh docker-menu.sh docker-menu.py 2>/dev/null || true
+	@chmod +x docker-cli.sh docker-menu.sh 2>/dev/null || true
 	@chmod +x $(TEST_DIR)/*.sh 2>/dev/null || true
 	@chmod +x $(LIB_DIR)/*.sh 2>/dev/null || true
 	@echo -e "$(GREEN)Permissions updated$(NC)"
