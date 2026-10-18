@@ -50,6 +50,16 @@ The reason is measured. The architect ran it on scratch repositories on 2026-10-
 |---|---|
 | `agenthub_client` | on branch `<rig>/<seat>` of the client repository: attached to when that branch already exists with no worktree holding it, else created at the parent's gitlink; detached at the pin in the reviewer's worktree |
 
+## Where a seat's client code lives
+
+Ruling, 2026-10-18 (`qitem-20261018121114-9209ad06b981`): **one location**, `<roomDir>/wt/<seat>/agenthub_client`. A seat commits client code there, on its client branch: `<rig>/<seat>` for a seat that has none, and the branch its legacy worktree held for a seat the migration moves. `<roomDir>/wt/<seat>-client` is the pre-derivation layout; the migration (`clearStaleClientWorktrees`) removes it, clean only, and the branch survives.
+
+There is no per-seat location to name, because a second location means a second check: `Check` tests the derived path, and it exists so a seat that cannot build the client is named before the build fails. Naming `<seat>-client` as a location for some seats would make the check's answer depend on a table that must be kept true, and the seat launched in `<seat>` would still not find the client where the derivation puts it.
+
+Measured 2026-10-18, the reason for this ruling: go-dev's link holds `4genthub-min/go-dev` (52 commits ahead of `main`) and works; the architect's and fe-dev's links were never placed, and their client work sat in `architect-client` (`4genthub-min/architect-client`, 3 ahead) and `fe-dev-client` (`4genthub-min/fe-dev-edit-yield`, one untracked `captures/` directory) - so `Check` called two working seats wrong. The migration's first form matched a legacy worktree only when it held exactly `<rig>/<seat>`, so no lane branch ever matched it: the legacy path is identified by PATH, and the branch it holds is what the link then carries.
+
+A legacy worktree holding uncommitted or untracked work is not removed: `git worktree remove` without `--force` refuses it, the path is named, and the seat keeps working there until it commits. `Check` names the seat until the link exists; that is the truthful state, not a defect of the seat.
+
 ## (b) The merge routine
 
 | | A: each seat tip fast-forwards `main` directly | B: one integration branch, gated as a whole, then fast-forwarded |
@@ -104,7 +114,7 @@ commit. The commit therefore names its paths and nothing is staged first.
     - link the `agenthub_client` worktree into it (on the branch above, or detached at the pin for the reviewer), and nothing else;
     - link `.env` into it, through the existing `rigLinkProviderKey`. `.env` is ignored by `.gitignore:169`.
 
-    A path that is already a registered worktree is **kept** - read, not re-derived: it is not moved, not refused for the branch it holds (a seat's worktree moves onto the lane it is working, and a reviewer's is detached), and its client link is not repaired - the one write it receives is its `.env` link. Only a path that exists and is not a registered worktree is **refused and named**. Nothing is overwritten.
+    A path that is already a registered worktree is **kept** - read, not re-derived: it is not moved and not refused for the branch it holds (a seat's worktree moves onto the lane it is working, and a reviewer's is detached). One thing is still placed: the `agenthub_client` link, when `<seat>/agenthub_client/.git` is absent. It attaches to the branch the seat's legacy `<seat>-client` worktree held when the migration removed it, else to the branch the derivation names, and is created at the parent's gitlink when that branch does not exist. A legacy worktree holding uncommitted or untracked work is named and left (no `--force`), and the run continues: the seat's link waits until the seat commits, and `Check` says so. Everything else in a kept path is the seat's own business; the one other write is its `.env` link. A path that exists and is not a registered worktree is **refused and named**. Nothing is overwritten.
   - **`Check`**: every derived path is registered in `git worktree list` **whatever branch it holds**, with the `agenthub_client` link present (a `.git` under it). Wrong is "present but not a worktree, or the client link missing", never "on another branch": measured 2026-10-18, fe-dev sat on `fe-dashboard-update-depth` and the architect on `g3-drop-classification` while the reviewer was detached, and a check that called all three wrong made a room that `up` keeps read as broken.
 - **`sync rig`**: sets each member's `cwd` to `SeatWorktree(...)`. The path is deterministic, so sync can write it before the worktree exists.
 - **New verbs:**
@@ -117,6 +127,7 @@ commit. The commit therefore names its paths and nothing is staged first.
 ## Facts the lead should know (none are ruled here)
 
 - `.claude` is not a submodule of this hub and no derived worktree carries one (`f8989ba`). The earlier fact here - recorded at `b376accb`, checked out at `6e8bf881`, a new worktree getting the recorded hooks - described a link the derivation never places. go-dev's worktree holds an empty `.claude` directory with no `.git` under it (2026-10-18 13:52); it is a directory, not a link, and nothing links or removes it.
+- The client skill `skills/share/seat-worktree/SKILL.md` still says `.claude` is detached inside the seat worktree and does not mention the client-location migration; both sentences go with the implementation of this ruling (client lane, go-dev).
 - The architect seat is `claude-code` and is missing from the materialized rig (`072996ad`). Its worktree follows the same rule, and how it is launched belongs to that item.
 - An ignored file is not in a new worktree. The frontend seat installs `node_modules` in its own worktree, and the client does not.
 
@@ -127,6 +138,8 @@ commit. The commit therefore names its paths and nothing is staged first.
 | `team.json` with lead, developer, reviewer and architect | four seat paths and `integration`; the reviewer has no branch |
 | `Start` run twice | the second run changes nothing |
 | a derived path that exists on another branch | kept and named `kept`, untouched |
+| a kept seat path with no client link and a clean `<seat>-client` on a lane branch | the legacy is removed and its line says so; the link exists at `<seat>/agenthub_client` on that lane branch |
+| the same, with an untracked file in `<seat>-client` | the legacy is named and kept, no link is placed, the run continues, `Check` calls the path Wrong |
 | prune over `/tmp/wt-x` (clean), `/tmp/gate-y` (dirty) and `/tmp/wt-z` (`HEAD` on no branch) | x removed; y and z named and kept |
 | a fixture parent repository whose submodule pin was never pushed | `Start` succeeds, and `git -C <wt> submodule status` shows the pin |
 | `sync rig` | every member's `cwd` is its derived path |
