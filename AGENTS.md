@@ -27,7 +27,7 @@ restore, before concluding anything about where you are.
   owned work, handoffs, block/wake state).
 - **The board and decisions** — the hub board's five Outcome tasks (Outcome 1-5) through
   `manage_task`: the queue row is the handoff, the Outcome task is the record.
-  `NEXT-GEN2.md` was parked on 2026-10-16 and is `NEXT-GEN2.md.obsolete`; no file at the repo
+  `NEXT-GEN2.md` was parked on 2026-10-16 and pruned on 2026-10-18; no file at the repo
   root is the board.
 - **Project skills** — one source: `agenthub_client/skills/`. The runtime installs it: every seat start
   resolves the tree (share → room → seat, never `client/`) and writes it under the seat's own
