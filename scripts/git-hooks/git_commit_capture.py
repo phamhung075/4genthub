@@ -44,8 +44,8 @@ place that sees the PATH SET the commit will carry. A seat commits by pathspec (
 `git diff --cached` answers "not docs" on exactly the commits the rule is about - measured 2026-10-17: the
 retired `docs-only-guard` probe exited 0 for a docs-only pathspec commit and 1 only when docs happened to
 be staged. This wrapper expands the pathspecs and refuses when every path the commit carries is
-documentation. The owner's host (no AGENTHUB_SESSION_NAME) and the owner's flag `OWNER_DOCS_COMMIT=1` are
-exempt.
+documentation. The owner's host (no AGENTHUB_SESSION_NAME), the owner's flag `OWNER_DOCS_COMMIT=1`, and the
+lead seat are exempt: the owner's 2026-10-18 ruling gives the lead the push and the docs it lands.
 
 USAGE. python3 scripts/git-hooks/git_commit_capture.py -- <the arguments you would give git commit>
         python3 scripts/git-hooks/git_commit_capture.py --list
@@ -74,6 +74,13 @@ SEAT_ENV = "AGENTHUB_SEAT"
 SEAT_SESSION_ENV = "AGENTHUB_SESSION_NAME"
 #: The owner's one-commit exemption, for a document the owner asked for.
 OWNER_DOCS_ENV = "OWNER_DOCS_COMMIT"
+#: The seat the owner's 2026-10-18 ruling lets push, and therefore land documentation: the lead merges and
+#: records what the room ships. The same key names the session on every runtime.
+PUSH_AUTHORITY_SEAT = "lead"
+#: The canonical session spelling the 4genthub runtime sets on every seat (`agenthub--<room>--<seat>`); the
+#: OpenRig spelling is the other (`<room>-<seat>@<room>`).
+CANONICAL_SESSION_PREFIX = "agenthub--"
+OPENRIG_SESSION_ENV = "OPENRIG_SESSION_NAME"
 
 DOCS_ONLY_REFUSAL = """\
 docs-only commit refused: every path this commit carries is documentation.
@@ -126,9 +133,36 @@ def commit_paths(repo: Path, commit_args: list[str]) -> list[str]:
     return [line.strip() for line in proc.stdout.splitlines() if line.strip()]
 
 
+def session_seat(name: str) -> str | None:
+    """The seat a session name names, in either spelling the client's guard accepts; None when it names none."""
+    name = name.strip()
+    if name.startswith(CANONICAL_SESSION_PREFIX):
+        rest = name[len(CANONICAL_SESSION_PREFIX) :]
+        room, sep, seat = rest.rpartition("--")
+        return seat if sep and room and seat else None
+    left, at, room = name.rpartition("@")
+    prefix = room + "-"
+    if not at or not room or not left.startswith(prefix):
+        return None
+    return left[len(prefix) :] or None
+
+
+def lead_is_committing() -> bool:
+    """Whether this shell is the lead's. A session is required unless the seat key names it: a host with no
+    session is the owner's, never assumed to be the lead."""
+    if os.environ.get(SEAT_ENV) == PUSH_AUTHORITY_SEAT:
+        return True
+    return any(
+        session_seat(os.environ.get(variable) or "") == PUSH_AUTHORITY_SEAT
+        for variable in (SEAT_SESSION_ENV, OPENRIG_SESSION_ENV)
+    )
+
+
 def docs_only_refusal(repo: Path, commit_args: list[str]) -> str | None:
     """The refusal when a seat's commit carries only documentation; None when it may run."""
     if not os.environ.get(SEAT_SESSION_ENV) or os.environ.get(OWNER_DOCS_ENV) == "1":
+        return None
+    if lead_is_committing():
         return None
     paths = commit_paths(repo, commit_args)
     if not paths or any(not is_document(path) for path in paths):

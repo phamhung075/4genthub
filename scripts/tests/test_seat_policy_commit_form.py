@@ -121,3 +121,35 @@ def test_one_commit_form_match_declares_one_sibling_across_the_policy_modules() 
         "a commit-form match is declared with two different siblings across the ten policy "
         f"modules: {disagreeing}"
     )
+
+
+def _push_patterns() -> dict[str, list[dict[str, str]]]:
+    """The `git push*` entries each policy module declares, by module name."""
+    out: dict[str, list[dict[str, str]]] = {}
+    for path in POLICY_FILES:
+        doc = json.loads(path.read_text(encoding="utf-8"))
+        out[path.name] = [
+            pattern
+            for pattern in doc.get("bash", {}).get("patterns", [])
+            if pattern["match"].startswith("git push")
+        ]
+    return out
+
+
+def test_only_the_lead_module_may_push() -> None:
+    """The owner's 2026-10-18 ruling: the lead pushes, every other seat is refused at the policy layer.
+
+    One entry per module and one seat exempt, so the answer to "may this seat push" is unambiguous.
+    """
+    by_module = _push_patterns()
+
+    assert by_module.get("policy-lead.json") == [{"match": "git push*", "approval": "allow"}], (
+        "the lead's policy module must allow the push in exactly one entry: "
+        f"{by_module.get('policy-lead.json')}"
+    )
+    others = {name: entries for name, entries in by_module.items() if name != "policy-lead.json"}
+    assert len(others) == 4, f"expected the four non-lead modules, found {sorted(others)}"
+    for name, entries in others.items():
+        assert len(entries) == 1 and entries[0]["approval"] == "deny", (
+            f"{name} must deny the push in exactly one entry: {entries}"
+        )

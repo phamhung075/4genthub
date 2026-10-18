@@ -6840,3 +6840,26 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
   runs the measured sentence (`--test "go test ./... (green at …)"`) and asserts exit 2 with no dial and
   no git call. Measured 2026-10-18: that line had reached the command as extra argv, exited non-zero and
   was read as D3 over a green tree.
+
+## 2026-10-18 - the push authority is the lead seat, held at one point per surface (hub, branch 4genthub-min/lead-push)
+
+- `scripts/tests/test_seat_policy_commit_form.py`: `test_only_the_lead_module_may_push` pins the owner's
+  2026-10-18 ruling at the policy layer - `policy-lead.json` declares the push pattern with `approval:
+  allow` in exactly one entry and the four other modules declare it with `deny` in exactly one each, so
+  "may this seat push" has one answer per seat.
+- `scripts/tests/test_git_commit_capture.py`: `test_the_lead_seat_lands_documentation_under_either_session_spelling`
+  runs real commits in a temp repository under the wrapper's entry point: a docs-only commit lands for the
+  canonical `agenthub--<room>--lead`, for a seat's canonical name whose `OPENRIG_SESSION_NAME` names the
+  lead, and for `AGENTHUB_SEAT=lead`; `agenthub--4genthub-min--lead-dev` is still refused with the
+  docs-only message. The autouse fixture now scrubs `AGENTHUB_SEAT` and `OPENRIG_SESSION_NAME` too, so
+  each case states the identity it tests. Red before the wrapper change: the three lead cases get `rc 1`.
+- Client `internal/clientguard`: five cases in `guard_test.go` (lead admitted in the checkout and in a
+  linked worktree, `lead-dev`/`lead2`/empty still refused, the lead's shared-checkout commit admitted
+  while another seat's is refused, the canonical session name parsed and five non-session names
+  rejected) and `TestTheLeadsPushAndCommitGoThrough` in `guard_e2e_test.go`, which pushes real branches
+  through the installed hooks and reads the remote's `main` back. The e2e fixture strips the canonical
+  session variable as well as the OpenRig one.
+- At this change: `14 passed` (commit wrapper), `7 passed` (policy modules), client `go test ./...` ->
+  35 packages ok, `cargo test --offline` -> 204 passed. Three `test_census_audits.py` cases are red in the
+  same run, on `S3-REDERIVE.py`'s anchors in `ai_docs/api-integration/surface-inventory.md`; this branch
+  touches neither `ai_docs/` nor the schema that instrument reads, so it is not this change's red.

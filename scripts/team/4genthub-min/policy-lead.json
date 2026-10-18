@@ -11,8 +11,7 @@
       },
       {
         "match": "git push*",
-        "approval": "deny",
-        "sibling": "you never push. Commit, then tell the lead the hash; the principal pushes."
+        "approval": "allow"
       },
       {
         "match": "git reset --hard*",
