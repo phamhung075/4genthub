@@ -25,6 +25,17 @@ Track test suite changes, fixes, and improvements for agenthub.
   `go test ./...` = every package ok, exit 0; `go vet ./internal/clientcomplete/ ./internal/clientjev/`
   clean.
 
+## 2026-10-18 - the shared scan fixture names the sk-key shapes and the filename that is not one
+
+- `agenthub_go/fastmcp/seat_management/domain/secretscan/testdata/scan_cases.json`: five cases added -
+  `openai-project-key`, `anthropic-key` and `anthropic-key-with-underscores` stay `has_secret=true`
+  (the underscored key is the case the alnum-only tail dropped), `sk-hyphenated-filename` is `false`,
+  and `sk-hyphenated-filename-line-start` is `true` - the doc name at a line start is over-redacted,
+  accepted by the lead because a boundary cannot separate it from a key without losing real shapes.
+  The fixture drives `TestContainsMatchesSharedFixture`, so no test code changed.
+- At this change: `go test ./fastmcp/seat_management/domain/secretscan/...` and `go test ./...` in
+  `agenthub_go` are green; `redact_cases.json` is a generated parity fixture and is not edited.
+
 ## 2026-10-18 - the /dashboard update-depth instrument lives outside the tree (frontend)
 
 - `.gitignore`: a scoped `/agenthub-frontend/audit-runs/` entry under Test artifacts, so a later sweep
