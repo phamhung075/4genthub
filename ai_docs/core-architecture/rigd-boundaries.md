@@ -169,6 +169,32 @@ The cloud must never receive an unredacted byte, so redaction is a **preconditio
    - Command-line flags `--token`, `--password`, `--secret` and `--api-key`, in both the `=` and the space form.
 3. **`.env` content is WITHHELD, not pattern-redacted.** An event whose tool input names a path matching `(^|/)\.env(\..*)?$` (Read, cat, or similar), and the tool result paired with it, is replaced by the withheld placeholder in 4.4. Patterns cannot be trusted to recognise every value in an env file.
 
+### 4.3.1 The `sk-` detector: a left boundary, never a narrower alphabet
+
+The `sk-` pattern ships in two copies, `internal/secretscan` on both sides (`secretscan.go:11`, `redact.go:42`
+in `agenthub_client/internal/secretscan` and `agenthub_go/fastmcp/seat_management/domain/secretscan`). Both
+carried `sk-[A-Za-z0-9_-]{20,}` with no left boundary, which redacts a mid-word name such as
+`task-workflow-and-reporting.md`. The ruled shape is `\bsk-[A-Za-z0-9_-]{20,}`: the `\b` is the whole of the
+fix for that false positive, and the tail keeps the full base64url alphabet.
+
+Measured 2026-10-18 (Go `regexp`, three shapes against six strings; `orig` is `sk-[A-Za-z0-9_-]{20,}` with no
+boundary, `narrow` is `\bsk-(?:[A-Za-z0-9]+-)*[A-Za-z0-9]{20,}`):
+
+| string | orig | narrow | `\bsk-[A-Za-z0-9_-]{20,}` |
+|---|---|---|---|
+| `sk-ant-api03-AbCd_EfGhIjKlMn_OpQrStUvWxYz_0123456789AbCd` | true | **false - a real key would pass unredacted** | true |
+| `ai_docs/agent-system/task-workflow-and-reporting.md` | true | false | **false** |
+| `sk-workflow-and-reporting.md is the doc` (line start) | true | false | true - accepted over-redaction |
+| `DEEPSEEK_API_KEY=sk-abcdefghijklmnop` (17-char tail) | false | false | false |
+
+- **The left boundary decides, not the alphabet.** Narrowing the tail trades a false positive (a redacted
+  file name) for a false negative (a stored secret), and the second cost is unbounded. Over-redaction is the
+  safe direction: a document named at line start `sk-...` is redacted, and that is accepted.
+- **A fixture exercises the real alphabet.** A test string of alphanumerics alone proves nothing about a key
+  whose tail carries `_` and `-`; the base64url-shaped key above is the one to test with. The acceptance for
+  both copies: the pattern above, and a test that asserts that key redacts and the `task-workflow-...` path
+  does not.
+
 ### 4.4 When redaction fails or is unsure: FAIL CLOSED, per event
 
 I agree with the lead's fail-closed preference, and make one granularity choice explicit.
