@@ -2,6 +2,33 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-18 - the phone walk is a spec on the repo harness (frontend, branch 4genthub-min/fe-phone-walk-spec)
+
+- `agenthub-frontend/e2e/phone-layout.spec.ts` (new, 20 tests = 10 signed-in routes x 375x667 and
+  320x568). Per route: `document.scrollingElement.scrollWidth === innerWidth`, `main.scrollWidth ===
+  main.clientWidth`, and no element under `main` with its right edge past main's unless an ancestor's
+  computed `overflow-x` is auto/scroll (the deliberate code scrollers). Plus the room's touch floor:
+  every visible `button`/`[role=button]` under `main`/`header`/`aside` with no non-whitespace text has
+  a border box of at least 40x40. Short screenshots/traces land in `test-results/` on failure, and one
+  test names one route, so a failure says which page and which rule.
+- Readiness is two measured things, not `load`: `main` holds more than 60 characters of text
+  (`/dashboard` renders 106, the smallest real page, while an unmounted shell has 0) and the app's
+  `/api` requests have been quiet for 750ms. Without the second, a fresh context measured `/seats` at
+  375px wide before its project tree arrived, while the same route laid out at 550 with the data in.
+- Run: `cd agenthub-frontend && E2E_ACCOUNT_FILE=<file> npx playwright test e2e/phone-layout.spec.ts`
+  (`baseURL` from `E2E_BASE_URL`, default the deployed app; the repo-root account default is absent in a
+  worktree, so the file is passed explicitly). Not in CI - `ci.yml` has no Playwright, and putting the
+  shared account into CI secrets is an owner decision.
+- Against https://www.4genthub.com at 2026-10-18T19:1xZ the spec is 8 passed / 12 failed, the
+  pre-deploy state it was built to catch: layout fails on `/seats` (main 550 wide in 375 and in 320),
+  `/seats/authoring` (549), `/topology` (634); the touch floor fails on `/dashboard` (twelve project-row
+  actions at 28x28: View Project Details, Create Branch, Edit, Delete), `/docs` and `/help-setup` (36x36
+  docs menu, 32x32 dark mode), and at 320 only on `/seats/authoring` (two delete buttons at 34.8x40 and
+  33.55x40). The pre-fix node walk measured 12/20 on the older bundle with a different composition
+  (`/profile` 411 and `/feedback` 631 then; both now fit), so the count is the same and the routes are not.
+- `npx tsc --noEmit -p .` does not cover `e2e/` (neither does `tsconfig.tests.json`), so the spec is
+  checked by running it: three runs, same 12/8 split on the settled readiness.
+
 ## 2026-10-18 - the client copy's sk boundary, pinned at the decide refusal (client, branch 4genthub-min/client-secretscan-boundary)
 
 - `agenthub_client/internal/secretscan/testdata/scan_cases.json` gains the same five cases the server
