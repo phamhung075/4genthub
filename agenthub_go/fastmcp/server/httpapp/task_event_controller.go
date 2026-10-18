@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"log"
 
 	"agenthub/fastmcp/server/routes"
 	"agenthub/fastmcp/task_management/application/services"
@@ -95,6 +96,13 @@ func (a taskEvidenceWriterAdapter) RecordEvidence(ctx context.Context, taskID, h
 		return err
 	})
 	if err != nil {
+		// A refusal - the duplicate the route maps to 409 - is the rule working, not a failure. Any
+		// other error is a submission that did not land, and its error is the ONLY record of why:
+		// routes.SubmitTaskEvidence answers a flat 500 and drops it. Without this line a failed
+		// completion is undiagnosable from outside (2026-10-18: two 500s nobody could explain).
+		if !errors.Is(err, routes.ErrEvidenceDuplicate) {
+			log.Printf("evidence: task %s: RecordEvidence failed: %v", taskID, err)
+		}
 		return nil, err
 	}
 	return out, nil
