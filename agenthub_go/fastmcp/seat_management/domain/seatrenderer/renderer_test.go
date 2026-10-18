@@ -378,7 +378,7 @@ func TestRenderSeatKeepsCommGuardNextToAnotherToolModule(t *testing.T) {
 	if err := json.Unmarshal([]byte(fileContent(t, spec, settingsFragmentPath)), &settings); err != nil {
 		t.Fatal(err)
 	}
-	wantDeny := "Bash(4genteam input:*)|Bash(tmux send-keys:*)|Bash(tmux paste-buffer:*)|Bash(rm:*)"
+	wantDeny := "Bash(4genteam input:*)|Bash(tmux send-keys:*)|Bash(tmux paste-buffer:*)|Bash(4genteam send --via-owner:*)|Bash(rm:*)"
 	if strings.Join(settings.Permissions.Deny, "|") != wantDeny || strings.Join(settings.Permissions.Allow, "|") != "Bash(4genteam whoami:*)|Bash(4genteam send:*)|Read" {
 		t.Fatalf("permissions = %+v", settings.Permissions)
 	}
@@ -411,8 +411,8 @@ func TestRenderSeatSameModulesOnBothRuntimes(t *testing.T) {
 	if err != nil {
 		t.Fatalf("claude-code: %v", err)
 	}
-	if settings := fileContent(t, claude, settingsFragmentPath); strings.Count(settings, "Bash(") != 5 {
-		t.Fatalf("claude-code settings fragment should carry the 3 denies and the 2 allows:\n%s", settings)
+	if settings := fileContent(t, claude, settingsFragmentPath); strings.Count(settings, "Bash(") != 6 {
+		t.Fatalf("claude-code settings fragment should carry the 4 denies and the 2 allows:\n%s", settings)
 	}
 
 	codex, err := RenderSeat(withModules(seatFixture("codex"), modules), testMCPURL)
@@ -424,17 +424,19 @@ func TestRenderSeatSameModulesOnBothRuntimes(t *testing.T) {
 		`pattern = ["4genteam", "input"]`,
 		`pattern = ["tmux", "send-keys"]`,
 		`pattern = ["tmux", "paste-buffer"]`,
+		`pattern = ["4genteam", "send", "--via-owner"]`,
 	} {
 		if !strings.Contains(rules, want) {
 			t.Fatalf("codex rules missing %s:\n%s", want, rules)
 		}
 	}
-	// The audited send path is not among them: deny rules bind unaudited routes only.
-	if strings.Contains(rules, `pattern = ["4genteam", "send"]`) {
+	// The audited send path is not among them: deny rules bind unaudited routes only. The three-token
+	// --via-owner prefix is the exception, and it is asserted above.
+	if strings.Contains(rules, `pattern = ["4genteam", "send"],`) {
 		t.Fatalf("codex rules deny the audited send path:\n%s", rules)
 	}
-	if got := strings.Count(rules, `decision = "forbidden"`); got != 3 {
-		t.Fatalf("codex rules carry %d forbidden rules, want the 3 unaudited denies:\n%s", got, rules)
+	if got := strings.Count(rules, `decision = "forbidden"`); got != 4 {
+		t.Fatalf("codex rules carry %d forbidden rules, want the 4 denies:\n%s", got, rules)
 	}
 	if strings.Contains(rules, "claude") {
 		t.Fatalf("codex rules mention claude:\n%s", rules)
@@ -681,7 +683,7 @@ func TestRenderSeatOmpWaitsForMCPConnections(t *testing.T) {
 func TestRenderSeatCodexRulesDenyTheDirectSendSurface(t *testing.T) {
 	guard := resolver.ResolvedModule{
 		Slug: "comm-guard", Version: "1.1.1", Kind: resolver.KindTool,
-		Content: `{"permissions":{"deny":["Bash(4genteam input:*)","Bash(tmux send-keys:*)","Bash(tmux paste-buffer:*)"],"allow":["Bash(4genteam whoami:*)","Bash(4genteam send:*)"]}}`,
+		Content: `{"permissions":{"deny":["Bash(4genteam input:*)","Bash(tmux send-keys:*)","Bash(tmux paste-buffer:*)","Bash(4genteam send --via-owner:*)"],"allow":["Bash(4genteam whoami:*)","Bash(4genteam send:*)"]}}`,
 	}
 
 	codex, err := RenderSeat(withModules(seatFixture("codex"), []resolver.ResolvedModule{guard}), testMCPURL)
@@ -689,14 +691,15 @@ func TestRenderSeatCodexRulesDenyTheDirectSendSurface(t *testing.T) {
 		t.Fatalf("RenderSeat(codex): %v", err)
 	}
 	rules := fileContent(t, codex, codexRulesPath)
-	for _, want := range []string{`pattern = ["4genteam", "input"]`, `pattern = ["tmux", "paste-buffer"]`} {
+	for _, want := range []string{`pattern = ["4genteam", "input"]`, `pattern = ["tmux", "paste-buffer"]`, `pattern = ["4genteam", "send", "--via-owner"]`} {
 		if !strings.Contains(rules, want) {
 			t.Fatalf("rules missing %s:\n%s", want, rules)
 		}
 	}
 	// The AUDITED path is not denied: `4genteam send` is the route every guard skill names, and a deny
-	// rule for it blocked the one sanctioned way to reach another seat.
-	if strings.Contains(rules, `pattern = ["4genteam", "send"]`) {
+	// rule for it blocked the one sanctioned way to reach another seat. The --via-owner row above is a
+	// three-token prefix and does not deny the verb itself; the bare two-token rule must stay absent.
+	if strings.Contains(rules, `pattern = ["4genteam", "send"],`) {
 		t.Fatalf("codex rules deny the audited send path:\n%s", rules)
 	}
 	// Deny-only on purpose: an `allow` prefix rule would widen what runs outside the sandbox
@@ -730,7 +733,7 @@ func TestRenderSeatCodexRulesDenyTheDirectSendSurface(t *testing.T) {
 	if err := json.Unmarshal([]byte(fileContent(t, claude, settingsFragmentPath)), &fragment); err != nil {
 		t.Fatal(err)
 	}
-	if got := strings.Join(fragment.Permissions.Deny, "|"); got != "Bash(4genteam input:*)|Bash(tmux send-keys:*)|Bash(tmux paste-buffer:*)" {
+	if got := strings.Join(fragment.Permissions.Deny, "|"); got != "Bash(4genteam input:*)|Bash(tmux send-keys:*)|Bash(tmux paste-buffer:*)|Bash(4genteam send --via-owner:*)" {
 		t.Fatalf("claude-code deny = %q, want the unaudited routes only", got)
 	}
 	if got := strings.Join(fragment.Permissions.Allow, "|"); got != "Bash(4genteam whoami:*)|Bash(4genteam send:*)" {
