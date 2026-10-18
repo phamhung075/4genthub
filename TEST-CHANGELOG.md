@@ -6682,3 +6682,13 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
   anyway; and the clearance case's legacy now sits on a lane branch too, so it fails if the created path's
   link attaches to the derived name instead. Both fail on `9df46df` and pass on `287f7bc`.
 - At this change: `go vet ./...` clean and `go test -count=1 ./...` green in `agenthub_client`.
+
+## 2026-10-18 - a detached seat's <seat>-client is cleared by the migration too
+
+- `agenthub_client/internal/clientworktree/ensure_test.go`: `TestEnsureClearsADetachedLegacyClientWorktree`
+  builds a reviewer-only room (derived branch empty, so the fixture asserts that) and a CLEAN detached
+  `<seat>-client` worktree at the reviewer's legacy path. It pins the ruling's scope: the migration clears
+  it and says so, and the reviewer's client link is detached at the parent's gitlink. Under the old
+  `Branch == ""` skip the case fails (`<<legacy>>: cleared` absent); with the skip dropped it passes.
+  Real repository and real worktrees, as the package's other cases are.
+- At this change: `go vet ./...` clean and `go test -count=1 ./...` green in `agenthub_client`.
