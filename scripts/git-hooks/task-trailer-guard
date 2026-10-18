@@ -3,8 +3,8 @@
 #
 # WHY: a seat commit must name its hub task so the task can be closed from the commit.
 #
-# WHO: only a seat. AGENTHUB_SESSION_NAME is exported to seats and unset on the owner's host (same
-# convention as docs-only-guard). Merge commits are exempt.
+# WHO: only a seat. AGENTHUB_SESSION_NAME is exported to seats and unset on the owner's host (the same
+# convention the commit wrapper's docs-only check reads). Merge commits are exempt.
 #
 # Argument: the commit message file (pre-commit passes it for the commit-msg stage). Shape check only.
 
