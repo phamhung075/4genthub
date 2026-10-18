@@ -29,6 +29,47 @@ Track test suite changes, fixes, and improvements for agenthub.
 - `npx tsc --noEmit -p .` does not cover `e2e/` (neither does `tsconfig.tests.json`), so the spec is
   checked by running it: three runs, same 12/8 split on the settled readiness.
 
+## 2026-10-18 - a shallow clone is named, not accused (repoguards, branch 4genthub-min/test-argv-refusal)
+
+- `internal/repoguards/pruned_paths_test.go`: `TestAPrunedPathWasDeletedByACommit` now asks
+  `git rev-parse --is-shallow-repository` first and fails with the shallow cause named, instead of reporting
+  every listed path as "a typo or a path that was never tracked". Teeth kept: a shallow clone still fails,
+  and a genuinely typoed entry still fails with the typo sentence.
+- Measured on a scratch depth-1 clone (`git clone --depth 1 --no-local file://<hub>`): before, nine entries
+  accused; after, the shallow sentence, exit 1. After `fetch --unshallow --tags`, the whole repoguards
+  package = ok. A fabricated entry (`scripts/definitely-never-existed.py`) still fails the typo assertion.
+- `.github/workflows/ci.yml` gives the go job `fetch-depth: 0`, which is what the test needs; that file is
+  not a test, it is the fix's other half.
+- At this change: `go -C agenthub_go test -count=1 ./internal/repoguards/` = exit 0.
+
+## 2026-10-18 - the queue verbs' ROOM default is pinned in frames and refusals (client, branch 4genthub-min/test-argv-refusal)
+
+- `internal/clientroom/queue_test.go`: `TestRoomQueueShowDefaultsTheRoomFromTheSeatEnv` drives
+  `queue show <qitem>` with `$AGENTHUB_ROOM` set and asserts the frame carries `"room":"room-a"` and the
+  pair prints that room; `TestRoomQueueListDefaultsTheRoomAndAnExplicitRoomStillWins` asserts both frames,
+  in order, so the explicit room cannot be silently overridden; `TestRoomQueueWithNoRoomAndNoEnvRefusesNamingTheVariable`
+  asserts exit 3, the stderr naming `$AGENTHUB_ROOM`, empty stdout and NO frame written;
+  `TestQueueArgumentRefusalNamesTheMissingTail` pins `a QITEM_ID is required` and the extra-argument refusal.
+- Deleted `TestAQueueItemIdInTheRoomPlaceNamesTheRoomFirstRule` with the message it pinned: the form it
+  explained (`queue show <qitem>`) is the working form now.
+- At this change: `cd agenthub_client && go test -count=1 ./...` = exit 0; `go vet ./internal/clientroom/` clean.
+
+## 2026-10-18 - a dying start is pinned to two attempts and a named stage (runtime, branch 4genthub-min/test-argv-refusal)
+
+- `rust/agenthub-runtime/src/supervisor/mod.rs`: new
+  `a_dying_start_names_the_stage_in_the_seat_log_and_retries_exactly_once` starts a seat whose command
+  does not exist and asserts the four facts the reseat report (`3ac8b369`) asked for: the refusal says
+  `(final)` and `did not start after 2 attempts`, the seat's log holds exactly **two** `start attempt`
+  lines and one `start final` line, and both name `pane exit before readiness`. Falsified with
+  `START_ATTEMPTS = 1`: fails on the attempt count.
+- Same case takes `crate::pty::test_servers::own("start-retry")`, because it launches a pane twice and
+  `TMUX_TMPDIR` is process-wide.
+- `rust/agenthub-runtime/src/pty/mod.rs`: `a_live_session_answers_a_pid_and_the_record_describes_it`
+  now takes `test_servers::own("pane-pid-live")`. It opened a live pane with no guard, so a guarded
+  test's `kill-server` on drop ended its session — measured twice in parallel runs, green alone.
+- At this change: `cd agenthub_client/rust/agenthub-runtime && cargo test --offline` = 182 passed,
+  0 failed, three consecutive runs.
+
 ## 2026-10-18 - the client copy's sk boundary, pinned at the decide refusal (client, branch 4genthub-min/client-secretscan-boundary)
 
 - `agenthub_client/internal/secretscan/testdata/scan_cases.json` gains the same five cases the server

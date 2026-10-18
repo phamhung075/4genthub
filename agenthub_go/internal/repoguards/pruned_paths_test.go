@@ -44,6 +44,14 @@ var allowedLiveReferences = map[string]string{
 // nothing and guarding nothing - the list would look maintained while being blind.
 func TestAPrunedPathWasDeletedByACommit(t *testing.T) {
 	root := repoRoot(t)
+	// A SHALLOW CLONE CANNOT ANSWER THIS, AND IT MUST SAY SO RATHER THAN ACCUSE THE LISTING. Measured
+	// 2026-10-18 (CI run 39156598706): the go job checked out at depth 1, `git log --all` saw no deletion
+	// commits, and all nine entries were reported as "a typo or a path that was never tracked" on a tree
+	// whose own suite was green. The teeth stay: the guard still refuses, and the refusal names the clone
+	// and the one flag that fixes it.
+	if strings.TrimSpace(runGit(t, root, "rev-parse", "--is-shallow-repository")) == "true" {
+		t.Fatalf("this checkout is a SHALLOW clone, so `git log --all` cannot see the deletion commits the listing is judged against - the entries below are not typos, the history is missing. Check out with full history (`actions/checkout` with `fetch-depth: 0`), then rerun.")
+	}
 	pruned := readPrunedPaths(t, filepath.Join(root, "agenthub_go", "internal", "repoguards", "testdata", "pruned_paths.txt"))
 	if len(pruned) == 0 {
 		t.Fatal("testdata/pruned_paths.txt lists nothing: an empty guard passes everything")
