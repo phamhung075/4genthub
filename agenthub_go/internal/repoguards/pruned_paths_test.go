@@ -39,6 +39,23 @@ var allowedLiveReferences = map[string]string{
 	"agenthub_go/internal/repoguards/testdata/pruned_paths.txt": "the guard's data",
 }
 
+// TestAPrunedPathWasDeletedByACommit pins the listing's other end: every entry must be a path that
+// existed in history and was deleted there. Without this a typo sits in the data file forever, matching
+// nothing and guarding nothing - the list would look maintained while being blind.
+func TestAPrunedPathWasDeletedByACommit(t *testing.T) {
+	root := repoRoot(t)
+	pruned := readPrunedPaths(t, filepath.Join(root, "agenthub_go", "internal", "repoguards", "testdata", "pruned_paths.txt"))
+	if len(pruned) == 0 {
+		t.Fatal("testdata/pruned_paths.txt lists nothing: an empty guard passes everything")
+	}
+	for _, path := range pruned {
+		// --all, because a prune may land on a branch that is not an ancestor of this checkout.
+		if strings.TrimSpace(runGit(t, root, "log", "--all", "--diff-filter=D", "--format=%H", "-1", "--", path)) == "" {
+			t.Errorf("%s has no deletion commit in history: the entry is a typo or a path that was never tracked", path)
+		}
+	}
+}
+
 // TestAPrunedPathHasNoLiveReference walks prune's payload in both directions: a listed path that is
 // still tracked is refused (the listing is stale, or the prune did not do its job), and a live
 // reference outside the allowlist is refused (the prune left a dangling citation behind).

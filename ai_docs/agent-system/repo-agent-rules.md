@@ -70,6 +70,12 @@ the model → yes: fix the test to match the model.
 - `CHANGELOG/<date>--<title>.md` — one new file per change that ships (Keep a Changelog subsections; see `CHANGELOG/README.md`).
 - `TEST-CHANGELOG.md` — test-suite changes.
 - A documentation change that ships gets a changelog entry too.
+- **A prune edits its own guard.** There is no prune tool; a prune is a commit. When it deletes files,
+  every removed path goes into `agenthub_go/internal/repoguards/testdata/pruned_paths.txt`, which two
+  tests read: each entry must have a deletion commit in history, and no tracked file outside an
+  exact-file allowlist may name it. The changelog entry still records the removal as history — but the
+  sentence "no live reference survived" is what the guard runs, never what the entry claims. Measured
+  2026-10-18: `53b95dee` wrote that sentence and four live references survived it.
 
 ## Keep-out files and staging
 

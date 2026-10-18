@@ -6760,3 +6760,9 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
   name `AGENTS.md:160`; with the line removed it passes in 0.04s. Two things it caught while being
   written: `git grep -f` takes every line of the data file as a pattern, so its `#` comments matched
   the whole tree (6097 hits, 30s) until the patterns were written comment-free to a scratch file.
+- `TestAPrunedPathWasDeletedByACommit` joins the pruned-path guard: every entry in
+  `testdata/pruned_paths.txt` must have a deletion commit in `git log --all --diff-filter=D`, because a
+  typo sits in the data file matching nothing and guarding nothing while the list looks maintained.
+  Falsified: appending `scripts/never-existed.py` fails it; the real list passes in 0.14s.
+- `ai_docs/agent-system/repo-agent-rules.md` Changelog duties gains "a prune edits its own guard": there
+  is no prune tool, so the deleted paths are added to the listing by the prune commit itself.
