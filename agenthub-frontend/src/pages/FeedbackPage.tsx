@@ -69,7 +69,7 @@ const ReportRow: React.FC<{ report: FeedbackReport }> = ({ report }) => {
           <span className="font-mono text-xs text-base-secondary">{report.machine_id}</span>
         )}
       </div>
-      <p className="mt-1 whitespace-pre-wrap text-sm text-base-primary">{report.text}</p>
+      <p className="mt-1 whitespace-pre-wrap break-words text-sm text-base-primary">{report.text}</p>
     </li>
   );
 };
