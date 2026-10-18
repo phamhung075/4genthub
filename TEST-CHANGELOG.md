@@ -2,6 +2,22 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-18 - a dying start is pinned to two attempts and a named stage (runtime, branch 4genthub-min/test-argv-refusal)
+
+- `rust/agenthub-runtime/src/supervisor/mod.rs`: new
+  `a_dying_start_names_the_stage_in_the_seat_log_and_retries_exactly_once` starts a seat whose command
+  does not exist and asserts the four facts the reseat report (`3ac8b369`) asked for: the refusal says
+  `(final)` and `did not start after 2 attempts`, the seat's log holds exactly **two** `start attempt`
+  lines and one `start final` line, and both name `pane exit before readiness`. Falsified with
+  `START_ATTEMPTS = 1`: fails on the attempt count.
+- Same case takes `crate::pty::test_servers::own("start-retry")`, because it launches a pane twice and
+  `TMUX_TMPDIR` is process-wide.
+- `rust/agenthub-runtime/src/pty/mod.rs`: `a_live_session_answers_a_pid_and_the_record_describes_it`
+  now takes `test_servers::own("pane-pid-live")`. It opened a live pane with no guard, so a guarded
+  test's `kill-server` on drop ended its session — measured twice in parallel runs, green alone.
+- At this change: `cd agenthub_client/rust/agenthub-runtime && cargo test --offline` = 182 passed,
+  0 failed, three consecutive runs.
+
 ## 2026-10-18 - the client copy's sk boundary, pinned at the decide refusal (client, branch 4genthub-min/client-secretscan-boundary)
 
 - `agenthub_client/internal/secretscan/testdata/scan_cases.json` gains the same five cases the server
