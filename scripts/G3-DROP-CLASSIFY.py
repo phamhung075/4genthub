@@ -6,7 +6,7 @@ file §G3) requires that every Go comment which says the Python implementation d
 port does not gets a one-word class: logging, unused-arg, unreachable or ported-elsewhere. The
 reviewer's pass at 15693b6a produced that table inside a seat session and never committed it, so
 the gate could not be read from the tree: a grep for the class words returns only the plan's own
-sentence. This instrument and its report (`ai_docs/reports-status/G3-drop-classification.md`) are
+sentence. This instrument and its report (`ai_docs/core-architecture/G3-drop-classification.md`) are
 that table, re-derived from the tree and re-runnable, so the next reader does not have to trust a
 session that is gone.
 
@@ -57,7 +57,7 @@ import sys
 from collections import Counter
 from pathlib import Path
 
-REPORT = "ai_docs/reports-status/G3-drop-classification.md"
+REPORT = "ai_docs/core-architecture/G3-drop-classification.md"
 SUBTREE = "agenthub_go"
 MARKER_CLASSES = ("logging", "unused-arg", "unreachable", "ported-elsewhere")
 NON_MARKER = ("named", "agrees", "domain")
