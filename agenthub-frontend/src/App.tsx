@@ -151,7 +151,7 @@ function Dashboard() {
 
       {/* Modern Toggle button for mobile */}
       <ShimmerButton
-        className={`fixed bottom-6 left-6 z-50 ${isLargeScreen ? 'hidden' : 'block'}`}
+        className={`fixed bottom-6 left-6 z-50 min-h-10 min-w-10 ${isLargeScreen ? 'hidden' : 'block'}`}
         onClick={() => setSidebarOpen(!sidebarOpen)}
         aria-label={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
         size="icon"

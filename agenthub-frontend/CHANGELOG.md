@@ -9,6 +9,10 @@
   - Page copy (`index.html`, `manifest.json`, landing, seats, connect-machine, prose) names the 4genteam client. NOT run (no local test run); `tsc --noEmit` is the check.
 
 ### Fixed
+- **The phone sidebar toggle meets the 40px touch floor** - 2026-10-18
+  - `src/App.tsx`: the `ShimmerButton` instance that opens the project tree gains `min-h-10 min-w-10`. Its box was 39px square — the shared `size="icon"` span is `h-9 w-9` (36px) and the button's `p-[1.5px]` adds 3px. The floor goes on this instance only; the shared `icon` size keeps its 36px inner span. No `AppLayout.tsx` change.
+  - Measured on https://www.4genthub.com at 375x812, signed in: 39x39 at x=24, y=749 (the pre-change deploy), and 40x40 at x=24, y=748 with the same 2.5rem floor applied to that node — the bottom edge stays at 788, so `bottom-6 left-6` keeps the placement. `main` (scrollHeight/clientHeight 739/739) and the inner scroller (715/715) are unchanged, and the button still opens and closes the drawer. The served bundle carries no `.min-h-10`/`.min-w-10` rule yet, so a deployed build is still needed to see the utilities themselves.
+  - `npx tsc --noEmit -p .` clean; `npx vitest run` 1929 tests in 130 files pass.
 - **The ledger's context-update row names the level and version it recorded** - 2026-10-18
   - `src/lib/taskTimeline.ts` `describeEvent`: a `context_updated` row reads the payload's `{level, version}` and prints "Context updated: task context, version 7" instead of the bare kind label; an empty level keeps "Context updated". What it may NOT print is which field changed or which seat wrote: both writers send only `{level, id, version}` with `actor_id` the literal `"context"` (`agenthub_go/.../use_cases/update_context.go:83`, `.../services/unified_context_service.go:474`), so a row claiming a field or a seat would invent it. Asked in row `qitem-20261018171212-02987299f1e2` for the payload to carry the changed keys and the acting seat key.
   - `src/tests/lib/taskTimeline.test.ts`: four payload cases in one new case (task level with version, branch level with version 0, level only, empty level). `npx tsc --noEmit -p .` clean; the file's 21 tests pass.
