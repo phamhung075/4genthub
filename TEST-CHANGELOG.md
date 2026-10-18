@@ -7095,3 +7095,13 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
   absent.
 - At this change: `go test ./fastmcp/server/... -count=1` -> ok; `go test ./internal/apiref/ -count=1`
   -> ok.
+
+## 2026-10-19 - complete names why the task stayed open (client 2ffd265)
+
+- `agenthub_client/internal/clientcomplete/complete_test.go`: five cases pin the post-gate surface -
+  a non-2xx evidence write other than 409 stops with the evidence line and leaves the task alone, a
+  409 continues the completion once, a failed completion reads the task state back once and names
+  it, and the gate verdict plus the evidence outcome both print.
+- `agenthub_client/internal/clientevidence/evidence.go`: the writer reports the HTTP status it
+  answered, so the verb can name it.
+- At this change: `go vet ./...` and `go test ./...` in `agenthub_client` -> rc 0.
