@@ -2,6 +2,54 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-18 - the client copy's sk boundary, pinned at the decide refusal (client, branch 4genthub-min/client-secretscan-boundary)
+
+- `agenthub_client/internal/secretscan/testdata/scan_cases.json` gains the same five cases the server
+  copy carries: `openai-project-key`, `anthropic-key` and `anthropic-key-with-underscores` must be
+  detected, `sk-hyphenated-filename` (in `changed ai_docs/agent-system/task-workflow-and-reporting.md`)
+  must not, and `sk-hyphenated-filename-line-start` is pinned as detected — the accepted
+  over-redaction of the boundary fix.
+- `agenthub_client/internal/clientdecide/decide_test.go` (new, 1 case):
+  `TestABriefThatNamesAHyphenatedDocIsNotACredential` runs the real refusal path
+  (`decide.go:109` -> `secretscan.Contains` over summary and detail) with both fields naming the doc,
+  and asserts the ask reaches Jev once and logs one entry instead of exiting usage.
+- At this change: `cd agenthub_client && go test -count=1 ./...` = exit 0;
+  `go vet ./internal/secretscan/ ./internal/clientdecide/` clean.
+
+## 2026-10-18 - the gate's sha+counts form is a fixture on the two diffs review 2 names (client, branch 4genthub-min/gate-register-fixtures)
+
+- `agenthub_client/internal/clientcomplete/complete_test.go` (3 new tests, no production change):
+  `TestAMergeGitlinkDiffAndATwoFileDocsDiffAreAdmitted` runs the review's two closure shapes through
+  `evaluate` - a merge commit whose only change is a one-line gitlink pin (`1\t1\tagenthub_client`, the
+  634ac5c9 shape) and an ordinary two-file docs diff (2 files, 21 lines, the a669935d shape) - with a
+  criterion naming the head sha prefix and both counts. Each must be ADMITTED (one judge call, no
+  warning), ACCEPT at the measured band (stub answers 0.95; the live form measured 0.93-0.97), and the
+  `state` the judge receives must carry that fixture's own `files_changed`/`lines_changed`, so the
+  numbers the criterion names are the numbers read.
+  `TestACountOnlyCriterionIsRefusedAtEntry` pins the other half of the ruling: "the diff is fewer than
+  80 lines" names no command, exit code, path or sha, so it is `Unjudgeable` from the deterministic
+  checks and Jev is not called. `stateServer` is the local helper that records `state` per request.
+- The decision behind tests-only: `4genteam decide --tier seat` on 2026-10-18 picked
+  `opt_tests_only` at confidence 1 on the conflict between the board's "widen what the register admits"
+  and the architect's ruling ("admissible and informative form is sha>=7 + files_changed +
+  lines_changed ... no gate code change for it"). The counts are already on the wire
+  (`clientjev.countsState`), so the vocabulary needs no branch; a path-only criterion keeps the warning
+  a323b4c landed (two tests pin it) rather than gaining a refusal.
+- At this change: `cd agenthub_client && go test ./internal/clientcomplete/` = ok;
+  `go test ./...` = every package ok, exit 0; `go vet ./internal/clientcomplete/ ./internal/clientjev/`
+  clean.
+
+## 2026-10-18 - the shared scan fixture names the sk-key shapes and the filename that is not one
+
+- `agenthub_go/fastmcp/seat_management/domain/secretscan/testdata/scan_cases.json`: five cases added -
+  `openai-project-key`, `anthropic-key` and `anthropic-key-with-underscores` stay `has_secret=true`
+  (the underscored key is the case the alnum-only tail dropped), `sk-hyphenated-filename` is `false`,
+  and `sk-hyphenated-filename-line-start` is `true` - the doc name at a line start is over-redacted,
+  accepted by the lead because a boundary cannot separate it from a key without losing real shapes.
+  The fixture drives `TestContainsMatchesSharedFixture`, so no test code changed.
+- At this change: `go test ./fastmcp/seat_management/domain/secretscan/...` and `go test ./...` in
+  `agenthub_go` are green; `redact_cases.json` is a generated parity fixture and is not edited.
+
 ## 2026-10-18 - the /dashboard update-depth instrument lives outside the tree (frontend)
 
 - `.gitignore`: a scoped `/agenthub-frontend/audit-runs/` entry under Test artifacts, so a later sweep
