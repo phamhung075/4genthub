@@ -2,6 +2,19 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-18 - a shallow clone is named, not accused (repoguards, branch 4genthub-min/test-argv-refusal)
+
+- `internal/repoguards/pruned_paths_test.go`: `TestAPrunedPathWasDeletedByACommit` now asks
+  `git rev-parse --is-shallow-repository` first and fails with the shallow cause named, instead of reporting
+  every listed path as "a typo or a path that was never tracked". Teeth kept: a shallow clone still fails,
+  and a genuinely typoed entry still fails with the typo sentence.
+- Measured on a scratch depth-1 clone (`git clone --depth 1 --no-local file://<hub>`): before, nine entries
+  accused; after, the shallow sentence, exit 1. After `fetch --unshallow --tags`, the whole repoguards
+  package = ok. A fabricated entry (`scripts/definitely-never-existed.py`) still fails the typo assertion.
+- `.github/workflows/ci.yml` gives the go job `fetch-depth: 0`, which is what the test needs; that file is
+  not a test, it is the fix's other half.
+- At this change: `go -C agenthub_go test -count=1 ./internal/repoguards/` = exit 0.
+
 ## 2026-10-18 - the queue verbs' ROOM default is pinned in frames and refusals (client, branch 4genthub-min/test-argv-refusal)
 
 - `internal/clientroom/queue_test.go`: `TestRoomQueueShowDefaultsTheRoomFromTheSeatEnv` drives
