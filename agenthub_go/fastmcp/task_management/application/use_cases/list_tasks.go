@@ -5,13 +5,15 @@ import (
 
 	dtostask "agenthub/fastmcp/task_management/application/dtos/task"
 	"agenthub/fastmcp/task_management/domain/entities"
+	"agenthub/fastmcp/task_management/domain/repositories"
 	"agenthub/fastmcp/task_management/domain/value_objects"
 )
 
 // ListTasksTaskRepository is the task repository surface used by ListTasksUseCase:
 // find_by_criteria plus the batch completed-subtask counts.
 type ListTasksTaskRepository interface {
-	FindByCriteria(ctx context.Context, filters map[string]any, limit *int) ([]*entities.Task, error)
+	FindByCriteria(ctx context.Context, filters map[string]any, query repositories.ListQuery) ([]*entities.Task, error)
+	CountByCriteria(ctx context.Context, filters map[string]any) (int, error)
 	GetCompletedSubtaskCounts(ctx context.Context, taskIDs []string) (map[string]int, error)
 }
 
@@ -63,7 +65,16 @@ func (uc *ListTasksUseCase) Execute(ctx context.Context,
 		filters["git_branch_id"] = *request.GitBranchID
 	}
 
-	tasks, err := uc.taskRepository.FindByCriteria(ctx, filters, request.Limit)
+	tasks, err := uc.taskRepository.FindByCriteria(ctx, filters, repositories.ListQuery{
+		Limit:     request.Limit,
+		Offset:    request.Offset,
+		SortBy:    listQueryString(request.SortBy),
+		SortOrder: listQueryString(request.SortOrder),
+	})
+	if err != nil {
+		return nil, err
+	}
+	total, err := uc.taskRepository.CountByCriteria(ctx, filters)
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +98,29 @@ func (uc *ListTasksUseCase) Execute(ctx context.Context,
 	if request.Limit != nil && *request.Limit != 0 {
 		filtersApplied.Set("limit", *request.Limit)
 	}
+	if request.Offset != nil && *request.Offset != 0 {
+		filtersApplied.Set("offset", *request.Offset)
+	}
+	if request.SortBy != nil && *request.SortBy != "" {
+		filtersApplied.Set("sort_by", *request.SortBy)
+	}
+	if request.SortOrder != nil && *request.SortOrder != "" {
+		filtersApplied.Set("sort_order", *request.SortOrder)
+	}
 
-	return dtostask.TaskListResponseFromDomainList(ctx, tasks, uc.gitBranchRepository,
+	response, err := dtostask.TaskListResponseFromDomainList(ctx, tasks, uc.gitBranchRepository,
 		uc.taskRepository, uc.progressEvents, filtersApplied, nil)
+	if err != nil {
+		return nil, err
+	}
+	response.Total = total
+	return response, nil
+}
+
+// listQueryString dereferences an optional ordering field; empty means the repository default.
+func listQueryString(v *string) string {
+	if v == nil {
+		return ""
+	}
+	return *v
 }

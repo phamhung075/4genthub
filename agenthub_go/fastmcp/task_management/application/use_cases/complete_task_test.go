@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"reflect"
+	"strings"
 	"testing"
 
 	dtotask "agenthub/fastmcp/task_management/application/dtos/task"
@@ -92,14 +93,51 @@ func TestCompleteTaskNotFound(t *testing.T) {
 	}
 }
 
-func TestCompleteTaskAlreadyCompletedUpdatesSummary(t *testing.T) {
+// completeTaskActorLedger is a LedgerRecorder with a settable actor that remembers the progress
+// notes a save carried. The completion gate compares the request's actor with the row's recorded
+// author, and a replaced result line is exactly one of those notes.
+type completeTaskActorLedger struct {
+	noopRecorder
+	actorKind entities.TaskEventActorKind
+	actorID   string
+	notes     []entities.ProgressEntry
+}
+
+func (l *completeTaskActorLedger) ActorOf(context.Context) (entities.TaskEventActorKind, string, bool) {
+	return l.actorKind, l.actorID, true
+}
+
+func (l *completeTaskActorLedger) RecordProgress(_ context.Context, _, _ string, note entities.ProgressEntry) (*entities.TaskEvent, error) {
+	l.notes = append(l.notes, note)
+	return &entities.TaskEvent{Kind: entities.TaskEventKindProgress}, nil
+}
+
+// completeTaskDoneTask is a done task whose result line is attributed to author ("" for a row that
+// predates attribution), with the ledger that attributes this request to actor.
+func completeTaskDoneTask(t *testing.T, author, actor, previous string) (*entities.Task, value_objects.TaskId, *completeTaskFakeTaskRepository, *completeTaskActorLedger) {
+	t.Helper()
 	task, id := completeTaskNewTestTask(t)
 	done, _ := value_objects.NewTaskStatus("done")
 	task.Status = &done
-
+	if previous != "" {
+		task.CompletionSummary = &previous
+	}
+	if author != "" {
+		task.CompletedBy = &author
+	}
+	ledger := &completeTaskActorLedger{actorKind: entities.TaskEventActorHuman, actorID: actor}
 	repo := &completeTaskFakeTaskRepository{task: task}
-	uc := NewCompleteTaskUseCase(repo, nil, nil, nil).WithLedger(noopLedger())
-	summary := "finished the work"
+	return task, id, repo, ledger
+}
+
+// The original completer may correct its own line; the line it replaced stays readable in the
+// ledger, attributed and timed, rather than vanishing into the column's new value.
+func TestCompleteTaskAlreadyCompletedByItsOwnAuthorSupersedesTheOldLine(t *testing.T) {
+	const author = "agenthub--room--go-dev"
+	task, id, repo, ledger := completeTaskDoneTask(t, author, author, "the first result line")
+	uc := NewCompleteTaskUseCase(repo, nil, nil, nil).
+		WithLedger(StatusLedger{Tx: &ledgerFakeTx{}, Ledger: ledger})
+	summary := "the corrected result line"
 
 	resp, err := uc.Execute(context.Background(), id.Value, &summary, nil, nil)
 	if err != nil {
@@ -107,17 +145,8 @@ func TestCompleteTaskAlreadyCompletedUpdatesSummary(t *testing.T) {
 	}
 	completeTaskAssertKeys(t, resp.Keys(),
 		[]string{"success", "task_id", "message", "status", "was_already_completed"})
-	if v, _ := resp.Get("success"); v != true {
-		t.Fatalf("success = %v", v)
-	}
-	if v, _ := resp.Get("task_id"); v != id.Value {
-		t.Fatalf("task_id = %v", v)
-	}
 	if v, _ := resp.Get("message"); v != "Task already completed, summary updated" {
 		t.Fatalf("message = %v", v)
-	}
-	if v, _ := resp.Get("status"); v != "done" {
-		t.Fatalf("status = %v", v)
 	}
 	if v, _ := resp.Get("was_already_completed"); v != true {
 		t.Fatalf("was_already_completed = %v", v)
@@ -125,8 +154,97 @@ func TestCompleteTaskAlreadyCompletedUpdatesSummary(t *testing.T) {
 	if task.CompletionSummary == nil || *task.CompletionSummary != summary {
 		t.Fatalf("CompletionSummary = %v", task.CompletionSummary)
 	}
+	// The replacement is attributed to the SEAT that made it, which is also who the row already named.
+	if task.CompletedBy == nil || *task.CompletedBy != author {
+		t.Fatalf("CompletedBy = %v, want the replacing seat", task.CompletedBy)
+	}
+	if task.CompletedAt == nil {
+		t.Fatal("CompletedAt was not recorded")
+	}
 	if len(repo.saves) != 1 {
 		t.Fatalf("expected 1 save, got %d", len(repo.saves))
+	}
+	if len(ledger.notes) != 1 {
+		t.Fatalf("expected 1 superseded note, got %d", len(ledger.notes))
+	}
+	note := ledger.notes[0].Content
+	for _, want := range []string{"superseded by " + author, author, "the first result line"} {
+		if !strings.Contains(note, want) {
+			t.Fatalf("note %q does not name %q", note, want)
+		}
+	}
+}
+
+// A caller that does not own the line is refused, and nothing is written - which is the whole point:
+// the old branch let any seat holding an id replace another seat's evidence silently.
+func TestCompleteTaskAlreadyCompletedByAnotherCallerIsRefused(t *testing.T) {
+	task, id, repo, ledger := completeTaskDoneTask(t, "agenthub--room--go-dev", "agenthub--room--fe-dev", "the first result line")
+	uc := NewCompleteTaskUseCase(repo, nil, nil, nil).
+		WithLedger(StatusLedger{Tx: &ledgerFakeTx{}, Ledger: ledger})
+	summary := "someone else's line"
+
+	_, err := uc.Execute(context.Background(), id.Value, &summary, nil, nil)
+	if err == nil {
+		t.Fatal("a caller that does not own the result line replaced it")
+	}
+	if !strings.Contains(err.Error(), "attributed to agenthub--room--go-dev") ||
+		!strings.Contains(err.Error(), "correction=true") {
+		t.Fatalf("error does not name the author and the way forward: %v", err)
+	}
+	if len(repo.saves) != 0 {
+		t.Fatalf("the refused call still saved %d times", len(repo.saves))
+	}
+	if len(ledger.notes) != 0 {
+		t.Fatalf("the refused call still wrote %d notes", len(ledger.notes))
+	}
+	if task.CompletionSummary == nil || *task.CompletionSummary != "the first result line" {
+		t.Fatalf("the result line changed on a refused call: %v", task.CompletionSummary)
+	}
+}
+
+// The explicit flag is what lets one seat correct another's line, and the previous line is still kept.
+func TestCompleteTaskAlreadyCompletedWithCorrectionReplacesAndKeepsTheOldLine(t *testing.T) {
+	task, id, repo, ledger := completeTaskDoneTask(t, "agenthub--room--go-dev", "agenthub--room--fe-dev", "the first result line")
+	uc := NewCompleteTaskUseCase(repo, nil, nil, nil).
+		WithLedger(StatusLedger{Tx: &ledgerFakeTx{}, Ledger: ledger})
+	summary := "the corrected line"
+
+	resp, err := uc.ExecuteWithCorrection(context.Background(), id.Value, &summary, nil, nil, true)
+	if err != nil {
+		t.Fatalf("ExecuteWithCorrection: %v", err)
+	}
+	if v, _ := resp.Get("success"); v != true {
+		t.Fatalf("success = %v", v)
+	}
+	if task.CompletionSummary == nil || *task.CompletionSummary != summary {
+		t.Fatalf("CompletionSummary = %v", task.CompletionSummary)
+	}
+	if len(ledger.notes) != 1 {
+		t.Fatalf("expected 1 superseded note, got %d", len(ledger.notes))
+	}
+	if note := ledger.notes[0].Content; !strings.Contains(note, "the first result line") ||
+		!strings.Contains(note, "agenthub--room--go-dev") {
+		t.Fatalf("the superseded note does not carry the old line and its author: %q", note)
+	}
+}
+
+// A row completed before attribution was recorded has no author any caller can match, so replacing
+// its line needs the flag rather than a guess.
+func TestCompleteTaskAlreadyCompletedWithNoRecordedAuthorNeedsTheCorrectionFlag(t *testing.T) {
+	_, id, repo, ledger := completeTaskDoneTask(t, "", "agenthub--room--fe-dev", "an unattributed line")
+	uc := NewCompleteTaskUseCase(repo, nil, nil, nil).
+		WithLedger(StatusLedger{Tx: &ledgerFakeTx{}, Ledger: ledger})
+	summary := "a new line"
+
+	_, err := uc.Execute(context.Background(), id.Value, &summary, nil, nil)
+	if err == nil {
+		t.Fatal("an unattributed result line was replaced without the flag")
+	}
+	if !strings.Contains(err.Error(), "no recorded author") {
+		t.Fatalf("error does not say why: %v", err)
+	}
+	if len(repo.saves) != 0 {
+		t.Fatalf("the refused call still saved %d times", len(repo.saves))
 	}
 }
 

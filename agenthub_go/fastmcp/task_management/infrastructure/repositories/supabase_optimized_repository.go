@@ -123,6 +123,42 @@ func (r *SupabaseOptimizedRepository) ListTasksMinimal(
 	return out, err
 }
 
+// CountTasksMinimal counts the rows ListTasksMinimal's filters select, with the same predicate
+// construction as that query.
+func (r *SupabaseOptimizedRepository) CountTasksMinimal(
+	ctx context.Context, status, priority, assigneeID, gitBranchID *string,
+) (int, error) {
+	total := 0
+	err := r.Sessions.WithSession(ctx, func(ctx context.Context, s database.DBTX) error {
+		filters := []string{"1=1"}
+		var args []any
+		if supabaseRepoTruthy(r.GitBranchID) {
+			args = append(args, *r.GitBranchID)
+			filters = append(filters, fmt.Sprintf("git_branch_id = $%d", len(args)))
+		}
+		if supabaseRepoTruthy(gitBranchID) {
+			args = append(args, *gitBranchID)
+			filters = append(filters, fmt.Sprintf("git_branch_id = $%d", len(args)))
+		}
+		if supabaseRepoTruthy(status) {
+			args = append(args, *status)
+			filters = append(filters, fmt.Sprintf("status = $%d", len(args)))
+		}
+		if supabaseRepoTruthy(priority) {
+			args = append(args, *priority)
+			filters = append(filters, fmt.Sprintf("priority = $%d", len(args)))
+		}
+		if supabaseRepoTruthy(assigneeID) {
+			args = append(args, *assigneeID)
+			filters = append(filters, fmt.Sprintf(
+				"EXISTS (SELECT 1 FROM task_assignees WHERE task_id = tasks.id AND assignee_id = $%d)", len(args)))
+		}
+		return s.QueryRowContext(ctx,
+			fmt.Sprintf("SELECT COUNT(*) FROM tasks WHERE %s", strings.Join(filters, " AND ")), args...).Scan(&total)
+	})
+	return total, err
+}
+
 // ListTasksNoRelations is list_tasks_no_relations.
 func (r *SupabaseOptimizedRepository) ListTasksNoRelations(
 	ctx context.Context, status, priority *string, limit, offset *int,

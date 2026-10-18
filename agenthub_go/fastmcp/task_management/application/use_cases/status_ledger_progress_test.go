@@ -37,6 +37,10 @@ func (c *progressCapturingLedger) RecordStatusChange(context.Context, string, st
 	return &entities.TaskEvent{}, nil
 }
 
+func (c *progressCapturingLedger) ActorOf(context.Context) (entities.TaskEventActorKind, string, bool) {
+	return entities.TaskEventActorHuman, "test-user", true
+}
+
 func (c *progressCapturingLedger) RecordProgress(_ context.Context, _, _ string, note entities.ProgressEntry) (*entities.TaskEvent, error) {
 	c.event = &entities.TaskEvent{
 		Kind: entities.TaskEventKindProgress,

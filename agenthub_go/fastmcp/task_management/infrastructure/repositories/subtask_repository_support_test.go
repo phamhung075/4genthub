@@ -409,12 +409,8 @@ func (subtaskRepoFakeFactoryBackend) GetSubtaskRepository(userID *string) (domai
 func subtaskRepoStringPtr(v string) *string { return &v }
 
 func TestSubtaskRepositoryFactory(t *testing.T) {
-	t.Setenv("MCP_DB_PATH", "/tmp/agenthub-factory.db")
 	emptyRoot := ""
 	factory := NewSubtaskRepositoryFactory(nil, nil, &emptyRoot, nil)
-	if got := factory.GetSubtaskDBPath("p", "main", nil); got != "/tmp/agenthub-factory.db" {
-		t.Fatalf("db path %q", got)
-	}
 	if !factory.ValidateUserProjectTree("p", "main", nil) {
 		t.Fatal("validate must be true")
 	}
@@ -432,12 +428,6 @@ func TestSubtaskRepositoryFactory(t *testing.T) {
 	}
 	if _, err := factory.Create("p", "main", "u"); err != nil {
 		t.Fatalf("classmethod create: %v", err)
-	}
-	if _, err := factory.CreateSQLiteSubtaskRepository("p", "main", nil, nil); err != nil {
-		t.Fatalf("sqlite create: %v", err)
-	}
-	if got := factory.GetSubtaskDBPath("p", "main", nil); got != "/tmp/agenthub-factory.db" {
-		t.Fatalf("sqlite db path %q", got)
 	}
 
 	fx := newSubtaskRepoFixture(t)

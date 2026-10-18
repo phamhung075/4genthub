@@ -17,8 +17,12 @@ package database_test
 import (
 	"context"
 	"database/sql"
+	"fmt"
+	"net/url"
+	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"agenthub/fastmcp/session_stream/testdb"
 	"agenthub/fastmcp/task_management/application/services"
@@ -26,6 +30,43 @@ import (
 	"agenthub/fastmcp/task_management/infrastructure/database"
 	"agenthub/fastmcp/task_management/infrastructure/repositories"
 )
+
+// newEnsurerTestDB opens a throwaway database on the cluster AGENTHUB_TEST_PG_URL names, and drops it
+// when the case ends.
+func newEnsurerTestDB(t *testing.T) *sql.DB {
+	t.Helper()
+	admin := os.Getenv("AGENTHUB_TEST_PG_URL")
+	if admin == "" {
+		t.Skip("SKIPPED, NOT PASSED: AGENTHUB_TEST_PG_URL is unset, so this case did NOT run - " +
+			"bash tools/testpg/start.sh prints a URL to pass to it")
+	}
+	adm, err := sql.Open("pgx", admin)
+	if err != nil {
+		t.Fatal(err)
+	}
+	name := fmt.Sprintf("agenthub_ensurer_%d", time.Now().UnixNano())
+	if _, err := adm.Exec("CREATE DATABASE " + name); err != nil {
+		t.Fatal(err)
+	}
+	u, err := url.Parse(admin)
+	if err != nil {
+		t.Fatal(err)
+	}
+	u.Path = "/" + name
+	db, err := sql.Open("pgx", u.String())
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		_ = db.Close()
+		adm, err := sql.Open("pgx", admin)
+		if err == nil {
+			_, _ = adm.Exec("DROP DATABASE IF EXISTS " + name + " WITH (FORCE)")
+			_ = adm.Close()
+		}
+	})
+	return db
+}
 
 // relaxTaskNotNullColumns is a fixture convenience: the row below is seeded with the two columns this
 // case needs, and the rest of the table's NOT NULL columns are not what this case measures.

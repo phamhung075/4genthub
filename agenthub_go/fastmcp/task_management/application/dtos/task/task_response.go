@@ -20,12 +20,23 @@ type GitBranchGetter interface {
 
 // TaskResponse is the response DTO for task operations.
 type TaskResponse struct {
-	ID                 string
-	Title              string
-	Description        string
-	Status             string
-	Priority           string
-	Details            string
+	ID          string
+	Title       string
+	Description string
+	Status      string
+	Priority    string
+	Details     string
+	// CompletionSummary and TestingNotes are what `manage_task complete` accepts and the
+	// repository stores (task_repository.go reads them back onto the entity). They were absent
+	// from this DTO, so ToDict dropped them and a closure whose only record is the summary could
+	// not be read back - the board is this pod's system of record (board task 5420da8e).
+	CompletionSummary string
+	TestingNotes      string
+	// CompletedAt and CompletedBy are WHEN and WHO produced the line above. A result line with no
+	// author cannot be attributed and a completion with no write time cannot be ordered against its
+	// corrections - both were missing from the read path (board task ca541a97).
+	CompletedAt        *time.Time
+	CompletedBy        string
 	EstimatedEffort    string
 	Assignees          []string
 	Labels             []string
@@ -99,6 +110,11 @@ func TaskResponseFromDomain(ctx context.Context, task *entities.Task, gitBranchR
 		return nil, err
 	}
 
+	completedAt, err := parseISODateTimeAny(taskDict["completed_at"])
+	if err != nil {
+		return nil, err
+	}
+
 	details := ""
 	if task != nil {
 		// The ledger is the only progress surface: details render the task's `progress` events, and
@@ -143,6 +159,10 @@ func TaskResponseFromDomain(ctx context.Context, task *entities.Task, gitBranchR
 		Status:                  stringFromAny(taskDict["status"]),
 		Priority:                stringFromAny(taskDict["priority"]),
 		Details:                 details,
+		CompletionSummary:       stringFromAny(taskDict["completion_summary"]),
+		TestingNotes:            stringFromAny(taskDict["testing_notes"]),
+		CompletedAt:             completedAt,
+		CompletedBy:             stringFromAny(taskDict["completed_by"]),
 		EstimatedEffort:         stringFromAny(taskDict["estimatedEffort"]),
 		Assignees:               assignees,
 		AcceptanceCriteria:      stringSliceFromAny(taskDict["acceptance_criteria"]),
@@ -209,6 +229,10 @@ func (r *TaskResponse) ToDict() (*entities.OrderedMap[any], error) {
 	m.Set("status", r.Status)
 	m.Set("priority", r.Priority)
 	m.Set("details", r.Details)
+	m.Set("completion_summary", r.CompletionSummary)
+	m.Set("testing_notes", r.TestingNotes)
+	m.Set("completed_at", isoOrNil(r.CompletedAt))
+	m.Set("completed_by", r.CompletedBy)
 	m.Set("estimatedEffort", r.EstimatedEffort)
 	m.Set("assignees", assigneesList)
 	m.Set("acceptance_criteria", acceptanceCriteria)

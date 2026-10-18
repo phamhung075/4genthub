@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"agenthub/fastmcp/task_management/domain/entities"
+	"agenthub/fastmcp/task_management/domain/repositories"
 	"agenthub/fastmcp/task_management/domain/value_objects"
 )
 
@@ -62,7 +63,7 @@ func (f *useCasesGroup3FakeTaskRepository) FindByLabels(ctx context.Context, lab
 	return nil, nil
 }
 
-func (f *useCasesGroup3FakeTaskRepository) Search(ctx context.Context, query string, filters map[string]any, limit int) ([]*entities.Task, error) {
+func (f *useCasesGroup3FakeTaskRepository) Search(ctx context.Context, query string, filters map[string]any, limit, offset int) ([]*entities.Task, error) {
 	return nil, nil
 }
 
@@ -86,8 +87,12 @@ func (f *useCasesGroup3FakeTaskRepository) GetStatistics(ctx context.Context) (m
 	return nil, nil
 }
 
-func (f *useCasesGroup3FakeTaskRepository) FindByCriteria(ctx context.Context, filters map[string]any, limit *int) ([]*entities.Task, error) {
+func (f *useCasesGroup3FakeTaskRepository) FindByCriteria(ctx context.Context, filters map[string]any, query repositories.ListQuery) ([]*entities.Task, error) {
 	return nil, nil
+}
+
+func (f *useCasesGroup3FakeTaskRepository) CountByCriteria(ctx context.Context, filters map[string]any) (int, error) {
+	return 0, nil
 }
 
 func (f *useCasesGroup3FakeTaskRepository) FindByIDAllStates(ctx context.Context, taskID value_objects.TaskId) (*entities.Task, error) {

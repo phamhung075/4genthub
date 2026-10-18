@@ -80,6 +80,10 @@ func (f *operationFakeFacade) CompleteTask(context.Context, string, string, *str
 	return nil
 }
 
+func (f *operationFakeFacade) CompleteTaskWithCorrection(context.Context, string, string, *string, *string, bool) *entities.OrderedMap[any] {
+	return nil
+}
+
 func (f *operationFakeFacade) AddDependency(context.Context, string, string) *entities.OrderedMap[any] {
 	return nil
 }

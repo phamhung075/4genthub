@@ -133,7 +133,7 @@ func TestDraftCreateInvalidActionErrorDefaultActions(t *testing.T) {
 	vd, _ := md.(*entities.OrderedMap[any]).Get("validation_details")
 	details := vd.(*entities.OrderedMap[any])
 	expected, _ := details.Get("expected")
-	want := "One of: create, update, get, delete, complete, list, search, next, add_dependency, remove_dependency, ai_plan, ai_create, ai_enhance, ai_analyze, ai_suggest_agents"
+	want := "One of: create, update, get, delete, complete, list, search, next, add_dependency, remove_dependency"
 	if expected != want {
 		t.Fatalf("expected = %q", expected)
 	}

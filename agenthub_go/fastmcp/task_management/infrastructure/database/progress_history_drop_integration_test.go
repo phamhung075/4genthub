@@ -578,12 +578,13 @@ func TestTheRuledCarryStepProceedsUnderTheBaselineMark(t *testing.T) {
 }
 
 // TestTheBootRefusesTheCarryStepOnAPopulatedDatabaseWithoutTheMark IS THE PAIR'S PROOF, and it is
-// deliberately NOT a test that the gate exists: on the shipping runner (main's, whose 0001 baseline is
-// inert) a boot meets a database that already has the schema - createAll has just built it - skips
-// 0001 WITHOUT recording it, and so reaches the step that destroys two columns with no mark. The step
-// REFUSES, its own transaction rolls back, BOTH COLUMNS SURVIVE and no ledger row is written. A gate
-// that PASSES here is the failure mode this case exists for: the boot would carry and drop the columns
-// unattended. The other half - the same boot under the owner's mark, which carries and then drops - is
+// deliberately NOT a test that the gate exists: a boot meets a catalogue that ALREADY holds the
+// schema and that predates the ledger - every database the old boot (createAll plus the column
+// ensurers) left behind is in exactly this state - so 0001 is skipped WITHOUT being recorded, and the
+// boot reaches the step that destroys two columns with no mark. The step REFUSES, its own transaction
+// rolls back, BOTH COLUMNS SURVIVE and no ledger row for it is written. A gate that PASSES here is the
+// failure mode this case exists for: the boot would carry and drop the columns unattended. The other
+// half - the same boot under the owner's mark, which carries and then drops - is
 // TestTheRuledCarryStepProceedsUnderTheBaselineMark.
 func TestTheBootRefusesTheCarryStepOnAPopulatedDatabaseWithoutTheMark(t *testing.T) {
 	dsn := newTestDatabase(t)
@@ -595,6 +596,21 @@ func TestTheBootRefusesTheCarryStepOnAPopulatedDatabaseWithoutTheMark(t *testing
 	cfg := &database.DatabaseConfig{Engine: &database.Engine{DB: db, URL: dsn}}
 	ctx := context.Background()
 
+	// Build the legacy catalogue: the schema as the old boot left it - the tables, the four columns the
+	// carry step drops, and NO applied_migrations row for 0001 (the old creators wrote no ledger at all,
+	// which is what the DELETE reproduces exactly).
+	if err := cfg.CreateTables(ctx); err != nil {
+		t.Fatalf("the fresh boot must succeed before a legacy catalogue can be built from it: %v", err)
+	}
+	sessions := database.NewSessionManager(cfg)
+	restorePreDropColumns(t, sessions)
+	if err := sessions.WithSession(ctx, func(ctx context.Context, s database.DBTX) error {
+		_, err := s.ExecContext(ctx, `DELETE FROM applied_migrations`)
+		return err
+	}); err != nil {
+		t.Fatalf("the ledger could not be cleared: %v", err)
+	}
+
 	err = cfg.CreateTables(ctx)
 	if err == nil {
 		t.Fatal("the boot applied the destructive carry step on a populated database with no 0001_baseline row")
@@ -602,7 +618,6 @@ func TestTheBootRefusesTheCarryStepOnAPopulatedDatabaseWithoutTheMark(t *testing
 	if !strings.Contains(err.Error(), "0001_baseline") {
 		t.Fatalf("the boot refused, but not for the missing baseline mark: %v", err)
 	}
-	sessions := database.NewSessionManager(cfg)
 	for _, c := range []struct{ table, column string }{
 		{"tasks", "progress_history"},
 		{"tasks", "progress_count"},

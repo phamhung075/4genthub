@@ -11,6 +11,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"agenthub/fastmcp/task_management/infrastructure/utilities"
 )
 
 // logNameKey is the slog attribute carrying the Python logger name.
@@ -161,32 +163,14 @@ func (h *logHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
 // WithGroup is a no-op: Python logging has no group equivalent.
 func (h *logHandler) WithGroup(string) slog.Handler { return h }
 
-// GetProjectRoot is unified_logging.get_project_root.
+// GetProjectRoot is unified_logging.get_project_root, resolved by the SAME marker every other
+// project-root site uses (utilities.Env.FindProjectRoot: a directory holding agenthub_go, then
+// AGENTHUB_DATA_PATH, then /tmp/agenthub_project). The port's own version was a fixed five-level
+// walk from os.Executable() under a comment naming the Python tree's depth, and a measured binary
+// outside this repo resolved it to "/" (a shipped binary at /tmp/x walks /tmp -> / -> / -> / -> /),
+// which is why the walk is gone rather than annotated.
 func GetProjectRoot() string {
-	if _, err := os.Stat("/app"); err == nil {
-		return "/app"
-	}
-	exe, err := os.Executable()
-	if err != nil {
-		return "."
-	}
-	// Navigate up from agenthub_main/src/fastmcp/task_management/infrastructure/.
-	cur := exe
-	for i := 0; i < 5; i++ {
-		cur = dirOf(cur)
-	}
-	return cur
-}
-
-func dirOf(p string) string {
-	i := strings.LastIndex(p, "/")
-	if i < 0 {
-		return "."
-	}
-	if i == 0 {
-		return "/"
-	}
-	return p[:i]
+	return utilities.DefaultEnv().FindProjectRoot()
 }
 
 // InitLogging is unified_logging.init_logging. It configures the process logger with a

@@ -146,13 +146,24 @@ func TestFacadeSliceBounds(t *testing.T) {
 // unconditionally true - so a filtered list answered with rows the caller had excluded.
 type capturingMinimalLister struct {
 	assigneeID *string
+	offset     int
+	total      int
 	calls      int
+	countCalls int
 }
 
-func (c *capturingMinimalLister) ListTasksMinimal(_ context.Context, _, _, assigneeID, _ *string, _, _ *int) ([]*entities.OrderedMap[any], error) {
+func (c *capturingMinimalLister) ListTasksMinimal(_ context.Context, _, _, assigneeID, _ *string, _, offset *int) ([]*entities.OrderedMap[any], error) {
 	c.calls++
 	c.assigneeID = assigneeID
+	if offset != nil {
+		c.offset = *offset
+	}
 	return nil, nil
+}
+
+func (c *capturingMinimalLister) CountTasksMinimal(_ context.Context, _, _, _, _ *string) (int, error) {
+	c.countCalls++
+	return c.total, nil
 }
 
 func TestListTasksForwardsTheAssigneeToThePerformancePath(t *testing.T) {
@@ -180,5 +191,43 @@ func TestListTasksForwardsTheAssigneeToThePerformancePath(t *testing.T) {
 	f.ListTasks(context.Background(), dtostask.ListTasksRequest{Limit: new(int)}, false, true, false)
 	if unfiltered.calls != 1 || unfiltered.assigneeID != nil {
 		t.Fatalf("unfiltered list: calls=%d assignee=%v", unfiltered.calls, unfiltered.assigneeID)
+	}
+}
+
+// TestListTasksPerformancePathForwardsOffsetAndTotal is the live path's half of the enumeration
+// defect: IsPerformanceMode() is unconditionally true, so the MCP list runs here - and this branch
+// used to hardcode offset 0 and report the page length as the total, which made page 2 the same as
+// page 1 while the pagination block claimed otherwise.
+func TestListTasksPerformancePathForwardsOffsetAndTotal(t *testing.T) {
+	lister := &capturingMinimalLister{total: 137}
+	f := &TaskApplicationFacade{deps: TaskFacadeDeps{
+		NewMinimalLister: func(_, _ *string) (TaskMinimalLister, error) { return lister, nil },
+	}}
+
+	limit, offset := 20, 40
+	out := f.ListTasks(context.Background(), dtostask.ListTasksRequest{
+		Limit:  &limit,
+		Offset: &offset,
+	}, false, true, false)
+
+	if lister.offset != 40 {
+		t.Fatalf("performance path offset = %d, want the requested 40", lister.offset)
+	}
+	if lister.countCalls != 1 {
+		t.Fatalf("count calls = %d, want 1: a total must come from a count, not the page", lister.countCalls)
+	}
+	if total, _ := out.Get("total"); total != 137 {
+		t.Fatalf("facade total = %v, want 137", total)
+	}
+
+	// An explicit ordering the minimal lister cannot serve falls through instead of being ignored:
+	// the ORM lister sorts by updated_at and the superset lister by created_at, so any named ordering
+	// has to go to the full path, which honours it.
+	sortBy, sortOrder := "title", "asc"
+	if minimalListerServesOrder(&sortBy, nil) || minimalListerServesOrder(nil, &sortOrder) {
+		t.Fatal("minimalListerServesOrder accepted an explicit ordering the lister cannot serve")
+	}
+	if !minimalListerServesOrder(nil, nil) || !minimalListerServesOrder(new(string), new(string)) {
+		t.Fatal("minimalListerServesOrder rejected the default ordering")
 	}
 }

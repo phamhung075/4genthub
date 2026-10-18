@@ -242,11 +242,6 @@ func (f *ResponseFactory) CreateInvalidActionError(invalidAction string,
 			"next",
 			"add_dependency",
 			"remove_dependency",
-			"ai_plan",
-			"ai_create",
-			"ai_enhance",
-			"ai_analyze",
-			"ai_suggest_agents",
 		}
 	}
 

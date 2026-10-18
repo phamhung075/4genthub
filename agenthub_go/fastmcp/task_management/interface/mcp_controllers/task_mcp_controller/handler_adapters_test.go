@@ -81,6 +81,7 @@ func newFakeSearchFacade() *fakeSearchFacade {
 	listResult := entities.NewOrderedMap[any]()
 	listResult.Set("success", true)
 	listResult.Set("tasks", []any{taskData})
+	listResult.Set("total", 40)
 
 	searchResult := entities.NewOrderedMap[any]()
 	searchResult.Set("success", true)
@@ -124,6 +125,7 @@ func TestTaskSearchHandlerAdapterKwargs(t *testing.T) {
 	t.Run("list", func(t *testing.T) {
 		result := adapter.ListTasks(ctx, facade, map[string]any{
 			"status": "in_progress", "limit": 10, "offset": 5,
+			"sort_by": "created_at", "sort_order": "asc",
 		})
 		mustSuccess(t, result, "list")
 		if facade.lastListRequest == nil {
@@ -143,6 +145,24 @@ func TestTaskSearchHandlerAdapterKwargs(t *testing.T) {
 		if offset, _ := pagination.Get("offset"); offset != 5 {
 			t.Fatalf("list: pagination offset = %v", offset)
 		}
+		// The page request must REACH the use case: echoing offset back in the pagination block
+		// while sending 0 to the repository is exactly the defect this row exists to remove.
+		if facade.lastListRequest.Offset == nil || *facade.lastListRequest.Offset != 5 {
+			t.Fatalf("list: request offset = %v, want 5", facade.lastListRequest.Offset)
+		}
+		if facade.lastListRequest.SortBy == nil || *facade.lastListRequest.SortBy != "created_at" {
+			t.Fatalf("list: request sort_by = %v, want created_at", facade.lastListRequest.SortBy)
+		}
+		if facade.lastListRequest.SortOrder == nil || *facade.lastListRequest.SortOrder != "asc" {
+			t.Fatalf("list: request sort_order = %v, want asc", facade.lastListRequest.SortOrder)
+		}
+		// total is the facade's count of the filtered set, and has_more is derived from it.
+		if total, _ := pagination.Get("total"); total != 40 {
+			t.Fatalf("list: pagination total = %v, want the facade's 40", total)
+		}
+		if hasMore, _ := pagination.Get("has_more"); hasMore != true {
+			t.Fatalf("list: has_more = %v, want true at offset 5 of 40", hasMore)
+		}
 	})
 
 	t.Run("search", func(t *testing.T) {
@@ -158,6 +178,9 @@ func TestTaskSearchHandlerAdapterKwargs(t *testing.T) {
 		}
 		if facade.lastSearchRequest.Limit != 7 {
 			t.Fatalf("search: limit = %d", facade.lastSearchRequest.Limit)
+		}
+		if facade.lastSearchRequest.Offset != 0 {
+			t.Fatalf("search: offset = %d, want 0", facade.lastSearchRequest.Offset)
 		}
 	})
 

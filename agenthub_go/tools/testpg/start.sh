@@ -26,6 +26,15 @@ fi
 # Unix-domain sockets" in pg.log, and has to relocate the cluster by hand. unix_socket_directories=''
 # means no socket path exists to be too long. This is the recipe the session_stream package's testdb.go
 # has documented all along; the two diverged and this one was wrong.
+# THE ONE VARIABLE NOT TO EXPORT HERE IS TEST_DATABASE_URL. This harness prints AGENTHUB_TEST_PG_URL;
+# TEST_DATABASE_URL is another case's switch, and exporting it while "setting the database env vars"
+# turns that case from a loud skip into a red that has nothing to do with the caller's change:
+# fastmcp/task_management/infrastructure/database/models_prod_test.go:29 reads it
+# (prodTestDatabaseURLEnv), :143 skips the run with "SKIPPED, NOT PASSED" when it is unset, and when it
+# is set the case RUNS against whatever database the DSN names - on this harness's fresh cluster that
+# is a red 0.02s in on six legacy tables ("relation agent_import_history does not exist"), because the
+# schema that case needs is not the one the migrations create. The skip is correct behaviour, and the
+# export silently disables it.
 "$ROOT/bin/pg_ctl" -D "$ROOT/data" -o "-p $PORT -c listen_addresses=127.0.0.1 -c unix_socket_directories=''" -l "$ROOT/pg.log" -w start >/dev/null 2>&1 || true
 if ! "$ROOT/bin/pg_ctl" -D "$ROOT/data" status >/dev/null 2>&1; then
   echo "ERROR: no cluster is running under $ROOT/data, so there is no URL to print." >&2

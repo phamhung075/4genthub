@@ -333,6 +333,7 @@ CREATE TABLE tasks (
     created_at TIMESTAMP NOT NULL,
     updated_at TIMESTAMP NOT NULL,
     completed_at TIMESTAMP,
+    completed_by VARCHAR NOT NULL DEFAULT '',
     completion_summary TEXT NOT NULL,
     testing_notes TEXT NOT NULL,
     context_id UUID,
