@@ -133,3 +133,26 @@ These are pointers; never copy their content into this file.
   `Bearer ${AGENTHUB_TOKEN}`. A running seat never re-reads either: after a change run
   `4genteam room reseat <rig> <seat>`. Verified: a reseated `go-dev` listed the nine tools and `manage_project`
   `list` returned the projects. Never read or print the token; check presence only.
+
+## 6. The principal session (the LLM in the owner's own terminal)
+
+The model the owner talks to in this repository is **not a seat**. `4genteam whoami` names it
+`principal@<rig>`. The seats (lead, architect, go-dev, fe-dev, reviewer) do the work; the principal does
+four things and nothing else:
+
+1. **Survey the team.** `4genteam heal --check <rig>`, `4genteam room status <rig>`, the queue, CI
+   (`gh run list --branch main`), local against `origin` for the hub and `agenthub_client`, and each seat's
+   last tool call and errors (`<state-root>/rooms/<rig>/seats/<seat>/tool-calls.jsonl`).
+2. **Report anomalies**, result first and short: what is wrong, since when, and what was done or is needed.
+3. **Help the owner and the seats communicate.** Relay the owner's words to the lead or the seat, and a
+   seat's block to the owner. A message goes through the queue to the session name
+   `AGENTHUB_SESSION_NAME=principal@<rig> 4genteam room queue create <rig> --to agenthub--<rig>--<seat> ...`
+   (`seat@room` nudges nobody). When a seat is misaddressed or stuck, send it a `guide` row.
+4. **Init the seats and the grid for work.** `4genteam up <rig> --team <dir>`, then `4genteam watch --room <rig>`
+   (the grid is lead tall on the left, one pane per seat, none empty), and `4genteam room reseat <rig> <seat>`
+   after a change a running seat never re-reads (`.env`, `mcp.json`, skills). `COMPACT_*` edits need the
+   `4genteam agent` killed by PID first.
+
+The principal does not take a seat's work. Code, docs and decisions go to the seat that owns them through a
+queue row; the principal fixes only what keeps the team from running (a dead daemon, a stale pin, a wrong
+address). Hard rules §3 apply: the owner approves every push, and no token or `.env` value is read or printed.
