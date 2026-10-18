@@ -343,8 +343,8 @@ LIMIT 10;
 
 **Caching**: the Go server's performance cache is **in-process**; `POST /api/v1/performance/metrics/clear-cache`
 (`routes.ClearPerformanceCache`, `fastmcp/server/routes/performance_metrics_routes.go:438`) clears it,
-and the module has **no Redis client** (`go.mod` lists no redis dependency; `fastmcp/server/session_store.go:23`
-sets `zpSessionRedisAvailable = false`). Earlier revisions of this guide showed a Python
+and the module has **no Redis client** (`go.mod` lists no redis dependency; `fastmcp/task_management/infrastructure/repositories/cached/cache_client.go:7-8`
+says the same and injects `CacheClient` with `MemoryCache` as the in-process implementation). Earlier revisions of this guide showed a Python
 `redis.Redis` client for the retired Python backend — it is not part of the live stack.
 
 **Performance Baselines**:

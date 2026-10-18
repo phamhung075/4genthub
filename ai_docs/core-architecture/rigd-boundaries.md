@@ -19,7 +19,7 @@ agent is the always-on local client. It holds one outbound WebSocket to `/ws/con
 
 - Server: `agenthub_go/fastmcp/server/httpapp/ws_mount.go` (`handleConnector`) requires the `sessions:write` scope and serves these frames: `hello` → `ready`, `session` → `session_ack {session_id, last_seq}`, `events` → `events_ack {session_id, last_seq}`, and `error {message}`. An unknown `type` is answered with `error "unknown type"` and the socket stays open. On disconnect the server marks the connector's sessions offline (`session_stream.MarkOffline`).
 - The server assigns `seq` (`session_stream/repository.go`, `AppendEvents`; at most 200 events per batch, `MaxEventsPerBatch`). An event carries no client key, so a batch resent after a lost ack is stored twice. The client comment `internal/clientsync/connector.go:321` makes deduplication the client's job, and nothing does it today.
-- Client: `internal/clientsync/connector.go` and `connectorverb.go` send ONE session ONE time (`sync connector`). Redaction is a fixed regex list (`Redact`, `redactionPatterns`) with no failure path. The same files exist in BOTH `agenthub_client` (pin `80cc766d`) and `agenthub_go/internal/clientsync`. The duplication is the seatcheck case again.
+- Client: `internal/clientsync/connector.go` and `connectorverb.go` send ONE session ONE time (`sync connector`). Redaction is a fixed regex list (`Redact`, `redactionPatterns`) with no failure path. The same files exist only in `agenthub_client` (pin `80cc766d`); the server's copy was purged in `cbc51bae` with the legacy rig client, and the client routes moved to `/api/v2`.
 - `agent_sessions` has `status`, `last_seq`, `last_seen` and the seat pair, and no client cursor column.
 
 ## 1. Where agent lives

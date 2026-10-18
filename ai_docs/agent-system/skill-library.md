@@ -230,6 +230,7 @@ The stored digest was corrected. Two things made that drift worth chasing rather
   command aborted on `client-user` and published nothing.
 
 The 35 canonical skills are mirrored to `packages/daemon/specs/agents/shared/skills/` upstream,
-and 4genteam guards its own mirrors with pinned digests (`scripts/skill-edge-digests.generated.json`).
+and 4genteam guards its own mirrors by digest: `4genteam team drift-check` compares the sha256 a stored
+skill block records for its source and its mirror (`agenthub_client/internal/clientteam/drift.go`).
 This file applies the same idea to the copy 4genthub seeds from. It is hand-maintained: no
 script writes it, so a source-side change must be re-measured here by hand.

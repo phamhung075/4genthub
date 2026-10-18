@@ -217,7 +217,7 @@ session state.
    (`deepseek-flash`, `deepseek-v4-flash`, `deepseek-v4-flash-vision-exp`, `deepseek-v4-pro`).
    Nothing on the server path validates the model string: the only validator there is
    `resolver.CheckRuntime` (`agenthub_go/fastmcp/seat_management/domain/resolver/runtime.go:23`,
-   called from `rigspec/rigspec.go:124` and `repositories/names.go:26`), which checks the
+   called from `repositories/names.go:26` and `seatrenderer/renderer.go:45`), which checks the
    **runtime** only. *(The model→provider mapping is omp's, not this repository's.)*
 4. **`GET /api/v2/seats/{room}/{seat}` carries the seat's `runtime` and rendered
    `files` but no `model` field** (keys: `files hash policy room runtime seat`), so a check for
