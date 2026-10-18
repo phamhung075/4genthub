@@ -106,9 +106,9 @@ and the two auth `RegisterRoutes` methods.
 | GET | `/api/v2/tasks/{id}` | `routes.GetUserTask` | `task_routes.go:107` |
 | GET | `/api/v2/tasks/{id}/events` | `routes.GetTaskEvents` | `task_routes.go:111` |
 | POST | `/api/v2/tasks/{id}/evidence` | `routes.SubmitTaskEvidence` | `task_routes.go:135` |
-| PUT | `/api/v2/tasks/{id}` | `routes.UpdateUserTask` | `task_routes.go:164` |
-| DELETE | `/api/v2/tasks/{id}` | `routes.DeleteUserTask` | `task_routes.go:187` |
-| POST | `/api/v2/tasks/{id}/complete` | `routes.CompleteUserTask` | `task_routes.go:191` |
+| PUT | `/api/v2/tasks/{id}` | `routes.UpdateUserTask` | `task_routes.go:168` |
+| DELETE | `/api/v2/tasks/{id}` | `routes.DeleteUserTask` | `task_routes.go:191` |
+| POST | `/api/v2/tasks/{id}/complete` | `routes.CompleteUserTask` | `task_routes.go:195` |
 
 **DRIFT FOUND AND REPAIRED 2026-10-08 at HEAD `88d27758` (docs duty pass 4).** *Three rows in the table above cited a line that is no longer a registration (`PUT {id}` 107->117, `DELETE {id}` 130->140, `complete` 134->144) and one route had no row at all.* **The control that names the cause rather than assuming it: every moved row moved by EXACTLY +10, and the insertion that did it is the `GET /{id}/events` route — one registration plus its closure, added above them.** *So this is the rotted-pointer class the §1 citation pass predicted, reproduced on schedule, and the fix is a line number, not a re-reading of the table.* **Re-resolve a row by reading the file's own `base` const and matching the row's method+path to the registration that carries it — never by trusting the number.**
 
@@ -299,16 +299,16 @@ audit wrapper), except `handleCreateRoom`/`handleListRooms` and the GETs.
 
 | Method | Path | Handler | Registration |
 |---|---|---|---|
-| POST | `/api/auth/register` | `AuthController.Register` | `auth_endpoints.go:1103` |
-| POST | `/api/auth/login` | `AuthController.Login` | `auth_endpoints.go:1117` |
-| POST | `/api/auth/refresh` | `AuthController.RefreshToken` | `auth_endpoints.go:1131` |
-| POST | `/api/auth/dev-login` | `AuthController.DevLogin` | `auth_endpoints.go:1145` |
-| POST | `/api/auth/logout` | `AuthController.Logout` | `auth_endpoints.go:1154` |
-| GET | `/api/auth/provider` | `AuthController.GetProviderConfig` | `auth_endpoints.go:1165` |
-| POST | `/api/auth/registration-success` | `AuthController.HandleRegistrationSuccess` | `auth_endpoints.go:1169` |
-| GET | `/api/auth/verify` | inline (provider echo) | `auth_endpoints.go:1175` |
-| GET | `/api/auth/password-requirements` | inline | `auth_endpoints.go:1180` |
-| POST | `/api/auth/validate-password` | `ValidatePasswordRequirements` | `auth_endpoints.go:1199` |
+| POST | `/api/auth/register` | `AuthController.Register` | `auth_endpoints.go:1124` |
+| POST | `/api/auth/login` | `AuthController.Login` | `auth_endpoints.go:1138` |
+| POST | `/api/auth/refresh` | `AuthController.RefreshToken` | `auth_endpoints.go:1152` |
+| POST | `/api/auth/dev-login` | `AuthController.DevLogin` | `auth_endpoints.go:1166` |
+| POST | `/api/auth/logout` | `AuthController.Logout` | `auth_endpoints.go:1175` |
+| GET | `/api/auth/provider` | `AuthController.GetProviderConfig` | `auth_endpoints.go:1186` |
+| POST | `/api/auth/registration-success` | `AuthController.HandleRegistrationSuccess` | `auth_endpoints.go:1190` |
+| GET | `/api/auth/verify` | inline (provider echo) | `auth_endpoints.go:1196` |
+| GET | `/api/auth/password-requirements` | inline | `auth_endpoints.go:1201` |
+| POST | `/api/auth/validate-password` | `ValidatePasswordRequirements` | `auth_endpoints.go:1220` |
 
 ### 1.19 Auth — Supabase (`fastmcp/auth/api/supabase_endpoints.go:333`)
 
