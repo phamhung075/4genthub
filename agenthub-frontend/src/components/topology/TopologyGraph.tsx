@@ -123,7 +123,7 @@ function RoomGroup({ entry }: { entry: RoomTopology }) {
 
   return (
     <section className="rounded-lg border border-surface-border-hover p-4">
-      <header className="mb-2 flex items-baseline justify-between gap-2">
+      <header className="mb-2 flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1">
         <h3 className="font-semibold text-base-primary">{room.name}</h3>
         <span className="text-xs text-base-secondary">
           {room.slug} · {seats.length} {seats.length === 1 ? 'seat' : 'seats'}
@@ -134,48 +134,53 @@ function RoomGroup({ entry }: { entry: RoomTopology }) {
       {seats.length === 0 ? (
         <p className="py-6 text-center text-sm text-base-secondary">No seats in this room.</p>
       ) : (
-        <svg
-          role="img"
-          aria-label={`${room.name} topology`}
-          width={width}
-          height={height}
-          viewBox={`0 0 ${width} ${height}`}
-          className="max-w-full"
-        >
-          <defs>
-            <marker
-              id="topology-arrow"
-              viewBox="0 0 10 10"
-              refX="10"
-              refY="5"
-              markerWidth="6"
-              markerHeight="6"
-              orient="auto-start-reverse"
-            >
-              <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor" className="text-gray-400" />
-            </marker>
-          </defs>
+        /* The graph scrolls inside its card rather than shrinking: max-w-full scaled the whole
+           drawing by the card's width, which at 375 put the 14px labels at ~7px - an unreadable
+           graph is worse than a scrollable one. */
+        <div className="overflow-x-auto">
+          <svg
+            role="img"
+            aria-label={`${room.name} topology`}
+            width={width}
+            height={height}
+            viewBox={`0 0 ${width} ${height}`}
+            className="max-w-none"
+          >
+            <defs>
+              <marker
+                id="topology-arrow"
+                viewBox="0 0 10 10"
+                refX="10"
+                refY="5"
+                markerWidth="6"
+                markerHeight="6"
+                orient="auto-start-reverse"
+              >
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor" className="text-gray-400" />
+              </marker>
+            </defs>
 
-          {edges.map((edge) => {
-            const from = positions[edge.from_seat_id];
-            const to = positions[edge.to_seat_id];
-            if (!from || !to) return null;
-            return (
-              <Edge
-                key={edge.id}
-                from={from}
-                to={to}
-                edge={edge}
-                style={LINK_STYLES[edge.kind]}
-              />
-            );
-          })}
+            {edges.map((edge) => {
+              const from = positions[edge.from_seat_id];
+              const to = positions[edge.to_seat_id];
+              if (!from || !to) return null;
+              return (
+                <Edge
+                  key={edge.id}
+                  from={from}
+                  to={to}
+                  edge={edge}
+                  style={LINK_STYLES[edge.kind]}
+                />
+              );
+            })}
 
-          {seats.map((seat) => {
-            const point = positions[seat.id];
-            return point ? <SeatNode key={seat.id} seat={seat} point={point} /> : null;
-          })}
-        </svg>
+            {seats.map((seat) => {
+              const point = positions[seat.id];
+              return point ? <SeatNode key={seat.id} seat={seat} point={point} /> : null;
+            })}
+          </svg>
+        </div>
       )}
     </section>
   );
