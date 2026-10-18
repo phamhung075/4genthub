@@ -127,6 +127,15 @@ the model → yes: fix the test to match the model.
   (`b059b863`, 2026-10-08).
 - The old "`CLAUDE.md` stays out of every commit" rule is **superseded**: `CLAUDE.md` was renamed
   to `AGENTS.md` (`f7a809dc`), and `AGENTS.md` is tracked. See `agenthub_go/NEXT_GEN.md`.
+- **A submodule pointer is committed only from a clone every checkout can resolve.** A worktree that
+  initialised `agenthub_client` gets its OWN object store, so a client commit made there exists nowhere
+  else; committing that sha as the gitlink leaves every other checkout unable to `cat-file` it, and a
+  plain `git submodule update` answers `reference is not a tree`. Measured 2026-10-18: `9a464dc6` pinned
+  a client commit that existed only in `wt/go-dev-root`'s module store, and the hub worktree sat on the
+  old commit while its status read ` M agenthub_client` — the fix was to fetch the ref from that store
+  into the hub clone and fast-forward it. So before the commit, `git -C <hub-client-clone> cat-file -e
+  <new-client-sha>` must exit 0, where `<hub-client-clone>` is the clone the hub worktree uses and not
+  the seat's own module store; move the commit there first, then pin it.
 
 ## Docs conventions
 
@@ -135,8 +144,8 @@ the model → yes: fix the test to match the model.
 - Search existing docs before creating new ones.
 - **Seat reports live in `ai_docs/reports-status/`.** Findings, gate docs, verdicts and status reports
   go there, one file per report (`<KIND>-<subject>-<date>.md`) — not in a repo root. The 4genthub root
-  keeps only `README`, `TEST-CHANGELOG`, `AGENTS` and `CLAUDE.local` (plus the parked board
-  `NEXT-GEN2.md.obsolete` and the `CHANGELOG/` directory), and the same applies to every seat worktree root.
+  keeps only `README`, `TEST-CHANGELOG`, `AGENTS` and `CLAUDE.local` (plus the `CHANGELOG/` directory),
+  and the same applies to every seat worktree root.
   Reports about the client submodule live in that submodule's own `ai_docs/reports-status/` — the same
   rule read in that tree. **The u3 lab tree (`wt/<rig>/u3-run/`) is the instrument's directory, not a
   seat worktree:** its install, calibration, smoke and gate records stay next to the harness they

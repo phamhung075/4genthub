@@ -6751,3 +6751,12 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
   alone, and the two content assertions (no retired-index claim, the docs chapter names the two layout
   commands) still run on it. At this change: `go vet` clean and `go test -count=1 ./...` green in
   `agenthub_go`; the three failures reproduce at `7aa5475a` without it.
+- New guard `TestAPrunedPathHasNoLiveReference` in `agenthub_go/internal/repoguards/pruned_paths_test.go`,
+  with `testdata/pruned_paths.txt` as its data: every listed path must be gone from the index, and no
+  tracked file outside an exact-file allowlist may name it. The prune's own sentence ("git grep finds no
+  live reference to a removed file outside `CHANGELOG/`") is now a check, because at `53b95dee` it was
+  false in four places. `CHANGELOG/` and `TEST-CHANGELOG.md` are excluded by pathspec, not allowlist.
+  Falsified: appending "the parked board is NEXT-GEN2.md.obsolete" to `AGENTS.md` makes it exit 1 and
+  name `AGENTS.md:160`; with the line removed it passes in 0.04s. Two things it caught while being
+  written: `git grep -f` takes every line of the data file as a pattern, so its `#` comments matched
+  the whole tree (6097 hits, 30s) until the patterns were written comment-free to a scratch file.
