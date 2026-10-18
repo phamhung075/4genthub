@@ -106,9 +106,9 @@ export const SeatAuthoringPage: React.FC = () => {
 
   return (
     <div className="container mx-auto space-y-6 p-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-4xl font-bold tracking-tight">Seat authoring</h1>
+          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Seat authoring</h1>
           <p className="text-muted-foreground mt-2">
             Compose a seat from blocks one at a time, then author the modules and seat types those blocks come from.
           </p>

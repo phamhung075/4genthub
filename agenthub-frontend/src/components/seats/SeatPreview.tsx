@@ -53,12 +53,12 @@ export const SeatPreview: React.FC<SeatPreviewProps> = ({ room, seat }) => {
         <CardContent className="space-y-3">
           <div className="flex items-center gap-3 flex-wrap text-sm">
             <span className="text-muted-foreground">Hash</span>
-            <code className="rounded bg-muted px-2 py-1 font-mono">{resolvedSeat?.hash ?? '—'}</code>
+            <code className="break-all rounded bg-muted px-2 py-1 font-mono">{resolvedSeat?.hash ?? '—'}</code>
             <span className="text-muted-foreground">Runtime</span>
             <Badge variant="secondary">{resolvedSeat?.runtime ?? '—'}</Badge>
           </div>
-          <div className="flex items-center gap-2">
-            <code className="rounded bg-muted px-2 py-1 font-mono text-xs">{command}</code>
+          <div className="flex flex-wrap items-center gap-2">
+            <code className="min-w-0 break-all rounded bg-muted px-2 py-1 font-mono text-xs">{command}</code>
             <Button variant="outline" size="sm" onClick={handleCopy}>
               {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
               Copy pull command
