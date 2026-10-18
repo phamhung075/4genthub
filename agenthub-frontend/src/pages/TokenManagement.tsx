@@ -98,8 +98,8 @@ function ScopeCard({ scope, isSelected, onToggle }: ScopeCardProps) {
         onClick={() => onToggle(scope.value)}
       >
         <CardContent className="p-3">
-          <div className="flex items-center space-x-2">
-            <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-all duration-200 ${
+          <div className="flex items-start gap-2">
+            <div className={`mt-0.5 w-4 h-4 shrink-0 rounded border-2 flex items-center justify-center transition-all duration-200 ${
               isSelected
                 ? 'bg-primary border-primary text-primary-foreground'
                 : 'border-muted-foreground/30 hover:border-primary/50'
@@ -111,12 +111,10 @@ function ScopeCard({ scope, isSelected, onToggle }: ScopeCardProps) {
               )}
             </div>
             <div className="flex-1 min-w-0">
-              <div className="flex items-center space-x-1">
-                <span className="font-medium text-xs text-foreground truncate">{resource}</span>
-                <span className="text-[10px] font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">
-                  {verb}
-                </span>
-              </div>
+              <span className="block truncate font-medium text-xs text-foreground">{resource}</span>
+              <span className="mt-0.5 inline-block whitespace-nowrap rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
+                {verb}
+              </span>
             </div>
           </div>
         </CardContent>
@@ -382,24 +380,24 @@ export function TokenManagement() {
           <TabsList className="grid w-full grid-cols-3 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm rounded-lg h-12">
             <TabsTrigger
               value="generate"
-              className="flex items-center justify-center space-x-2 font-medium h-full data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-500 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-all rounded-md"
+              className="flex h-full min-w-0 items-center justify-center gap-1.5 px-1 text-xs font-medium sm:gap-2 sm:text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-500 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-all rounded-md"
             >
-              <Key size={18} />
-              <span>Generate Token</span>
+              <Key size={18} className="hidden shrink-0 sm:block" />
+              <span className="text-center leading-tight">Generate Token</span>
             </TabsTrigger>
             <TabsTrigger
               value="tokens"
-              className="flex items-center justify-center space-x-2 font-medium h-full data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-500 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-all rounded-md"
+              className="flex h-full min-w-0 items-center justify-center gap-1.5 px-1 text-xs font-medium sm:gap-2 sm:text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-500 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-all rounded-md"
             >
-              <Shield size={18} />
-              <span>Active Tokens</span>
+              <Shield size={18} className="hidden shrink-0 sm:block" />
+              <span className="text-center leading-tight">Active Tokens</span>
             </TabsTrigger>
             <TabsTrigger
               value="settings"
-              className="flex items-center justify-center space-x-2 font-medium h-full data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-500 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-all rounded-md"
+              className="flex h-full min-w-0 items-center justify-center gap-1.5 px-1 text-xs font-medium sm:gap-2 sm:text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-500 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-all rounded-md"
             >
-              <Settings size={18} />
-              <span>Settings</span>
+              <Settings size={18} className="hidden shrink-0 sm:block" />
+              <span className="text-center leading-tight">Settings</span>
             </TabsTrigger>
           </TabsList>
 

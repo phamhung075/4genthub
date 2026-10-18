@@ -228,11 +228,11 @@ export function DocsPage() {
           <Link to="/" className="font-semibold">
             4genthub
           </Link>
-          <Link to={DOCS_BASE} className="text-text-tertiary hover:text-primary">
+          <Link to={DOCS_BASE} className="hidden text-text-tertiary hover:text-primary sm:inline">
             Docs
           </Link>
           <div className="ml-auto flex items-center gap-2">
-            <Link to="/dashboard" className="rounded-md px-3 py-1.5 text-sm hover:bg-surface-hover">
+            <Link to="/dashboard" className="rounded-md px-2 py-1.5 text-sm hover:bg-surface-hover sm:px-3">
               Dashboard
             </Link>
             <button

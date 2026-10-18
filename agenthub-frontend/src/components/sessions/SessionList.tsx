@@ -71,8 +71,8 @@ export const SessionList: React.FC<SessionListProps> = ({ sessions, selectedId, 
                   </Badge>
                 </div>
               </div>
-              <div className="mt-1 flex items-center justify-between gap-2 text-xs text-base-secondary">
-                <span className="truncate">{session.project ?? session.connector_id}</span>
+              <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-base-secondary">
+                <span className="min-w-0 truncate">{session.project ?? session.connector_id}</span>
                 {/* The seat this session IS, from the row's own fields - the pair the message route
                     needs, so a rig's sessions are identifiable at a glance. Both come from the
                     connector at ingest; neither is derived from the name here, and a session whose
