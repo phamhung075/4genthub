@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"hash/fnv"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -850,29 +851,49 @@ func (c *AuthController) Login(ctx context.Context, req LoginRequest) (*LoginRes
 			}, nil
 		}
 
-		if resp.StatusCode == 401 {
+		// Every other answer is the token endpoint refusing. Read it once: the
+		// error_description is the only thing that separates a wrong password from a
+		// disabled or temporarily locked account, and dropping it made every 401 the
+		// same diagnosis-free "Invalid credentials".
+		refusal, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
+		var tokenErr struct {
+			Error            string `json:"error"`
+			ErrorDescription string `json:"error_description"`
+		}
+		_ = json.Unmarshal(refusal, &tokenErr)
+		log.Printf("auth: keycloak token exchange for %s answered %d: error=%q description=%q",
+			req.Email, resp.StatusCode, tokenErr.Error, tokenErr.ErrorDescription)
+
+		desc := strings.ToLower(tokenErr.ErrorDescription)
+		switch {
+		case strings.Contains(desc, "not fully set up"):
+			return nil, &authpkg.HTTPException{
+				StatusCode: 400,
+				Detail:     "Your account is incomplete. Please try registering again with this email address. The system will handle any existing account issues automatically.",
+			}
+		case strings.Contains(desc, "temporarily") || strings.Contains(desc, "locked"):
+			return nil, &authpkg.HTTPException{
+				StatusCode: 403,
+				Detail:     "Account is temporarily locked after repeated failed sign-ins. Try again later.",
+			}
+		case strings.Contains(desc, "disabled"):
+			return nil, &authpkg.HTTPException{
+				StatusCode: 403,
+				Detail:     "Account is disabled. Contact an administrator.",
+			}
+		case strings.Contains(desc, "invalid_grant"):
+			return nil, &authpkg.HTTPException{
+				StatusCode: 401,
+				Detail:     "Invalid email or password. Please check your credentials and try again.",
+			}
+		case resp.StatusCode == 401:
+			// A wrong password and an unknown user both arrive here with the same
+			// canonical description, so the surface keeps its measured string.
 			return nil, &authpkg.HTTPException{StatusCode: 401, Detail: "Invalid credentials"}
 		}
-
-		if resp.StatusCode == 400 {
-			var errData map[string]any
-			_ = json.NewDecoder(resp.Body).Decode(&errData)
-			errMsg := fmt.Sprintf("%v", errData["error_description"])
-			if strings.Contains(strings.ToLower(errMsg), "not fully set up") {
-				return nil, &authpkg.HTTPException{
-					StatusCode: 400,
-					Detail:     "Your account is incomplete. Please try registering again with this email address. The system will handle any existing account issues automatically.",
-				}
-			}
-			if strings.Contains(strings.ToLower(errMsg), "invalid_grant") {
-				return nil, &authpkg.HTTPException{
-					StatusCode: 401,
-					Detail:     "Invalid email or password. Please check your credentials and try again.",
-				}
-			}
-			return nil, &authpkg.HTTPException{StatusCode: 400, Detail: fmt.Sprintf("Authentication failed: %s", errMsg)}
+		if tokenErr.ErrorDescription != "" {
+			return nil, &authpkg.HTTPException{StatusCode: resp.StatusCode, Detail: "Authentication failed: " + tokenErr.ErrorDescription}
 		}
-
 		return nil, &authpkg.HTTPException{StatusCode: resp.StatusCode, Detail: "Authentication failed"}
 
 	} else if provider == "supabase" {

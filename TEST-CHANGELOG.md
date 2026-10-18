@@ -7124,4 +7124,18 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
   replaced by `TestEvidenceConflictStopsTheCompletion` - exit 1, the "not completed: the evidence was
   not stored" line, zero `/complete` calls. It was red on the pre-change client (exit 0, one call).
 - At this change: `go test ./...` in `agenthub_go` with `AGENTHUB_TEST_PG_URL` set -> rc 0;
-  `go test ./...` in `agenthub_client` -> rc 0.
+
+## 2026-10-19 - the login names the token endpoint's refusal (hub, branch 4genthub-min/login-401-detail)
+
+- `agenthub_go/fastmcp/auth/interface/auth_endpoints_login_refusal_test.go`:
+  `TestLoginNamesTheTokenEndpointsRefusal` drives `Login` against a scripted token endpoint and pins
+  seven answers: the canonical 401 keeps "Invalid credentials"; "Account disabled" and "Account is
+  temporarily disabled" answer 403 with their own details; a 400 `invalid_grant` keeps its 401; "not
+  fully set up" keeps its 400 hint; an unknown description reaches the detail; an empty body stays
+  "Authentication failed". The two named states and the log assertion failed against the pre-change
+  handler ("401 Invalid credentials") and pass after.
+- `TestLoginSendsTheAccountAndLogsTheRefusal` pins the wire form the refusal is about
+  (`grant_type=password`, `username`, `password`) and the log line
+  `error="invalid_grant" description="Account disabled"` - and that the password is not in it.
+- `TestLoginResponseMappingIsUnchangedOnSuccess` pins the 200 path (token, refresh token, `sub`/`email`
+  claims, `expires_in`) so the refusal rewrite cannot have moved it.
