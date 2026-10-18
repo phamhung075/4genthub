@@ -93,8 +93,12 @@ export const SeatPreview: React.FC<SeatPreviewProps> = ({ room, seat }) => {
       </Card>
 
       {resolvedSeat && (
+        /* Every card here is a grid item, so its automatic minimum is its min-content width: the
+           file list's unbreakable paths and the two `pre` blocks (475px) set it, and the track grew
+           past the phone before the `pre`'s own overflow-auto could scroll. min-w-0 on each card
+           hands the width to the track. */
         <div className="grid gap-4 lg:grid-cols-[240px_1fr]">
-          <Card>
+          <Card className="min-w-0">
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
                 <FileCode className="h-4 w-4" /> Files ({files.length})
@@ -117,7 +121,7 @@ export const SeatPreview: React.FC<SeatPreviewProps> = ({ room, seat }) => {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="min-w-0">
             <CardHeader>
               <CardTitle className="text-base">{activeFile?.path ?? 'File'}</CardTitle>
             </CardHeader>
@@ -128,7 +132,7 @@ export const SeatPreview: React.FC<SeatPreviewProps> = ({ room, seat }) => {
             </CardContent>
           </Card>
 
-          <Card className="lg:col-span-2">
+          <Card className="min-w-0 lg:col-span-2">
             <CardHeader>
               <CardTitle className="text-base">Policy</CardTitle>
             </CardHeader>

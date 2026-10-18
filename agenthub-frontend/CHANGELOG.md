@@ -9,6 +9,14 @@
   - Page copy (`index.html`, `manifest.json`, landing, seats, connect-machine, prose) names the 4genteam client. NOT run (no local test run); `tsc --noEmit` is the check.
 
 ### Fixed
+- **The three routes the phone walk still reported as dragging now fit 320px and 375px** - 2026-10-18
+  - Measured first, on the deployed origin (`E2E_BASE_URL=https://www.4genthub.com npx playwright test e2e/phone-layout.spec.ts`): **14 passed / 6 failed**. The six are the layout condition on `/seats`, `/seats/authoring` and `/topology` at both widths; the 40px floor passes on all twenty. That run is why the earlier "expects 20/20" was wrong: the 40x40 change fixed the floor, not the drags.
+  - `src/components/seats/MachinesPanel.tsx`: the machine `Card` gains `min-w-0`. A grid item's automatic minimum is its min-content width, and the seat table's unbreakable cells made that 553px, so the `lg:grid-cols-2` track grew past the phone (`main` 577 wide in 375 and in 320) instead of the table scrolling in its own `overflow-x-auto`.
+  - `src/components/topology/TopologyGraph.tsx`: the room `<section>` gains `min-w-0`, same cause — the graph's `width` attribute set a 618px min-content (`main` 634 wide).
+  - `src/components/seats/SeatPreview.tsx`: all three cards in the `lg:grid-cols-[240px_1fr]` grid gain `min-w-0`; the two `pre` blocks' 475px min-content had the same effect (`main` 549 wide).
+  - `src/components/seats/McpBlockForm.tsx`: the block `input[type=file]` gains `w-full`. Its intrinsic width is 301px (picker button plus filename field), which set the paste row's min-content and dragged `/seats/authoring` on its own.
+  - Measured in Chromium against the live DOM: the exact classes this branch emits (`min-w-0` on those grid children, `w-full` on that input; both utilities already ship in `index-*.css`) bring `main.scrollWidth == main.clientWidth` on all three routes at 375x667 and 320x568 — 577/549/634 → 375 and 375/375/375, then 577/549/634 → 320. NOT RUN: the live re-walk of this branch, which needs the owner's next deploy.
+  - `npx tsc --noEmit -p .` clean; `npx vitest run` 130 files / 1929 tests pass.
 - **Every icon control the phone walk names now has a 40x40 box** - 2026-10-18
   - `src/components/ProjectList/components/ProjectItem.tsx`: the four project-row actions (View Project Details, Create Branch, Edit, Delete) were `h-7 w-7` and measured 28x28; they are now `h-10 w-10` with an `h-4 w-4` glyph. Three rows, so twelve buttons on `/dashboard`.
   - `src/pages/DocsPage.tsx`: the documentation menu button (36x36) and the theme button (32x32) gain `flex h-10 w-10 items-center justify-center` in place of `p-2`, so the glyph stays centered. `/help-setup` redirects here, so both routes are covered by the one header.

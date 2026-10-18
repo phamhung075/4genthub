@@ -76,7 +76,10 @@ export const SeatUnresolvedBadge: React.FC = () => (
 );
 
 const MachineCard: React.FC<{ machine: MachineStatus }> = ({ machine }) => (
-  <Card>
+  /* min-w-0: the card is a grid item, so its automatic minimum is its min-content width - the
+     seat table's unbreakable cells, 553px - and it dragged the track past the phone. Zero lets
+     the card take the track and the table scroll inside its own overflow-x-auto. */
+  <Card className="min-w-0">
     <CardHeader>
       <CardTitle className="text-lg flex flex-wrap items-center justify-between gap-2">
         <span className="min-w-0 truncate">{machine.machine_id}</span>
