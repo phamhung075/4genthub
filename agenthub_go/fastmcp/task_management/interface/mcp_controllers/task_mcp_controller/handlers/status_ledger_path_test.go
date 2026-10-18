@@ -75,6 +75,10 @@ func (r *ledgerPathRecorder) RecordGateVerdict(context.Context, string, map[stri
 	return &entities.TaskEvent{Kind: entities.TaskEventKindGateVerdict}, nil
 }
 
+func (r *ledgerPathRecorder) ActorOf(context.Context) (entities.TaskEventActorKind, string, bool) {
+	return entities.TaskEventActorHuman, "test-user", true
+}
+
 type ledgerPathEntry struct {
 	taskID string
 	old    string
@@ -124,6 +128,10 @@ func (a ledgerPathFacade) GetTask(ctx context.Context, taskID string, includeCon
 
 func (a ledgerPathFacade) CompleteTask(ctx context.Context, taskID, completionSummary string, testingNotes, userID *string) *entities.OrderedMap[any] {
 	return a.TaskApplicationFacade.CompleteTask(ctx, taskID, &completionSummary, testingNotes, userID)
+}
+
+func (a ledgerPathFacade) CompleteTaskWithCorrection(ctx context.Context, taskID, completionSummary string, testingNotes, userID *string, correction bool) *entities.OrderedMap[any] {
+	return a.TaskApplicationFacade.CompleteTaskWithCorrection(ctx, taskID, &completionSummary, testingNotes, userID, correction)
 }
 
 func (a ledgerPathFacade) TaskRepository() repositories.TaskRepository {

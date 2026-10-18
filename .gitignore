@@ -368,6 +368,7 @@ cursor_agent/mcp_server_config_alternatives.json
 # Test artifacts
 test-results/
 test-reports/
+/agenthub-frontend/audit-runs/
 .coverage
 htmlcov/
 

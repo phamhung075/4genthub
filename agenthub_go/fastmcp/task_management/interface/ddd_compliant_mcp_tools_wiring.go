@@ -128,6 +128,10 @@ func (a taskMCPFacade) CompleteTask(ctx context.Context, taskID, completionSumma
 	return a.f.CompleteTask(ctx, taskID, &completionSummary, testingNotes, userID)
 }
 
+func (a taskMCPFacade) CompleteTaskWithCorrection(ctx context.Context, taskID, completionSummary string, testingNotes, userID *string, correction bool) *entities.OrderedMap[any] {
+	return a.f.CompleteTaskWithCorrection(ctx, taskID, &completionSummary, testingNotes, userID, correction)
+}
+
 func (a taskMCPFacade) AddDependency(ctx context.Context, taskID, dependencyID string) *entities.OrderedMap[any] {
 	return a.f.AddDependency(ctx, taskID, dependencyID)
 }

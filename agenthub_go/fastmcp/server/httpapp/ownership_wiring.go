@@ -10,14 +10,13 @@ import (
 // ownershipChecker answers routes.OwnershipChecker from the tables themselves.
 //
 // WHY THIS EXISTS. routes.Ownership is an injected global that no production code assigned, so it
-// stayed nil and CheckResourceOwnership fell through to its environment fallback for every value of
-// ENVIRONMENT except exactly "development": production refused every system-triggered cross-user
-// frame, development delivered it to every connection. Python has no seam here - its
-// _check_resource_ownership queries Task/Subtask/ProjectGitBranch/Project directly, filtered by
-// user_id - and the four queries below are that function's four branches, read from git history
-// because the Python backend is retired from the tree. NewApp assigns this so Rule 2 consults real
-// ownership; the environment fallback stays what it is in the reference: the answer when the check
-// cannot be made at all, failing closed in production.
+// stayed nil and CheckResourceOwnership answered from an ENVIRONMENT branch instead of from ownership:
+// production refused every system-triggered cross-user frame, development delivered it to every
+// connection. Python has no seam here - its _check_resource_ownership queries
+// Task/Subtask/ProjectGitBranch/Project directly, filtered by user_id - and the four queries below are
+// that function's four branches, read from git history because the Python backend is retired from the
+// tree. NewApp assigns this so Rule 2 consults real ownership. The environment branch is GONE (ruling
+// R1): a nil checker or a query error now denies in every environment.
 type ownershipChecker struct{ sessions *database.SessionManager }
 
 var _ routes.OwnershipChecker = ownershipChecker{}
@@ -43,8 +42,7 @@ func (o ownershipChecker) ProjectOwnedBy(ctx context.Context, projectID, userID 
 
 // rowExists COUNTS rather than selecting a row: COUNT always answers, so a real failure is never
 // confused with "no such row" and no driver-specific not-found error has to be classified here. An
-// error is returned as an error, never as "not owned" - CheckResourceOwnership treats it as "cannot
-// tell" and falls through to the environment answer.
+// error is returned as an error, never as "not owned" - CheckResourceOwnership DENIES on it.
 func (o ownershipChecker) rowExists(ctx context.Context, query string, args ...any) (bool, error) {
 	var n int
 	err := o.sessions.WithSession(ctx, func(ctx context.Context, s database.DBTX) error {

@@ -39,7 +39,7 @@ func (uc *SearchTasksUseCase) Execute(ctx context.Context, request *task.SearchT
 	if len(request.Labels) > 0 {
 		filters["labels"] = request.Labels
 	}
-	tasks, err := uc.taskRepository.Search(ctx, request.Query, filters, request.Limit)
+	tasks, err := uc.taskRepository.Search(ctx, request.Query, filters, request.Limit, request.Offset)
 	if err != nil {
 		return nil, err
 	}

@@ -59,6 +59,13 @@ type Task struct {
 	CompletionSummary *string
 	TestingNotes      *string
 
+	// CompletedAt and CompletedBy are WHO produced the completion summary and WHEN, which the row
+	// already had a column for (completed_at) and did not record: a completion line with no author is
+	// the defect board task ca541a97 is about. CompletedBy holds the seat identity the request named
+	// (`<room>/<seat>`), or the user id on a request that named no seat.
+	CompletedAt *time.Time
+	CompletedBy *string
+
 	ClaimedBy *string
 	ClaimedAt *time.Time
 }
@@ -1132,6 +1139,16 @@ func (t *Task) ToDict() (map[string]any, error) {
 	}
 	if t.CompletionSummary != nil {
 		result["completion_summary"] = *t.CompletionSummary
+	}
+	if t.CompletedAt != nil {
+		result["completed_at"] = value_objects.IsoFormat(*t.CompletedAt)
+	} else {
+		result["completed_at"] = nil
+	}
+	if t.CompletedBy != nil {
+		result["completed_by"] = *t.CompletedBy
+	} else {
+		result["completed_by"] = nil
 	}
 	if t.TestingNotes != nil {
 		result["testing_notes"] = *t.TestingNotes

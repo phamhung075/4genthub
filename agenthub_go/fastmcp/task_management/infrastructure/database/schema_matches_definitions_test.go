@@ -96,7 +96,14 @@ func TestSchemaMatchesGoDefinitions(t *testing.T) {
 			t.Fatalf("%v", err)
 		}
 		for table, statements := range stepIndexes {
-			indexed[table] = append(indexed[table], statements...)
+			// The same index may be created by more than one step - 0001 for an empty catalogue, 0005
+			// for one that predates its column - and an index is its name and definition, not the
+			// number of steps that mention it.
+			for _, statement := range statements {
+				if !containsString(indexed[table], statement) {
+					indexed[table] = append(indexed[table], statement)
+				}
+			}
 		}
 	}
 

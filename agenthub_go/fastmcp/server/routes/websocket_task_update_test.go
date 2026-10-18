@@ -9,16 +9,16 @@ package routes
 // the acting user receives its own task's frame, with the keys the client contract needs intact.
 //
 // THE CASE THIS FILE NO LONGER CARRIES, because a claim like it would be false of the shipped runtime:
-// what a system-stamped frame does when NO checker is assigned and no check can be made. Then the
-// answer is the ENVIRONMENT string - development delivers, production refuses - so a case asserting
-// refusal there is green only because the ambient ENVIRONMENT is not development, and it FAILS under
+// what a system-stamped frame does when NO checker is assigned and no check can be made. It used to be
+// the ENVIRONMENT string - development delivered, production refused - so a case asserting refusal
+// there was green only because the ambient ENVIRONMENT was not development, and it FAILED under
 // ENVIRONMENT=development with the frame delivered - MEASURED at the gate on 67af511f, which is what
-// made the name false rather than merely optimistic.
-// TestSystemStampedTaskUpdateIsRefusedForEveryConnection
-// was exactly that: its name and header claimed a property of the stamp, and its green came from the
-// environment. It was deleted by the gate on 67af511f rather than renamed around, and its one unique
-// assertion - that the refusing connection is TOLD, rather than silently dropped - moved to the
-// not-owned cases above, where the checker is installed.
+// made the name false rather than merely optimistic. Ruling R1 then deleted the environment branch
+// altogether: a nil checker or a failed query DENIES in every environment, pinned by
+// TestAQueryErrorDeniesInEveryEnvironment. TestSystemStampedTaskUpdateIsRefusedForEveryConnection
+// was the case that depended on the ambient environment; it was deleted by the gate on 67af511f rather
+// than renamed around, and its one unique assertion - that the refusing connection is TOLD, rather than
+// silently dropped - moved to the not-owned cases above, where the checker is installed.
 
 import (
 	"context"

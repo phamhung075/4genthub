@@ -8,6 +8,7 @@ package routes
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"testing"
 
@@ -88,7 +89,69 @@ func TestTheOwnershipCheckerDecidesASystemStampedFrame(t *testing.T) {
 	}
 }
 
-// TestTheEnvironmentStringDoesNotDecideWhenTheCheckerAnswers is the sharp edge of the row: the
+// failingOwnership is a checker that cannot answer: the ownership query errored. The answer that must
+// come out of CheckResourceOwnership is NO, in every environment - a database error cannot turn into a
+// delivery because the process happens to be named "development".
+type failingOwnership struct{}
+
+func (failingOwnership) TaskOwnedBy(context.Context, string, string) (bool, error) {
+	return false, errors.New("the ownership query failed")
+}
+
+func (failingOwnership) SubtaskParentOwnedBy(context.Context, string, string) (bool, error) {
+	return false, errors.New("the ownership query failed")
+}
+
+func (failingOwnership) BranchOwnedBy(context.Context, string, string) (bool, error) {
+	return false, errors.New("the ownership query failed")
+}
+
+func (failingOwnership) ProjectOwnedBy(context.Context, string, string) (bool, error) {
+	return false, errors.New("the ownership query failed")
+}
+
+// TestAQueryErrorDeniesInEveryEnvironment is row R1's acceptance: the ENVIRONMENT branch is gone, so a
+// failed ownership check denies - development included, where the deleted fallback delivered the frame.
+func TestAQueryErrorDeniesInEveryEnvironment(t *testing.T) {
+	previous := Ownership
+	t.Cleanup(func() { Ownership = previous })
+
+	for _, environment := range []string{"development", "production"} {
+		t.Run(environment, func(t *testing.T) {
+			t.Setenv("ENVIRONMENT", environment)
+			Ownership = failingOwnership{}
+			actor := &fakeWS{}
+			connectionsMu.Lock()
+			connections[actor] = &WebSocketConnection{
+				Websocket: actor,
+				User:      &authdomain.User{ID: strPtr("u-actor")},
+				ClientID:  "c1",
+			}
+			connectionsMu.Unlock()
+			defer func() {
+				connectionsMu.Lock()
+				delete(connections, actor)
+				connectionsMu.Unlock()
+			}()
+
+			data := entities.NewOrderedMap[any]()
+			data.Set("id", "task-1")
+			if err := BroadcastDataChange(context.Background(), "updated", "task", "task-1", "system", data, nil); err != nil {
+				t.Fatalf("BroadcastDataChange: %v", err)
+			}
+			for _, frame := range actor.sent {
+				if strings.Contains(string(frame), `"action":"updated"`) {
+					t.Fatalf("ENVIRONMENT=%s delivered the frame while the ownership query errored: %s",
+						environment, frame)
+				}
+			}
+			if len(actor.sent) == 0 {
+				t.Fatalf("ENVIRONMENT=%s: the connection was told nothing at all", environment)
+			}
+		})
+	}
+}
+
 // fallback reads ENVIRONMENT, so the checker's answer must be taken BEFORE it - in every environment,
 // including the one where the fallback would have delivered the frame.
 func TestTheEnvironmentStringDoesNotDecideWhenTheCheckerAnswers(t *testing.T) {

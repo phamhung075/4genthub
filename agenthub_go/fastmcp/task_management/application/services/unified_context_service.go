@@ -654,12 +654,44 @@ func (s *UnifiedContextService) AddProgress(ctx context.Context, level, contextI
 	} else {
 		progress.Set("agent", "unified_context_service")
 	}
-	progress.Set("timestamp", value_objects.IsoFormat(time.Now().UTC()))
+	progressTimestamp := value_objects.IsoFormat(time.Now().UTC())
+	progress.Set("timestamp", progressTimestamp)
 	progressUpdates = append(progressUpdates, progress)
 	implementationNotes.Set("progress_updates", progressUpdates)
 	update := entities.NewOrderedMap[any]()
 	update.Set("implementation_notes", implementationNotes)
-	return s.UpdateContext(ctx, level, contextID, update, true, nil)
+	result, err := s.UpdateContext(ctx, level, contextID, update, true, nil)
+	if err != nil {
+		return result, err
+	}
+	// THE NOTE ALSO REACHES THE BOARD'S OWN SURFACE. A task's details ARE its `progress` ledger events
+	// (Task.ProgressTextWith), so a note written only into implementation_notes.progress_updates is
+	// invisible to every board reader - the two verbs that both write "task progress" disagreed
+	// (hub task 4138904d). This is the one ledger write that makes add_progress and manage_task's
+	// details ONE surface, and it carries the note's content in its payload, so a reader of the
+	// ledger alone has the text.
+	if level == "task" && s.EventAppender != nil {
+		actorID := "unified_context_service"
+		if agent != nil && *agent != "" {
+			actorID = *agent
+		}
+		if _, aerr := s.EventAppender.Append(ctx, entities.AppendTaskEvent{
+			TaskID:    contextID,
+			Kind:      entities.TaskEventKindProgress,
+			ActorKind: entities.TaskEventActorSeat,
+			ActorID:   actorID,
+			Payload: map[string]any{
+				"content":         content,
+				"progress_number": float64(len(progressUpdates)),
+				"timestamp":       progressTimestamp,
+			},
+		}); aerr != nil {
+			// Same contract as the context_updated append above: the row write already landed, so a
+			// failed ledger append is logged rather than reported as a refusal - but never dropped.
+			log.Printf("progress note NOT recorded in the task ledger for %s: %v", contextID, aerr)
+		}
+	}
+	return result, nil
 }
 
 // AutoCreateContextIfMissing mirrors auto_create_context_if_missing.

@@ -11,6 +11,7 @@ import (
 
 	"agenthub/fastmcp/task_management/domain/entities"
 	"agenthub/fastmcp/task_management/domain/exceptions"
+	tmrepo "agenthub/fastmcp/task_management/domain/repositories"
 	tmvo "agenthub/fastmcp/task_management/domain/value_objects"
 	"agenthub/fastmcp/task_management/infrastructure/database"
 )
@@ -234,7 +235,7 @@ func TestTaskRepoFindBySeatKeyAssigneeIsTenantScoped(t *testing.T) {
 	}
 
 	limit := 10
-	critA, err := repoA.FindByCriteria(ctx, map[string]any{"assignees": []string{"@go-dev"}}, &limit)
+	critA, err := repoA.FindByCriteria(ctx, map[string]any{"assignees": []string{"@go-dev"}}, tmrepo.ListQuery{Limit: &limit})
 	if err != nil || len(critA) != 1 || critA[0].Title != "A" {
 		t.Fatalf("FindByCriteria(A, @go-dev) = %v %#v", err, critA)
 	}
@@ -257,17 +258,92 @@ func TestTaskRepoSearch(t *testing.T) {
 	if _, err := repo.CreateTask(ctx, "Database migration", "migration desc", "medium", nil, []string{"backend"}, nil); err != nil {
 		t.Fatal(err)
 	}
-	byWord, err := repo.Search(ctx, "JWT", nil, 10)
+	byWord, err := repo.Search(ctx, "JWT", nil, 10, 0)
 	if err != nil || len(byWord) != 1 || byWord[0].Title != "Authentication JWT handling" {
 		t.Fatalf("Search JWT: %v %#v", err, byWord)
 	}
-	byLabel, err := repo.Search(ctx, "backend", nil, 10)
+	byLabel, err := repo.Search(ctx, "backend", nil, 10, 0)
 	if err != nil || len(byLabel) != 1 || byLabel[0].Title != "Database migration" {
 		t.Fatalf("Search label: %v %#v", err, byLabel)
 	}
-	empty, err := repo.SearchTasks(ctx, "   ", nil, 10)
+	// search pages too: the same query at offset 0 and offset 1 returns different rows.
+	if _, err := repo.CreateTask(ctx, "Second migration note", "migration again", "medium", nil, nil, nil); err != nil {
+		t.Fatal(err)
+	}
+	first, err := repo.Search(ctx, "migration", nil, 1, 0)
+	if err != nil || len(first) != 1 {
+		t.Fatalf("search page 1: %v %#v", err, first)
+	}
+	second, err := repo.Search(ctx, "migration", nil, 1, 1)
+	if err != nil || len(second) != 1 {
+		t.Fatalf("search page 2: %v %#v", err, second)
+	}
+	if second[0].ID.Value == first[0].ID.Value {
+		t.Fatalf("search offset ignored: pages 1 and 2 both returned %s", first[0].ID.Value)
+	}
+	empty, err := repo.SearchTasks(ctx, "   ", nil, 10, 0)
 	if err != nil || len(empty) != 0 {
 		t.Fatalf("Search empty: %v %d", err, len(empty))
+	}
+}
+
+// TestTaskRepoListPagingHasNoOverlap is the enumeration contract: two consecutive pages share NO
+// row, a known-old row is reachable by paging, and the total the caller is told is the count of the
+// rows the filters select, not the length of the page. Before the fix offset was never bound into
+// the query and the page length was reported as the total, so page 2 was page 1.
+func TestTaskRepoListPagingHasNoOverlap(t *testing.T) {
+	sessions := newTestRepoEnv(t)
+	ctx := context.Background()
+	branchID := taskRepoTestBranch(t, sessions, taskRepoTestUserA)
+	repo := taskRepoTestNewRepo(t, sessions, taskRepoTestUserA, branchID, false)
+
+	titles := []string{"page-a", "page-b", "page-c", "page-d", "page-e"}
+	for _, title := range titles {
+		if _, err := repo.CreateTask(ctx, title, "paging", "medium", nil, nil, nil); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	seen := map[string]bool{}
+	for offset := 0; offset < len(titles); offset += 2 {
+		limit, off := 2, offset
+		page, err := repo.FindByCriteria(ctx, map[string]any{}, tmrepo.ListQuery{Limit: &limit, Offset: &off})
+		if err != nil {
+			t.Fatalf("page at offset %d: %v", offset, err)
+		}
+		for _, task := range page {
+			if seen[task.ID.Value] {
+				t.Fatalf("row %s appears on two pages: offset %d returned a row an earlier page already returned", task.ID.Value, offset)
+			}
+			seen[task.ID.Value] = true
+		}
+	}
+	if len(seen) != len(titles) {
+		t.Fatalf("paging covered %d of %d rows: %v", len(seen), len(titles), seen)
+	}
+
+	total, err := repo.CountByCriteria(ctx, map[string]any{})
+	if err != nil || total != len(titles) {
+		t.Fatalf("CountByCriteria = %d, %v; want %d", total, err, len(titles))
+	}
+
+	// The oldest row is only reachable past the first page under the default ordering.
+	limit, off := 2, len(titles)-1
+	last, err := repo.FindByCriteria(ctx, map[string]any{}, tmrepo.ListQuery{Limit: &limit, Offset: &off})
+	if err != nil || len(last) != 1 || last[0].Title != titles[0] {
+		t.Fatalf("last page = %#v, %v; want the oldest row %q", last, err, titles[0])
+	}
+
+	// An ordering is honoured, not silently replaced: created_at ASC puts the oldest row first.
+	limit, off, sortBy := 1, 0, "created_at"
+	oldestFirst, err := repo.FindByCriteria(ctx, map[string]any{}, tmrepo.ListQuery{Limit: &limit, Offset: &off, SortBy: sortBy, SortOrder: "asc"})
+	if err != nil || len(oldestFirst) != 1 || oldestFirst[0].Title != titles[0] {
+		t.Fatalf("created_at asc page = %#v, %v; want %q", oldestFirst, err, titles[0])
+	}
+
+	// An ordering the repository cannot serve is an ERROR, never a fallback to the default.
+	if _, err := repo.FindByCriteria(ctx, map[string]any{}, tmrepo.ListQuery{SortBy: "no_such_column"}); err == nil {
+		t.Fatal("FindByCriteria accepted sort_by=no_such_column")
 	}
 }
 
@@ -284,15 +360,15 @@ func TestTaskRepoFindByCriteria(t *testing.T) {
 		t.Fatal(err)
 	}
 	limit := 10
-	byAssignee, err := repo.FindByCriteria(ctx, map[string]any{"assignees": []string{"agent-x"}}, &limit)
+	byAssignee, err := repo.FindByCriteria(ctx, map[string]any{"assignees": []string{"agent-x"}}, tmrepo.ListQuery{Limit: &limit})
 	if err != nil || len(byAssignee) != 1 || byAssignee[0].Title != "A" {
 		t.Fatalf("criteria assignees: %v %#v", err, byAssignee)
 	}
-	byLabel, err := repo.FindByCriteria(ctx, map[string]any{"labels": []string{"backend"}}, &limit)
+	byLabel, err := repo.FindByCriteria(ctx, map[string]any{"labels": []string{"backend"}}, tmrepo.ListQuery{Limit: &limit})
 	if err != nil || len(byLabel) != 1 || byLabel[0].Title != "A" {
 		t.Fatalf("criteria labels: %v %#v", err, byLabel)
 	}
-	byStatus, err := repo.FindByCriteria(ctx, map[string]any{"status": "low-status"}, &limit)
+	byStatus, err := repo.FindByCriteria(ctx, map[string]any{"status": "low-status"}, tmrepo.ListQuery{Limit: &limit})
 	if err != nil || len(byStatus) != 0 {
 		t.Fatalf("criteria status: %v %d", err, len(byStatus))
 	}
@@ -614,7 +690,8 @@ func TestTaskRepositoryInterface(t *testing.T) {
 		GetNextID(context.Context) (tmvo.TaskId, error)
 		Count(context.Context) (int, error)
 		GetStatistics(context.Context) (map[string]any, error)
-		FindByCriteria(context.Context, map[string]any, *int) ([]*entities.Task, error)
+		FindByCriteria(context.Context, map[string]any, tmrepo.ListQuery) ([]*entities.Task, error)
+		CountByCriteria(context.Context, map[string]any) (int, error)
 		FindByIDAllStates(context.Context, tmvo.TaskId) (*entities.Task, error)
 	} = (*ORMTaskRepository)(nil)
 }

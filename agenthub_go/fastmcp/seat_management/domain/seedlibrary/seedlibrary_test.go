@@ -182,7 +182,9 @@ func TestLoadEmbeddedSeedsCarryCommGuard(t *testing.T) {
 		// THE DENY LIST BINDS UNAUDITED ROUTES ONLY, and the audited one is ALLOWED by name: `4genteam
 		// send` builds the sender's policy, writes the decision line, delivers and writes the outcome line
 		// (internal/clientseat/sendpolicy.go), so a deny of it denied the only route the guard skill names.
-		wantDeny := []string{"Bash(4genteam input:*)", "Bash(tmux send-keys:*)", "Bash(tmux paste-buffer:*)"}
+		// The --via-owner flag is the exception INSIDE the audited verb: it asks the owner node to sign, so a
+		// seat that carries this list must not reach it (ruling 2026-10-18; the client verb refuses it too).
+		wantDeny := []string{"Bash(4genteam input:*)", "Bash(tmux send-keys:*)", "Bash(tmux paste-buffer:*)", "Bash(4genteam send --via-owner:*)"}
 		wantAllow := "Bash(4genteam whoami:*)|Bash(4genteam send:*)"
 		if strings.Join(settings.Permissions.Deny, "|") != strings.Join(wantDeny, "|") || strings.Join(settings.Permissions.Allow, "|") != wantAllow {
 			t.Fatalf("%s: permissions = %+v", seed.SeatTypeSlug, settings.Permissions)

@@ -385,6 +385,13 @@ Both read the absence of a signal as the absence of work, which is the same fail
 
 ### 7.8 Addendum: `4genteam up RIG` is the only room entry point (owner refinement 2026-10-11, folded in)
 
+**What exists today (measured 2026-10-17).** `clientservices.Safeguards()` is built and its only caller is its
+own test; `Verify`, `AllRunning`, `NotRunning` and `StateLine` are built and consumed by `doctor` (its row read,
+its wait and its report), `up`'s `waitSafeguards`, agent's `pass()` (which calls `Verify` and then reports and
+persists the rows - `reconcile` itself reads no row) and `heal`'s row read; the `Obligatory` table and its
+`daemon`, `gate`, `worktrees` and `seats` rows are NOT built, and section 4's `continue` deletion has NOT
+happened.
+
 **1. One list, compiled.**
 
 | | A: a compiled Go table | B: a data list in `agent.json` |
@@ -397,13 +404,14 @@ Both read the absence of a signal as the absence of work, which is the same fail
 - **New:** package `internal/clientservices`, file `services.go`, `var Obligatory = []Service{...}` in start order.
 - **The type:** `Service {Name; Scope machine|rig; Start func(ctx, Env) error; Check func(ctx, Env) Health; RestartBy agent|watchdog|none}`.
 - Each row declares its own `Check`, which returns the 7.2 row. `up`, `doctor`, `status --json` and agent iterate this ONE list, so a new service is one new row.
-- The duplicate daemon start, `lifecycle.go:193` and `clientrestore/restore.go:189`, becomes the `daemon` row's `Start`.
-- The two restore paths, `up`'s `ensureRig` (`lifecycle.go:203`) and `clientrestore`'s restorer, become the `seats` row's `Start`. The kept path is the restorer, which runs the peak gate.
+- The duplicate daemon start - `ensureDaemon` in `internal/clientlifecycle` and the restorer's `daemonUp` in `internal/clientrestore` - becomes the `daemon` row's `Start`.
+- The two restore paths, `up`'s `ensureRig` and `clientrestore`'s restorer, become the `seats` row's `Start`. The kept path is the restorer, which runs the peak gate.
 
 | Row | Scope | Start | Check (alive means) | RestartBy |
 |---|---|---|---|---|
 | `daemon` | machine | `rig daemon start` | `rig daemon status` succeeds | agent |
 | `gate` | rig | none | the schedule and the room's models are readable. A peak refusal is the gate WORKING; see 3. | none |
+| `worktrees` | rig | `SeatWorktree` for each seat from `team.json` (seat-worktrees.md) | every derived path is in `git worktree list`, on its branch, with both submodules present; a foreign count above zero is a detail, not a failure | none |
 | `seats` | rig | the restorer (gate first) | every node is `running` AND the tmux live count equals the expected count (the watchdog's `verdict`) | watchdog |
 | `agent` | machine | spawn plus `awaitStart` | heartbeat 7.2 | none locally; the server's dead-man (7.3) |
 | `bridge` | machine | agent child | heartbeat | agent |
@@ -412,13 +420,13 @@ Both read the absence of a signal as the absence of work, which is the same fail
 
 **2. No start cycle.**
 
-- `up` is a short-lived foreground root. It starts the daemon, evaluates the gate, starts the seats, then agent, in that order. Then it verifies (5).
+- `up` is a short-lived foreground root. It starts the daemon, evaluates the gate, ensures the worktrees, starts the seats, then agent, in that order. Then it verifies (5).
 - agent starts its three children. It restarts the daemon when the daemon's check fails, because `rig daemon start` detaches on its own and is not a child.
 - **Nothing starts `up`, and nothing but `up` starts agent.** Seats are restored only by the watchdog (plus `up`). agent restarts the watchdog and never restores a seat itself, so there is one mechanism per thing.
 
 **3. A gate is not a process.**
 
-- The gate's `Check` is "readable", not "running". Peak for a DeepSeek room is a correct closed state, and `up` already refuses with exit 3 naming the gate (`PeakGate`, `lifecycle.go:251`). That stays.
+- The gate's `Check` is "readable", not "running". Peak for a DeepSeek room is a correct closed state, and `up` already refuses with exit 3 naming the gate (`clientlifecycle.PeakGate`). That stays.
 - An unreadable schedule is the gate failing: today `ExitUsage`, unchanged.
 - The gate is evaluated on every seat start, including the watchdog's restores. It is not polled.
 
@@ -426,7 +434,7 @@ Both read the absence of a signal as the absence of work, which is the same fail
 
 - **Deleted:** the `continue` verb (`clientrestore/continue.go`). `up` is the entry point, and its seat restore is the same restorer, so its brief step moves into the `seats` row's `Start`.
 - **Not deletable here:** `rig up` is the 4genteam CLI. It is not this repository's code, and the client keeps calling it internally. A room started by hand with `rig up` has no agent row, and `doctor` names it.
-- **Owner action, not done by a seat:** `~/.config/4genthub/bin/rig-continue.sh` and `rig-watchdog.sh` are the owner's own copies outside this repository (`clientrestore/paths.go:7`). The ruling is that they go, and the owner deletes them; no seat touches the owner's home.
+- **Owner action, not done by a seat:** `~/.config/4genthub/bin/rig-continue.sh` and `rig-watchdog.sh` are the owner's own copies outside this repository (the `clientrestore` package's own comment names the pair it was ported from). The ruling is that they go, and the owner deletes them; no seat touches the owner's home.
 
 **5. Verify-before-success composes with `doctor`.**
 
@@ -440,7 +448,7 @@ Both read the absence of a signal as the absence of work, which is the same fail
 | Kind | Names |
 |---|---|
 | Package and variable | `clientservices.Obligatory` |
-| Row names | `daemon`, `gate`, `seats`, `agent`, `bridge`, `compact`, `watchdog` |
+| Row names | `daemon`, `gate`, `worktrees`, `seats`, `agent`, `bridge`, `compact`, `watchdog` |
 | Heartbeat field | `in_flight` |
 | Detail prefix | `busy` |
 
