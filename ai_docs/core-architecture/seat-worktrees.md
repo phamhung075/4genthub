@@ -108,6 +108,7 @@ commit. The commit therefore names its paths and nothing is staged first.
 
 ## Composition with 7.8 and the CLI
 
+- **Which repository it derives in.** The step reads the room's own repository from the definition's seat `cwds` (git's common directory behind them, `SeatProjectRoot`), not the working directory's toplevel, so `up` from a seat's client worktree derives the same paths as `up` from the project root; when the readable seat directories name more than one repository, the disagreement is printed and the working directory's answer stands. Measured 2026-10-18: the same `up --room-only` refused 6 of 6 paths from a client worktree and printed six kept lines from the project root (`4fd6c67`); `doctor`'s worktrees row reads the same root (`68c7ae9`). The root is read, never guessed from the seat path: `<roomDir>/wt/<seat>` is still where the paths sit.
 - **A new `Obligatory` row, `worktrees`.** Scope `rig`; RestartBy `none`; start order `daemon`, `gate`, **`worktrees`**, `seats`, and so on, because a seat's `cwd` must exist before it launches.
   - **`Start`**, for each seat from `team.json`:
     - create the path from `SeatWorktree` if it is missing: `git worktree add <path> <branch>` when that branch already exists with no worktree holding it (it carries the seat's own commits; attaching re-points nothing), `git worktree add -b <branch> <path> main` when it does not, `--detach` for the reviewer;
