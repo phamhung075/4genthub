@@ -291,3 +291,140 @@ def test_two_runs_in_the_same_second_do_not_share_a_run_directory(tmp_path: Path
 
     assert first != second, f"one second is not enough to tell two runs apart: {first}"
     assert first.endswith("1111") and second.endswith("2222"), (first, second)
+
+
+DOC_SHAPES = [
+    "AGENTS.md",
+    "ai_docs/core-architecture/seat-skills.md",
+    "CHANGELOG/2026-10-18--one-entry.md",
+    "claude-automation/CHANGELOG/2026-10-18--another-entry.md",
+    "TEST-CHANGELOG.md",
+    "NEXT-GEN2.md",
+]
+
+SEAT = "agenthub--4genthub-min--go-dev"
+
+
+@pytest.fixture(autouse=True)
+def _no_ambient_seat_identity(monkeypatch: pytest.MonkeyPatch) -> None:
+    """This suite runs INSIDE a seat, where AGENTHUB_SESSION_NAME is exported: inherited, every case is
+    judged as a seat, and an inherited OWNER_DOCS_COMMIT would exempt them all. Each case says which."""
+    monkeypatch.delenv("AGENTHUB_SESSION_NAME", raising=False)
+    monkeypatch.delenv("OWNER_DOCS_COMMIT", raising=False)
+
+
+def _seat_repo(tmp_path: Path) -> Path:
+    """One base commit holding a code file and every doc shape: any commit torn down from it has content."""
+    repo = tmp_path / "seat-repo"
+    repo.mkdir()
+    _git(repo, "init", "-q", ".")
+    _git(repo, "config", "user.email", "capture@test.invalid")
+    _git(repo, "config", "user.name", "capture test")
+    (repo / "code.py").write_text("one\n", encoding="utf-8")
+    for shape in DOC_SHAPES:
+        path = repo / shape
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("one\n", encoding="utf-8")
+    _git(repo, "add", "--", "code.py", *DOC_SHAPES)
+    _git(repo, "commit", "-q", "-m", "base")
+    return repo
+
+
+def _commit(module, repo: Path, *commit_args: str) -> int:
+    return module.main(["--repo", str(repo), "--", *commit_args])
+
+
+def test_the_check_judges_the_commits_path_set_and_not_the_index(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys
+) -> None:
+    """Both directions of the measured blind spot, because the rule names a CHECK, not a symptom.
+
+    An UNSTAGED doc carried by a pathspec is refused (`git diff --cached` answers 0 - the retired hook's
+    probe). A doc that IS staged but is not in the commit's path set is not judged (the hook answered 1,
+    refusing a commit that carries no document at all).
+    """
+    module = _module()
+    repo = _seat_repo(tmp_path)
+    monkeypatch.setenv("AGENTHUB_SESSION_NAME", SEAT)
+    base = _git(repo, "rev-parse", "HEAD").strip()
+
+    (repo / "AGENTS.md").write_text("two\n", encoding="utf-8")  # worktree only: nothing staged
+    rc = _commit(module, repo, "-m", "docs: the plan", "--", "AGENTS.md")
+
+    assert rc == 1
+    assert "docs-only commit refused" in capsys.readouterr().err
+    assert _git(repo, "rev-parse", "HEAD").strip() == base, "a refused commit runs nothing"
+    assert list(_parked(repo).glob("*")) == [], "a refused commit parks nothing"
+
+    (repo / "AGENTS.md").write_text("three\n", encoding="utf-8")
+    _git(repo, "add", "--", "AGENTS.md")  # a doc STAGED: the old hook's whole answer
+    (repo / "code.py").write_text("two\n", encoding="utf-8")
+    rc = _commit(module, repo, "-m", "feat: the code", "--", "code.py")
+
+    assert rc == 0, "the commit carries no document, so the staged doc is not its path set"
+    assert _git(repo, "show", "HEAD:code.py") == "two\n"
+    assert _git(repo, "show", "HEAD:AGENTS.md") == "one\n", "the staged doc was not carried"
+
+
+def test_every_doc_shape_alone_is_refused_and_one_code_path_carries_the_bundle(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys
+) -> None:
+    """The globs, and the carrier rule: each shape is a document alone, and the whole set rides a commit
+    that names one code path. A gitlink is not a document."""
+    module = _module()
+    repo = _seat_repo(tmp_path)
+    monkeypatch.setenv("AGENTHUB_SESSION_NAME", SEAT)
+    base = _git(repo, "rev-parse", "HEAD").strip()
+    assert not module.is_document("agenthub_client"), "a gitlink is outside the doc globs"
+
+    for shape in DOC_SHAPES:
+        path = repo / shape
+        path.write_text("two\n", encoding="utf-8")
+        assert _commit(module, repo, "-m", "docs: one shape", "--", shape) == 1, shape
+        assert "docs-only commit refused" in capsys.readouterr().err, shape
+        assert _git(repo, "rev-parse", "HEAD").strip() == base, shape
+        path.write_text("one\n", encoding="utf-8")
+
+    for shape in DOC_SHAPES:
+        (repo / shape).write_text("two\n", encoding="utf-8")
+    (repo / "code.py").write_text("two\n", encoding="utf-8")
+    rc = _commit(module, repo, "-m", "feat: the carrier", "--", "code.py", *DOC_SHAPES)
+
+    assert rc == 0, capsys.readouterr().err
+    assert _git(repo, "show", "HEAD:code.py") == "two\n"
+    assert _git(repo, "show", "HEAD:AGENTS.md") == "two\n"
+
+
+def test_the_owner_host_and_the_owner_flag_are_exempt(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The two exemptions the check states: the owner's host has no AGENTHUB_SESSION_NAME, and
+    OWNER_DOCS_COMMIT=1 lets a seat land the one document the owner asked for."""
+    module = _module()
+    repo = _seat_repo(tmp_path)
+    (repo / "AGENTS.md").write_text("two\n", encoding="utf-8")
+
+    assert _commit(module, repo, "-m", "docs: owner asked", "--", "AGENTS.md") == 0
+    assert _git(repo, "show", "HEAD:AGENTS.md") == "two\n"
+
+    monkeypatch.setenv("AGENTHUB_SESSION_NAME", SEAT)
+    monkeypatch.setenv("OWNER_DOCS_COMMIT", "1")
+    (repo / "AGENTS.md").write_text("three\n", encoding="utf-8")
+
+    assert _commit(module, repo, "-m", "docs: owner's flag", "--", "AGENTS.md") == 0
+    assert _git(repo, "show", "HEAD:AGENTS.md") == "three\n"
+
+
+def test_nothing_to_commit_is_not_a_docs_refusal(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys
+) -> None:
+    """An empty path set is git's own error to report, not this check's refusal: the wrapper hands git's
+    return code back and does not spend the refusal on a commit that carries nothing."""
+    module = _module()
+    repo = _seat_repo(tmp_path)
+    monkeypatch.setenv("AGENTHUB_SESSION_NAME", SEAT)
+
+    rc = _commit(module, repo, "-m", "nothing")
+
+    assert "docs-only commit refused" not in capsys.readouterr().err
+    assert rc == 1, "git's own 'nothing to commit' survives"

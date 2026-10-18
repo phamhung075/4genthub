@@ -6631,3 +6631,22 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
 - Two more `claimed` literals in the same file were vacuously passing - `TestLedgerIntentsStaleDecisionSucceedsOnceTheClientReReads` and `TestALedgerBatchThatAcceptedNothingNudgesNobody` staged a decision but only checked the HTTP status, so a refused staging left the task at seq 0 and the case still passed. Both move to `status_changed` and now assert the staged answer is ACCEPTED, so a future narrowing cannot hollow them out again.
 - Red before, green after on the same scratch Postgres: both named cases failed with `unsupported_kind` / `handover_malformed`, and after the change all seven `TestLedgerIntents*`/`TestALedgerBatchThatAcceptedNothingNudgesNobody` cases pass.
 - At this change: `AGENTHUB_TEST_PG_URL=... go test ./fastmcp/server/httpapp/ -count=1` green.
+
+## 2026-10-18 - the docs-only check's witness moves from the shipped shell guard to the commit wrapper
+
+- `scripts/tests/test_git_commit_capture.py`, five cases: the retired `docs-only-guard` judged `git diff
+  --cached`, which a rule-4 pathspec commit never touches. `test_the_check_judges_the_commits_path_set_and_not_the_index`
+  pins BOTH probes - an UNSTAGED doc carried by a pathspec is refused (the old hook answered 0) and a doc
+  that IS staged but is not in the commit's path set is not judged (the old hook answered 1) - and requires a
+  refused commit to run nothing and park nothing. `test_every_doc_shape_alone_is_refused_and_one_code_path_carries_the_bundle`
+  moves the guard's glob cases to the wrapper (`.md` at the root, `ai_docs/`, `CHANGELOG/`, a nested
+  `CHANGELOG/`, `TEST-CHANGELOG.md`, `NEXT-GEN2.md`) and keeps the gitlink control as `is_document("agenthub_client") is False`.
+  `test_the_owner_host_and_the_owner_flag_are_exempt` pins the two unchanged exemptions, and
+  `test_nothing_to_commit_is_not_a_docs_refusal` pins that an empty path set stays git's own error. An autouse
+  fixture removes an inherited `AGENTHUB_SESSION_NAME`/`OWNER_DOCS_COMMIT`, which the suite runs WITH in a seat.
+- `agenthub_go/internal/repoguards/docs_only_guard_test.go` is `.obsolete`: it ran the deleted script. Its
+  four cases are the five above, against the entry point that now holds the rule.
+- Red before, green after against the real files: the two refusal cases fail on the HEAD wrapper (`assert 0
+  == 1`; `module ... has no attribute 'is_document'`) while the three unchanged-behaviour cases pass; with
+  the change, `python3 -m pytest --noconftest -p no:cacheprovider scripts/tests/test_git_commit_capture.py -q`
+  -> 13 passed.

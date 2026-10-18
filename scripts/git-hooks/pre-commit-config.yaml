@@ -31,17 +31,9 @@ repos:
         language: script
         stages: [prepare-commit-msg]
 
-  # A seat's commit whose files are all documentation is refused (owner rule: docs change once, in the code
-  # commit of a finished task). Seats only: AGENTHUB_SESSION_NAME is unset on the owner's host.
-  - repo: local
-    hooks:
-      - id: docs-only-guard
-        name: "no docs-only commit by a seat"
-        entry: scripts/git-hooks/docs-only-guard
-        language: script
-        stages: [pre-commit]
-        always_run: true
-        pass_filenames: false
+  # NOTE: the docs-only rule is NOT a hook here. It is checked by the commit wrapper
+  # (`scripts/git-hooks/git_commit_capture.py`), which is the only place that sees the PATH SET a seat's
+  # pathspec commit carries; a pre-commit hook reads the index, and rule 4's commit form never uses it.
 
   # A seat's commit message must carry `Task: <hub task uuid>` so the task can be closed. Seats only, merges exempt.
   - repo: local
