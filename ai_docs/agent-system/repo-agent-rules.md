@@ -67,9 +67,19 @@ the model → yes: fix the test to match the model.
 
 ## Changelog duties
 
-- `CHANGELOG/<date>--<title>.md` — one new file per change that ships (Keep a Changelog subsections; see `CHANGELOG/README.md`).
+- `CHANGELOG/<date>--<title>.md` — one new file per **merged task**, not per commit (Keep a Changelog
+  subsections; see `CHANGELOG/README.md`). Measured 2026-10-18: 56 of 71 commits carried a changelog file, so
+  a task's fix, its test and its follow-up correction each restated the same change under three titles. The
+  one entry is written with the task's first commit, carries every commit the task lands, and is finished
+  before the merge; a change after the merge is a new task and gets its own file.
 - `TEST-CHANGELOG.md` — test-suite changes.
 - A documentation change that ships gets a changelog entry too.
+- **A prune edits its own guard.** There is no prune tool; a prune is a commit. When it deletes files,
+  every removed path goes into `agenthub_go/internal/repoguards/testdata/pruned_paths.txt`, which two
+  tests read: each entry must have a deletion commit in history, and no tracked file outside an
+  exact-file allowlist may name it. The changelog entry still records the removal as history — but the
+  sentence "no live reference survived" is what the guard runs, never what the entry claims. Measured
+  2026-10-18: `53b95dee` wrote that sentence and four live references survived it.
 
 ## Keep-out files and staging
 
@@ -114,8 +124,8 @@ the model → yes: fix the test to match the model.
   it restored cleanly, and this tree has already lost a fleet to a tmux death once). The hazard is the window,
   not the mechanism: prefer `--files <your paths>` when the tree is crowded.
 - **A changelog entry is one new file, so it cannot carry a peer's entry.** The changelog is the `CHANGELOG/`
-  directory: one file `CHANGELOG/<date>--<title>.md` per change, added with `git add -N` and committed by
-  pathspec with the change it describes. Do not read the whole directory; `ls CHANGELOG | tail` lists the newest.
+  directory: one file `CHANGELOG/<date>--<title>.md` per merged task, added with `git add -N` and committed by
+  pathspec with the task it describes. Do not read the whole directory; `ls CHANGELOG | tail` lists the newest.
   The old single `CHANGELOG.md` took the WHOLE file under `git commit -- CHANGELOG.md` and carried every peer's
   uncommitted entry (measured 2026-10-08, `0ea06c77`); that hazard now applies only to the other shared files
   (the backlog, the guides): before naming one, check it is clear of other seats' lines, sequence with that
@@ -127,6 +137,15 @@ the model → yes: fix the test to match the model.
   (`b059b863`, 2026-10-08).
 - The old "`CLAUDE.md` stays out of every commit" rule is **superseded**: `CLAUDE.md` was renamed
   to `AGENTS.md` (`f7a809dc`), and `AGENTS.md` is tracked. See `agenthub_go/NEXT_GEN.md`.
+- **A submodule pointer is committed only from a clone every checkout can resolve.** A worktree that
+  initialised `agenthub_client` gets its OWN object store, so a client commit made there exists nowhere
+  else; committing that sha as the gitlink leaves every other checkout unable to `cat-file` it, and a
+  plain `git submodule update` answers `reference is not a tree`. Measured 2026-10-18: `9a464dc6` pinned
+  a client commit that existed only in `wt/go-dev-root`'s module store, and the hub worktree sat on the
+  old commit while its status read ` M agenthub_client` — the fix was to fetch the ref from that store
+  into the hub clone and fast-forward it. So before the commit, `git -C <hub-client-clone> cat-file -e
+  <new-client-sha>` must exit 0, where `<hub-client-clone>` is the clone the hub worktree uses and not
+  the seat's own module store; move the commit there first, then pin it.
 
 ## Docs conventions
 
@@ -135,8 +154,8 @@ the model → yes: fix the test to match the model.
 - Search existing docs before creating new ones.
 - **Seat reports live in `ai_docs/reports-status/`.** Findings, gate docs, verdicts and status reports
   go there, one file per report (`<KIND>-<subject>-<date>.md`) — not in a repo root. The 4genthub root
-  keeps only `README`, `TEST-CHANGELOG`, `AGENTS` and `CLAUDE.local` (plus the parked board
-  `NEXT-GEN2.md.obsolete` and the `CHANGELOG/` directory), and the same applies to every seat worktree root.
+  keeps only `README`, `TEST-CHANGELOG`, `AGENTS` and `CLAUDE.local` (plus the `CHANGELOG/` directory),
+  and the same applies to every seat worktree root.
   Reports about the client submodule live in that submodule's own `ai_docs/reports-status/` — the same
   rule read in that tree. **The u3 lab tree (`wt/<rig>/u3-run/`) is the instrument's directory, not a
   seat worktree:** its install, calibration, smoke and gate records stay next to the harness they

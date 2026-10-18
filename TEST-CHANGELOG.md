@@ -2,6 +2,122 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-18 - the phone walk is a spec on the repo harness (frontend, branch 4genthub-min/fe-phone-walk-spec)
+
+- `agenthub-frontend/e2e/phone-layout.spec.ts` (new, 20 tests = 10 signed-in routes x 375x667 and
+  320x568). Per route: `document.scrollingElement.scrollWidth === innerWidth`, `main.scrollWidth ===
+  main.clientWidth`, and no element under `main` with its right edge past main's unless an ancestor's
+  computed `overflow-x` is auto/scroll (the deliberate code scrollers). Plus the room's touch floor:
+  every visible `button`/`[role=button]` under `main`/`header`/`aside` with no non-whitespace text has
+  a border box of at least 40x40. Short screenshots/traces land in `test-results/` on failure, and one
+  test names one route, so a failure says which page and which rule.
+- Readiness is two measured things, not `load`: `main` holds more than 60 characters of text
+  (`/dashboard` renders 106, the smallest real page, while an unmounted shell has 0) and the app's
+  `/api` requests have been quiet for 750ms. Without the second, a fresh context measured `/seats` at
+  375px wide before its project tree arrived, while the same route laid out at 550 with the data in.
+- Run: `cd agenthub-frontend && E2E_ACCOUNT_FILE=<file> npx playwright test e2e/phone-layout.spec.ts`
+  (`baseURL` from `E2E_BASE_URL`, default the deployed app; the repo-root account default is absent in a
+  worktree, so the file is passed explicitly). Not in CI - `ci.yml` has no Playwright, and putting the
+  shared account into CI secrets is an owner decision.
+- Against https://www.4genthub.com at 2026-10-18T19:1xZ the spec is 8 passed / 12 failed, the
+  pre-deploy state it was built to catch: layout fails on `/seats` (main 550 wide in 375 and in 320),
+  `/seats/authoring` (549), `/topology` (634); the touch floor fails on `/dashboard` (twelve project-row
+  actions at 28x28: View Project Details, Create Branch, Edit, Delete), `/docs` and `/help-setup` (36x36
+  docs menu, 32x32 dark mode), and at 320 only on `/seats/authoring` (two delete buttons at 34.8x40 and
+  33.55x40). The pre-fix node walk measured 12/20 on the older bundle with a different composition
+  (`/profile` 411 and `/feedback` 631 then; both now fit), so the count is the same and the routes are not.
+- `npx tsc --noEmit -p .` does not cover `e2e/` (neither does `tsconfig.tests.json`), so the spec is
+  checked by running it: three runs, same 12/8 split on the settled readiness.
+
+## 2026-10-18 - a shallow clone is named, not accused (repoguards, branch 4genthub-min/test-argv-refusal)
+
+- `internal/repoguards/pruned_paths_test.go`: `TestAPrunedPathWasDeletedByACommit` now asks
+  `git rev-parse --is-shallow-repository` first and fails with the shallow cause named, instead of reporting
+  every listed path as "a typo or a path that was never tracked". Teeth kept: a shallow clone still fails,
+  and a genuinely typoed entry still fails with the typo sentence.
+- Measured on a scratch depth-1 clone (`git clone --depth 1 --no-local file://<hub>`): before, nine entries
+  accused; after, the shallow sentence, exit 1. After `fetch --unshallow --tags`, the whole repoguards
+  package = ok. A fabricated entry (`scripts/definitely-never-existed.py`) still fails the typo assertion.
+- `.github/workflows/ci.yml` gives the go job `fetch-depth: 0`, which is what the test needs; that file is
+  not a test, it is the fix's other half.
+- At this change: `go -C agenthub_go test -count=1 ./internal/repoguards/` = exit 0.
+
+## 2026-10-18 - the queue verbs' ROOM default is pinned in frames and refusals (client, branch 4genthub-min/test-argv-refusal)
+
+- `internal/clientroom/queue_test.go`: `TestRoomQueueShowDefaultsTheRoomFromTheSeatEnv` drives
+  `queue show <qitem>` with `$AGENTHUB_ROOM` set and asserts the frame carries `"room":"room-a"` and the
+  pair prints that room; `TestRoomQueueListDefaultsTheRoomAndAnExplicitRoomStillWins` asserts both frames,
+  in order, so the explicit room cannot be silently overridden; `TestRoomQueueWithNoRoomAndNoEnvRefusesNamingTheVariable`
+  asserts exit 3, the stderr naming `$AGENTHUB_ROOM`, empty stdout and NO frame written;
+  `TestQueueArgumentRefusalNamesTheMissingTail` pins `a QITEM_ID is required` and the extra-argument refusal.
+- Deleted `TestAQueueItemIdInTheRoomPlaceNamesTheRoomFirstRule` with the message it pinned: the form it
+  explained (`queue show <qitem>`) is the working form now.
+- At this change: `cd agenthub_client && go test -count=1 ./...` = exit 0; `go vet ./internal/clientroom/` clean.
+
+## 2026-10-18 - a dying start is pinned to two attempts and a named stage (runtime, branch 4genthub-min/test-argv-refusal)
+
+- `rust/agenthub-runtime/src/supervisor/mod.rs`: new
+  `a_dying_start_names_the_stage_in_the_seat_log_and_retries_exactly_once` starts a seat whose command
+  does not exist and asserts the four facts the reseat report (`3ac8b369`) asked for: the refusal says
+  `(final)` and `did not start after 2 attempts`, the seat's log holds exactly **two** `start attempt`
+  lines and one `start final` line, and both name `pane exit before readiness`. Falsified with
+  `START_ATTEMPTS = 1`: fails on the attempt count.
+- Same case takes `crate::pty::test_servers::own("start-retry")`, because it launches a pane twice and
+  `TMUX_TMPDIR` is process-wide.
+- `rust/agenthub-runtime/src/pty/mod.rs`: `a_live_session_answers_a_pid_and_the_record_describes_it`
+  now takes `test_servers::own("pane-pid-live")`. It opened a live pane with no guard, so a guarded
+  test's `kill-server` on drop ended its session — measured twice in parallel runs, green alone.
+- At this change: `cd agenthub_client/rust/agenthub-runtime && cargo test --offline` = 182 passed,
+  0 failed, three consecutive runs.
+
+## 2026-10-18 - the client copy's sk boundary, pinned at the decide refusal (client, branch 4genthub-min/client-secretscan-boundary)
+
+- `agenthub_client/internal/secretscan/testdata/scan_cases.json` gains the same five cases the server
+  copy carries: `openai-project-key`, `anthropic-key` and `anthropic-key-with-underscores` must be
+  detected, `sk-hyphenated-filename` (in `changed ai_docs/agent-system/task-workflow-and-reporting.md`)
+  must not, and `sk-hyphenated-filename-line-start` is pinned as detected — the accepted
+  over-redaction of the boundary fix.
+- `agenthub_client/internal/clientdecide/decide_test.go` (new, 1 case):
+  `TestABriefThatNamesAHyphenatedDocIsNotACredential` runs the real refusal path
+  (`decide.go:109` -> `secretscan.Contains` over summary and detail) with both fields naming the doc,
+  and asserts the ask reaches Jev once and logs one entry instead of exiting usage.
+- At this change: `cd agenthub_client && go test -count=1 ./...` = exit 0;
+  `go vet ./internal/secretscan/ ./internal/clientdecide/` clean.
+
+## 2026-10-18 - the gate's sha+counts form is a fixture on the two diffs review 2 names (client, branch 4genthub-min/gate-register-fixtures)
+
+- `agenthub_client/internal/clientcomplete/complete_test.go` (3 new tests, no production change):
+  `TestAMergeGitlinkDiffAndATwoFileDocsDiffAreAdmitted` runs the review's two closure shapes through
+  `evaluate` - a merge commit whose only change is a one-line gitlink pin (`1\t1\tagenthub_client`, the
+  634ac5c9 shape) and an ordinary two-file docs diff (2 files, 21 lines, the a669935d shape) - with a
+  criterion naming the head sha prefix and both counts. Each must be ADMITTED (one judge call, no
+  warning), ACCEPT at the measured band (stub answers 0.95; the live form measured 0.93-0.97), and the
+  `state` the judge receives must carry that fixture's own `files_changed`/`lines_changed`, so the
+  numbers the criterion names are the numbers read.
+  `TestACountOnlyCriterionIsRefusedAtEntry` pins the other half of the ruling: "the diff is fewer than
+  80 lines" names no command, exit code, path or sha, so it is `Unjudgeable` from the deterministic
+  checks and Jev is not called. `stateServer` is the local helper that records `state` per request.
+- The decision behind tests-only: `4genteam decide --tier seat` on 2026-10-18 picked
+  `opt_tests_only` at confidence 1 on the conflict between the board's "widen what the register admits"
+  and the architect's ruling ("admissible and informative form is sha>=7 + files_changed +
+  lines_changed ... no gate code change for it"). The counts are already on the wire
+  (`clientjev.countsState`), so the vocabulary needs no branch; a path-only criterion keeps the warning
+  a323b4c landed (two tests pin it) rather than gaining a refusal.
+- At this change: `cd agenthub_client && go test ./internal/clientcomplete/` = ok;
+  `go test ./...` = every package ok, exit 0; `go vet ./internal/clientcomplete/ ./internal/clientjev/`
+  clean.
+
+## 2026-10-18 - the shared scan fixture names the sk-key shapes and the filename that is not one
+
+- `agenthub_go/fastmcp/seat_management/domain/secretscan/testdata/scan_cases.json`: five cases added -
+  `openai-project-key`, `anthropic-key` and `anthropic-key-with-underscores` stay `has_secret=true`
+  (the underscored key is the case the alnum-only tail dropped), `sk-hyphenated-filename` is `false`,
+  and `sk-hyphenated-filename-line-start` is `true` - the doc name at a line start is over-redacted,
+  accepted by the lead because a boundary cannot separate it from a key without losing real shapes.
+  The fixture drives `TestContainsMatchesSharedFixture`, so no test code changed.
+- At this change: `go test ./fastmcp/seat_management/domain/secretscan/...` and `go test ./...` in
+  `agenthub_go` are green; `redact_cases.json` is a generated parity fixture and is not edited.
+
 ## 2026-10-18 - the /dashboard update-depth instrument lives outside the tree (frontend)
 
 - `.gitignore`: a scoped `/agenthub-frontend/audit-runs/` entry under Test artifacts, so a later sweep
@@ -6882,3 +6998,31 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
   refuses and names it, keeps the legacy at that commit, places no link for the seat (blocked on the
   create path too), and returns nil. It fails on the guardless tip `c9dfee7` and passes with the guard.
 - At this change: `go vet ./...` clean and `go test -count=1 ./...` green in `agenthub_client`.
+- Follow-up on the prune (`53b95dee`): `TestTheTwoAgentGuidesCarryOneDocsBlock` is deleted with the second
+  copy it compared. The prune removed `.gemini/`, its own changelog says "27 command files and two notes",
+  so `.gemini/gemini.local.md` is gone and the test failed on a missing file, not on copy-drift - the whole
+  `internal/repoguards` package was red at `7aa5475a` (3 failures). `agentGuides` keeps `CLAUDE.local.md`
+  alone, and the two content assertions (no retired-index claim, the docs chapter names the two layout
+  commands) still run on it. At this change: `go vet` clean and `go test -count=1 ./...` green in
+  `agenthub_go`; the three failures reproduce at `7aa5475a` without it.
+- New guard `TestAPrunedPathHasNoLiveReference` in `agenthub_go/internal/repoguards/pruned_paths_test.go`,
+  with `testdata/pruned_paths.txt` as its data: every listed path must be gone from the index, and no
+  tracked file outside an exact-file allowlist may name it. The prune's own sentence ("git grep finds no
+  live reference to a removed file outside `CHANGELOG/`") is now a check, because at `53b95dee` it was
+  false in four places. `CHANGELOG/` and `TEST-CHANGELOG.md` are excluded by pathspec, not allowlist.
+  Falsified: appending "the parked board is NEXT-GEN2.md.obsolete" to `AGENTS.md` makes it exit 1 and
+  name `AGENTS.md:160`; with the line removed it passes in 0.04s. Two things it caught while being
+  written: `git grep -f` takes every line of the data file as a pattern, so its `#` comments matched
+  the whole tree (6097 hits, 30s) until the patterns were written comment-free to a scratch file.
+- `TestAPrunedPathWasDeletedByACommit` joins the pruned-path guard: every entry in
+  `testdata/pruned_paths.txt` must have a deletion commit in `git log --all --diff-filter=D`, because a
+  typo sits in the data file matching nothing and guarding nothing while the list looks maintained.
+  Falsified: appending `scripts/never-existed.py` fails it; the real list passes in 0.14s.
+- `ai_docs/agent-system/repo-agent-rules.md` Changelog duties gains "a prune edits its own guard": there
+  is no prune tool, so the deleted paths are added to the listing by the prune commit itself.
+- `TestSplitCommand` (client `internal/clientevidence`) gains the refusal set: an unquoted `(` `)` `|`
+  `&` `;` `<` `>` or backtick is refused with a message naming the argument-list split, and the quoted
+  `sh -c '... (green at 1daa0e6d)'` line still splits into three arguments. `TestEvidenceUsageErrorsNeverWork`
+  runs the measured sentence (`--test "go test ./... (green at …)"`) and asserts exit 2 with no dial and
+  no git call. Measured 2026-10-18: that line had reached the command as extra argv, exited non-zero and
+  was read as D3 over a green tree.

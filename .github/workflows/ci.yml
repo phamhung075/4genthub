@@ -12,7 +12,12 @@ jobs:
       run:
         working-directory: agenthub_go
     steps:
+      # FULL HISTORY, not the depth-1 default: the repoguards witness asks `git log --all` which commits
+      # deleted each pruned path, so a shallow checkout reported nine live entries as typos (CI run
+      # 39156598706 on 536df7d6). The test names a shallow clone too, so a future run says why.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-go@v5
         with:
           go-version-file: agenthub_go/go.mod

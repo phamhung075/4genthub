@@ -1,0 +1,28 @@
+# Paths removed by a prune, kept as DATA because the prune's claim - "no live reference to a removed
+# file survives" - has to be a check, not a sentence in its changelog. Measured 2026-10-18: 53b95dee
+# pruned .gemini/, .automation/, docker-system/.claude/ and five legacy Python helpers, and four live
+# references to them survived the commit (the repoguards guide test, the architecture record, AGENTS.md
+# and repo-agent-rules.md). A prune that deletes files edits this list; the guard then refuses the next
+# reference, and a path listed here that comes BACK tracked is refused too.
+#
+# One path per line, exact repository-relative paths, no globs: the scan is a fixed-string grep.
+
+# The five legacy Python helpers, all removed by 53b95dee.
+scripts/add_future_annotations.py
+scripts/fix_code_quality.py
+scripts/modernize_type_hints.py
+scripts/test-keycloak-auth.py
+scripts/test_mcp_crud_suite.py
+
+# Pre-seat-model tooling removed by 53b95dee.
+docker-system/docker-menu.py
+docker-system/.claude/hooks
+.gemini/gemini.local.md
+.gemini/gemini.md
+.automation/template/master_orchestrator_agent.md
+.automation/template/test-review-after-commit.md
+
+# The obsolete markers the prune removed; the board marker is the one documents kept citing.
+NEXT-GEN2.md.obsolete
+agenthub_go/internal/repoguards/docs_only_guard_test.go.obsolete
+scripts/git-hooks/docs-only-guard.obsolete

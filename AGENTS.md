@@ -27,7 +27,7 @@ restore, before concluding anything about where you are.
   owned work, handoffs, block/wake state).
 - **The board and decisions** — the hub board's five Outcome tasks (Outcome 1-5) through
   `manage_task`: the queue row is the handoff, the Outcome task is the record.
-  `NEXT-GEN2.md` was parked on 2026-10-16 and is `NEXT-GEN2.md.obsolete`; no file at the repo
+  `NEXT-GEN2.md` was parked on 2026-10-16 and pruned on 2026-10-18; no file at the repo
   root is the board.
 - **Project skills** — one source: `agenthub_client/skills/`. The runtime installs it: every seat start
   resolves the tree (share → room → seat, never `client/`) and writes it under the seat's own
@@ -54,9 +54,9 @@ These are pointers; never copy their content into this file.
 2. **The entity/ORM is the source of truth, over the tests.** Order: prompt input → ORM/entity
    model → database → tests → code. A failing test means fix the code (or the test) to match the
    model; never add compatibility code to make tests pass. Rules and locations: same file.
-3. **Changelog duties.** Update the changelog for changes that ship (one new file
-   `CHANGELOG/<date>--<title>.md`) and `TEST-CHANGELOG.md` for
-   test-suite changes. Detail: same file.
+3. **Changelog duties.** One changelog file per merged task - not per commit
+   (`CHANGELOG/<date>--<title>.md`), carrying every commit the task lands - and
+   `TEST-CHANGELOG.md` for test-suite changes. Detail: same file.
 4. **Keep-out files and staging.** `.claude/` and `agenthub_go/seatcheck` never enter a commit.
    **Stage by explicit path; never `git add -A`** is **RETIRED** — the index is shared with every other
    seat working in this worktree, so a staged line can be taken by another seat's commit. **Commit by

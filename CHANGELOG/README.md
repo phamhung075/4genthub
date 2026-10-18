@@ -1,8 +1,9 @@
 # CHANGELOG
 
-One file per change: `CHANGELOG/<YYYY-MM-DD>--<kebab-case-title>.md` (ascii, title at most about 80 characters; on a name clash add `-2`).
+One file per merged task (not per commit): `CHANGELOG/<YYYY-MM-DD>--<kebab-case-title>.md` (ascii, title at most about 80 characters; on a name clash add `-2`).
+A task's commits - the fix, its test, a correction - share the one entry, written with the task's first commit and finished before the merge; a change after the merge is a new task and gets its own file.
 A file starts with `## <title>`, then Keep a Changelog subsections (`### Added`, `### Changed`, `### Fixed`, ...) with file paths, impact and testing.
-To record a change, add ONE new file; never edit another change's file and never read the whole directory (about 250 files, 1 MB). List the newest with `ls CHANGELOG | tail`.
+To record a task, add ONE new file; never edit another task's file and never read the whole directory (about 250 files, 1 MB). List the newest with `ls CHANGELOG | tail`.
 Entries from before the split are in the same format; the old `## [0.0.x]` releases are the `2025-09-*` files, and the old `## [Unreleased]` block is split by its `###` sections (its first bullet is the title).
 Frontend-only changes stay in `agenthub-frontend/CHANGELOG.md`; test-suite changes in `TEST-CHANGELOG.md`.
 
