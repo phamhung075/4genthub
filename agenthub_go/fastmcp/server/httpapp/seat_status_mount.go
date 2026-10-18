@@ -115,6 +115,9 @@ func mountSeatStatusRoutes(mux *http.ServeMux, sessions *database.SessionManager
 	mux.HandleFunc("GET /api/v2/machines", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleListMachines(w, r, u, sessions)
 	}))
+	mux.HandleFunc("GET /api/v2/rooms/{room}/sync", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+		handleRoomSync(w, r, u, sessions)
+	}))
 }
 
 func seatStatusSourceFor(w http.ResponseWriter, sessions *database.SessionManager) (seatStatusSource, bool) {
@@ -197,6 +200,77 @@ func seatVerdicts(machines []repositories.Machine, machineID string) []any {
 		return out
 	}
 	return []any{}
+}
+
+// handleRoomSync serves one room's record-vs-live verdict, derived from the machine-status join
+// alone: the same expected hash and the same seatsync call GET /machines answers with, read through
+// the same source.List, so the room view and the machine view cannot disagree by construction. It is
+// a read of the record: it never resolves a seat, because a resolve WRITES a new snapshot
+// (seat_resolution_service's Save), and an inspection of drift would then create the record it was
+// inspecting. A seat no machine reports is absent from the answer - absence is never in_sync - and the
+// full roster is GET /api/v2/rooms/{room}/seats.
+func handleRoomSync(w http.ResponseWriter, r *http.Request, u *authdomain.User, sessions *database.SessionManager) {
+	source, ok := seatStatusSourceFor(w, sessions)
+	if !ok {
+		return
+	}
+	machines, err := source.List(r.Context(), userID(u))
+	if err != nil {
+		writeDetail(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	room := r.PathValue("room")
+	body := entities.NewOrderedMap[any]()
+	body.Set("success", true)
+	body.Set("room", room)
+	body.Set("seats", roomSyncRows(machines, room))
+	writeJSON(w, http.StatusOK, body)
+}
+
+// roomSyncRows is the room's record-vs-live verdict, one row per seat a machine reports for it. More
+// than one machine may report the same room+seat (a seat moved between PCs, or two bridges over one
+// host): the newest report is the live one, a tie on ReportedAt is broken by the smallest machine id,
+// and the answer is therefore a function of the reported set, not of row or map order. Rows are sorted
+// by seat key. pinned_hash is the reported running hash, the wire's spelling on /machines: it is not
+// the cloud's intended hash, which is expected_hash.
+func roomSyncRows(machines []repositories.Machine, room string) []any {
+	type liveSeat struct {
+		machineID string
+		seat      repositories.SeatStatus
+	}
+	live := make(map[string]liveSeat, len(machines))
+	for _, m := range machines {
+		for _, s := range m.Seats {
+			if s.Room != room {
+				continue
+			}
+			held, seen := live[s.Seat]
+			switch {
+			case !seen,
+				s.ReportedAt.After(held.seat.ReportedAt),
+				s.ReportedAt.Equal(held.seat.ReportedAt) && m.MachineID < held.machineID:
+				live[s.Seat] = liveSeat{machineID: m.MachineID, seat: s}
+			}
+		}
+	}
+	keys := make([]string, 0, len(live))
+	for seat := range live {
+		keys = append(keys, seat)
+	}
+	sort.Strings(keys)
+	out := make([]any, 0, len(keys))
+	for _, seat := range keys {
+		held := live[seat]
+		row := entities.NewOrderedMap[any]()
+		row.Set("seat", seat)
+		row.Set("expected_hash", held.seat.ExpectedHash)
+		row.Set("pinned_hash", held.seat.RunningHash)
+		row.Set("machine_id", held.machineID)
+		row.Set("reported_at", held.seat.ReportedAt.UTC().Format(time.RFC3339))
+		row.Set("sync", seatsync.Sync(held.seat.RunningHash, held.seat.ExpectedHash))
+		out = append(out, row)
+	}
+	return out
 }
 
 func readSeatStatusBody(w http.ResponseWriter, r *http.Request) ([]byte, bool) {

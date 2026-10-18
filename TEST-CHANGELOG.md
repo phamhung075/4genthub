@@ -7075,3 +7075,15 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
   updates (the create path still writes exactly one); `countingCollectionAppender` records the
   context_updated entry beside the progress note.
 - At this change: `go test ./...` in `agenthub_go` -> rc 0.
+
+## 2026-10-19 - the room sync route pins record-against-live per seat (hub, branch 4genthub-min/room-sync-route)
+
+- `agenthub_go/fastmcp/server/httpapp/seat_status_mount_test.go`:
+  `TestRoomSyncReadsTheRecordAgainstTheLivePin` is the one test for `GET /api/v2/rooms/{room}/sync`,
+  on the existing `fakeSeatStatus` seam: two machines report room `eng` and one also reports `ops`;
+  it asserts the four verdict outcomes (`in_sync`, `drift`, unknown with an empty record and unknown
+  with nothing live), the newest-`reported_at` reduction (alpha), the `machine_id` tie (delta), the
+  seat-key ordering, the row's `reported_at`, and that `ops`'s seat and a never-reported seat are
+  absent.
+- At this change: `go test ./fastmcp/server/... -count=1` -> ok; `go test ./internal/apiref/ -count=1`
+  -> ok.
