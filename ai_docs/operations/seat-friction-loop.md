@@ -233,16 +233,17 @@ No skill text, no code, no new route, no board task. Design only — acceptance 
 
 - `share/` (client-owned source, `agenthub_client/skills/share/`), **11** when measured: agent-browser,
   changelog-updater, development-team, dogfood, safe-file-removal, seat-worktree, systematic-debugging,
-  test-driven-development, token-economy, unused-code-cleanup, verification-before-completion. **18** on 2026-10-18:
-  those plus flow-summary, jev-decisions, queue-row-schema, responsible-engineer, room-decision-request, short-output,
-  typesafe-ai.
+  test-driven-development, token-economy, unused-code-cleanup, verification-before-completion. **21** on 2026-10-18:
+  those plus deepseek-offload (a submodule linked into `share/`), flow-summary, friction-report, jev-decisions,
+  queue-row-schema, responsible-engineer, room-decision-request, self-check-while-working, short-output, typesafe-ai -
+  43 `SKILL.md` in the client tree when counted.
 - `client/` (never delivered to a seat), **5** when measured: offpeak-gate, rig-runtime-switch, seat-runtime-switch,
   spawn-team, watch-team — the seat-skills ruling §1 listed four and was one short. **6** on 2026-10-18: those plus
   install.
 - `rooms/` (the room- and seat-level location): an **empty placeholder** when measured; `rooms/4genthub-min/` held
-  7 skills across 5 seats on 2026-10-18 (architect-role, fe-4genthub-driven, fe-dev-role, taste-skill, go-dev-role,
-  lead-role, reviewer-role), so the set in §1 is no longer its first occupants. The layout is `resolve_for_seat`
-  (`agenthub_client/rust/agenthub-runtime/src/skills/mod.rs`).
+  **16** on 2026-10-18 - 15 seat-level across 5 seat dirs (architect 3, fe-dev 4, go-dev 2, lead 3, reviewer 3) plus
+  the room-level `architect-ecosystem-review` - so the set in §1 is no longer its first occupants. The layout is
+  `resolve_for_seat` (`agenthub_client/rust/agenthub-runtime/src/skills/mod.rs`).
 - Delivered but not yet client-owned (cloud snapshot / 4genteam vendored), among the 18 skills in the architect's
   delivered tree: comm-guard-skill, queue-handoff, plan-review, refocusing, client-skills, plus four cloud leftovers
   the per-start install drops, since a skill absent from the tree is not installed. The seat-skills ruling §1 plans
