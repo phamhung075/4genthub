@@ -2,6 +2,29 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-18 - the gate's sha+counts form is a fixture on the two diffs review 2 names (client, branch 4genthub-min/gate-register-fixtures)
+
+- `agenthub_client/internal/clientcomplete/complete_test.go` (3 new tests, no production change):
+  `TestAMergeGitlinkDiffAndATwoFileDocsDiffAreAdmitted` runs the review's two closure shapes through
+  `evaluate` - a merge commit whose only change is a one-line gitlink pin (`1\t1\tagenthub_client`, the
+  634ac5c9 shape) and an ordinary two-file docs diff (2 files, 21 lines, the a669935d shape) - with a
+  criterion naming the head sha prefix and both counts. Each must be ADMITTED (one judge call, no
+  warning), ACCEPT at the measured band (stub answers 0.95; the live form measured 0.93-0.97), and the
+  `state` the judge receives must carry that fixture's own `files_changed`/`lines_changed`, so the
+  numbers the criterion names are the numbers read.
+  `TestACountOnlyCriterionIsRefusedAtEntry` pins the other half of the ruling: "the diff is fewer than
+  80 lines" names no command, exit code, path or sha, so it is `Unjudgeable` from the deterministic
+  checks and Jev is not called. `stateServer` is the local helper that records `state` per request.
+- The decision behind tests-only: `4genteam decide --tier seat` on 2026-10-18 picked
+  `opt_tests_only` at confidence 1 on the conflict between the board's "widen what the register admits"
+  and the architect's ruling ("admissible and informative form is sha>=7 + files_changed +
+  lines_changed ... no gate code change for it"). The counts are already on the wire
+  (`clientjev.countsState`), so the vocabulary needs no branch; a path-only criterion keeps the warning
+  a323b4c landed (two tests pin it) rather than gaining a refusal.
+- At this change: `cd agenthub_client && go test ./internal/clientcomplete/` = ok;
+  `go test ./...` = every package ok, exit 0; `go vet ./internal/clientcomplete/ ./internal/clientjev/`
+  clean.
+
 ## 2026-10-18 - the /dashboard update-depth instrument lives outside the tree (frontend)
 
 - `.gitignore`: a scoped `/agenthub-frontend/audit-runs/` entry under Test artifacts, so a later sweep
