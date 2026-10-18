@@ -2,6 +2,20 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-18 - the client copy's sk boundary, pinned at the decide refusal (client, branch 4genthub-min/client-secretscan-boundary)
+
+- `agenthub_client/internal/secretscan/testdata/scan_cases.json` gains the same five cases the server
+  copy carries: `openai-project-key`, `anthropic-key` and `anthropic-key-with-underscores` must be
+  detected, `sk-hyphenated-filename` (in `changed ai_docs/agent-system/task-workflow-and-reporting.md`)
+  must not, and `sk-hyphenated-filename-line-start` is pinned as detected — the accepted
+  over-redaction of the boundary fix.
+- `agenthub_client/internal/clientdecide/decide_test.go` (new, 1 case):
+  `TestABriefThatNamesAHyphenatedDocIsNotACredential` runs the real refusal path
+  (`decide.go:109` -> `secretscan.Contains` over summary and detail) with both fields naming the doc,
+  and asserts the ask reaches Jev once and logs one entry instead of exiting usage.
+- At this change: `cd agenthub_client && go test -count=1 ./...` = exit 0;
+  `go vet ./internal/secretscan/ ./internal/clientdecide/` clean.
+
 ## 2026-10-18 - the gate's sha+counts form is a fixture on the two diffs review 2 names (client, branch 4genthub-min/gate-register-fixtures)
 
 - `agenthub_client/internal/clientcomplete/complete_test.go` (3 new tests, no production change):
