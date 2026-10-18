@@ -389,7 +389,7 @@ func TestLedgerIntentsOneBatchDecidesEachItemAndAnswersTheResendFromItsRow(t *te
 	// against. Two are staged because the first may land on a task that already carries an entry of
 	// another kind; what the case needs is a decision at the task's tip.
 	stagedID := value_objects.NewUUIDv4()
-	code, body := ledgerPgPostOne(t, app, token, stagedID, task, "claimed", new(0))
+	code, body := ledgerPgPostOne(t, app, token, stagedID, task, "status_changed", new(0))
 	if code != http.StatusOK {
 		t.Fatalf("staging a decision = %d: %s", code, body)
 	}
@@ -404,7 +404,7 @@ func TestLedgerIntentsOneBatchDecidesEachItemAndAnswersTheResendFromItsRow(t *te
 	staleID := value_objects.NewUUIDv4()
 	batch, err := json.Marshal([]map[string]any{
 		ledgerPgIntent(factID, task, "progress", nil),
-		ledgerPgIntent(staleID, task, "claimed", new(tip-1)),
+		ledgerPgIntent(staleID, task, "status_changed", new(tip-1)),
 		ledgerPgIntent(factID, task, "progress", nil),
 	})
 	if err != nil {
@@ -464,8 +464,10 @@ func TestLedgerIntentsStaleDecisionSucceedsOnceTheClientReReads(t *testing.T) {
 	task := ledgerPgTask(t, app, sm, token, user, "ledger P3 stale base task")
 
 	stagedID := value_objects.NewUUIDv4()
-	if code, body := ledgerPgPostOne(t, app, token, stagedID, task, "claimed", new(0)); code != http.StatusOK {
+	if code, body := ledgerPgPostOne(t, app, token, stagedID, task, "status_changed", new(0)); code != http.StatusOK {
 		t.Fatalf("staging a decision = %d: %s", code, body)
+	} else if staged := ledgerPgDecodeAnswers(t, body)[0]; staged.Accepted == nil || !*staged.Accepted {
+		t.Fatalf("the staged decision must be accepted, got %s", body)
 	}
 	tip := ledgerPgTaskSeq(t, sm, user, task)
 
@@ -548,9 +550,12 @@ func TestLedgerIntentsRecordsOfflineFactsUnchangedInArrivalOrder(t *testing.T) {
 			"task_id":         task,
 			"kind":            "handover",
 			"payload": map[string]any{
-				"at":     "2026-10-10T21:05:00Z",
-				"next":   "read the ledger from these two entries",
-				"nested": map[string]any{"n": float64(2), "flag": true},
+				"decision":    "continue",
+				"next_action": "read the ledger from these two entries",
+				"facts": []any{map[string]any{
+					"claim":    "recorded while the cloud was unreachable",
+					"evidence": "task:" + task,
+				}},
 			},
 		},
 	}
@@ -585,7 +590,7 @@ func TestLedgerIntentsRecordsOfflineFactsUnchangedInArrivalOrder(t *testing.T) {
 		if e["kind"] == "progress" && payload["note"] == "recorded while the cloud was unreachable" {
 			byClientID[firstID] = payload
 		}
-		if e["kind"] == "handover" && payload["next"] == "read the ledger from these two entries" {
+		if e["kind"] == "handover" && payload["next_action"] == "read the ledger from these two entries" {
 			byClientID[secondID] = payload
 		}
 	}
@@ -967,8 +972,10 @@ func TestALedgerBatchThatAcceptedNothingNudgesNobody(t *testing.T) {
 	// A first decision so the task has a seq the second one can be stale against. It COMMITS, so it
 	// nudges, and it is posted BEFORE the socket opens: a frame left in the buffer would otherwise be
 	// read below as the refused batch's own.
-	if code, body := ledgerPgPostOne(t, app, token, value_objects.NewUUIDv4(), task, "claimed", new(0)); code != http.StatusOK {
+	if code, body := ledgerPgPostOne(t, app, token, value_objects.NewUUIDv4(), task, "status_changed", new(0)); code != http.StatusOK {
 		t.Fatalf("staging a decision = %d: %s", code, body)
+	} else if staged := ledgerPgDecodeAnswers(t, body)[0]; staged.Accepted == nil || !*staged.Accepted {
+		t.Fatalf("the staged decision must be accepted, got %s", body)
 	}
 	seq := ledgerPgTaskSeq(t, sm, user, task)
 	rows := ledgerPgRowCount(t, sm, user)
