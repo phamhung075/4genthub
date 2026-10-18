@@ -468,6 +468,7 @@ export const SeatComposer: React.FC<SeatComposerProps> = ({
                       type="button"
                       size="icon"
                       variant="ghost"
+                      className="shrink-0"
                       aria-label={`Delete ${op.kind} ${op.slug}`}
                       disabled={isSaving}
                       onClick={() => onApply(scope, scopeOps.filter((_, i) => i !== index))}
