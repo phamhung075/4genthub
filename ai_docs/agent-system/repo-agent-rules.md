@@ -67,7 +67,11 @@ the model → yes: fix the test to match the model.
 
 ## Changelog duties
 
-- `CHANGELOG/<date>--<title>.md` — one new file per change that ships (Keep a Changelog subsections; see `CHANGELOG/README.md`).
+- `CHANGELOG/<date>--<title>.md` — one new file per **merged task**, not per commit (Keep a Changelog
+  subsections; see `CHANGELOG/README.md`). Measured 2026-10-18: 56 of 71 commits carried a changelog file, so
+  a task's fix, its test and its follow-up correction each restated the same change under three titles. The
+  one entry is written with the task's first commit, carries every commit the task lands, and is finished
+  before the merge; a change after the merge is a new task and gets its own file.
 - `TEST-CHANGELOG.md` — test-suite changes.
 - A documentation change that ships gets a changelog entry too.
 - **A prune edits its own guard.** There is no prune tool; a prune is a commit. When it deletes files,
@@ -120,8 +124,8 @@ the model → yes: fix the test to match the model.
   it restored cleanly, and this tree has already lost a fleet to a tmux death once). The hazard is the window,
   not the mechanism: prefer `--files <your paths>` when the tree is crowded.
 - **A changelog entry is one new file, so it cannot carry a peer's entry.** The changelog is the `CHANGELOG/`
-  directory: one file `CHANGELOG/<date>--<title>.md` per change, added with `git add -N` and committed by
-  pathspec with the change it describes. Do not read the whole directory; `ls CHANGELOG | tail` lists the newest.
+  directory: one file `CHANGELOG/<date>--<title>.md` per merged task, added with `git add -N` and committed by
+  pathspec with the task it describes. Do not read the whole directory; `ls CHANGELOG | tail` lists the newest.
   The old single `CHANGELOG.md` took the WHOLE file under `git commit -- CHANGELOG.md` and carried every peer's
   uncommitted entry (measured 2026-10-08, `0ea06c77`); that hazard now applies only to the other shared files
   (the backlog, the guides): before naming one, check it is clear of other seats' lines, sequence with that

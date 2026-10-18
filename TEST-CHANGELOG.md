@@ -2,6 +2,18 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-18 - the queue verbs' ROOM default is pinned in frames and refusals (client, branch 4genthub-min/test-argv-refusal)
+
+- `internal/clientroom/queue_test.go`: `TestRoomQueueShowDefaultsTheRoomFromTheSeatEnv` drives
+  `queue show <qitem>` with `$AGENTHUB_ROOM` set and asserts the frame carries `"room":"room-a"` and the
+  pair prints that room; `TestRoomQueueListDefaultsTheRoomAndAnExplicitRoomStillWins` asserts both frames,
+  in order, so the explicit room cannot be silently overridden; `TestRoomQueueWithNoRoomAndNoEnvRefusesNamingTheVariable`
+  asserts exit 3, the stderr naming `$AGENTHUB_ROOM`, empty stdout and NO frame written;
+  `TestQueueArgumentRefusalNamesTheMissingTail` pins `a QITEM_ID is required` and the extra-argument refusal.
+- Deleted `TestAQueueItemIdInTheRoomPlaceNamesTheRoomFirstRule` with the message it pinned: the form it
+  explained (`queue show <qitem>`) is the working form now.
+- At this change: `cd agenthub_client && go test -count=1 ./...` = exit 0; `go vet ./internal/clientroom/` clean.
+
 ## 2026-10-18 - a dying start is pinned to two attempts and a named stage (runtime, branch 4genthub-min/test-argv-refusal)
 
 - `rust/agenthub-runtime/src/supervisor/mod.rs`: new
