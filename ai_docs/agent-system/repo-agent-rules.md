@@ -164,5 +164,8 @@ the model → yes: fix the test to match the model.
 
 ## Push approval
 
-The owner approves every push. A push to main deploys production. Never push, deploy or touch
-production or another rig without the owner's explicit go-ahead.
+The lead commits, pushes `main` (and `frontend`), rebuilds the client and respawns the team without
+asking (owner ruling 2026-10-18); the human is out of the loop for building, fixing and improving.
+A push to main deploys production, so the lead pushes only after the reviewer gate and a green test run.
+Other seats never push. Nobody touches another rig. Credentials and spend stay the owner's. A
+decision goes through `4genteam decide`; the owner is asked only for direction the team cannot settle.

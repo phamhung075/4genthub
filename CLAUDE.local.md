@@ -10,7 +10,7 @@ This file (`CLAUDE.local.md`) contains **local, environment-specific rules** for
 | **CLAUDE.local.md** | Local environment rules and overrides | ✅ Tracked in this repository |
 
 **Quick Dev Commands:**
-- Deploy: a push to `main` updates production (frontend included). Do NOT rebuild Docker locally, and the owner approves every push
+- Deploy: a push to `main` updates production (frontend included). Do NOT rebuild Docker locally, and the lead pushes after the gate (owner ruling 2026-10-18; credentials and spend stay the owner's)
 - Run tests: `cd agenthub_go && go test ./...`; client: `cd agenthub_client && go test ./... && (cd rust/agenthub-runtime && cargo test --offline)`
 - Build and install the client: `cd agenthub_client && ./scripts/build.sh --no-test` (installs `~/.local/bin/4genteam`)
 - Team seats get `~/.config/4genthub/.env` and the `agenthub_http` MCP config at start; a running seat re-reads neither, so `4genteam room reseat <rig> <seat>`
