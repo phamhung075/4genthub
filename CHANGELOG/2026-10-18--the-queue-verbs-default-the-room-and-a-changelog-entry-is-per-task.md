@@ -27,6 +27,10 @@ Two owner decisions from the 19:10Z rail row, both measured.
   and the one-file-per-entry bullet), `AGENTS.md` §3.3 and `CHANGELOG/README.md`. A task's commits share the
   one entry, written with its first commit and finished before the merge; after the merge a change is a new
   task and gets its own file.
+- **Both rules are also taught where a seat reads them at start**: `agenthub_client/skills/share/seat-crew/SKILL.md`
+  gains a "Two rules the rail and the changelog enforce" section — the `[ROOM]`-optional verb forms with a
+  copyable `show` / `claim` / `close` line, and the per-merged-task changelog rule — because a rule only in
+  the repo's AGENTS.md is read by a seat that already knows it; the skill is what every seat is handed.
 
 ## Runs at this change
 
