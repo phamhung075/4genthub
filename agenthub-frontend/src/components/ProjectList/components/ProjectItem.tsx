@@ -53,13 +53,13 @@ export const ProjectItem: React.FC<ProjectItemProps> = ({
         animationClass
       )}
     >
-      <div className="flex items-center gap-2 flex-1" onClick={() => onToggle(project.id)}>
-        {isOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-        <Folder className="w-4 h-4" />
+      <div className="flex items-center gap-2 flex-1 min-w-0" onClick={() => onToggle(project.id)}>
+        {isOpen ? <ChevronDown className="w-4 h-4 shrink-0" /> : <ChevronRight className="w-4 h-4 shrink-0" />}
+        <Folder className="w-4 h-4 shrink-0" />
         <span className="font-semibold text-sm truncate text-left" title={project.name}>
           {project.name}
         </span>
-        <div className="flex gap-1 ml-2">
+        <div className="flex gap-1 ml-2 shrink-0">
           {branchCount > 0 && (
             <ShimmerBadge variant={isOpen ? "secondary" : "outline"} className="text-xs">
               {branchCount} {branchCount === 1 ? 'branch' : 'branches'}
@@ -72,7 +72,9 @@ export const ProjectItem: React.FC<ProjectItemProps> = ({
           )}
         </div>
       </div>
-      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-2 shrink-0">
+      {/* Reachable without a mouse: a touch device has no hover, so the actions are visible by
+          default and only fade until hover on a device that HAS hover (pointer or keyboard). */}
+      <div className="flex gap-1 transition-opacity ml-2 shrink-0 opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 [@media(hover:hover)]:group-focus-within:opacity-100">
         {onShowDetails && (
           <ShimmerButton
             size="icon"

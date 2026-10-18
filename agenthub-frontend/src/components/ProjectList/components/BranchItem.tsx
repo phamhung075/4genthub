@@ -58,7 +58,7 @@ export const BranchItem: React.FC<BranchItemProps> = ({
           size="sm"
           variant={isSelected ? "default" : "ghost"}
           className={cn(
-            "flex-1 justify-start text-xs text-left",
+            "flex-1 min-w-0 justify-start text-xs text-left",
             isSelected && "bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-300 dark:border-blue-700"
           )}
           onClick={() => {
@@ -80,7 +80,8 @@ export const BranchItem: React.FC<BranchItemProps> = ({
             </ShimmerBadge>
           </div>
         </ShimmerButton>
-        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-2 shrink-0">
+        {/* Same rule as the project row: visible without hover, faded only where a pointer exists. */}
+        <div className="flex gap-1 transition-opacity ml-2 shrink-0 opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 [@media(hover:hover)]:group-focus-within:opacity-100">
           <ShimmerButton
             size="icon"
             variant="ghost"
