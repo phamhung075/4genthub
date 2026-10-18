@@ -181,9 +181,9 @@ export const SeatsPage: React.FC = () => {
 
   return (
     <div className="container mx-auto space-y-6 p-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-4xl font-bold tracking-tight">Seats</h1>
+          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Seats</h1>
           <p className="text-muted-foreground mt-2">
             Rooms hold fixed role slots. Each seat's occupant and modules are replaceable.
           </p>
@@ -340,7 +340,7 @@ export const SeatsPage: React.FC = () => {
       {/* Seats in the selected room */}
       {selectedRoom && (
         <section className="space-y-3">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-lg font-semibold flex items-center gap-2">
               <Users className="h-5 w-5 text-primary" /> Seats in {selectedRoom}
             </h2>
@@ -420,8 +420,8 @@ export const SeatsPage: React.FC = () => {
                 }}
               >
                 <CardHeader>
-                  <CardTitle className="text-lg flex items-center justify-between">
-                    <span>{seat.seat_key}</span>
+                  <CardTitle className="text-lg flex flex-wrap items-center justify-between gap-2">
+                    <span className="min-w-0 truncate">{seat.seat_key}</span>
                     <span className="flex items-center gap-2">
                       {live && <SeatStateBadge state={live.state} />}
                       {live && <SeatSyncBadge seat={live} />}
@@ -442,7 +442,7 @@ export const SeatsPage: React.FC = () => {
                     </div>
                     <div>
                       <span className="text-muted-foreground">Model</span>
-                      <p className="font-medium">{seat.model || '—'}</p>
+                      <p className="break-words font-medium">{seat.model || '—'}</p>
                     </div>
                     <div>
                       <span className="text-muted-foreground">Version</span>
