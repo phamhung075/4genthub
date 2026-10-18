@@ -153,10 +153,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       if (!response.ok) {
         const error = await response.json();
-        // Check if it's an email verification issue
-        if (response.status === 403) {
-          throw new Error('Please verify your email before signing in. Check your inbox for the verification link.');
-        }
+        // 403 is not one thing: an unverified address, a disabled account and a lockout after
+        // repeated failures all answer with their own `detail`, and the user needs that sentence,
+        // not a refusal this client invents. A 401 stays the server's own "Invalid credentials".
         throw new Error(error.detail || 'Login failed');
       }
 

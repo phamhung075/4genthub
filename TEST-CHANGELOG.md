@@ -2,6 +2,14 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-19 - the login 403 test pins the hub's own sentence (frontend, branch 4genthub-min/login-403-detail)
+
+- `agenthub-frontend/src/tests/contexts/AuthContext.test.tsx`: "should handle email verification
+  required error" became "should surface a 403 detail as the server wrote it" - a 403 carrying
+  "Account is disabled. Contact an administrator." must reject with that detail, not with the canned
+  verification sentence. It fails on the previous `AuthContext` (threw "Please verify your email
+  before signing in.") and passes after. `npx vitest run` on AuthContext + LoginForm: 53 pass.
+
 ## 2026-10-18 - the phone walk is a spec on the repo harness (frontend, branch 4genthub-min/fe-phone-walk-spec)
 
 - `agenthub-frontend/e2e/phone-layout.spec.ts` (new, 20 tests = 10 signed-in routes x 375x667 and

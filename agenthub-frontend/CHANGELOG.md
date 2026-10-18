@@ -9,6 +9,10 @@
   - Page copy (`index.html`, `manifest.json`, landing, seats, connect-machine, prose) names the 4genteam client. NOT run (no local test run); `tsc --noEmit` is the check.
 
 ### Fixed
+- **A login 403 reaches the user as the hub worded it, not as a verification message** - 2026-10-19
+  - `src/contexts/AuthContext.tsx`: login threw "Please verify your email before signing in…" for EVERY 403, so a disabled account and a lockout after repeated failures both showed a verification sentence. The hub now names the reason in `detail` (403 "Account is disabled. Contact an administrator." / 403 "Account is temporarily locked after repeated failed sign-ins. Try again later."), and the form shows that sentence as-is; an unverified address still answers 403 with its own detail, and 401 keeps the server's "Invalid credentials".
+  - `src/tests/contexts/AuthContext.test.tsx`: the 403 case pins the pass-through; on the old branch it fails with the canned message.
+  - `npx tsc --noEmit -p .` clean; `npx vitest run src/tests/contexts/AuthContext.test.tsx src/tests/components/auth/LoginForm.test.tsx` 53 pass. NOT RUN: the live check — hub `6f948838` (branch `4genthub-min/login-401-detail`) is not deployed and no local build is run.
 - **The dashboard drawer has its own phone spec, so its two criteria are a command** - 2026-10-19
   - `e2e/dashboard-drawer.spec.ts`: at 375x667 and 320x568 with `isMobile`/`hasTouch`, signed in, the drawer is opened through its toggle, the first project is expanded, and every VISIBLE row action is measured — opacity 1 with no hover, both sides at or above 40px, right edge inside the viewport — with the whole aside scanned for any element past the viewport. Tapping View Branch Details must open a `[role=dialog]`.
   - Delete Branch is measured but not required: `BranchItem` renders it only when the branch is not `main`, and the seeded tree's branches are `main`.
