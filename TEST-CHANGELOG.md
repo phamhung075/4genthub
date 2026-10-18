@@ -6766,3 +6766,9 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
   Falsified: appending `scripts/never-existed.py` fails it; the real list passes in 0.14s.
 - `ai_docs/agent-system/repo-agent-rules.md` Changelog duties gains "a prune edits its own guard": there
   is no prune tool, so the deleted paths are added to the listing by the prune commit itself.
+- `TestSplitCommand` (client `internal/clientevidence`) gains the refusal set: an unquoted `(` `)` `|`
+  `&` `;` `<` `>` or backtick is refused with a message naming the argument-list split, and the quoted
+  `sh -c '... (green at 1daa0e6d)'` line still splits into three arguments. `TestEvidenceUsageErrorsNeverWork`
+  runs the measured sentence (`--test "go test ./... (green at …)"`) and asserts exit 2 with no dial and
+  no git call. Measured 2026-10-18: that line had reached the command as extra argv, exited non-zero and
+  was read as D3 over a green tree.
