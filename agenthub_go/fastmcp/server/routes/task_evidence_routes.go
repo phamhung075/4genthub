@@ -43,10 +43,11 @@ type TaskEvidence struct {
 	TestFailed   []string
 }
 
-// ErrEvidenceDuplicate is what the writer returns when the submission's head_sha is already the
-// task's latest evidence. It is the 409's whole decision: the writer makes it inside the transaction
-// that would append the entry, and this package only maps it to the status.
-var ErrEvidenceDuplicate = errors.New("task_events: this head_sha is already this task's latest evidence")
+// ErrEvidenceDuplicate is what the writer returns when the task's latest evidence carries this
+// head_sha with a DIFFERENT account of it. It is the 409's whole decision: the writer makes it inside
+// the transaction that would append the entry, and this package only maps it to the status. An
+// identical replay is not this error - the writer answers it with the stored entry and created=false.
+var ErrEvidenceDuplicate = errors.New("task_events: this head_sha is already this task's latest evidence, with different content")
 
 // TaskEvidenceWriter is the minimal write surface the handler needs: one call that decides whether
 // the submission duplicates the task's latest evidence and, when it does not, appends the
@@ -54,8 +55,13 @@ var ErrEvidenceDuplicate = errors.New("task_events: this head_sha is already thi
 //
 // headSHA is passed beside payload because the decision reads it while the entry stores it: both come
 // from the one TaskEvidence the handler validated, in one expression, so they cannot disagree.
+//
+// The bool is `created`: true when an entry was appended; false when the submission was an identical
+// REPLAY of the task's latest entry, in which case the event returned is the STORED one and nothing
+// was written. The rule lives in the writer because the record is where the comparison belongs: a
+// client-side copy would parse the ledger and carry a second version of the duplicate rule.
 type TaskEvidenceWriter interface {
-	RecordEvidence(ctx context.Context, taskID string, headSHA string, payload map[string]any) (*taskdomain.TaskEvent, error)
+	RecordEvidence(ctx context.Context, taskID string, headSHA string, payload map[string]any) (*taskdomain.TaskEvent, bool, error)
 }
 
 // SubmitTaskEvidence ports POST /{task_id}/evidence.
@@ -63,16 +69,19 @@ type TaskEvidenceWriter interface {
 // THE ORDER IS THE CONTRACT: the payload is validated first (422 for a blank sha or an over-cap
 // numstat), then the task is asked for through the same controller GetTaskEvents uses (404 for one
 // this user cannot see), and only then is the writer reached, which is where 409 lives.
+//
+// The bool is the writer's `created`: the handler answers 201 when it is true and 200 when the
+// submission was an identical replay of the stored entry.
 func SubmitTaskEvidence(ctx context.Context, taskID string, evidence TaskEvidence, currentUser *authdomain.User,
-	tasks UserTaskController, writer TaskEvidenceWriter) (*taskdomain.OrderedMap[any], error) {
+	tasks UserTaskController, writer TaskEvidenceWriter) (*taskdomain.OrderedMap[any], bool, error) {
 	if strings.TrimSpace(evidence.BaseSHA) == "" {
-		return nil, httpErr(422, "base_sha is required")
+		return nil, false, httpErr(422, "base_sha is required")
 	}
 	if strings.TrimSpace(evidence.HeadSHA) == "" {
-		return nil, httpErr(422, "head_sha is required")
+		return nil, false, httpErr(422, "head_sha is required")
 	}
 	if len(evidence.Numstat) > EvidenceNumstatMaxBytes {
-		return nil, httpErr(422, fmt.Sprintf("numstat is %d bytes, over the %d byte cap",
+		return nil, false, httpErr(422, fmt.Sprintf("numstat is %d bytes, over the %d byte cap",
 			len(evidence.Numstat), EvidenceNumstatMaxBytes))
 	}
 
@@ -82,21 +91,21 @@ func SubmitTaskEvidence(ctx context.Context, taskID string, evidence TaskEvidenc
 	// writer is never reached for a task this user cannot see.
 	result, err := tasks.GetTask(ctx, taskID, userID)
 	if err != nil {
-		return nil, httpErr(500, "Failed to get task")
+		return nil, false, httpErr(500, "Failed to get task")
 	}
 	if !result.Success {
-		return nil, httpErr(404, "Task not found")
+		return nil, false, httpErr(404, "Task not found")
 	}
 
-	event, err := writer.RecordEvidence(ctx, taskID, evidence.HeadSHA, evidencePayload(evidence))
+	event, created, err := writer.RecordEvidence(ctx, taskID, evidence.HeadSHA, evidencePayload(evidence))
 	if err != nil {
 		if errors.Is(err, ErrEvidenceDuplicate) {
-			return nil, httpErr(409, "Evidence for this head_sha has already been submitted")
+			return nil, false, httpErr(409, "Evidence for this head_sha has already been submitted with different content")
 		}
-		return nil, httpErr(500, "Failed to record evidence")
+		return nil, false, httpErr(500, "Failed to record evidence")
 	}
 
-	return evidenceEventBody(event), nil
+	return evidenceEventBody(event), created, nil
 }
 
 // evidencePayload is what the entry stores: the SAME fields as the request. The nested `test` block

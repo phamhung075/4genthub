@@ -151,15 +151,19 @@ func (a *App) registerTaskRoutes(mux *http.ServeMux) {
 				evidence.TestExitCode = int(code)
 			}
 		}
-		body, err := routes.SubmitTaskEvidence(r.Context(), r.PathValue("id"), evidence, u, c,
+		body, created, err := routes.SubmitTaskEvidence(r.Context(), r.PathValue("id"), evidence, u, c,
 			taskEvidenceWriterAdapter{sessions: a.Sessions, userID: userID(u)})
 		if err != nil {
 			writeResult(w, nil, err)
 			return
 		}
-		// 201 with the created event; writeResult writes 200, and a created resource is the one
-		// thing this route says 201 about.
-		writeJSON(w, http.StatusCreated, body)
+		// 201 only when an entry was appended. A replay of the task's latest evidence answers 200 with
+		// the STORED entry: the submission stands, nothing was written, and the status says which.
+		status := http.StatusOK
+		if created {
+			status = http.StatusCreated
+		}
+		writeJSON(w, status, body)
 	}))
 	mux.HandleFunc("PUT "+base+"/{id}", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		m, ok := jsonBody(w, r)

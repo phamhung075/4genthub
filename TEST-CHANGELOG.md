@@ -7105,3 +7105,23 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
 - `agenthub_client/internal/clientevidence/evidence.go`: the writer reports the HTTP status it
   answered, so the verb can name it.
 - At this change: `go vet ./...` and `go test ./...` in `agenthub_client` -> rc 0.
+
+## 2026-10-19 - the evidence writer's replay rule (hub 4genthub-min/evidence-replay, client 4genthub-min/complete-failure-surface cb7e81f)
+
+- `agenthub_go/fastmcp/server/httpapp/task_evidence_pg_test.go`:
+  `TestEvidenceRouteAnswersAnIdenticalReplayWithTheStoredEntry` posts the same body twice - 201 then
+  **200 with the same id and seq**, one row - and then the same head with a different numstat -> 409
+  naming "different content", still one row. On the pre-change source the replay answered 409.
+- `TestEvidenceRouteSerializesConcurrentDuplicates` (same file) now pins one 201 and (n-1) x 200 for
+  two identical concurrent submissions, one row; it was red on the old writer ([409 201]).
+  `TestEvidenceRouteRefusesASecondSubmissionOfTheSameHeadSHA` keeps 409 for a DIFFERENT account and a
+  201 for a moved head.
+- `agenthub_go/fastmcp/server/routes/task_evidence_routes_test.go`: the fake writer carries the
+  `created` flag; `TestSubmitTaskEvidenceAnswersAReplayWithoutCreating` pins created=false and the
+  stored event as the body; the 409 test asserts the detail names "different content"; the positive
+  test asserts created=true.
+- `agenthub_client/internal/clientcomplete/complete_test.go`: `TestStoredEvidenceContinuesPast409` is
+  replaced by `TestEvidenceConflictStopsTheCompletion` - exit 1, the "not completed: the evidence was
+  not stored" line, zero `/complete` calls. It was red on the pre-change client (exit 0, one call).
+- At this change: `go test ./...` in `agenthub_go` with `AGENTHUB_TEST_PG_URL` set -> rc 0;
+  `go test ./...` in `agenthub_client` -> rc 0.
