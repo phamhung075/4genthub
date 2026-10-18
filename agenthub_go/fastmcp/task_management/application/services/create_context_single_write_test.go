@@ -62,7 +62,7 @@ func TestOneCreatePathWriteAppendsOneTaskContextEvent(t *testing.T) {
 	}
 
 	if appender.count != 1 {
-		t.Fatalf("appends = %d, want exactly 1: a create must not write the same context twice (hub 26e857b0)", appender.count)
+		t.Fatalf("context updates = %d, want exactly 1: a create must not write the same context twice (hub 26e857b0)", appender.count)
 	}
 	if appender.lastKind != entities.TaskEventKindContextUpdated {
 		t.Fatalf("kind = %q, want context_updated", appender.lastKind)
@@ -93,7 +93,8 @@ func (a ctxServiceAdapter) UpdateContext(ctx context.Context, level, contextID s
 	return a.UnifiedContextService.UpdateContext(ctx, level, contextID, data, propagateChanges, nil)
 }
 
-// countingContextAppender is the ledger seam: it records how many events the service appended.
+// countingContextAppender is the ledger seam: it records how many context updates the service wrote,
+// and the payload the last one carried.
 type countingContextAppender struct {
 	count       int
 	lastKind    entities.TaskEventKind
@@ -101,9 +102,14 @@ type countingContextAppender struct {
 }
 
 func (a *countingContextAppender) Append(ctx context.Context, in entities.AppendTaskEvent) (*entities.TaskEvent, error) {
+	return &entities.TaskEvent{}, nil
+}
+
+func (a *countingContextAppender) RecordContextUpdate(ctx context.Context, taskID, level string, version int,
+	origin string, changes []entities.ContextChange, dropped int) (*entities.TaskEvent, error) {
 	a.count++
-	a.lastKind = in.Kind
-	a.lastPayload = in.Payload
+	a.lastKind = entities.TaskEventKindContextUpdated
+	a.lastPayload = entities.ContextUpdatePayload(level, taskID, version, origin, changes, dropped)
 	return &entities.TaskEvent{}, nil
 }
 
@@ -168,5 +174,15 @@ type countingCollectionAppender struct {
 
 func (a *countingCollectionAppender) Append(ctx context.Context, in entities.AppendTaskEvent) (*entities.TaskEvent, error) {
 	a.events = append(a.events, in)
+	return &entities.TaskEvent{}, nil
+}
+
+func (a *countingCollectionAppender) RecordContextUpdate(ctx context.Context, taskID, level string, version int,
+	origin string, changes []entities.ContextChange, dropped int) (*entities.TaskEvent, error) {
+	a.events = append(a.events, entities.AppendTaskEvent{
+		TaskID:  taskID,
+		Kind:    entities.TaskEventKindContextUpdated,
+		Payload: entities.ContextUpdatePayload(level, taskID, version, origin, changes, dropped),
+	})
 	return &entities.TaskEvent{}, nil
 }

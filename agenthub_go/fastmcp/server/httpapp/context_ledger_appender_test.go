@@ -31,3 +31,17 @@ func TestContextLedgerAppenderRefusesWithoutAResolvedCaller(t *testing.T) {
 		t.Fatal("an append with no caller in the context must be refused, not written under an empty id")
 	}
 }
+
+// The context_updated write obeys the same rule: no resolved caller, no entry - never a row under an
+// empty id, which the caller's own history would not show.
+func TestContextLedgerAppenderRefusesAContextUpdateWithoutAResolvedCaller(t *testing.T) {
+	t.Setenv("AUTH_ENABLED", "true")
+	t.Setenv("MCP_AUTH_MODE", "production")
+
+	appender := contextLedgerAppender{sessions: nil}
+	_, err := appender.RecordContextUpdate(context.Background(), "0d0f5f2a-0000-4000-8000-000000000001",
+		"task", 1, "manage_context.update", nil, 0)
+	if err == nil {
+		t.Fatal("a context update with no caller in the context must be refused, not written under an empty id")
+	}
+}

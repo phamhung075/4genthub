@@ -6863,3 +6863,23 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
   35 packages ok, `cargo test --offline` -> 204 passed. Three `test_census_audits.py` cases are red in the
   same run, on `S3-REDERIVE.py`'s anchors in `ai_docs/api-integration/surface-inventory.md`; this branch
   touches neither `ai_docs/` nor the schema that instrument reads, so it is not this change's red.
+
+## 2026-10-18 - the context event's seat and change set are pinned on both writers (hub, branch 4genthub-min/context-payload)
+
+- `agenthub_go/fastmcp/task_management/domain/entities/context_change_test.go`: the builder's contract -
+  `implementation_notes.added` (add), `implementation_notes.removed` (remove), `labels` (set, both arrays
+  whole), `new_key` (add), `status` (set todo->done) in canonical order; a 522-byte value becomes
+  `{truncated, bytes, sha256}` with the true length and 64 hex; 300 changes keep a prefix of 8 KiB and
+  report `changes_truncated`; `ContextUpdatePayload` carries all six keys and serializes a nil set as `[]`.
+- `agenthub_go/fastmcp/task_management/application/services/context_update_attribution_test.go` and
+  `agenthub_go/fastmcp/task_management/application/use_cases/update_context_ledger_test.go`: each writer
+  runs through the REAL `TaskEventRecorder` over a capturing ledger - `actor_kind=seat`,
+  `actor_id=="4genthub-min/go-dev"` from `services.WithActor(SeatActor(...))`, the writer's own `origin`,
+  `level=task`, and a change whose path names the edited leaf.
+- `agenthub_go/fastmcp/server/httpapp/context_ledger_appender_test.go`:
+  `TestContextLedgerAppenderRefusesAContextUpdateWithoutAResolvedCaller` pins the empty-id rule for the
+  new method as the Append case already did.
+- `create_context_single_write_test.go`: `countingContextAppender` counts the widened seam's context
+  updates (the create path still writes exactly one); `countingCollectionAppender` records the
+  context_updated entry beside the progress note.
+- At this change: `go test ./...` in `agenthub_go` -> rc 0.
