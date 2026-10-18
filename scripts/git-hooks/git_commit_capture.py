@@ -37,6 +37,16 @@ committer's message as its only attribution (measured: `f344a64f`, CHANGELOG.md 
 attribution moving and it cannot tell the victim. A seat whose `git diff HEAD -- <path>` goes EMPTY while it
 still expects an edit has had that edit taken; `git log -1 --numstat -S'<the line>' -- <path>` names the commit.
 
+DOCS-ONLY CHECK (owner's rule: seats build, fix and improve; docs, CHANGELOG and TEST-CHANGELOG change
+ONCE, in the code commit of a finished task). It lives HERE and nowhere else, because this is the one
+place that sees the PATH SET the commit will carry. A seat commits by pathspec (AGENTS.md rule 4), and
+`git commit -- <paths>` takes those files' worktree content without touching the index, so a hook reading
+`git diff --cached` answers "not docs" on exactly the commits the rule is about - measured 2026-10-17: the
+retired `docs-only-guard` probe exited 0 for a docs-only pathspec commit and 1 only when docs happened to
+be staged. This wrapper expands the pathspecs and refuses when every path the commit carries is
+documentation. The owner's host (no AGENTHUB_SESSION_NAME) and the owner's flag `OWNER_DOCS_COMMIT=1` are
+exempt.
+
 USAGE. python3 scripts/git-hooks/git_commit_capture.py -- <the arguments you would give git commit>
         python3 scripts/git-hooks/git_commit_capture.py --list
         python3 scripts/git-hooks/git_commit_capture.py --sweep [--keep-days 7]
@@ -60,6 +70,18 @@ DEFAULT_KEEP_DAYS = 7.0
 #: The seam a test replaces to stage the death without killing a real process.
 COMMIT_COMMAND: list[str] = ["git", "commit"]
 SEAT_ENV = "AGENTHUB_SEAT"
+#: Exported to every seat and unset on the owner's host: the docs-only check is a seat's check.
+SEAT_SESSION_ENV = "AGENTHUB_SESSION_NAME"
+#: The owner's one-commit exemption, for a document the owner asked for.
+OWNER_DOCS_ENV = "OWNER_DOCS_COMMIT"
+
+DOCS_ONLY_REFUSAL = """\
+docs-only commit refused: every path this commit carries is documentation.
+The owner's rule: seats build, fix and improve. A plan, finding, ruling, status or recount goes through the
+queue (one short row), not into a commit. Docs, CHANGELOG and TEST-CHANGELOG change ONCE, in the code commit
+of the finished task. Put these files in that commit, or drop them.
+Only if the owner asked for this document: OWNER_DOCS_COMMIT=1 python3 scripts/git-hooks/git_commit_capture.py -- ...
+"""
 
 
 def git(*args: str, repo: Path | None = None) -> subprocess.CompletedProcess:
@@ -67,6 +89,51 @@ def git(*args: str, repo: Path | None = None) -> subprocess.CompletedProcess:
     return subprocess.run(
         ["git", "--no-optional-locks", *args], cwd=repo, capture_output=True, text=True
     )
+
+
+def is_document(path: str) -> bool:
+    """The doc globs in one statement: a `.md` anywhere, `ai_docs/`, any `CHANGELOG/`, the plan files.
+
+    `TEST-CHANGELOG.md` needs no clause of its own: it is a `.md`.
+    """
+    p = path.replace(os.sep, "/")
+    return (
+        p.endswith(".md")
+        or p.startswith("ai_docs/")
+        or p.startswith("CHANGELOG/")
+        or "/CHANGELOG/" in p
+        or p.startswith("NEXT-GEN")
+    )
+
+
+def commit_paths(repo: Path, commit_args: list[str]) -> list[str]:
+    """The paths THIS commit carries: the pathspec rule 4 prescribes, or the index when there is none.
+
+    `git commit -- <paths>` takes each named file's WORKTREE content and records nothing in the index, so
+    for exactly the commits rule 4 describes the index cannot answer what the commit carries. The pathspec
+    is expanded against HEAD - the changed tracked files those arguments will carry - which is also what
+    makes a directory or glob pathspec judgeable. A pathspec that matches no change expands to nothing and
+    the commit itself reports that, so it is not this check's refusal to make.
+    """
+    if "--" in commit_args:
+        pathspec = commit_args[commit_args.index("--") + 1 :]
+        if pathspec:
+            proc = git(
+                "diff", "--name-only", "--no-renames", "--diff-filter=ACMR", "HEAD", "--", *pathspec, repo=repo
+            )
+            return [line.strip() for line in proc.stdout.splitlines() if line.strip()]
+    proc = git("diff", "--cached", "--name-only", "--diff-filter=ACMR", repo=repo)
+    return [line.strip() for line in proc.stdout.splitlines() if line.strip()]
+
+
+def docs_only_refusal(repo: Path, commit_args: list[str]) -> str | None:
+    """The refusal when a seat's commit carries only documentation; None when it may run."""
+    if not os.environ.get(SEAT_SESSION_ENV) or os.environ.get(OWNER_DOCS_ENV) == "1":
+        return None
+    paths = commit_paths(repo, commit_args)
+    if not paths or any(not is_document(path) for path in paths):
+        return None
+    return DOCS_ONLY_REFUSAL
 
 
 def repo_root(start: Path) -> Path | None:
@@ -303,6 +370,11 @@ def main(argv: list[str] | None = None) -> int:
     if not commit_args:
         print("nothing to commit: pass the arguments you would give `git commit` after `--`", file=sys.stderr)
         return 2
+    # Before anything is parked: a refused commit runs nothing, so it has nothing to capture.
+    refusal = docs_only_refusal(repo, commit_args)
+    if refusal is not None:
+        print(refusal, file=sys.stderr)
+        return 1
 
     run_dir = parked / run_label()
     run_dir.mkdir(parents=True, exist_ok=True)

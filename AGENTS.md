@@ -60,9 +60,13 @@ These are pointers; never copy their content into this file.
 4. **Keep-out files and staging.** `.claude/` and `agenthub_go/seatcheck` never enter a commit.
    **Stage by explicit path; never `git add -A`** is **RETIRED** — the index is shared with every other
    seat working in this worktree, so a staged line can be taken by another seat's commit. **Commit by
-   pathspec and do not stage first:** `git commit -m "<type(scope): subject>" -- <paths>`, and a
-   brand-new file is the one exception, marked with `git add -N -- <new>` (intent-to-add, nothing enters
-   the index) before the same commit. Never `git add .`, `-A` or `--amend`. **A removal is attributed by
+   pathspec and do not stage first, through the wrapper:** `python3 scripts/git-hooks/git_commit_capture.py
+   -- -m "<type(scope): subject>" -- <paths>`, and a brand-new file is the one exception, marked with
+   `git add -N -- <new>` (intent-to-add, nothing enters the index) before the same commit. The wrapper runs
+   the same `git commit` and carries the **docs-only check**, which judges the PATH SET those arguments
+   carry (a pathspec commit never reads the index, so a hook cannot see it): a seat's commit whose paths are
+   all documentation is refused, and `OWNER_DOCS_COMMIT=1` is the owner's one-commit exemption. A seat that
+   runs `git commit` directly skips that check. Never `git add .`, `-A` or `--amend`. **A removal is attributed by
    the COMMIT that carries it, never by the staging area** (`git show --numstat --format= <sha> -- <path>`);
    **a changelog entry is ONE new file `CHANGELOG/<date>--<title>.md`**, so no changelog commit can carry another seat's
    entry; any other shared file takes the WHOLE file, so check it is clear of other seats' lines, or sequence
