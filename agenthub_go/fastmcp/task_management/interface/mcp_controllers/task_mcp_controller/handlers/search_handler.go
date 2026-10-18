@@ -48,7 +48,8 @@ func NewSearchHandler(responseFormatter SearchResponseFormatter) *SearchHandler 
 // ListTasks ports list_tasks. limit/offset page the set and sortBy/sortOrder order it: all four
 // travel to the repository, because a page that ignores them is a page the caller cannot enumerate
 // with (page 2 came back as page 1, and an unsupported ordering silently became updated_at DESC).
-func (h *SearchHandler) ListTasks(ctx context.Context, facade TaskSearchFacade, status, priority, assignee, tag, gitBranchID *string,
+func (h *SearchHandler) ListTasks(ctx context.Context, facade TaskSearchFacade, status, priority *string,
+	assignees, labels []string, gitBranchID *string,
 	limit, offset *int, sortBy, sortOrder *string) (result *entities.OrderedMap[any]) {
 
 	defer func() {
@@ -58,14 +59,6 @@ func (h *SearchHandler) ListTasks(ctx context.Context, facade TaskSearchFacade, 
 		}
 	}()
 
-	var assignees []string
-	if assignee != nil {
-		assignees = []string{*assignee}
-	}
-	var labels []string
-	if tag != nil {
-		labels = []string{*tag}
-	}
 	effectiveLimit := 50
 	if limit != nil {
 		effectiveLimit = *limit
@@ -134,7 +127,8 @@ func (h *SearchHandler) ListTasks(ctx context.Context, facade TaskSearchFacade, 
 }
 
 // SearchTasks ports search_tasks.
-func (h *SearchHandler) SearchTasks(ctx context.Context, facade TaskSearchFacade, query, status, priority, assignee, tag, gitBranchID *string,
+func (h *SearchHandler) SearchTasks(ctx context.Context, facade TaskSearchFacade, query, status, priority *string,
+	assignees, labels []string, gitBranchID *string,
 	limit, offset *int) (result *entities.OrderedMap[any]) {
 
 	if query == nil || !value_objects.PyTruthy(*query) {
@@ -161,12 +155,8 @@ func (h *SearchHandler) SearchTasks(ctx context.Context, facade TaskSearchFacade
 	request.Offset = offsetValue
 	request.Status = status
 	request.Priority = priority
-	if assignee != nil {
-		request.Assignees = []string{*assignee}
-	}
-	if tag != nil {
-		request.Labels = []string{*tag}
-	}
+	request.Assignees = assignees
+	request.Labels = labels
 	result = facade.SearchTasks(ctx, request)
 
 	successVal, _ := result.Get("success")

@@ -30,8 +30,8 @@ AI RULES: Create before work (>1 file edit) | Use 'next' for recommendations | U
 | get                 | task_id                           | include_context                    | Retrieve task                      |
 | delete              | task_id                           |                                    | Remove task                        |
 | complete            | task_id                           | completion_summary, testing_notes  | Complete task                      |
-| list                | (none)                            | status, priority, assignees, labels, limit, git_branch_id | List with filters                  |
-| search              | query                             | limit, git_branch_id               | Full-text search                   |
+| list                | (none)                            | status, priority, assignees, labels, limit, offset, git_branch_id | List with filters                  |
+| search              | query                             | status, priority, assignees, labels, limit, offset, git_branch_id | Full-text search                   |
 | next                | git_branch_id                     | include_context                    | Get recommended task               |
 | add_dependency      | task_id, dependency_id            |                                    | Add dependency                     |
 | remove_dependency   | task_id, dependency_id            |                                    | Remove dependency                  |
@@ -87,8 +87,8 @@ var ManageTaskParametersDescription = map[string]string{
 	"details":               "[REQUIRED when updating status or progress_percentage] Progress notes describing what changed (minimum 10 characters). This field is MANDATORY when updating status or progress to ensure all changes are documented. Optional for: create",
 	"estimated_effort":      "Time estimate like '2 hours', '3 days', '1 week'. Helps with planning. Optional for: create, update",
 	"progress_percentage":   "Task completion percentage (0-100). Optional for 'update'. Automatically maps to status transitions and progress tracking when supplied.",
-	"assignees":             "User identifiers - accepts string (single user) or comma-separated string (multiple users). Optional. Examples: 'user1' or 'user1,user2'. Default: current user",
-	"labels":                "Categories/tags - accepts string (single label) or comma-separated string (multiple labels). Optional. Examples: 'frontend' or 'frontend,auth,bug'. Useful for filtering.",
+	"assignees":             "Assignee identifiers, one published spelling for both write and read: create/update take them (REQUIRED for create, min 1) and list/search FILTER by them. Use the '@<seat_key>' form (e.g., '@lead', '@go-dev'); it is the only accepted assignee identity, and a bare name, including a retired agent role, is rejected. Accepts an array or a comma-separated string, e.g. '@lead,@go-dev'. Optional.",
+	"labels":                "Categories/tags, one published spelling for write and read: create/update take them and list/search FILTER by them. Accepts an array or a comma-separated string, e.g. 'frontend,auth'. Optional.",
 	"acceptance_criteria":   "Acceptance criteria - the verifiable conditions that must hold for the work to be done, as a JSON array of strings (a comma-separated string is also accepted). Optional for: create, update.",
 	"scope":                 "Scope - glob patterns for the files or areas the work may touch, as a JSON array of strings (a comma-separated string is also accepted), e.g. ['internal/**', 'cmd/*.go']. Optional for: create, update.",
 	"dependencies":          "Task IDs this task depends on (for create action) - accepts string (single dependency) or comma-separated string (multiple dependencies). Optional. Examples: 'task-uuid' or 'task-uuid-1,task-uuid-2'. Tasks must be completed before this task can start.",
@@ -105,8 +105,6 @@ var ManageTaskParametersDescription = map[string]string{
 	"offset":                "Result offset for pagination. Optional. Default: 0. Used with 'limit' for paginated results.",
 	"sort_by":               "Field to sort results by. Optional. Examples: 'created_at', 'updated_at', 'priority', 'status', 'title'.",
 	"sort_order":            "Sort order for results. Optional. Valid values: 'asc', 'desc'. Default: 'desc'.",
-	"assignee":              "Filter tasks by specific assignee. Optional for 'list' action. Example: 'user123'.",
-	"tag":                   "Filter tasks by specific tag/label. Optional for 'list' action. Example: 'frontend'.",
 	"user_id":               "User ID performing the operation. Optional - automatically populated from authentication context.",
 	"context":               "Planning context for AI operations. Optional. Values: 'new_feature', 'bug_fix', 'enhancement', 'refactor'. Default: 'new_feature'.",
 }
@@ -138,8 +136,7 @@ func GetManageTaskParameters() *entities.OrderedMap[any] {
 	properties.Set("details", stringProp("details"))
 	properties.Set("estimated_effort", stringProp("estimated_effort"))
 	properties.Set("progress_percentage", intProp("progress_percentage"))
-	properties.Set("assignees", paramProp("string",
-		"**REQUIRED for create action** - Assignee identifiers (minimum 1 required). Use the '@<seat_key>' form (e.g., '@lead', '@go-dev'); it is the only accepted assignee identity. A bare name, including a retired agent role, is rejected. For multiple assignees use comma-separated: '@lead,@go-dev'."))
+	properties.Set("assignees", stringProp("assignees"))
 	properties.Set("labels", stringProp("labels"))
 	properties.Set("acceptance_criteria", stringListProp("acceptance_criteria"))
 	properties.Set("scope", stringListProp("scope"))
@@ -157,8 +154,6 @@ func GetManageTaskParameters() *entities.OrderedMap[any] {
 	properties.Set("sort_order", stringProp("sort_order"))
 	properties.Set("include_context", boolProp("include_context"))
 	properties.Set("force_full_generation", boolProp("force_full_generation"))
-	properties.Set("assignee", stringProp("assignee"))
-	properties.Set("tag", stringProp("tag"))
 	properties.Set("user_id", stringProp("user_id"))
 	properties.Set("context", stringProp("context"))
 

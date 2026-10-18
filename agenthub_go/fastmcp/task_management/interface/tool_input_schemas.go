@@ -45,8 +45,6 @@ var toolParamSpecs = map[string][]toolParam{
 		{"sort_order", "[OPTIONAL] ", `{"type":"string"}`},
 		{"include_context", "[OPTIONAL] ", `{"type":"boolean"}`},
 		{"force_full_generation", "[OPTIONAL] ", `{"type":"boolean"}`},
-		{"assignee", "[OPTIONAL] ", `{"type":"string"}`},
-		{"tag", "[OPTIONAL] ", `{"type":"string"}`},
 		{"user_id", "[OPTIONAL] ", `{"type":"string"}`},
 		{"context", "[OPTIONAL] ", `{"type":"string"}`},
 	},

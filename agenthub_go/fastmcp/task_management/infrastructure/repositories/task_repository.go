@@ -1758,15 +1758,19 @@ func (r *ORMTaskRepository) taskRepoCriteriaWhere(filters map[string]any) (strin
 			conds = append(conds, fmt.Sprintf(`"priority" = $%d`, len(args)))
 		}
 	}
+	if v, ok := filters["id_prefix"]; ok && value_objects.PyTruthy(v) {
+		// The READ-ONLY address form: the room cites a task by the first hex characters of its id, and
+		// a read resolves that prefix to the one task it names. It is a filter rather than a second
+		// lookup path so the identity scoping every other read gets applies here too.
+		args = append(args, value_objects.PyStr(v)+"%")
+		conds = append(conds, fmt.Sprintf(`"id"::text LIKE $%d`, len(args)))
+	}
 	if v, ok := filters["assignees"]; ok && value_objects.PyTruthy(v) {
 		assignees := taskRepoStringList(v)
 		if len(assignees) > 0 {
 			in := taskRepoInClause("ta.assignee_id", assignees, &args, "")
 			conds = append(conds, `EXISTS (SELECT 1 FROM task_assignees ta WHERE ta.task_id = tasks.id AND `+in+`)`)
 		}
-	} else if v, ok := filters["assignee"]; ok && value_objects.PyTruthy(v) {
-		args = append(args, value_objects.PyStr(v))
-		conds = append(conds, fmt.Sprintf(`EXISTS (SELECT 1 FROM task_assignees ta WHERE ta.task_id = tasks.id AND ta.assignee_id = $%d)`, len(args)))
 	}
 	if v, ok := filters["labels"]; ok && value_objects.PyTruthy(v) {
 		labels := taskRepoStringList(v)

@@ -28,7 +28,7 @@ import (
 // for one. 1.4.5 is the retirement of the checker's send verb: the comm-guard allow list drops its
 // entry for it and the guard skill now names `4genteam send`. The deny list and
 // `Bash(4genteam whoami:*)` are unchanged.
-const seedVersion = "1.4.16"
+const seedVersion = "1.4.17"
 
 type SeedModule struct {
 	Slug    string

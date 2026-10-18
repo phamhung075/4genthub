@@ -184,11 +184,11 @@ func (f *OperationFactory) handleSearchOperation(ctx context.Context, operation 
 
 	switch operation {
 	case "list":
-		allowed := stringSet("status", "priority", "assignee", "tag", "git_branch_id",
+		allowed := stringSet("status", "priority", "assignees", "labels", "git_branch_id",
 			"limit", "offset", "sort_by", "sort_order")
 		return f.searchHandler.ListTasks(ctx, facade, filterKeys(kwargs, allowed))
 	case "search":
-		allowed := stringSet("query", "status", "priority", "assignee", "tag", "git_branch_id",
+		allowed := stringSet("query", "status", "priority", "assignees", "labels", "git_branch_id",
 			"limit", "offset")
 		return f.searchHandler.SearchTasks(ctx, facade, filterKeys(kwargs, allowed))
 	case "next":

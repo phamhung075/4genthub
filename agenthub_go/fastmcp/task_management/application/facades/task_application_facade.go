@@ -9,6 +9,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"regexp"
 	"sort"
 	"strings"
 	"time"
@@ -151,13 +152,17 @@ func (f *TaskApplicationFacade) TaskRepository() FacadeTaskRepository { return f
 // composition handed in, never to the brief: two callers resume one task with byte-identical
 // briefs. The brief is returned WHOLE - nothing is trimmed to fit the budget.
 func (f *TaskApplicationFacade) ResumeBrief(ctx context.Context, taskID string) (*entities.OrderedMap[any], error) {
+	resolved, err := f.readableTaskID(ctx, taskID)
+	if err != nil {
+		return nil, err
+	}
 	return services.NewTaskResumeService(
 		f.taskRepository,
 		f.subtaskRepository,
 		resumeDependencyStatuses{repo: f.taskRepository},
 		f.deps.ResumeTaskContext,
 		f.deps.ResumeLedger,
-	).Resume(ctx, taskID)
+	).Resume(ctx, resolved)
 }
 
 // resumeDependencyStatuses answers the statuses of the tasks a brief's task depends on, keyed by the
@@ -1089,6 +1094,58 @@ func (f *TaskApplicationFacade) loadSubtasks(ctx context.Context, taskID string)
 	return f.deps.LoadSubtasks(ctx, f.repoUserID(), id)
 }
 
+// taskIDPrefixPattern is the READ-ONLY address form: 4 to 31 hex characters with no dashes, which is
+// how the room cites a task (an 8-hex prefix is the common case). A full 32-character id is an
+// ADDRESS already and never reaches the lookup.
+var taskIDPrefixPattern = regexp.MustCompile(`^[0-9a-f]{4,31}$`)
+
+// taskIDPrefixCandidates caps the ids an ambiguous prefix is reported with. The refusal names them
+// because the caller's next move is to pick one, and it needs the ids, not a count.
+const taskIDPrefixCandidates = 5
+
+// readableTaskID resolves the read-only address form to the canonical id, or answers an error that
+// names what to do next. It is READ ONLY by construction: the writers call value_objects.NewTaskId
+// on the caller's own string, so a prefix can never create, update or delete anything, and every id
+// this returns is the canonical one the store holds.
+//
+//	canonical id, anything else in NewTaskId's vocabulary -> returned unchanged
+//	hex prefix, exactly one match                            -> the task's full id
+//	hex prefix, several matches                             -> refused, candidates NAMED
+//	hex prefix, no match                                    -> returned unchanged, so the caller's
+//	                                                           own not-found answer stands
+func (f *TaskApplicationFacade) readableTaskID(ctx context.Context, taskID string) (string, error) {
+	trimmed := strings.TrimSpace(taskID)
+	lower := strings.ToLower(trimmed)
+	if !taskIDPrefixPattern.MatchString(lower) {
+		return trimmed, nil
+	}
+	limit := taskIDPrefixCandidates + 1
+	matches, err := f.taskRepository.FindByCriteria(ctx, map[string]any{"id_prefix": lower},
+		repositories.ListQuery{Limit: &limit, SortBy: "created_at", SortOrder: "asc"})
+	if err != nil {
+		return "", err
+	}
+	if len(matches) == 0 {
+		return trimmed, nil
+	}
+	ids := make([]string, 0, len(matches))
+	for _, task := range matches {
+		if task != nil && task.ID != nil {
+			ids = append(ids, task.ID.String())
+		}
+	}
+	if len(ids) == 1 {
+		return ids[0], nil
+	}
+	named := ids
+	if len(named) > taskIDPrefixCandidates {
+		named = named[:taskIDPrefixCandidates]
+	}
+	return "", value_objects.ValueErrorf(
+		"Task ID %q is ambiguous: %d tasks start with it - %s. Pass one of those ids.",
+		trimmed, len(ids), strings.Join(named, ", "))
+}
+
 // GetTask is get_task.
 func (f *TaskApplicationFacade) GetTask(ctx context.Context, taskID string, includeContext, includeDependencies bool) *entities.OrderedMap[any] {
 	notFound := func() *entities.OrderedMap[any] {
@@ -1100,6 +1157,11 @@ func (f *TaskApplicationFacade) GetTask(ctx context.Context, taskID string, incl
 	if strings.TrimSpace(taskID) == "" {
 		return unexpected(value_objects.ValueErrorf("Task ID is required"))
 	}
+	resolved, resolveErr := f.readableTaskID(ctx, taskID)
+	if resolveErr != nil {
+		return facadeFail("get", resolveErr.Error())
+	}
+	taskID = resolved
 	domainID, err := value_objects.NewTaskId(taskID)
 	if err != nil {
 		return unexpected(err)
