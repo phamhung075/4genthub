@@ -9,6 +9,9 @@
   - Page copy (`index.html`, `manifest.json`, landing, seats, connect-machine, prose) names the 4genteam client. NOT run (no local test run); `tsc --noEmit` is the check.
 
 ### Fixed
+- **The ledger's context-update row names the level and version it recorded** - 2026-10-18
+  - `src/lib/taskTimeline.ts` `describeEvent`: a `context_updated` row reads the payload's `{level, version}` and prints "Context updated: task context, version 7" instead of the bare kind label; an empty level keeps "Context updated". What it may NOT print is which field changed or which seat wrote: both writers send only `{level, id, version}` with `actor_id` the literal `"context"` (`agenthub_go/.../use_cases/update_context.go:83`, `.../services/unified_context_service.go:474`), so a row claiming a field or a seat would invent it. Asked in row `qitem-20261018171212-02987299f1e2` for the payload to carry the changed keys and the acting seat key.
+  - `src/tests/lib/taskTimeline.test.ts`: four payload cases in one new case (task level with version, branch level with version 0, level only, empty level). `npx tsc --noEmit -p .` clean; the file's 21 tests pass.
 - **The dashboard drawer's row actions work on a phone** - 2026-10-18
   - `src/components/ProjectList/components/ProjectItem.tsx` and `BranchItem.tsx`: the action cluster was `opacity-0 group-hover:opacity-100`, which no touch device can reach. It is now visible by default and fades only where hover exists (`[@media(hover:hover)]:opacity-0` plus group-hover), with `group-focus-within` so a keyboard reaches it too.
   - The same rows overflowed the 375px drawer (actions measured at right=419): the project name's container gains `min-w-0`, its badges and both icons `shrink-0`, and the branch's button `min-w-0`, so the name truncates instead of setting the row's width.
