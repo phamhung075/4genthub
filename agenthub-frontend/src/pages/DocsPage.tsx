@@ -218,7 +218,7 @@ export function DocsPage() {
         <div className="mx-auto flex h-14 max-w-screen-2xl items-center gap-3 px-4">
           <button
             type="button"
-            className="rounded-md p-2 hover:bg-surface-hover lg:hidden"
+            className="flex h-10 w-10 items-center justify-center rounded-md hover:bg-surface-hover lg:hidden"
             onClick={() => setMenuOpen((open) => !open)}
             aria-label={menuOpen ? 'Close the documentation menu' : 'Open the documentation menu'}
             aria-expanded={menuOpen}
@@ -238,7 +238,7 @@ export function DocsPage() {
             <button
               type="button"
               onClick={toggleTheme}
-              className="rounded-md p-2 hover:bg-surface-hover"
+              className="flex h-10 w-10 items-center justify-center rounded-md hover:bg-surface-hover"
               aria-label={theme === 'dark' ? 'Light mode' : 'Dark mode'}
             >
               {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}

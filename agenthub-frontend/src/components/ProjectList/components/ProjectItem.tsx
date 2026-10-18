@@ -79,40 +79,40 @@ export const ProjectItem: React.FC<ProjectItemProps> = ({
           <ShimmerButton
             size="icon"
             variant="ghost"
-            className="h-7 w-7"
+            className="h-10 w-10"
             aria-label="View Project Details"
             title="View Project Details"
             onClick={() => onShowDetails(project)}
           >
-            <Eye className="w-3 h-3" />
+            <Eye className="h-4 w-4" />
           </ShimmerButton>
         )}
         <ShimmerButton
           size="icon"
           variant="ghost"
-          className="h-7 w-7"
+          className="h-10 w-10"
           aria-label="Create Branch"
           onClick={() => onCreateBranch(project)}
         >
-          <GitBranchPlus className="w-3 h-3" />
+          <GitBranchPlus className="h-4 w-4" />
         </ShimmerButton>
         <ShimmerButton
           size="icon"
           variant="ghost"
-          className="h-7 w-7"
+          className="h-10 w-10"
           aria-label="Edit"
           onClick={() => onEdit(project)}
         >
-          <Pencil className="w-3 h-3" />
+          <Pencil className="h-4 w-4" />
         </ShimmerButton>
         <ShimmerButton
           size="icon"
           variant="ghost"
-          className="h-7 w-7"
+          className="h-10 w-10"
           aria-label="Delete"
           onClick={() => onDelete(project)}
         >
-          <Trash2 className="w-3 h-3 text-destructive" />
+          <Trash2 className="h-4 w-4 text-destructive" />
         </ShimmerButton>
       </div>
     </div>
