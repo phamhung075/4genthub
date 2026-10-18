@@ -77,10 +77,15 @@ These are pointers; never copy their content into this file.
    `git show --numstat` after committing. (`b059b863`; the full text and the checks: the file below.)
    (The old "`CLAUDE.md` stays out of every commit" rule is superseded — that file was renamed to
    `AGENTS.md`, which is tracked; see `agenthub_go/NEXT_GEN.md`.)
-5. **The owner approves every push.** Never push, deploy or touch production or another rig without
-   the owner's explicit go-ahead. **The remote carries only `main` and `frontend`.** A seat works in a
-   local branch or worktree, merges into `main`, and pushes `main` (`frontend` for the frontend line);
-   pushing any other remote branch or tag is refused by the `pre-push` hook (`scripts/git-hooks/pre-push-branches`).
+5. **The lead commits, pushes and rebuilds without asking (owner ruling 2026-10-18).** The lead seat owns
+   the commit, the push of `main` (and `frontend` for the frontend line), the client rebuild and the team
+   respawn; no human approval is needed to continue building, fixing or improving. The other seats hand
+   their landed work to the lead. The human is out of the loop: a seat or the lead decides through
+   `4genteam decide` (Jev); the team asks the owner only for direction it cannot settle, and for
+   **credentials and spend, which stay the owner's**. **The remote carries only `main` and `frontend`.**
+   A seat works in a local branch or worktree; pushing any other remote branch or tag is refused by the
+   `pre-push` hook (`scripts/git-hooks/pre-push-branches`). Order: test the client, push the client,
+   commit the hub pin, push hub `main`. Never touch another rig.
 6. **Launch and resume teams with `4genteam`, NEVER legacy 4genteam.** Always run `4genteam up <rig> [--allow-peak]`
    or `4genteam continue <rig>`. 4genteam daemon and runtime orchestration are retired; `4genteam` runs the full client
    supervisor stack (`agent`, the auto-compaction supervisor `compact-run`, `watchdog`, status `bridge`, and the styled
@@ -155,4 +160,4 @@ four things and nothing else:
 
 The principal does not take a seat's work. Code, docs and decisions go to the seat that owns them through a
 queue row; the principal fixes only what keeps the team from running (a dead daemon, a stale pin, a wrong
-address). Hard rules §3 apply: the owner approves every push, and no token or `.env` value is read or printed.
+address). Hard rules §3 apply: the lead pushes, and no token or `.env` value is read or printed.
