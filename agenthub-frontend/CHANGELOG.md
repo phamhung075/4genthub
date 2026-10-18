@@ -9,6 +9,10 @@
   - Page copy (`index.html`, `manifest.json`, landing, seats, connect-machine, prose) names the 4genteam client. NOT run (no local test run); `tsc --noEmit` is the check.
 
 ### Fixed
+- **The drawer's branch-row actions meet the 40px touch floor too** - 2026-10-18
+  - `src/components/ProjectList/components/BranchItem.tsx`: View Branch Details and Delete Branch were `h-6 w-6` with `w-3 h-3` glyphs and measured 24x24 in the live drawer; they are now `h-10 w-10` with `h-4 w-4` glyphs, the same box the project-row actions took in the 40x40 pass. The earlier pass missed these because the rows only render once a project is expanded, which the deployed phone walk never does.
+  - Measured on https://www.4genthub.com at 375x667 and 320x568, signed in, drawer open, first project expanded: the live nodes are 24x24; setting exactly these classes on the live DOM makes them 40x40 and leaves the row's right edge where it was (362 in 375, 308 in 320), so the cluster still fits inside the drawer.
+  - `npx tsc --noEmit -p .` clean; `npx vitest run` 130 files / 1929 tests pass. NOT RUN: the live re-walk of this branch — the served bundle predates it and no local build is run.
 - **The three routes the phone walk still reported as dragging now fit 320px and 375px** - 2026-10-18
   - Measured first, on the deployed origin (`E2E_BASE_URL=https://www.4genthub.com npx playwright test e2e/phone-layout.spec.ts`): **14 passed / 6 failed**. The six are the layout condition on `/seats`, `/seats/authoring` and `/topology` at both widths; the 40px floor passes on all twenty. That run is why the earlier "expects 20/20" was wrong: the 40x40 change fixed the floor, not the drags.
   - `src/components/seats/MachinesPanel.tsx`: the machine `Card` gains `min-w-0`. A grid item's automatic minimum is its min-content width, and the seat table's unbreakable cells made that 553px, so the `lg:grid-cols-2` track grew past the phone (`main` 577 wide in 375 and in 320) instead of the table scrolling in its own `overflow-x-auto`.
