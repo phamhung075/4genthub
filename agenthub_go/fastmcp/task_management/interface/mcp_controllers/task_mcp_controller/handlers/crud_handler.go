@@ -43,6 +43,7 @@ type TaskFacade interface {
 	ResumeBrief(ctx context.Context, taskID string) (*entities.OrderedMap[any], error)
 	DeleteTask(ctx context.Context, taskID string, userID *string) *entities.OrderedMap[any]
 	CompleteTask(ctx context.Context, taskID, completionSummary string, testingNotes, userID *string) *entities.OrderedMap[any]
+	CompleteTaskWithCorrection(ctx context.Context, taskID, completionSummary string, testingNotes, userID *string, correction bool) *entities.OrderedMap[any]
 	AddDependency(ctx context.Context, taskID, dependencyID string) *entities.OrderedMap[any]
 	RemoveDependency(ctx context.Context, taskID, dependencyID string) *entities.OrderedMap[any]
 	TaskRepository() repositories.TaskRepository
@@ -316,7 +317,7 @@ func (h *CRUDHandler) DeleteTask(ctx context.Context, facade TaskFacade, taskID 
 
 // CompleteTask ports complete_task(facade, task_id, completion_summary=None, testing_notes=None).
 func (h *CRUDHandler) CompleteTask(ctx context.Context, facade TaskFacade, taskID string,
-	completionSummary, testingNotes *string) *entities.OrderedMap[any] {
+	completionSummary, testingNotes *string, correction *bool) *entities.OrderedMap[any] {
 
 	if taskID == "" {
 		return h.createStandardizedError("complete_task", "task_id", "A valid task_id string",
@@ -338,7 +339,8 @@ func (h *CRUDHandler) CompleteTask(ctx context.Context, facade TaskFacade, taskI
 		userID = provider.TaskRepositoryUserID()
 	}
 
-	return facade.CompleteTask(ctx, taskID, *completionSummary, testingNotes, userID)
+	return facade.CompleteTaskWithCorrection(ctx, taskID, *completionSummary, testingNotes, userID,
+		correction != nil && *correction)
 }
 
 // createStandardizedError ports _create_standardized_error.

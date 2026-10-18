@@ -9,6 +9,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"regexp"
 	"sort"
 	"strings"
 	"time"
@@ -63,9 +64,12 @@ type TaskFacadeContextSync interface {
 	SyncContextAndGetTask(ctx context.Context, taskID, userID, projectID, gitBranchName string) (any, error)
 }
 
-// TaskMinimalLister is the performance-mode ORMTaskRepository.list_tasks_minimal.
+// TaskMinimalLister is the performance-mode ORMTaskRepository.list_tasks_minimal plus the count a
+// page needs to report a total: a total computed from another predicate than the page's is a number
+// the caller cannot act on.
 type TaskMinimalLister interface {
 	ListTasksMinimal(ctx context.Context, status, priority, assigneeID, gitBranchID *string, limit, offset *int) ([]*entities.OrderedMap[any], error)
+	CountTasksMinimal(ctx context.Context, status, priority, assigneeID, gitBranchID *string) (int, error)
 }
 
 // TaskFacadeDeps carries what Python's constructor builds or imports lazily: the use
@@ -148,13 +152,17 @@ func (f *TaskApplicationFacade) TaskRepository() FacadeTaskRepository { return f
 // composition handed in, never to the brief: two callers resume one task with byte-identical
 // briefs. The brief is returned WHOLE - nothing is trimmed to fit the budget.
 func (f *TaskApplicationFacade) ResumeBrief(ctx context.Context, taskID string) (*entities.OrderedMap[any], error) {
+	resolved, err := f.readableTaskID(ctx, taskID)
+	if err != nil {
+		return nil, err
+	}
 	return services.NewTaskResumeService(
 		f.taskRepository,
 		f.subtaskRepository,
 		resumeDependencyStatuses{repo: f.taskRepository},
 		f.deps.ResumeTaskContext,
 		f.deps.ResumeLedger,
-	).Resume(ctx, taskID)
+	).Resume(ctx, resolved)
 }
 
 // resumeDependencyStatuses answers the statuses of the tasks a brief's task depends on, keyed by the
@@ -785,7 +793,7 @@ func (f *TaskApplicationFacade) CountTasks(ctx context.Context, filters map[stri
 
 	m := entities.NewOrderedMap[any]()
 	m.Set("success", true)
-	m.Set("count", response.Count)
+	m.Set("count", response.Total)
 	return m
 }
 
@@ -1086,6 +1094,58 @@ func (f *TaskApplicationFacade) loadSubtasks(ctx context.Context, taskID string)
 	return f.deps.LoadSubtasks(ctx, f.repoUserID(), id)
 }
 
+// taskIDPrefixPattern is the READ-ONLY address form: 4 to 31 hex characters with no dashes, which is
+// how the room cites a task (an 8-hex prefix is the common case). A full 32-character id is an
+// ADDRESS already and never reaches the lookup.
+var taskIDPrefixPattern = regexp.MustCompile(`^[0-9a-f]{4,31}$`)
+
+// taskIDPrefixCandidates caps the ids an ambiguous prefix is reported with. The refusal names them
+// because the caller's next move is to pick one, and it needs the ids, not a count.
+const taskIDPrefixCandidates = 5
+
+// readableTaskID resolves the read-only address form to the canonical id, or answers an error that
+// names what to do next. It is READ ONLY by construction: the writers call value_objects.NewTaskId
+// on the caller's own string, so a prefix can never create, update or delete anything, and every id
+// this returns is the canonical one the store holds.
+//
+//	canonical id, anything else in NewTaskId's vocabulary -> returned unchanged
+//	hex prefix, exactly one match                            -> the task's full id
+//	hex prefix, several matches                             -> refused, candidates NAMED
+//	hex prefix, no match                                    -> returned unchanged, so the caller's
+//	                                                           own not-found answer stands
+func (f *TaskApplicationFacade) readableTaskID(ctx context.Context, taskID string) (string, error) {
+	trimmed := strings.TrimSpace(taskID)
+	lower := strings.ToLower(trimmed)
+	if !taskIDPrefixPattern.MatchString(lower) {
+		return trimmed, nil
+	}
+	limit := taskIDPrefixCandidates + 1
+	matches, err := f.taskRepository.FindByCriteria(ctx, map[string]any{"id_prefix": lower},
+		repositories.ListQuery{Limit: &limit, SortBy: "created_at", SortOrder: "asc"})
+	if err != nil {
+		return "", err
+	}
+	if len(matches) == 0 {
+		return trimmed, nil
+	}
+	ids := make([]string, 0, len(matches))
+	for _, task := range matches {
+		if task != nil && task.ID != nil {
+			ids = append(ids, task.ID.String())
+		}
+	}
+	if len(ids) == 1 {
+		return ids[0], nil
+	}
+	named := ids
+	if len(named) > taskIDPrefixCandidates {
+		named = named[:taskIDPrefixCandidates]
+	}
+	return "", value_objects.ValueErrorf(
+		"Task ID %q is ambiguous: %d tasks start with it - %s. Pass one of those ids.",
+		trimmed, len(ids), strings.Join(named, ", "))
+}
+
 // GetTask is get_task.
 func (f *TaskApplicationFacade) GetTask(ctx context.Context, taskID string, includeContext, includeDependencies bool) *entities.OrderedMap[any] {
 	notFound := func() *entities.OrderedMap[any] {
@@ -1097,6 +1157,11 @@ func (f *TaskApplicationFacade) GetTask(ctx context.Context, taskID string, incl
 	if strings.TrimSpace(taskID) == "" {
 		return unexpected(value_objects.ValueErrorf("Task ID is required"))
 	}
+	resolved, resolveErr := f.readableTaskID(ctx, taskID)
+	if resolveErr != nil {
+		return facadeFail("get", resolveErr.Error())
+	}
+	taskID = resolved
 	domainID, err := value_objects.NewTaskId(taskID)
 	if err != nil {
 		return unexpected(err)
@@ -1297,6 +1362,13 @@ func (f *TaskApplicationFacade) DeleteTask(ctx context.Context, taskID string, u
 
 // CompleteTask is complete_task.
 func (f *TaskApplicationFacade) CompleteTask(ctx context.Context, taskID string, completionSummary, testingNotes *string, userID *string) *entities.OrderedMap[any] {
+	return f.CompleteTaskWithCorrection(ctx, taskID, completionSummary, testingNotes, userID, false)
+}
+
+// CompleteTaskWithCorrection is CompleteTask with the caller's explicit statement that it is
+// REPLACING a result line it does not own. Only `manage_task` carries the flag; every other entry
+// point completes without it, which is the rule the already-done branch enforces.
+func (f *TaskApplicationFacade) CompleteTaskWithCorrection(ctx context.Context, taskID string, completionSummary, testingNotes *string, userID *string, correction bool) *entities.OrderedMap[any] {
 	fail := func(err error) *entities.OrderedMap[any] {
 		if facadeIsTaskNotFound(err) || facadeIsValueError(err) {
 			return facadeFail("complete", err.Error())
@@ -1306,7 +1378,7 @@ func (f *TaskApplicationFacade) CompleteTask(ctx context.Context, taskID string,
 	if strings.TrimSpace(taskID) == "" {
 		return fail(value_objects.ValueErrorf("Task ID is required"))
 	}
-	result, err := f.deps.CompleteTask.Execute(ctx, taskID, completionSummary, testingNotes, nil)
+	result, err := f.deps.CompleteTask.ExecuteWithCorrection(ctx, taskID, completionSummary, testingNotes, nil, correction)
 	if err != nil {
 		return fail(err)
 	}
@@ -1437,6 +1509,14 @@ func dependencySummaryDict(r *dtostask.DependencyRelationships) *entities.Ordere
 	return m
 }
 
+// minimalListerServesOrder reports whether the request asks for nothing the minimal lister cannot
+// give it. Its ORDER BY is fixed and differs between the two implementations (ORM by updated_at,
+// superset by created_at), so ANY explicit ordering falls through to the full path rather than being
+// silently replaced by whichever column that implementation happens to sort on.
+func minimalListerServesOrder(sortBy, sortOrder *string) bool {
+	return (sortBy == nil || *sortBy == "") && (sortOrder == nil || *sortOrder == "")
+}
+
 // ListTasks is list_tasks. minimal defaults to true in Python; includeDependencies and
 // includeContext default to false.
 func (f *TaskApplicationFacade) ListTasks(ctx context.Context, request dtostask.ListTasksRequest, includeDependencies, minimal, includeContext bool) *entities.OrderedMap[any] {
@@ -1446,7 +1526,11 @@ func (f *TaskApplicationFacade) ListTasks(ctx context.Context, request dtostask.
 	// The minimal lister expresses one assignee and no labels. A request carrying more than
 	// that falls through to the full path rather than silently returning rows the caller
 	// asked to exclude - the bug that made a filtered list answer with other seats' work.
-	if performance.Settings.IsPerformanceMode() && minimal && len(request.Labels) == 0 && len(request.Assignees) <= 1 {
+	// The minimal lister has ONE ordering (created_at DESC) and no label filter. A request asking for
+	// anything else falls through to the full path, which serves both, instead of being answered with
+	// rows in an order it did not ask for.
+	if performance.Settings.IsPerformanceMode() && minimal && len(request.Labels) == 0 && len(request.Assignees) <= 1 &&
+		minimalListerServesOrder(request.SortBy, request.SortOrder) {
 		if f.deps.NewMinimalLister == nil {
 			return unexpected(errors.New("performance-mode repository is not wired"))
 		}
@@ -1459,7 +1543,14 @@ func (f *TaskApplicationFacade) ListTasks(ctx context.Context, request dtostask.
 			assigneeID = &request.Assignees[0]
 		}
 		offset := 0
+		if request.Offset != nil {
+			offset = *request.Offset
+		}
 		tasks, err := lister.ListTasksMinimal(ctx, request.Status, request.Priority, assigneeID, request.GitBranchID, request.Limit, &offset)
+		if err != nil {
+			return unexpected(err)
+		}
+		total, err := lister.CountTasksMinimal(ctx, request.Status, request.Priority, assigneeID, request.GitBranchID)
 		if err != nil {
 			return unexpected(err)
 		}
@@ -1485,11 +1576,15 @@ func (f *TaskApplicationFacade) ListTasks(ctx context.Context, request dtostask.
 		}
 		filters.Set("assignees", appliedAssignee)
 		filters.Set("git_branch_id", facadeStrOrNil(request.GitBranchID))
+		if request.Offset != nil && *request.Offset != 0 {
+			filters.Set("offset", *request.Offset)
+		}
 		out := entities.NewOrderedMap[any]()
 		out.Set("success", true)
 		out.Set("action", "list")
 		out.Set("tasks", list)
 		out.Set("count", len(list))
+		out.Set("total", total)
 		out.Set("filters_applied", filters)
 		out.Set("minimal", minimal)
 		out.Set("performance_mode", true)
@@ -1550,6 +1645,7 @@ func (f *TaskApplicationFacade) ListTasks(ctx context.Context, request dtostask.
 	out.Set("action", "list")
 	out.Set("tasks", list)
 	out.Set("count", response.Count)
+	out.Set("total", response.Total)
 	out.Set("filters_applied", response.FiltersApplied)
 	out.Set("minimal", minimal)
 	return out

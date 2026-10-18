@@ -288,7 +288,6 @@ func (c *DatabaseConfig) initializeDatabase(ctx context.Context) error {
 		if err := c.testConnection(ctx, url); err != nil {
 			return err
 		}
-		EnsureAIColumnsExist(ctx, c.Engine.DB)
 		connectionVerified = true
 	}
 	return nil
@@ -394,75 +393,17 @@ func GetSession(ctx context.Context, deps Deps) (*sql.Conn, error) {
 // CloseDB closes the connections and resets the singleton.
 func CloseDB() { ResetInstance() }
 
-// createAll is Base.metadata.create_all(checkfirst=True): enum types and tables that do not
-// exist yet are created in dependency order, with each table's indexes.
-func createAll(ctx context.Context, db *sql.DB) error {
-	existing, err := tableNames(ctx, db)
-	if err != nil {
-		return err
-	}
-	for _, t := range Tables {
-		if contains(existing, t.Name) {
-			continue
-		}
-		for _, c := range t.Columns {
-			if c.EnumName == "" {
-				continue
-			}
-			var one int
-			err := db.QueryRowContext(ctx, "SELECT 1 FROM pg_type WHERE typname = $1", c.EnumName).Scan(&one)
-			if err == sql.ErrNoRows {
-				labels := make([]string, len(EnumTypes[c.EnumName]))
-				for i, l := range EnumTypes[c.EnumName] {
-					labels[i] = "'" + strings.ReplaceAll(l, "'", "''") + "'"
-				}
-				if _, err := db.ExecContext(ctx, fmt.Sprintf("CREATE TYPE %s AS ENUM (%s)", c.EnumName, strings.Join(labels, ", "))); err != nil {
-					return err
-				}
-			} else if err != nil {
-				return err
-			}
-		}
-		for _, stmt := range t.DDL {
-			if _, err := db.ExecContext(ctx, stmt); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
-// CreateTables creates every table, re-checks the critical context tables once, and ensures the
-// AI columns exist (DatabaseConfig.create_tables).
+// CreateTables is THE single schema creator: the embedded migration steps, in filename order.
+//
+// It used to be four creators in one boot - createAll (the TableDef registry), EnsureAIColumnsExist,
+// the registered column ensurers, and the migrations last (seat-tier decision 2026-10-17 22:45Z chose
+// the migrations). The registry's DDL is 0001_baseline.sql and every column the ensurers patched in
+// is 0005/0006, so a fresh database and a database that predates those columns both reach the same
+// shape here, and there is no second path to disagree with this one.
 func (c *DatabaseConfig) CreateTables(ctx context.Context) error {
 	if c.Engine == nil {
 		return fmt.Errorf("Database not initialized")
 	}
-	if err := createAll(ctx, c.Engine.DB); err != nil {
-		return err
-	}
-	critical := []string{"branch_contexts", "task_contexts", "project_contexts", "global_contexts"}
-	existing, err := tableNames(ctx, c.Engine.DB)
-	if err != nil {
-		return err
-	}
-	for _, name := range critical {
-		if !contains(existing, name) {
-			// Python forces one more create_all(checkfirst=True) when context tables are missing.
-			if err := createAll(ctx, c.Engine.DB); err != nil {
-				return err
-			}
-			break
-		}
-	}
-	EnsureAIColumnsExist(ctx, c.Engine.DB)
-	if err := RunColumnEnsurers(ctx, c.Engine.DB); err != nil {
-		return err
-	}
-	// The embedded migrations run LAST, against the schema createAll and the ensurers have left: a
-	// step that creates or alters a registered table needs createAll to have run, and one that builds
-	// on an ensurer's column needs the ensurer to have run. Every step and its ledger row commit
-	// together (migration_runner.go), so a failure leaves the record of what did run.
 	set, err := LoadMigrations()
 	if err != nil {
 		return err

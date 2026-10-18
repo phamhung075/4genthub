@@ -26,6 +26,9 @@ type LedgerRecorder interface {
 	// caller's because a number read before the transaction could race another note's write.
 	NextProgressNumberInTx(ctx context.Context, taskID string) (int, error)
 	RecordGateVerdict(ctx context.Context, taskID string, payload map[string]any) (*entities.TaskEvent, error)
+	// ActorOf names who this request is attributed to - the seat it named, else the recorder's own
+	// user. The completion gate reads it to tell the original completer from anyone else.
+	ActorOf(ctx context.Context) (entities.TaskEventActorKind, string, bool)
 }
 
 // LedgerProgress is one progress note a save carries into the ledger: the note's TEXT as the caller

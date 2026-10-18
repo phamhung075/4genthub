@@ -208,3 +208,27 @@ func TestResponseOptimizer_MergeMetadataWithholdsAnUnpersistedHandle(t *testing.
 		t.Fatalf("persisted call lost its handle: %#v", metaOK)
 	}
 }
+
+// TestResponseOptimizer_KeepsSingleElementLists is the shape half of the enumeration defect: a page
+// carrying ONE row must still answer "tasks": [ {...} ], because every caller parses that key as an
+// array. The optimizer used to flatten [x] to x, so the last page of a paged list was the one page a
+// consumer could not read - and nothing about the length of a list makes it a scalar.
+func TestResponseOptimizer_KeepsSingleElementLists(t *testing.T) {
+	r := NewResponseOptimizer()
+	row := zpRespOM("id", "only-row")
+	resp := zpRespOM("tasks", []any{row}, "count", 1)
+	detailed := ResponseProfileDetailed
+	out := r.OptimizeResponse(resp, &detailed, nil)
+	got, _ := out.Get("tasks")
+	list, ok := got.([]any)
+	if !ok || len(list) != 1 {
+		t.Fatalf("tasks = %#v (%T), want a one-element list", got, got)
+	}
+	// The same holds nested: a list inside a data map is still a list.
+	nested := zpRespOM("data", zpRespOM("tasks", []any{row}))
+	data, _ := r.OptimizeResponse(nested, &detailed, nil).Get("data")
+	inner, _ := data.(*entities.OrderedMap[any]).Get("tasks")
+	if innerList, ok := inner.([]any); !ok || len(innerList) != 1 {
+		t.Fatalf("data.tasks = %#v (%T), want a one-element list", inner, inner)
+	}
+}

@@ -9,9 +9,9 @@ package task_mcp_controller
 // kwargs exactly as operation_factory.py does and bridge the two views.
 //
 // The Python operation_factory filters the kwargs before calling a handler:
-//   list   -> status, priority, assignee, tag, git_branch_id, limit, offset,
+//   list   -> status, priority, assignees, labels, git_branch_id, limit, offset,
 //             sort_by, sort_order
-//   search -> query, status, priority, assignee, tag, git_branch_id, limit, offset
+//   search -> query, status, priority, assignees, labels, git_branch_id, limit, offset
 //   next   -> git_branch_id, include_context (default True)
 //   count  -> everything except user_id, task_id, title, description
 //
@@ -57,8 +57,8 @@ type taskSearchHandlerAdapter struct {
 	responseFormatter handlers.SearchResponseFormatter
 }
 
-// ListTasks ports SearchHandler.list_tasks(facade, status, priority, assignee,
-// tag, git_branch_id, limit, offset, sort_by, sort_order).
+// ListTasks ports SearchHandler.list_tasks(facade, status, priority, assignees,
+// labels, git_branch_id, limit, offset, sort_by, sort_order).
 func (a taskSearchHandlerAdapter) ListTasks(ctx context.Context, facade handlers.TaskFacade, params map[string]any) *entities.OrderedMap[any] {
 	searchFacade, ok := facade.(handlers.TaskSearchFacade)
 	if !ok {
@@ -67,8 +67,8 @@ func (a taskSearchHandlerAdapter) ListTasks(ctx context.Context, facade handlers
 	return a.searchHandler.ListTasks(ctx, searchFacade,
 		adapterKwString(params, "status"),
 		adapterKwString(params, "priority"),
-		adapterKwString(params, "assignee"),
-		adapterKwString(params, "tag"),
+		adapterKwStringList(params, "assignees"),
+		adapterKwStringList(params, "labels"),
 		adapterKwString(params, "git_branch_id"),
 		adapterKwInt(params, "limit"),
 		adapterKwInt(params, "offset"),
@@ -78,7 +78,7 @@ func (a taskSearchHandlerAdapter) ListTasks(ctx context.Context, facade handlers
 }
 
 // SearchTasks ports SearchHandler.search_tasks(facade, query, status, priority,
-// assignee, tag, git_branch_id, limit, offset).
+// assignees, labels, git_branch_id, limit, offset).
 func (a taskSearchHandlerAdapter) SearchTasks(ctx context.Context, facade handlers.TaskFacade, params map[string]any) *entities.OrderedMap[any] {
 	searchFacade, ok := facade.(handlers.TaskSearchFacade)
 	if !ok {
@@ -88,8 +88,8 @@ func (a taskSearchHandlerAdapter) SearchTasks(ctx context.Context, facade handle
 		adapterKwString(params, "query"),
 		adapterKwString(params, "status"),
 		adapterKwString(params, "priority"),
-		adapterKwString(params, "assignee"),
-		adapterKwString(params, "tag"),
+		adapterKwStringList(params, "assignees"),
+		adapterKwStringList(params, "labels"),
 		adapterKwString(params, "git_branch_id"),
 		adapterKwInt(params, "limit"),
 		adapterKwInt(params, "offset"),
@@ -174,6 +174,37 @@ func adapterKwString(params map[string]any, key string) *string {
 	}
 	if s, isStr := v.(string); isStr {
 		return &s
+	}
+	return nil
+}
+
+// adapterKwStringList mirrors the list keywords: the schema accepts an array or a comma-separated
+// string, and both reach this adapter as the same filter. A key that is absent is nil, so an empty
+// request filters nothing.
+func adapterKwStringList(params map[string]any, key string) []string {
+	v, ok := params[key]
+	if !ok || v == nil {
+		return nil
+	}
+	switch t := v.(type) {
+	case []string:
+		return t
+	case []any:
+		out := make([]string, 0, len(t))
+		for _, item := range t {
+			if s, isStr := item.(string); isStr && strings.TrimSpace(s) != "" {
+				out = append(out, strings.TrimSpace(s))
+			}
+		}
+		return out
+	case string:
+		out := []string{}
+		for _, part := range strings.Split(t, ",") {
+			if p := strings.TrimSpace(part); p != "" {
+				out = append(out, p)
+			}
+		}
+		return out
 	}
 	return nil
 }

@@ -120,6 +120,22 @@ func (r *TaskEventRecorder) RecordProgress(ctx context.Context, taskID, subtaskI
 	})
 }
 
+// ActorOf names who a write from this request is attributed to, in the same order actorFor settles
+// it: the seat the request named, else the user the recorder was built for. The second return is
+// false when neither exists - a write with no actor, which the recorder refuses rather than
+// attribute to something anonymous.
+//
+// It is exposed because a caller may have to decide something from the identity BEFORE writing: the
+// completion gate in complete_task.go asks whether the caller is the one who wrote the result line
+// it is about to replace.
+func (r *TaskEventRecorder) ActorOf(ctx context.Context) (entities.TaskEventActorKind, string, bool) {
+	actor, err := r.actorFor(ctx)
+	if err != nil {
+		return "", "", false
+	}
+	return actor.Kind, actor.ID, true
+}
+
 // RecordGateVerdict writes the entry for a validation gate verdict.
 func (r *TaskEventRecorder) RecordGateVerdict(ctx context.Context, taskID string, payload map[string]any) (*entities.TaskEvent, error) {
 	return r.Record(ctx, taskID, entities.TaskEventKindGateVerdict, entities.TaskEventActorGate, "gate-validation", payload)

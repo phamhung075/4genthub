@@ -101,6 +101,10 @@ func (l *zpNoteLedger) RecordStatusChange(context.Context, string, string, strin
 	return &entities.TaskEvent{}, nil
 }
 
+func (l *zpNoteLedger) ActorOf(context.Context) (entities.TaskEventActorKind, string, bool) {
+	return entities.TaskEventActorHuman, "test-user", true
+}
+
 func (l *zpNoteLedger) RecordProgress(_ context.Context, taskID, subtaskID string, note entities.ProgressEntry) (*entities.TaskEvent, error) {
 	l.writes++
 	l.taskID, l.subtaskID, l.note = taskID, subtaskID, note

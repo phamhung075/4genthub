@@ -199,7 +199,12 @@ func (o *ResponseOptimizer) FlattenStructure(response *entities.OrderedMap[any])
 			response.Delete("confirmation")
 		}
 	}
-	return o.flattenSingleArrays(response).(*entities.OrderedMap[any])
+	// A one-element list is NOT the same value as its element: "tasks", "partial_failures" and every
+	// other collection a caller parses are typed as arrays, so rewriting [x] as x breaks the contract
+	// for exactly the page where it happens - a last page carrying one row. The response optimizer
+	// therefore normalizes nothing here. (It used to flatten single-element arrays; that is how a
+	// one-row manage_task list page answered with "tasks" as an object.)
+	return response
 }
 
 // RemoveNulls mirrors ResponseOptimizer.remove_nulls.
@@ -384,30 +389,6 @@ func (o *ResponseOptimizer) MergeMetadata(response *entities.OrderedMap[any]) *e
 		response.Delete("meta")
 	}
 	return response
-}
-
-func (o *ResponseOptimizer) flattenSingleArrays(data any) any {
-	switch d := data.(type) {
-	case *entities.OrderedMap[any]:
-		flattened := entities.NewOrderedMap[any]()
-		for _, key := range d.Keys() {
-			value, _ := d.Get(key)
-			if list, ok := value.([]any); ok && len(list) == 1 {
-				flattened.Set(key, o.flattenSingleArrays(list[0]))
-			} else {
-				flattened.Set(key, o.flattenSingleArrays(value))
-			}
-		}
-		return flattened
-	case []any:
-		out := make([]any, len(d))
-		for i, item := range d {
-			out[i] = o.flattenSingleArrays(item)
-		}
-		return out
-	default:
-		return data
-	}
 }
 
 func (o *ResponseOptimizer) simplifyWorkflowGuidance(guidance *entities.OrderedMap[any]) *entities.OrderedMap[any] {

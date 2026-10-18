@@ -74,10 +74,21 @@ func TestRealPostgresCreateTablesAndSessions(t *testing.T) {
 		names = append(names, n)
 	}
 	rows.Close()
-	// The registry's tables, plus the migration runner's own ledger: CreateTables runs the embedded
-	// set, and the runner creates applied_migrations when the database has none.
-	if len(names) != len(database.Tables)+1 {
-		t.Fatalf("created %d tables, want %d: %s", len(names), len(database.Tables)+1, strings.Join(names, ","))
+	// THE STEPS ARE THE CREATOR, so the assertion is that every table the registry declares exists -
+	// not that the count equals the registry's, which was only ever true while createAll did the work:
+	// 0001 is a static snapshot and carries tables whose init() registration is absent from this test
+	// binary's imports.
+	created := map[string]bool{}
+	for _, n := range names {
+		created[n] = true
+	}
+	for _, def := range database.Tables {
+		if !created[def.Name] {
+			t.Errorf("the steps did not create the registered table %q", def.Name)
+		}
+	}
+	if !created["applied_migrations"] {
+		t.Fatalf("the migration ledger is absent after CreateTables: %s", strings.Join(names, ","))
 	}
 	var ledger bool
 	if err := db.QueryRowContext(ctx, `SELECT to_regclass('applied_migrations') IS NOT NULL`).Scan(&ledger); err != nil || !ledger {
@@ -87,11 +98,12 @@ func TestRealPostgresCreateTablesAndSessions(t *testing.T) {
 	if err := db.QueryRowContext(ctx, "SELECT string_agg(enumlabel, ',' ORDER BY enumsortorder) FROM pg_enum e JOIN pg_type t ON t.oid=e.enumtypid WHERE t.typname='progressstate'").Scan(&labels); err != nil || labels != "INITIAL,IN_PROGRESS,COMPLETE" {
 		t.Fatalf("enum labels %q %v", labels, err)
 	}
-	if !database.EnsureAIColumnsExist(ctx, db) {
-		t.Fatal("EnsureAIColumnsExist failed on a real database")
-	}
-	status := database.VerifyAIColumns(ctx, db)
-	if _, ok := status.Get("tasks"); !ok {
-		t.Fatalf("verify: %v", status.Keys())
+	// The ai_* columns are the schema's own now (0001, or 0005 on a database that predates them), so
+	// the catalogue is the assertion: there is no separate creator left to run.
+	var aiColumns int
+	if err := db.QueryRowContext(ctx, `SELECT count(*) FROM information_schema.columns
+			WHERE table_schema = current_schema() AND table_name = 'tasks' AND column_name ~ '^ai_'`).
+		Scan(&aiColumns); err != nil || aiColumns != 7 {
+		t.Fatalf("tasks carries %d ai_* columns, want 7: %v", aiColumns, err)
 	}
 }

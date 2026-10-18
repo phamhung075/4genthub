@@ -160,6 +160,16 @@ func (s *TaskContextSyncService) SyncContextAndGetTask(ctx context.Context, task
 	taskData.Set("task_data", inner)
 	taskData.Set("parent_branch_id", domainTask.GitBranchID)
 	taskData.Set("parent_branch_context_id", domainTask.GitBranchID)
+	// THIS IS THE CREATE PATH'S ONLY TaskContext WRITE, so it carries the WHOLE creation-time
+	// picture, not just task_data: the metadata map (status, priority, labels, assignees and the two
+	// timestamps) and the objective's estimated_effort are the fields the create use case used to
+	// mirror in a SECOND UpdateContext, which is what made one create append two context_updated
+	// events (hub task 26e857b0). SyncTaskMetadata below in this file writes the same metadata shape,
+	// so an update and a create disagree about nothing.
+	taskData.Set("metadata", TaskOwnedFieldsFromTask(domainTask))
+	if domainTask.EstimatedEffort != "" {
+		taskData.Set("objective", map[string]any{"estimated_effort": domainTask.EstimatedEffort})
+	}
 
 	if contextResult == nil {
 		if _, err := s.hierarchicalContextService.CreateContext(ctx, "task", taskIDStr, taskData, nil); err != nil {

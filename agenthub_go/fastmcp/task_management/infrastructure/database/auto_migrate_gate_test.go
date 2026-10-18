@@ -61,34 +61,6 @@ func TestInitDatabaseNoDDLWithoutAutoMigrate(t *testing.T) {
 	}
 }
 
-func TestEnsureAIColumnsRespectsAutoMigrateGate(t *testing.T) {
-	clearAutoMigrate(t)
-	f := newFakeDB()
-	db, _ := f.open("", EngineOptions{})
-	if !EnsureAIColumnsExist(context.Background(), db) {
-		t.Fatal("expected no-op success when AUTO_MIGRATE is off")
-	}
-	if len(f.statements) != 0 {
-		t.Fatalf("expected no statements, got %v", f.statements)
-	}
-
-	t.Setenv("AUTO_MIGRATE", "true")
-	f2 := newFakeDB()
-	db2, _ := f2.open("", EngineOptions{})
-	if !EnsureAIColumnsExist(context.Background(), db2) {
-		t.Fatal("expected success when AUTO_MIGRATE is on")
-	}
-	adds := 0
-	for _, s := range f2.statements {
-		if strings.HasPrefix(s, "ALTER TABLE") {
-			adds++
-		}
-	}
-	if adds != 13 {
-		t.Fatalf("adds=%d statements=%v", adds, f2.statements)
-	}
-}
-
 func TestDBInitializerSkipsInitSQLWithoutAutoMigrate(t *testing.T) {
 	clearAutoMigrate(t)
 	f := &fakeDB{tables: map[string][]string{}}

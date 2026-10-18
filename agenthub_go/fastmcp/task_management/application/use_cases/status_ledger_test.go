@@ -88,6 +88,10 @@ func (f *ledgerFakeRecorder) RecordGateVerdict(_ context.Context, taskID string,
 	return &entities.TaskEvent{TaskID: taskID, Kind: entities.TaskEventKindGateVerdict, Payload: payload}, nil
 }
 
+func (f *ledgerFakeRecorder) ActorOf(context.Context) (entities.TaskEventActorKind, string, bool) {
+	return entities.TaskEventActorHuman, "test-user", true
+}
+
 // ledgerFakeTx counts the transactions the use case opens, the one unit of work SaveStatus needs.
 type ledgerFakeTx struct {
 	begun  int

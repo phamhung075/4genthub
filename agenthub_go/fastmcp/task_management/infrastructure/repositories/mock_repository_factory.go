@@ -278,14 +278,23 @@ func (m *MockTaskRepository) Exists(_ context.Context, taskID tmvo.TaskId) (bool
 	return m.Tasks.Has(taskID.Value), nil
 }
 
-// Search is search. Python lower-cases query/title/description and ignores its limit.
-func (m *MockTaskRepository) Search(_ context.Context, query string, _ map[string]any, _ int) ([]*entities.Task, error) {
+// Search is search: lower-cased substring over title/description, then the page window.
+func (m *MockTaskRepository) Search(_ context.Context, query string, _ map[string]any, limit, offset int) ([]*entities.Task, error) {
 	out := []*entities.Task{}
 	q := strings.ToLower(query)
 	for _, t := range m.Tasks.Values() {
 		if strings.Contains(strings.ToLower(t.Title), q) || strings.Contains(strings.ToLower(t.Description), q) {
 			out = append(out, t)
 		}
+	}
+	if offset > 0 {
+		if offset >= len(out) {
+			return []*entities.Task{}, nil
+		}
+		out = out[offset:]
+	}
+	if limit > 0 && limit < len(out) {
+		out = out[:limit]
 	}
 	return out, nil
 }
@@ -357,7 +366,29 @@ func (m *MockTaskRepository) GetStatistics(_ context.Context) (map[string]any, e
 
 // FindByCriteria is find_by_criteria. Python compares getattr(task, key) against each
 // filter and only appends when every key matches; limit is applied after a match.
-func (m *MockTaskRepository) FindByCriteria(_ context.Context, filters map[string]any, limit *int) ([]*entities.Task, error) {
+func (m *MockTaskRepository) FindByCriteria(_ context.Context, filters map[string]any, query domainrepos.ListQuery) ([]*entities.Task, error) {
+	matched := m.mockTasksMatching(filters)
+	start := 0
+	if query.Offset != nil && *query.Offset > 0 {
+		start = *query.Offset
+	}
+	if start >= len(matched) {
+		return []*entities.Task{}, nil
+	}
+	matched = matched[start:]
+	if query.Limit != nil && *query.Limit != 0 && *query.Limit < len(matched) {
+		matched = matched[:*query.Limit]
+	}
+	return append([]*entities.Task{}, matched...), nil
+}
+
+// CountByCriteria counts the rows FindByCriteria would page through - the same predicate, so the
+// mock answers a total the way the SQL does.
+func (m *MockTaskRepository) CountByCriteria(_ context.Context, filters map[string]any) (int, error) {
+	return len(m.mockTasksMatching(filters)), nil
+}
+
+func (m *MockTaskRepository) mockTasksMatching(filters map[string]any) []*entities.Task {
 	out := []*entities.Task{}
 	for _, t := range m.Tasks.Values() {
 		match := true
@@ -370,12 +401,9 @@ func (m *MockTaskRepository) FindByCriteria(_ context.Context, filters map[strin
 		}
 		if match {
 			out = append(out, t)
-			if limit != nil && len(out) >= *limit {
-				break
-			}
 		}
 	}
-	return out, nil
+	return out
 }
 
 // FindByIDAllStates is find_by_id_all_states (delegates to find_by_id).

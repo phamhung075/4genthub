@@ -113,11 +113,6 @@ func (f *SubtaskRepositoryFactory) CreateSubtaskRepository(projectID, gitBranchN
 	return subtaskRepoFactoryBackend.GetSubtaskRepository(userID)
 }
 
-// CreateSQLiteSubtaskRepository creates a subtask repository (the ORM is always used).
-func (f *SubtaskRepositoryFactory) CreateSQLiteSubtaskRepository(projectID, gitBranchName string, userID *string, dbPath *string) (domainrepos.SubtaskRepository, error) {
-	return f.CreateSubtaskRepository(projectID, gitBranchName, userID)
-}
-
 // CreateORMSubtaskRepository creates an ORM subtask repository.
 func (f *SubtaskRepositoryFactory) CreateORMSubtaskRepository(userID *string) (*ORMSubtaskRepository, error) {
 	if userID == nil {
@@ -129,17 +124,6 @@ func (f *SubtaskRepositoryFactory) CreateORMSubtaskRepository(userID *string) (*
 // ValidateUserProjectTree always returns true for the ORM repositories.
 func (f *SubtaskRepositoryFactory) ValidateUserProjectTree(projectID, gitBranchName string, userID *string) bool {
 	return true
-}
-
-// GetSubtaskDBPath is get_subtask_db_path.
-func (f *SubtaskRepositoryFactory) GetSubtaskDBPath(projectID, gitBranchName string, userID *string) string {
-	if userID == nil {
-		userID = f.DefaultUserID
-	}
-	if envDBPath := subtaskRepoFactoryGetenv("MCP_DB_PATH", ""); envDBPath != "" {
-		return envDBPath
-	}
-	return utilities.PyJoin(f.ProjectRoot, "data", "agenthub.db")
 }
 
 // ---- helpers -------------------------------------------------------------------

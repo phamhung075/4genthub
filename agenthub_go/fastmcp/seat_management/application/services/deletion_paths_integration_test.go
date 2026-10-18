@@ -241,6 +241,20 @@ func TestDeletionPathsIntegration(t *testing.T) {
 	status("probe", "a")
 	status("probe", "ghost") // a reported seat the room does not hold: seat_status is keyed by name
 	status("keeper", "k")
+	// The reported topology, which no other line in this fixture writes: DeleteRoom deletes the
+	// room's machine_edges by ROOM SLUG (room_deletion_service.go's DeleteMachineEdgesForRoom, added
+	// in 02bfd416) and nothing in the fixture produced a row for it to delete until this call - so
+	// the table was counted and could not move, and the new half of DeleteRoom was untested here.
+	// Two edges on "probe" and one on "keeper" make the deletion observable AND scoped.
+	must(t, machines.ReplaceSnapshot(ctx, user, repositories.Machine{
+		MachineID: "del-machine-edges",
+		LastSeen:  time.Now().UTC(),
+		Edges: []repositories.MachineEdge{
+			{Room: "probe", From: "a", To: "b", Kind: "delegates_to"},
+			{Room: "probe", From: "a", To: "b", Kind: "escalates_to"},
+			{Room: "keeper", From: "k", To: "k2", Kind: "delegates_to"},
+		},
+	}))
 
 	// CLAIM 1: deleting an existing link removes exactly one row and moves no other table.
 	before := deletionCounts(t, db, user)
@@ -302,16 +316,17 @@ func TestDeletionPathsIntegration(t *testing.T) {
 	before = deletionCounts(t, db, user)
 	must(t, svc.DeleteRoom(ctx, user, "probe"))
 	after = deletionCounts(t, db, user)
-	want := "rooms 2->1, overlays 2->1, seat_status 2->1"
+	want := "rooms 2->1, overlays 2->1, seat_status 2->1, machine_edges 3->1"
 	if d := deletionDiff(before, after); d != want {
 		t.Fatalf("CLAIM 4 FAILED: DeleteRoom moved %q, want %q", d, want)
 	}
 	for table, where := range map[string]string{
-		"rooms":       `user_id = $1 AND slug = 'keeper'`,
-		"seats":       `user_id = $1`,
-		"seat_links":  `user_id = $1`,
-		"overlays":    `user_id = $1 AND room_id IS NOT NULL`,
-		"seat_status": `user_id = $1 AND room = 'keeper'`,
+		"rooms":         `user_id = $1 AND slug = 'keeper'`,
+		"seats":         `user_id = $1`,
+		"seat_links":    `user_id = $1`,
+		"overlays":      `user_id = $1 AND room_id IS NOT NULL`,
+		"seat_status":   `user_id = $1 AND room = 'keeper'`,
+		"machine_edges": `user_id = $1 AND room = 'keeper'`,
 	} {
 		var n int
 		if err := db.QueryRow(`SELECT count(*) FROM "`+table+`" WHERE `+where, user).Scan(&n); err != nil {

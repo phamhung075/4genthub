@@ -37,8 +37,11 @@ type TaskProgressEventsByTask interface {
 
 // TaskListResponse is the response DTO for task list operations.
 type TaskListResponse struct {
-	Tasks          []*TaskResponse
+	Tasks []*TaskResponse
+	// Count is the number of rows this page carries; Total is the number the filters select. A
+	// pager needs both: Count ends a page, Total ends the enumeration.
 	Count          int
+	Total          int
 	FiltersApplied *entities.OrderedMap[any]
 	Query          *string
 }

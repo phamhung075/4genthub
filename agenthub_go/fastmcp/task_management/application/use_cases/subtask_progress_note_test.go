@@ -49,6 +49,10 @@ func (l *subtaskNoteLedger) RecordGateVerdict(context.Context, string, map[strin
 	return &entities.TaskEvent{Kind: entities.TaskEventKindGateVerdict}, nil
 }
 
+func (l *subtaskNoteLedger) ActorOf(context.Context) (entities.TaskEventActorKind, string, bool) {
+	return entities.TaskEventActorHuman, "test-user", true
+}
+
 func (l *subtaskNoteLedger) Events(context.Context, string) ([]*entities.TaskEvent, error) {
 	return nil, nil
 }
