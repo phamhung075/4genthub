@@ -26,11 +26,15 @@ are **never delivered to a seat**. One source under `agenthub_client/skills`; th
 resolved tree under the seat's own `skills/` at every seat start, so a change reaches a seat at its next
 start; the loader resolves share → room → seat, never `client/`.
 
-The format (`agenthub_client/internal/clientskills/tree.go:1-12`): a directory that holds `SKILL.md` **is** a skill; a
-directory without one is a seat folder. A skill's id is its front-matter `name` (`name` and `description` required;
-`allowed-tools`, `license`, `metadataconfig/4genthub` optional). `sync rig ROOM` copies each resolved skill to
-`<agentDir>/skills/<id>/` and declares it in `agent.yaml` (`resources.skills`, profile `uses.skills`); an omp seat then
-gets a second copy into its harness agent dir (`internal/clientseat/skills.go`).
+The format (`agenthub_client/rust/agenthub-runtime/src/skills/mod.rs`, `parse_skill_file` and `resolve_for_seat`): a
+directory that holds `SKILL.md` **is** a skill; a directory without one is a seat folder. A skill's id is its
+front-matter `name` (`name` and `description` required; `allowed-tools`, `license`, `metadata.agenthub` and
+`seat-type-version` optional). Delivery is `install_seat_skills`
+(`agenthub_client/rust/agenthub-runtime/src/supervisor/mod.rs:411`, called at seat start, `:733`): it clears
+`<seat dir>/skills/` and copies the resolved tree share → room → seat, so the more specific skill replaces a shared
+one of the same name and a skill removed from the tree does not linger. There is no `sync rig`: the `sync` verbs are
+pull, messages, connector, bundle, switch, install-checker, offline-install and respawn
+(`agenthub_client/internal/clientsync/sync.go`), and nothing writes `agent.yaml`.
 
 Where each of the seven lands:
 
@@ -227,17 +231,22 @@ No skill text, no code, no new route, no board task. Design only — acceptance 
 
 ## 10. Measured inventory (what "the 16 on disk" is)
 
-- `share/` (client-owned source, `agenthub_client/skills/share/`): agent-browser, changelog-updater,
-  development-team, dogfood, safe-file-removal, seat-worktree, systematic-debugging, test-driven-development,
-  token-economy, unused-code-cleanup, verification-before-completion — **11**.
-- `client/` (never delivered to a seat): offpeak-gate, rig-runtime-switch, seat-runtime-switch, spawn-team,
-  watch-team — **5** (measured in the tree; the seat-skills ruling §1 listed four and is one short).
-- `rooms/` (the room- and seat-level location): an **empty placeholder today** — `rooms/<room>/` and
-  `rooms/<room>/<seat>/` are the documented layout (`agenthub_client/internal/clientskills/tree.go:1-12`) with no
-  content. The set in §1 would be its first occupants.
+- `share/` (client-owned source, `agenthub_client/skills/share/`), **11** when measured: agent-browser,
+  changelog-updater, development-team, dogfood, safe-file-removal, seat-worktree, systematic-debugging,
+  test-driven-development, token-economy, unused-code-cleanup, verification-before-completion. **18** on 2026-10-18:
+  those plus flow-summary, jev-decisions, queue-row-schema, responsible-engineer, room-decision-request, short-output,
+  typesafe-ai.
+- `client/` (never delivered to a seat), **5** when measured: offpeak-gate, rig-runtime-switch, seat-runtime-switch,
+  spawn-team, watch-team — the seat-skills ruling §1 listed four and was one short. **6** on 2026-10-18: those plus
+  install.
+- `rooms/` (the room- and seat-level location): an **empty placeholder** when measured; `rooms/4genthub-min/` held
+  7 skills across 5 seats on 2026-10-18 (architect-role, fe-4genthub-driven, fe-dev-role, taste-skill, go-dev-role,
+  lead-role, reviewer-role), so the set in §1 is no longer its first occupants. The layout is `resolve_for_seat`
+  (`agenthub_client/rust/agenthub-runtime/src/skills/mod.rs`).
 - Delivered but not yet client-owned (cloud snapshot / 4genteam vendored), among the 18 skills in the architect's
   delivered tree: comm-guard-skill, queue-handoff, plan-review, refocusing, client-skills, plus four cloud leftovers
-  `sync rig` should drop. The seat-skills ruling §1 plans to fold comm-guard-skill and queue-handoff into `share/`;
+  the per-start install drops, since a skill absent from the tree is not installed. The seat-skills ruling §1 plans
+  to fold comm-guard-skill and queue-handoff into `share/`;
   that copy has not landed (no `agenthub_client/skills` source exists for them).
 
 ## 11. References
