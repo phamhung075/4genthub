@@ -9,6 +9,10 @@
   - Page copy (`index.html`, `manifest.json`, landing, seats, connect-machine, prose) names the 4genteam client. NOT run (no local test run); `tsc --noEmit` is the check.
 
 ### Fixed
+- **The dashboard drawer's row actions work on a phone** - 2026-10-18
+  - `src/components/ProjectList/components/ProjectItem.tsx` and `BranchItem.tsx`: the action cluster was `opacity-0 group-hover:opacity-100`, which no touch device can reach. It is now visible by default and fades only where hover exists (`[@media(hover:hover)]:opacity-0` plus group-hover), with `group-focus-within` so a keyboard reaches it too.
+  - The same rows overflowed the 375px drawer (actions measured at right=419): the project name's container gains `min-w-0`, its badges and both icons `shrink-0`, and the branch's button `min-w-0`, so the name truncates instead of setting the row's width.
+  - NOT verified in a browser yet: it needs the owner's deploy. `npx tsc --noEmit -p .` clean; the ProjectList tests (6 files, 91 tests) pass.
 - **Every page fits a 375px and a 320px phone** - 2026-10-18
   - Measured on https://www.4genthub.com at iPhone SE size (375x667) and 320 wide, signed in: 7 of the 10 signed-in pages carried a fault (horizontal drag, clipped text, unreadable labels, collapsed table columns). Fixed per page:
   - `/token-management` (`src/pages/TokenManagement.tsx`): the three tab labels shrink to `text-xs` with the icons hidden below `sm`, so the active pill no longer overlaps its neighbour; each scope tile stacks its resource name above the verb chip, so a 110px tile holds "MCP Profile" and "Delegate" without crushing them.
