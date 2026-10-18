@@ -78,8 +78,8 @@ export const SeatUnresolvedBadge: React.FC = () => (
 const MachineCard: React.FC<{ machine: MachineStatus }> = ({ machine }) => (
   <Card>
     <CardHeader>
-      <CardTitle className="text-lg flex items-center justify-between">
-        <span>{machine.machine_id}</span>
+      <CardTitle className="text-lg flex flex-wrap items-center justify-between gap-2">
+        <span className="min-w-0 truncate">{machine.machine_id}</span>
         <Badge variant={machine.online ? 'default' : 'destructive'}>
           {machine.online ? 'online' : 'offline'}
         </Badge>
@@ -90,43 +90,45 @@ const MachineCard: React.FC<{ machine: MachineStatus }> = ({ machine }) => (
     </CardHeader>
     <CardContent className="space-y-3">
       {machine.seats.length > 0 && (
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-left text-muted-foreground">
-              <th className="font-medium">Seat</th>
-              <th className="font-medium">State</th>
-              <th className="font-medium">Runtime</th>
-              <th className="font-medium">Hash</th>
-              <th className="font-medium">Sync</th>
-              <th className="font-medium">Detail</th>
-            </tr>
-          </thead>
-          <tbody>
-            {machine.seats.map(seat => (
-              <tr key={`${seat.room}/${seat.seat}`}>
-                <td>
-                  {seat.room}/{seat.seat}
-                </td>
-                <td>
-                  <SeatStateBadge state={seat.state} />
-                </td>
-                <td>{seat.runtime}</td>
-                <td className="font-mono">{shortHash(seat.pinned_hash)}</td>
-                <td>
-                  <SeatSyncBadge seat={seat} />
-                </td>
-                <td>
-                  {seat.detail}
-                  {seat.redacted && (
-                    <Badge variant="secondary" className="ml-2">
-                      redacted
-                    </Badge>
-                  )}
-                </td>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-muted-foreground">
+                <th className="font-medium">Seat</th>
+                <th className="font-medium">State</th>
+                <th className="font-medium">Runtime</th>
+                <th className="font-medium">Hash</th>
+                <th className="font-medium">Sync</th>
+                <th className="font-medium">Detail</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {machine.seats.map(seat => (
+                <tr key={`${seat.room}/${seat.seat}`}>
+                  <td>
+                    {seat.room}/{seat.seat}
+                  </td>
+                  <td>
+                    <SeatStateBadge state={seat.state} />
+                  </td>
+                  <td>{seat.runtime}</td>
+                  <td className="font-mono">{shortHash(seat.pinned_hash)}</td>
+                  <td>
+                    <SeatSyncBadge seat={seat} />
+                  </td>
+                  <td>
+                    {seat.detail}
+                    {seat.redacted && (
+                      <Badge variant="secondary" className="ml-2">
+                        redacted
+                      </Badge>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
       {machine.agents.length > 0 && (
         <ul className="flex flex-wrap gap-2 text-xs">
