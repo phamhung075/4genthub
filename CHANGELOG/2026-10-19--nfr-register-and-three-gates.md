@@ -43,10 +43,28 @@ commit and the host, and state the range rather than one number.
 
 **T4b, client half, commit `81abcf6` on client `main`** (hub pin `8407df92`): the client repo gains
 `.github/workflows/ci.yml` with a go job (`go vet`, `go test`) and a rust job (`cargo test --locked`).
-The hub half (`beff2fb7`: `gofmt-check.sh` in the go job, `pnpm typecheck`/`pnpm lint` in the frontend
-job) lands with T4a, whose scripts its frontend job calls.
+**T4b, hub half, commit `fe64381f` on `main`** (cherry-pick of `beff2fb7`): the go job runs
+`../scripts/gofmt-check.sh` before vet and test, and the frontend job runs `pnpm typecheck` and
+`pnpm lint` between install and test. The gate started red - `context_change_test.go` was unformatted
+on `main` - so the same commit carries the formatting; `gofmt-check` then reports `clean over 1242
+tracked .go file(s)`, exit 0.
 
-Pending in this task: T4a (frontend typecheck + lint). Its commit extends this entry.
+**T4a, commit `45fbd0cf` on `main`** (cherry-pick of `408a304c`): `agenthub-frontend` gains its
+`typecheck` (`tsc --noEmit -p .`) and `lint` (`eslint src --max-warnings=0`) scripts, the dead CRA
+`eslintConfig` block goes, and `eslint.config.mjs` carries `@eslint/js` + `typescript-eslint` +
+`eslint-plugin-react-hooks` recommended over `src` with no baseline and no allowlist. 167 files: the
+`any`s are replaced by the API's own types (`BranchLike` in `src/types/api.types.ts`), envelopes are
+narrowed where they arrive, `catch (error: any)` becomes `unknown` plus a real narrowing, two
+`useEffect` dependency arrays are corrected, and `useWebSocketV2` reads the client through its public
+accessors. One test that asserted an impossible state (`onSelect: undefined` on a required prop, which
+left an unhandled `TypeError`) is deleted, so the suite is 131 files / 1925 tests. Ledgers:
+`CHANGELOG/2026-10-19--the-frontend-typecheck-and-lint-gates-run-clean.md` and the `TEST-CHANGELOG.md`
+entry.
+
+Both halves are in place, so `ci.yml`'s two new steps call scripts that exist; measured on `main` after
+the landing: `pnpm install --frozen-lockfile` ok, `pnpm typecheck` 0, `pnpm lint` 0 problems, `pnpm
+test` 130 files / 1920 tests, 0 failures. (The seat measured 131 files / 1925 tests on its own base
+`cad91428`, which carries the frontend line's extra test files; `main` does not have those commits.)
 
 ## Evidence
 
