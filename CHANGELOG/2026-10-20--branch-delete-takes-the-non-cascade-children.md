@@ -41,3 +41,32 @@ green after the change):
 
 The existing branch, project and task cascade tests stay green; `go test ./...` against
 `AGENTHUB_TEST_PG_URL` passes.
+
+## The register: INT-03 flips to GATE in the same landing
+
+`ai_docs/core-architecture/nfr-register.md` moves with this task, so the row never states a rule the
+code does not keep. A status-only flip was rejected by the architect (`qitem-20261019224650`): the
+mechanism and enforcement cells still described the pre-landing schema and Q7 planned the work in
+the future tense.
+
+- The INT-03 row is **GATE**. The mechanism cell states what the schema carries now: seven
+  `ON DELETE CASCADE` columns on six tables (`models.go:769, 810, 864, 900, 913, 950`, the last
+  table carrying two) and `task_events.task_id` (`task_event_tables.go:40`) as the ledger the
+  application owns. The enforcement cell names one delete per removed reference - contexts and
+  labels with the task (`task_repository.go:677`, `:689`) and by task id in the branch delete
+  (steps 9 and 7, `git_branch_repository.go:514`, `:499`), `task_labels.label_id` at
+  `label_repository.go:231`, `user_token_balances.user_id` at `user_repository.go:474`, the ledger
+  with the task (`task_repository.go:703`) and in the branch delete (step 10, `:523`) - and states
+  the aggregate-scope rule, the project check at `:432` being the tenancy boundary.
+- The residual the row names is the one path that relies on order rather than on its own delete:
+  `ORMProjectRepository.DeleteProject` (`project_repository.go:616`) carries no ledger delete and is
+  safe because `ProjectManagementService.DeleteProject` deletes each branch first
+  (`project_management_service.go:413`).
+- Q7's paragraph moves from the plan to the landing, and G2's line no longer says the requirement
+  stays open. "Open gates this register expects" stays `None open.`, this time because the residual
+  it named has landed.
+
+Every `file:line` in the changed lines was resolved against the landing tree: 17 `file:line`
+citations over the changed rows, each opening on the statement or test it names. The aggregate-scope
+change is cited as "the commit that carries this entry" because it and the register text are the
+same landing and the row cannot cite its own sha.

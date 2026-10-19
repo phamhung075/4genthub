@@ -85,7 +85,7 @@ path with its line (a static fact a reader can open) · `review` (the policy has
 |---|---|---|---|---|---|---|
 | INT-01 | A construction failure is loud; no mock reachable from the request path. | GATE | Nil session manager, nil builder or a failing builder returns an error; the mock is deleted from production. | `test:go test ./fastmcp/task_management/application/factories -run TestFactory`; `file:agenthub_go/fastmcp/task_management/application/factories/unified_context_facade_factory.go:69` | agenthub_go | 2026-10-19 `ffe4f07f` |
 | INT-02 | A task's status has one writer and survives a delete. | PARTIAL | Status is dual-stored (row, then ledger append, one transaction); deleting a task deletes its ledger. | `file:agenthub_go/fastmcp/task_management/application/use_cases/status_ledger.go:92`; `file:agenthub_go/fastmcp/task_management/infrastructure/repositories/task_repository.go:703` | agenthub_go | 2026-10-19 |
-| INT-03 | Foreign keys carry `CASCADE` only where the child has no independent lifecycle (Q7's seven); every join or aggregate-spanning child and every billing row is deleted by the application. | GATE | 11 FK columns on 9 tables carry `ON DELETE CASCADE` (10 in `models.go`, 1 in `models_auth.go`); Q7 keeps 7 and names the 4 to remove with the delete each needs. `task_events.task_id` is the one reference into `tasks` without it. | Q7: 7 stay (`models.go:762, 796, 837, 872, 906, 944, 945`), 4 removed - `task_contexts.task_id` (`models.go:919`), `task_labels.task_id` and `task_labels.label_id` (`:953`, `:954`), `user_token_balances.user_id` (`models_auth.go:122`) - with the delete at `task_repository.go:677`, `label_repository.go:226`, `user_repository.go:469`; `test:go test ./fastmcp/task_management/infrastructure/database -run TestSchemaInventoryPinsTenancyAndCascades` | agenthub_go | 2026-10-19 |
+| INT-03 | Foreign keys carry `CASCADE` only where the child has no independent lifecycle (Q7's seven); every join or aggregate-spanning child and every billing row is deleted by the application. | GATE | Q7 landed in four commits - `76b0d84d` removed the four cascades and added the application deletes, `a04131e3` gave the branch delete its `task_events` step, `ce3b1d87` widened that step to every author's events, and `33e369a6` with the working-tree finish took the author condition out of the rest of the branch delete. Seven `ON DELETE CASCADE` columns on six tables remain (`models.go:769, 810, 864, 900, 913, 950`, the last table carrying two); `task_events.task_id` (`task_event_tables.go:40`) never cascaded and is the precedent the four removals follow. | Application deletes, one per reference: `task_contexts.task_id` with the task (`task_repository.go:677`) and in the branch delete (step 9, `git_branch_repository.go:514`); `task_labels.task_id` with the task (`task_repository.go:689`) and in the branch delete (step 7, `git_branch_repository.go:499`); `task_labels.label_id` at `label_repository.go:231`; `user_token_balances.user_id` at `user_repository.go:474`; the ledger with the task (`task_repository.go:703`) and in the branch delete (step 10, `git_branch_repository.go:523`). The branch delete is aggregate-scoped by ruling (`RULING-int03-branch-delete-scope-2026-10-20.md`): the project check at `git_branch_repository.go:432` is its tenancy boundary, so its child statements carry no author filter. Named residual: `ORMProjectRepository.DeleteProject` (`project_repository.go:616`) carries no ledger delete and is safe because `ProjectManagementService.DeleteProject` deletes each branch first (`project_management_service.go:413`). | `test:go test ./fastmcp/task_management/infrastructure/repositories -run TestGitBranchRepoDeleteBranchRemovesTaskEvents`; `test:go test ./fastmcp/task_management/infrastructure/repositories -run TestGitBranchRepoUserIsolation`; `test:go test ./fastmcp/task_management/infrastructure/database -run TestSchemaInventoryPinsTenancyAndCascades`; `file:agenthub_go/fastmcp/task_management/infrastructure/database/testdata/schema_fks.txt` | agenthub_go | 2026-10-20 |
 | INT-04 | A terminal state is terminal; a handoff appends a successor and never reopens the source. | GATE | `TERMINAL_STATES` is `done`/`handed-off`; `handed_off_to` appends a successor. | `test:cargo test -p agenthub-runtime queue::tests`; `file:agenthub_client/rust/agenthub-runtime/src/queue/mod.rs:7` | runtime | 2026-10-19 |
 | INT-05 | Each seat writes only in its own worktree on its own branch. | PARTIAL | Paths derive `<roomDir>/wt/<seat>`; `doctor` accepts any branch and there is no `--ff-only`. | `file:agenthub_client/internal/clientservices/worktrees.go:71`; `file:agenthub_client/internal/clientworktree/check.go:23` | client | 2026-10-19 |
 | INT-06 | A commit carries only the named paths, and no seat lands a docs-only commit. | PARTIAL | The wrapper refuses an all-documentation seat commit; a direct `git commit` bypasses it. | `file:scripts/git-hooks/git_commit_capture.py:40`; `file:scripts/git-hooks/git_commit_capture.py:165` | hub | 2026-10-19 |
@@ -122,7 +122,7 @@ path with its line (a static fact a reader can open) · `review` (the policy has
 | Gate | Row | State |
 |---|---|---|
 | G1 | INT-01 | Landed `ffe4f07f`: the factory returns an error and the mock leaves the production package. |
-| G2 | SEC-01, INT-03 | Landed `02a31ec4`: the schema guard pins the nullable `user_id` set and every cascade column. The requirement itself (INT-03, no `CASCADE`) stays open as a GAP on the schema, not on the guard. |
+| G2 | SEC-01, INT-03 | Landed `02a31ec4`: the schema guard pins the nullable `user_id` set and every cascade column. The requirement itself closed at `76b0d84d` plus the branch-delete fix (row INT-03). |
 | G3 | MAINT-04 | Landed `8c7b7364` (client `252c42b`): the client CI gates `gofmt`, `cargo fmt --check` and `cargo clippy -D warnings`, and the drift they exposed is fixed. |
 | T5 | PERF-04, PERF-06 | Landed `86da875e` (client `c21e702`): `BenchmarkRealtimeFanout` over 1/10/100 sockets with the 500 ms ceiling, and `TestFeedWritesEachLineWithinOnePoll` bound to 2 x `feedPollInterval`. |
 | T6 | PERF-02 | Landed `d45aa05d`: the cache service and its test, the `CacheService` field, the cache parameter/default and `invalidateChildCaches` leave the service, the factory stops constructing it, and `force_refresh` leaves the MCP schema, description and handler, the HTTP routes, the controller, the facades, the service, the batch use case and the regenerated `apiReference.ts`; the `context_inheritance_cache` table and the branch-delete `DELETE` stay. |
@@ -160,40 +160,48 @@ emitter families collapses), and the frontend merges `primary` into the cached t
 (`useRealtimeSync.ts:331-393` already merges for `completed`; `:224-243` replaces for `updated`).
 Proven by `BenchmarkTaskEventDelta` (spec in `nfr-measurements.md`), gate T7.
 
-INT-03's cascade set is per column (Q7, 2026-10-19). The schema carries 11 `ON DELETE CASCADE`
-foreign keys on 9 tables (10 in `models.go`, the 11th at `models_auth.go:122`); the model set also
-holds `task_events`, whose `task_id` references `tasks` with no cascade
-(`task_event_tables.go:39`). Seven stay, because the child has no independent lifecycle and belongs
-to exactly one aggregate: `agent_session_events.session_id` (a session's own log, and no code deletes
-an `agent_sessions` row), `project_git_branchs.project_id` (the project delete deletes its branches
-first, `project_management_service.go:413`), `tasks.git_branch_id` (a task is NOT NULL in its
-branch, and the branch delete removes its tasks, `git_branch_repository.go:540`), and
-`subtasks.task_id`, `task_assignees.task_id`, `task_dependencies.task_id`,
-`task_dependencies.depends_on_task_id` (a nested item, and an edge between two tasks of one
-aggregate). Four are removed, because the row spans two aggregates or is billing state, and the
-application deletes it explicitly: `task_contexts.task_id` is also parented by a branch
-(`parent_branch_id`, `parent_branch_context_id`) and is already deleted with the task
-(`task_repository.go:677`), while the branch delete must gain
-`DELETE FROM task_contexts WHERE task_id IN (taskIDs)` before `git_branch_repository.go:540` - its
-steps 9 and 10 (`:522`, `:531`) only match the branch's own ids; `task_labels.task_id` is deleted
-with the task (`task_repository.go:689`, branch step 7 `git_branch_repository.go:504`);
-`task_labels.label_id` has no delete today - `DeleteLabel` is the bare row delete
-(`label_repository.go:225-227`) - so it gains `DELETE FROM task_labels WHERE label_id = $1`; and
-`user_token_balances.user_id` is billing state, deleted with the user at
-`user_repository.go:468-470` (which no route calls today). The G2 golden is the mechanism:
-`testdata/schema_fks.txt` loses the four lines, and
+INT-03's cascade set is per column (Q7, 2026-10-19), and it landed in four commits. `76b0d84d`
+removed the four cascades and gave the task delete and the repository deletes their statements;
+`a04131e3` gave the branch delete its `task_events` step; `ce3b1d87` widened that step to every
+author's events; `33e369a6` and the working-tree finish removed the author condition from the rest
+of the branch delete. The schema now carries
+seven `ON DELETE CASCADE` columns on six tables: `agent_session_events.session_id` (`models.go:769`),
+`project_git_branchs.project_id` (`:810`), `tasks.git_branch_id` (`:864`), `subtasks.task_id`
+(`:900`), `task_assignees.task_id` (`:913`), and `task_dependencies.task_id` with
+`depends_on_task_id` (`:950`). Each stays because the child has no independent lifecycle and belongs
+to exactly one aggregate. `task_events.task_id` (`task_event_tables.go:40`) never cascaded; it is the
+precedent the four removals follow. The four removed references, and the delete that owns each now:
+`task_contexts.task_id` with the task (`task_repository.go:677`) and in the branch delete (step 9,
+`git_branch_repository.go:514`); `task_labels.task_id` with the task (`task_repository.go:689`) and in
+the branch delete (step 7, `git_branch_repository.go:499`); `task_labels.label_id` at
+`label_repository.go:231`; `user_token_balances.user_id` at `user_repository.go:474`.
+
+The branch delete proves ownership once, on the branch's project (`git_branch_repository.go:440`),
+and then deletes every child by id with no author filter: a child's `user_id` records who WROTE the
+row, and where the schema does not cascade (`task_contexts`, `task_labels`, `branch_contexts`,
+`task_events`) filtering by it left another author's row behind and refused the branch with 23503
+(`RULING-int03-branch-delete-scope-2026-10-20.md`). Where the schema cascades the filter only
+removed a subset the database takes anyway. The project delete is the one path that relies on order
+rather than on its own delete: `ProjectManagementService.DeleteProject` deletes each branch through
+`DeleteBranch` first (`project_management_service.go:413`) and only then the project row (`:419`,
+which reaches `ORMProjectRepository.Delete` at `project_repository.go:305` and its `DeleteProject`
+at `:616`), so the project row goes with no tasks left; `ce3b1d87` kept that order instead of giving
+the project delete a ledger step of its own, and a direct `DeleteProject` call with an evented task
+would still fail 23503, and there is no such caller.
+
+The G2 golden is the mechanism: `testdata/schema_fks.txt` carries the seven lines and
 `TestSchemaInventoryPinsTenancyAndCascades` (`schema_matches_definitions_test.go:196`) fails in both
-directions - a stale line and an unpinned cascade. Orphan counts become load-bearing once the
+directions - a stale line and an unpinned cascade. Orphan counts are load-bearing now that the
 database stops deleting: `TestTaskRepoDeleteCascade` (`task_repository_test.go:492`) seeds a
-`task_contexts` row at `:501` and counts only the task and the branch counters, so it must count
-`task_contexts` by `task_id`; `TestGitBranchRepoDeleteBranchCascade`
-(`git_branch_repository_test.go:544`) counts contexts by their branch ids and must also count by
-`task_id` and seed one context with no parent ids; a new label-repository test seeds a `task_labels`
-link, calls `DeleteLabel`, and counts by `label_id` (no label-repository test exists);
-`TestAuthUserRepositoryDeleteAndResetToken` (`auth_repositories_test.go:249`) seeds a
-`user_token_balances` row and counts it after `Delete`. The precedent is `task_events`, the FK the
-application already owns (delete `task_repository.go:703`, proof
-`server/httpapp/task_delete_ledger_pg_test.go:125`).
+`task_contexts` row and counts it by `task_id`; `TestLabelRepoDeleteRemovesTaskLabels`
+(`label_repository_test.go:14`) deletes a label and counts its `task_labels` link by `label_id`; `TestGitBranchRepoDeleteBranchCascade`
+(`git_branch_repository_test.go:570`) seeds a context owned only by its task, plus a label, a
+dependency, a subtask, an assignee and a branch context; `TestGitBranchRepoDeleteBranchRemovesTaskEvents`
+(`:700`) seeds an event under a second author; `TestGitBranchRepoUserIsolation` (`:188`) proves
+another user's branch delete answers false and leaves the branch and its children;
+`TestProjectRepoDeleteProjectRemovesTaskEvents` (`project_repository_test.go:120`) walks the service
+order; `TestAuthUserRepositoryDeleteAndResetToken` (`auth_repositories_test.go:249`) seeds a
+`user_token_balances` row and counts it after `Delete`.
 
 A later change to a status is a ruling, not an edit in
 passing: amend this file and cite the row you changed.
