@@ -19,13 +19,14 @@ var (
 	wsNotificationCache   = map[string]float64{}
 )
 
-// wsIsDuplicateNotification mirrors _is_duplicate_notification. It prunes expired keys,
-// returns true for a recent duplicate, and otherwise records the notification.
-func wsIsDuplicateNotification(eventType, entityType, entityID, userID string) bool {
+// wsIsDuplicateNotification is the duplicate gate: a task event whose payload carries an
+// updated_at is keyed by that stamp, so the two emitter families collapse one write and two
+// distinct writes inside the TTL both emit; every other event keeps the user-scoped key.
+func wsIsDuplicateNotification(eventType, entityType, entityID, identity string) bool {
 	wsNotificationCacheMu.Lock()
 	defer wsNotificationCacheMu.Unlock()
 
-	key := eventType + ":" + entityType + ":" + entityID + ":" + userID
+	key := eventType + ":" + entityType + ":" + entityID + ":" + identity
 	currentTime := float64(time.Now().UnixNano()) / 1e9
 
 	for k, timestamp := range wsNotificationCache {
@@ -69,39 +70,6 @@ type WebSocketDataBroadcaster interface {
 type WebSocketNotificationService struct {
 	Provider WebSocketNotificationContextProvider
 	Broker   WebSocketDataBroadcaster
-}
-
-// BroadcastTaskEvent mirrors broadcast_task_event. The optional task_data,
-// git_branch_id and project_id are pointers to model Python's None defaults.
-func (s *WebSocketNotificationService) BroadcastTaskEvent(
-	ctx context.Context,
-	eventType, taskID, userID string,
-	taskData any,
-	gitBranchID, projectID *string,
-) error {
-	if wsIsDuplicateNotification(eventType, "task", taskID, userID) {
-		return nil
-	}
-	if s.Broker == nil {
-		return nil
-	}
-
-	metadata := entities.NewOrderedMap[any]()
-	if gitBranchID != nil && *gitBranchID != "" {
-		metadata.Set("git_branch_id", *gitBranchID)
-	}
-	if projectID != nil && *projectID != "" {
-		metadata.Set("project_id", *projectID)
-	}
-	metadata.Set("timestamp", value_objects.IsoFormat(time.Now().UTC()))
-
-	uid := userID
-	taskContext := s.taskContext(ctx, taskID, &uid)
-	metadata.Set("task_title", wsContextValue(taskContext, "task_title"))
-	metadata.Set("parent_branch_id", wsContextValue(taskContext, "parent_branch_id"))
-	metadata.Set("parent_branch_title", wsContextValue(taskContext, "parent_branch_title"))
-
-	return s.Broker.BroadcastDataChange(ctx, eventType, "task", taskID, userID, taskData, metadata)
 }
 
 // BroadcastSubtaskEvent mirrors broadcast_subtask_event.
@@ -253,12 +221,14 @@ func (s *WebSocketNotificationService) BroadcastAgentEventNoDedup(
 // PreFetchedContext is used for deletion events so the deleted task is not queried;
 // Metadata is copied and extended.
 type SyncTaskEventParams struct {
-	EventType         string
-	TaskID            string
-	UserID            string
-	TaskData          any
-	GitBranchID       *string
-	ProjectID         *string
+	EventType   string
+	TaskID      string
+	UserID      string
+	TaskData    any
+	Changed     []string
+	GitBranchID *string
+	ProjectID   *string
+	// PreFetchedContext is used for deletion events so the deleted task is not queried.
 	PreFetchedContext *entities.OrderedMap[any]
 	Metadata          *entities.OrderedMap[any]
 }
@@ -309,7 +279,14 @@ func wsAddCompletionMetadata(metadata *entities.OrderedMap[any], data any, title
 // (pre-fetched or from the provider), metadata (custom + branch/project/timestamp +
 // titles), completion enrichment, and branch cascade data for created/deleted events.
 func (s *WebSocketNotificationService) SyncBroadcastTask(ctx context.Context, p SyncTaskEventParams) error {
-	if wsIsDuplicateNotification(p.EventType, "task", p.TaskID, p.UserID) {
+	// The duplicate gate keys a payload-carrying update by its updated_at: one write reaches this
+	// service from two emitter families with two different user stamps, and the stamp is what tells
+	// two writes inside the TTL apart.
+	identity := p.UserID
+	if stamp, ok := wsDataGet(p.TaskData, "updated_at", nil).(string); ok && stamp != "" {
+		identity = stamp
+	}
+	if wsIsDuplicateNotification(p.EventType, "task", p.TaskID, identity) {
 		return nil
 	}
 
@@ -356,7 +333,29 @@ func (s *WebSocketNotificationService) SyncBroadcastTask(ctx context.Context, p 
 	if s.Broker == nil {
 		return nil
 	}
-	return s.Broker.BroadcastDataChange(ctx, p.EventType, "task", p.TaskID, p.UserID, p.TaskData, metadata)
+	return s.Broker.BroadcastDataChange(ctx, p.EventType, "task", p.TaskID, p.UserID, taskEventPrimary(p), metadata)
+}
+
+// taskEventPrimary is the payload.data.primary a task event delivers: the completed seed a
+// `created`/`deleted` event carries, else the flat field delta of the write, and never more than
+// WebSocketTaskPayloadCap - an over-cap delta is replaced by {"id", "refetch": true}.
+func taskEventPrimary(p SyncTaskEventParams) any {
+	full, isMap := p.TaskData.(*entities.OrderedMap[any])
+	primary := p.TaskData
+	if isMap && full != nil {
+		switch p.EventType {
+		case "updated", "completed":
+			primary = WebSocketPayloadBuilder{}.BuildTaskDelta(full, p.Changed)
+		}
+		if m, ok := primary.(*entities.OrderedMap[any]); ok && m != nil &&
+			(WebSocketPayloadBuilder{}).EstimatePayloadSize(m) > WebSocketTaskPayloadCap {
+			refetch := entities.NewOrderedMap[any]()
+			refetch.Set("id", p.TaskID)
+			refetch.Set("refetch", true)
+			return refetch
+		}
+	}
+	return primary
 }
 
 // SyncBroadcastTaskEvent matches the SubtaskEventBroadcaster consumer interface; the
