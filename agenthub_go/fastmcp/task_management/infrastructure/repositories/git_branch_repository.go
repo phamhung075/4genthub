@@ -426,6 +426,12 @@ func (r *ORMGitBranchRepository) FindAll(ctx context.Context) ([]*entities.GitBr
 
 // DeleteBranch is delete_branch: a comprehensive cascade delete of everything that references
 // the branch, then the branch itself.
+//
+// Ownership is checked ONCE, at the project the branch belongs to (the block below). The child
+// deletes then carry no user condition: a child's user_id records who WROTE it, not who owns the
+// branch, so filtering by it would leave another user's row behind, and the rows the schema does
+// not cascade (task_contexts, task_labels, branch_contexts) would refuse the branch delete with
+// 23503. The task delete precedent (task_repository.go) has the same shape for the same reason.
 func (r *ORMGitBranchRepository) DeleteBranch(ctx context.Context, branchID string) (bool, error) {
 	deleted := false
 	err := r.GetDBSession(ctx, func(ctx context.Context, s database.DBTX) error {
@@ -469,13 +475,13 @@ func (r *ORMGitBranchRepository) DeleteBranch(ctx context.Context, branchID stri
 		}
 
 		// Step 3: BranchContext ids for this branch.
-		branchContextIDs, err := r.gitBranchRepoSelectIDs(ctx, s, "branch_contexts", "branch_id", "id", branchID, true)
+		branchContextIDs, err := r.gitBranchRepoSelectIDs(ctx, s, "branch_contexts", "branch_id", "id", branchID, false)
 		if err != nil {
 			return err
 		}
 
 		// Step 4: Task ids for this branch.
-		taskIDs, err := r.gitBranchRepoSelectIDs(ctx, s, "tasks", "git_branch_id", "id", branchID, true)
+		taskIDs, err := r.gitBranchRepoSelectIDs(ctx, s, "tasks", "git_branch_id", "id", branchID, false)
 		if err != nil {
 			return err
 		}
@@ -500,7 +506,6 @@ func (r *ORMGitBranchRepository) DeleteBranch(ctx context.Context, branchID stri
 			// Step 7: TaskLabel records.
 			args = []any{}
 			conds = []string{gitBranchRepoInArgs("task_id", taskIDs, &args)}
-			conds, args = r.gitBranchRepoUserCond(conds, args)
 			if err := gitBranchRepoDelete(ctx, s, "task_labels", conds, args); err != nil {
 				return err
 			}
@@ -517,7 +522,6 @@ func (r *ORMGitBranchRepository) DeleteBranch(ctx context.Context, branchID stri
 			// Step 9: TaskContext records for this branch's Tasks.
 			args = []any{}
 			conds = []string{gitBranchRepoInArgs("task_id", taskIDs, &args)}
-			conds, args = r.gitBranchRepoUserCond(conds, args)
 			if err := gitBranchRepoDelete(ctx, s, "task_contexts", conds, args); err != nil {
 				return err
 			}
@@ -525,10 +529,6 @@ func (r *ORMGitBranchRepository) DeleteBranch(ctx context.Context, branchID stri
 			// Step 10: TaskEvent records for this branch's Tasks. task_events.task_id is the one
 			// FK into tasks with NO ON DELETE CASCADE (task_event_tables.go), so the ledger must
 			// be emptied before Step 13 deletes the tasks, or PostgreSQL refuses it with 23503.
-			// No user condition, unlike the steps above: task_events.user_id is the event's
-			// AUTHOR, not the task's owner, and an event another user wrote on this task would
-			// otherwise survive the branch delete and block it. The task delete precedent
-			// (task_repository.go) carries no user filter for the same reason.
 			args = []any{}
 			conds = []string{gitBranchRepoInArgs("task_id", taskIDs, &args)}
 			if err := gitBranchRepoDelete(ctx, s, "task_events", conds, args); err != nil {
@@ -539,7 +539,6 @@ func (r *ORMGitBranchRepository) DeleteBranch(ctx context.Context, branchID stri
 		// Step 11: TaskContext records referencing this branch directly.
 		tcArgs := []any{branchID}
 		tcConds := []string{quoteIdent("parent_branch_id") + " = $1"}
-		tcConds, tcArgs = r.gitBranchRepoUserCond(tcConds, tcArgs)
 		if err := gitBranchRepoDelete(ctx, s, "task_contexts", tcConds, tcArgs); err != nil {
 			return err
 		}
@@ -548,7 +547,6 @@ func (r *ORMGitBranchRepository) DeleteBranch(ctx context.Context, branchID stri
 		if len(branchContextIDs) > 0 {
 			args := []any{}
 			conds := []string{gitBranchRepoInArgs("parent_branch_context_id", branchContextIDs, &args)}
-			conds, args = r.gitBranchRepoUserCond(conds, args)
 			if err := gitBranchRepoDelete(ctx, s, "task_contexts", conds, args); err != nil {
 				return err
 			}
@@ -557,7 +555,6 @@ func (r *ORMGitBranchRepository) DeleteBranch(ctx context.Context, branchID stri
 		// Step 13: Task records for this branch.
 		tArgs := []any{branchID}
 		tConds := []string{quoteIdent("git_branch_id") + " = $1"}
-		tConds, tArgs = r.gitBranchRepoUserCond(tConds, tArgs)
 		if err := gitBranchRepoDelete(ctx, s, "tasks", tConds, tArgs); err != nil {
 			return err
 		}
@@ -565,7 +562,6 @@ func (r *ORMGitBranchRepository) DeleteBranch(ctx context.Context, branchID stri
 		// Step 14: BranchContext records for this branch.
 		bcArgs := []any{branchID}
 		bcConds := []string{quoteIdent("branch_id") + " = $1"}
-		bcConds, bcArgs = r.gitBranchRepoUserCond(bcConds, bcArgs)
 		if err := gitBranchRepoDelete(ctx, s, "branch_contexts", bcConds, bcArgs); err != nil {
 			return err
 		}

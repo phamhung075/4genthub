@@ -1,3 +1,10 @@
+## 2026-10-20 - the branch delete takes a cross-author child with it
+
+`TestGitBranchRepoDeleteBranchCascade` (branch `4genthub-min/next-work`): seeds `task_labels`,
+`branch_contexts` and `task_contexts` written by a user other than the branch owner, so a delete
+that filters a child by `user_id` aborts with 23503 instead of deleting. RED before the
+`gitBranchRepoUserCond` removal in `DeleteBranch`, green after.
+
 # Test Suite Changelog
 
 Track test suite changes, fixes, and improvements for agenthub.

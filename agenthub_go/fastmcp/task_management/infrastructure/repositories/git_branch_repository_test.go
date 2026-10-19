@@ -609,6 +609,24 @@ func TestGitBranchRepoDeleteBranchCascade(t *testing.T) {
 	// only the branch delete's task_id statement can remove it.
 	gitBranchRepoTestCreate[database.TaskContext](t, sessions, "task_contexts", NewKwargs(
 		"id", tmvo.NewUUIDv4(), "task_id", taskID, "user_id", user))
+	// Children another user WROTE. Their user_id records the author, not the owner of the
+	// branch, and none of these tables cascades from the branch or from a task: a delete that
+	// filters on that column would leave the row behind and the branch row would refuse to go
+	// with 23503. This is the cross-author case, on every table that can block.
+	foreign := "f1e2d3c4-b5a6-5978-8a9b-0c1d2e3f4a5b"
+	foreignLabelID := "label-foreign"
+	gitBranchRepoTestCreate[database.Label](t, sessions, "labels", NewKwargs(
+		"id", foreignLabelID, "name", foreignLabelID, "color", "#000", "description", "", "user_id", foreign, "created_at", now, "updated_at", now))
+	gitBranchRepoTestCreate[database.TaskLabel](t, sessions, "task_labels", NewKwargs(
+		"task_id", taskID, "label_id", foreignLabelID, "user_id", foreign, "applied_at", now))
+	foreignBranchContextID := tmvo.NewUUIDv4()
+	gitBranchRepoTestCreate[database.BranchContext](t, sessions, "branch_contexts", NewKwargs(
+		"id", foreignBranchContextID, "branch_id", gb.ID.Value, "user_id", foreign))
+	gitBranchRepoTestCreate[database.TaskContext](t, sessions, "task_contexts", NewKwargs(
+		"id", tmvo.NewUUIDv4(), "task_id", otherTask, "parent_branch_context_id", foreignBranchContextID, "user_id", foreign))
+	gitBranchRepoTestCreate[database.TaskContext](t, sessions, "task_contexts", NewKwargs(
+		"id", tmvo.NewUUIDv4(), "task_id", otherTask, "parent_branch_id", gb.ID.Value, "user_id", foreign))
+
 	// ContextInheritanceCache.
 	gitBranchRepoTestCreate[database.ContextInheritanceCache](t, sessions, "context_inheritance_cache", NewKwargs(
 		"context_id", gb.ID.Value, "context_level", "branch", "context_type", "hierarchical",
@@ -647,6 +665,10 @@ func TestGitBranchRepoDeleteBranchCascade(t *testing.T) {
 		{`SELECT count(*) FROM branch_contexts WHERE branch_id = $1`, gb.ID.Value},
 		{`SELECT count(*) FROM context_inheritance_cache WHERE context_id = $1`, gb.ID.Value},
 		{`SELECT count(*) FROM context_delegations WHERE source_id = $1`, gb.ID.Value},
+		{`SELECT count(*) FROM task_labels WHERE task_id = $1`, taskID},
+		{`SELECT count(*) FROM branch_contexts WHERE id = $1`, foreignBranchContextID},
+		{`SELECT count(*) FROM task_contexts WHERE parent_branch_context_id = $1`, foreignBranchContextID},
+		{`SELECT count(*) FROM task_contexts WHERE user_id = $1`, foreign},
 	}
 	for _, c := range checks {
 		if gitBranchRepoTestRowExists(t, sessions, c.query, c.arg) {
