@@ -24,14 +24,20 @@ FK columns across 10 tables) and line 619 (compaction is delivered by the runtim
 not the retired `forcecompact` binary); `seat-compaction-supervisor.md` drops the retired Python loop,
 the binary and its `CAP_SYS_PTRACE` recipe. The report gains a SUPERSEDED marker.
 
-**T2, commit `f8212aec` on `4genthub-min/next-work`.** The context factory returns an error when the
+**T2, commit `ffe4f07f` on `main`.** The context factory returns an error when the
 repository builder fails instead of installing `MockUnifiedContextService`; the mock (and its test
 helper) leaves the production package; `app.go`, `routes_mount.go` and `task_sweeper_wiring.go` take the
-error path. The task's changelog rides that commit as
+error path. The changelog the seat wrote rides that commit as
 `CHANGELOG/2026-10-19--the-context-factory-refuses-instead-of-installing-a-mock.md`.
 
-Pending in this task: T3 (G2 schema guard), T4a (frontend typecheck + lint), T4b (CI gofmt/typecheck/
-lint plus `agenthub_client` CI), T5 (benchmarks). Their commits extend this entry.
+**T3, commit `02a31ec4` on `main`.** The external schema guard gains
+`TestSchemaInventoryPinsTenancyAndCascades`: the 49-table union is counted, every `OnDelete` column must
+have its line in `testdata/schema_fks.txt` (11 today, all `CASCADE`), and a nullable `user_id` must be
+recorded in `testdata/user_id_nullable.txt` (2 today). Red on a removed cascade, a dropped nullable line,
+or an unlinked table registerer.
+
+Pending in this task: T4a (frontend typecheck + lint), T4b (CI gofmt/typecheck/lint plus
+`agenthub_client` CI), T5 (benchmarks). Their commits extend this entry.
 
 ## Evidence
 
@@ -39,3 +45,5 @@ lint plus `agenthub_client` CI), T5 (benchmarks). Their commits extend this entr
 - Legs 01-04 applied at hub `0a682479`, client `872ae41` (`git apply --check` clean for each).
 - T2 claim-checked by the lead at `f8212aec`: `go build ./...` clean,
   `go test ./application/... ./server/httpapp/...` green, no mock reference in production Go.
+- After both landings on `main` (`76eb8349`, `ffe4f07f`, `02a31ec4`): `go build ./...` clean and
+  `go test -count=1 ./...` 138 packages ok, 0 FAIL.
