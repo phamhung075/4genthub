@@ -13,9 +13,9 @@ Run from the REPOSITORY ROOT (`scripts/G3-DROP-CLASSIFY.py` refuses any other cw
 ```
 $ python3 scripts/G3-DROP-CLASSIFY.py
 G3-DROP-CLASSIFY: root=/home/daihu/.config/4genthub/rooms/4genthub-min/wt/architect
-  swept 744 tracked non-test .go file(s) under agenthub_go/ from the repository root
-  candidates=92 markers=46 non-markers=46
-  classes: logging=15, ported-elsewhere=10, unreachable=11, unused-arg=10
+  swept 743 tracked non-test .go file(s) under agenthub_go/ from the repository root
+  candidates=91 markers=45 non-markers=46
+  classes: logging=15, ported-elsewhere=10, unreachable=10, unused-arg=10
   not markers: agrees=20, domain=22, named=4
 ```
 
@@ -48,7 +48,7 @@ sweep saw disappears silently.
   lines: the sweep is line-keyed, and such a half-line appears in the second table when only one
   half qualified.
 
-## Markers (46)
+## Markers (45)
 
 The class is the verdict; the basis is the check that settles it.
 
@@ -66,11 +66,10 @@ The class is the verdict; the basis is the check that settles it.
 | `agenthub_go/fastmcp/task_management/application/services/audit_service.go:14` | logging | the log call is the drop |
 | `agenthub_go/fastmcp/task_management/application/services/branch_statistics_integration_service.go:11` | logging | the log call is the drop |
 | `agenthub_go/fastmcp/task_management/application/services/context_cache_optimizer.go:515` | ported-elsewhere | the attribute-access shim becomes map access in the same service |
-| `agenthub_go/fastmcp/task_management/application/services/context_cache_service.go:12` | unreachable | `ContextCacheRepository` has no implementation and the service is built with nil (`unified_context_service.go:116`) |
 | `agenthub_go/fastmcp/task_management/application/services/context_delegation_service.go:101` | unused-arg | `session`/`user_id` is not taken; the repository is returned unchanged |
 | `agenthub_go/fastmcp/task_management/application/services/context_inheritance_service.go:18` | logging | nil stands for None; the log call is the drop |
-| `agenthub_go/fastmcp/task_management/application/services/unified_context_service.go:556` | ported-elsewhere | delegation is skipped in sync mode, which is the port's only mode |
-| `agenthub_go/fastmcp/task_management/application/use_cases/batch_context_operations.go:261` | unreachable | `CopyContexts` has no non-test caller, so `include_task_contexts` is never read |
+| `agenthub_go/fastmcp/task_management/application/services/unified_context_service.go:551` | ported-elsewhere | delegation is skipped in sync mode, which is the port's only mode |
+| `agenthub_go/fastmcp/task_management/application/use_cases/batch_context_operations.go:260` | unreachable | `CopyContexts` has no non-test caller, so `include_task_contexts` is never read |
 | `agenthub_go/fastmcp/task_management/application/use_cases/complete_task.go:81` | ported-elsewhere | production wiring passes `completeContextFactory` (`task_wiring.go:154`); nil is the test form |
 | `agenthub_go/fastmcp/task_management/application/use_cases/create_task.go:155` | logging | invalid dependencies are skipped in both; only the Python log differs |
 | `agenthub_go/fastmcp/task_management/application/use_cases/delete_branch.go:20` | unused-arg | `db_session_factory` and `logging_service` are unused arguments |
@@ -85,7 +84,7 @@ The class is the verdict; the basis is the check that settles it.
 | `agenthub_go/fastmcp/task_management/infrastructure/repositories/mock_repository_factory.go:6` | logging | logging calls are the drop |
 | `agenthub_go/fastmcp/task_management/infrastructure/repositories/mock_task_context_repository.go:4` | unused-arg | `session_factory=None` is unused |
 | `agenthub_go/fastmcp/task_management/infrastructure/repositories/project_repository.go:5` | logging | `CacheInvalidationMixin` effects are logging; `log_access` is a log |
-| `agenthub_go/fastmcp/task_management/infrastructure/repositories/task_repository.go:2212` | unreachable | `ORMTaskRepository.InvalidateCache` has no call site (`grep '\.InvalidateCache\('` finds only `CachedRepository.InvalidateCache`, a different method) and the cache it fronted is gone |
+| `agenthub_go/fastmcp/task_management/infrastructure/repositories/task_repository.go:2234` | unreachable | `ORMTaskRepository.InvalidateCache` has no call site (`grep '\.InvalidateCache\('` finds only `CachedRepository.InvalidateCache`, a different method) and the cache it fronted is gone |
 | `agenthub_go/fastmcp/task_management/infrastructure/repositories/token_repository.go:7` | ported-elsewhere | the APIToken-only methods are the port's whole token surface |
 | `agenthub_go/fastmcp/task_management/infrastructure/repositories/user_scoped_orm_repository.go:4` | logging | the audit log is the drop |
 | `agenthub_go/fastmcp/task_management/infrastructure/services/performance_cache_manager.go:1056` | unreachable | `cancel()` needs an event loop; there is no task to cancel |
@@ -120,7 +119,7 @@ domain's own (SQL, the entity's vocabulary, an incident note), not a parity note
 | `agenthub_go/fastmcp/seat_management/infrastructure/repositories/orm/seat_feedback_repository.go:37` | domain | the absence word is SQL: `uuid_generate_v4() does not exist` |
 | `agenthub_go/fastmcp/seat_management/infrastructure/repositories/orm/seat_message_repository.go:36` | domain | the absence word is SQL: `uuid_generate_v4() does not exist` |
 | `agenthub_go/fastmcp/server/httpapp/misc_mount.go:143` | domain | `drop every session idle for more` is the ported pruning behaviour, not a parity note |
-| `agenthub_go/fastmcp/server/httpapp/task_event_controller.go:73` | domain | `no-op` describes re-taking one's own advisory lock |
+| `agenthub_go/fastmcp/server/httpapp/task_event_controller.go:76` | domain | `no-op` describes re-taking one's own advisory lock |
 | `agenthub_go/fastmcp/task_management/application/event_handlers/progress_event_handlers.go:112` | agrees | `_add_blocker_insight` was a no-op in Python |
 | `agenthub_go/fastmcp/task_management/application/event_handlers/progress_event_handlers.go:127` | agrees | Python's call raised AttributeError and was only logged |
 | `agenthub_go/fastmcp/task_management/application/facades/token_application_facade.go:12` | agrees | `decode_token` did not exist on the Python service |

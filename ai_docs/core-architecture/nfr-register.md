@@ -8,7 +8,7 @@ mechanisms were checked against committed code — 15 of its 43 rows named a mec
 the code contradicts, 20 were policy or weaker than claimed, 8 held. The catalogue stays where it is as
 provenance; this register is what a reader rules from.
 
-Measured at: hub `d9c165ae`, client `c46812c`, 2026-10-19.
+Measured at: hub `d45aa05d`, client `c46812c`, 2026-10-19.
 
 ## Vocabulary
 
@@ -39,7 +39,7 @@ path with its line (a static fact a reader can open) · `review` (the policy has
 | ID | Requirement | Status | Enforcement or policy | Verification | Owner | Measured |
 |---|---|---|---|---|---|---|
 | PERF-01 | Database access is pooled over pgx, and the API answers within a published latency envelope. | PARTIAL | `database/sql` pool over pgx stdlib; `SetMaxOpenConns(PoolSize+MaxOverflow)`. | `file:agenthub_go/fastmcp/task_management/infrastructure/database/pgx_opener.go:45`; measured `test:go test ./fastmcp/task_management/application/services -bench BenchmarkResolveContext -benchmem` -> 19.7-26.0 us/op over two runs, 212 allocs/op (2026-10-19, commit `81074bd6`, i7-12700F); no published latency envelope | agenthub_go | 2026-10-19 |
-| PERF-02 | Context resolution is served from a cache, not a query per level. | GAP | None: the cache service is built with a **nil** repository, and each resolve calls the level repositories. | `file:agenthub_go/fastmcp/task_management/application/factories/unified_context_facade_factory.go:84`; `file:agenthub_go/fastmcp/task_management/application/services/unified_context_service.go:1183`; measured `test:go test ./fastmcp/task_management/application/services -bench BenchmarkResolveContext -benchmem` -> 19.7-26.0 us/op over two runs, 212 allocs/op (2026-10-19, commit `81074bd6`, i7-12700F) | agenthub_go | 2026-10-19 |
+| PERF-02 | Context read and resolution stay under the 5 ms provenance budget, with the inheritance merge in memory and no cache layer. | PARTIAL | `GetContext` reads the requested level's repository and `resolveInheritanceSync` walks the parent repositories in order; the never-wired cache service and the dead `force_refresh` argument are gone (gate T6). The 5 ms budget is measured by the benchmark, not gated. | `file:agenthub_go/fastmcp/task_management/application/services/unified_context_service.go:315`; `file:agenthub_go/fastmcp/task_management/application/services/unified_context_service.go:1173`; measured `test:go test ./fastmcp/task_management/application/services -bench BenchmarkResolveContext -benchmem` -> 18.5-26.3 us/op over three runs (architect two, lead one), 25881-25882 B/op, 212 allocs/op (2026-10-19, commit `d45aa05d`, i7-12700F) | agenthub_go | 2026-10-19 |
 | PERF-03 | IPC frames are unix-socket, length-prefixed. | PARTIAL | Unix socket, **newline-delimited JSON** frames, not length-prefixed. | `file:agenthub_client/rust/agenthub-runtime/src/ipc/mod.rs:101` | runtime | 2026-10-19 |
 | PERF-04 | Realtime fan-out reaches a client promptly under load. | PARTIAL | `/ws/realtime` is mounted and fan-out exists; server-side fan-out is measured, the wire and the render are not. | `file:agenthub_go/fastmcp/server/httpapp/ws_mount.go:70`, `file:agenthub_go/fastmcp/server/routes/websocket_fanout_bench_test.go`; measured `cmd:go test ./fastmcp/server/routes -bench BenchmarkRealtimeFanout -benchmem` -> 1 socket 14.8 us/op, 10 sockets 126-127 us/op, 100 sockets 1.24-1.31 ms/op (12.4-13 us/socket, 13841 allocs/op) over three runs; the 500 ms ceiling at 100 sockets holds (2026-10-19, commit `86da875e`, i7-12700F) | agenthub_go | 2026-10-19 |
 | PERF-05 | A task event sends a delta under a size cap. | GAP | Every event broadcasts the whole `TaskData`; no delta, no cap. | `file:agenthub_go/fastmcp/task_management/application/services/websocket_notification_service.go:359`; measured `test:go test ./fastmcp/task_management/application/services -bench BenchmarkTaskEventFrame -benchmem` -> 1.4-1.8 us/op over two runs, 25 allocs/op (2026-10-19, commit `81074bd6`, i7-12700F) | agenthub_go | 2026-10-19 |
@@ -83,7 +83,7 @@ path with its line (a static fact a reader can open) · `review` (the policy has
 
 | ID | Requirement | Status | Enforcement or policy | Verification | Owner | Measured |
 |---|---|---|---|---|---|---|
-| INT-01 | A construction failure is loud; no mock reachable from the request path. | GATE | Nil session manager, nil builder or a failing builder returns an error; the mock is deleted from production. | `test:go test ./fastmcp/task_management/application/factories -run TestFactory`; `file:agenthub_go/fastmcp/task_management/application/factories/unified_context_facade_factory.go:71` | agenthub_go | 2026-10-19 `ffe4f07f` |
+| INT-01 | A construction failure is loud; no mock reachable from the request path. | GATE | Nil session manager, nil builder or a failing builder returns an error; the mock is deleted from production. | `test:go test ./fastmcp/task_management/application/factories -run TestFactory`; `file:agenthub_go/fastmcp/task_management/application/factories/unified_context_facade_factory.go:69` | agenthub_go | 2026-10-19 `ffe4f07f` |
 | INT-02 | A task's status has one writer and survives a delete. | PARTIAL | Status is dual-stored (row, then ledger append, one transaction); deleting a task deletes its ledger. | `file:agenthub_go/fastmcp/task_management/application/use_cases/status_ledger.go:92`; `file:agenthub_go/fastmcp/task_management/infrastructure/repositories/task_repository.go:703` | agenthub_go | 2026-10-19 |
 | INT-03 | Foreign keys carry no `CASCADE`; the application owns deletion. | GAP | 11 FK columns across 10 tables carry `ON DELETE CASCADE`; `task_events` is the one table without, by comment. | `test:go test ./fastmcp/task_management/infrastructure/database -run TestSchema`; `file:agenthub_go/fastmcp/task_management/infrastructure/database/models.go:762` | agenthub_go | 2026-10-19 |
 | INT-04 | A terminal state is terminal; a handoff appends a successor and never reopens the source. | GATE | `TERMINAL_STATES` is `done`/`handed-off`; `handed_off_to` appends a successor. | `test:cargo test -p agenthub-runtime queue::tests`; `file:agenthub_client/rust/agenthub-runtime/src/queue/mod.rs:7` | runtime | 2026-10-19 |
@@ -94,7 +94,7 @@ path with its line (a static fact a reader can open) · `review` (the policy has
 
 | ID | Requirement | Status | Enforcement or policy | Verification | Owner | Measured |
 |---|---|---|---|---|---|---|
-| MAINT-01 | No compatibility shims, aliases or legacy paths. | POLICY | Review-enforced; contradicted by live surfaces (`GET /legacy/tokens`, `legacyTaskContextRepo`). | `file:agenthub_go/fastmcp/server/httpapp/routes_mount.go:381`; `review` | policy | 2026-10-19 |
+| MAINT-01 | No compatibility shims, aliases or legacy paths. | POLICY | Review-enforced; contradicted by live surfaces (`GET /legacy/tokens`, `legacyTaskContextRepo`). | `file:agenthub_go/fastmcp/server/httpapp/routes_mount.go:382`; `review` | policy | 2026-10-19 |
 | MAINT-02 | Dependencies run one direction across the layers. | POLICY | Layering convention; no import check. | `review` | policy | 2026-10-19 |
 | MAINT-03 | One `CHANGELOG/<date>--<title>.md` per task. | POLICY | Review-enforced; no check. | `review` | policy | 2026-10-19 |
 | MAINT-04 | CI gates format, vet, typecheck and lint on every surface. | GATE | Hub Go runs `gofmt-check.sh`, `go vet`, `go test`; the frontend runs `pnpm typecheck`, `pnpm lint`, `pnpm test`, `pnpm build`; the client (CI at `252c42b`, landed `8c7b7364`) runs `gofmt -l`, `go vet`, `go test`, `cargo fmt --check`, `cargo clippy -- -D warnings`, `cargo test`. | `file:.github/workflows/ci.yml:28`; `file:.github/workflows/ci.yml:48`; `file:agenthub_client/.github/workflows/ci.yml:31`; `file:agenthub_client/.github/workflows/ci.yml:55`; `file:agenthub_client/.github/workflows/ci.yml:56` | hub + frontend + client | 2026-10-19 |
@@ -125,12 +125,11 @@ path with its line (a static fact a reader can open) · `review` (the policy has
 | G2 | SEC-01, INT-03 | Landed `02a31ec4`: the schema guard pins the nullable `user_id` set and every cascade column. The requirement itself (INT-03, no `CASCADE`) stays open as a GAP on the schema, not on the guard. |
 | G3 | MAINT-04 | Landed `8c7b7364` (client `252c42b`): the client CI gates `gofmt`, `cargo fmt --check` and `cargo clippy -D warnings`, and the drift they exposed is fixed. |
 | T5 | PERF-04, PERF-06 | Landed `86da875e` (client `c21e702`): `BenchmarkRealtimeFanout` over 1/10/100 sockets with the 500 ms ceiling, and `TestFeedWritesEachLineWithinOnePoll` bound to 2 x `feedPollInterval`. |
+| T6 | PERF-02 | Landed `d45aa05d`: the cache service and its test, the `CacheService` field, the cache parameter/default and `invalidateChildCaches` leave the service, the factory stops constructing it, and `force_refresh` leaves the MCP schema, description and handler, the HTTP routes, the controller, the facades, the service, the batch use case and the regenerated `apiReference.ts`; the `context_inheritance_cache` table and the branch-delete `DELETE` stay. |
 
 ## Open gates this register expects
 
-| Gate | Row | What changes |
-|---|---|---|
-| T6 | PERF-02 | The never-wired context-cache chain and the dead `force_refresh` argument leave the code; the resolve path is live reads only, and the row is rebased to the provenance budget after the landing. |
+None open.
 
 ## Rulings
 
@@ -138,12 +137,13 @@ Jev at lead tier, with the owner's delegation (2026-10-19): this register is the
 0.82); OBS-04 states the client-side gate and `RecordGateVerdict` is not wired (Q2, 1.0); SEC-04/PORT-01
 state the guard boundary rather than extend it (Q3, 0.96); a TARGET row carries a recorded baseline once
 T5 measures one (Q4, 0.8). PERF-02 is deleted, not wired (Q5, board `a120aef2`): the cache service
-is built with a nil repository (`unified_context_facade_factory.go:84`), no production path reads it,
-`force_refresh` is threaded through the whole resolve surface and read by nothing, and no production
-path reads or inserts into `context_inheritance_cache` (the branch-delete cleanup still deletes its
-rows, `git_branch_repository.go:457`); the row is rebased to the provenance budget
-(`NFR-analysis:41`, `< 5 ms` with the merge in memory) once the deletion lands under gate T6. A future
-cache must key by user, level and context id, invalidate on every service write with the Python
-cascade (global -> all of the user, project -> branch+task, branch -> task), and prove that a second
-identical resolve makes zero repository calls. A later change to a status is a ruling, not an edit in
+was built with a nil repository (`unified_context_facade_factory.go:84` at `695e4232`, deleted at
+`d45aa05d`), no production path read it, `force_refresh` was threaded through the whole resolve
+surface and read by nothing, and no production path reads or inserts into
+`context_inheritance_cache` (the branch-delete cleanup still deletes its rows,
+`git_branch_repository.go:457`); the row is rebased to the provenance budget (`NFR-analysis:41`,
+`< 5 ms` with the merge in memory) at the landing `d45aa05d` (gate T6). A future cache must key by
+user, level and context id, invalidate on every service write with the Python cascade (global -> all
+of the user, project -> branch+task, branch -> task), and prove that a second identical resolve makes
+zero repository calls. A later change to a status is a ruling, not an edit in
 passing: amend this file and cite the row you changed.
