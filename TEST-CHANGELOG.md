@@ -7156,3 +7156,10 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
   seat-role copies. The reviewer copy moved to 1.4.19 with the decision check, so its case table carries
   the expected version per seat: reviewer 1.4.19, the other four 1.4.12. Red on the un-updated copy
   (`left: Some("1.4.19") right: Some("1.4.12")`), green after.
+
+- `agenthub_go/fastmcp/task_management/application/factories/unified_context_facade_factory_test.go`:
+  `TestFactoryMockBranch` (which asserted the mock branch was taken) is replaced by
+  `TestFactoryRefusesWithoutARepositoryBuilder` and `TestFactoryRefusesWhenTheBuilderFails`; both go
+  red against a constructor that returns a mock, green against the hard-fail one.
+- `agenthub_go/fastmcp/task_management/application/services/mock_unified_context_service_test.go`:
+  deleted with the mock itself — its ten cases pinned a type production can no longer reach.

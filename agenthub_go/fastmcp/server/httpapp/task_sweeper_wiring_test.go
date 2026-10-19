@@ -12,6 +12,10 @@ import (
 	"context"
 	"strings"
 	"testing"
+
+	"agenthub/fastmcp/task_management/application/factories"
+	"agenthub/fastmcp/task_management/application/services"
+	"agenthub/fastmcp/task_management/infrastructure/database"
 )
 
 func TestNewTaskLifecycleSweeperRefusesAMalformedInterval(t *testing.T) {
@@ -37,7 +41,18 @@ func TestNewTaskLifecycleSweeperComposesOnTheDocumentedDefaults(t *testing.T) {
 		t.Setenv(key, "")
 	}
 
-	sweeper, err := NewTaskLifecycleSweeper(context.Background(), nil)
+	// The sweep's context factory hard-fails without a session manager and a
+	// repository builder, so the composition supplies both (no repository is
+	// needed for this seam: the sweep only composes here).
+	previousBuilder := factories.UnifiedContextRepositoryBuilder
+	factories.UnifiedContextRepositoryBuilder = func(*database.SessionManager, *string) (
+		services.UnifiedContextRepository, services.UnifiedContextRepository,
+		services.UnifiedContextRepository, services.UnifiedContextRepository, error) {
+		return nil, nil, nil, nil, nil
+	}
+	t.Cleanup(func() { factories.UnifiedContextRepositoryBuilder = previousBuilder })
+
+	sweeper, err := NewTaskLifecycleSweeper(context.Background(), database.NewSessionManager(&database.DatabaseConfig{}))
 	if err != nil {
 		t.Fatalf("an unset schedule must compose: %v", err)
 	}

@@ -10,6 +10,7 @@ import (
 	"agenthub/fastmcp/task_management/application/facades"
 	"agenthub/fastmcp/task_management/application/factories"
 	"agenthub/fastmcp/task_management/application/services"
+	"agenthub/fastmcp/task_management/infrastructure/database"
 )
 
 const facadeWiringUserID = "3f0d8f7a-1b2c-4d5e-8f90-1234567890ab"
@@ -38,7 +39,20 @@ func TestCreateTokenFacadeRefusesUnsetSecret(t *testing.T) {
 func TestBuildMCPFacadeFactoriesWireTypedFacades(t *testing.T) {
 	t.Setenv("JWT_SECRET_KEY", facadeWiringJWTSecret)
 	ctx := context.Background()
-	ctxFactory := factories.NewUnifiedContextFacadeFactory(ctx, nil)
+	// The factory refuses a nil session manager its builder: wire a stub that
+	// supplies no repositories, so the composition is exercised without a
+	// database (the facades are constructed, not called).
+	previousBuilder := factories.UnifiedContextRepositoryBuilder
+	factories.UnifiedContextRepositoryBuilder = func(*database.SessionManager, *string) (
+		services.UnifiedContextRepository, services.UnifiedContextRepository,
+		services.UnifiedContextRepository, services.UnifiedContextRepository, error) {
+		return nil, nil, nil, nil, nil
+	}
+	t.Cleanup(func() { factories.UnifiedContextRepositoryBuilder = previousBuilder })
+	ctxFactory, err := factories.NewUnifiedContextFacadeFactory(ctx, database.NewSessionManager(&database.DatabaseConfig{}))
+	if err != nil {
+		t.Fatalf("NewUnifiedContextFacadeFactory: %v", err)
+	}
 	project, branch, unifiedContext, token := buildMCPFacadeFactories(ctx, nil, ctxFactory)
 
 	svc := services.NewFacadeService(nil, nil, project, branch, unifiedContext, token)

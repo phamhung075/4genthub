@@ -50,8 +50,9 @@ func newRouteDeps(a *App) routeDeps {
 		deps.subtaskRoutes = subtaskRoutesAdapter{c: sa.c}
 		deps.userSubtasks = userSubtaskAdapter{c: sa.c}
 	}
-	ctxFactory := factories.NewUnifiedContextFacadeFactory(context.Background(), a.Sessions)
-	deps.contexts = contextRoutesAdapter{c: api_controllers.NewContextAPIController(contextFacadeProvider{factory: ctxFactory})}
+	if a.ctxFactory != nil {
+		deps.contexts = contextRoutesAdapter{c: api_controllers.NewContextAPIController(contextFacadeProvider{factory: a.ctxFactory})}
+	}
 	deps.tokens = tokenRoutesAdapter{c: api_controllers.NewTokenAPIController(facadeServiceTokenProvider{})}
 	deps.broadcast = broadcastAdapter
 	return deps
