@@ -14,6 +14,9 @@
   - `src/types/websocket-protocol.ts`: `TaskUpdatePayload` is the delta - `{id, updated_at}` plus the optional changed fields, `details_changed`, `refetch` - not a full row. Clean cutover: no version check, no second shape.
   - `src/tests/hooks/test_useRealtimeSync_task.test.tsx`: three tests - a status-only delta keeps title, description, details and context; a `details_changed` delta never writes a details string and the open detail refetches the server's text; an `{id, refetch: true}` frame invalidates `['task', id]` and leaves no `refetch` key in the cache. All three fail on the previous handler.
   - `npx tsc --noEmit -p .` clean; full suite 131 files / 1928 tests passed. The Go emitter landed with it (0f2c67fd), so the live frame is the delta the handler merges.
+  - The wire it merges is measured: `BenchmarkTaskEventDelta` at `0f2c67fd` reports a status delta of 90 B,
+    a completion of 208 B, a details delta of 91 B, and the over-cap wide update replaced by the 42-byte
+    `{id, refetch}` shape. Landed on the frontend branch at `b6ab0203` and on `main` at `6b465040`.
 - **The dashboard drawer has its own phone spec, so its two criteria are a command** - 2026-10-19
   - `e2e/dashboard-drawer.spec.ts`: at 375x667 and 320x568 with `isMobile`/`hasTouch`, signed in, the drawer is opened through its toggle, the first project is expanded, and every VISIBLE row action is measured — opacity 1 with no hover, both sides at or above 40px, right edge inside the viewport — with the whole aside scanned for any element past the viewport. Tapping View Branch Details must open a `[role=dialog]`.
   - Delete Branch is measured but not required: `BranchItem` renders it only when the branch is not `main`, and the seeded tree's branches are `main`.
