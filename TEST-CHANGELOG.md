@@ -2,6 +2,18 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-19 - the realtime fan-out has a benchmark (branch 4genthub-min/next-work)
+
+- `agenthub_go/fastmcp/server/routes/websocket_fanout_bench_test.go` (new):
+  `BenchmarkRealtimeFanout` broadcasts one ~2 KB task event through the production
+  `RegisterConnection`/`BroadcastDataChange` path to 1, 10 and 100 sockets, all owned by the
+  triggering user, so the measured cost is the fan-out (authorization per socket, one marshal and
+  one `SendText` per socket) and not the ownership port. Each socket counts its frames and the
+  benchmark fails unless every one received exactly one per broadcast; the per-user queue is
+  cleared per iteration, as the event-frame benchmark clears its duplicate key. Measured
+  2026-10-19 on a 12th Gen i7-12700F: 15.0 us/op at N=1, 132.8 us at N=10, 1.29 ms at N=100
+  (12.9-15.0 us per socket), inside PERF-04's 500 ms ceiling for 100 sockets.
+
 ## 2026-10-19 - the census reads a dotted chunk as one name (branch 4genthub-min/next-work)
 
 - `scripts/tests/test_check_served_frontend.py::test_a_dotted_chunk_name_is_one_ref_not_a_phantom`
