@@ -82,7 +82,7 @@ path with its line (a static fact a reader can open) · `review` (the policy has
 
 | ID | Requirement | Status | Enforcement or policy | Verification | Owner | Measured |
 |---|---|---|---|---|---|---|
-| INT-01 | A construction failure is loud; no mock reachable from the request path. | GAP | A repository construction failure silently installs a mock context service. | `file:agenthub_go/fastmcp/task_management/application/factories/unified_context_facade_factory.go:78` | agenthub_go | 2026-10-19 |
+| INT-01 | A construction failure is loud; no mock reachable from the request path. | GATE | Nil session manager, nil builder or a failing builder returns an error; the mock is deleted from production. | `test:go test ./fastmcp/task_management/application/factories -run TestFactory`; `file:agenthub_go/fastmcp/task_management/application/factories/unified_context_facade_factory.go:71` | agenthub_go | 2026-10-19 `ffe4f07f` |
 | INT-02 | A task's status has one writer and survives a delete. | PARTIAL | Status is dual-stored (row, then ledger append, one transaction); deleting a task deletes its ledger. | `file:agenthub_go/fastmcp/task_management/application/use_cases/status_ledger.go:92`; `file:agenthub_go/fastmcp/task_management/infrastructure/repositories/task_repository.go:703` | agenthub_go | 2026-10-19 |
 | INT-03 | Foreign keys carry no `CASCADE`; the application owns deletion. | GAP | 11 FK columns across 10 tables carry `ON DELETE CASCADE`; `task_events` is the one table without, by comment. | `test:go test ./fastmcp/task_management/infrastructure/database -run TestSchema`; `file:agenthub_go/fastmcp/task_management/infrastructure/database/models.go:762` | agenthub_go | 2026-10-19 |
 | INT-04 | A terminal state is terminal; a handoff appends a successor and never reopens the source. | GATE | `TERMINAL_STATES` is `done`/`handed-off`; `handed_off_to` appends a successor. | `test:cargo test -p agenthub-runtime queue::tests`; `file:agenthub_client/rust/agenthub-runtime/src/queue/mod.rs:7` | runtime | 2026-10-19 |
@@ -93,7 +93,7 @@ path with its line (a static fact a reader can open) · `review` (the policy has
 
 | ID | Requirement | Status | Enforcement or policy | Verification | Owner | Measured |
 |---|---|---|---|---|---|---|
-| MAINT-01 | No compatibility shims, aliases or legacy paths. | POLICY | Review-enforced; contradicted by INT-01 and by live surfaces (`GET /legacy/tokens`, `legacyTaskContextRepo`). | `file:agenthub_go/fastmcp/server/httpapp/routes_mount.go:381`; `review` | policy | 2026-10-19 |
+| MAINT-01 | No compatibility shims, aliases or legacy paths. | POLICY | Review-enforced; contradicted by live surfaces (`GET /legacy/tokens`, `legacyTaskContextRepo`). | `file:agenthub_go/fastmcp/server/httpapp/routes_mount.go:381`; `review` | policy | 2026-10-19 |
 | MAINT-02 | Dependencies run one direction across the layers. | POLICY | Layering convention; no import check. | `review` | policy | 2026-10-19 |
 | MAINT-03 | One `CHANGELOG/<date>--<title>.md` per task. | POLICY | Review-enforced; no check. | `review` | policy | 2026-10-19 |
 | MAINT-04 | CI gates format, vet, typecheck and lint on every surface. | GAP | CI runs `go vet`, `go test`, `pnpm test`, `pnpm build`; no `gofmt -l`, no `tsc --noEmit`, no ESLint, and `agenthub_client` has no CI. | `file:.github/workflows/ci.yml:25`; `scripts/gofmt-check.sh` is referenced by nothing | hub + frontend + client | 2026-10-19 |
@@ -116,12 +116,17 @@ path with its line (a static fact a reader can open) · `review` (the policy has
 | PORT-02 | Spawns are argv-based; no shell interpolation. | PARTIAL | No production `sh -c`; three `format!`-built tmux commands remain. | `file:agenthub_client/rust/agenthub-runtime/src/pty/mod.rs:579` | runtime | 2026-10-19 |
 | PORT-03 | `--state-root` is honoured on every verb. | PARTIAL | Honoured on the main verbs; `activity` re-derives the default and ignores it. | `file:agenthub_client/internal/clientactivity/activity.go:138` | client | 2026-10-19 |
 
+## Gates this task landed
+
+| Gate | Row | State |
+|---|---|---|
+| G1 | INT-01 | Landed `ffe4f07f`: the factory returns an error and the mock leaves the production package. |
+| G2 | SEC-01, INT-03 | Landed `02a31ec4`: the schema guard pins the nullable `user_id` set and every cascade column. The requirement itself (INT-03, no `CASCADE`) stays open as a GAP on the schema, not on the guard. |
+
 ## Open gates this register expects
 
 | Gate | Row | What changes |
 |---|---|---|
-| G1 | INT-01 | The context factory returns an error and the mock leaves the production package. |
-| G2 | SEC-01, INT-03 | The schema guard gains the two tenancy properties: a nullable `user_id` needs a recorded reason, and every cascade needs a review line. |
 | G3 | MAINT-04 | CI gains `gofmt`, typecheck and lint, and `agenthub_client` gets CI. |
 | T5 | PERF-01, PERF-04, PERF-06 | Benchmarks record the context-resolve and frame baselines; the TARGET rows cite them. |
 
