@@ -170,6 +170,167 @@ func TestSchemaMatchesGoDefinitions(t *testing.T) {
 	}
 }
 
+// schemaInventoryTableCount is today's registry size: taskdb.Tables (the aggregate union) plus
+// taskdb.ProductionTables (deliberately outside it). It is asserted because every property below is
+// vacuous over a partial registry - without the four blank imports above the registry is 27 of these
+// 49 tables (Tables 21, ProductionTables 6) and both properties pass while 22 tables go unchecked.
+const schemaInventoryTableCount = 49
+
+// TestSchemaInventoryPinsTenancyAndCascades is gate G2: two properties of the registry that nothing
+// else checks, each pinned by a golden file that names live columns in both directions.
+//
+// PROPERTY 1 (tenancy): a table that carries a user_id declares it NOT NULL, unless
+// testdata/user_id_nullable.txt records it with a reason (table:reason). Two tables are nullable
+// today, and neither is a defect: templates is the global template library (created_by is NOT NULL),
+// and email_tokens exists before an account does. A NEW nullable user_id therefore needs a reviewed
+// line rather than passing silently.
+//
+// PROPERTY 2 (cascade set): every column with a non-empty OnDelete has a line in
+// testdata/schema_fks.txt (table:column:on_delete:owner, owner = the referenced table), and every
+// line names a live cascade column with its on_delete and owner. task_events deliberately has no
+// cascade - the application layer cascades - so its absence is asserted by the golden file rather
+// than left to the silence a reader would have to interpret.
+//
+// The goldens are review artifacts, not a compatibility layer: a line is valid only while the column
+// it names exists, and removing a cascade without removing its line fails this test too.
+func TestSchemaInventoryPinsTenancyAndCascades(t *testing.T) {
+	registry := goDefRegistry()
+	if len(registry) != schemaInventoryTableCount {
+		t.Fatalf("the registry is %d tables, want %d: a property tested over part of the side-effect union passes vacuously. If a table was legitimately added, update this count and the files under testdata/",
+			len(registry), schemaInventoryTableCount)
+	}
+
+	nullable := goDefReadGolden(t, filepath.Join("testdata", "user_id_nullable.txt"), 2)
+	seenNullable := map[string]bool{}
+	for _, line := range nullable.lines {
+		table, reason := line.fields[0], line.fields[1]
+		if seenNullable[table] {
+			t.Errorf("%s:%d: table %s is listed twice", nullable.path, line.number, table)
+		}
+		seenNullable[table] = true
+		if strings.TrimSpace(reason) == "" {
+			t.Errorf("%s:%d: table %s records no reason; a nullable user_id needs one", nullable.path, line.number, table)
+		}
+		def, ok := goDefTableByName(table)
+		if !ok {
+			t.Errorf("%s:%d: table %s is not registered in the 49-table union", nullable.path, line.number, table)
+			continue
+		}
+		column, ok := goDefColumn(def, "user_id")
+		if !ok || !column.Nullable {
+			t.Errorf("%s:%d: table %s has no nullable user_id, so the line is stale", nullable.path, line.number, table)
+		}
+	}
+	for _, def := range registry {
+		column, ok := goDefColumn(def, "user_id")
+		if !ok || !column.Nullable {
+			continue
+		}
+		if !seenNullable[def.Name] {
+			t.Errorf("table %s: user_id is nullable and testdata/user_id_nullable.txt records no reason; a nullable tenancy column is a reviewed decision, not a default", def.Name)
+		}
+	}
+
+	fks := goDefReadGolden(t, filepath.Join("testdata", "schema_fks.txt"), 4)
+	type fkKey struct{ table, column string }
+	pinned := map[fkKey]goDefGoldenLine{}
+	for _, line := range fks.lines {
+		key := fkKey{line.fields[0], line.fields[1]}
+		if previous, dup := pinned[key]; dup {
+			t.Errorf("%s:%d: %s:%s is pinned twice (first at line %d)", fks.path, line.number, key.table, key.column, previous.number)
+		}
+		pinned[key] = line
+	}
+	for _, def := range registry {
+		for _, column := range def.Columns {
+			if column.OnDelete == "" {
+				continue
+			}
+			line, ok := pinned[fkKey{def.Name, column.Name}]
+			if !ok {
+				t.Errorf("table %s column %s: OnDelete %q is not pinned in testdata/schema_fks.txt; a cascade is a reviewed decision", def.Name, column.Name, column.OnDelete)
+				continue
+			}
+			if line.fields[2] != column.OnDelete {
+				t.Errorf("%s:%d: %s:%s pins on_delete %s, the registry says %s", fks.path, line.number, def.Name, column.Name, line.fields[2], column.OnDelete)
+			}
+			if owner := goDefReferencedTable(column.ForeignKey); line.fields[3] != owner {
+				t.Errorf("%s:%d: %s:%s pins owner %s, the foreign key references %s", fks.path, line.number, def.Name, column.Name, line.fields[3], owner)
+			}
+		}
+	}
+	for _, line := range fks.lines {
+		def, ok := goDefTableByName(line.fields[0])
+		if !ok {
+			t.Errorf("%s:%d: table %s is not registered in the 49-table union", fks.path, line.number, line.fields[0])
+			continue
+		}
+		column, ok := goDefColumn(def, line.fields[1])
+		if !ok {
+			t.Errorf("%s:%d: table %s has no column %s, so the line is stale", fks.path, line.number, line.fields[0], line.fields[1])
+			continue
+		}
+		if column.OnDelete != line.fields[2] {
+			t.Errorf("%s:%d: %s:%s pins on_delete %s, the registry has %q, so the line is stale",
+				fks.path, line.number, line.fields[0], line.fields[1], line.fields[2], column.OnDelete)
+		}
+		if owner := goDefReferencedTable(column.ForeignKey); owner != line.fields[3] {
+			t.Errorf("%s:%d: %s:%s pins owner %s, the foreign key references %q, so the line is stale",
+				fks.path, line.number, line.fields[0], line.fields[1], line.fields[3], owner)
+		}
+	}
+}
+
+// goDefGolden is one parsed golden file and the line number each entry came from.
+type goDefGolden struct {
+	path  string
+	lines []goDefGoldenLine
+}
+
+type goDefGoldenLine struct {
+	number int
+	fields []string
+}
+
+// goDefReadGolden reads a golden file of `fieldCount` colon-separated fields per line. Blank lines
+// and lines starting with # are skipped; a line with the wrong field count is a failure, not a skip.
+func goDefReadGolden(t *testing.T, path string, fieldCount int) goDefGolden {
+	t.Helper()
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read %s: %v", path, err)
+	}
+	golden := goDefGolden{path: path}
+	for index, text := range strings.Split(string(data), "\n") {
+		trimmed := strings.TrimSpace(text)
+		if trimmed == "" || strings.HasPrefix(trimmed, "#") {
+			continue
+		}
+		fields := strings.Split(trimmed, ":")
+		if len(fields) != fieldCount {
+			t.Fatalf("%s:%d: %d colon-separated fields, want %d: %q", path, index+1, len(fields), fieldCount, trimmed)
+		}
+		golden.lines = append(golden.lines, goDefGoldenLine{number: index + 1, fields: fields})
+	}
+	return golden
+}
+
+// goDefColumn returns one column of a table definition.
+func goDefColumn(def taskdb.TableDef, name string) (taskdb.ColumnDef, bool) {
+	for _, column := range def.Columns {
+		if column.Name == name {
+			return column, true
+		}
+	}
+	return taskdb.ColumnDef{}, false
+}
+
+// goDefReferencedTable returns the table a ForeignKey ("table.column") points at.
+func goDefReferencedTable(foreignKey string) string {
+	table, _, _ := strings.Cut(foreignKey, ".")
+	return table
+}
+
 // goDefStepTableBodies returns each CREATE TABLE body in one step, keyed by lower-cased table name.
 // A statement whose header cannot be parsed is a failure, not a skip: an unreadable schema statement
 // is precisely what a guard must not pass over.

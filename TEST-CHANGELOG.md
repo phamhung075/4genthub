@@ -2,6 +2,24 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-19 - the schema registry's tenancy and cascade set are pinned (branch 4genthub-min/next-work)
+
+- `agenthub_go/fastmcp/task_management/infrastructure/database/schema_matches_definitions_test.go`:
+  `TestSchemaInventoryPinsTenancyAndCascades` (G2), two properties over all 49 registry tables, red
+  before this test and green after. Property 1: a nullable `user_id` needs a line with a reason in
+  `testdata/user_id_nullable.txt` (`table:reason`); today that is exactly `templates` and
+  `email_tokens`. Property 2: the cascade set is pinned by `testdata/schema_fks.txt`
+  (`table:column:on_delete:owner`, owner = referenced table), 11 lines today; `task_contexts`' FKs
+  carry no cascade and `task_events` has no FK column at all (application-layer cascade), so both are
+  recorded by absence. Each golden line is checked in both directions: every registry `OnDelete`
+  column needs its line, and every line must name a live column whose `OnDelete` and referenced
+  table still match. The registry size (49) is asserted so the properties cannot pass over a partial
+  registry: without the four blank imports it is 27 tables.
+- Verified red: removing `task_contexts.task_id`'s cascade alone fails the test; dropping one
+  `user_id_nullable.txt` line fails it; unlinking a registerer package fails the count (48 vs 49).
+  Run: `cd agenthub_go && go test ./fastmcp/task_management/infrastructure/database/` (the whole
+  module is green: `go test ./...`).
+
 ## 2026-10-18 - the phone walk is a spec on the repo harness (frontend, branch 4genthub-min/fe-phone-walk-spec)
 
 - `agenthub-frontend/e2e/phone-layout.spec.ts` (new, 20 tests = 10 signed-in routes x 375x667 and
