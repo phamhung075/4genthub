@@ -1,0 +1,134 @@
+# NFR register
+
+The one NFR doc of record. Every requirement carries a **status** and a **verification**; a status
+without a verification is a claim, and this file does not carry claims.
+
+Provenance: derived from `ai_docs/reports-status/NFR-analysis-2026-10-19.md`, a claim catalogue whose
+mechanisms were checked against committed code — 15 of its 43 rows named a mechanism, scope or number
+the code contradicts, 20 were policy or weaker than claimed, 8 held. The catalogue stays where it is as
+provenance; this register is what a reader rules from.
+
+Measured at: hub `0a682479`, client `872ae41`, 2026-10-19.
+
+## Vocabulary
+
+| Status | Means |
+|---|---|
+| **GATE** | A test, hook or script fails when the property stops holding. |
+| **CONFIG** | A runtime setting enforces it; any published number is a default, never a property. |
+| **POLICY** | A rule a human or agent review enforces. No machine check. |
+| **TARGET** | A goal with no mechanism yet. |
+| **GAP** | The claimed enforcement does not exist. |
+| **STALE** | The report named a mechanism that was retired. |
+| **PARTIAL** | The mechanism exists but is weaker or narrower than claimed. |
+
+Two rules keep this file honest:
+
+1. **A published limit is a default.** The code reads the environment; any number in this file or in a
+   doc is the default, and the rig's value is read with the command in the row's verification.
+2. **A row whose mechanism moves without its `measured` date moves is drift.** The verification column is
+   how the next reader checks the row; a row with `none` is a GAP or a TARGET, not a promise.
+
+Verification forms: `test:` and the test's run pattern · `cmd:` and a shell command · `file:` and a repo
+path with its line (a static fact a reader can open) · `review` (the policy has no machine check) · `none`
+(no mechanism).
+
+## Performance
+
+| ID | Requirement | Status | Enforcement or policy | Verification | Owner | Measured |
+|---|---|---|---|---|---|---|
+| PERF-01 | Database access is pooled over pgx, and the API answers within a published latency envelope. | PARTIAL | `database/sql` pool over pgx stdlib; `SetMaxOpenConns(PoolSize+MaxOverflow)`. | `file:agenthub_go/fastmcp/task_management/infrastructure/database/pgx_opener.go:45`; no latency check (`none`; `BenchmarkResolveContext` owed) | agenthub_go | 2026-10-19 |
+| PERF-02 | Context resolution is served from a cache, not a query per level. | GAP | None: the cache service is built with a **nil** repository, and each resolve calls the level repositories. | `file:agenthub_go/fastmcp/task_management/application/factories/unified_context_facade_factory.go:93`; `file:agenthub_go/fastmcp/task_management/application/services/unified_context_service.go:1183` | agenthub_go | 2026-10-19 |
+| PERF-03 | IPC frames are unix-socket, length-prefixed. | PARTIAL | Unix socket, **newline-delimited JSON** frames, not length-prefixed. | `file:agenthub_client/rust/agenthub-runtime/src/ipc/mod.rs:101` | runtime | 2026-10-19 |
+| PERF-04 | Realtime fan-out reaches a client promptly under load. | PARTIAL | `/ws/realtime` is mounted and fan-out exists; frame latency is unmeasured. | `file:agenthub_go/fastmcp/server/httpapp/ws_mount.go:70`; no benchmark (`none`) | agenthub_go | 2026-10-19 |
+| PERF-05 | A task event sends a delta under a size cap. | GAP | Every event broadcasts the whole `TaskData`; no delta, no cap. | `file:agenthub_go/fastmcp/task_management/application/services/websocket_notification_service.go:359` | agenthub_go | 2026-10-19 |
+| PERF-06 | The watch wall has no line-buffering delay. | TARGET | Qualitative; no measurement, no mechanism. | `none` | client | 2026-10-19 |
+
+## Cost
+
+| ID | Requirement | Status | Enforcement or policy | Verification | Owner | Measured |
+|---|---|---|---|---|---|---|
+| COST-01 | Compaction limits are configurable; no constant is a property. | CONFIG | Defaults 150k/250k/300k; the rig's value is in the tmux environment. | `cmd:tmux show-environment -g COMPACT_*`; `file:agenthub_client/internal/seatlog/seatlog.go:40` | client | 2026-10-19 |
+| COST-02 | A seat can be compacted out-of-band while it works. | STALE | A `ForceCompact` IPC request relays `{"type":"compact"}` into the seat's mailbox; the `forcecompact` binary was retired. | `file:agenthub_client/rust/agenthub-runtime/src/ipc/mod.rs:205`; `file:agenthub_client/rust/agenthub-runtime/src/runner/mod.rs:1161` | runtime | 2026-10-19 |
+| COST-03 | The peak gate blocks the published UTC windows. | GAP | It blocks 01:00-04:00 and 06:00-10:00 UTC Mon-Fri, and only for seats whose model starts `deepseek/`. | `file:agenthub_client/internal/clientoffpeak/schedule.go:43`; `file:agenthub_client/internal/clientoffpeak/gate.go:145` | client | 2026-10-19 |
+| COST-04 | Bulk work is offloaded to a cheap model. | POLICY | The `deepseek-offload` skill; no machine check. | `review` | policy | 2026-10-19 |
+| COST-05 | A queue row is bounded and its body schema is enforced. | GATE | Row 600 chars; fields 280/110/100/78 plus prefixes; summary 120. | `test:cargo test -p agenthub-runtime queue::tests`; `file:agenthub_client/rust/agenthub-runtime/src/queue/mod.rs:179` | runtime | 2026-10-19 |
+| COST-06 | Replies and docs are short. | POLICY | The `short-output` and `token-economy` skills; no machine check. | `review` | policy | 2026-10-19 |
+
+## Security
+
+| ID | Requirement | Status | Enforcement or policy | Verification | Owner | Measured |
+|---|---|---|---|---|---|---|
+| SEC-01 | Every tenant-scoped query filters by user. | PARTIAL | Repository-level scope; a **nil** `UserID` means system mode with no filter. 49 tables: 4 carry no `user_id`, 2 carry a nullable one. | `file:agenthub_go/fastmcp/task_management/infrastructure/repositories/base_user_scoped_repository.go:37`; `test:go test ./fastmcp/task_management/infrastructure/database -run TestSchema` | agenthub_go | 2026-10-19 |
+| SEC-02 | No credential rides argv or a long-lived environment. | PARTIAL | Connector token denied by exact name; tmux server starts with a clean argv (0 argv hits). Residual: `tmux show-environment -g` is readable in-session. | `file:agenthub_client/rust/agenthub-runtime/src/main.rs:55`; `file:agenthub_client/rust/agenthub-runtime/src/pty/mod.rs:110` | runtime | 2026-10-19 |
+| SEC-03 | Redaction is fail-closed per event. | GATE | Every failure mode withholds the raw bytes. | `test:go test ./internal/clientsync -run 'TestRedact\|TestEventWithholds'`; `file:agenthub_client/internal/clientsync/redaction.go:1` | client | 2026-10-19 |
+| SEC-04 | A seat's tool calls pass a deny-by-policy hook. | PARTIAL | The guard is installed for omp and agy; the deny config is written only into an omp seat's dir. claude-code and codex get neither. | `file:agenthub_client/rust/agenthub-runtime/assets/seat-guard.ts:1`; `file:agenthub_client/rust/agenthub-runtime/src/supervisor/mod.rs:1016` | runtime | 2026-10-19 |
+| SEC-05 | A seat cannot push any ref but `main` (or `frontend`). | GATE | The `pre-push` hook refuses every other ref; it is seat-independent. | `file:scripts/git-hooks/pre-push-branches:5` | hub | 2026-10-19 |
+| SEC-06 | Evidence leaves the client redacted. | PARTIAL | Count-only wire at the client transport; the server's evidence route stores the raw `git diff --numstat` text (capped at 1 MiB). | `file:agenthub_client/internal/clientjev/countsonly.go:7`; `file:agenthub_go/fastmcp/server/routes/task_evidence_routes.go:64` | client + agenthub_go | 2026-10-19 |
+| SEC-07 | Seats run unprivileged. | POLICY | Convention; no check on the seat UID. | `review` | policy | 2026-10-19 |
+
+## Reliability
+
+| ID | Requirement | Status | Enforcement or policy | Verification | Owner | Measured |
+|---|---|---|---|---|---|---|
+| REL-01 | The rail survives a cloud outage and board work can continue. | PARTIAL | The rail is durable local SQLite; cloud-board work during an outage is deferred by owner decision. | `file:agenthub_client/rust/agenthub-runtime/src/queue/mod.rs:524`; `file:ai_docs/core-architecture/agenthub-system-architecture.md:733` | runtime | 2026-10-19 |
+| REL-02 | Seat children survive an agent kill; four safeguards hold. | PARTIAL | Children are `Setsid`-detached and survive an agent SIGKILL; board work still needs the agent. | `file:agenthub_client/internal/clientlifecycle/supervisor.go:22` | client | 2026-10-19 |
+| REL-03 | A dead bridge is detected: 25 s heartbeat, degraded after 3 misses, fatal 1008/4401. | GATE | The keep-alive closes after three silent heartbeats. | `test:go test ./internal/clientsync -run TestKeepAlive` | client | 2026-10-19 |
+| REL-04 | Events and the cursor commit atomically, and resume replays nothing twice. | PARTIAL | One transaction moves events and `client_cursor`; there is no server replay, the client resumes. | `file:agenthub_go/fastmcp/session_stream/repository.go:425` | agenthub_go | 2026-10-19 |
+| REL-05 | `continue` rebuilds a seat from durable state. | PARTIAL | It restarts seats and re-sends the brief; no tmux pane snapshot is read back. | `file:agenthub_client/internal/clientlifecycle/lifecycle.go:1176` | client | 2026-10-19 |
+| REL-06 | A failure exits non-zero. | PARTIAL | A missing binary or token exits non-zero; the peak gate can return 0 with no row, and `up` ignores the watch child's exit. | `file:agenthub_client/internal/clientlifecycle/lifecycle.go:844`; `file:agenthub_client/internal/clientlifecycle/lifecycle.go:217` | client | 2026-10-19 |
+
+## Integrity
+
+| ID | Requirement | Status | Enforcement or policy | Verification | Owner | Measured |
+|---|---|---|---|---|---|---|
+| INT-01 | A construction failure is loud; no mock reachable from the request path. | GAP | A repository construction failure silently installs a mock context service. | `file:agenthub_go/fastmcp/task_management/application/factories/unified_context_facade_factory.go:78` | agenthub_go | 2026-10-19 |
+| INT-02 | A task's status has one writer and survives a delete. | PARTIAL | Status is dual-stored (row, then ledger append, one transaction); deleting a task deletes its ledger. | `file:agenthub_go/fastmcp/task_management/application/use_cases/status_ledger.go:92`; `file:agenthub_go/fastmcp/task_management/infrastructure/repositories/task_repository.go:703` | agenthub_go | 2026-10-19 |
+| INT-03 | Foreign keys carry no `CASCADE`; the application owns deletion. | GAP | 11 FK columns across 10 tables carry `ON DELETE CASCADE`; `task_events` is the one table without, by comment. | `test:go test ./fastmcp/task_management/infrastructure/database -run TestSchema`; `file:agenthub_go/fastmcp/task_management/infrastructure/database/models.go:762` | agenthub_go | 2026-10-19 |
+| INT-04 | A terminal state is terminal; a handoff appends a successor and never reopens the source. | GATE | `TERMINAL_STATES` is `done`/`handed-off`; `handed_off_to` appends a successor. | `test:cargo test -p agenthub-runtime queue::tests`; `file:agenthub_client/rust/agenthub-runtime/src/queue/mod.rs:7` | runtime | 2026-10-19 |
+| INT-05 | Each seat writes only in its own worktree on its own branch. | PARTIAL | Paths derive `<roomDir>/wt/<seat>`; `doctor` accepts any branch and there is no `--ff-only`. | `file:agenthub_client/internal/clientservices/worktrees.go:71`; `file:agenthub_client/internal/clientworktree/check.go:23` | client | 2026-10-19 |
+| INT-06 | A commit carries only the named paths, and no seat lands a docs-only commit. | PARTIAL | The wrapper refuses an all-documentation seat commit; a direct `git commit` bypasses it. | `file:scripts/git-hooks/git_commit_capture.py:40`; `file:scripts/git-hooks/git_commit_capture.py:165` | hub | 2026-10-19 |
+
+## Maintainability
+
+| ID | Requirement | Status | Enforcement or policy | Verification | Owner | Measured |
+|---|---|---|---|---|---|---|
+| MAINT-01 | No compatibility shims, aliases or legacy paths. | POLICY | Review-enforced; contradicted by INT-01 and by live surfaces (`GET /legacy/tokens`, `legacyTaskContextRepo`). | `file:agenthub_go/fastmcp/server/httpapp/routes_mount.go:381`; `review` | policy | 2026-10-19 |
+| MAINT-02 | Dependencies run one direction across the layers. | POLICY | Layering convention; no import check. | `review` | policy | 2026-10-19 |
+| MAINT-03 | One `CHANGELOG/<date>--<title>.md` per task. | POLICY | Review-enforced; no check. | `review` | policy | 2026-10-19 |
+| MAINT-04 | CI gates format, vet, typecheck and lint on every surface. | GAP | CI runs `go vet`, `go test`, `pnpm test`, `pnpm build`; no `gofmt -l`, no `tsc --noEmit`, no ESLint, and `agenthub_client` has no CI. | `file:.github/workflows/ci.yml:25`; `scripts/gofmt-check.sh` is referenced by nothing | hub + frontend + client | 2026-10-19 |
+| MAINT-05 | A pruned path stays deleted and unreferenced. | GATE | A test pins both directions. | `test:go test ./internal/repoguards -run TestAPrunedPath` | agenthub_go | 2026-10-19 |
+
+## Observability
+
+| ID | Requirement | Status | Enforcement or policy | Verification | Owner | Measured |
+|---|---|---|---|---|---|---|
+| OBS-01 | A live wall shows every seat. | GATE | `4genteam watch --room <rig>` renders the grid. | `cmd:4genteam watch --room 4genthub-min` | client | 2026-10-19 |
+| OBS-02 | Tool calls, jev decisions, the daemon log and queue transitions are on disk. | GATE | `<seat>/tool-calls.jsonl`, `<state>/jev_decisions.log`, `<state>/daemon.log`, the rail's transitions. | `file:agenthub_client/internal/clientactivity/activity.go:6`; `file:agenthub_client/internal/clientlifecycle/lifecycle.go:453` | client | 2026-10-19 |
+| OBS-03 | The jev threshold is configuration in (0,1]. | PARTIAL | The ladder exists; the threshold is read and validated as a number in (0,1]. The published 0.75 is a default. | `file:agenthub_client/internal/clientjev/jev.go:79` | client | 2026-10-19 |
+| OBS-04 | The completion gate runs client-side; the server does not record a verdict. | GATE | `4genteam complete` asks Jev and posts the evidence; `RecordGateVerdict` stays callerless by ruling (Q2 shrink, 2026-10-19). | `file:agenthub_client/internal/clientjev/jev.go:79`; `file:agenthub_go/fastmcp/task_management/application/services/task_event_recorder.go:158` | client | 2026-10-19 |
+
+## Portability
+
+| ID | Requirement | Status | Enforcement or policy | Verification | Owner | Measured |
+|---|---|---|---|---|---|---|
+| PORT-01 | Every supported runtime gets the same guard and policy. | PARTIAL | Four runtimes exist (`omp`, `agy`, `claude-code`, `codex`); only omp and agy get the guard. | `file:agenthub_client/rust/agenthub-runtime/src/types.rs:23`; `review` of SEC-04 | runtime | 2026-10-19 |
+| PORT-02 | Spawns are argv-based; no shell interpolation. | PARTIAL | No production `sh -c`; three `format!`-built tmux commands remain. | `file:agenthub_client/rust/agenthub-runtime/src/pty/mod.rs:579` | runtime | 2026-10-19 |
+| PORT-03 | `--state-root` is honoured on every verb. | PARTIAL | Honoured on the main verbs; `activity` re-derives the default and ignores it. | `file:agenthub_client/internal/clientactivity/activity.go:138` | client | 2026-10-19 |
+
+## Open gates this register expects
+
+| Gate | Row | What changes |
+|---|---|---|
+| G1 | INT-01 | The context factory returns an error and the mock leaves the production package. |
+| G2 | SEC-01, INT-03 | The schema guard gains the two tenancy properties: a nullable `user_id` needs a recorded reason, and every cascade needs a review line. |
+| G3 | MAINT-04 | CI gains `gofmt`, typecheck and lint, and `agenthub_client` gets CI. |
+| T5 | PERF-01, PERF-04, PERF-06 | Benchmarks record the context-resolve and frame baselines; the TARGET rows cite them. |
+
+## Rulings
+
+Jev at lead tier, with the owner's delegation (2026-10-19): this register is the doc of record (Q1,
+0.82); OBS-04 states the client-side gate and `RecordGateVerdict` is not wired (Q2, 1.0); SEC-04/PORT-01
+state the guard boundary rather than extend it (Q3, 0.96); a TARGET row carries a recorded baseline once
+T5 measures one (Q4, 0.8). A later change to a status is a ruling, not an edit in passing: amend this
+file and cite the row you changed.
