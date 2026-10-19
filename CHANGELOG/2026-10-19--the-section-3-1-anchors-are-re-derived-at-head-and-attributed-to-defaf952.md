@@ -41,14 +41,17 @@ paragraph below it is left as the measurement it records.
 
 ## Verified
 
-- `python3 scripts/S3-REDERIVE.py HEAD` -> `rev=HEAD base=a7990665  rows=46  anchors=67`, `FRESH 67
-  STALE->BATCH 0  STALE->EARLIER 0  UNRESOLVED 0`, exit 0.
-- `python3 scripts/S3-REDERIVE.py --self-test` -> PASS (the perturbed row is named against a clean
-  baseline).
-- `python3 scripts/COUNTS-AUDIT.py` -> every row matches, exit 0.
-- `python3 -m pytest --noconftest -p no:cacheprovider scripts/tests/test_census_audits.py -q` ->
-  `2 failed, 11 passed`; both failures are the two `CITATION-AUDIT.py` cases and belong to §1's route
-  citations (below), not to this section.
+- `python3 scripts/S3-REDERIVE.py origin/main a7990665 --doc-file surface-inventory.md` -> `rows=46
+  anchors=67`, `FRESH 67  STALE->BATCH 0  STALE->EARLIER 0  UNRESOLVED 0`, exit 0. The instrument reads
+  the committed document, so this is the doc-file form; the `HEAD` form is the landing check.
+- The instrument's self-test logic on the patched document: baseline 0 not-fresh, one perturbation ->
+  1 not-fresh with the row named (`PASS`).
+- `python3 scripts/COUNTS-AUDIT.py` on the patched worktree: every row matches, exit 0.
+- Every one of the nineteen §3.1 cells checked against `git show origin/main:.../models.go`: 19
+  checked, 0 bad.
+- The census file at `1caaadf1` is `5 failed, 8 passed`. This patch set clears the three S3 cases, so
+  the landed result is expected to be `2 failed, 11 passed`, both failures being `CITATION-AUDIT`'s
+  §1 cases (below); the `HEAD`-form instrument run and the test file are the landing checks.
 - Docs only: no `.go`, `.sql` or test file changed.
 
 ## Not in this change
