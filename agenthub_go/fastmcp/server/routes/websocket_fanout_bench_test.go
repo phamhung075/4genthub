@@ -75,7 +75,7 @@ func BenchmarkRealtimeFanout(b *testing.B) {
 			for b.Loop() {
 				// The success path deletes the queue entry it made, so this delete is bookkeeping
 				// the next broadcast of the same (entity, user) would otherwise accumulate - the
-				// same per-iteration reset BenchmarkTaskEventFrame does for its duplicate cache.
+				// same per-iteration reset BenchmarkTaskEventDelta does for its duplicate cache.
 				messageQueueMu.Lock()
 				delete(userMessageQueues, userID)
 				messageQueueMu.Unlock()

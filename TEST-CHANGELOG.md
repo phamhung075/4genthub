@@ -7247,3 +7247,13 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
   unchanged.
 - At this change: `npx vitest run` -> 131 files, 1925 tests, 0 failures, 0 unhandled errors;
   `npx tsc --noEmit -p .` -> 0 errors; `npx eslint src --max-warnings=0` -> 0 problems.
+
+## 2026-10-19 - the payload tests assert the flat task-event delta (go, branch 4genthub-min/t7-event-delta)
+
+- T7 go (PERF-05): the payload tests assert the flat delta and the refetch shape. Each emitter that
+  can ship an `updated`/`completed` event is asserted to name its write: the update use case
+  (`[title]`, `[title details]`), completion (`[status]`), creation (no names), the facade's
+  `updated` and the dependency emitter (`[has_dependencies]`). `TestSyncBroadcastTaskCarriesAFlatDeltaAndCapsIt`
+  and `TestSyncBroadcastTaskDeduplicatesOneWriteNotTwo` replace the old shape assertions;
+  `BenchmarkTaskEventFrame` is replaced by `BenchmarkTaskEventDelta`, which asserts the ruling's
+  sizes and shapes instead of only timing the call.

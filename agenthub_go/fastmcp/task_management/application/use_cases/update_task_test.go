@@ -283,4 +283,23 @@ func TestUpdateTaskUseCaseHooksSyncAndNotify(t *testing.T) {
 	if !reflect.DeepEqual(hooks.calls, []string{"sync", "notify"}) {
 		t.Fatalf("hook calls = %v", hooks.calls)
 	}
+	if !reflect.DeepEqual(hooks.lastChanged, []string{"title"}) {
+		t.Fatalf("changed = %v, want exactly the fields the request set", hooks.lastChanged)
+	}
+}
+
+// TestUpdateTaskUseCaseNamesEveryChangedField pins the write's names to the payload keys: a note is
+// never carried, so its name is what tells the client to refetch it.
+func TestUpdateTaskUseCaseNamesEveryChangedField(t *testing.T) {
+	const idValue = "44444444-4444-4444-4444-444444444444"
+	repo := &updateTaskFakeRepo{found: updateTaskNewEntity(t, idValue)}
+	hooks := &createTaskFakeHooks{}
+	uc := NewUpdateTaskUseCase(repo, nil).WithLedger(noopLedger()).WithHooks(hooks)
+	title, details := "Hooked", "a note"
+	if _, err := uc.Execute(context.Background(), dtotask.UpdateTaskRequest{TaskID: idValue, Title: &title, Details: &details}); err != nil {
+		t.Fatalf("Execute: %v", err)
+	}
+	if !reflect.DeepEqual(hooks.lastChanged, []string{"title", "details"}) {
+		t.Fatalf("changed = %v, want [title details]", hooks.lastChanged)
+	}
 }

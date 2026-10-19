@@ -370,6 +370,7 @@ func TestCompleteTaskSuccess(t *testing.T) {
 // createTaskFakeHooks. The assertion that matters is WHICH action string reaches the broadcast.
 type completeTaskFakeHooks struct {
 	notified []string
+	changed  []string
 }
 
 func (h *completeTaskFakeHooks) SyncTaskStatus(_ context.Context, _ string, _ string) error {
@@ -380,8 +381,9 @@ func (h *completeTaskFakeHooks) SyncTaskMetadata(_ context.Context, _ string, _ 
 	return nil
 }
 
-func (h *completeTaskFakeHooks) NotifyTaskEvent(_ context.Context, eventType string, _ *entities.Task, _ *dtotask.TaskResponse, _ *string, _ string) {
+func (h *completeTaskFakeHooks) NotifyTaskEvent(_ context.Context, eventType string, _ *entities.Task, _ *dtotask.TaskResponse, _ *string, _ string, changed []string) {
 	h.notified = append(h.notified, eventType)
+	h.changed = changed
 }
 
 // TestCompleteTaskSuccessBroadcasts is the regression this whole change exists for, and it FAILED TO
@@ -407,6 +409,9 @@ func TestCompleteTaskSuccessBroadcasts(t *testing.T) {
 	}
 	if len(hooks.notified) != 1 || hooks.notified[0] != "completed" {
 		t.Fatalf("broadcast actions = %v, want exactly [completed]", hooks.notified)
+	}
+	if len(hooks.changed) != 1 || hooks.changed[0] != "status" {
+		t.Fatalf("changed = %v, want exactly [status]", hooks.changed)
 	}
 }
 

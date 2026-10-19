@@ -37,12 +37,12 @@ func wsTaskWithCreated(t *entities.Task) *entities.Task {
 
 func TestBuildTaskPayload_EntityOrderAndValues(t *testing.T) {
 	task := wsTaskWithCreated(wsTestTask())
-	payload := WebSocketPayloadBuilder{}.BuildTaskPayload(task, nil, true)
+	payload := WebSocketPayloadBuilder{}.BuildTaskPayload(task, nil)
 
 	wantKeys := []string{
 		"id", "title", "status", "priority",
 		"project_id", "git_branch_id", "subtask_count", "completed_subtasks",
-		"progress_percentage", "details",
+		"progress_percentage",
 		"assignees", "has_dependencies", "has_context", "labels",
 		"created_at", "updated_at", "description",
 	}
@@ -95,7 +95,7 @@ func TestBuildTaskPayload_LongDescriptionTruncated(t *testing.T) {
 	}
 	task := wsTestTask()
 	task.Description = long
-	payload := WebSocketPayloadBuilder{}.BuildTaskPayload(task, nil, true)
+	payload := WebSocketPayloadBuilder{}.BuildTaskPayload(task, nil)
 	got, _ := payload.Get("description")
 	want := long[:200] + "..."
 	if got != want {
@@ -103,12 +103,30 @@ func TestBuildTaskPayload_LongDescriptionTruncated(t *testing.T) {
 	}
 }
 
-func TestBuildTaskPayload_LightweightOmitsHistory(t *testing.T) {
-	task := wsTaskWithCreated(wsTestTask())
-	payload := WebSocketPayloadBuilder{}.BuildLightweightPayload(task, nil)
-	details, _ := payload.Get("details")
-	if details != "" {
-		t.Fatalf("details = %#v, want empty string", details)
+func TestBuildTaskDelta_FlatChangedFields(t *testing.T) {
+	full := entities.NewOrderedMap[any]()
+	full.Set("id", "task-1")
+	full.Set("status", "in_progress")
+	full.Set("updated_at", "2026-10-19T12:00:00Z")
+	delta := WebSocketPayloadBuilder{}.BuildTaskDelta(full, []string{"status", "details"})
+	keys := delta.Keys()
+	want := []string{"id", "updated_at", "status", "details_changed"}
+	if len(keys) != len(want) {
+		t.Fatalf("keys = %v, want %v", keys, want)
+	}
+	for i := range want {
+		if keys[i] != want[i] {
+			t.Fatalf("key[%d] = %q, want %q", i, keys[i], want[i])
+		}
+	}
+	if v, _ := delta.Get("id"); v != "task-1" {
+		t.Fatalf("id = %#v", v)
+	}
+	if v, _ := delta.Get("details_changed"); v != true {
+		t.Fatalf("details_changed = %#v, want true", v)
+	}
+	if _, ok := delta.Get("details"); ok {
+		t.Fatal("a delta must never carry the unbounded details string itself")
 	}
 }
 
@@ -121,13 +139,12 @@ func TestBuildTaskPayload_FromResponse(t *testing.T) {
 		CompletedSubtasks: 2,
 		Details:           "history text",
 	})
-	payload := WebSocketPayloadBuilder{}.BuildTaskPayload(task, resp, true)
+	payload := WebSocketPayloadBuilder{}.BuildTaskPayload(task, resp)
 	checks := map[string]any{
 		"project_id":         "proj-1",
 		"git_branch_id":      "branch-2",
 		"subtask_count":      3,
 		"completed_subtasks": 2,
-		"details":            "history text",
 	}
 	for k, want := range checks {
 		got, _ := payload.Get(k)
@@ -135,11 +152,14 @@ func TestBuildTaskPayload_FromResponse(t *testing.T) {
 			t.Errorf("%s = %#v, want %#v", k, got, want)
 		}
 	}
+	if _, ok := payload.Get("details"); ok {
+		t.Fatal("details is unbounded and must not be carried; an update names it with details_changed")
+	}
 }
 
 func TestEstimatePayloadSize(t *testing.T) {
 	task := wsTaskWithCreated(wsTestTask())
-	payload := WebSocketPayloadBuilder{}.BuildTaskPayload(task, nil, true)
+	payload := WebSocketPayloadBuilder{}.BuildTaskPayload(task, nil)
 	size := WebSocketPayloadBuilder{}.EstimatePayloadSize(payload)
 	if size <= 0 {
 		t.Fatalf("size = %d, want > 0", size)
@@ -191,17 +211,18 @@ func (b *wsRecordingBroker) BroadcastDataChange(_ context.Context, eventType, en
 	return nil
 }
 
-func TestBroadcastTaskEvent_MetadataOrder(t *testing.T) {
+func TestSyncBroadcastTask_MetadataOrder(t *testing.T) {
 	wsNotificationCacheMu.Lock()
 	wsNotificationCache = map[string]float64{}
 	wsNotificationCacheMu.Unlock()
 
 	broker := &wsRecordingBroker{}
 	svc := &WebSocketNotificationService{Broker: broker}
-	err := svc.BroadcastTaskEvent(
-		context.Background(), "created", "task-9", "user-9",
-		entities.NewOrderedMap[any](), wsStrPtr("branch-9"), wsStrPtr("proj-9"),
-	)
+	err := svc.SyncBroadcastTask(context.Background(), SyncTaskEventParams{
+		EventType: "created", TaskID: "task-9", UserID: "user-9",
+		TaskData: entities.NewOrderedMap[any](), PreFetchedContext: entities.NewOrderedMap[any](),
+		GitBranchID: wsStrPtr("branch-9"), ProjectID: wsStrPtr("proj-9"),
+	})
 	if err != nil {
 		t.Fatal(err)
 	}

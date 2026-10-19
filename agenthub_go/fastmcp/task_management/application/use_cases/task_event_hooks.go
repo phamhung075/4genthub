@@ -15,6 +15,7 @@ type TaskEventHooks interface {
 	// SyncTaskMetadata is TaskContextSyncService.sync_task_metadata.
 	SyncTaskMetadata(ctx context.Context, taskID string, task *entities.Task, userID string) error
 	// NotifyTaskEvent builds the complete payload and calls sync_broadcast_task_event
-	// (user falls back to "system" when userID is nil or empty).
-	NotifyTaskEvent(ctx context.Context, eventType string, task *entities.Task, response *task.TaskResponse, userID *string, gitBranchID string)
+	// (user falls back to "system" when userID is nil or empty). changed names the payload fields
+	// the write changed; an update or completion event delivers them as a flat delta.
+	NotifyTaskEvent(ctx context.Context, eventType string, task *entities.Task, response *task.TaskResponse, userID *string, gitBranchID string, changed []string)
 }

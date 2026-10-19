@@ -744,6 +744,7 @@ func (f *TaskApplicationFacade) UpdateTask(ctx context.Context, request dtostask
 		}
 		_ = f.deps.Notifier.SyncBroadcastTask(ctx, services.SyncTaskEventParams{
 			EventType: "updated", TaskID: taskID, UserID: userID, TaskData: validated,
+			Changed: use_cases.ChangedTaskFields(request),
 		})
 		if request.ProgressPercentage != nil {
 			// task_dict is the minimal serialization, which carries no git_branch_id for
@@ -1466,6 +1467,7 @@ func (f *TaskApplicationFacade) broadcastCompletion(ctx context.Context, taskID 
 	}
 	_ = f.deps.Notifier.SyncBroadcastTask(ctx, services.SyncTaskEventParams{
 		EventType: "completed", TaskID: taskID, UserID: user, TaskData: validated, GitBranchID: gitBranchID, ProjectID: projectID,
+		Changed: []string{"status", "completion_summary", "testing_notes", "completed_at"},
 	})
 }
 
@@ -1892,8 +1894,13 @@ func (f *TaskApplicationFacade) dependencyUpdateBroadcast(ctx context.Context, t
 		Priority: facadeOr(facadeDictGet(taskDict, "priority"), priority), GitBranchID: facadeOr(facadeDictGet(taskDict, "git_branch_id"), branch),
 		Assignees: assignees, Labels: labels, UpdatedAt: facadeStrPtrOf(facadeDictGet(taskDict, "updated_at")),
 	}
+	// add/remove_dependency changes no column of the task row: the delta is the one flag the
+	// frontend reads, set on the dumped payload so the update shape itself stays the parity shape.
+	full := payload.ModelDump()
+	full.Set("has_dependencies", true)
 	_ = f.deps.Notifier.SyncBroadcastTask(ctx, services.SyncTaskEventParams{
-		EventType: "updated", TaskID: taskID, UserID: "system", TaskData: payload.ModelDump(),
+		EventType: "updated", TaskID: taskID, UserID: "system", TaskData: full,
+		Changed: []string{"has_dependencies"},
 	})
 }
 
