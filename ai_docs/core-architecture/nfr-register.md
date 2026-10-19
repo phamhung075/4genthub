@@ -128,8 +128,8 @@ path with its line (a static fact a reader can open) · `review` (the policy has
 
 | Gate | Row | What changes |
 |---|---|---|
-| G3 | MAINT-04 | CI gains `gofmt`, typecheck and lint, and `agenthub_client` gets CI. |
-| T5 | PERF-01, PERF-04, PERF-06 | Benchmarks record the context-resolve and frame baselines; the TARGET rows cite them. |
+| G3 | MAINT-04 | `agenthub_client` gains Go and Rust format and lint gates (`gofmt`, `cargo fmt --check`, clippy); its CI and the hub gates have landed. |
+| T5 | PERF-04, PERF-06 | Benchmarks for the realtime frame and the watch wall, cited as baselines; the PERF-01 context-resolve baseline has landed. |
 
 ## Rulings
 
