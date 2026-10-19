@@ -73,13 +73,13 @@ Both forms point at the same kind of thing — the line that registers the route
 
 | Method | Path | Handler | Registration |
 |---|---|---|---|
-| GET | `/health` | `handleHealth` | `fastmcp/server/httpapp/app.go:151` |
-| POST | `/api/v2/projects/` | `routes.CreateProject` | `fastmcp/server/httpapp/app.go:178` |
-| GET | `/api/v2/projects/` | `routes.ListProjects` | `fastmcp/server/httpapp/app.go:191` |
-| GET | `/api/v2/projects/{id}` | `routes.GetProject` | `fastmcp/server/httpapp/app.go:199` |
-| PUT | `/api/v2/projects/{id}` | `routes.UpdateProject` | `fastmcp/server/httpapp/app.go:207` |
-| DELETE | `/api/v2/projects/{id}` | `routes.DeleteProject` | `fastmcp/server/httpapp/app.go:228` |
-| POST | `/api/v2/projects/{id}/health-check` | `routes.ProjectHealthCheck` | `fastmcp/server/httpapp/app.go:236` |
+| GET | `/health` | `handleHealth` | `fastmcp/server/httpapp/app.go:158` |
+| POST | `/api/v2/projects/` | `routes.CreateProject` | `fastmcp/server/httpapp/app.go:185` |
+| GET | `/api/v2/projects/` | `routes.ListProjects` | `fastmcp/server/httpapp/app.go:198` |
+| GET | `/api/v2/projects/{id}` | `routes.GetProject` | `fastmcp/server/httpapp/app.go:206` |
+| PUT | `/api/v2/projects/{id}` | `routes.UpdateProject` | `fastmcp/server/httpapp/app.go:214` |
+| DELETE | `/api/v2/projects/{id}` | `routes.DeleteProject` | `fastmcp/server/httpapp/app.go:235` |
+| POST | `/api/v2/projects/{id}/health-check` | `routes.ProjectHealthCheck` | `fastmcp/server/httpapp/app.go:243` |
 
 **The project-creation contract, STATED rather than implied — `POST /api/v2/projects/` (the trailing slash is part of the route) accepts `application/x-www-form-urlencoded` ONLY.** `app.go:179` registers it and `:184` parses the body with `_ = r.ParseForm()`, then refuses a body with no `name` through the shared `missingForm(r, "name")` helper (`:185`; it validates presence via `r.PostForm.Has`, `http.go:132`, and the `422` is `writeMissing`, `http.go:124`), and only then reads the VALUE with `r.PostForm.Get("name")` / `Get("description")` at `:189`: **RE-RESOLVED 2026-10-15 at `80e51824` — the four are `:179`/`:184`/`:185`/`:189`, a uniform +9 from the `:170`/`:175`/`:176`/`:180` this paragraph printed until now; the paragraph and the table above it disagreed for as long as it took this amendment to land, because the table rows are what `scripts/CITATION-AUDIT.py` reads and this paragraph is not a row.** **RE-RESOLVED 2026-10-13 (docs duty pass 10) at `6adbbc3f` — the four are `:170`/`:175`/`:176`/`:180` (`mux.HandleFunc("POST "+base+"/", …)`, `_ = r.ParseForm()`, `missingForm(r, "name")`, `r.PostForm.Get("name")`), a 24-line movement from the `:146`/`:151`/`:152`/`:156` that `36716e6e` carried the same block higher, because the ledger, room-decision, prefetch and orchestration routes landed above it; the movement is the tree's, not this clause's.** **CITATIONS RE-RESOLVED 2026-10-09 — this clause read `:135`/`:137-144`, the same region eleven lines above; and the mechanism it named (the value read) is one half of the handler while the check that produces the `422` is the other, so the clause now states both.** **`name` is required and `description` is optional**, and neither a JSON body nor a multipart body is read at all. **A JSON or multipart request is therefore refused with the SAME `422` that reports `body.name` missing**, because `ParseForm` reads neither encoding — so the refusal names a **MISSING FIELD** rather than the **ENCODING**, which is why two independent callers concluded they had a payload problem when they had a content-type problem. The application itself sends exactly this shape (`agenthub-frontend/src/services/apiV2.ts:475` posts `name`/`description` with `Content-Type: application/x-www-form-urlencoded`, and its flow measures **200** end to end), so **the route is not wrong — it was merely unstated.** **THE REUSABLE HALF: A REFUSAL THAT NAMES THE WRONG CAUSE COSTS A CALLER THE SAME TIME AS A SILENT FAILURE** — the same family as the reason text that never reached the chip, the preview read that looked truncated, and the grep that looked absent from the wrong field; and this is that family's **cheapest instance to fix, because the fix is a documented contract rather than a change to the refusal.**
 
@@ -160,80 +160,80 @@ and the two auth `RegisterRoutes` methods.
 
 | Method | Path | Handler | Registration |
 |---|---|---|---|
-| GET | `/api/v2/connections/health` | `routes.HealthCheck` | `routes_mount.go:85` |
-| GET | `/api/v2/connections/status` | `routes.ConnectionStatus` | `routes_mount.go:88` |
+| GET | `/api/v2/connections/health` | `routes.HealthCheck` | `routes_mount.go:86` |
+| GET | `/api/v2/connections/status` | `routes.ConnectionStatus` | `routes_mount.go:89` |
 
 ### 1.10 Alerts — base `/api/v1/alerts` (`routes_mount.go:97`)
 
 | Method | Path | Handler | Registration |
 |---|---|---|---|
-| GET | `/api/v1/alerts/rules` | `routes.ListAlertRules` | `routes_mount.go:99` |
-| POST | `/api/v1/alerts/rules` | `routes.CreateAlertRule` | `routes_mount.go:102` |
-| PUT | `/api/v1/alerts/rules/{rule_id}` | `routes.UpdateAlertRule` | `routes_mount.go:110` |
-| DELETE | `/api/v1/alerts/rules/{rule_id}` | `routes.DeleteAlertRule` | `routes_mount.go:118` |
-| GET | `/api/v1/alerts/events` | `routes.ListAlertEvents` | `routes_mount.go:122` |
-| POST | `/api/v1/alerts/events/{event_index}/acknowledge` | `routes.AcknowledgeAlert` | `routes_mount.go:125` |
-| POST | `/api/v1/alerts/check-rules` | `routes.CheckAlertRules` | `routes_mount.go:134` |
-| POST | `/api/v1/alerts/test-webhook` | `routes.TestWebhook` | `routes_mount.go:137` |
+| GET | `/api/v1/alerts/rules` | `routes.ListAlertRules` | `routes_mount.go:100` |
+| POST | `/api/v1/alerts/rules` | `routes.CreateAlertRule` | `routes_mount.go:103` |
+| PUT | `/api/v1/alerts/rules/{rule_id}` | `routes.UpdateAlertRule` | `routes_mount.go:111` |
+| DELETE | `/api/v1/alerts/rules/{rule_id}` | `routes.DeleteAlertRule` | `routes_mount.go:119` |
+| GET | `/api/v1/alerts/events` | `routes.ListAlertEvents` | `routes_mount.go:123` |
+| POST | `/api/v1/alerts/events/{event_index}/acknowledge` | `routes.AcknowledgeAlert` | `routes_mount.go:126` |
+| POST | `/api/v1/alerts/check-rules` | `routes.CheckAlertRules` | `routes_mount.go:135` |
+| POST | `/api/v1/alerts/test-webhook` | `routes.TestWebhook` | `routes_mount.go:138` |
 
 ### 1.11 Performance — base `/api/v1/performance` (`routes_mount.go:150`)
 
 | Method | Path | Handler | Registration |
 |---|---|---|---|
-| GET | `/api/v1/performance/metrics/overview` | `routes.GetPerformanceOverview` | `routes_mount.go:151` |
-| GET | `/api/v1/performance/metrics/timeseries` | `routes.GetPerformanceTimeseries` | `routes_mount.go:155` |
-| GET | `/api/v1/performance/metrics/alerts` | `routes.GetPerformanceAlerts` | `routes_mount.go:159` |
-| POST | `/api/v1/performance/metrics/clear-cache` | `routes.ClearPerformanceCache` | `routes_mount.go:163` |
+| GET | `/api/v1/performance/metrics/overview` | `routes.GetPerformanceOverview` | `routes_mount.go:152` |
+| GET | `/api/v1/performance/metrics/timeseries` | `routes.GetPerformanceTimeseries` | `routes_mount.go:156` |
+| GET | `/api/v1/performance/metrics/alerts` | `routes.GetPerformanceAlerts` | `routes_mount.go:160` |
+| POST | `/api/v1/performance/metrics/clear-cache` | `routes.ClearPerformanceCache` | `routes_mount.go:164` |
 
 ### 1.12 Broadcast
 
 | Method | Path | Handler | Registration |
 |---|---|---|---|
-| POST | `/api/v2/broadcast/notify` | `routes.TriggerBroadcast` | `routes_mount.go:206` |
+| POST | `/api/v2/broadcast/notify` | `routes.TriggerBroadcast` | `routes_mount.go:207` |
 
 ### 1.13 Contexts — base `/api/v2/contexts` (`routes_mount.go:262`)
 
 | Method | Path | Handler | Registration |
 |---|---|---|---|
-| POST | `/api/v2/contexts/{level}` | `routes.CreateContext` | `routes_mount.go:264` |
-| GET | `/api/v2/contexts/{level}/{context_id}` | `routes.GetContext` | `routes_mount.go:282` |
-| PUT | `/api/v2/contexts/{level}/{context_id}` | `routes.UpdateContext` | `routes_mount.go:287` |
-| DELETE | `/api/v2/contexts/{level}/{context_id}` | `routes.DeleteContext` | `routes_mount.go:300` |
-| GET | `/api/v2/contexts/{level}/{context_id}/resolve` | `routes.ResolveContext` | `routes_mount.go:304` |
-| POST | `/api/v2/contexts/{level}/{context_id}/delegate` | `routes.DelegateContext` | `routes_mount.go:308` |
-| POST | `/api/v2/contexts/{level}/{context_id}/insights` | `routes.AddInsight` | `routes_mount.go:321` |
-| POST | `/api/v2/contexts/{level}/{context_id}/progress` | `routes.AddProgress` | `routes_mount.go:335` |
-| GET | `/api/v2/contexts/{level}/list` | `routes.ListContexts` | `routes_mount.go:344` |
-| GET | `/api/v2/contexts/{level}/{context_id}/summary` | `routes.GetContextSummary` | `routes_mount.go:348` |
+| POST | `/api/v2/contexts/{level}` | `routes.CreateContext` | `routes_mount.go:265` |
+| GET | `/api/v2/contexts/{level}/{context_id}` | `routes.GetContext` | `routes_mount.go:283` |
+| PUT | `/api/v2/contexts/{level}/{context_id}` | `routes.UpdateContext` | `routes_mount.go:288` |
+| DELETE | `/api/v2/contexts/{level}/{context_id}` | `routes.DeleteContext` | `routes_mount.go:301` |
+| GET | `/api/v2/contexts/{level}/{context_id}/resolve` | `routes.ResolveContext` | `routes_mount.go:305` |
+| POST | `/api/v2/contexts/{level}/{context_id}/delegate` | `routes.DelegateContext` | `routes_mount.go:309` |
+| POST | `/api/v2/contexts/{level}/{context_id}/insights` | `routes.AddInsight` | `routes_mount.go:322` |
+| POST | `/api/v2/contexts/{level}/{context_id}/progress` | `routes.AddProgress` | `routes_mount.go:336` |
+| GET | `/api/v2/contexts/{level}/list` | `routes.ListContexts` | `routes_mount.go:345` |
+| GET | `/api/v2/contexts/{level}/{context_id}/summary` | `routes.GetContextSummary` | `routes_mount.go:349` |
 
 ### 1.14 Tokens — base `/api/v2/tokens` (`routes_mount.go:361`)
 
 | Method | Path | Handler | Registration |
 |---|---|---|---|
-| POST | `/api/v2/tokens` | `routes.GenerateTokenHandler` | `routes_mount.go:371` |
-| POST | `/api/v2/tokens/` | `routes.GenerateTokenHandler` | `routes_mount.go:372` |
-| POST | `/api/v2/tokens/generate` | `routes.GenerateTokenHandler` | `routes_mount.go:373` |
-| GET | `/api/v2/tokens` | `routes.ListTokens` | `routes_mount.go:379` |
-| GET | `/api/v2/tokens/` | `routes.ListTokens` | `routes_mount.go:380` |
-| GET | `/api/v2/tokens/legacy/tokens` | `routes.ListTokens` | `routes_mount.go:381` |
-| GET | `/api/v2/tokens/health` | `routes.TokenServiceHealth` | `routes_mount.go:382` |
-| GET | `/api/v2/tokens/{token_id}` | `routes.GetTokenDetails` | `routes_mount.go:386` |
-| DELETE | `/api/v2/tokens/{token_id}` | `routes.DeleteToken` | `routes_mount.go:390` |
-| PATCH | `/api/v2/tokens/{token_id}/revoke` | `routes.RevokeToken` | `routes_mount.go:394` |
-| PATCH | `/api/v2/tokens/{token_id}/reactivate` | `routes.ReactivateToken` | `routes_mount.go:398` |
-| POST | `/api/v2/tokens/{token_id}/rotate` | `routes.RotateToken` | `routes_mount.go:402` |
-| POST | `/api/v2/tokens/validate` | `routes.ValidateTokenEndpoint` | `routes_mount.go:406` |
-| POST | `/api/v2/tokens/cleanup` | `routes.CleanupExpiredTokens` | `routes_mount.go:414` |
+| POST | `/api/v2/tokens` | `routes.GenerateTokenHandler` | `routes_mount.go:372` |
+| POST | `/api/v2/tokens/` | `routes.GenerateTokenHandler` | `routes_mount.go:373` |
+| POST | `/api/v2/tokens/generate` | `routes.GenerateTokenHandler` | `routes_mount.go:374` |
+| GET | `/api/v2/tokens` | `routes.ListTokens` | `routes_mount.go:380` |
+| GET | `/api/v2/tokens/` | `routes.ListTokens` | `routes_mount.go:381` |
+| GET | `/api/v2/tokens/legacy/tokens` | `routes.ListTokens` | `routes_mount.go:382` |
+| GET | `/api/v2/tokens/health` | `routes.TokenServiceHealth` | `routes_mount.go:383` |
+| GET | `/api/v2/tokens/{token_id}` | `routes.GetTokenDetails` | `routes_mount.go:387` |
+| DELETE | `/api/v2/tokens/{token_id}` | `routes.DeleteToken` | `routes_mount.go:391` |
+| PATCH | `/api/v2/tokens/{token_id}/revoke` | `routes.RevokeToken` | `routes_mount.go:395` |
+| PATCH | `/api/v2/tokens/{token_id}/reactivate` | `routes.ReactivateToken` | `routes_mount.go:399` |
+| POST | `/api/v2/tokens/{token_id}/rotate` | `routes.RotateToken` | `routes_mount.go:403` |
+| POST | `/api/v2/tokens/validate` | `routes.ValidateTokenEndpoint` | `routes_mount.go:407` |
+| POST | `/api/v2/tokens/cleanup` | `routes.CleanupExpiredTokens` | `routes_mount.go:415` |
 
 ### 1.15 Summary / remaining task routes (`routes_mount.go:440`)
 
 | Method | Path | Handler | Registration |
 |---|---|---|---|
-| POST | `/api/tasks/summaries` | `routes.GetTaskSummaries` | `routes_mount.go:442` |
-| GET | `/api/tasks/{task_id}/context/summary` | `routes.GetTaskContextSummary` | `routes_mount.go:457` |
-| POST | `/api/subtasks/summaries` | `routes.GetTaskRouteSubtaskSummaries` | `routes_mount.go:463` |
-| GET | `/api/performance/metrics` | `routes.GetPerformanceMetrics` | `routes_mount.go:472` |
-| POST | `/api/v2/tasks/{task_id}/subtasks/summaries` | `routes.GetUserSubtaskSummaries` | `routes_mount.go:475` |
+| POST | `/api/tasks/summaries` | `routes.GetTaskSummaries` | `routes_mount.go:443` |
+| GET | `/api/tasks/{task_id}/context/summary` | `routes.GetTaskContextSummary` | `routes_mount.go:458` |
+| POST | `/api/subtasks/summaries` | `routes.GetTaskRouteSubtaskSummaries` | `routes_mount.go:464` |
+| GET | `/api/performance/metrics` | `routes.GetPerformanceMetrics` | `routes_mount.go:473` |
+| POST | `/api/v2/tasks/{task_id}/subtasks/summaries` | `routes.GetUserSubtaskSummaries` | `routes_mount.go:476` |
 
 ### 1.16 4genteam seat management — admin (`seat_admin_mount.go`)
 
@@ -364,6 +364,8 @@ within the caller's memberships.
 | POST | `/api/v2/ledger/intents` | `routes.SubmitLedgerIntents` | `ledger_mount.go:52` |
 
 Both routes take the same `authed` wrapper as the task routes: the ledger is read and written on behalf of the user the bearer token resolves, and there is no machine token behind either one (`ledger_mount.go:29-33`).
+
+**RE-DERIVED 2026-10-19 (architect, row `qitem-20261019193238-b9ad05db51eb`, board `1a5768d0`): every §1 route anchor that moved was moved by one commit, and the section's counts did not move.** `ffe4f07f fix(context): the factory refuses instead of installing a mock` is the only commit to touch `agenthub_go/fastmcp/server/httpapp/app.go` or `routes_mount.go` since the inventory's last route sync at `51f3dc01` (`git log --oneline 51f3dc01..379dd005 -- <both paths>` names it alone). Its `git diff -U0` carries two insertions above the cited registrations: three lines at `app.go:34` (the `ctxFactory` field and its comment) and four net at `app.go:74` (the constructor's error return), so **+7 for the seven `app.go` rows**; and one net line at `routes_mount.go:53` (the nil guard around the context mount), so **+1 for the forty-four `routes_mount.go` rows**. No registration was added or removed — `CITATION-AUDIT.py` reads `rows 148`, and §1's Reproduce line keeps `156 (httpapp 136, auth 20)` — so only the line numbers move. `CITATION-AUDIT.py` reports `stale 51` before the edit and `stale 0` after it.
 
 ---
 
