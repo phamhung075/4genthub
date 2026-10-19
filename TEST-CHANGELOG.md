@@ -2,6 +2,33 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-19 - the two PERF targets carry benchmarks (branch 4genthub-min/next-work)
+
+- `agenthub_go/fastmcp/task_management/application/services/unified_context_bench_test.go` (new):
+  `BenchmarkResolveContext` measures the task-level read with inheritance (`ResolveContext` ->
+  `GetContext` -> `resolveInheritanceSync` over global/project/branch); the hierarchy is created once
+  in setup, and the loop is `b.Loop`. `BenchmarkTaskEventFrame` measures one `SyncBroadcastTask`
+  frame (metadata, context, completion enrichment, broker hand-off) against a discarding broker; the
+  five-second duplicate cache would short-circuit a repeat, so each iteration clears its own key
+  (one mutex + map delete, inside the timing).
+- Measured 2026-10-19 on a 12th Gen i7-12700F, `go test -run '^$' -bench . -benchmem`:
+  ResolveContext 25952 ns/op, 25882 B/op, 212 allocs/op; TaskEventFrame 1832 ns/op, 1328 B/op, 25
+  allocs/op. Benchmarks are not a CI gate; the register carries the date and commit of the run.
+
+## 2026-10-19 - CI gains the gofmt and frontend gates, and the client repo gains CI (branch 4genthub-min/next-work)
+
+- `.github/workflows/ci.yml`: the go job runs `../scripts/gofmt-check.sh` before vet and test; the
+  frontend job runs `pnpm typecheck` and `pnpm lint` between install and test. The gofmt gate is red
+  on the tree as it stood (one unformatted file, `context_change_test.go`, now formatted), so it went
+  green with the same commit: 1241 tracked .go files checked, two excluded non-Go paths named.
+  `pnpm typecheck`/`pnpm lint` need fe-dev's T4a scripts and eslint flat config to land first.
+- `agenthub_client/.github/workflows/ci.yml` (new, client branch `4genthub-min/client-ci` at
+  c17454f): a go job (`go vet ./...`, `go test ./...`) and a rust job (`cargo test --locked` in
+  `rust/agenthub-runtime`, `Swatinem/rust-cache`). `--locked`, not `--offline`: a cold runner has no
+  cargo cache, so `--offline` fails before compiling; the seat's local command stays
+  `cargo test --offline`. Measured locally: client `go vet` + `go test ./...` green, `cargo test
+  --offline` green.
+
 ## 2026-10-19 - the schema registry's tenancy and cascade set are pinned (branch 4genthub-min/next-work)
 
 - `agenthub_go/fastmcp/task_management/infrastructure/database/schema_matches_definitions_test.go`:
