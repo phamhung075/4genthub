@@ -97,7 +97,7 @@ path with its line (a static fact a reader can open) · `review` (the policy has
 | MAINT-01 | No compatibility shims, aliases or legacy paths. | POLICY | Review-enforced; contradicted by live surfaces (`GET /legacy/tokens`, `legacyTaskContextRepo`). | `file:agenthub_go/fastmcp/server/httpapp/routes_mount.go:381`; `review` | policy | 2026-10-19 |
 | MAINT-02 | Dependencies run one direction across the layers. | POLICY | Layering convention; no import check. | `review` | policy | 2026-10-19 |
 | MAINT-03 | One `CHANGELOG/<date>--<title>.md` per task. | POLICY | Review-enforced; no check. | `review` | policy | 2026-10-19 |
-| MAINT-04 | CI gates format, vet, typecheck and lint on every surface. | PARTIAL | Hub Go runs `gofmt-check.sh`, `go vet`, `go test`; the frontend runs `pnpm typecheck`, `pnpm lint`, `pnpm test`, `pnpm build`; the client runs `go vet`, `go test` and `cargo test`. Residual: the client's own Go and Rust format and lint are ungated (no `gofmt`, `cargo fmt --check` or clippy). | `file:.github/workflows/ci.yml:28`; `file:.github/workflows/ci.yml:48`; `file:agenthub_client/.github/workflows/ci.yml:27` | hub + frontend + client | 2026-10-19 |
+| MAINT-04 | CI gates format, vet, typecheck and lint on every surface. | GATE | Hub Go runs `gofmt-check.sh`, `go vet`, `go test`; the frontend runs `pnpm typecheck`, `pnpm lint`, `pnpm test`, `pnpm build`; the client (CI at `252c42b`, landed `8c7b7364`) runs `gofmt -l`, `go vet`, `go test`, `cargo fmt --check`, `cargo clippy -- -D warnings`, `cargo test`. | `file:.github/workflows/ci.yml:28`; `file:.github/workflows/ci.yml:48`; `file:agenthub_client/.github/workflows/ci.yml:31`; `file:agenthub_client/.github/workflows/ci.yml:55`; `file:agenthub_client/.github/workflows/ci.yml:56` | hub + frontend + client | 2026-10-19 |
 | MAINT-05 | A pruned path stays deleted and unreferenced. | GATE | A test pins both directions. | `test:go test ./internal/repoguards -run TestAPrunedPath` | agenthub_go | 2026-10-19 |
 
 ## Observability
@@ -123,12 +123,12 @@ path with its line (a static fact a reader can open) · `review` (the policy has
 |---|---|---|
 | G1 | INT-01 | Landed `ffe4f07f`: the factory returns an error and the mock leaves the production package. |
 | G2 | SEC-01, INT-03 | Landed `02a31ec4`: the schema guard pins the nullable `user_id` set and every cascade column. The requirement itself (INT-03, no `CASCADE`) stays open as a GAP on the schema, not on the guard. |
+| G3 | MAINT-04 | Landed `8c7b7364` (client `252c42b`): the client CI gates `gofmt`, `cargo fmt --check` and `cargo clippy -D warnings`, and the drift they exposed is fixed. |
 
 ## Open gates this register expects
 
 | Gate | Row | What changes |
 |---|---|---|
-| G3 | MAINT-04 | `agenthub_client` gains Go and Rust format and lint gates (`gofmt`, `cargo fmt --check`, clippy); its CI and the hub gates have landed. |
 | T5 | PERF-04, PERF-06 | Benchmarks for the realtime frame and the watch wall, cited as baselines; the PERF-01 context-resolve baseline has landed. |
 
 ## Rulings
