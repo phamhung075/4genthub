@@ -41,9 +41,9 @@ path with its line (a static fact a reader can open) · `review` (the policy has
 | PERF-01 | Database access is pooled over pgx, and the API answers within a published latency envelope. | PARTIAL | `database/sql` pool over pgx stdlib; `SetMaxOpenConns(PoolSize+MaxOverflow)`. | `file:agenthub_go/fastmcp/task_management/infrastructure/database/pgx_opener.go:45`; measured `test:go test ./fastmcp/task_management/application/services -bench BenchmarkResolveContext -benchmem` -> 19.7-26.0 us/op over two runs, 212 allocs/op (2026-10-19, commit `81074bd6`, i7-12700F); no published latency envelope | agenthub_go | 2026-10-19 |
 | PERF-02 | Context resolution is served from a cache, not a query per level. | GAP | None: the cache service is built with a **nil** repository, and each resolve calls the level repositories. | `file:agenthub_go/fastmcp/task_management/application/factories/unified_context_facade_factory.go:93`; `file:agenthub_go/fastmcp/task_management/application/services/unified_context_service.go:1183`; measured `test:go test ./fastmcp/task_management/application/services -bench BenchmarkResolveContext -benchmem` -> 19.7-26.0 us/op over two runs, 212 allocs/op (2026-10-19, commit `81074bd6`, i7-12700F) | agenthub_go | 2026-10-19 |
 | PERF-03 | IPC frames are unix-socket, length-prefixed. | PARTIAL | Unix socket, **newline-delimited JSON** frames, not length-prefixed. | `file:agenthub_client/rust/agenthub-runtime/src/ipc/mod.rs:101` | runtime | 2026-10-19 |
-| PERF-04 | Realtime fan-out reaches a client promptly under load. | PARTIAL | `/ws/realtime` is mounted and fan-out exists; frame latency is unmeasured. | `file:agenthub_go/fastmcp/server/httpapp/ws_mount.go:70`; no benchmark (`none`) | agenthub_go | 2026-10-19 |
+| PERF-04 | Realtime fan-out reaches a client promptly under load. | PARTIAL | `/ws/realtime` is mounted and fan-out exists; server-side fan-out is measured, the wire and the render are not. | `file:agenthub_go/fastmcp/server/httpapp/ws_mount.go:70`, `file:agenthub_go/fastmcp/server/routes/websocket_fanout_bench_test.go`; measured `cmd:go test ./fastmcp/server/routes -bench BenchmarkRealtimeFanout -benchmem` -> 1 socket 14.8 us/op, 10 sockets 126-127 us/op, 100 sockets 1.24-1.31 ms/op (12.4-13 us/socket, 13841 allocs/op) over three runs; the 500 ms ceiling at 100 sockets holds (2026-10-19, commit `86da875e`, i7-12700F) | agenthub_go | 2026-10-19 |
 | PERF-05 | A task event sends a delta under a size cap. | GAP | Every event broadcasts the whole `TaskData`; no delta, no cap. | `file:agenthub_go/fastmcp/task_management/application/services/websocket_notification_service.go:359`; measured `test:go test ./fastmcp/task_management/application/services -bench BenchmarkTaskEventFrame -benchmem` -> 1.4-1.8 us/op over two runs, 25 allocs/op (2026-10-19, commit `81074bd6`, i7-12700F) | agenthub_go | 2026-10-19 |
-| PERF-06 | The watch wall has no line-buffering delay. | TARGET | Qualitative; no measurement, no mechanism. | `none` | client | 2026-10-19 |
+| PERF-06 | The watch wall has no line-buffering delay. | GATE | A line reaches the pane's writer within 2 x `feedPollInterval` (1 s), in a `Write` of its own, uncoalesced. | `test:go test ./internal/clientwatch -run TestFeedWritesEachLineWithinOnePoll`; measured green in 1.00 s at client `c21e702`: the delay and the one-`Write` shape are both asserted (2026-10-19) | client | 2026-10-19 |
 
 ## Cost
 
@@ -124,12 +124,11 @@ path with its line (a static fact a reader can open) · `review` (the policy has
 | G1 | INT-01 | Landed `ffe4f07f`: the factory returns an error and the mock leaves the production package. |
 | G2 | SEC-01, INT-03 | Landed `02a31ec4`: the schema guard pins the nullable `user_id` set and every cascade column. The requirement itself (INT-03, no `CASCADE`) stays open as a GAP on the schema, not on the guard. |
 | G3 | MAINT-04 | Landed `8c7b7364` (client `252c42b`): the client CI gates `gofmt`, `cargo fmt --check` and `cargo clippy -D warnings`, and the drift they exposed is fixed. |
+| T5 | PERF-04, PERF-06 | Landed `86da875e` (client `c21e702`): `BenchmarkRealtimeFanout` over 1/10/100 sockets with the 500 ms ceiling, and `TestFeedWritesEachLineWithinOnePoll` bound to 2 x `feedPollInterval`. |
 
 ## Open gates this register expects
 
-| Gate | Row | What changes |
-|---|---|---|
-| T5 | PERF-04, PERF-06 | Benchmarks for the realtime frame and the watch wall, cited as baselines; the PERF-01 context-resolve baseline has landed. |
+None open.
 
 ## Rulings
 
