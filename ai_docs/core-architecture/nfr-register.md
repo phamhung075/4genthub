@@ -8,7 +8,7 @@ mechanisms were checked against committed code — 15 of its 43 rows named a mec
 the code contradicts, 20 were policy or weaker than claimed, 8 held. The catalogue stays where it is as
 provenance; this register is what a reader rules from.
 
-Measured at: hub `0a682479`, client `872ae41`, 2026-10-19.
+Measured at: hub `d9c165ae`, client `c46812c`, 2026-10-19.
 
 ## Vocabulary
 
@@ -38,7 +38,7 @@ path with its line (a static fact a reader can open) · `review` (the policy has
 
 | ID | Requirement | Status | Enforcement or policy | Verification | Owner | Measured |
 |---|---|---|---|---|---|---|
-| PERF-01 | Database access is pooled over pgx, and the API answers within a published latency envelope. | PARTIAL | `database/sql` pool over pgx stdlib; `SetMaxOpenConns(PoolSize+MaxOverflow)`. | `file:agenthub_go/fastmcp/task_management/infrastructure/database/pgx_opener.go:45`; no latency check (`none`; `BenchmarkResolveContext` owed) | agenthub_go | 2026-10-19 |
+| PERF-01 | Database access is pooled over pgx, and the API answers within a published latency envelope. | PARTIAL | `database/sql` pool over pgx stdlib; `SetMaxOpenConns(PoolSize+MaxOverflow)`. | `file:agenthub_go/fastmcp/task_management/infrastructure/database/pgx_opener.go:45`; measured `test:go test ./fastmcp/task_management/application/services -bench BenchmarkResolveContext -benchmem` -> 19.7-26.0 us/op over two runs, 212 allocs/op (2026-10-19, commit `81074bd6`, i7-12700F); no published latency envelope | agenthub_go | 2026-10-19 |
 | PERF-02 | Context resolution is served from a cache, not a query per level. | GAP | None: the cache service is built with a **nil** repository, and each resolve calls the level repositories. | `file:agenthub_go/fastmcp/task_management/application/factories/unified_context_facade_factory.go:93`; `file:agenthub_go/fastmcp/task_management/application/services/unified_context_service.go:1183`; measured `test:go test ./fastmcp/task_management/application/services -bench BenchmarkResolveContext -benchmem` -> 19.7-26.0 us/op over two runs, 212 allocs/op (2026-10-19, commit `81074bd6`, i7-12700F) | agenthub_go | 2026-10-19 |
 | PERF-03 | IPC frames are unix-socket, length-prefixed. | PARTIAL | Unix socket, **newline-delimited JSON** frames, not length-prefixed. | `file:agenthub_client/rust/agenthub-runtime/src/ipc/mod.rs:101` | runtime | 2026-10-19 |
 | PERF-04 | Realtime fan-out reaches a client promptly under load. | PARTIAL | `/ws/realtime` is mounted and fan-out exists; frame latency is unmeasured. | `file:agenthub_go/fastmcp/server/httpapp/ws_mount.go:70`; no benchmark (`none`) | agenthub_go | 2026-10-19 |
@@ -97,7 +97,7 @@ path with its line (a static fact a reader can open) · `review` (the policy has
 | MAINT-01 | No compatibility shims, aliases or legacy paths. | POLICY | Review-enforced; contradicted by live surfaces (`GET /legacy/tokens`, `legacyTaskContextRepo`). | `file:agenthub_go/fastmcp/server/httpapp/routes_mount.go:381`; `review` | policy | 2026-10-19 |
 | MAINT-02 | Dependencies run one direction across the layers. | POLICY | Layering convention; no import check. | `review` | policy | 2026-10-19 |
 | MAINT-03 | One `CHANGELOG/<date>--<title>.md` per task. | POLICY | Review-enforced; no check. | `review` | policy | 2026-10-19 |
-| MAINT-04 | CI gates format, vet, typecheck and lint on every surface. | GAP | CI runs `go vet`, `go test`, `pnpm test`, `pnpm build`; no `gofmt -l`, no `tsc --noEmit`, no ESLint, and `agenthub_client` has no CI. | `file:.github/workflows/ci.yml:25`; `scripts/gofmt-check.sh` is referenced by nothing | hub + frontend + client | 2026-10-19 |
+| MAINT-04 | CI gates format, vet, typecheck and lint on every surface. | PARTIAL | Hub Go runs `gofmt-check.sh`, `go vet`, `go test`; the frontend runs `pnpm typecheck`, `pnpm lint`, `pnpm test`, `pnpm build`; the client runs `go vet`, `go test` and `cargo test`. Residual: the client's own Go and Rust format and lint are ungated (no `gofmt`, `cargo fmt --check` or clippy). | `file:.github/workflows/ci.yml:28`; `file:.github/workflows/ci.yml:48`; `file:agenthub_client/.github/workflows/ci.yml:27` | hub + frontend + client | 2026-10-19 |
 | MAINT-05 | A pruned path stays deleted and unreferenced. | GATE | A test pins both directions. | `test:go test ./internal/repoguards -run TestAPrunedPath` | agenthub_go | 2026-10-19 |
 
 ## Observability
@@ -115,7 +115,7 @@ path with its line (a static fact a reader can open) · `review` (the policy has
 |---|---|---|---|---|---|---|
 | PORT-01 | Every supported runtime gets the same guard and policy. | PARTIAL | Four runtimes exist (`omp`, `agy`, `claude-code`, `codex`); only omp and agy get the guard. | `file:agenthub_client/rust/agenthub-runtime/src/types.rs:23`; `review` of SEC-04 | runtime | 2026-10-19 |
 | PORT-02 | Spawns are argv-based; no shell interpolation. | PARTIAL | No production `sh -c`; three `format!`-built tmux commands remain. | `file:agenthub_client/rust/agenthub-runtime/src/pty/mod.rs:579` | runtime | 2026-10-19 |
-| PORT-03 | `--state-root` is honoured on every verb. | PARTIAL | Honoured on the main verbs; `activity` re-derives the default and ignores it. | `file:agenthub_client/internal/clientactivity/activity.go:138` | client | 2026-10-19 |
+| PORT-03 | `--state-root` is honoured on every verb. | GATE | `activity` and `4genteam seat reseat` take the flag as of client `c46812c` (hub pin `d9c165ae`): `clientenv.StateRootFromFlags` -> `ResolveStateRoot` at `activity.go:134,144` and `internal/clientseat/reseat.go:64,87`. | `test:go test ./internal/clientactivity -run TestTheStateRootFlagIsReadInsteadOfTheMachineDefault`; `test:go test ./internal/clientseat -run TestReseatReadsTheStateRootFlagInsteadOfTheMachineDefault` | client | 2026-10-19 |
 
 ## Gates this task landed
 
