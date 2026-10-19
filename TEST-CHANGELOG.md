@@ -2,6 +2,16 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-19 - a task event merges its delta, details_changed re-reads (frontend, branch 4genthub-min/fe-deploy-walk)
+
+- `agenthub-frontend/src/tests/hooks/test_useRealtimeSync_task.test.tsx` (3 new tests): a status-only
+  delta (`{id, updated_at, status}`) merged over a cached row keeps title, description, `details` and
+  `context_data`, and writes neither control flag into the cache; a `details_changed` delta written by
+  the handler never carries the text, invalidates `['task', <id>]`, and an open detail observer
+  refetches the new log from the server; an `{id, refetch: true}` frame invalidates `['task', <id>]`,
+  leaves the cached status alone and never merges `refetch`. All three fail on the previous handler.
+  Suite: 20 passed in the file; full run 131 files / 1928 tests passed; `npx tsc --noEmit -p .` clean.
+
 ## 2026-10-19 - the module content viewer reads sections, raw, and non-JSON (frontend, branch 4genthub-min/fe-deploy-walk)
 
 - `agenthub-frontend/src/tests/components/ModuleContentView.test.tsx` (new, 5 tests): a skill block

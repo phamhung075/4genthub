@@ -563,6 +563,158 @@ describe('useRealtimeSync - Task Handler with Type Guards', () => {
       invalidateSpy.mockRestore();
     });
 
+    // THE DELTA CONTRACT (PERF-05 ruling at 3ccf9b00): an update frame is `{id, updated_at}` plus
+    // the fields its write changed and no others. A replace would drop every cached key the frame
+    // omits - the description and `details` above all - and the details view would blank on an
+    // unrelated status change.
+    const deltaFrame = (delta: Record<string, unknown>): WSMessage =>
+      ({
+        id: 'broadcast-task-424242',
+        version: '2.0',
+        type: 'update',
+        timestamp: '2026-10-09T20:00:00.000000+00:00',
+        sequence: 4242,
+        payload: {
+          entity: 'task',
+          action: 'updated',
+          data: { primary: { id: TASK_ID, ...delta } },
+        },
+        metadata: {
+          source: 'user',
+          entity_type: 'task',
+          entity_id: TASK_ID,
+          task_title: 'Status Task',
+          event_type: 'updated',
+        },
+      }) as unknown as WSMessage;
+
+    const deliver = (frame: WSMessage) => ({
+      on: vi.fn((event: string, handler: (msg: WSMessage) => void) => {
+        if (event === 'update') {
+          setTimeout(() => handler(frame), 10);
+        }
+      }),
+      off: vi.fn(),
+    });
+
+    it('keeps the keys a status-only delta omits', async () => {
+      const wrapper = createWrapper();
+
+      // What the task details view already holds: its description, progress log and context.
+      const cachedTask = {
+        ...taskAt('todo'),
+        description: 'the description the operator wrote',
+        details: '=== Progress 1 ===\nthe earlier note',
+        context_data: {
+          id: 'ctx-status-1',
+          level: 'task',
+          context_data: { progress: { completion_percentage: 40 } },
+        },
+      } as unknown as Task;
+      queryClient.setQueryData(['task', TASK_ID, false], cachedTask);
+      queryClient.setQueryData(['task', TASK_ID, true], cachedTask);
+
+      const frame = deltaFrame({ updated_at: '2026-10-09T20:00:01Z', status: 'in_progress' });
+      expect(frame.payload.data.primary).not.toHaveProperty('details');
+      expect(frame.payload.data.primary).not.toHaveProperty('description');
+
+      renderHook(() => useRealtimeSync(deliver(frame), true), { wrapper });
+
+      await waitFor(
+        () => {
+          expect(queryClient.getQueryData<Task>(['task', TASK_ID, false])?.status).toBe('in_progress');
+          expect(queryClient.getQueryData<Task>(['task', TASK_ID, true])?.status).toBe('in_progress');
+        },
+        { timeout: 2000 }
+      );
+
+      for (const includeContext of [false, true]) {
+        const merged = queryClient.getQueryData<Task>(['task', TASK_ID, includeContext]);
+        // The delta's fields win ...
+        expect(merged?.status).toBe('in_progress');
+        expect(merged?.updated_at).toBe('2026-10-09T20:00:01Z');
+        // ... and the keys it omits survive, untouched by the delta's control flags.
+        expect(merged?.title).toBe('Status Task');
+        expect(merged?.description).toBe('the description the operator wrote');
+        expect(merged?.details).toBe('=== Progress 1 ===\nthe earlier note');
+        expect(merged?.context_data).toEqual(cachedTask.context_data);
+        expect(merged && 'refetch' in merged).toBe(false);
+        expect(merged && 'details_changed' in merged).toBe(false);
+      }
+    });
+
+    it('re-reads the detail when the delta says details_changed, since it never carries the text', async () => {
+      const wrapper = createWrapper();
+
+      // The open details view and the server's copy of it. The subscriber carries a staleTime no
+      // ordinary staleness reaches inside this case, so a refetch here is the frame's invalidation.
+      let servedDetails = 'the earlier note';
+      const detailFetches: string[] = [];
+      const detailObserver = renderHook(
+        () =>
+          useQuery({
+            queryKey: ['task', TASK_ID, true],
+            queryFn: async () => {
+              detailFetches.push(servedDetails);
+              return { ...taskAt('todo'), details: servedDetails } as unknown as Task;
+            },
+            staleTime: 30 * 1000,
+          }),
+        { wrapper }
+      );
+      await waitFor(() => expect(detailObserver.result.current.data?.details).toBe('the earlier note'));
+      expect(detailFetches).toHaveLength(1);
+
+      servedDetails = '=== Progress 2 ===\nthe note the delta refused to carry';
+      const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+      const frame = deltaFrame({
+        updated_at: '2026-10-09T20:00:02Z',
+        details_changed: true,
+      });
+      expect(frame.payload.data.primary).not.toHaveProperty('details');
+
+      renderHook(() => useRealtimeSync(deliver(frame), true), { wrapper });
+
+      await waitFor(() =>
+        expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['task', TASK_ID] }),
+      );
+      await waitFor(() => expect(detailFetches).toHaveLength(2), { timeout: 2000 });
+      await waitFor(() =>
+        expect(detailObserver.result.current.data?.details).toBe(
+          '=== Progress 2 ===\nthe note the delta refused to carry'
+        ),
+      );
+
+      invalidateSpy.mockRestore();
+    });
+
+    it('re-reads the row on the over-cap refetch shape instead of merging {id, refetch}', async () => {
+      const wrapper = createWrapper();
+
+      const cachedTask = taskAt('todo');
+      queryClient.setQueryData(['task', TASK_ID, false], cachedTask);
+      queryClient.setQueryData(['task', TASK_ID, true], cachedTask);
+
+      const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+      const frame = deltaFrame({ refetch: true });
+
+      renderHook(() => useRealtimeSync(deliver(frame), true), { wrapper });
+
+      await waitFor(() =>
+        expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['task', TASK_ID] }),
+      );
+
+      // Nothing was merged: the frame carries no row, so the cached task keeps its values and the
+      // control flag never lands in the cache.
+      for (const includeContext of [false, true]) {
+        const cached = queryClient.getQueryData<Task>(['task', TASK_ID, includeContext]);
+        expect(cached?.status).toBe('todo');
+        expect(cached && 'refetch' in cached).toBe(false);
+      }
+
+      invalidateSpy.mockRestore();
+    });
+
     it('re-reads the EXECUTION LEDGER, so an open timeline follows the same status change', async () => {
       const wrapper = createWrapper();
 
