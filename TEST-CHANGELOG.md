@@ -2,6 +2,12 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-19 - the census reads a dotted chunk as one name (branch 4genthub-min/next-work)
+
+- `scripts/tests/test_check_served_frontend.py::test_a_dotted_chunk_name_is_one_ref_not_a_phantom`
+  (new): pins `discover_refs('./mermaid.core-PVSKwLbE.js')` to the one dotted ref and serves that
+  asset, asserting verdict OK with no fetch failure; RED before the `HASHED_REF` boundary fix.
+
 ## 2026-10-19 - the two PERF targets carry benchmarks (branch 4genthub-min/next-work)
 
 - `agenthub_go/fastmcp/task_management/application/services/unified_context_bench_test.go` (new):

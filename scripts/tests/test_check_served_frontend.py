@@ -138,6 +138,25 @@ def test_a_fresh_build_reads_ok(tmp_path, capsys):
     assert "OK" in capsys.readouterr().out
 
 
+def test_a_dotted_chunk_name_is_one_ref_not_a_phantom(tmp_path, capsys):
+    """`./mermaid.core-PVSKwLbE.js` is ONE name. A pattern that starts after the dot reads
+    `core-PVSKwLbE.js`, fetches it, 404s, and reports INCOMPLETE on a clean surface."""
+    assert census.discover_refs('import("./mermaid.core-PVSKwLbE.js")') == {
+        "/assets/mermaid.core-PVSKwLbE.js"
+    }
+    files = fresh_shape()
+    files["assets/index-riIYPcmm.js"] = (
+        files["assets/index-riIYPcmm.js"]
+        + 'import "./mermaid.core-PVSKwLbE.js";\n'
+    )
+    files["assets/mermaid.core-PVSKwLbE.js"] = "export const x=1;\n"
+    with serve(write_tree(tmp_path, files)) as base:
+        assert run(base) == 0
+    out = capsys.readouterr().out
+    assert "OK" in out
+    assert "core-PVSKwLbE.js" not in out.split("entry:", 1)[1]
+
+
 def test_stale_page_is_found_behind_a_ref_inside_another_chunk(tmp_path, capsys):
     """THE ONE-HOP TEST. The fossil appears in a chunk the INDEX never names - only a chunk-map in
     the entry names it. A scan of the index's own assets reports nothing stale and nothing live;
