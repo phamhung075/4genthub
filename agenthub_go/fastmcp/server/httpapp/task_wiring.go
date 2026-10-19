@@ -31,7 +31,7 @@ type contextReader struct {
 }
 
 func (c contextReader) GetContext(ctx context.Context, level, contextID string, includeInherited bool) (*entities.OrderedMap[any], error) {
-	return c.facade.GetContext(ctx, level, contextID, includeInherited, false, c.userID)
+	return c.facade.GetContext(ctx, level, contextID, includeInherited, c.userID)
 }
 
 // branchRepoWithProject adds FirstProjectID to the branch repository.
@@ -243,7 +243,7 @@ func (c completeContextFacade) CreateContext(level, contextID string, data *enti
 }
 
 func (c completeContextFacade) GetContext(level, contextID string) map[string]any {
-	r, err := c.f.GetContext(context.Background(), level, contextID, false, false, nil)
+	r, err := c.f.GetContext(context.Background(), level, contextID, false, nil)
 	if err != nil {
 		return map[string]any{"success": false, "error": err.Error()}
 	}

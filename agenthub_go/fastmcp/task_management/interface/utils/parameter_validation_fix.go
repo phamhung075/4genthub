@@ -36,7 +36,7 @@ var ParameterTypeCoercerINTEGERParameters = map[string]bool{
 var ParameterTypeCoercerBOOLEANParameters = map[string]bool{
 	"include_context": true, "force": true, "audit_required": true,
 	"include_details": true, "propagate_changes": true, "include_inherited": true,
-	"force_refresh": true, "recursive": true, "enabled": true, "active": true,
+	"recursive": true, "enabled": true, "active": true,
 	"visible": true, "public": true, "strict": true, "validate": true,
 	"auto_create": true, "cascade": true,
 }

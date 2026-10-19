@@ -88,7 +88,7 @@ type ContextController interface {
 	GetContext(ctx context.Context, level, contextID string, includeInherited bool, userID string) (ControllerResult, error)
 	UpdateContext(ctx context.Context, level, contextID string, data *entities.OrderedMap[any], userID string) (ControllerResult, error)
 	DeleteContext(ctx context.Context, level, contextID string, userID string) (ControllerResult, error)
-	ResolveContext(ctx context.Context, level, contextID string, forceRefresh bool, userID string) (ControllerResult, error)
+	ResolveContext(ctx context.Context, level, contextID string, userID string) (ControllerResult, error)
 }
 
 // CreateContext is create_context POST /{level}.
@@ -112,7 +112,7 @@ func CreateContext(ctx context.Context, level string, req ContextCreateRequest, 
 }
 
 // GetContext is get_context GET /{level}/{context_id}.
-func GetContext(ctx context.Context, level, contextID string, includeInherited, forceRefresh bool, currentUser *authdomain.User, c ContextController) (*entities.OrderedMap[any], error) {
+func GetContext(ctx context.Context, level, contextID string, includeInherited bool, currentUser *authdomain.User, c ContextController) (*entities.OrderedMap[any], error) {
 	if level == "global" {
 		contextID = currentUserID(currentUser)
 	}
@@ -171,8 +171,8 @@ func DeleteContext(ctx context.Context, level, contextID string, currentUser *au
 }
 
 // ResolveContext is resolve_context GET /{level}/{context_id}/resolve.
-func ResolveContext(ctx context.Context, level, contextID string, forceRefresh bool, currentUser *authdomain.User, c ContextController) (*entities.OrderedMap[any], error) {
-	result, err := c.ResolveContext(ctx, level, contextID, forceRefresh, currentUserID(currentUser))
+func ResolveContext(ctx context.Context, level, contextID string, currentUser *authdomain.User, c ContextController) (*entities.OrderedMap[any], error) {
+	result, err := c.ResolveContext(ctx, level, contextID, currentUserID(currentUser))
 	if err != nil {
 		return nil, httpErr(500, "Failed to resolve context")
 	}

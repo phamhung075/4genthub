@@ -65,7 +65,7 @@ func (*zucsErrRepo) Get(context.Context, string) (any, error) { return nil, erro
 // Python reports a repository exception as str(e), not "Context not found".
 func TestGetContextRepositoryErrorIsReported(t *testing.T) {
 	s := &UnifiedContextService{repositories: map[value_objects.ContextLevel]UnifiedContextRepository{value_objects.ContextLevelProject: &zucsErrRepo{}}}
-	res, _ := s.GetContext(context.Background(), "project", "p1", false, false, nil)
+	res, _ := s.GetContext(context.Background(), "project", "p1", false, nil)
 	if v, _ := res.Get("error"); v != "db down" {
 		t.Fatalf("error = %v, want db down", v)
 	}

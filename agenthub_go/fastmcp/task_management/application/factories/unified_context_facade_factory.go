@@ -52,7 +52,6 @@ type UnifiedContextFacadeFactory struct {
 	// unified_service). Construction fails rather than substituting a stand-in.
 	UnifiedService *services.UnifiedContextService
 
-	cacheService       *services.ContextCacheService
 	inheritanceService *services.ContextInheritanceService
 	validationService  *services.ContextValidationService
 }
@@ -81,14 +80,13 @@ func NewUnifiedContextFacadeFactory(ctx context.Context, sessions *database.Sess
 
 	repoMap := map[string]any{"global": global, "project": project, "branch": branch, "task": task}
 	f := &UnifiedContextFacadeFactory{SessionManager: sessions}
-	f.cacheService = services.NewContextCacheService(nil, 1, nil)
 	// Python also builds ContextDelegationService(repo_map); that service has no
 	// exported Go constructor, so nil is passed (the service tolerates nil).
 	f.inheritanceService = services.NewContextInheritanceService(repoMap, nil)
 	f.validationService = services.NewContextValidationService(nil, nil)
 	f.UnifiedService = services.NewUnifiedContextService(
 		global, project, branch, task,
-		f.cacheService, f.inheritanceService, nil, f.validationService, nil,
+		f.inheritanceService, nil, f.validationService, nil,
 	).WithEntityLookup(UnifiedContextEntityLookup).WithEventAppender(UnifiedContextEventAppender)
 	unifiedContextFacadeFactoryInitialized = true
 	unifiedContextFacadeFactoryInstance = f
@@ -108,7 +106,7 @@ func (f *UnifiedContextFacadeFactory) CreateFacade(ctx context.Context, userID, 
 		userInheritance := services.NewContextInheritanceService(userRepoMap, userID)
 		scoped = services.NewUnifiedContextService(
 			global, project, branch, task,
-			f.cacheService, userInheritance, nil, f.validationService, nil,
+			userInheritance, nil, f.validationService, nil,
 		).WithEntityLookup(UnifiedContextEntityLookup).WithEventAppender(UnifiedContextEventAppender).WithUser(*userID)
 	}
 
@@ -143,7 +141,7 @@ func (f *UnifiedContextFacadeFactory) AutoCreateGlobalContext(ctx context.Contex
 	}
 	globalContextID := zpUCFUUID5(zpUCFNamespaceUUID, userUUID)
 
-	if existing, err := facade.GetContext(ctx, "global", globalContextID, false, false, nil); err == nil {
+	if existing, err := facade.GetContext(ctx, "global", globalContextID, false, nil); err == nil {
 		if zpUCFResultSuccess(existing) {
 			return true
 		}

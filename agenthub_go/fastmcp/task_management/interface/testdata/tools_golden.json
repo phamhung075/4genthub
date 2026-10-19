@@ -380,7 +380,7 @@
   }
  },
  "manage_context": {
-  "description": "\nCONTEXT MANAGEMENT - 4-tier hierarchy (Global\u2192Project\u2192Branch\u2192Task): CRUD | inheritance | caching | delegation | insights\n\nACTIONS: create | get | update | delete | resolve (full chain) | delegate (move between levels) | add_insight | add_progress | list\n\nLEVELS: global (user-scoped) | project | branch | task | Each inherits from parent\n\nKEY PARAMS: level (tier) | context_id (ID for level) | force_refresh (bypass cache) | include_inherited (full chain) | propagate_changes (cascade) | delegate_to ('delegate' action) | content ('add_insight'/'add_progress' actions)\n\nFEATURES: Unified API | Auto-inheritance | Smart caching | Change propagation | Delegation queue | Backward compatible\n\nERRORS: Missing fields\u2192specific error | Unknown actions\u2192valid list | Internal\u2192logged+generic\n",
+  "description": "\nCONTEXT MANAGEMENT - 4-tier hierarchy (Global\u2192Project\u2192Branch\u2192Task): CRUD | inheritance | delegation | insights\n\nACTIONS: create | get | update | delete | resolve (full chain) | delegate (move between levels) | add_insight | add_progress | list\n\nLEVELS: global (user-scoped) | project | branch | task | Each inherits from parent\n\nKEY PARAMS: level (tier) | context_id (ID for level) | include_inherited (full chain) | propagate_changes (cascade) | delegate_to ('delegate' action) | content ('add_insight'/'add_progress' actions)\n\nFEATURES: Unified API | Auto-inheritance | Change propagation | Delegation queue | Backward compatible\n\nERRORS: Missing fields\u2192specific error | Unknown actions\u2192valid list | Internal\u2192logged+generic\n",
   "parameters": {
    "properties": {
     "action": {
@@ -422,12 +422,6 @@
      "default": null,
      "description": "[OPTIONAL] Git branch identifier for branch-level context operations. Required for branch and task level operations",
      "title": "Git Branch Id",
-     "type": "string"
-    },
-    "force_refresh": {
-     "default": null,
-     "description": "[OPTIONAL] Bypass cache and force fresh data retrieval. Use when cache consistency is critical. Accepts: 'true', 'false', '1', '0'",
-     "title": "Force Refresh",
      "type": "string"
     },
     "include_inherited": {

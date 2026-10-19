@@ -2,6 +2,14 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-19 - the dead context cache takes its test with it (branch 4genthub-min/next-work)
+
+- `agenthub_go/fastmcp/task_management/application/services/context_cache_service_test.go` is
+  deleted with the service it pinned.
+- Every `GetContext`/`ResolveContext` call and fake in the hub's tests loses the dead
+  `forceRefresh` argument (bulk edit, then the whole module run green); the golden tool entry drops
+  the `force_refresh` property, so the wire test pins its absence.
+
 ## 2026-10-19 - the realtime fan-out has a benchmark (branch 4genthub-min/next-work)
 
 - `agenthub_go/fastmcp/server/routes/websocket_fanout_bench_test.go` (new):

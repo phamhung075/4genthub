@@ -18,7 +18,7 @@ import (
 // application layer cannot import the facades package (import cycle), so the
 // concrete *facades.UnifiedContextFacade is injected by the caller.
 type zpTaskCtxSyncContextService interface {
-	GetContext(ctx context.Context, level, contextID string, includeInherited, forceRefresh bool, userID *string) (*entities.OrderedMap[any], error)
+	GetContext(ctx context.Context, level, contextID string, includeInherited bool, userID *string) (*entities.OrderedMap[any], error)
 	CreateContext(ctx context.Context, level, contextID string, data *entities.OrderedMap[any], userID *string) (*entities.OrderedMap[any], error)
 	UpdateContext(ctx context.Context, level, contextID string, data *entities.OrderedMap[any], propagateChanges bool) (*entities.OrderedMap[any], error)
 }
@@ -138,7 +138,7 @@ func (s *TaskContextSyncService) SyncContextAndGetTask(ctx context.Context, task
 		return nil, &value_objects.ValueError{Msg: "project_id is required for context sync (no fallback allowed for DDD compliance)"}
 	}
 
-	contextResult, err := s.hierarchicalContextService.GetContext(ctx, "task", taskIDStr, false, false, nil)
+	contextResult, err := s.hierarchicalContextService.GetContext(ctx, "task", taskIDStr, false, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -269,7 +269,7 @@ func (s *TaskContextSyncService) SyncSubtaskCounts(ctx context.Context, taskID s
 		subtaskItems = append(subtaskItems, item)
 	}
 
-	contextResult, err := s.hierarchicalContextService.GetContext(ctx, "task", taskID, false, false, nil)
+	contextResult, err := s.hierarchicalContextService.GetContext(ctx, "task", taskID, false, nil)
 	if err != nil {
 		return fmt.Errorf("the task context could not be read: %w", err)
 	}
@@ -291,7 +291,7 @@ func (s *TaskContextSyncService) SyncSubtaskCounts(ctx context.Context, taskID s
 
 // SyncTaskStatus mirrors sync_task_status.
 func (s *TaskContextSyncService) SyncTaskStatus(ctx context.Context, taskID string, newStatus string) error {
-	contextResult, err := s.hierarchicalContextService.GetContext(ctx, "task", taskID, false, false, nil)
+	contextResult, err := s.hierarchicalContextService.GetContext(ctx, "task", taskID, false, nil)
 	if err != nil {
 		return fmt.Errorf("the task context could not be read: %w", err)
 	}
@@ -310,7 +310,7 @@ func (s *TaskContextSyncService) SyncTaskStatus(ctx context.Context, taskID stri
 
 // SyncTaskMetadata mirrors sync_task_metadata.
 func (s *TaskContextSyncService) SyncTaskMetadata(ctx context.Context, taskID string, task *entities.Task) error {
-	contextResult, err := s.hierarchicalContextService.GetContext(ctx, "task", taskID, false, false, nil)
+	contextResult, err := s.hierarchicalContextService.GetContext(ctx, "task", taskID, false, nil)
 	if err != nil {
 		return fmt.Errorf("the task context could not be read: %w", err)
 	}

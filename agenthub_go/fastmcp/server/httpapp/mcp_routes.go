@@ -463,7 +463,6 @@ func (a *App) dispatchMCPTool(ctx context.Context, r *http.Request, name string,
 			data := getOptStringPtr(args, "data")
 			pID := getOptStringPtr(args, "project_id")
 			bID := getOptStringPtr(args, "git_branch_id", "branch_id")
-			forceRefresh := getOptStringPtr(args, "force_refresh")
 			includeInherited := getOptStringPtr(args, "include_inherited")
 			propagateChanges := getOptStringPtr(args, "propagate_changes")
 			delegateTo := getOptStringPtr(args, "delegate_to")
@@ -474,7 +473,7 @@ func (a *App) dispatchMCPTool(ctx context.Context, r *http.Request, name string,
 			importance := getOptStringPtr(args, "importance")
 			agent := getOptStringPtr(args, "agent")
 			filters := getOptStringPtr(args, "filters")
-			res := a.mcpTools.ContextController.ManageUnifiedContext(ctx, action, level, contextID, data, userID, pID, bID, forceRefresh, includeInherited, propagateChanges, delegateTo, delegateData, delegationReason, content, category, importance, agent, filters)
+			res := a.mcpTools.ContextController.ManageUnifiedContext(ctx, action, level, contextID, data, userID, pID, bID, includeInherited, propagateChanges, delegateTo, delegateData, delegationReason, content, category, importance, agent, filters)
 			return res, false
 		}
 		return map[string]any{"error": "ContextController not initialized"}, true

@@ -24,7 +24,7 @@ import (
 func benchResolveService(b *testing.B) *UnifiedContextService {
 	b.Helper()
 	user := "user-bench"
-	s := NewUnifiedContextService(newZucsFakeRepo(), newZucsFakeRepo(), newZucsFakeRepo(), newZucsFakeRepo(), nil, nil, nil, nil, &user)
+	s := NewUnifiedContextService(newZucsFakeRepo(), newZucsFakeRepo(), newZucsFakeRepo(), newZucsFakeRepo(), nil, nil, nil, &user)
 	ctx := context.Background()
 
 	creates := []struct {
@@ -49,7 +49,7 @@ func BenchmarkResolveContext(b *testing.B) {
 	s := benchResolveService(b)
 	ctx := context.Background()
 
-	result, _ := s.ResolveContext(ctx, "task", "task-bench", true, nil)
+	result, _ := s.ResolveContext(ctx, "task", "task-bench", nil)
 	if ok, _ := result.Get("success"); ok != true {
 		b.Fatalf("resolve failed: %v", result.Keys())
 	}
@@ -60,7 +60,7 @@ func BenchmarkResolveContext(b *testing.B) {
 
 	b.ReportAllocs()
 	for b.Loop() {
-		if _, err := s.ResolveContext(ctx, "task", "task-bench", true, nil); err != nil {
+		if _, err := s.ResolveContext(ctx, "task", "task-bench", nil); err != nil {
 			b.Fatal(err)
 		}
 	}

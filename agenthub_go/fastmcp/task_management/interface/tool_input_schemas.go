@@ -81,7 +81,6 @@ var toolParamSpecs = map[string][]toolParam{
 		{"user_id", "[OPTIONAL] ", `{"type":"string"}`},
 		{"project_id", "[OPTIONAL] ", `{"type":"string"}`},
 		{"git_branch_id", "[OPTIONAL] ", `{"type":"string"}`},
-		{"force_refresh", "[OPTIONAL] ", `{"type":"string"}`},
 		{"include_inherited", "[OPTIONAL] ", `{"type":"string"}`},
 		{"propagate_changes", "[OPTIONAL] ", `{"type":"string"}`},
 		{"delegate_to", "[REQUIRED for 'delegate' action] ", `{"type":"string"}`},

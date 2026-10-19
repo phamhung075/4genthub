@@ -52,7 +52,7 @@ func TestTheUnifiedServiceWriterAttributesTheContextUpdateToTheSeat(t *testing.T
 	repo.store[taskID] = zucsTaskContext(taskID, "todo")
 
 	ledger := &captureLedger{}
-	svc := NewUnifiedContextService(repo, repo, repo, repo, nil, nil, nil, nil, &user).
+	svc := NewUnifiedContextService(repo, repo, repo, repo, nil, nil, nil, &user).
 		WithEventAppender(ledgerAppender{recorder: NewTaskEventRecorder(ledger, user)})
 
 	data := entities.NewOrderedMap[any]()

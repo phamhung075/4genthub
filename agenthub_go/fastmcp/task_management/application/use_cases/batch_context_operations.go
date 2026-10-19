@@ -36,7 +36,6 @@ type BatchOperation struct {
 
 	PropagateChanges bool
 	IncludeInherited bool
-	ForceRefresh     bool
 }
 
 // NewBatchOperation applies the Python defaults (propagate_changes=True).

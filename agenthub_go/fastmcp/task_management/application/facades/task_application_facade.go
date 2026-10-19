@@ -40,7 +40,7 @@ type FacadeTaskRepository interface {
 
 // TaskFacadeContextService is the hierarchical (unified) context service.
 type TaskFacadeContextService interface {
-	GetContext(ctx context.Context, level, contextID string, includeInherited, forceRefresh bool, userID *string) (*entities.OrderedMap[any], error)
+	GetContext(ctx context.Context, level, contextID string, includeInherited bool, userID *string) (*entities.OrderedMap[any], error)
 	CreateContext(ctx context.Context, level, contextID string, data *entities.OrderedMap[any], userID *string) (*entities.OrderedMap[any], error)
 }
 
@@ -390,7 +390,7 @@ func (f *TaskApplicationFacade) ensureBranchContextExists(ctx context.Context, g
 	}
 
 	uid := userID
-	got, err := f.deps.ContextService.GetContext(ctx, "branch", gitBranchID, false, false, &uid)
+	got, err := f.deps.ContextService.GetContext(ctx, "branch", gitBranchID, false, &uid)
 	if err != nil {
 		return result(false, "error", "Unexpected error ensuring branch context: "+err.Error(), "git_branch_created", false, "context_created", false)
 	}

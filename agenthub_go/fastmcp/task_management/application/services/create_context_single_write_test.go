@@ -30,7 +30,7 @@ func TestOneCreatePathWriteAppendsOneTaskContextEvent(t *testing.T) {
 	repo.store[taskID] = zucsTaskContext(taskID, "todo")
 
 	appender := &countingContextAppender{}
-	svc := NewUnifiedContextService(repo, repo, repo, repo, nil, nil, nil, nil, &user).WithEventAppender(appender)
+	svc := NewUnifiedContextService(repo, repo, repo, repo, nil, nil, nil, &user).WithEventAppender(appender)
 
 	status, err := value_objects.NewTaskStatus("todo")
 	if err != nil {
@@ -135,7 +135,7 @@ func TestAddProgressReachesTheTaskLedger(t *testing.T) {
 	repo.store[taskID] = zucsTaskContext(taskID, "todo")
 
 	appender := &countingCollectionAppender{}
-	svc := NewUnifiedContextService(repo, repo, repo, repo, nil, nil, nil, nil, &user).WithEventAppender(appender)
+	svc := NewUnifiedContextService(repo, repo, repo, repo, nil, nil, nil, &user).WithEventAppender(appender)
 
 	if _, err := svc.AddProgress(context.Background(), "task", taskID, "the note a board reader must see", nil); err != nil {
 		t.Fatalf("add_progress: %v", err)
