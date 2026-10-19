@@ -2,6 +2,15 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-19 - the served census pins the whole dotted name (repo scripts, branch 4genthub-min/fe-deploy-walk)
+
+- `scripts/tests/test_check_served_frontend.py`: two tests added. One serves a fresh tree whose entry
+  names `./mermaid.core-CGIcD27U.js` and asserts the census closes OK - on the previous patterns the
+  closure fetched `core-CGIcD27U.js`, 404'd, and read INCOMPLETE (the production verdict of
+  2026-10-18); it also asserts `discover_refs` maps the two production names
+  (`mermaid.core-CGIcD27U.js`, `cytoscape.esm-CkK8FqzY.js`) to their whole served paths. The other
+  pins the left boundary: `assets/` inside a longer word is not a ref. Suite: 15 passed.
+
 ## 2026-10-19 - the login 403 test pins the hub's own sentence (frontend, branch 4genthub-min/login-403-detail)
 
 - `agenthub-frontend/src/tests/contexts/AuthContext.test.tsx`: "should handle email verification
