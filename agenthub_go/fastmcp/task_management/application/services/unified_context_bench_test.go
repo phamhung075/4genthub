@@ -124,6 +124,17 @@ func benchPrimaryEmitted(b *testing.B, svc *WebSocketNotificationService, broker
 	if _, carried := primary.Get("details"); carried {
 		b.Fatalf("%s event carried the unbounded details string", p.EventType)
 	}
+	if p.EventType == "updated" || p.EventType == "completed" {
+		if v, carried := primary.Get("id"); !carried || v == nil {
+			b.Fatalf("%s delta has no id", p.EventType)
+		}
+		// The refetch shape is the one exception: {id, refetch} is not a field delta.
+		if refetch, _ := primary.Get("refetch"); refetch != true {
+			if _, carried := primary.Get("updated_at"); !carried {
+				b.Fatalf("%s delta on %s has no updated_at (keys %v)", p.EventType, p.TaskID, primary.Keys())
+			}
+		}
+	}
 	return primary
 }
 
@@ -167,6 +178,7 @@ func BenchmarkTaskEventDelta(b *testing.B) {
 	completedAt := "2026-10-19T12:00:02Z"
 	completion := (&domain.TaskCompletePayload{ID: "task-bench-done", Title: "a task title", CompletionSummary: &completedAt,
 		TestingNotes: &completedAt, CompletedAt: &completedAt}).ModelDump()
+	completion.Set("updated_at", completedAt)
 	completionDelta := benchPrimaryEmitted(b, svc, broker, SyncTaskEventParams{
 		EventType: "completed", TaskID: "task-bench-done", UserID: "u", TaskData: completion,
 		Changed: []string{"status", "completion_summary", "testing_notes", "completed_at"},

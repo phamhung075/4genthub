@@ -19,6 +19,8 @@ server side, and the frontend merge is fe-dev's row.
   (`create` nil, `update` from the request's non-nil fields via `use_cases.ChangedTaskFields`,
   `complete` `["status"]`) and the five facade sites (`created` nil, `updated` from the request,
   dependency `["has_dependencies"]`, `completed` its completion fields) populate it.
+- The facade's completion payload carries the row's `updated_at`, so its frame and the use-case
+  hook's frame for the same completion share the dedup identity and collapse to one.
 - `SyncBroadcastTask` picks the shape by event type (`created`/`deleted` unchanged, `updated`/
   `completed` deltas) and enforces `WebSocketTaskPayloadCap = 2048` at emit time with
   `EstimatePayloadSize`; an over-cap delta becomes `{"id", "refetch": true}`.

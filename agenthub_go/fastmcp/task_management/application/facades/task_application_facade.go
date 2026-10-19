@@ -1454,12 +1454,16 @@ func (f *TaskApplicationFacade) broadcastCompletion(ctx context.Context, taskID 
 		title = "Task " + facadeShort(taskID)
 	}
 	if title != nil {
-		validated = domain.TaskCompletePayload{
+		completion := domain.TaskCompletePayload{
 			ID: facadeOr(facadeDictGet(taskData, "id"), taskID), Title: value_objects.PyStr(title),
 			CompletionSummary: facadeStrPtrOf(facadeDictGet(taskData, "completion_summary")),
 			TestingNotes:      facadeStrPtrOf(facadeDictGet(taskData, "testing_notes")),
 			CompletedAt:       facadeStrPtrOf(facadeDictGet(taskData, "completed_at")),
 		}.ModelDump()
+		// The row's updated_at is the delta's identity: it is what lets the client collapse this
+		// frame with the use-case hook's for the same write, so the completion delta carries it.
+		completion.Set("updated_at", facadeDictGet(taskData, "updated_at"))
+		validated = completion
 	}
 	user := "system"
 	if userID != nil && *userID != "" {
