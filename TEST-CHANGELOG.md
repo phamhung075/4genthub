@@ -7148,3 +7148,11 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
   and the full title with `limit 3`, no status filter. Against the pre-change repository both calls
   returned only decoys (`Search id prefix ... did not surface the task first`); after the change each
   returns the task first.
+
+## 2026-10-19 - the reviewer copy names seat-type-version 1.4.19 (client rust, branch 4genthub-min/next-work)
+
+- `agenthub_client/rust/agenthub-runtime/src/skills/mod.rs`:
+  `a_seat_resolves_its_own_role_skill_and_no_other_seats` pinned `seat-type-version: 1.4.12` on all five
+  seat-role copies. The reviewer copy moved to 1.4.19 with the decision check, so its case table carries
+  the expected version per seat: reviewer 1.4.19, the other four 1.4.12. Red on the un-updated copy
+  (`left: Some("1.4.19") right: Some("1.4.12")`), green after.

@@ -10,7 +10,10 @@ import (
 )
 
 // seedVersion is bumped whenever a seed's module set changes: a stored seat type version is
-// immutable, so a changed module set needs a new version. 1.4.18 adds the comm-guard deny row `4genteam send --via-owner:*`: the flag asks the owner node to sign, so a seat must not reach it (the client verb refuses too; the row is the statement where a permission list binds). 1.4.15 makes the comm-guard deny list bind unaudited routes only - `4genteam input`, `tmux send-keys`, `tmux paste-buffer` - and allows `4genteam send` by name, because that is the audited path the guard skill names and denying it denied the only route a seat may send over. 1.4.14 states guide-common.md's queue-row caps as the CLI enforces them - summary at most 120 characters, body at most 600, where the rule read as one 600-character row - and drops seat-friction-loop.md's `4genteam sync rig`, which no longer exists: the runtime installs the resolved skill tree under the seat's own `skills/` at every start. 1.4.13 restores guide-common.md's loop step 4 to the commit form the owner ruled fleet-wide: commit by pathspec and do not stage first, with git add -N only for a new file. 1.4.12 cuts shared-modules/guide-common.md to a short index (the loop, the five rules, stuck handling), drops its shared-tree commit, approval-gate, pytest and task-ritual sections, and moves the reviewer verdict into the task or queue row (no GATE file, no vite build). 1.4.11 moves the runtime-neutral note rule out
+// immutable, so a changed module set needs a new version. 1.4.19 adds the reviewer's `decision check`
+// rule and the `Decision check:` output line: a change that picks among defensible options must point at
+// its `jev=` line in `~/.config/4genthub/jev_decisions.log`, so the gating seat can fail a silent pick
+// with `decision-check: no jev=<subject>` (owner ruling Option A, 2026-10-19). 1.4.18 adds the comm-guard deny row `4genteam send --via-owner:*`: the flag asks the owner node to sign, so a seat must not reach it (the client verb refuses too; the row is the statement where a permission list binds). 1.4.15 makes the comm-guard deny list bind unaudited routes only - `4genteam input`, `tmux send-keys`, `tmux paste-buffer` - and allows `4genteam send` by name, because that is the audited path the guard skill names and denying it denied the only route a seat may send over. 1.4.14 states guide-common.md's queue-row caps as the CLI enforces them - summary at most 120 characters, body at most 600, where the rule read as one 600-character row - and drops seat-friction-loop.md's `4genteam sync rig`, which no longer exists: the runtime installs the resolved skill tree under the seat's own `skills/` at every start. 1.4.13 restores guide-common.md's loop step 4 to the commit form the owner ruled fleet-wide: commit by pathspec and do not stage first, with git add -N only for a new file. 1.4.12 cuts shared-modules/guide-common.md to a short index (the loop, the five rules, stuck handling), drops its shared-tree commit, approval-gate, pytest and task-ritual sections, and moves the reviewer verdict into the task or queue row (no GATE file, no vite build). 1.4.11 moves the runtime-neutral note rule out
 // of guide-writer.md and into shared-modules/guide-common.md's writing section, where every seat reads it:
 // the rule covers every seat that writes a note, and guide-common.md is the cross-seat container, so
 // guide-writer.md returns to its pre-1.4.10 content. 1.4.10 rehomes the rule the architect guide
@@ -28,7 +31,7 @@ import (
 // for one. 1.4.5 is the retirement of the checker's send verb: the comm-guard allow list drops its
 // entry for it and the guard skill now names `4genteam send`. The deny list and
 // `Bash(4genteam whoami:*)` are unchanged.
-const seedVersion = "1.4.18"
+const seedVersion = "1.4.19"
 
 type SeedModule struct {
 	Slug    string
