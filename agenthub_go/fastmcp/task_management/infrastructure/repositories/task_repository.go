@@ -1165,7 +1165,8 @@ func taskRepoInClause(column string, ids []string, args *[]any, cast string) str
 
 // ---- search_tasks --------------------------------------------------------------
 
-// SearchTasks is search_tasks: ANY word matches ANY of title/description/label name.
+// SearchTasks is search_tasks: ANY word matches ANY of id/title/description/label name, and a match
+// on the whole query (an id prefix or an exact title) is ordered ahead of the word matches.
 func (r *ORMTaskRepository) SearchTasks(ctx context.Context, query string, filters map[string]any, limit, offset int) ([]*entities.Task, error) {
 	out := []*entities.Task{}
 	searchWords := []string{}
@@ -1226,14 +1227,35 @@ func (r *ORMTaskRepository) SearchTasks(ctx context.Context, query string, filte
 			p2 := len(args)
 			args = append(args, pattern)
 			p3 := len(args)
+			args = append(args, pattern)
+			p4 := len(args)
+			// The id is a searchable column: a word that is an id prefix (an 8-hex fragment is how a
+			// task is quoted between seats) must surface the task itself, not only the rows whose
+			// text happens to mention it.
 			wordConds = append(wordConds, fmt.Sprintf(
-				`("title" ILIKE $%d OR "description" ILIKE $%d OR EXISTS (SELECT 1 FROM task_labels tl JOIN labels l ON tl.label_id = l.id WHERE tl.task_id = tasks.id AND l.name ILIKE $%d))`,
-				p1, p2, p3))
+				`("id"::text ILIKE $%d OR "title" ILIKE $%d OR "description" ILIKE $%d OR EXISTS (SELECT 1 FROM task_labels tl JOIN labels l ON tl.label_id = l.id WHERE tl.task_id = tasks.id AND l.name ILIKE $%d))`,
+				p1, p2, p3, p4))
 		}
 		conds = append(conds, "("+strings.Join(wordConds, " OR ")+")")
 		suffix := " WHERE " + strings.Join(conds, " AND ")
+		// A match on the WHOLE query outranks a match on one of its words, so the exact id prefix or
+		// exact title string a caller typed is in the page even when the limit is small and newer rows
+		// mention one of its words: id and title first, then description, then the word matches.
 		// The id tiebreaker keeps consecutive pages disjoint when two matches share created_at.
-		suffix += ` ORDER BY "created_at" DESC, "id" ASC`
+		if phrase := value_objects.PyStrip(query); phrase != "" {
+			phrasePattern := "%" + phrase + "%"
+			args = append(args, phrasePattern)
+			q1 := len(args)
+			args = append(args, phrasePattern)
+			q2 := len(args)
+			args = append(args, phrasePattern)
+			q3 := len(args)
+			suffix += fmt.Sprintf(
+				` ORDER BY CASE WHEN "id"::text ILIKE $%d THEN 0 WHEN "title" ILIKE $%d THEN 0 WHEN "description" ILIKE $%d THEN 1 ELSE 2 END, "created_at" DESC, "id" ASC`,
+				q1, q2, q3)
+		} else {
+			suffix += ` ORDER BY "created_at" DESC, "id" ASC`
+		}
 		suffix += fmt.Sprintf(" LIMIT %d", limit)
 		if offset > 0 {
 			suffix += fmt.Sprintf(" OFFSET %d", offset)

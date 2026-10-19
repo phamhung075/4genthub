@@ -7139,3 +7139,12 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
   `error="invalid_grant" description="Account disabled"` - and that the password is not in it.
 - `TestLoginResponseMappingIsUnchangedOnSuccess` pins the 200 path (token, refresh token, `sub`/`email`
   claims, `expires_in`) so the refusal rewrite cannot have moved it.
+
+## 2026-10-19 - task search surfaces an id prefix and an exact title (go, branch 4genthub-min/next-work)
+
+- `agenthub_go/fastmcp/task_management/infrastructure/repositories/task_repository_test.go`:
+  `TestTaskRepoSearchSurfacesIdPrefixAndTitlePhrase` seeds a task whose title is the full phrase, then
+  five newer decoys whose descriptions quote its id and title words, and searches the 8-hex id prefix
+  and the full title with `limit 3`, no status filter. Against the pre-change repository both calls
+  returned only decoys (`Search id prefix ... did not surface the task first`); after the change each
+  returns the task first.
