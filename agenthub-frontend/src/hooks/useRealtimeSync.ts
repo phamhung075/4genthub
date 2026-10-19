@@ -10,6 +10,7 @@ import {
   type RoomEventPayload,
   type NotificationEventPayload,
   type RigSafeguardAlertPayload,
+  type TaskUpdatePayload,
   isBranchDeletePayload,
   isSubtaskDeletePayload,
   isProjectDeletePayload,
@@ -45,6 +46,16 @@ const asRealtimeWebSocketClient = (value: unknown): RealtimeWebSocketClient | nu
     ? (candidate as RealtimeWebSocketClient)
     : null;
 };
+
+/**
+ * A task event carries the row a write produced, and a delta names only the fields that write
+ * changed. Spreading the payload over what the cache already holds keeps the fields the event
+ * omits - `details` and `context_data` above all, which no update payload carries (the facade's
+ * update dict leaves `details` out, and the T7 deltas omit it too). Replace only when there is
+ * nothing cached to preserve.
+ */
+const mergeTaskEvent = (cached: Task | undefined, primary: Partial<Task>): Task =>
+  cached ? { ...cached, ...primary } : (primary as Task);
 
 /**
  * The dashboard inbox line for one safeguard alert.
@@ -179,7 +190,7 @@ export const useRealtimeSync = (
                 // ✨ FIX: Check if task already exists (from optimistic update)
                 const exists = old.some(t => t.id === taskId);
                 if (exists) {
-                  return old.map(t => t.id === taskId ? taskData : t);
+                  return old.map(t => t.id === taskId ? mergeTaskEvent(t, taskData) : t);
                 }
 
                 // Add new task to BEGINNING (first row) for newest-first order
@@ -195,7 +206,7 @@ export const useRealtimeSync = (
             // ✨ FIX: Check if task already exists
             const exists = old.some(t => t.id === taskId);
             if (exists) {
-              return old.map(t => t.id === taskId ? taskData : t);
+              return old.map(t => t.id === taskId ? mergeTaskEvent(t, taskData) : t);
             }
 
             // Add new task to BEGINNING (first row) for newest-first order
@@ -222,24 +233,54 @@ export const useRealtimeSync = (
           break;
 
         case 'updated': {
-          // ✅ FIX 2025-11-22: Backend NOW sends complete data (fixed facade to return complete task)
-          // Directly update cache with WebSocket payload instead of invalidating
-          // This is faster and prevents stale data in fullTasksMap
+          // THE EVENT IS A DELTA (PERF-05 ruling at 3ccf9b00): the id, `updated_at`, and only the
+          // fields the write changed. It is MERGED over the cached task - a replace would drop
+          // every key the delta omits, `details` and `context_data` among them. Two shapes decide
+          // otherwise:
+          //   refetch:true     the change set overflowed the byte cap; the frame carries no fields
+          //                    at all, so the row is re-read rather than merged;
+          //   details_changed  the progress log changed and its text is not carried (unbounded),
+          //                    so the detail re-reads it instead of showing the cached copy as
+          //                    current.
+          const delta = data.primary as TaskUpdatePayload;
+          const { refetch: refetchWholeTask, details_changed: detailsChanged, ...taskFields } = delta;
+          const detailVariants = [false, true] as const;
 
           // CRITICAL: Delay to allow update animation to play (~150ms)
           setTimeout(() => {
-            // ✅ DIRECTLY UPDATE cache with complete WebSocket data
-            // Backend now sends ALL fields (title, description, status, priority, etc.)
-            queryClient.setQueryData(['task', taskId, false], taskData);
-            queryClient.setQueryData(['task', taskId, true], taskData);
+            const cachedTasks = detailVariants.map((includeContext) => ({
+              includeContext,
+              cached: queryClient.getQueryData<Task>(['task', taskId, includeContext]),
+            }));
+
+            if (!refetchWholeTask) {
+              for (const { includeContext, cached } of cachedTasks) {
+                if (cached) {
+                  queryClient.setQueryData<Task>(['task', taskId, includeContext], {
+                    ...cached,
+                    ...taskFields,
+                  });
+                }
+              }
+            }
+
+            // The overflow shape, a stale progress log, or nothing cached to merge into: all three
+            // are answered by re-reading the row. Merging into an absent cache entry instead would
+            // leave an id-and-a-few-fields phantom that reads as a loaded task.
+            if (refetchWholeTask || detailsChanged || cachedTasks.every(({ cached }) => !cached)) {
+              queryClient.invalidateQueries({ queryKey: ['task', taskId] });
+            }
 
             // Also invalidate task list to update summaries
-            if (taskData.git_branch_id) {
-              queryClient.invalidateQueries({ queryKey: ['tasks', taskData.git_branch_id] });
+            if (taskFields.git_branch_id) {
+              queryClient.invalidateQueries({ queryKey: ['tasks', taskFields.git_branch_id] });
             }
             queryClient.invalidateQueries({ queryKey: ['tasks'] });
 
-            logger.debug(`[useRealtimeSync] Updated task ${taskId} with complete data from WebSocket`);
+            logger.debug(`[useRealtimeSync] Merged task delta ${taskId} into the cached task`, {
+              refetch: refetchWholeTask === true,
+              detailsChanged: detailsChanged === true,
+            });
           }, 150); // Match UPDATE animation duration from WebSocketAnimationService.ts
 
           // 🔇 SUPPRESS toast for automatic task updates (subtask count changes)

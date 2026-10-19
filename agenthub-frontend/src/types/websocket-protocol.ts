@@ -85,16 +85,24 @@ export interface TaskCreatePayload {
   created_at?: string;
 }
 
+/**
+ * A task update is a DELTA (PERF-05 ruling at 3ccf9b00): the id and `updated_at`, plus only the
+ * fields the write changed. `details` is never carried - unbounded text - so a changed progress log
+ * is signalled by `details_changed`, and the reader re-reads the row for it. A change set that would
+ * exceed the byte cap is sent as `{id, refetch: true}` instead, carrying no fields to merge at all.
+ */
 export interface TaskUpdatePayload {
   id: string;
-  title: string;
+  updated_at?: string;
+  details_changed?: boolean;
+  refetch?: boolean;
+  title?: string;
   description?: string;
-  status: string;
-  priority: string;
-  git_branch_id: string;
+  status?: string;
+  priority?: string;
+  git_branch_id?: string;
   assignees?: string[];
   labels?: string[];
-  updated_at?: string;
 }
 
 export interface TaskDeletePayload {
