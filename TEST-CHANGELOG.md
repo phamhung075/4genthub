@@ -7276,10 +7276,12 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
 
 - `fastmcp/task_management/infrastructure/repositories/git_branch_repository_test.go`: new
   `TestGitBranchRepoDeleteBranchRemovesTaskEvents` - a branch task with one event appended through
-  `TaskEventRepository.Append`, then `DeleteBranch`, then `task_events` counted by `task_id`. Red at
-  `76b0d84d` with `23503` on `task_events_task_id_fkey`.
+  `TaskEventRepository.Append` and a second appended under another user (the ledger's `user_id` is
+  the author), then `DeleteBranch`, then `task_events` counted by `task_id`. Red at `76b0d84d` with
+  `23503` on `task_events_task_id_fkey`, and red on a user-filtered step 10 with the same error.
 - `fastmcp/task_management/infrastructure/repositories/project_repository_test.go`: new
   `TestProjectRepoDeleteProjectRemovesTaskEvents` - a project with a branch, a task and one event,
-  then `DeleteProject`, then the same count. Red at `76b0d84d` with the same `23503`.
+  deleted in the service's order (`DeleteBranch` per branch, then `DeleteProject`), then the same
+  count. Red at `76b0d84d` at the branch step with the same `23503`.
   Both green after the fix; the existing branch, project and task cascade tests stay green;
   `go test ./...` against `AGENTHUB_TEST_PG_URL` passes.

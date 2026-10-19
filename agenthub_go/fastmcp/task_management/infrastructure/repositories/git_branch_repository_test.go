@@ -671,6 +671,9 @@ func TestGitBranchRepoDeleteBranchRemovesTaskEvents(t *testing.T) {
 	}
 	taskID := gitBranchRepoTestAddTask(t, sessions, gb.ID.Value, user, "todo", "high")
 	taskEventsTestAppend(t, sessions, user, gb.ID.Value, taskID)
+	// task_events.user_id is the event's AUTHOR, not the task's owner: an event another user
+	// wrote on this task must not survive the branch delete and block it.
+	taskEventsTestAppend(t, sessions, "c4a1b7e3-2d5f-5e8a-9b6c-7d0e1f2a3b4c", gb.ID.Value, taskID)
 
 	deleted, err := repo.DeleteBranch(ctx, gb.ID.Value)
 	if err != nil || !deleted {

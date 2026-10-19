@@ -612,31 +612,24 @@ func (r *ORMProjectRepository) UpdateProject(ctx context.Context, projectID stri
 }
 
 // DeleteProject deletes a project row (delete_project); user scoping is bypassed like the
-// Python fallback path. The branches and tasks leave through the schema's cascades
-// (project_git_branchs.project_id, tasks.git_branch_id), but task_events.task_id has none, so
-// the ledger of every task in the project is deleted here first, in the same transaction.
+// Python fallback path.
 func (r *ORMProjectRepository) DeleteProject(ctx context.Context, projectID string) (bool, error) {
 	deleted := false
-	err := r.Transaction(ctx, func(ctx context.Context) error {
-		return r.GetDBSession(ctx, func(ctx context.Context, s database.DBTX) error {
-			row, err := r.ORMRepository.getByID(ctx, s, projectID)
-			if err != nil {
-				return err
-			}
-			if row == nil {
-				return nil
-			}
-			if _, err := s.ExecContext(ctx, `DELETE FROM task_events WHERE task_id IN (SELECT id FROM tasks WHERE git_branch_id IN (SELECT id FROM project_git_branchs WHERE project_id = $1::uuid))`, projectID); err != nil {
-				return err
-			}
-			res, err := s.ExecContext(ctx, "DELETE FROM "+quoteIdent(r.Table.Name)+" WHERE "+r.pkColumn()+" = $1", projectID)
-			if err != nil {
-				return err
-			}
-			n, _ := res.RowsAffected()
-			deleted = n > 0
+	err := r.GetDBSession(ctx, func(ctx context.Context, s database.DBTX) error {
+		row, err := r.ORMRepository.getByID(ctx, s, projectID)
+		if err != nil {
+			return err
+		}
+		if row == nil {
 			return nil
-		})
+		}
+		res, err := s.ExecContext(ctx, "DELETE FROM "+quoteIdent(r.Table.Name)+" WHERE "+r.pkColumn()+" = $1", projectID)
+		if err != nil {
+			return err
+		}
+		n, _ := res.RowsAffected()
+		deleted = n > 0
+		return nil
 	})
 	return deleted, err
 }

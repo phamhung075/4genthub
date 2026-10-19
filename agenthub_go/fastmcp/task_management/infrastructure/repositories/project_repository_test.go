@@ -118,9 +118,10 @@ func TestProjectRepoSaveFindDelete(t *testing.T) {
 }
 
 func TestProjectRepoDeleteProjectRemovesTaskEvents(t *testing.T) {
-	// DeleteProject relies on the chain project_git_branchs.project_id -> tasks.git_branch_id
-	// cascades, but task_events.task_id has none: without an explicit ledger delete the project
-	// delete aborts on the FK.
+	// The project delete is not a second delete body: the service deletes each of the project's
+	// branches through DeleteBranch and only then the project row
+	// (project_management_service.go). This test walks that same order end to end, so the branch
+	// delete is what must take the ledger and the project row survives nothing.
 	sessions := newTestRepoEnv(t)
 	ctx := context.Background()
 	user := "b7d1c0a2-3f4e-5d6c-8b9a-0f1e2d3c4b5a"
@@ -139,6 +140,14 @@ func TestProjectRepoDeleteProjectRemovesTaskEvents(t *testing.T) {
 	}
 	taskID := projectRepoTestCreateTask(t, sessions, branch.ID.Value, user, "todo")
 	taskEventsTestAppend(t, sessions, user, branch.ID.Value, taskID)
+
+	branchRepo, err := NewORMGitBranchRepository(sessions, &user, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if deleted, err := branchRepo.DeleteBranch(ctx, branch.ID.Value); err != nil || !deleted {
+		t.Fatalf("DeleteBranch: %v %v", deleted, err)
+	}
 
 	deleted, err := repo.DeleteProject(ctx, project.ID.Value)
 	if err != nil || !deleted {

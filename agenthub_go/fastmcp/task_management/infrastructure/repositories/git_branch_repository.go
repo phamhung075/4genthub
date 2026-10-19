@@ -525,9 +525,12 @@ func (r *ORMGitBranchRepository) DeleteBranch(ctx context.Context, branchID stri
 			// Step 10: TaskEvent records for this branch's Tasks. task_events.task_id is the one
 			// FK into tasks with NO ON DELETE CASCADE (task_event_tables.go), so the ledger must
 			// be emptied before Step 13 deletes the tasks, or PostgreSQL refuses it with 23503.
+			// No user condition, unlike the steps above: task_events.user_id is the event's
+			// AUTHOR, not the task's owner, and an event another user wrote on this task would
+			// otherwise survive the branch delete and block it. The task delete precedent
+			// (task_repository.go) carries no user filter for the same reason.
 			args = []any{}
 			conds = []string{gitBranchRepoInArgs("task_id", taskIDs, &args)}
-			conds, args = r.gitBranchRepoUserCond(conds, args)
 			if err := gitBranchRepoDelete(ctx, s, "task_events", conds, args); err != nil {
 				return err
 			}
