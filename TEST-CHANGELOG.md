@@ -1,9 +1,11 @@
 ## 2026-10-20 - the branch delete takes a cross-author child with it
 
 `TestGitBranchRepoDeleteBranchCascade` (branch `4genthub-min/next-work`): seeds `task_labels`,
-`branch_contexts` and `task_contexts` written by a user other than the branch owner, so a delete
-that filters a child by `user_id` aborts with 23503 instead of deleting. RED before the
-`gitBranchRepoUserCond` removal in `DeleteBranch`, green after.
+`branch_contexts`, `task_contexts` (by both parent ids) and a cascading `task_assignees` row written
+by a user other than the branch owner, so a delete that filters a child by `user_id` aborts with
+23503 instead of deleting. RED before the `gitBranchRepoUserCond` removal in `DeleteBranch`, green
+after. `TestGitBranchRepoUserIsolation` gains the gate proof: a project owner's branch with a task
+and a context, deleted by another user, answers false and leaves all three rows.
 
 # Test Suite Changelog
 

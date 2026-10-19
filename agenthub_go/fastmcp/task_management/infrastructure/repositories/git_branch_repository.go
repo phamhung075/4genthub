@@ -272,14 +272,6 @@ func gitBranchRepoInArgs(col string, ids []string, args *[]any) string {
 	return quoteIdent(col) + " IN (" + strings.Join(holders, ", ") + ")"
 }
 
-func (r *ORMGitBranchRepository) gitBranchRepoUserCond(conds []string, args []any) ([]string, []any) {
-	if r.gitBranchRepoHasUser() {
-		args = append(args, *r.UserID)
-		conds = append(conds, quoteIdent("user_id")+fmt.Sprintf(" = $%d", len(args)))
-	}
-	return conds, args
-}
-
 func gitBranchRepoDelete(ctx context.Context, s database.DBTX, table string, conds []string, args []any) error {
 	q := "DELETE FROM " + quoteIdent(table)
 	if len(conds) > 0 {
@@ -427,11 +419,13 @@ func (r *ORMGitBranchRepository) FindAll(ctx context.Context) ([]*entities.GitBr
 // DeleteBranch is delete_branch: a comprehensive cascade delete of everything that references
 // the branch, then the branch itself.
 //
-// Ownership is checked ONCE, at the project the branch belongs to (the block below). The child
-// deletes then carry no user condition: a child's user_id records who WROTE it, not who owns the
-// branch, so filtering by it would leave another user's row behind, and the rows the schema does
-// not cascade (task_contexts, task_labels, branch_contexts) would refuse the branch delete with
-// 23503. The task delete precedent (task_repository.go) has the same shape for the same reason.
+// The delete is AGGREGATE-scoped, not author-scoped. The ownership check on the branch's project
+// (the block below) is the one tenancy boundary; every child delete and both id selects then run
+// with no user_id condition. A child's user_id records who WROTE it, and it can never act as a
+// control here: where the schema cascades (tasks, subtasks, task_assignees, task_dependencies) the
+// filter deletes a subset the database would take anyway, and where it does not (task_contexts,
+// task_labels, branch_contexts, task_events) the filter leaves another author's row behind and the
+// branch row then refuses to go with 23503. Ruling: seats/architect/RULING-int03-branch-delete-scope-2026-10-20.md.
 func (r *ORMGitBranchRepository) DeleteBranch(ctx context.Context, branchID string) (bool, error) {
 	deleted := false
 	err := r.GetDBSession(ctx, func(ctx context.Context, s database.DBTX) error {
@@ -459,7 +453,6 @@ func (r *ORMGitBranchRepository) DeleteBranch(ctx context.Context, branchID stri
 		// Step 1: ContextInheritanceCache for this branch.
 		cacheConds := []string{quoteIdent("context_id") + " = $1", quoteIdent("context_level") + " = 'branch'"}
 		cacheArgs := []any{branchID}
-		cacheConds, cacheArgs = r.gitBranchRepoUserCond(cacheConds, cacheArgs)
 		if err := gitBranchRepoDelete(ctx, s, "context_inheritance_cache", cacheConds, cacheArgs); err != nil {
 			return err
 		}
@@ -469,7 +462,6 @@ func (r *ORMGitBranchRepository) DeleteBranch(ctx context.Context, branchID stri
 		c1 := "(" + quoteIdent("source_id") + " = $1 AND " + quoteIdent("source_level") + " = 'branch')"
 		c2 := "(" + quoteIdent("target_id") + " = $1 AND " + quoteIdent("target_level") + " = 'branch')"
 		delConds := []string{"(" + c1 + " OR " + c2 + ")"}
-		delConds, delArgs = r.gitBranchRepoUserCond(delConds, delArgs)
 		if err := gitBranchRepoDelete(ctx, s, "context_delegations", delConds, delArgs); err != nil {
 			return err
 		}
@@ -490,7 +482,6 @@ func (r *ORMGitBranchRepository) DeleteBranch(ctx context.Context, branchID stri
 			// Step 5: Subtask records.
 			args := []any{}
 			conds := []string{gitBranchRepoInArgs("task_id", taskIDs, &args)}
-			conds, args = r.gitBranchRepoUserCond(conds, args)
 			if err := gitBranchRepoDelete(ctx, s, "subtasks", conds, args); err != nil {
 				return err
 			}
@@ -498,7 +489,6 @@ func (r *ORMGitBranchRepository) DeleteBranch(ctx context.Context, branchID stri
 			// Step 6: TaskAssignee records.
 			args = []any{}
 			conds = []string{gitBranchRepoInArgs("task_id", taskIDs, &args)}
-			conds, args = r.gitBranchRepoUserCond(conds, args)
 			if err := gitBranchRepoDelete(ctx, s, "task_assignees", conds, args); err != nil {
 				return err
 			}
@@ -514,7 +504,6 @@ func (r *ORMGitBranchRepository) DeleteBranch(ctx context.Context, branchID stri
 			args = []any{}
 			cond := "(" + gitBranchRepoInArgs("task_id", taskIDs, &args) + " OR " + gitBranchRepoInArgs("depends_on_task_id", taskIDs, &args) + ")"
 			conds = []string{cond}
-			conds, args = r.gitBranchRepoUserCond(conds, args)
 			if err := gitBranchRepoDelete(ctx, s, "task_dependencies", conds, args); err != nil {
 				return err
 			}

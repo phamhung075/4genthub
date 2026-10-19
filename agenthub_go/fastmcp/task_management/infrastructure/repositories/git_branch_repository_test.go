@@ -208,11 +208,22 @@ func TestGitBranchRepoUserIsolation(t *testing.T) {
 	if deleted, err := repoB.Delete(ctx, projectA, gb.ID.Value); err != nil || deleted {
 		t.Fatalf("user B delete: %v %v", deleted, err)
 	}
+	// The branch delete carries no per-child user filter, so its project-ownership gate is the one
+	// tenancy control: user B's call must answer false and leave the branch AND its children.
+	taskA := gitBranchRepoTestAddTask(t, sessions, gb.ID.Value, userA, "todo", "medium")
+	gitBranchRepoTestCreate[database.TaskContext](t, sessions, "task_contexts", NewKwargs(
+		"id", tmvo.NewUUIDv4(), "task_id", taskA, "user_id", userA))
 	if deleted, err := repoB.DeleteBranch(ctx, gb.ID.Value); err != nil || deleted {
 		t.Fatalf("user B cascade delete: %v %v", deleted, err)
 	}
 	if got, _ := repoA.FindByID(ctx, gb.ID.Value, nil); got == nil {
 		t.Fatal("branch should still exist for user A")
+	}
+	if !gitBranchRepoTestRowExists(t, sessions, `SELECT count(*) FROM tasks WHERE git_branch_id = $1`, gb.ID.Value) {
+		t.Fatal("user B's refused delete removed user A's task")
+	}
+	if !gitBranchRepoTestRowExists(t, sessions, `SELECT count(*) FROM task_contexts WHERE task_id = $1`, taskA) {
+		t.Fatal("user B's refused delete removed user A's task context")
 	}
 }
 
@@ -626,6 +637,11 @@ func TestGitBranchRepoDeleteBranchCascade(t *testing.T) {
 		"id", tmvo.NewUUIDv4(), "task_id", otherTask, "parent_branch_context_id", foreignBranchContextID, "user_id", foreign))
 	gitBranchRepoTestCreate[database.TaskContext](t, sessions, "task_contexts", NewKwargs(
 		"id", tmvo.NewUUIDv4(), "task_id", otherTask, "parent_branch_id", gb.ID.Value, "user_id", foreign))
+	// A cascading child written by another user: the database would take it with the task, and the
+	// delete takes it too, because no step in this method filters by author.
+	gitBranchRepoTestCreate[database.TaskAssignee](t, sessions, "task_assignees", NewKwargs(
+		"id", tmvo.NewUUIDv4(), "task_id", otherTask, "assignee_id", "agent-foreign",
+		"user_id", foreign, "assigned_at", now))
 
 	// ContextInheritanceCache.
 	gitBranchRepoTestCreate[database.ContextInheritanceCache](t, sessions, "context_inheritance_cache", NewKwargs(
@@ -669,6 +685,7 @@ func TestGitBranchRepoDeleteBranchCascade(t *testing.T) {
 		{`SELECT count(*) FROM branch_contexts WHERE id = $1`, foreignBranchContextID},
 		{`SELECT count(*) FROM task_contexts WHERE parent_branch_context_id = $1`, foreignBranchContextID},
 		{`SELECT count(*) FROM task_contexts WHERE user_id = $1`, foreign},
+		{`SELECT count(*) FROM task_assignees WHERE assignee_id = $1`, "agent-foreign"},
 	}
 	for _, c := range checks {
 		if gitBranchRepoTestRowExists(t, sessions, c.query, c.arg) {
