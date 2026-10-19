@@ -141,18 +141,24 @@ CORS_ORIGINS=https://app.captain.yourdomain.com
 
 ### Frontend deploy path (measured 2026-10-19)
 
-The frontend ships from the `frontend` branch, not from a script: CapRover's GitHub webhook on that
-branch builds the app, and nothing in this repository runs the build. Measured 2026-10-19 (the lead's
-deploy walk, re-read here): the push of `408a304c` (authored 17:01Z) at 17:11Z returned **200
-Delivered** on the webhook and built nothing; the re-trigger at 17:56Z served
-`/assets/index-BAhshU-p.js` at 18:03:24Z, and the same chunk was served when this note was written.
+The frontend ships on its own line, the `frontend` branch (`main` and `frontend` are separate branches
+that merge periodically), and not from a script: a push to `frontend` fires the GitHub push webhook
+that CapRover's app `4genthub-frontend` builds, and nothing in this repository runs the build.
+Measured 2026-10-19 (the lead's deploy walk, re-read here): the push of `408a304c` (authored 17:01:36Z)
+at 17:11Z returned **200 Delivered** on the webhook and built nothing; the re-trigger at 17:56Z produced
+the build that began serving at 18:03:24Z (`/assets/index-BAhshU-p.js`). A build runs about 4-11
+minutes (04:35Z trigger -> live 04:46Z; 17:56Z -> 18:03Z), and a trigger can be lost silently while the
+webhook still answers 200.
 
 **A webhook 200 is delivery, not a build.** It says CapRover accepted the event; it says nothing about
-whether an image was built, was deployed, or is serving. Only two surfaces answer that: the frontend
-app's build log in the CapRover dashboard (a build has a start line and an end line), and the served
-entry chunk - the hash Vite writes into the build's own `index.html`.
+whether an image was built, was deployed, or is serving. Two surfaces answer that: the frontend app's
+build log in the CapRover dashboard (a build has a start line and an end line), and the served entry -
+its `Last-Modified` must move past the push, and the entry chunk's hash is the one Vite wrote into the
+build's own `index.html`.
 
 ```bash
+# Did the deploy you pushed actually serve? The served entry's Last-Modified moves past the push time.
+curl -sI https://www.4genthub.com/ | grep -i last-modified
 # Which build is live? The entry chunk is the script the page loads.
 curl -s https://www.4genthub.com | grep -o '<script[^>]*src="/assets/index-[A-Za-z0-9_-]*\.js"'
 # The same hash in a local build of HEAD proves the live app IS that build (exit 0 = identity):
@@ -161,17 +167,18 @@ python3 scripts/check_served_frontend.py --base-url https://www.4genthub.com \
 ```
 
 When the 200 is followed by no build, re-trigger from the CapRover app's deployment tab, wait for the
-build log's end line, and re-run the two checks. A 200 on its own is not a deploy report.
+build log's end line, and re-run the checks. A 200 on its own is not a deploy report.
 
-**The build definition is not pinned in the tree.** CapRover reads `captain-definition` from the branch
-root, and `origin/frontend` carries no such file - only `captain-definition.backend`,
-`captain-definition.backend.go` and `captain-definition.frontend`. `agenthub-frontend/captain-definition`
-names `./Dockerfile.production`, which is absent at HEAD and on `origin/frontend` (`9787bce2` introduced
-it); `captain-definition.frontend` names `docker-system/docker/Dockerfile.frontend.production`, a
-multi-stage node:20-alpine build. Until a root `captain-definition` exists, the definition a given build
-used lives only in the CapRover app's configuration and cannot be reproduced from the repository.
-`scripts/deploy-frontend.sh` is the image-push variant of this path and stops at the same missing
-`agenthub-frontend/Dockerfile.production`.
+**The build definition is a suffixed file, and the app's choice of it is not in the repository.**
+CapRover reads `captain-definition` from the branch root, and `origin/frontend` carries no such file -
+only three suffixed variants, `captain-definition.backend`, `captain-definition.backend.go` and
+`captain-definition.frontend`; which of them the app reads is a CapRover app setting. The frontend one
+names `docker-system/docker/Dockerfile.frontend.production` - a multi-stage node:20-alpine build that
+exists at HEAD and on `origin/frontend`. `agenthub-frontend/captain-definition` is a second, stale
+definition: it names `./Dockerfile.production`, absent at HEAD and on `origin/frontend` (`9787bce2`
+introduced it), and `scripts/deploy-frontend.sh`, the image-push variant of this path, stops at that
+same missing file (`:110`). Until a root `captain-definition` exists, the repository cannot say which
+definition a given build used; the CapRover app configuration holds the answer.
 
 ### Managed PostgreSQL Deployment
 
