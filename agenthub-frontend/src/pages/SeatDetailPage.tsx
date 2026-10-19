@@ -56,6 +56,7 @@ import {
   useUpsertSeatLink,
 } from '../hooks/useSeats';
 import { SeatLlmPanel } from '../components/seats/SeatLlmPanel';
+import { ModuleContentView } from '../components/seats/ModuleContentView';
 import { SeatPermissionPolicyPanel } from '../components/seats/SeatPermissionPolicyPanel';
 import { SeatPreview } from '../components/seats/SeatPreview';
 import { computeEffectiveModules } from '../lib/seatModules';
@@ -143,9 +144,7 @@ const ModuleRow: React.FC<{ module: EffectiveSeatModule }> = ({ module }) => {
       {showContent && !module.removed && (
         <div className="space-y-1">
           {module.overridden && module.contentOverride !== undefined ? (
-            <pre className="max-h-64 overflow-auto rounded bg-muted p-3 text-xs whitespace-pre-wrap">
-              {module.contentOverride}
-            </pre>
+            <ModuleContentView content={module.contentOverride} />
           ) : isLoading ? (
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <Loader2 className="h-3 w-3 animate-spin" /> Loading {module.slug}@
@@ -154,9 +153,7 @@ const ModuleRow: React.FC<{ module: EffectiveSeatModule }> = ({ module }) => {
           ) : error ? (
             <p className="text-xs text-destructive">{error.message}</p>
           ) : fetched ? (
-            <pre className="max-h-64 overflow-auto rounded bg-muted p-3 text-xs whitespace-pre-wrap">
-              {fetched.content}
-            </pre>
+            <ModuleContentView content={fetched.content} />
           ) : null}
         </div>
       )}

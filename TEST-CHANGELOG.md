@@ -2,6 +2,15 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-19 - the module content viewer reads sections, raw, and non-JSON (frontend, branch 4genthub-min/fe-deploy-walk)
+
+- `agenthub-frontend/src/tests/components/ModuleContentView.test.tsx` (new, 5 tests): a skill block
+  (`{"content": "<SKILL.md>", "source_path", "sha256"}`) renders its keys as sections with the markdown
+  line breaks intact and no escaped `\n` left in the text; the Raw toggle reproduces the stored string
+  byte for byte and Formatted returns to sections; nested objects and arrays render level by level;
+  non-JSON content stays a plain `<pre>` with no toggle; whitespace-only content says it carries none
+  instead of drawing an empty pane. Suite: 5 passed, plus `SeatDetailPage.test.tsx` 29 passed.
+
 ## 2026-10-19 - the served census pins the whole dotted name (repo scripts, branch 4genthub-min/fe-deploy-walk)
 
 - `scripts/tests/test_check_served_frontend.py`: two tests added. One serves a fresh tree whose entry

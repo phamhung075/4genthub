@@ -3,6 +3,11 @@
 ## [Unreleased]
 
 ### Changed
+- **Effective module content reads as sections, not as one escaped JSON line** - 2026-10-19
+  - `src/components/seats/ModuleContentView.tsx` (new): a module's content string goes through `JSON.parse` once; valid JSON renders as labelled key/value sections with nested objects and arrays indented under a left rule, and a string value keeps its own line breaks (a skill block's `content` is the whole SKILL.md, so the raw dump showed `\n` escapes and one unreadable line). A `Raw` toggle returns the exact stored string for copy and debug.
+  - `src/pages/SeatDetailPage.tsx`: both the fetched branch and the overlay `contentOverride` branch render through the viewer instead of a raw `<pre>`.
+  - Content that is not JSON keeps the plain reading with no toggle; whitespace-only content says it carries none instead of drawing an empty pane.
+  - `npx tsc --noEmit -p .` clean; `npx vitest run src/tests/components/ModuleContentView.test.tsx src/tests/pages/SeatDetailPage.test.tsx` 34 passed. NOT RUN: the browser check at `/seats/<room>/<seat>` - it needs the frontend deploy.
 - **Client routes move to `/api/v2/*` and the feedback layer is `client`** - 2026-10-15
   - Every API call, the generated `src/` route reference and the tests use `/api/v2/...` without the old client sub-prefix; the server and client change in the same release, so deploy the frontend with the backend.
   - `src/types/feedback.ts`, `src/pages/FeedbackPage.tsx` (label "Client") and its test: the layer value is `client`.
