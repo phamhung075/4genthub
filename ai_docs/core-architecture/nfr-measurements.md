@@ -1,13 +1,13 @@
-# NFR measurements — PERF-04 and PERF-06
+# NFR measurements — PERF-04, PERF-05 and PERF-06
 
-The measurement spec for the two rows open gate T5 names (`ai_docs/core-architecture/nfr-register.md:132`).
+The measurement spec for the rows open gates T5 and T7 name (`ai_docs/core-architecture/nfr-register.md`).
 It states, per row, the exact command, the metric and its unit, the threshold and that threshold's
 source, and the load the measurement applies. It changes **no row status**: the register reseed after
 the numbers exist is a separate ruling ("a status change is a ruling, not an edit").
 
-Provenance: written 2026-10-19 by the architect seat, from the row text at `nfr-register.md:44` and
-`:46` and the claim catalogue the register is derived from,
-`ai_docs/reports-status/NFR-analysis-2026-10-19.md` (`:43`, `:45`).
+Provenance: written 2026-10-19 by the architect seat, from the row text at `nfr-register.md:44`,
+`:45` and `:46` and the claim catalogue the register is derived from,
+`ai_docs/reports-status/NFR-analysis-2026-10-19.md` (`:43`, `:44`, `:45`).
 
 ## PERF-04 — realtime fan-out
 
@@ -85,6 +85,52 @@ The test (test-only file `internal/clientwatch/feed_timing_test.go`):
 - **Not measured**: the terminal provider's own rendering (herdr/tmux); the check covers the feed's
   stdout path, which is the client's.
 
+## PERF-05 — task-event delta and cap
+
+Exercised path: a task write reaches `SyncBroadcastTask`
+(`agenthub_go/fastmcp/task_management/application/services/websocket_notification_service.go:311`),
+which builds one `payload.data.primary`, hands it to `routes.BroadcastDataChange`
+(`fastmcp/server/routes/websocket_routes.go:421`), and marshals that frame once per authorized
+socket. Before T7 the primary is the whole task payload built by
+`WebSocketPayloadBuilder.BuildTaskPayload` (`websocket_payload_builder.go:22`), with `details`
+copied verbatim (`:38-46`); `BenchmarkTaskEventFrame`
+(`unified_context_bench_test.go:81-107`) times that path with a 3-key payload into a discard broker
+and measures no frame and no size.
+
+Command, from `agenthub_go/`:
+
+```
+go test ./fastmcp/task_management/application/services -run '^$' -bench '^BenchmarkTaskEventDelta$' -benchmem -count=1
+```
+
+The benchmark (test-only, replacing `BenchmarkTaskEventFrame`'s 3-key payload) builds one task with
+`details` of 41,000 runes, a 200-rune description, 20 labels and 20 assignees, and runs four
+sub-benchmarks against a broker that counts frames and keeps the marshal length:
+
+1. **status** - an update changing `status` only;
+2. **completion** - the `completed` event;
+3. **details** - an update appending to `details`;
+4. **wide** - an update changing description, labels and assignees together.
+
+- **Metric and unit**: bytes of the compact JSON of `payload.data.primary` (`len` of the marshalled
+  primary, the same bytes `wrSendJSON` writes), plus `ns/op` and `allocs/op` for the emit path.
+- **Threshold**: **≤ 2048 B** for every case; the **status** and **completion** cases additionally
+  **≤ 512 B**. Sources: Q6 (`nfr-register.md` Rulings) for the cap, and the PERF-05 claim,
+  `ai_docs/reports-status/NFR-analysis-2026-10-19.md:44` ("state transition payloads < 500 bytes",
+  "full 2KB+ entity snapshots") for the transition bound; the fan-out ceiling PERF-04 already
+  measures is taken at ~2 KB, so it covers this cap.
+- **Shape assertions**: no case's primary carries a `details` byte string; the **details** case
+  carries `details_changed: true`; the **wide** case is either <= 2048 B or exactly the refetch
+  shape `{"id": <id>, "refetch": true}`; `id` and `updated_at` are present in every delta; the
+  `created` shape is the task payload without `details`; `deleted` stays `{id, title}`.
+- **Tautology guards**: the pre-delta full payload must marshal to > 41,000 B, so the cap is not
+  proven against a payload too small to fail it; the broker counts one frame per broadcast; the
+  duplicate cache is cleared per iteration exactly as the old benchmark did, and a separate case
+  fires two updates inside 5 s and asserts **two** frames with distinct primaries (the dedup key
+  carries `updated_at`); a case with a user-stamped and a `"system"`-stamped emission of the same
+  write asserts **one** frame.
+- **Not measured**: the browser's merge cost and the HTTP refetch the `refetch` shape triggers.
+
 ## Where the numbers land
 
 After `go-dev` runs the two commands and a reviewer gate confirms them:
@@ -95,5 +141,8 @@ After `go-dev` runs the two commands and a reviewer gate confirms them:
   appears — the register's GATE vocabulary).
 - **T5** (`nfr-register.md:132`) then reads one benchmark (PERF-04, baseline cited) and one test
   (PERF-06, GATE).
+- **PERF-05**'s cell cites the `BenchmarkTaskEventDelta` command with the date, commit, host and the
+  per-case byte figures, and its status moves GAP -> GATE once the benchmark asserts the delta, the
+  cap and the dedup key at the landed sha (gate T7).
 
 Those edits are the architect's, after the numbers exist; they are not part of this document.

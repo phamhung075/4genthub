@@ -42,7 +42,7 @@ path with its line (a static fact a reader can open) · `review` (the policy has
 | PERF-02 | Context read and resolution stay under the 5 ms provenance budget, with the inheritance merge in memory and no cache layer. | PARTIAL | `GetContext` reads the requested level's repository and `resolveInheritanceSync` walks the parent repositories in order; the never-wired cache service and the dead `force_refresh` argument are gone (gate T6). The 5 ms budget is measured by the benchmark, not gated. | `file:agenthub_go/fastmcp/task_management/application/services/unified_context_service.go:315`; `file:agenthub_go/fastmcp/task_management/application/services/unified_context_service.go:1173`; measured `test:go test ./fastmcp/task_management/application/services -bench BenchmarkResolveContext -benchmem` -> 18.5-26.3 us/op over three runs (architect two, lead one), 25881-25882 B/op, 212 allocs/op (2026-10-19, commit `d45aa05d`, i7-12700F) | agenthub_go | 2026-10-19 |
 | PERF-03 | IPC frames are unix-socket, length-prefixed. | PARTIAL | Unix socket, **newline-delimited JSON** frames, not length-prefixed. | `file:agenthub_client/rust/agenthub-runtime/src/ipc/mod.rs:101` | runtime | 2026-10-19 |
 | PERF-04 | Realtime fan-out reaches a client promptly under load. | PARTIAL | `/ws/realtime` is mounted and fan-out exists; server-side fan-out is measured, the wire and the render are not. | `file:agenthub_go/fastmcp/server/httpapp/ws_mount.go:70`, `file:agenthub_go/fastmcp/server/routes/websocket_fanout_bench_test.go`; measured `cmd:go test ./fastmcp/server/routes -bench BenchmarkRealtimeFanout -benchmem` -> 1 socket 14.8 us/op, 10 sockets 126-127 us/op, 100 sockets 1.24-1.31 ms/op (12.4-13 us/socket, 13841 allocs/op) over three runs; the 500 ms ceiling at 100 sockets holds (2026-10-19, commit `86da875e`, i7-12700F) | agenthub_go | 2026-10-19 |
-| PERF-05 | A task event sends a delta under a size cap. | GAP | Every event broadcasts the whole `TaskData`; no delta, no cap. | `file:agenthub_go/fastmcp/task_management/application/services/websocket_notification_service.go:359`; measured `test:go test ./fastmcp/task_management/application/services -bench BenchmarkTaskEventFrame -benchmem` -> 1.4-1.8 us/op over two runs, 25 allocs/op (2026-10-19, commit `81074bd6`, i7-12700F) | agenthub_go | 2026-10-19 |
+| PERF-05 | A task event carries a delta of changed fields under a 2048-byte cap. | GAP | Every event broadcasts the whole `TaskData`; no delta, no cap. | `file:agenthub_go/fastmcp/task_management/application/services/websocket_notification_service.go:359`; measured `test:go test ./fastmcp/task_management/application/services -bench BenchmarkTaskEventFrame -benchmem` -> 1.4-1.8 us/op over two runs, 25 allocs/op (2026-10-19, commit `81074bd6`, i7-12700F) | agenthub_go | 2026-10-19 |
 | PERF-06 | The watch wall has no line-buffering delay. | GATE | A line reaches the pane's writer within 2 x `feedPollInterval` (1 s), in a `Write` of its own, uncoalesced. | `test:go test ./internal/clientwatch -run TestFeedWritesEachLineWithinOnePoll`; measured green in 1.00 s at client `c21e702`: the delay and the one-`Write` shape are both asserted (2026-10-19) | client | 2026-10-19 |
 
 ## Cost
@@ -129,7 +129,9 @@ path with its line (a static fact a reader can open) · `review` (the policy has
 
 ## Open gates this register expects
 
-None open.
+| Gate | Row | State |
+|---|---|---|
+| T7 | PERF-05 | Open: `SyncTaskEventParams.Changed` and `BuildTaskDelta` emit the Q6 shapes; every `payload.data.primary` serialises to <= 2048 B (over cap -> `{id, refetch: true}`); the dedup key carries `updated_at`; `BenchmarkTaskEventDelta` asserts the shapes, the cap and two successive writes; the frontend merges `primary` into `['task', <id>, false|true]`; `BroadcastTaskEvent`, `BuildLightweightPayload` and the `includeProgressHistory` flag are deleted; `agenthub-system-architecture.md:329` states the emitted envelope. |
 
 ## Rulings
 
@@ -145,5 +147,19 @@ surface and read by nothing, and no production path reads or inserts into
 `< 5 ms` with the merge in memory) at the landing `d45aa05d` (gate T6). A future cache must key by
 user, level and context id, invalidate on every service write with the Python cascade (global -> all
 of the user, project -> branch+task, branch -> task), and prove that a second identical resolve makes
-zero repository calls. A later change to a status is a ruling, not an edit in
+zero repository calls.
+
+PERF-05's delta is a flat field map (Q6, 2026-10-19): a task event's `payload.data.primary` carries
+`id` and `updated_at` plus only the fields the write changed; `created` carries the task payload
+without `details`; `deleted` keeps `{id, title}`. A changed `details` is signalled by
+`details_changed: true` and never carried - the field is copied verbatim by the builder
+(`websocket_payload_builder.go:38-46`) and has held 41k characters. Any `primary` that would exceed
+**2048 bytes** is replaced by `{id, refetch: true}` and the consumer refetches. The emitter takes
+the changed field names alongside the task, the notification dedup key carries the row's
+`updated_at` (two distinct writes inside the 5 s window both ship, and one write emitted by both
+emitter families collapses), and the frontend merges `primary` into the cached task
+(`useRealtimeSync.ts:331-393` already merges for `completed`; `:224-243` replaces for `updated`).
+Proven by `BenchmarkTaskEventDelta` (spec in `nfr-measurements.md`), gate T7.
+
+A later change to a status is a ruling, not an edit in
 passing: amend this file and cite the row you changed.
