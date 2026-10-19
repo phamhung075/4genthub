@@ -263,10 +263,26 @@ func TestAuthUserRepositoryDeleteAndResetToken(t *testing.T) {
 	if err != nil || byToken == nil || byToken.Username != "frank" {
 		t.Fatalf("GetByResetToken = %v, %v", byToken, err)
 	}
+	balances, err := NewTokenBalanceRepository(env)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := balances.CreateBalance(ctx, *saved.ID, 100, 100); err != nil {
+		t.Fatalf("CreateBalance: %v", err)
+	}
 
 	deleted, err := repo.Delete(ctx, *saved.ID)
 	if err != nil || !deleted {
 		t.Fatalf("Delete = %v, %v", deleted, err)
+	}
+	n := 0
+	if err := env.WithSession(ctx, func(ctx context.Context, s database.DBTX) error {
+		return s.QueryRowContext(ctx, `SELECT count(*) FROM user_token_balances WHERE user_id = $1`, *saved.ID).Scan(&n)
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if n != 0 {
+		t.Fatalf("user_token_balances rows still present: %d", n)
 	}
 	deleted, err = repo.Delete(ctx, *saved.ID)
 	if err != nil || deleted {

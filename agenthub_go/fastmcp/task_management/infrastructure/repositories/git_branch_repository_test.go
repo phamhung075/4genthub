@@ -590,6 +590,10 @@ func TestGitBranchRepoDeleteBranchCascade(t *testing.T) {
 	// Indirect TaskContext (parent_branch_context_id).
 	gitBranchRepoTestCreate[database.TaskContext](t, sessions, "task_contexts", NewKwargs(
 		"id", tmvo.NewUUIDv4(), "task_id", otherTask, "parent_branch_context_id", branchContextID, "user_id", user))
+	// TaskContext owned only by its task (no parent ids): the task_id cascade is gone, so
+	// only the branch delete's task_id statement can remove it.
+	gitBranchRepoTestCreate[database.TaskContext](t, sessions, "task_contexts", NewKwargs(
+		"id", tmvo.NewUUIDv4(), "task_id", taskID, "user_id", user))
 	// ContextInheritanceCache.
 	gitBranchRepoTestCreate[database.ContextInheritanceCache](t, sessions, "context_inheritance_cache", NewKwargs(
 		"context_id", gb.ID.Value, "context_level", "branch", "context_type", "hierarchical",
@@ -623,6 +627,8 @@ func TestGitBranchRepoDeleteBranchCascade(t *testing.T) {
 		{`SELECT count(*) FROM task_dependencies WHERE task_id = $1`, taskID},
 		{`SELECT count(*) FROM task_contexts WHERE parent_branch_id = $1`, gb.ID.Value},
 		{`SELECT count(*) FROM task_contexts WHERE parent_branch_context_id = $1`, branchContextID},
+		{`SELECT count(*) FROM task_contexts WHERE task_id = $1`, taskID},
+		{`SELECT count(*) FROM task_contexts WHERE task_id = $1`, otherTask},
 		{`SELECT count(*) FROM branch_contexts WHERE branch_id = $1`, gb.ID.Value},
 		{`SELECT count(*) FROM context_inheritance_cache WHERE context_id = $1`, gb.ID.Value},
 		{`SELECT count(*) FROM context_delegations WHERE source_id = $1`, gb.ID.Value},

@@ -7269,3 +7269,5 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
   completion, details, wide) that each report `primary-B` and `delta-B` beside ns/op, after
   asserting the created seed, the deleted shape and both directions of the duplicate gate (one
   write from both families collapses; two distinct writes ship two frames with two primaries).
+
+- 2026-10-19 - the four removed cascades: the branch test seeds a parentless task_context and counts by task_id, the task test counts its context, a new label test proves the join row goes and the task stays, the auth delete test seeds a token balance and counts it by user_id (branch 4genthub-min/int03-cascades).

@@ -222,8 +222,22 @@ func (r *ORMLabelRepository) UpdateLabel(ctx context.Context, labelID string, na
 }
 
 // DeleteLabel is delete_label.
+// DeleteLabel removes the label and its task relationships in one transaction. The
+// task_labels.label_id foreign key no longer cascades, so the application owns the delete.
 func (r *ORMLabelRepository) DeleteLabel(ctx context.Context, labelID string) (bool, error) {
-	return r.ORMRepository.Delete(ctx, labelID)
+	deleted := false
+	err := r.Transaction(ctx, func(ctx context.Context) error {
+		if err := r.GetDBSession(ctx, func(ctx context.Context, s database.DBTX) error {
+			_, err := s.ExecContext(ctx, "DELETE FROM "+quoteIdent("task_labels")+" WHERE "+quoteIdent("label_id")+" = $1", labelID)
+			return err
+		}); err != nil {
+			return err
+		}
+		d, err := r.ORMRepository.Delete(ctx, labelID)
+		deleted = d
+		return err
+	})
+	return deleted, err
 }
 
 // ListLabels is list_labels; limit/offset are only applied when truthy (non-zero).

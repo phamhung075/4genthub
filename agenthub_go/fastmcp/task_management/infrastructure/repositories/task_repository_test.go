@@ -512,6 +512,9 @@ func TestTaskRepoDeleteCascade(t *testing.T) {
 	if got != nil {
 		t.Fatalf("task still present")
 	}
+	if gitBranchRepoTestRowExists(t, sessions, `SELECT count(*) FROM task_contexts WHERE task_id = $1`, task.ID.Value) {
+		t.Fatal("task_contexts row still present")
+	}
 	tc, cc := taskRepoTestBranchCounts(t, sessions, branchID)
 	if tc != 0 || cc != 0 {
 		t.Fatalf("branch counts after delete = %d,%d", tc, cc)
