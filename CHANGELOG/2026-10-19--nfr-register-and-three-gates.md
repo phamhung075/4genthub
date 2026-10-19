@@ -36,8 +36,17 @@ have its line in `testdata/schema_fks.txt` (11 today, all `CASCADE`), and a null
 recorded in `testdata/user_id_nullable.txt` (2 today). Red on a removed cascade, a dropped nullable line,
 or an unlinked table registerer.
 
-Pending in this task: T4a (frontend typecheck + lint), T4b (CI gofmt/typecheck/lint plus
-`agenthub_client` CI), T5 (benchmarks). Their commits extend this entry.
+**T5, commit `81074bd6` on `main`.** `unified_context_bench_test.go` adds `BenchmarkResolveContext`
+(19.0-26.0 us/op across two runs, 212 allocs/op) and `BenchmarkTaskEventFrame` (1.4-1.8 us/op,
+25 allocs/op) on an i7-12700F; the register's PERF-02 and PERF-05 rows cite the command, the landed
+commit and the host, and state the range rather than one number.
+
+**T4b, client half, commit `81abcf6` on client `main`** (hub pin `8407df92`): the client repo gains
+`.github/workflows/ci.yml` with a go job (`go vet`, `go test`) and a rust job (`cargo test --locked`).
+The hub half (`beff2fb7`: `gofmt-check.sh` in the go job, `pnpm typecheck`/`pnpm lint` in the frontend
+job) lands with T4a, whose scripts its frontend job calls.
+
+Pending in this task: T4a (frontend typecheck + lint). Its commit extends this entry.
 
 ## Evidence
 

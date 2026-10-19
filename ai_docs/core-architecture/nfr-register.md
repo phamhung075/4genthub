@@ -26,7 +26,8 @@ Two rules keep this file honest:
 
 1. **A published limit is a default.** The code reads the environment; any number in this file or in a
    doc is the default, and the rig's value is read with the command in the row's verification.
-2. **A row whose mechanism moves without its `measured` date moves is drift.** The verification column is
+2. **A benchmark baseline names its host and is a range, not a promise.** Two runs on the same CPU model differed by 30% here; a move beyond that range is what a reader should treat as drift.
+3. **A row whose mechanism moves without its `measured` date moves is drift.** The verification column is
    how the next reader checks the row; a row with `none` is a GAP or a TARGET, not a promise.
 
 Verification forms: `test:` and the test's run pattern · `cmd:` and a shell command · `file:` and a repo
@@ -38,10 +39,10 @@ path with its line (a static fact a reader can open) · `review` (the policy has
 | ID | Requirement | Status | Enforcement or policy | Verification | Owner | Measured |
 |---|---|---|---|---|---|---|
 | PERF-01 | Database access is pooled over pgx, and the API answers within a published latency envelope. | PARTIAL | `database/sql` pool over pgx stdlib; `SetMaxOpenConns(PoolSize+MaxOverflow)`. | `file:agenthub_go/fastmcp/task_management/infrastructure/database/pgx_opener.go:45`; no latency check (`none`; `BenchmarkResolveContext` owed) | agenthub_go | 2026-10-19 |
-| PERF-02 | Context resolution is served from a cache, not a query per level. | GAP | None: the cache service is built with a **nil** repository, and each resolve calls the level repositories. | `file:agenthub_go/fastmcp/task_management/application/factories/unified_context_facade_factory.go:93`; `file:agenthub_go/fastmcp/task_management/application/services/unified_context_service.go:1183` | agenthub_go | 2026-10-19 |
+| PERF-02 | Context resolution is served from a cache, not a query per level. | GAP | None: the cache service is built with a **nil** repository, and each resolve calls the level repositories. | `file:agenthub_go/fastmcp/task_management/application/factories/unified_context_facade_factory.go:93`; `file:agenthub_go/fastmcp/task_management/application/services/unified_context_service.go:1183`; measured `test:go test ./fastmcp/task_management/application/services -bench BenchmarkResolveContext -benchmem` -> 19.7-26.0 us/op over two runs, 212 allocs/op (2026-10-19, commit `81074bd6`, i7-12700F) | agenthub_go | 2026-10-19 |
 | PERF-03 | IPC frames are unix-socket, length-prefixed. | PARTIAL | Unix socket, **newline-delimited JSON** frames, not length-prefixed. | `file:agenthub_client/rust/agenthub-runtime/src/ipc/mod.rs:101` | runtime | 2026-10-19 |
 | PERF-04 | Realtime fan-out reaches a client promptly under load. | PARTIAL | `/ws/realtime` is mounted and fan-out exists; frame latency is unmeasured. | `file:agenthub_go/fastmcp/server/httpapp/ws_mount.go:70`; no benchmark (`none`) | agenthub_go | 2026-10-19 |
-| PERF-05 | A task event sends a delta under a size cap. | GAP | Every event broadcasts the whole `TaskData`; no delta, no cap. | `file:agenthub_go/fastmcp/task_management/application/services/websocket_notification_service.go:359` | agenthub_go | 2026-10-19 |
+| PERF-05 | A task event sends a delta under a size cap. | GAP | Every event broadcasts the whole `TaskData`; no delta, no cap. | `file:agenthub_go/fastmcp/task_management/application/services/websocket_notification_service.go:359`; measured `test:go test ./fastmcp/task_management/application/services -bench BenchmarkTaskEventFrame -benchmem` -> 1.4-1.8 us/op over two runs, 25 allocs/op (2026-10-19, commit `81074bd6`, i7-12700F) | agenthub_go | 2026-10-19 |
 | PERF-06 | The watch wall has no line-buffering delay. | TARGET | Qualitative; no measurement, no mechanism. | `none` | client | 2026-10-19 |
 
 ## Cost
