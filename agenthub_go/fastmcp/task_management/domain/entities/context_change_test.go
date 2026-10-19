@@ -36,10 +36,10 @@ func TestContextChangesNamesEachLeafAndCapsOneValue(t *testing.T) {
 		got[change.Path] = change
 	}
 	want := []struct {
-		path  string
-		op    string
-		old   any
-		new   any
+		path string
+		op   string
+		old  any
+		new  any
 	}{
 		{path: "implementation_notes.added", op: "add", new: "here"},
 		{path: "implementation_notes.removed", op: "remove", old: "gone"},

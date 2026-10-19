@@ -14,7 +14,6 @@ Track test suite changes, fixes, and improvements for agenthub.
 - Measured 2026-10-19 on a 12th Gen i7-12700F, `go test -run '^$' -bench . -benchmem`:
   ResolveContext 25952 ns/op, 25882 B/op, 212 allocs/op; TaskEventFrame 1832 ns/op, 1328 B/op, 25
   allocs/op. Benchmarks are not a CI gate; the register carries the date and commit of the run.
-
 ## 2026-10-19 - CI gains the gofmt and frontend gates, and the client repo gains CI (branch 4genthub-min/next-work)
 
 - `.github/workflows/ci.yml`: the go job runs `../scripts/gofmt-check.sh` before vet and test; the

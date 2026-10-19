@@ -22,6 +22,10 @@ jobs:
         with:
           go-version-file: agenthub_go/go.mod
           cache-dependency-path: agenthub_go/go.sum
+      # gofmt over every tracked .go file, from the repository root: the script resolves the toplevel
+      # itself and learns its two non-Go .go paths from .gofmt-excludes. It exits 2 when it cannot
+      # measure (stale exclusion, zero coverage, a parse error) so a broken instrument is not green.
+      - run: ../scripts/gofmt-check.sh
       - run: go vet ./...
       - run: go test ./...
 
@@ -41,5 +45,7 @@ jobs:
           cache: pnpm
           cache-dependency-path: agenthub-frontend/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm lint
       - run: pnpm test
       - run: pnpm build
