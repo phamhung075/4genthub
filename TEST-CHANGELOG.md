@@ -7271,3 +7271,15 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
   write from both families collapses; two distinct writes ship two frames with two primaries).
 
 - 2026-10-19 - the four removed cascades: the branch test seeds a parentless task_context and counts by task_id, the task test counts its context, a new label test proves the join row goes and the task stays, the auth delete test seeds a token balance and counts it by user_id (branch 4genthub-min/int03-cascades).
+
+## 2026-10-20 - the branch and project deletes take the task-event ledger (go, branch 4genthub-min/int03-cascades)
+
+- `fastmcp/task_management/infrastructure/repositories/git_branch_repository_test.go`: new
+  `TestGitBranchRepoDeleteBranchRemovesTaskEvents` - a branch task with one event appended through
+  `TaskEventRepository.Append`, then `DeleteBranch`, then `task_events` counted by `task_id`. Red at
+  `76b0d84d` with `23503` on `task_events_task_id_fkey`.
+- `fastmcp/task_management/infrastructure/repositories/project_repository_test.go`: new
+  `TestProjectRepoDeleteProjectRemovesTaskEvents` - a project with a branch, a task and one event,
+  then `DeleteProject`, then the same count. Red at `76b0d84d` with the same `23503`.
+  Both green after the fix; the existing branch, project and task cascade tests stay green;
+  `go test ./...` against `AGENTHUB_TEST_PG_URL` passes.

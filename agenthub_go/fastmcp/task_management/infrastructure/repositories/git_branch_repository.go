@@ -521,9 +521,19 @@ func (r *ORMGitBranchRepository) DeleteBranch(ctx context.Context, branchID stri
 			if err := gitBranchRepoDelete(ctx, s, "task_contexts", conds, args); err != nil {
 				return err
 			}
+
+			// Step 10: TaskEvent records for this branch's Tasks. task_events.task_id is the one
+			// FK into tasks with NO ON DELETE CASCADE (task_event_tables.go), so the ledger must
+			// be emptied before Step 13 deletes the tasks, or PostgreSQL refuses it with 23503.
+			args = []any{}
+			conds = []string{gitBranchRepoInArgs("task_id", taskIDs, &args)}
+			conds, args = r.gitBranchRepoUserCond(conds, args)
+			if err := gitBranchRepoDelete(ctx, s, "task_events", conds, args); err != nil {
+				return err
+			}
 		}
 
-		// Step 10: TaskContext records referencing this branch directly.
+		// Step 11: TaskContext records referencing this branch directly.
 		tcArgs := []any{branchID}
 		tcConds := []string{quoteIdent("parent_branch_id") + " = $1"}
 		tcConds, tcArgs = r.gitBranchRepoUserCond(tcConds, tcArgs)
@@ -531,7 +541,7 @@ func (r *ORMGitBranchRepository) DeleteBranch(ctx context.Context, branchID stri
 			return err
 		}
 
-		// Step 11: TaskContext records referencing this branch's BranchContexts.
+		// Step 12: TaskContext records referencing this branch's BranchContexts.
 		if len(branchContextIDs) > 0 {
 			args := []any{}
 			conds := []string{gitBranchRepoInArgs("parent_branch_context_id", branchContextIDs, &args)}
@@ -541,7 +551,7 @@ func (r *ORMGitBranchRepository) DeleteBranch(ctx context.Context, branchID stri
 			}
 		}
 
-		// Step 12: Task records for this branch.
+		// Step 13: Task records for this branch.
 		tArgs := []any{branchID}
 		tConds := []string{quoteIdent("git_branch_id") + " = $1"}
 		tConds, tArgs = r.gitBranchRepoUserCond(tConds, tArgs)
@@ -549,7 +559,7 @@ func (r *ORMGitBranchRepository) DeleteBranch(ctx context.Context, branchID stri
 			return err
 		}
 
-		// Step 13: BranchContext records for this branch.
+		// Step 14: BranchContext records for this branch.
 		bcArgs := []any{branchID}
 		bcConds := []string{quoteIdent("branch_id") + " = $1"}
 		bcConds, bcArgs = r.gitBranchRepoUserCond(bcConds, bcArgs)
@@ -557,7 +567,7 @@ func (r *ORMGitBranchRepository) DeleteBranch(ctx context.Context, branchID stri
 			return err
 		}
 
-		// Step 14: the branch itself (no user filter: project ownership was verified).
+		// Step 15: the branch itself (no user filter: project ownership was verified).
 		res, err := s.ExecContext(ctx, "DELETE FROM "+quoteIdent(r.Table.Name)+" WHERE "+r.pkColumn()+" = $1", branchID)
 		if err != nil {
 			return err

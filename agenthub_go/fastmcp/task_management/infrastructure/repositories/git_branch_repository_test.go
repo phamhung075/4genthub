@@ -55,6 +55,21 @@ func gitBranchRepoTestAddTask(t *testing.T, sessions *database.SessionManager, b
 	return id
 }
 
+// taskEventsTestAppend writes one ledger row through the production write path, so the delete
+// tests exercise the same shape a real event has.
+func taskEventsTestAppend(t *testing.T, sessions *database.SessionManager, user, branchID, taskID string) {
+	t.Helper()
+	events := NewTaskEventRepository(sessions, user, branchID)
+	if _, err := events.Append(context.Background(), entities.AppendTaskEvent{
+		TaskID:    taskID,
+		Kind:      entities.TaskEventKindProgress,
+		ActorKind: entities.TaskEventActorHuman,
+		ActorID:   "test",
+	}); err != nil {
+		t.Fatalf("append task event: %v", err)
+	}
+}
+
 func gitBranchRepoTestSetColumns(t *testing.T, sessions *database.SessionManager, branchID, priority, status string, createdAt time.Time) {
 	t.Helper()
 	err := sessions.WithSession(context.Background(), func(ctx context.Context, s database.DBTX) error {
@@ -640,6 +655,32 @@ func TestGitBranchRepoDeleteBranchCascade(t *testing.T) {
 	}
 	if deleted, err := repo.DeleteBranch(ctx, tmvo.NewUUIDv4()); err != nil || deleted {
 		t.Fatalf("DeleteBranch missing: %v %v", deleted, err)
+	}
+}
+
+func TestGitBranchRepoDeleteBranchRemovesTaskEvents(t *testing.T) {
+	// task_events.task_id is the one FK into tasks with no ON DELETE CASCADE, so the branch
+	// delete must take the ledger rows itself before Step 12 removes the tasks.
+	sessions := newTestRepoEnv(t)
+	ctx := context.Background()
+	user := "a3f0c25e-6a7b-5df0-9f21-2c1d3e4f5a6b"
+	projectID, repo := gitBranchRepoTestSetup(t, sessions, user)
+	gb, err := repo.CreateBranch(ctx, projectID, "evented", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	taskID := gitBranchRepoTestAddTask(t, sessions, gb.ID.Value, user, "todo", "high")
+	taskEventsTestAppend(t, sessions, user, gb.ID.Value, taskID)
+
+	deleted, err := repo.DeleteBranch(ctx, gb.ID.Value)
+	if err != nil || !deleted {
+		t.Fatalf("DeleteBranch: %v %v", deleted, err)
+	}
+	if gitBranchRepoTestRowExists(t, sessions, `SELECT count(*) FROM task_events WHERE task_id = $1`, taskID) {
+		t.Fatal("task_events row still present after the branch delete")
+	}
+	if gitBranchRepoTestRowExists(t, sessions, `SELECT count(*) FROM tasks WHERE git_branch_id = $1`, gb.ID.Value) {
+		t.Fatal("task still present after the branch delete")
 	}
 }
 
