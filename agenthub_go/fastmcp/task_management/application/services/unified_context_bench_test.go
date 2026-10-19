@@ -138,21 +138,33 @@ func benchPrimaryEmitted(b *testing.B, svc *WebSocketNotificationService, broker
 	return primary
 }
 
-// BenchmarkTaskEventDelta measures one `updated` task event through SyncBroadcastTask - the flat
-// delta build, the 2048-byte cap check, and the frame hand-off - and asserts the ruling's sizes
-// and shapes per event kind. It replaces BenchmarkTaskEventFrame, whose 3-key payload measured the
-// service path but never a frame (1755 ns/op, 1328 B/op, 25 allocs/op at d45aa05d).
+// benchDedupKey is the duplicate-gate key the service computes, so a sub-benchmark clears exactly
+// the entry its own event leaves behind.
+func benchDedupKey(p SyncTaskEventParams) string {
+	identity := p.UserID
+	if stamp, ok := wsDataGet(p.TaskData, "updated_at", nil).(string); ok && stamp != "" {
+		identity = stamp
+	}
+	return p.EventType + ":task:" + p.TaskID + ":" + identity
+}
+
+// BenchmarkTaskEventDelta measures the four task-event shapes the PERF-05 spec names - status-only
+// update, completion, details append, wide update - each through SyncBroadcastTask, and reports
+// the emitted primary's bytes alongside ns/op. It replaces BenchmarkTaskEventFrame, whose 3-key
+// payload measured the service path but never a frame (1755 ns/op, 1328 B/op, 25 allocs/op at
+// d45aa05d). The one-time assertions below run before any sub-benchmark: reachability of every
+// writable field, the created and deleted shapes, and the duplicate gate's two directions.
 func BenchmarkTaskEventDelta(b *testing.B) {
 	wsNotificationCacheMu.Lock()
 	wsNotificationCache = map[string]float64{}
 	wsNotificationCacheMu.Unlock()
 	broker := &benchCaptureBroker{}
 	svc := &WebSocketNotificationService{Broker: broker}
-	changedNames := []string{"title", "description", "status", "priority", "details", "assignees", "labels", "progress_percentage", "has_context"}
 
 	// Every field a task update can change is reachable through some Changed path; the fields a
 	// write cannot touch (project_id, git_branch_id, subtask_count, completed_subtasks, created_at)
 	// are seeded by `created` and reached by refetch, and id/updated_at are always in a delta.
+	changedNames := []string{"title", "description", "status", "priority", "details", "assignees", "labels", "progress_percentage", "has_context"}
 	full := benchTaskPayload("task-bench-reach", "2026-10-19T12:00:00Z")
 	for _, name := range append(append([]string{}, changedNames...), "has_dependencies") {
 		delta := WebSocketPayloadBuilder{}.BuildTaskDelta(full, []string{name})
@@ -167,85 +179,129 @@ func BenchmarkTaskEventDelta(b *testing.B) {
 		}
 	}
 
-	// State transitions stay small: a status-only update and a completion are <= 512 B.
-	statusDelta := benchPrimaryEmitted(b, svc, broker, SyncTaskEventParams{
-		EventType: "updated", TaskID: "task-bench-status", UserID: "u",
-		TaskData: benchTaskPayload("task-bench-status", "2026-10-19T12:00:01Z"), Changed: []string{"status"},
-	})
-	if size := (WebSocketPayloadBuilder{}).EstimatePayloadSize(statusDelta); size > 512 {
-		b.Fatalf("status-only delta = %d B, want <= 512", size)
+	// created: the cache seed, carrying the task and never the note.
+	seed := (WebSocketPayloadBuilder{}).BuildTaskPayload(wsTaskWithCreated(wsTestTask()), nil)
+	if _, ok := seed.Get("details"); ok {
+		b.Fatal("the created seed carries details")
 	}
+	created := benchPrimaryEmitted(b, svc, broker, SyncTaskEventParams{
+		EventType: "created", TaskID: "t-1", UserID: "u", TaskData: seed,
+	})
+	for _, key := range []string{"id", "title", "status", "assignees", "labels", "updated_at"} {
+		if _, ok := created.Get(key); !ok {
+			b.Fatalf("created shape lacks %q: %v", key, created.Keys())
+		}
+	}
+
+	// deleted: id and title are the fields the client validates, and the branch the cache filter
+	// reads; details is still absent.
+	delBranch, delProject := "branch-bench", "project-bench"
+	deletedPayload, err := domain.NewTaskDeletePayload("task-bench-deleted", "a deleted task", &delBranch, &delProject)
+	if err != nil {
+		b.Fatal(err)
+	}
+	deleted := benchPrimaryEmitted(b, svc, broker, SyncTaskEventParams{
+		EventType: "deleted", TaskID: "task-bench-deleted", UserID: "u", TaskData: deletedPayload.ModelDump(),
+	})
+	for _, key := range []string{"id", "title", "git_branch_id"} {
+		if _, ok := deleted.Get(key); !ok {
+			b.Fatalf("deleted shape lacks %q: %v", key, deleted.Keys())
+		}
+	}
+
+	// The duplicate gate, both directions. One write stamped by both emitter families collapses;
+	// two distinct writes inside the 5 s TTL both ship, with two different primaries.
+	firstWrite := benchTaskPayload("task-bench-dedup", "2026-10-19T12:00:05Z")
+	firstDelta := benchPrimaryEmitted(b, svc, broker, SyncTaskEventParams{
+		EventType: "updated", TaskID: "task-bench-dedup", UserID: "system", TaskData: firstWrite, Changed: []string{"status"},
+	})
+	frames := len(broker.primaries)
+	if err := svc.SyncBroadcastTask(context.Background(), SyncTaskEventParams{
+		EventType: "updated", TaskID: "task-bench-dedup", UserID: "u-actor", TaskData: firstWrite, Changed: []string{"status"},
+	}); err != nil {
+		b.Fatal(err)
+	}
+	if len(broker.primaries) != frames {
+		b.Fatal("the same write emitted by both emitter families shipped two frames")
+	}
+	secondWrite := benchTaskPayload("task-bench-dedup", "2026-10-19T12:00:06Z")
+	secondWrite.Set("status", "done")
+	secondDelta := benchPrimaryEmitted(b, svc, broker, SyncTaskEventParams{
+		EventType: "updated", TaskID: "task-bench-dedup", UserID: "system", TaskData: secondWrite, Changed: []string{"status"},
+	})
+	if firstStatus, _ := firstDelta.Get("status"); secondDelta == firstDelta {
+		b.Fatal("two distinct writes delivered the same primary")
+	} else if secondStatus, _ := secondDelta.Get("status"); firstStatus == secondStatus {
+		b.Fatalf("two distinct writes delivered the same status %v", firstStatus)
+	}
+
 	completedAt := "2026-10-19T12:00:02Z"
 	completion := (&domain.TaskCompletePayload{ID: "task-bench-done", Title: "a task title", CompletionSummary: &completedAt,
 		TestingNotes: &completedAt, CompletedAt: &completedAt}).ModelDump()
 	completion.Set("updated_at", completedAt)
-	completionDelta := benchPrimaryEmitted(b, svc, broker, SyncTaskEventParams{
-		EventType: "completed", TaskID: "task-bench-done", UserID: "u", TaskData: completion,
-		Changed: []string{"status", "completion_summary", "testing_notes", "completed_at"},
-	})
-	if size := (WebSocketPayloadBuilder{}).EstimatePayloadSize(completionDelta); size > 512 {
-		b.Fatalf("completion delta = %d B, want <= 512", size)
-	}
-
-	// A 41,000-rune note never travels: appending one names it with the flag.
-	wide := benchTaskPayload("task-bench-details", "2026-10-19T12:00:03Z")
-	wide.Set("details", strings.Repeat("n", 41000))
-	detailsDelta := benchPrimaryEmitted(b, svc, broker, SyncTaskEventParams{
-		EventType: "updated", TaskID: "task-bench-details", UserID: "u", TaskData: wide, Changed: []string{"details"},
-	})
-	if size := (WebSocketPayloadBuilder{}).EstimatePayloadSize(detailsDelta); size > 512 {
-		b.Fatalf("details delta = %d B, want <= 512", size)
-	}
-
-	// A wide update is either under the cap or takes the refetch shape.
 	wideFull := benchTaskPayload("task-bench-wide", "2026-10-19T12:00:04Z")
 	wideFull.Set("description", strings.Repeat("w", 3000))
-	wideDelta := benchPrimaryEmitted(b, svc, broker, SyncTaskEventParams{
-		EventType: "updated", TaskID: "task-bench-wide", UserID: "u", TaskData: wideFull,
-		Changed: []string{"description", "assignees", "labels"},
-	})
-	if size := (WebSocketPayloadBuilder{}).EstimatePayloadSize(wideDelta); size > WebSocketTaskPayloadCap {
-		if v, _ := wideDelta.Get("refetch"); v != true {
-			b.Fatalf("wide delta = %d B and is not the refetch shape: %v", size, wideDelta.Keys())
-		}
+	detailsFull := benchTaskPayload("task-bench-details", "2026-10-19T12:00:03Z")
+	detailsFull.Set("details", strings.Repeat("n", 41000))
+
+	cases := []struct {
+		name   string
+		params SyncTaskEventParams
+		limit  int // the smaller ceiling the ruling names; 0 means the cap alone
+	}{
+		{"status", SyncTaskEventParams{
+			EventType: "updated", TaskID: "task-bench-status", UserID: "u",
+			TaskData: benchTaskPayload("task-bench-status", "2026-10-19T12:00:01Z"), Changed: []string{"status"},
+		}, 512},
+		{"completion", SyncTaskEventParams{
+			EventType: "completed", TaskID: "task-bench-done", UserID: "u", TaskData: completion,
+			Changed: []string{"status", "completion_summary", "testing_notes", "completed_at"},
+		}, 512},
+		{"details", SyncTaskEventParams{
+			EventType: "updated", TaskID: "task-bench-details", UserID: "u", TaskData: detailsFull, Changed: []string{"details"},
+		}, 512},
+		{"wide", SyncTaskEventParams{
+			EventType: "updated", TaskID: "task-bench-wide", UserID: "u", TaskData: wideFull,
+			Changed: []string{"description", "assignees", "labels"},
+		}, 0},
 	}
 
-	// Two distinct writes inside the 5 s TTL both reach the client; one write stamped by both
-	// emitter families collapses.
-	first := benchTaskPayload("task-bench-dedup", "2026-10-19T12:00:05Z")
-	benchPrimaryEmitted(b, svc, broker, SyncTaskEventParams{
-		EventType: "updated", TaskID: "task-bench-dedup", UserID: "system", TaskData: first, Changed: []string{"status"},
-	})
-	before := len(broker.primaries)
-	if err := svc.SyncBroadcastTask(context.Background(), SyncTaskEventParams{
-		EventType: "updated", TaskID: "task-bench-dedup", UserID: "u-actor", TaskData: first, Changed: []string{"status"},
-	}); err != nil {
-		b.Fatal(err)
+	for _, c := range cases {
+		b.Run(c.name, func(b *testing.B) {
+			// -count N runs a sub-benchmark N times without re-running the parent's setup, so the
+			// key this case left behind on its previous run is cleared before the correctness emit.
+			key := benchDedupKey(c.params)
+			wsNotificationCacheMu.Lock()
+			delete(wsNotificationCache, key)
+			wsNotificationCacheMu.Unlock()
+			primary := benchPrimaryEmitted(b, svc, broker, c.params)
+			size := (WebSocketPayloadBuilder{}).EstimatePayloadSize(primary)
+			if size > WebSocketTaskPayloadCap {
+				if refetch, _ := primary.Get("refetch"); refetch != true {
+					b.Fatalf("%s primary = %d B and is not the refetch shape: %v", c.name, size, primary.Keys())
+				}
+			}
+			if c.limit > 0 && size > c.limit {
+				b.Fatalf("%s primary = %d B, want <= %d", c.name, size, c.limit)
+			}
+			// The duplicate cache short-circuits a repeat of the same event inside five seconds, so
+			// each iteration clears just its own key before the call; that delete is the same
+			// bookkeeping the read path pays.
+			b.ReportAllocs()
+			for b.Loop() {
+				wsNotificationCacheMu.Lock()
+				delete(wsNotificationCache, key)
+				wsNotificationCacheMu.Unlock()
+				if err := svc.SyncBroadcastTask(context.Background(), c.params); err != nil {
+					b.Fatal(err)
+				}
+			}
+			// Reported after the loop: b.Loop resets the metrics it inherits at its first iteration.
+			if raw, ok := c.params.TaskData.(*entities.OrderedMap[any]); ok {
+				deltaSize := (WebSocketPayloadBuilder{}).EstimatePayloadSize(WebSocketPayloadBuilder{}.BuildTaskDelta(raw, c.params.Changed))
+				b.ReportMetric(float64(deltaSize), "delta-B")
+			}
+			b.ReportMetric(float64(size), "primary-B")
+		})
 	}
-	if len(broker.primaries) != before {
-		b.Fatal("the same write emitted by both emitter families shipped two frames")
-	}
-	benchPrimaryEmitted(b, svc, broker, SyncTaskEventParams{
-		EventType: "updated", TaskID: "task-bench-dedup", UserID: "system",
-		TaskData: benchTaskPayload("task-bench-dedup", "2026-10-19T12:00:06Z"), Changed: []string{"status"},
-	})
-
-	// The timed event is the status-only update. The duplicate cache short-circuits a repeat of
-	// the same (event, entity, updated_at) inside five seconds, so each iteration clears just its
-	// own key before the call; that delete is the same bookkeeping the read path pays.
-	p := SyncTaskEventParams{
-		EventType: "updated", TaskID: "task-bench-loop", UserID: "u",
-		TaskData: benchTaskPayload("task-bench-loop", "2026-10-19T12:00:07Z"), Changed: []string{"status"},
-	}
-	key := "updated:task:task-bench-loop:2026-10-19T12:00:07Z"
-	b.ReportAllocs()
-	for b.Loop() {
-		wsNotificationCacheMu.Lock()
-		delete(wsNotificationCache, key)
-		wsNotificationCacheMu.Unlock()
-		if err := svc.SyncBroadcastTask(context.Background(), p); err != nil {
-			b.Fatal(err)
-		}
-	}
-	b.ReportMetric(float64((WebSocketPayloadBuilder{}).EstimatePayloadSize(statusDelta)), "status-delta-B")
 }

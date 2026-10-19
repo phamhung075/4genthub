@@ -28,9 +28,13 @@ server side, and the frontend merge is fe-dev's row.
   `updated_at`, else the user-scoped key: one write emitted by both families collapses, two writes
   inside the TTL both ship, `deleted` keeps the old key.
 - `WebSocketNotificationService.BroadcastTaskEvent` (no production call site) is deleted.
-- `BenchmarkTaskEventDelta` replaces `BenchmarkTaskEventFrame`: it asserts the reachability of every
-  writable payload field through some `Changed` path, `≤ 512 B` for a status-only update and a
-  completion, no `details` bytes, and that a wide update is under the cap or the refetch shape.
+- `BenchmarkTaskEventDelta` replaces `BenchmarkTaskEventFrame`: four sub-benchmarks (`status`,
+  `completion`, `details`, `wide`) each report the emitted primary's bytes and ns/op. Before them it
+  asserts the reachability of every writable payload field through some `Changed` path, the
+  `created` seed (no `details`) and the `deleted` shape (id, title, git_branch_id), `≤ 512 B` for
+  status-only, completion and details, the cap or the refetch shape for the wide case, and the
+  duplicate gate both ways: one write from both emitter families collapses, two distinct writes
+  inside 5 s ship two frames with two different primaries.
 - `ai_docs/core-architecture/agenthub-system-architecture.md` §3.6 now states the envelope the code
   emits and the post-T7 size statement.
 
@@ -39,8 +43,12 @@ server side, and the frontend merge is fe-dev's row.
 - `cd agenthub_go && go build ./...` clean; `go vet ./...` clean; `gofmt -l .` empty.
 - `cd agenthub_go && go test ./... -count=1` green, whole module.
 - `go test -run='^$' -bench BenchmarkTaskEventDelta -benchmem -count=3
-  ./fastmcp/task_management/application/services/`: 3820-4230 ns/op, 2496-2510 B/op, 54 allocs/op,
-  status delta 90 B (was a whole 17-key object, unbounded in `details`).
+  ./fastmcp/task_management/application/services/`, three runs each:
+  - status: primary **90 B**, 3894-4525 ns/op, 53-54 allocs/op
+  - completion: primary **208 B**, 7764-8696 ns/op, 85 allocs/op
+  - details (41,000-rune note): primary **91 B**, 3857-4635 ns/op, 52 allocs/op
+  - wide: delta 4069 B over the cap -> refetch primary **42 B**, 37-54 us/op
+  (was a whole 17-key object, unbounded in `details`).
 - Service tests: a delta carries `id`, `updated_at`, the changed fields and `details_changed` and
   never the note; an over-cap delta is the refetch shape; two emitter families stamping one write
   deliver one frame and a second write inside 5 s delivers a second.

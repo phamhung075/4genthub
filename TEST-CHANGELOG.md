@@ -7255,5 +7255,7 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
   (`[title]`, `[title details]`), completion (`[status]`), creation (no names), the facade's
   `updated` and the dependency emitter (`[has_dependencies]`). `TestSyncBroadcastTaskCarriesAFlatDeltaAndCapsIt`
   and `TestSyncBroadcastTaskDeduplicatesOneWriteNotTwo` replace the old shape assertions;
-  `BenchmarkTaskEventFrame` is replaced by `BenchmarkTaskEventDelta`, which asserts the ruling's
-  sizes and shapes instead of only timing the call.
+  `BenchmarkTaskEventFrame` is replaced by `BenchmarkTaskEventDelta`: four sub-benchmarks (status,
+  completion, details, wide) that each report `primary-B` and `delta-B` beside ns/op, after
+  asserting the created seed, the deleted shape and both directions of the duplicate gate (one
+  write from both families collapses; two distinct writes ship two frames with two primaries).
