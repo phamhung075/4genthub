@@ -24,7 +24,7 @@ const mockUseWebSocket = vi.fn(() => ({
 }));
 
 // Mock import.meta.env and API_BASE_URL
-(import.meta as any).env = {
+(import.meta as unknown).env = {
   MODE: 'test'
 };
 
@@ -36,16 +36,9 @@ vi.mock('../../config/environment', () => ({
 import { useWebSocket } from '../../hooks/useWebSocketV2';
 import { useNotificationStore } from '../../store/notifications';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-(useWebSocket as any).mockImplementation(mockUseWebSocket);
+(useWebSocket as unknown).mockImplementation(mockUseWebSocket);
 
 describe('AuthContext', () => {
-  const mockUser = {
-    id: 'user-123',
-    email: 'test@example.com',
-    username: 'testuser',
-    roles: ['user']
-  };
-
   const mockTokens = {
     access_token: 'mock-access-token',
     refresh_token: 'mock-refresh-token'
@@ -91,11 +84,11 @@ describe('AuthContext', () => {
     useNotificationStore.getState().reset();
     mockDisconnect.mockClear();
     mockUseWebSocket.mockClear();
-    (Cookies.get as any).mockReset();
-    (Cookies.set as any).mockReset();
-    (Cookies.remove as any).mockReset();
-    (jwtDecode.jwtDecode as any).mockReset();
-    (global.fetch as any).mockReset();
+    (Cookies.get as unknown).mockReset();
+    (Cookies.set as unknown).mockReset();
+    (Cookies.remove as unknown).mockReset();
+    (jwtDecode.jwtDecode as unknown).mockReset();
+    (global.fetch as unknown).mockReset();
   });
 
   afterEach(() => {
@@ -105,7 +98,7 @@ describe('AuthContext', () => {
 
   describe('Initial State', () => {
     it('should initialize with loading state', () => {
-      (Cookies.get as any).mockReturnValue(null);
+      (Cookies.get as unknown).mockReturnValue(null);
 
       render(
         <AuthProvider>
@@ -118,13 +111,13 @@ describe('AuthContext', () => {
     });
 
     it('should restore user from existing valid tokens', async () => {
-      (Cookies.get as any).mockImplementation((key: string) => {
+      (Cookies.get as unknown).mockImplementation((key: string) => {
         if (key === 'access_token') return mockTokens.access_token;
         if (key === 'refresh_token') return mockTokens.refresh_token;
         return null;
       });
 
-      (jwtDecode.jwtDecode as any).mockReturnValue(mockDecodedToken);
+      (jwtDecode.jwtDecode as unknown).mockReturnValue(mockDecodedToken);
 
       render(
         <AuthProvider>
@@ -336,7 +329,7 @@ describe('AuthContext', () => {
         exp: Math.floor(Date.now() / 1000) - 3600 // Expired 1 hour ago
       };
 
-      (Cookies.get as any).mockImplementation((key: string) => {
+      (Cookies.get as unknown).mockImplementation((key: string) => {
         if (key === 'access_token') return mockTokens.access_token;
         if (key === 'refresh_token') return mockTokens.refresh_token;
         return null;
@@ -344,12 +337,12 @@ describe('AuthContext', () => {
 
       // First decode sees the expired token; the refreshed token is decoded on
       // every subsequent call (decode after refresh + expiry-timer effect).
-      (jwtDecode.jwtDecode as any)
+      (jwtDecode.jwtDecode as unknown)
         .mockReturnValueOnce(expiredToken)
         .mockReturnValue(mockDecodedToken);
 
       // Mock successful token refresh
-      (global.fetch as any).mockResolvedValueOnce({
+      (global.fetch as unknown).mockResolvedValueOnce({
         ok: true,
         json: async () => ({
           access_token: 'new-access-token',
@@ -381,10 +374,10 @@ describe('AuthContext', () => {
 
   describe('Login', () => {
     it('should login successfully', async () => {
-      (Cookies.get as any).mockReturnValue(null);
-      (jwtDecode.jwtDecode as any).mockReturnValue(mockDecodedToken);
+      (Cookies.get as unknown).mockReturnValue(null);
+      (jwtDecode.jwtDecode as unknown).mockReturnValue(mockDecodedToken);
 
-      (global.fetch as any).mockResolvedValueOnce({
+      (global.fetch as unknown).mockResolvedValueOnce({
         ok: true,
         json: async () => ({
           success: true,
@@ -436,9 +429,9 @@ describe('AuthContext', () => {
     });
 
     it('should handle login failure', async () => {
-      (Cookies.get as any).mockReturnValue(null);
+      (Cookies.get as unknown).mockReturnValue(null);
 
-      (global.fetch as any).mockResolvedValueOnce({
+      (global.fetch as unknown).mockResolvedValueOnce({
         ok: false,
         status: 401,
         json: async () => ({
@@ -462,9 +455,9 @@ describe('AuthContext', () => {
     // A 403 is not always an unverified address: the hub names a disabled account and a lockout
     // in the same status, and each detail is the sentence the user has to read.
     it('should surface a 403 detail as the server wrote it', async () => {
-      (Cookies.get as any).mockReturnValue(null);
+      (Cookies.get as unknown).mockReturnValue(null);
 
-      (global.fetch as any).mockResolvedValueOnce({
+      (global.fetch as unknown).mockResolvedValueOnce({
         ok: false,
         status: 403,
         json: async () => ({
@@ -486,9 +479,9 @@ describe('AuthContext', () => {
     });
 
     it('should handle email verification response', async () => {
-      (Cookies.get as any).mockReturnValue(null);
+      (Cookies.get as unknown).mockReturnValue(null);
 
-      (global.fetch as any).mockResolvedValueOnce({
+      (global.fetch as unknown).mockResolvedValueOnce({
         ok: true,
         json: async () => ({
           success: true,
@@ -512,9 +505,9 @@ describe('AuthContext', () => {
 
   describe('Signup', () => {
     it('should signup and require email verification', async () => {
-      (Cookies.get as any).mockReturnValue(null);
+      (Cookies.get as unknown).mockReturnValue(null);
 
-      (global.fetch as any).mockResolvedValueOnce({
+      (global.fetch as unknown).mockResolvedValueOnce({
         ok: true,
         json: async () => ({
           success: true,
@@ -529,7 +522,7 @@ describe('AuthContext', () => {
         </AuthProvider>
       );
 
-      let result: any;
+      let result: unknown;
       await act(async () => {
         result = await authContext!.signup('new@example.com', 'newuser', 'password');
       });
@@ -559,10 +552,10 @@ describe('AuthContext', () => {
     });
 
     it('should signup and auto-login when no verification required', async () => {
-      (Cookies.get as any).mockReturnValue(null);
-      (jwtDecode.jwtDecode as any).mockReturnValue(mockDecodedToken);
+      (Cookies.get as unknown).mockReturnValue(null);
+      (jwtDecode.jwtDecode as unknown).mockReturnValue(mockDecodedToken);
 
-      (global.fetch as any).mockResolvedValueOnce({
+      (global.fetch as unknown).mockResolvedValueOnce({
         ok: true,
         json: async () => ({
           success: true,
@@ -588,9 +581,9 @@ describe('AuthContext', () => {
     });
 
     it('should handle signup failure', async () => {
-      (Cookies.get as any).mockReturnValue(null);
+      (Cookies.get as unknown).mockReturnValue(null);
 
-      (global.fetch as any).mockResolvedValueOnce({
+      (global.fetch as unknown).mockResolvedValueOnce({
         ok: false,
         status: 400,
         json: async () => ({
@@ -614,13 +607,13 @@ describe('AuthContext', () => {
 
   describe('Logout', () => {
     it('should clear user and tokens on logout', async () => {
-      (Cookies.get as any).mockImplementation((key: string) => {
+      (Cookies.get as unknown).mockImplementation((key: string) => {
         if (key === 'access_token') return mockTokens.access_token;
         if (key === 'refresh_token') return mockTokens.refresh_token;
         return null;
       });
 
-      (jwtDecode.jwtDecode as any).mockReturnValue(mockDecodedToken);
+      (jwtDecode.jwtDecode as unknown).mockReturnValue(mockDecodedToken);
 
       const { getByText } = render(
         <AuthProvider>
@@ -644,13 +637,13 @@ describe('AuthContext', () => {
     });
 
     it('clears the notification inbox on logout', async () => {
-      (Cookies.get as any).mockImplementation((key: string) => {
+      (Cookies.get as unknown).mockImplementation((key: string) => {
         if (key === 'access_token') return mockTokens.access_token;
         if (key === 'refresh_token') return mockTokens.refresh_token;
         return null;
       });
 
-      (jwtDecode.jwtDecode as any).mockReturnValue(mockDecodedToken);
+      (jwtDecode.jwtDecode as unknown).mockReturnValue(mockDecodedToken);
 
       const { getByText } = render(
         <AuthProvider>
@@ -675,13 +668,13 @@ describe('AuthContext', () => {
     });
 
     it('clears the query cache on logout', async () => {
-      (Cookies.get as any).mockImplementation((key: string) => {
+      (Cookies.get as unknown).mockImplementation((key: string) => {
         if (key === 'access_token') return mockTokens.access_token;
         if (key === 'refresh_token') return mockTokens.refresh_token;
         return null;
       });
 
-      (jwtDecode.jwtDecode as any).mockReturnValue(mockDecodedToken);
+      (jwtDecode.jwtDecode as unknown).mockReturnValue(mockDecodedToken);
 
       const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
       queryClient.setQueryData(['seatRooms'], [{ id: 'r1', slug: 'secret', name: 'previous user room' }]);
@@ -711,13 +704,13 @@ describe('AuthContext', () => {
       // A is live (restored from cookies), then B signs in on /login without any logout: the route
       // is public and the form swaps identity with SPA navigation, so this module and the cache stay
       // mounted and nothing else would drop A's rows.
-      (Cookies.get as any).mockImplementation((key: string) => {
+      (Cookies.get as unknown).mockImplementation((key: string) => {
         if (key === 'access_token') return mockTokens.access_token;
         if (key === 'refresh_token') return mockTokens.refresh_token;
         return null;
       });
 
-      (jwtDecode.jwtDecode as any).mockImplementation((token: string) =>
+      (jwtDecode.jwtDecode as unknown).mockImplementation((token: string) =>
         token === 'b-access-token' ? { ...mockDecodedToken, email: 'b@example.com' } : mockDecodedToken
       );
 
@@ -725,7 +718,7 @@ describe('AuthContext', () => {
       queryClient.setQueryData(['seatRooms'], [{ id: 'r1', slug: 'a-private-room', name: 'A room' }]);
       useNotificationStore.getState().add({ id: 'n1', message: 'A private message', from: 'agent' });
 
-      (global.fetch as any).mockResolvedValueOnce({
+      (global.fetch as unknown).mockResolvedValueOnce({
         ok: true,
         json: async () => ({
           success: true,
@@ -760,13 +753,13 @@ describe('AuthContext', () => {
 
     it('clears the cache and inbox when signup establishes a new identity', async () => {
       // /signup is public and auto-logs-in, so it reaches the same boundary as login.
-      (Cookies.get as any).mockImplementation((key: string) => {
+      (Cookies.get as unknown).mockImplementation((key: string) => {
         if (key === 'access_token') return mockTokens.access_token;
         if (key === 'refresh_token') return mockTokens.refresh_token;
         return null;
       });
 
-      (jwtDecode.jwtDecode as any).mockImplementation((token: string) =>
+      (jwtDecode.jwtDecode as unknown).mockImplementation((token: string) =>
         token === 'b-access-token'
           ? { ...mockDecodedToken, sub: 'user-b', email: 'b@example.com' }
           : mockDecodedToken
@@ -776,7 +769,7 @@ describe('AuthContext', () => {
       queryClient.setQueryData(['seatRooms'], [{ id: 'r1', slug: 'a-private-room', name: 'A room' }]);
       useNotificationStore.getState().add({ id: 'n1', message: 'A private message', from: 'agent' });
 
-      (global.fetch as any).mockResolvedValueOnce({
+      (global.fetch as unknown).mockResolvedValueOnce({
         ok: true,
         json: async () => ({
           success: true,
@@ -812,13 +805,13 @@ describe('AuthContext', () => {
     it('clears the cache and inbox when a refresh returns another identity', async () => {
       // The tokens are plain same-origin document cookies shared by every tab, so a refresh fired in
       // this tab after another tab signed in as B hands this tab B's identity.
-      (Cookies.get as any).mockImplementation((key: string) => {
+      (Cookies.get as unknown).mockImplementation((key: string) => {
         if (key === 'access_token') return mockTokens.access_token;
         if (key === 'refresh_token') return mockTokens.refresh_token;
         return null;
       });
 
-      (jwtDecode.jwtDecode as any).mockImplementation((token: string) =>
+      (jwtDecode.jwtDecode as unknown).mockImplementation((token: string) =>
         token === 'b-access-token'
           ? { ...mockDecodedToken, sub: 'user-b', email: 'b@example.com' }
           : mockDecodedToken
@@ -828,7 +821,7 @@ describe('AuthContext', () => {
       queryClient.setQueryData(['seatRooms'], [{ id: 'r1', slug: 'a-private-room', name: 'A room' }]);
       useNotificationStore.getState().add({ id: 'n1', message: 'A private message', from: 'agent' });
 
-      (global.fetch as any).mockResolvedValueOnce({
+      (global.fetch as unknown).mockResolvedValueOnce({
         ok: true,
         json: async () => ({
           access_token: 'b-access-token',
@@ -863,19 +856,19 @@ describe('AuthContext', () => {
     it('keeps the cache when a refresh returns the same identity', async () => {
       // The guard must not fire on the ordinary refresh: dropping the cache every refresh window
       // would be worse than the leak it closes.
-      (Cookies.get as any).mockImplementation((key: string) => {
+      (Cookies.get as unknown).mockImplementation((key: string) => {
         if (key === 'access_token') return mockTokens.access_token;
         if (key === 'refresh_token') return mockTokens.refresh_token;
         return null;
       });
 
-      (jwtDecode.jwtDecode as any).mockReturnValue(mockDecodedToken);
+      (jwtDecode.jwtDecode as unknown).mockReturnValue(mockDecodedToken);
 
       const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
       queryClient.setQueryData(['seatRooms'], [{ id: 'r1', slug: 'a-private-room', name: 'A room' }]);
       useNotificationStore.getState().add({ id: 'n1', message: 'A private message', from: 'agent' });
 
-      (global.fetch as any).mockResolvedValueOnce({
+      (global.fetch as unknown).mockResolvedValueOnce({
         ok: true,
         json: async () => ({
           access_token: mockTokens.access_token,
@@ -917,8 +910,8 @@ describe('AuthContext', () => {
       // refreshToken, and a new identity each render re-runs them (that shape already ended in a 4GB
       // heap once, via logout's deps). discardPreviousIdentity is a useCallback with only
       // useQueryClient() in it, which is provider-stable, so the array addition must be inert.
-      (Cookies.get as any).mockReturnValue(null);
-      (jwtDecode.jwtDecode as any).mockReturnValue(mockDecodedToken);
+      (Cookies.get as unknown).mockReturnValue(null);
+      (jwtDecode.jwtDecode as unknown).mockReturnValue(mockDecodedToken);
 
       const { getByText } = render(
         <AuthProvider>
@@ -940,18 +933,18 @@ describe('AuthContext', () => {
       // identity's rows. No previous session still skips (that is the mount path, empty cache).
       const noSub = { ...mockDecodedToken, sub: undefined };
 
-      (Cookies.get as any).mockImplementation((key: string) => {
+      (Cookies.get as unknown).mockImplementation((key: string) => {
         if (key === 'access_token') return mockTokens.access_token;
         if (key === 'refresh_token') return mockTokens.refresh_token;
         return null;
       });
 
-      (jwtDecode.jwtDecode as any).mockReturnValue(noSub);
+      (jwtDecode.jwtDecode as unknown).mockReturnValue(noSub);
 
       const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
       queryClient.setQueryData(['seatRooms'], [{ id: 'r1', slug: 'a-private-room', name: 'A room' }]);
 
-      (global.fetch as any).mockResolvedValueOnce({
+      (global.fetch as unknown).mockResolvedValueOnce({
         ok: true,
         json: async () => ({
           access_token: 'no-sub-access-token',
@@ -987,13 +980,13 @@ describe('AuthContext', () => {
         disconnect: mockDisconnect
       });
 
-      (Cookies.get as any).mockImplementation((key: string) => {
+      (Cookies.get as unknown).mockImplementation((key: string) => {
         if (key === 'access_token') return mockTokens.access_token;
         if (key === 'refresh_token') return mockTokens.refresh_token;
         return null;
       });
 
-      (jwtDecode.jwtDecode as any).mockReturnValue(mockDecodedToken);
+      (jwtDecode.jwtDecode as unknown).mockReturnValue(mockDecodedToken);
 
       const { getByText } = render(
         <AuthProvider>
@@ -1018,12 +1011,12 @@ describe('AuthContext', () => {
 
   describe('Token Refresh', () => {
     it('should refresh token successfully', async () => {
-      (Cookies.get as any).mockImplementation((key: string) => {
+      (Cookies.get as unknown).mockImplementation((key: string) => {
         if (key === 'refresh_token') return mockTokens.refresh_token;
         return null;
       });
 
-      (jwtDecode.jwtDecode as any).mockReturnValue(mockDecodedToken);
+      (jwtDecode.jwtDecode as unknown).mockReturnValue(mockDecodedToken);
 
       // This state is a refresh cookie with no access cookie, which is now restored ON MOUNT as well,
       // so the response is persistent rather than one-shot: the mount's refresh consumes one and the
@@ -1068,15 +1061,15 @@ describe('AuthContext', () => {
     });
 
     it('should logout on refresh failure', async () => {
-      (Cookies.get as any).mockImplementation((key: string) => {
+      (Cookies.get as unknown).mockImplementation((key: string) => {
         if (key === 'access_token') return mockTokens.access_token;
         if (key === 'refresh_token') return mockTokens.refresh_token;
         return null;
       });
 
-      (jwtDecode.jwtDecode as any).mockReturnValue(mockDecodedToken);
+      (jwtDecode.jwtDecode as unknown).mockReturnValue(mockDecodedToken);
 
-      const { getByText } = render(
+      render(
         <AuthProvider>
           <TestComponent />
         </AuthProvider>
@@ -1086,7 +1079,7 @@ describe('AuthContext', () => {
         expect(screen.getByTestId('user')).toHaveTextContent('test@example.com');
       });
 
-      (global.fetch as any).mockResolvedValueOnce({
+      (global.fetch as unknown).mockResolvedValueOnce({
         ok: false,
         status: 401,
         json: async () => ({
@@ -1132,7 +1125,7 @@ describe('AuthContext', () => {
         json: async () => ({ detail: 'Invalid refresh token' })
       } as unknown as Response);
 
-      const { getByText } = render(
+      render(
         <AuthProvider>
           <TestComponent />
         </AuthProvider>
@@ -1158,15 +1151,15 @@ describe('AuthContext', () => {
           exp: Math.floor(Date.now() / 1000) + 120 // Expires in 2 minutes
         };
 
-        (Cookies.get as any).mockImplementation((key: string) => {
+        (Cookies.get as unknown).mockImplementation((key: string) => {
           if (key === 'access_token') return mockTokens.access_token;
           if (key === 'refresh_token') return mockTokens.refresh_token;
           return null;
         });
 
-        (jwtDecode.jwtDecode as any).mockReturnValue(nearExpiryToken);
+        (jwtDecode.jwtDecode as unknown).mockReturnValue(nearExpiryToken);
 
-        (global.fetch as any).mockResolvedValueOnce({
+        (global.fetch as unknown).mockResolvedValueOnce({
           ok: true,
           json: async () => ({
             access_token: 'refreshed-access-token',
@@ -1197,8 +1190,8 @@ describe('AuthContext', () => {
 
   describe('setTokens', () => {
     it('should set tokens and decode user', async () => {
-      (Cookies.get as any).mockReturnValue(null);
-      (jwtDecode.jwtDecode as any).mockReturnValue(mockDecodedToken);
+      (Cookies.get as unknown).mockReturnValue(null);
+      (jwtDecode.jwtDecode as unknown).mockReturnValue(mockDecodedToken);
 
       const { getByText } = render(
         <AuthProvider>
@@ -1240,8 +1233,8 @@ describe('AuthContext', () => {
       // Mock production environment (vi.stubEnv updates import.meta.env for all modules)
       vi.stubEnv('MODE', 'production');
 
-      (Cookies.get as any).mockReturnValue(null);
-      (jwtDecode.jwtDecode as any).mockReturnValue(mockDecodedToken);
+      (Cookies.get as unknown).mockReturnValue(null);
+      (jwtDecode.jwtDecode as unknown).mockReturnValue(mockDecodedToken);
 
       const { getByText } = render(
         <AuthProvider>
@@ -1267,13 +1260,13 @@ describe('AuthContext', () => {
 
   describe('Token Decoding', () => {
     it('should handle malformed tokens', async () => {
-      (Cookies.get as any).mockImplementation((key: string) => {
+      (Cookies.get as unknown).mockImplementation((key: string) => {
         if (key === 'access_token') return 'malformed-token';
         if (key === 'refresh_token') return mockTokens.refresh_token;
         return null;
       });
 
-      (jwtDecode.jwtDecode as any).mockImplementation(() => {
+      (jwtDecode.jwtDecode as unknown).mockImplementation(() => {
         throw new Error('Invalid token');
       });
 
@@ -1301,10 +1294,10 @@ describe('AuthContext', () => {
         username: undefined
       };
 
-      (Cookies.get as any).mockReturnValue(null);
-      (jwtDecode.jwtDecode as any).mockReturnValue(tokenWithoutUsername);
+      (Cookies.get as unknown).mockReturnValue(null);
+      (jwtDecode.jwtDecode as unknown).mockReturnValue(tokenWithoutUsername);
 
-      (global.fetch as any).mockResolvedValueOnce({
+      (global.fetch as unknown).mockResolvedValueOnce({
         ok: true,
         json: async () => ({
           success: true,
@@ -1337,10 +1330,10 @@ describe('AuthContext', () => {
         roles: undefined
       };
 
-      (Cookies.get as any).mockReturnValue(null);
-      (jwtDecode.jwtDecode as any).mockReturnValue(tokenWithoutRoles);
+      (Cookies.get as unknown).mockReturnValue(null);
+      (jwtDecode.jwtDecode as unknown).mockReturnValue(tokenWithoutRoles);
 
-      (global.fetch as any).mockResolvedValueOnce({
+      (global.fetch as unknown).mockResolvedValueOnce({
         ok: true,
         json: async () => ({
           success: true,
@@ -1370,15 +1363,15 @@ describe('AuthContext', () => {
 
   describe('Event Listeners', () => {
     it('should handle logout event from API layer', async () => {
-      (Cookies.get as any).mockImplementation((key: string) => {
+      (Cookies.get as unknown).mockImplementation((key: string) => {
         if (key === 'access_token') return mockTokens.access_token;
         if (key === 'refresh_token') return mockTokens.refresh_token;
         return null;
       });
 
-      (jwtDecode.jwtDecode as any).mockReturnValue(mockDecodedToken);
+      (jwtDecode.jwtDecode as unknown).mockReturnValue(mockDecodedToken);
 
-      const { container } = render(
+      render(
         <AuthProvider>
           <TestComponent />
         </AuthProvider>
@@ -1418,8 +1411,8 @@ describe('AuthContext', () => {
     it('should console error on login failure', async () => {
       const loggerErrorSpy = vi.spyOn(logger, 'error').mockImplementation();
 
-      (Cookies.get as any).mockReturnValue(null);
-      (global.fetch as any).mockRejectedValueOnce(new Error('Network error'));
+      (Cookies.get as unknown).mockReturnValue(null);
+      (global.fetch as unknown).mockRejectedValueOnce(new Error('Network error'));
 
       render(
         <AuthProvider>
@@ -1441,8 +1434,8 @@ describe('AuthContext', () => {
     it('should console error on signup failure', async () => {
       const loggerErrorSpy = vi.spyOn(logger, 'error').mockImplementation();
 
-      (Cookies.get as any).mockReturnValue(null);
-      (global.fetch as any).mockRejectedValueOnce(new Error('Network error'));
+      (Cookies.get as unknown).mockReturnValue(null);
+      (global.fetch as unknown).mockRejectedValueOnce(new Error('Network error'));
 
       render(
         <AuthProvider>

@@ -4,6 +4,12 @@ import { completeSubtask, createSubtask, deleteSubtask, listSubtasks, updateSubt
 import type { Subtask } from '../types/api.types';
 import logger from '../utils/logger';
 
+/** Optimistic-update snapshot carried from `onMutate` to `onError`/`onSuccess`. */
+type SubtaskMutationContext = {
+  previousSubtasks?: Subtask[];
+  taskId?: string;
+};
+
 /**
  * Hook to fetch all subtasks for a parent task with caching
  * @param taskId Parent task ID to fetch subtasks for
@@ -76,7 +82,7 @@ export const useSubtaskMutations = () => {
       logger.debug('[useSubtaskMutations] Creating subtask for task', { taskId, subtask });
       return await createSubtask(taskId, subtask);
     },
-    onMutate: async ({ taskId, subtask }) => {
+    onMutate: async ({ taskId }): Promise<SubtaskMutationContext> => {
       // Cancel outgoing refetches
       await queryClient.cancelQueries({ queryKey: ['subtasks', taskId] });
       await queryClient.cancelQueries({ queryKey: ['task', taskId] });
@@ -94,14 +100,14 @@ export const useSubtaskMutations = () => {
 
       return { previousSubtasks, taskId };
     },
-    onError: (err, _, context: any) => {
+    onError: (err, _, context) => {
       logger.error('[useSubtaskMutations] Create failed:', err);
       // Rollback on error
       if (context?.previousSubtasks) {
         queryClient.setQueryData(['subtasks', context.taskId], context.previousSubtasks);
       }
     },
-    onSuccess: (data, { taskId }) => {
+    onSuccess: (data) => {
       logger.debug('[useSubtaskMutations] Subtask created:', data);
       // 🔥 REMOVED invalidateQueries - WebSocket handler updates cache in real-time
       // This prevents double animations from optimistic update + WebSocket + refetch
@@ -115,7 +121,7 @@ export const useSubtaskMutations = () => {
       logger.debug('[useSubtaskMutations] Updating subtask', { subtaskId, updates });
       return await updateSubtask(subtaskId, updates);
     },
-    onMutate: async ({ subtaskId, updates }) => {
+    onMutate: async ({ subtaskId, updates }): Promise<SubtaskMutationContext> => {
       // Find the task_id from existing cache
       let taskId: string | undefined;
       const allSubtasksQueries = queryClient.getQueriesData<Subtask[]>({ queryKey: ['subtasks'] });
@@ -150,7 +156,7 @@ export const useSubtaskMutations = () => {
 
       return { previousSubtasks, taskId };
     },
-    onError: (err, _, context: any) => {
+    onError: (err, _, context) => {
       logger.error('[useSubtaskMutations] Update failed:', err);
       if (context?.previousSubtasks && context?.taskId) {
         queryClient.setQueryData(['subtasks', context.taskId], context.previousSubtasks);
@@ -175,7 +181,7 @@ export const useSubtaskMutations = () => {
       await deleteSubtask(subtaskId);
       return subtaskId;
     },
-    onMutate: async (subtaskId) => {
+    onMutate: async (subtaskId): Promise<SubtaskMutationContext> => {
       // ✅ FIX 2025-11-22: REMOVED optimistic cache update to allow delete animation
       // Optimistic update was removing subtask from cache immediately, causing component to unmount
       // before animation could play. Now let WebSocket handler (useRealtimeSync.ts:430-448) handle
@@ -204,13 +210,13 @@ export const useSubtaskMutations = () => {
 
       return { previousSubtasks, taskId };
     },
-    onError: (err, _, context: any) => {
+    onError: (err, _, context) => {
       logger.error('[useSubtaskMutations] Delete failed:', err);
       if (context?.previousSubtasks && context?.taskId) {
         queryClient.setQueryData(['subtasks', context.taskId], context.previousSubtasks);
       }
     },
-    onSuccess: (subtaskId, _, context: any) => {
+    onSuccess: (subtaskId) => {
       logger.debug('[useSubtaskMutations] Subtask deleted:', subtaskId);
       // 🔥 REMOVED invalidateQueries - WebSocket handler updates cache with 600ms delay
       // This prevents cache refetch from removing subtask before delete animation completes
@@ -230,7 +236,7 @@ export const useSubtaskMutations = () => {
       logger.debug('[useSubtaskMutations] Completing subtask:', subtaskId);
       return await completeSubtask(subtaskId, completion_notes);
     },
-    onMutate: async ({ subtaskId }) => {
+    onMutate: async ({ subtaskId }): Promise<SubtaskMutationContext> => {
       // Find the task_id from existing cache
       let taskId: string | undefined;
       const allSubtasksQueries = queryClient.getQueriesData<Subtask[]>({ queryKey: ['subtasks'] });
@@ -267,7 +273,7 @@ export const useSubtaskMutations = () => {
 
       return { previousSubtasks, taskId };
     },
-    onError: (err, _, context: any) => {
+    onError: (err, _, context) => {
       logger.error('[useSubtaskMutations] Complete failed:', err);
       if (context?.previousSubtasks && context?.taskId) {
         queryClient.setQueryData(['subtasks', context.taskId], context.previousSubtasks);

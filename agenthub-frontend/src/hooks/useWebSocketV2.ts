@@ -21,6 +21,18 @@ let globalWebSocketClient: WebSocketClient | null = null;
 let globalIntegrationsInitialized = false;
 
 /**
+ * `EventEmitter` types every listener as `(...args: unknown[]) => void`. This adapter restores the
+ * concrete argument types the client emits for a given event, so the handlers below stay typed.
+ */
+const onEvent = <TArgs extends unknown[]>(
+  client: WebSocketClient,
+  event: string,
+  handler: (...args: TArgs) => void
+): void => {
+  client.on(event, handler as (...args: unknown[]) => void);
+};
+
+/**
  * React Hook for WebSocket v2.0
  * Provides WebSocket connection management and real-time updates
  * Implements singleton pattern to prevent multiple connections
@@ -48,8 +60,9 @@ export function useWebSocket(userId: string, token: string) {
 
       // SECURITY FIX: Disconnect global WebSocket singleton when credentials are cleared
       if (globalWebSocketClient) {
+        const isConnecting = globalWebSocketClient.isConnectingNow;
         const connectionState = globalWebSocketClient.isConnected() ? 'connected' :
-                              (globalWebSocketClient as any).isConnecting ? 'connecting' : 'disconnected';
+                              isConnecting ? 'connecting' : 'disconnected';
 
         if (connectionState === 'connected' || connectionState === 'connecting') {
           globalWebSocketClient.disconnect();
@@ -76,8 +89,7 @@ export function useWebSocket(userId: string, token: string) {
 
     // Check if we already have a global client with the same credentials
     if (globalWebSocketClient) {
-      const existingClientUserId = (globalWebSocketClient as any).userId;
-      const existingClientToken = (globalWebSocketClient as any).token;
+      const { userId: existingClientUserId, token: existingClientToken } = globalWebSocketClient.credentials;
 
       if (existingClientUserId === userId && existingClientToken === token) {
         clientRef.current = globalWebSocketClient;
@@ -107,7 +119,7 @@ export function useWebSocket(userId: string, token: string) {
     globalWebSocketClient = client;
 
     // Handle updates (both immediate and batched)
-    client.on('update', (message: WSMessage) => {
+    onEvent(client, 'update', (message: WSMessage) => {
       // WEBSOCKET VALIDATION: Validate message structure in development
       if (import.meta.env.DEV || import.meta.env.VITE_VALIDATE_RESPONSES === 'true') {
         const validationResult = validateWebSocketMessage(message);
@@ -122,7 +134,7 @@ export function useWebSocket(userId: string, token: string) {
     });
 
     // Handle user actions (immediate feedback)
-    client.on('userAction', (message: WSMessage) => {
+    onEvent(client, 'userAction', (message: WSMessage) => {
       // WEBSOCKET VALIDATION: Validate user action messages in development
       if (import.meta.env.DEV || import.meta.env.VITE_VALIDATE_RESPONSES === 'true') {
         const validationResult = validateWebSocketMessage(message);
@@ -145,12 +157,12 @@ export function useWebSocket(userId: string, token: string) {
     });
 
     // Handle reconnecting event with attempt details
-    client.on('reconnecting', (details: {attempt: number, maxAttempts: number, delay: number}) => {
+    onEvent(client, 'reconnecting', (details: {attempt: number, maxAttempts: number, delay: number}) => {
       logger.info(`[WebSocket] 🔄 Reconnecting (${details.attempt}/${details.maxAttempts})`);
       getWebSocketState().setReconnecting(details.attempt);
     });
 
-    client.on('error', (errorEvent: Event) => {
+    onEvent(client, 'error', (errorEvent: unknown) => {
       logger.error('[WebSocket] ❌ Error:', errorEvent);
       getWebSocketState().setError('WebSocket connection error');
     });
@@ -160,7 +172,7 @@ export function useWebSocket(userId: string, token: string) {
       getWebSocketState().setReconnectFailed();
     });
 
-    client.on('authenticationFailed', (reason: string) => {
+    onEvent(client, 'authenticationFailed', (reason: string) => {
       logger.error('[WebSocket] ❌ Auth failed:', reason);
       getWebSocketState().setError(`WebSocket authentication failed: ${reason}`);
     });
@@ -168,7 +180,9 @@ export function useWebSocket(userId: string, token: string) {
     // Initialize services only once per global client
     logger.info('[useWebSocket] Initializing WebSocket integrations for new client', undefined, 'useWebSocketV2.ts');
 
-    webSocketAnimationService.init(client);
+    webSocketAnimationService.init({
+      on: (event: string, handler: (message: WSMessage) => void) => onEvent(client, event, handler),
+    });
 
     // Mark integrations as initialized
     globalIntegrationsInitialized = true;

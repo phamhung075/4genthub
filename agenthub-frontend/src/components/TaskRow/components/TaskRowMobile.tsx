@@ -9,6 +9,7 @@ import LazySubtaskList from '../../LazySubtaskList';
 import { TaskRowActions } from './TaskRowActions';
 import { TaskCopyButtons } from './TaskCopyButtons';
 import { TaskRowMobileProps } from '../../../types/taskTypes';
+import type { ProgressState, Task } from '../../../types';
 import { useTaskRowState } from '../hooks/useTaskRowState';
 
 // CSS classes are now global (defined in src/styles/task-animations.css)
@@ -30,9 +31,19 @@ export const TaskRowMobile: React.FC<TaskRowMobileProps> = ({
 }) => {
   const { getBaseClasses } = useTaskRowState();
 
+  // `TaskRowMobileProps.fullTask` is widened to `unknown` at the shared type boundary; the row is
+  // only ever handed a full Task (or null) by the list.
+  const task = fullTask as Task | null;
+
   // Use subtask_count from summary (from backend), fallback to fullTask array
-  const subtaskCount = summary.subtask_count ?? fullTask?.subtasks?.length ?? 0;
-  const dependencyCount = summary.dependency_count ?? fullTask?.dependencies?.length ?? 0;
+  const subtaskCount = summary.subtask_count ?? task?.subtasks?.length ?? 0;
+  const dependencyCount = summary.dependency_count ?? task?.dependencies?.length ?? 0;
+
+  // Badges render a fixed set of wire strings; TaskSummary keeps the raw string.
+  const status = summary.status as React.ComponentProps<typeof HolographicStatusBadge>['status'];
+  const priority = summary.priority as React.ComponentProps<typeof HolographicPriorityBadge>['priority'];
+  // `Task.progress_state` is `unknown` on the wire; the display derives it when absent.
+  const progressState = task?.progress_state as ProgressState | undefined;
 
   // Combine animation classes with loading state
   const loadingClass = isLoading ? 'loading' : '';
@@ -64,10 +75,10 @@ export const TaskRowMobile: React.FC<TaskRowMobileProps> = ({
                 {/* Progress Display */}
                 <div className="mb-2">
                   <ProgressDisplayEnhanced
-                    status={fullTask?.status || summary.status}
-                    progressPercentage={fullTask?.progress_percentage}
-                    progressState={fullTask?.progress_state}
-                    progressHistory={fullTask?.details}
+                    status={task?.status || summary.status}
+                    progressPercentage={task?.progress_percentage}
+                    progressState={progressState}
+                    progressHistory={task?.details}
                     size="sm"
                     variant="compact"
                     showLabels={false}
@@ -80,8 +91,8 @@ export const TaskRowMobile: React.FC<TaskRowMobileProps> = ({
                 {/* Badges and info */}
                 <div className="flex items-center gap-2 overflow-hidden">
                   <div className="flex items-center gap-1 flex-shrink-0">
-                    <HolographicStatusBadge status={summary.status as any} size="xs" />
-                    <HolographicPriorityBadge priority={summary.priority as any} size="xs" />
+                    <HolographicStatusBadge status={status} size="xs" />
+                    <HolographicPriorityBadge priority={priority} size="xs" />
                   </div>
                   <div className="flex items-center gap-1 min-w-0 overflow-hidden">
                     {subtaskCount > 0 && (
@@ -102,7 +113,7 @@ export const TaskRowMobile: React.FC<TaskRowMobileProps> = ({
                       <div className="min-w-0 overflow-hidden">
                         <ClickableAssignees
                           assignees={summary.assignees}
-                          task={fullTask || summary as any}
+                          task={task ?? (summary as Task)}
                           variant="secondary"
                           className=""
                         />
@@ -146,7 +157,7 @@ export const TaskRowMobile: React.FC<TaskRowMobileProps> = ({
           </div>
 
           {/* Always show LazySubtaskList when expanded */}
-          {isExpanded && fullTask && (
+          {isExpanded && task && (
             <div className="border-t border-surface-border dark:border-gray-700 p-4">
               <LazySubtaskList
                 projectId={projectId}

@@ -233,7 +233,7 @@ describe('ThemeContext', () => {
     });
 
     it('responds to system theme change when no saved preference', () => {
-      let changeHandler: any;
+      let changeHandler: unknown;
       const addEventListener = vi.fn((event, handler) => {
         if (event === 'change') changeHandler = handler;
       });
@@ -263,7 +263,7 @@ describe('ThemeContext', () => {
     });
 
     it('ignores system theme change when there is saved preference', () => {
-      let changeHandler: any;
+      let changeHandler: unknown;
       const addEventListener = vi.fn((event, handler) => {
         if (event === 'change') changeHandler = handler;
       });

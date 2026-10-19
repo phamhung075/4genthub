@@ -31,26 +31,30 @@ export function useTaskGrouping(tasks: TaskSummary[]): UseTaskGroupingReturn {
         case 'title':
           comparison = a.title.localeCompare(b.title);
           break;
-        case 'status':
+        case 'status': {
           const aStatusIndex = STATUS_ORDER.indexOf(a.status as TaskStatus);
           const bStatusIndex = STATUS_ORDER.indexOf(b.status as TaskStatus);
           comparison = aStatusIndex - bStatusIndex;
           break;
-        case 'priority':
+        }
+        case 'priority': {
           const aPriorityIndex = PRIORITY_ORDER.indexOf(a.priority as TaskPriority);
           const bPriorityIndex = PRIORITY_ORDER.indexOf(b.priority as TaskPriority);
           comparison = aPriorityIndex - bPriorityIndex;
           break;
-        case 'created_at':
+        }
+        case 'created_at': {
           const aCreated = new Date(a.created_at || 0).getTime();
           const bCreated = new Date(b.created_at || 0).getTime();
           comparison = aCreated - bCreated;
           break;
-        case 'updated_at':
+        }
+        case 'updated_at': {
           const aUpdated = new Date(a.updated_at || 0).getTime();
           const bUpdated = new Date(b.updated_at || 0).getTime();
           comparison = aUpdated - bUpdated;
           break;
+        }
         default:
           comparison = 0;
       }
@@ -61,7 +65,7 @@ export function useTaskGrouping(tasks: TaskSummary[]): UseTaskGroupingReturn {
 
   const getGroupLabel = useCallback((groupKey: string, groupByField: GroupBy): string => {
     switch (groupByField) {
-      case 'status':
+      case 'status': {
         const statusLabels: Record<string, string> = {
           'todo': 'To Do',
           'in_progress': 'In Progress',
@@ -72,7 +76,8 @@ export function useTaskGrouping(tasks: TaskSummary[]): UseTaskGroupingReturn {
           'cancelled': 'Cancelled'
         };
         return statusLabels[groupKey] || groupKey;
-      case 'priority':
+      }
+      case 'priority': {
         const priorityLabels: Record<string, string> = {
           'critical': 'Critical',
           'urgent': 'Urgent',
@@ -81,6 +86,7 @@ export function useTaskGrouping(tasks: TaskSummary[]): UseTaskGroupingReturn {
           'low': 'Low'
         };
         return priorityLabels[groupKey] || groupKey;
+      }
       case 'assignee':
         return groupKey || 'Unassigned';
       default:
@@ -132,14 +138,16 @@ export function useTaskGrouping(tasks: TaskSummary[]): UseTaskGroupingReturn {
     // Sort groups by their natural order
     return groupArray.sort((a, b) => {
       switch (groupBy) {
-        case 'status':
+        case 'status': {
           const aIndex = STATUS_ORDER.indexOf(a.groupKey as TaskStatus);
           const bIndex = STATUS_ORDER.indexOf(b.groupKey as TaskStatus);
           return aIndex - bIndex;
-        case 'priority':
+        }
+        case 'priority': {
           const aPriorityIndex = PRIORITY_ORDER.indexOf(a.groupKey as TaskPriority);
           const bPriorityIndex = PRIORITY_ORDER.indexOf(b.groupKey as TaskPriority);
           return aPriorityIndex - bPriorityIndex;
+        }
         case 'assignee':
           // Sort alphabetically, with 'unassigned' last
           if (a.groupKey === 'unassigned') return 1;

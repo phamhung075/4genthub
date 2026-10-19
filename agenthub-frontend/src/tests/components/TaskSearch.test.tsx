@@ -15,7 +15,7 @@ vi.mock('../../lib/utils', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../lib/utils')>();
   return {
     ...actual,
-    debounce: (fn: any) => fn
+    debounce: (fn: unknown) => fn
   };
 });
 
@@ -230,7 +230,7 @@ describe('TaskSearch', () => {
 
     it('should show loading state while searching', async () => {
       // Create a delayed promise
-      let resolveSearch: any;
+      let resolveSearch: unknown;
       const searchPromise = new Promise((resolve) => {
         resolveSearch = resolve;
       });

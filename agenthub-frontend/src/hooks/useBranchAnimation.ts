@@ -121,9 +121,10 @@ export function useBranchAnimation(
     };
   }, [branch.id, isMobile]);
 
+  const createdAt = 'created_at' in branch ? branch.created_at : undefined;
+
   // Mount-time animation check for newly created branches
   useEffect(() => {
-    const createdAt = 'created_at' in branch ? branch.created_at : undefined;
     // KEPT SO THE EFFECT CAN CLEAR IT. This timer used to outlive the row: it fires
     // 50ms after mount, and on a remount that was long enough to land in the NEW row
     // and replay its create animation. The factory now dedupes that by element id,
@@ -149,7 +150,7 @@ export function useBranchAnimation(
     return () => {
       clearTimeout(timer);
     };
-  }, []); // Only run on mount
+  }, [createdAt, playCreateAnimation]);
 
   // NO prop-change update animation. The effect that used to sit here compared the
   // previous props and called playUpdateAnimation('websocket') - passing 'websocket'

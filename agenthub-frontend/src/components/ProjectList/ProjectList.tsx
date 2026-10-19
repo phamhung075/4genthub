@@ -8,9 +8,12 @@ import { useBranchSummaries } from "../../hooks/useBranchSummaries";
 import { useBranchMutations } from "../../hooks/useBranches";
 import { useWebSocket } from "../../hooks/useWebSocketV2";
 import { useRealtimeSync } from "../../hooks/useRealtimeSync";
-import { BranchSummary } from "../../types";
+import type { Branch, BranchSummary } from "../../types";
 import logger from "../../utils/logger";
 import { useErrorToast } from "../ui/toast";
+
+const getErrorMessage = (error: unknown): string =>
+  error instanceof Error ? error.message : String(error);
 
 const ProjectList: React.FC<ProjectListProps> = ({
   onSelect,
@@ -147,9 +150,9 @@ const ProjectList: React.FC<ProjectListProps> = ({
       // Note: Success toast is handled by WebSocket (backend confirmation)
       // This prevents duplicate toasts from both component and WebSocket
       closeDialog('create');
-    } catch (e: any) {
-      showErrorToast('Failed to create project', e.message);
-      setError(e.message);
+    } catch (e: unknown) {
+      showErrorToast('Failed to create project', getErrorMessage(e));
+      setError(getErrorMessage(e));
     } finally {
       setSaving(false);
     }
@@ -170,9 +173,9 @@ const ProjectList: React.FC<ProjectListProps> = ({
       // Note: Success toast is handled by WebSocket (backend confirmation)
       // This prevents duplicate toasts from both component and WebSocket
       closeDialog('edit');
-    } catch (e: any) {
-      showErrorToast('Failed to update project', e.message);
-      setError(e.message);
+    } catch (e: unknown) {
+      showErrorToast('Failed to update project', getErrorMessage(e));
+      setError(getErrorMessage(e));
     } finally {
       setSaving(false);
     }
@@ -190,9 +193,9 @@ const ProjectList: React.FC<ProjectListProps> = ({
     try {
       await projectMutations.deleteProjectAsync(showDelete.id);
       // Success toast will be shown by mutation hook
-    } catch (e: any) {
+    } catch (e: unknown) {
       // Make error message more user-friendly
-      const errorMsg = e.message || "Failed to delete project";
+      const errorMsg = getErrorMessage(e) || "Failed to delete project";
       const userFriendlyMsg = errorMsg
         .replace(/\(\d+ branches:/, '(branches:')
         .replace(/Delete other branches first.*/, 'Please delete all branches except "main" first.')
@@ -220,9 +223,9 @@ const ProjectList: React.FC<ProjectListProps> = ({
       // Note: Success toast is handled by WebSocket (backend confirmation)
       // This prevents duplicate toasts from both component and WebSocket
       closeDialog('createBranch');
-    } catch (e: any) {
-      showErrorToast('Failed to create branch', e.message);
-      setError(e.message);
+    } catch (e: unknown) {
+      showErrorToast('Failed to create branch', getErrorMessage(e));
+      setError(getErrorMessage(e));
     } finally {
       setSaving(false);
     }
@@ -233,13 +236,17 @@ const ProjectList: React.FC<ProjectListProps> = ({
 
     setSaving(true);
 
+    // DeleteBranchDialogState.branch is typed unknown in componentTypes; the
+    // dialog is only ever opened from the branch row that was clicked.
+    const branch = showDeleteBranch.branch as Branch;
+
     try {
-      await branchMutations.deleteBranchAsync(showDeleteBranch.branch.id);
+      await branchMutations.deleteBranchAsync(branch.id);
 
       closeDialog('deleteBranch');
       // Success - mutation hook handles cache updates via optimistic updates
-    } catch (e: any) {
-      const errorMessage = e.message || "Failed to delete branch";
+    } catch (e: unknown) {
+      const errorMessage = getErrorMessage(e) || "Failed to delete branch";
       showErrorToast(
         'Failed to delete branch',
         errorMessage,

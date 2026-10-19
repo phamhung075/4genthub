@@ -97,7 +97,7 @@ describe('ApiDocsPage', () => {
   });
 
   it('shows the live origin and the health version, and the token when health is unreachable', async () => {
-    (global.fetch as any).mockResolvedValue({ ok: true, json: async () => ({ version: '0.0.17' }) });
+    (global.fetch as unknown).mockResolvedValue({ ok: true, json: async () => ({ version: '0.0.17' }) });
 
     render(<ApiDocsPage />);
 
@@ -119,7 +119,7 @@ describe('ApiDocsPage', () => {
   });
 
   it('leaves the version token visible when /health fails', async () => {
-    (global.fetch as any).mockRejectedValue(new Error('backend down'));
+    (global.fetch as unknown).mockRejectedValue(new Error('backend down'));
 
     render(<ApiDocsPage />);
 

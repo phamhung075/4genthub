@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Button } from './button';
 
 interface RawJSONDisplayProps {
-  jsonData: any;
+  jsonData: unknown;
   title?: string;
   fileName?: string;
 }
@@ -43,7 +43,7 @@ export default function RawJSONDisplay({ jsonData, title = "Global Context Manag
     return jsonString.split('\n').length;
   };
 
-  const formatJSON = (data: any, indent: number = 0, path: string = 'root'): React.ReactElement[] => {
+  const formatJSON = (data: unknown, indent: number = 0, path: string = 'root'): React.ReactElement[] => {
     const elements: React.ReactElement[] = [];
     const spacing = '  '.repeat(indent);
 

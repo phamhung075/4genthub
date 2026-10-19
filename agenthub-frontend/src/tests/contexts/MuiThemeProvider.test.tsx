@@ -4,7 +4,6 @@ import { vi } from 'vitest';
 import { MuiThemeWrapper } from '../../contexts/MuiThemeProvider';
 import { useTheme } from '../../hooks/useTheme';
 import { getTheme } from '../../theme/muiTheme';
-import { ThemeProvider as MuiThemeProvider, CssBaseline } from '@mui/material';
 
 // Mock dependencies
 vi.mock('../../hooks/useTheme');
@@ -12,7 +11,7 @@ vi.mock('../../theme/muiTheme');
 
 // Mock Material-UI components
 vi.mock('@mui/material', () => ({
-  ThemeProvider: ({ theme, children }: any) => (
+  ThemeProvider: ({ theme, children }: unknown) => (
     <div data-testid="mui-theme-provider" data-theme={JSON.stringify(theme)}>
       {children}
     </div>
@@ -34,7 +33,7 @@ describe('MuiThemeWrapper', () => {
       toggleTheme: vi.fn(),
       setTheme: vi.fn(),
     });
-    mockGetTheme.mockReturnValue({ palette: { mode: 'light' } } as any);
+    mockGetTheme.mockReturnValue({ palette: { mode: 'light' } } as unknown);
 
     render(
       <MuiThemeWrapper>
@@ -52,7 +51,7 @@ describe('MuiThemeWrapper', () => {
       toggleTheme: vi.fn(),
       setTheme: vi.fn(),
     });
-    mockGetTheme.mockReturnValue(lightTheme as any);
+    mockGetTheme.mockReturnValue(lightTheme as unknown);
 
     render(
       <MuiThemeWrapper>
@@ -61,7 +60,7 @@ describe('MuiThemeWrapper', () => {
     );
 
     expect(mockGetTheme).toHaveBeenCalledWith('light');
-    
+
     const themeProvider = screen.getByTestId('mui-theme-provider');
     expect(themeProvider).toHaveAttribute('data-theme', JSON.stringify(lightTheme));
   });
@@ -73,7 +72,7 @@ describe('MuiThemeWrapper', () => {
       toggleTheme: vi.fn(),
       setTheme: vi.fn(),
     });
-    mockGetTheme.mockReturnValue(darkTheme as any);
+    mockGetTheme.mockReturnValue(darkTheme as unknown);
 
     render(
       <MuiThemeWrapper>
@@ -82,7 +81,7 @@ describe('MuiThemeWrapper', () => {
     );
 
     expect(mockGetTheme).toHaveBeenCalledWith('dark');
-    
+
     const themeProvider = screen.getByTestId('mui-theme-provider');
     expect(themeProvider).toHaveAttribute('data-theme', JSON.stringify(darkTheme));
   });
@@ -93,7 +92,7 @@ describe('MuiThemeWrapper', () => {
       toggleTheme: vi.fn(),
       setTheme: vi.fn(),
     });
-    mockGetTheme.mockReturnValue({ palette: { mode: 'light' } } as any);
+    mockGetTheme.mockReturnValue({ palette: { mode: 'light' } } as unknown);
 
     render(
       <MuiThemeWrapper>
@@ -107,13 +106,13 @@ describe('MuiThemeWrapper', () => {
   it('updates theme when theme changes', () => {
     const lightTheme = { palette: { mode: 'light' } };
     const darkTheme = { palette: { mode: 'dark' } };
-    
+
     mockUseTheme.mockReturnValue({
       theme: 'light',
       toggleTheme: vi.fn(),
       setTheme: vi.fn(),
     });
-    mockGetTheme.mockReturnValue(lightTheme as any);
+    mockGetTheme.mockReturnValue(lightTheme as unknown);
 
     const { rerender } = render(
       <MuiThemeWrapper>
@@ -129,7 +128,7 @@ describe('MuiThemeWrapper', () => {
       toggleTheme: vi.fn(),
       setTheme: vi.fn(),
     });
-    mockGetTheme.mockReturnValue(darkTheme as any);
+    mockGetTheme.mockReturnValue(darkTheme as unknown);
 
     rerender(
       <MuiThemeWrapper>
@@ -146,7 +145,7 @@ describe('MuiThemeWrapper', () => {
       toggleTheme: vi.fn(),
       setTheme: vi.fn(),
     });
-    mockGetTheme.mockReturnValue({ palette: { mode: 'light' } } as any);
+    mockGetTheme.mockReturnValue({ palette: { mode: 'light' } } as unknown);
 
     render(
       <MuiThemeWrapper>
@@ -167,7 +166,7 @@ describe('MuiThemeWrapper', () => {
       toggleTheme: vi.fn(),
       setTheme: vi.fn(),
     });
-    mockGetTheme.mockReturnValue({ palette: { mode: 'light' } } as any);
+    mockGetTheme.mockReturnValue({ palette: { mode: 'light' } } as unknown);
 
     render(
       <MuiThemeWrapper>
@@ -185,7 +184,7 @@ describe('MuiThemeWrapper', () => {
       toggleTheme: vi.fn(),
       setTheme: vi.fn(),
     });
-    mockGetTheme.mockReturnValue({ palette: { mode: 'light' } } as any);
+    mockGetTheme.mockReturnValue({ palette: { mode: 'light' } } as unknown);
 
     const ComplexComponent = () => (
       <div>
@@ -213,7 +212,7 @@ describe('MuiThemeWrapper', () => {
       toggleTheme: vi.fn(),
       setTheme: vi.fn(),
     });
-    mockGetTheme.mockReturnValue(theme as any);
+    mockGetTheme.mockReturnValue(theme as unknown);
 
     render(
       <MuiThemeWrapper>
@@ -231,7 +230,7 @@ describe('MuiThemeWrapper', () => {
       toggleTheme: vi.fn(),
       setTheme: vi.fn(),
     });
-    mockGetTheme.mockReturnValue({ palette: { mode: 'light' } } as any);
+    mockGetTheme.mockReturnValue({ palette: { mode: 'light' } } as unknown);
 
     render(
       <MuiThemeWrapper>

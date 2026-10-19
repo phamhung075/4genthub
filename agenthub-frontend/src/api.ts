@@ -14,9 +14,11 @@ import { seatApi } from './services/seatApi';
 import type {
     ApiResponse,
     Branch,
+    BranchLike,
     BranchesResponse,
     BranchRequestOptions,
     BranchResponse,
+    Context,
     ContextResponse,
     DeleteResponse,
     HealthResponse,
@@ -38,7 +40,7 @@ import type { TaskEvent, TaskEventsResponse } from './types/taskTypes';
 import logger from './utils/logger';
 
 export type {
-    ApiResponse, Branch, BranchRequestOptions, BranchesResponse,
+    ApiResponse, Branch, BranchLike, BranchRequestOptions, BranchesResponse,
     BranchResponse,
     ContextResponse, DeleteResponse, HealthResponse, Project, ProjectRequestOptions, ProjectResponse, ProjectsResponse, Rule, Subtask, SubtaskRequestOptions, SubtaskResponse, SubtasksResponse, Task, TaskRequestOptions, TaskResponse, TasksResponse
 };
@@ -49,7 +51,7 @@ export const listTasks = async (params?: { git_branch_id?: string; includeContex
     return response.tasks || [];
 };
 
-export const getTasks = async (git_branch_id: string, options?: TaskRequestOptions): Promise<any> => {
+export const getTasks = async (git_branch_id: string, options?: TaskRequestOptions): Promise<TasksResponse> => {
     const response = await taskApiV2.getTasks({
         git_branch_id,
         includeContext: options?.includeContext
@@ -95,7 +97,7 @@ export const updateTask = async (task_id: string, updates: Partial<Task>): Promi
     logger.debug('Updates received:', updates);
 
     // Filter out undefined values and only send defined fields
-    const updatePayload: any = {};
+    const updatePayload: Parameters<typeof taskApiV2.updateTask>[1] = {};
     if (updates.title !== undefined) updatePayload.title = updates.title;
     if (updates.description !== undefined) updatePayload.description = updates.description;
     if (updates.status !== undefined) updatePayload.status = updates.status;
@@ -108,7 +110,8 @@ export const updateTask = async (task_id: string, updates: Partial<Task>): Promi
     if (updates.dependencies !== undefined) updatePayload.dependencies = updates.dependencies;
     if (updates.context_data !== undefined) updatePayload.context_data = updates.context_data;
     // Add progress_notes - maps to 'details' field in backend
-    if ((updates as any).progress_notes !== undefined) updatePayload.details = (updates as any).progress_notes;
+    const progressNotes = (updates as Partial<Task> & { progress_notes?: string }).progress_notes;
+    if (progressNotes !== undefined) updatePayload.details = progressNotes;
 
     logger.debug('=== Progress 1 ===');
     logger.debug('Sending update payload to backend:', updatePayload);
@@ -252,14 +255,14 @@ export const deleteBranch = async (branch_id: string): Promise<DeleteResponse> =
         }
 
         if (typeof response === 'object' && response !== null) {
-            const responseObj = response as Record<string, any>;
+            const responseObj = response as Record<string, unknown>;
 
             // If response has a success field, use it
             if ('success' in responseObj) {
                 return {
                     success: Boolean(responseObj.success),
-                    message: responseObj.message,
-                    error: responseObj.error
+                    message: typeof responseObj.message === 'string' ? responseObj.message : undefined,
+                    error: typeof responseObj.error === 'string' ? responseObj.error : undefined
                 };
             }
 
@@ -267,30 +270,35 @@ export const deleteBranch = async (branch_id: string): Promise<DeleteResponse> =
             if (!responseObj.error && !responseObj.detail) {
                 return {
                     success: true,
-                    message: responseObj.message || 'Branch deleted successfully'
+                    message: typeof responseObj.message === 'string' && responseObj.message
+                        ? responseObj.message
+                        : 'Branch deleted successfully'
                 };
             }
 
             // If there's an error
+            const responseError = typeof responseObj.error === 'string'
+                ? responseObj.error
+                : typeof responseObj.detail === 'string' ? responseObj.detail : undefined;
             return {
                 success: false,
-                error: responseObj.error || responseObj.detail || 'Failed to delete branch'
+                error: responseError || 'Failed to delete branch'
             };
         }
 
         // For any other response type, assume success
         return { success: true, message: 'Branch deleted successfully' };
-    } catch (error: any) {
+    } catch (error: unknown) {
         logger.error('Delete branch error:', error);
         return {
             success: false,
-            error: error.message || 'Failed to delete branch'
+            error: error instanceof Error ? error.message : 'Failed to delete branch'
         };
     }
 };
 
 // --- Context Operations ---
-export const getTaskContext = async (task_id: string): Promise<any> => {
+export const getTaskContext = async (task_id: string): Promise<Context | null> => {
     try {
         const response = await contextApiV2.getContext('task', task_id, true) as ContextResponse;
         return response.context || response;
@@ -300,7 +308,7 @@ export const getTaskContext = async (task_id: string): Promise<any> => {
     }
 };
 
-export const getBranchContext = async (branch_id: string): Promise<any> => {
+export const getBranchContext = async (branch_id: string): Promise<Context | null> => {
     try {
         const response = await contextApiV2.getContext('branch', branch_id, true) as ContextResponse;
         return response.context || response;
@@ -310,7 +318,7 @@ export const getBranchContext = async (branch_id: string): Promise<any> => {
     }
 };
 
-export const getProjectContext = async (project_id: string): Promise<any> => {
+export const getProjectContext = async (project_id: string): Promise<Context | null> => {
     try {
         const response = await contextApiV2.getContext('project', project_id, true) as ContextResponse;
         return response.context || response;
@@ -320,7 +328,7 @@ export const getProjectContext = async (project_id: string): Promise<any> => {
     }
 };
 
-export const getGlobalContext = async (): Promise<any> => {
+export const getGlobalContext = async (): Promise<Context | null> => {
     try {
         // For global context, use any dummy value - server ignores it and uses token user
         const response = await contextApiV2.getContext('global', 'global', false) as ContextResponse;
@@ -331,7 +339,7 @@ export const getGlobalContext = async (): Promise<any> => {
     }
 };
 
-export const updateGlobalContext = async (data: any): Promise<any> => {
+export const updateGlobalContext = async (data: Record<string, unknown>): Promise<Context | null> => {
     try {
         // For global context, use any dummy value - server ignores it and uses token user
         const response = await contextApiV2.updateContext('global', 'global', data) as ContextResponse;
@@ -342,7 +350,7 @@ export const updateGlobalContext = async (data: any): Promise<any> => {
     }
 };
 
-export const updateProjectContext = async (project_id: string, data: any): Promise<any> => {
+export const updateProjectContext = async (project_id: string, data: Record<string, unknown>): Promise<Context | null> => {
     try {
         const response = await contextApiV2.updateContext('project', project_id, data) as ContextResponse;
         return response.context || response;
@@ -352,7 +360,7 @@ export const updateProjectContext = async (project_id: string, data: any): Promi
     }
 };
 
-export const updateBranchContext = async (branch_id: string, data: any): Promise<any> => {
+export const updateBranchContext = async (branch_id: string, data: Record<string, unknown>): Promise<Context | null> => {
     try {
         const response = await contextApiV2.updateContext('branch', branch_id, data) as ContextResponse;
         return response.context || response;
@@ -362,7 +370,7 @@ export const updateBranchContext = async (branch_id: string, data: any): Promise
     }
 };
 
-export const updateTaskContext = async (task_id: string, data: any): Promise<any> => {
+export const updateTaskContext = async (task_id: string, data: Record<string, unknown>): Promise<Context | null> => {
     try {
         const response = await contextApiV2.updateContext('task', task_id, data) as ContextResponse;
         return response.context || response;

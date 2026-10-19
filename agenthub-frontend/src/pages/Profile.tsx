@@ -49,7 +49,7 @@ export const Profile: React.FC = () => {
       // TODO: Implement API call to update user profile
       alert("Profile updated successfully!");
       setIsEditing(false);
-    } catch (error) {
+    } catch {
       alert("Failed to update profile. Please try again.");
     }
   };

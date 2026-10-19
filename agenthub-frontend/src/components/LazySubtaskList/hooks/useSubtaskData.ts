@@ -9,6 +9,8 @@ import type { UseSubtaskDataReturn } from "../../../types/subtaskTypes";
 import {
   subtaskToSummary,
   isValidSubtaskId,
+  isApiError,
+  isSubtask,
   logSubtaskError
 } from "../utils/subtaskHelpers";
 import logger from "../../../utils/logger";
@@ -62,16 +64,16 @@ export function useSubtaskData(parentTaskId: string): UseSubtaskDataReturn {
 
       logger.debug(`🔄 [loadSubtaskSummaries] COMPLETED - Set ${response.subtasks.length} subtasks in state`);
 
-    } catch (e: any) {
+    } catch (e: unknown) {
       // Handle 400 errors gracefully (task might not exist)
-      if (e.status === 400 || e.response?.status === 400) {
+      if (isApiError(e) && (e.status === 400 || e.response?.status === 400)) {
         setSubtaskSummaries([]);
         setHasLoaded(true);
         setTimeout(() => setSubscriptionEnabled(true), 100);
         return;
       }
 
-      const errorMessage = e?.message || 'Failed to load subtasks';
+      const errorMessage = (isApiError(e) && e.message) || 'Failed to load subtasks';
       setError(errorMessage);
       logSubtaskError('load summaries', e, { parentTaskId });
 
@@ -98,9 +100,9 @@ export function useSubtaskData(parentTaskId: string): UseSubtaskDataReturn {
 
       return subtaskMap;
 
-    } catch (e: any) {
+    } catch (e: unknown) {
       // Handle 400 errors silently for non-existent tasks
-      if (e.status === 400 || e.response?.status === 400) {
+      if (isApiError(e) && (e.status === 400 || e.response?.status === 400)) {
         setSubtaskSummaries([]);
         const emptyMap = new Map<string, Subtask>();
         setFullSubtasks(emptyMap);
@@ -108,7 +110,7 @@ export function useSubtaskData(parentTaskId: string): UseSubtaskDataReturn {
       }
 
       logSubtaskError('load full subtasks fallback', e, { parentTaskId });
-      setError(e?.message || 'Failed to load subtasks');
+      setError((isApiError(e) && e.message) || 'Failed to load subtasks');
       return new Map();
     }
   }, [parentTaskId]);
@@ -133,14 +135,16 @@ export function useSubtaskData(parentTaskId: string): UseSubtaskDataReturn {
       logger.debug(`Subtask ${subtaskId} does not belong to parent task ${parentTaskId}`);
       return null;
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Handle expected errors silently
-      if (error?.name === 'NotFoundError' || error?.status === 404 ||
-          error?.message?.includes('Invalid subtask ID format')) {
+      if (isApiError(error) && (
+        error.name === 'NotFoundError' || error.status === 404 ||
+        error.message?.includes('Invalid subtask ID format')
+      )) {
         logger.debug('Subtask not found or invalid format:', {
           subtaskId,
           parentTaskId,
-          errorType: error?.name || 'UNKNOWN'
+          errorType: error.name || 'UNKNOWN'
         });
         return null;
       }
@@ -153,7 +157,13 @@ export function useSubtaskData(parentTaskId: string): UseSubtaskDataReturn {
   /**
    * Handle subtask creation (add to local state)
    */
-  const handleSubtaskCreated = useCallback((newSubtask: Subtask) => {
+  const handleSubtaskCreated = useCallback((created: unknown) => {
+    if (!isSubtask(created)) {
+      logger.warn('Ignoring malformed created subtask payload:', created);
+      return;
+    }
+
+    const newSubtask = created;
     logger.debug('✨ [SubtaskData] handleSubtaskCreated called', {
       subtaskId: newSubtask.id,
       title: newSubtask.title,

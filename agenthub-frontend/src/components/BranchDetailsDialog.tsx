@@ -1,6 +1,7 @@
-import { Calendar, Check as CheckIcon, ChevronDown, ChevronRight, Code, Copy, Database, FileCode, FileText, GitBranch, Hash, Info, Layers, Settings, Shield, Tag, Users, Wifi, WifiOff } from "lucide-react";
+import { Check as CheckIcon, ChevronDown, ChevronRight, Code, Copy, Database, FileCode, FileText, GitBranch, Info, Layers, Settings, Shield, Users, Wifi, WifiOff } from "lucide-react";
 import React, { useEffect, useState } from "react";
-import { getBranchContext, Project } from "../api";
+import { getBranchContext } from "../api";
+import type { Branch, BranchContextData, BranchSummary, ContextMetadata, Project } from "../types";
 import { useBranchWebSocket } from "../hooks/useWebSocketV2";
 import { useAuth } from "../contexts/AuthContext";
 import { Badge } from "./ui/badge";
@@ -11,11 +12,24 @@ import RawJSONDisplay from "./ui/RawJSONDisplay";
 import { Separator } from "./ui/separator";
 import logger from "../utils/logger";
 
+/**
+ * Resolved branch context: `BranchContextData` plus the sections this dialog renders. Custom
+ * fields ride along through its index signature and stay `unknown` until they are rendered.
+ */
+type BranchContextView = BranchContextData & {
+  branch_standards?: Record<string, unknown>;
+  project_context?: Record<string, unknown>;
+  branch_data?: Record<string, unknown>;
+  agent_assignments?: Record<string, unknown> | unknown[];
+  metadata?: ContextMetadata & { created_at?: string; updated_at?: string };
+};
+
 interface BranchDetailsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   project: Project | null;
-  branch: any | null;
+  /** Either the bulk-list summary or the raw branch record nested in a project. */
+  branch: Branch | BranchSummary | null;
   onClose: () => void;
 }
 
@@ -27,11 +41,14 @@ export const BranchDetailsDialog: React.FC<BranchDetailsDialogProps> = ({
   onClose
 }) => {
   const { user, tokens } = useAuth();
-  const [branchContext, setBranchContext] = useState<any>(null);
+  const [branchContext, setBranchContext] = useState<BranchContextView | null>(null);
   const [contextLoading, setContextLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'details' | 'context'>('details');
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['data', 'resolved_context', 'branch_data', 'metadata']));
   const [jsonCopied, setJsonCopied] = useState(false);
+
+  // The branch record is typed, but the endpoint decorates it with fields the domain type does
+  // not model; this read-only view keeps those renderable without weakening the prop.
+  const branchFields = (branch ?? {}) as Record<string, unknown>;
 
   // Initialize WebSocket connection for real-time branch updates
   const { isConnected } = useBranchWebSocket(user?.id || '', tokens?.access_token || '', branch?.id);
@@ -40,39 +57,44 @@ export const BranchDetailsDialog: React.FC<BranchDetailsDialogProps> = ({
   useEffect(() => {
     if (open && branch?.id) {
       setContextLoading(true);
-      
+
       // Fetch branch context
       getBranchContext(branch.id)
-        .then(context => {
+        .then((context: unknown) => {
           logger.debug('Raw branch context response:', context);
-          
-          // Store the full response to ensure we capture ALL data including custom fields
-          if (context) {
-            // Keep the entire response structure to preserve all nested data
-            // This ensures custom fields like dependencies_to_install, risk_mitigation, etc. are preserved
-            const fullContext = {
-              // First priority: resolved_context which contains the actual merged data
-              ...(context.data?.resolved_context || context.resolved_context || {}),
-              
-              // Add any additional fields from the response that might not be in resolved_context
-              // This ensures we don't lose any custom data sent by the backend
-              ...Object.keys(context).reduce((acc: any, key) => {
-                if (key !== 'data' && key !== 'resolved_context' && key !== 'status' && key !== 'success') {
-                  acc[key] = context[key];
-                }
-                return acc;
-              }, {} as any),
-              
-              // Also preserve the original response structure for debugging
-              _originalResponse: context
-            };
-            
-            logger.debug('Processed full context with all nested data:', fullContext);
-            setBranchContext(fullContext);
-          } else {
+
+          if (!context) {
             logger.debug('No context data received');
             setBranchContext(null);
+            return;
           }
+
+          // `getBranchContext` returns untyped JSON; this is the boundary where the endpoint
+          // contract - `data.resolved_context` (or a plain `resolved_context`) - is asserted.
+          const response = context as Record<string, unknown>;
+          const data = response.data;
+          const resolvedContext =
+            data !== null && typeof data === 'object' && 'resolved_context' in data
+              ? data.resolved_context
+              : response.resolved_context;
+
+          // Keep the entire response structure to preserve custom fields such as
+          // dependencies_to_install or risk_mitigation that resolved_context may not carry.
+          const extraFields = Object.fromEntries(
+            Object.entries(response).filter(
+              ([key]) => !['data', 'resolved_context', 'status', 'success'].includes(key)
+            )
+          );
+
+          const fullContext = {
+            ...(resolvedContext as Record<string, unknown>),
+            ...extraFields,
+            // Also preserve the original response structure for debugging
+            _originalResponse: context
+          } as BranchContextView;
+
+          logger.debug('Processed full context with all nested data:', fullContext);
+          setBranchContext(fullContext);
         })
         .catch(error => {
           logger.error('Error fetching branch context:', error);
@@ -87,171 +109,6 @@ export const BranchDetailsDialog: React.FC<BranchDetailsDialogProps> = ({
       setActiveTab('details');
     }
   }, [open, branch?.id]);
-
-  // Toggle section expansion
-  const toggleSection = (path: string) => {
-    setExpandedSections(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(path)) {
-        newSet.delete(path);
-      } else {
-        newSet.add(path);
-      }
-      return newSet;
-    });
-  };
-
-
-  // Render nested JSON beautifully (same as TaskDetailsDialog)
-  const renderNestedJson = (data: any, path: string = '', depth: number = 0): React.ReactElement => {
-    if (data === null || data === undefined) {
-      return <span className="text-gray-400 italic">null</span>;
-    }
-
-    if (typeof data === 'boolean') {
-      return <span className={`font-medium ${data ? 'text-green-600' : 'text-red-600'}`}>{String(data)}</span>;
-    }
-
-    if (typeof data === 'string') {
-      // Check if it's a date string
-      if (data.match(/^\d{4}-\d{2}-\d{2}/) || data.includes('T')) {
-        try {
-          const date = new Date(data);
-          if (!isNaN(date.getTime())) {
-            return (
-              <span className="text-blue-600">
-                <Calendar className="inline w-3 h-3 mr-1" />
-                {date.toLocaleString()}
-              </span>
-            );
-          }
-        } catch {}
-      }
-      // Check if it's a UUID
-      if (data.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
-        return (
-          <span className="font-mono text-xs text-purple-600">
-            <Hash className="inline w-3 h-3 mr-1" />
-            {data}
-          </span>
-        );
-      }
-      return <span className="text-gray-700 dark:text-gray-300">"{data}"</span>;
-    }
-
-    if (typeof data === 'number') {
-      return <span className="text-blue-600 font-medium">{data}</span>;
-    }
-
-    if (Array.isArray(data)) {
-      if (data.length === 0) {
-        return <span className="text-gray-400 italic">[]</span>;
-      }
-      
-      const isExpanded = expandedSections.has(path);
-      
-      return (
-        <div className="inline-block">
-          <button
-            onClick={() => toggleSection(path)}
-            className="text-xs text-gray-500 hover:text-gray-700 flex items-center gap-1"
-          >
-            {isExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-            <span className="font-medium">[{data.length} items]</span>
-          </button>
-          {isExpanded && (
-            <div className="ml-4 mt-1 space-y-1">
-              {data.map((item, index) => (
-                <div key={index} className="flex items-start">
-                  <span className="text-gray-400 text-xs mr-2">{index}:</span>
-                  {renderNestedJson(item, `${path}[${index}]`, depth + 1)}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      );
-    }
-
-    if (typeof data === 'object') {
-      const keys = Object.keys(data);
-      if (keys.length === 0) {
-        return <span className="text-gray-400 italic">{'{}'}</span>;
-      }
-
-      const isExpanded = expandedSections.has(path);
-      const isMainSection = depth === 0 || depth === 1;
-      
-      return (
-        <div className={depth === 0 ? '' : 'inline-block'}>
-          {path && (
-            <button
-              onClick={() => toggleSection(path)}
-              className={`text-xs hover:text-gray-700 flex items-center gap-1 mb-1 ${
-                isMainSection ? 'text-gray-700 font-semibold' : 'text-gray-500'
-              }`}
-            >
-              {isExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-              <Layers className="w-3 h-3" />
-              <span>{keys.length} properties</span>
-            </button>
-          )}
-          {(!path || isExpanded) && (
-            <div className={`${path ? 'ml-4 mt-1' : ''} space-y-1`}>
-              {keys.map(key => {
-                const value = data[key];
-                const currentPath = path ? `${path}.${key}` : key;
-                const isEmpty = value === null || value === undefined || 
-                               (typeof value === 'object' && Object.keys(value).length === 0) ||
-                               (Array.isArray(value) && value.length === 0);
-                
-                // Get appropriate icon and color for known keys
-                let keyIcon = null;
-                let keyColor = 'text-gray-600';
-                
-                if (key.includes('id') || key.includes('uuid')) {
-                  keyIcon = <Hash className="inline w-3 h-3 mr-1" />;
-                  keyColor = 'text-purple-600';
-                } else if (key.includes('date') || key.includes('time') || key.includes('_at')) {
-                  keyIcon = <Calendar className="inline w-3 h-3 mr-1" />;
-                  keyColor = 'text-blue-600';
-                } else if (key.includes('status') || key.includes('state')) {
-                  keyIcon = <Tag className="inline w-3 h-3 mr-1" />;
-                  keyColor = 'text-green-600';
-                } else if (key.includes('agent')) {
-                  keyIcon = <Users className="inline w-3 h-3 mr-1" />;
-                  keyColor = 'text-orange-600';
-                }
-                
-                return (
-                  <div 
-                    key={key} 
-                    className={`flex items-start ${
-                      isEmpty ? 'opacity-50' : ''
-                    } ${
-                      isMainSection && typeof value === 'object' && !Array.isArray(value) 
-                        ? 'p-3 bg-surface-hover rounded-lg border border-surface-border' 
-                        : ''
-                    }`}
-                  >
-                    <span className={`${keyColor} text-sm font-medium mr-2 min-w-[120px]`}>
-                      {keyIcon}
-                      {key}:
-                    </span>
-                    <div className="flex-1">
-                      {renderNestedJson(value, currentPath, depth + 1)}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      );
-    }
-
-    return <span className="text-gray-500">{String(data)}</span>;
-  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -284,26 +141,26 @@ export const BranchDetailsDialog: React.FC<BranchDetailsDialogProps> = ({
             </div>
           </div>
         </DialogHeader>
-        
+
         {/* Tab Navigation */}
         <div className="flex gap-1 border-b px-6 -mt-2">
           <button
             onClick={() => setActiveTab('details')}
             className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-[1px] ${
-              activeTab === 'details' 
-                ? 'text-blue-700 dark:text-blue-300 border-blue-400 dark:border-blue-500 bg-blue-50 dark:bg-blue-900/20' 
+              activeTab === 'details'
+                ? 'text-blue-700 dark:text-blue-300 border-blue-400 dark:border-blue-500 bg-blue-50 dark:bg-blue-900/20'
                 : 'text-gray-500 border-transparent hover:text-gray-700'
             }`}
           >
             <Info className="w-4 h-4" />
             Details
           </button>
-          
+
           <button
             onClick={() => setActiveTab('context')}
             className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-[1px] ${
-              activeTab === 'context' 
-                ? 'text-blue-700 dark:text-blue-300 border-blue-400 dark:border-blue-500 bg-blue-50 dark:bg-blue-900/20' 
+              activeTab === 'context'
+                ? 'text-blue-700 dark:text-blue-300 border-blue-400 dark:border-blue-500 bg-blue-50 dark:bg-blue-900/20'
                 : 'text-gray-500 border-transparent hover:text-gray-700'
             }`}
           >
@@ -315,7 +172,7 @@ export const BranchDetailsDialog: React.FC<BranchDetailsDialogProps> = ({
             )}
           </button>
         </div>
-        
+
         <div className="flex-1 overflow-hidden flex flex-col">
           {/* Details Tab Content */}
           {activeTab === 'details' && (
@@ -334,7 +191,7 @@ export const BranchDetailsDialog: React.FC<BranchDetailsDialogProps> = ({
                   </div>
                   <div>
                     <span className="text-muted-foreground">Description:</span>
-                    <span className="ml-2">{branch?.description || "No description"}</span>
+                    <span className="ml-2">{branchFields.description ? String(branchFields.description) : "No description"}</span>
                   </div>
                   <div>
                     <span className="text-muted-foreground">Project:</span>
@@ -350,15 +207,15 @@ export const BranchDetailsDialog: React.FC<BranchDetailsDialogProps> = ({
               <Separator />
 
               {/* Branch Status */}
-              {branch && branch['status'] && (
+              {branch && Boolean(branchFields.status) && (
                 <>
                   <div className="bg-surface-hover p-4 rounded-lg">
                     <h3 className="text-lg font-semibold mb-3 text-blue-700">Branch Status</h3>
                     <div className="bg-surface p-3 rounded border border-surface-border">
                       <pre className="text-xs overflow-x-auto whitespace-pre-wrap">
-                        {typeof branch['status'] === 'object' 
-                          ? JSON.stringify(branch['status'], null, 2)
-                          : branch['status']}
+                        {typeof branchFields.status === 'object'
+                          ? JSON.stringify(branchFields.status, null, 2)
+                          : String(branchFields.status)}
                       </pre>
                     </div>
                   </div>
@@ -367,21 +224,21 @@ export const BranchDetailsDialog: React.FC<BranchDetailsDialogProps> = ({
               )}
 
               {/* Task Statistics */}
-              {branch && (branch['task_statistics'] || branch['total_tasks'] !== undefined) && (
+              {branch && (Boolean(branchFields.task_statistics) || branchFields.total_tasks !== undefined) && (
                 <>
                   <div className="bg-surface-hover p-4 rounded-lg">
                     <h3 className="text-lg font-semibold mb-3 text-green-700">Task Statistics</h3>
                     <div className="bg-surface p-3 rounded border border-surface-border">
-                      {branch['total_tasks'] !== undefined && (
+                      {branchFields.total_tasks !== undefined && (
                         <div className="mb-2">
-                          <span className="font-medium">Total Tasks:</span> {branch['total_tasks']}
+                          <span className="font-medium">Total Tasks:</span> {String(branchFields.total_tasks)}
                         </div>
                       )}
-                      {branch['task_statistics'] && (
+                      {Boolean(branchFields.task_statistics) && (
                         <pre className="text-xs overflow-x-auto whitespace-pre-wrap">
-                          {typeof branch['task_statistics'] === 'object' 
-                            ? JSON.stringify(branch['task_statistics'], null, 2)
-                            : branch['task_statistics']}
+                          {typeof branchFields.task_statistics === 'object'
+                            ? JSON.stringify(branchFields.task_statistics, null, 2)
+                            : String(branchFields.task_statistics)}
                         </pre>
                       )}
                     </div>
@@ -391,15 +248,15 @@ export const BranchDetailsDialog: React.FC<BranchDetailsDialogProps> = ({
               )}
 
               {/* Assigned Agents */}
-              {branch && branch['assigned_agents'] && (
+              {branch && Boolean(branchFields.assigned_agents) && (
                 <>
                   <div className="bg-surface-hover p-4 rounded-lg">
                     <h3 className="text-lg font-semibold mb-3 text-purple-700">Assigned Agents</h3>
                     <div className="bg-surface p-3 rounded border border-surface-border">
                       <pre className="text-xs overflow-x-auto whitespace-pre-wrap">
-                        {typeof branch['assigned_agents'] === 'object' 
-                          ? JSON.stringify(branch['assigned_agents'], null, 2)
-                          : branch['assigned_agents']}
+                        {typeof branchFields.assigned_agents === 'object'
+                          ? JSON.stringify(branchFields.assigned_agents, null, 2)
+                          : String(branchFields.assigned_agents)}
                       </pre>
                     </div>
                   </div>
@@ -408,15 +265,15 @@ export const BranchDetailsDialog: React.FC<BranchDetailsDialogProps> = ({
               )}
 
               {/* Branch Metadata */}
-              {branch && branch['metadata'] && (
+              {branch && Boolean(branchFields.metadata) && (
                 <>
                   <div className="bg-surface-hover p-4 rounded-lg">
                     <h3 className="text-lg font-semibold mb-3 text-orange-700">Branch Metadata</h3>
                     <div className="bg-surface p-3 rounded border border-surface-border">
                       <pre className="text-xs overflow-x-auto whitespace-pre-wrap">
-                        {typeof branch['metadata'] === 'object' 
-                          ? JSON.stringify(branch['metadata'], null, 2)
-                          : branch['metadata']}
+                        {typeof branchFields.metadata === 'object'
+                          ? JSON.stringify(branchFields.metadata, null, 2)
+                          : String(branchFields.metadata)}
                       </pre>
                     </div>
                   </div>
@@ -427,11 +284,11 @@ export const BranchDetailsDialog: React.FC<BranchDetailsDialogProps> = ({
               {/* Additional Fields - Display any other fields */}
               {branch && (
                 <>
-                  {Object.entries(branch).filter(([key]) => 
+                  {Object.entries(branchFields).filter(([key]) =>
                     !['id', 'name', 'description', 'status', 'task_statistics', 'total_tasks', 'assigned_agents', 'metadata'].includes(key)
                   ).map(([key, value]) => {
                     if (value === null || value === undefined) return null;
-                    
+
                     return (
                       <React.Fragment key={key}>
                         <div className="bg-surface-hover p-4 rounded-lg">
@@ -459,7 +316,7 @@ export const BranchDetailsDialog: React.FC<BranchDetailsDialogProps> = ({
                   View Complete Raw Branch Data (JSON)
                 </summary>
                 <div className="mt-3">
-                  <RawJSONDisplay 
+                  <RawJSONDisplay
                     jsonData={{ branch: branch, project: project }}
                     title="Branch Data"
                     fileName="branch.json"
@@ -468,7 +325,7 @@ export const BranchDetailsDialog: React.FC<BranchDetailsDialogProps> = ({
               </details>
             </div>
           )}
-          
+
           {/* Context Tab Content */}
           {activeTab === 'context' && (
             <div className="space-y-4 overflow-y-auto flex-1 p-4">
@@ -489,7 +346,7 @@ export const BranchDetailsDialog: React.FC<BranchDetailsDialogProps> = ({
                       Complete hierarchical context for this branch including inherited data
                     </p>
                   </div>
-                  
+
                   {/* Organized Context Sections */}
                   <div className="space-y-4">
                     {/* Branch Settings & Configuration */}
@@ -629,7 +486,7 @@ export const BranchDetailsDialog: React.FC<BranchDetailsDialogProps> = ({
                     {(() => {
                       const knownFields = ['branch_settings', 'branch_standards', 'branch_workflow', 'project_context', 'branch_data', 'agent_assignments', 'metadata', '_originalResponse', '_inheritance'];
                       const customFields = Object.entries(branchContext).filter(([key]) => !knownFields.includes(key) && !key.startsWith('_'));
-                      
+
                       if (customFields.length > 0) {
                         return (
                           <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
@@ -673,7 +530,7 @@ export const BranchDetailsDialog: React.FC<BranchDetailsDialogProps> = ({
                         </div>
                       </summary>
                       <div className="p-4">
-                        <RawJSONDisplay 
+                        <RawJSONDisplay
                           jsonData={branchContext}
                           title="Branch Context Data"
                           fileName="branch_context.json"
@@ -710,8 +567,8 @@ export const BranchDetailsDialog: React.FC<BranchDetailsDialogProps> = ({
                       details.open = true;
                     });
                     // Also expand all JSON viewers
-                    window.dispatchEvent(new CustomEvent('json-expand-all', { 
-                      detail: { viewerId: 'all' } 
+                    window.dispatchEvent(new CustomEvent('json-expand-all', {
+                      detail: { viewerId: 'all' }
                     }));
                   }}
                   className="flex items-center gap-2"
@@ -728,8 +585,8 @@ export const BranchDetailsDialog: React.FC<BranchDetailsDialogProps> = ({
                       details.open = false;
                     });
                     // Also collapse all JSON viewers
-                    window.dispatchEvent(new CustomEvent('json-collapse-all', { 
-                      detail: { viewerId: 'all' } 
+                    window.dispatchEvent(new CustomEvent('json-collapse-all', {
+                      detail: { viewerId: 'all' }
                     }));
                   }}
                   className="flex items-center gap-2"

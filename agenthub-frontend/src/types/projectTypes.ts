@@ -3,7 +3,7 @@
  * Consolidated types for ProjectList component and related functionality
  */
 
-import type { Project } from './api.types';
+import type { BranchLike, Project } from './api.types';
 
 // =============================================================================
 // Component Props
@@ -18,7 +18,7 @@ export interface ProjectListProps {
   selectedBranchId?: string;
   onShowGlobalContext?: () => void;
   onShowProjectDetails?: (project: Project) => void;
-  onShowBranchDetails?: (project: Project, branch: any) => void;
+  onShowBranchDetails?: (project: Project, branch: BranchLike) => void;
 }
 
 // =============================================================================

@@ -13,7 +13,7 @@ import type { AnimationTriggerType } from '../types/serviceTypes';
 import logger from '../utils/logger';
 
 class WebSocketAnimationService {
-  private animationListeners: Map<string, Set<Function>> = new Map();
+  private animationListeners: Map<string, Set<(data: unknown) => void>> = new Map();
   private initialized: boolean = false;
   private updateHandler: ((message: WSMessage) => void) | null = null;
 
@@ -21,7 +21,9 @@ class WebSocketAnimationService {
    * Initialize the service by connecting to WebSocket message events
    * Protected against multiple initialization to prevent duplicate animations
    */
-  init(webSocketClient: any) {
+  init(webSocketClient: {
+    on(event: string, handler: (message: WSMessage) => void): unknown;
+  }) {
     // Prevent duplicate initialization
     if (this.initialized) {
       logger.debug('[WebSocketAnimationService] Already initialized, skipping duplicate init');
@@ -275,7 +277,7 @@ class WebSocketAnimationService {
   /**
    * Subscribe to animation events
    */
-  on(eventType: string, callback: Function): () => void {
+  on(eventType: string, callback: (data: unknown) => void): () => void {
     if (!this.animationListeners.has(eventType)) {
       this.animationListeners.set(eventType, new Set());
     }
@@ -290,7 +292,7 @@ class WebSocketAnimationService {
   /**
    * Emit animation events to listeners
    */
-  private emit(eventType: string, data: any) {
+  private emit(eventType: string, data: unknown) {
     const listeners = this.animationListeners.get(eventType);
     if (listeners) {
       listeners.forEach(listener => listener(data));
@@ -353,6 +355,6 @@ export const webSocketAnimationService = new WebSocketAnimationService();
 
 // DEBUG: Export to window for debugging and testing
 if (typeof window !== 'undefined') {
-  (window as any).webSocketAnimationService = webSocketAnimationService;
+  (window as Window & { webSocketAnimationService?: typeof webSocketAnimationService }).webSocketAnimationService = webSocketAnimationService;
   logger.debug('🎬 WebSocketAnimationService: Exposed to window.webSocketAnimationService for debugging');
 }

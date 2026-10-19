@@ -30,15 +30,15 @@ export interface WSMessage {
     action: string;
     data: {
       id?: string;  // Direct data ID access
-      primary: { id?: string; [key: string]: any } | any[];
+      primary: { id?: string; [key: string]: unknown } | unknown[];
       cascade?: {
-        branches?: any[];
-        tasks?: any[];
-        projects?: any[];
-        subtasks?: any[];
-        contexts?: any[];
+        branches?: unknown[];
+        tasks?: unknown[];
+        projects?: unknown[];
+        subtasks?: unknown[];
+        contexts?: unknown[];
       };
-      [key: string]: any;  // Allow other dynamic properties
+      [key: string]: unknown;  // Allow other dynamic properties
     };
   };
   metadata: {

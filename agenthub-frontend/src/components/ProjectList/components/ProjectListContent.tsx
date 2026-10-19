@@ -1,5 +1,6 @@
 import React from "react";
 import type { ProjectListContentProps } from "../../../types/componentTypes";
+import type { Branch } from "../../../types";
 import { BranchItem } from "./BranchItem";
 import { ProjectItem } from "./ProjectItem";
 
@@ -90,15 +91,17 @@ export const ProjectListContent: React.FC<ProjectListContentProps> = ({
                   />
                 ))
               ) : project.git_branchs ? (
-                // Fallback to original branch data if optimized not loaded
-                Object.values(project.git_branchs as Record<string, any>).map((tree: any) => (
+                // Fallback to original branch data if optimized not loaded. The API
+                // decorates each nested branch record with a task_count that
+                // `Branch` does not model yet.
+                Object.values(project.git_branchs as Record<string, Branch & { task_count?: number }>).map((branch) => (
                   <BranchItem
-                    key={tree.id}
-                    branch={tree}
+                    key={branch.id}
+                    branch={branch}
                     projectId={project.id}
                     selected={selected}
-                    taskCount={tree.task_count !== undefined ? tree.task_count : (taskCounts[tree.id as string] ?? 0)}
-                    isAnimatingCount={animatingCounts.get(tree.id) || null}
+                    taskCount={branch.task_count !== undefined ? branch.task_count : (taskCounts[branch.id] ?? 0)}
+                    isAnimatingCount={animatingCounts.get(branch.id) || null}
                     onSelect={handleSelectBranch}
                     onShowDetails={handleShowBranchDetails}
                     onDelete={onDeleteBranch}

@@ -4,13 +4,13 @@
 import { Suspense, lazy } from "react";
 import { Subtask } from "../../../api";
 import { SubtaskSummary } from "../../../types/taskTypes";
-import { Button } from "../../ui/button";
 import SubtaskCreateDialog from "../../SubtaskCreateDialog";
 import type {
   DeleteDialogState,
   ActiveDialogState,
   DetailsDialogState
 } from "../../../types/subtaskTypes";
+import { isSubtask } from "../utils/subtaskHelpers";
 import logger from "../../../utils/logger";
 
 // Lazy load heavy dialog components
@@ -25,7 +25,6 @@ interface SubtaskDialogsProps {
   activeDialog: ActiveDialogState;
   detailsDialog: DetailsDialogState;
   createSubtaskDialogOpen: boolean;
-  editingSubtask: Subtask | null;
   isOpeningDialog: boolean;
 
   // Data
@@ -36,7 +35,6 @@ interface SubtaskDialogsProps {
   onDeleteDialogChange: (open: boolean) => void;
   onActiveDialogChange: (dialog: ActiveDialogState) => void;
   onCreateDialogChange: (open: boolean) => void;
-  onEditingSubtaskChange: (subtask: Subtask | null) => void;
 
   // Action handlers
   onDeleteSubtask: (subtaskId: string) => Promise<void>;
@@ -54,19 +52,24 @@ export function SubtaskDialogs({
   activeDialog,
   detailsDialog,
   createSubtaskDialogOpen,
-  editingSubtask,
   isOpeningDialog,
   subtaskSummaries,
   parentTaskId,
   onDeleteDialogChange,
   onActiveDialogChange,
   onCreateDialogChange,
-  onEditingSubtaskChange,
   onDeleteSubtask,
   onCompleteSubtask,
   onSubtaskCreated,
   onSubtaskDialogClose
 }: SubtaskDialogsProps) {
+  // The shared dialog state widens its subtask payloads to `unknown`; narrow once here so the lazy
+  // dialog components receive the concrete type they render.
+  const editSubtask =
+    activeDialog.type === 'edit' && isSubtask(activeDialog.subtask) ? activeDialog.subtask : null;
+  const completeSubtask =
+    activeDialog.type === 'complete' && isSubtask(activeDialog.subtask) ? activeDialog.subtask : null;
+  const detailsSubtask = isSubtask(detailsDialog.subtask) ? detailsDialog.subtask : null;
 
   return (
     <>
@@ -98,7 +101,7 @@ export function SubtaskDialogs({
         )}
 
         {/* Complete Subtask Dialog */}
-        {activeDialog.type === 'complete' && activeDialog.subtask && (
+        {activeDialog.type === 'complete' && completeSubtask && (
           <SubtaskCompleteDialog
             open={true}
             onOpenChange={(open) => {
@@ -106,7 +109,7 @@ export function SubtaskDialogs({
                 onActiveDialogChange({ type: null });
               }
             }}
-            subtask={activeDialog.subtask}
+            subtask={completeSubtask}
             parentTaskId={parentTaskId}
             onClose={() => onActiveDialogChange({ type: null })}
             onComplete={onCompleteSubtask}
@@ -114,7 +117,7 @@ export function SubtaskDialogs({
         )}
 
         {/* Edit Subtask Dialog */}
-        {activeDialog.type === 'edit' && activeDialog.subtask && (
+        {activeDialog.type === 'edit' && editSubtask && (
           <SubtaskEditDialog
             open={true}
             onOpenChange={(open) => {
@@ -122,7 +125,7 @@ export function SubtaskDialogs({
                 onActiveDialogChange({ type: null });
               }
             }}
-            subtask={activeDialog.subtask}
+            subtask={editSubtask}
             onClose={() => onActiveDialogChange({ type: null })}
             onUpdated={(updatedSubtask) => {
               logger.debug('Subtask updated:', updatedSubtask);
@@ -142,7 +145,7 @@ export function SubtaskDialogs({
                 onSubtaskDialogClose();
               }
             }}
-            subtask={detailsDialog.subtask}
+            subtask={detailsSubtask}
             parentTaskId={parentTaskId}
             onClose={onSubtaskDialogClose}
           />

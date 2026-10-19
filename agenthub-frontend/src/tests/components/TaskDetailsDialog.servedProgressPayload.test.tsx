@@ -55,11 +55,11 @@ vi.mock('js-cookie', () => ({
 
 vi.mock('../../components/ClickableAssignees', () => ({
   __esModule: true,
-  default: ({ assignees }: any) => <div data-testid="clickable-assignees">{assignees?.join(', ')}</div>
+  default: ({ assignees }: unknown) => <div data-testid="clickable-assignees">{assignees?.join(', ')}</div>
 }));
 
 vi.mock('../../components/ui/CopyableId', () => ({
-  CopyableId: ({ id }: any) => <span>{id}</span>
+  CopyableId: ({ id }: unknown) => <span>{id}</span>
 }));
 
 vi.mock('../../components/ui/RawJSONDisplay', () => ({

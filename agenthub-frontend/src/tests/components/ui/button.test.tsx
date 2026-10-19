@@ -1,19 +1,19 @@
 import React from 'react';
 import { render, screen, fireEvent } from './../../test-utils';
 import { describe, it, beforeEach, expect, vi } from 'vitest';
-import { Button, ButtonProps } from '../../../components/ui/button';
+import { Button } from '../../../components/ui/button';
 import { cn } from '../../../lib/utils';
 
 // Mock the cn utility
 vi.mock('../../../lib/utils', () => ({
-  cn: vi.fn((...args: any[]) => args.filter(Boolean).join(' ')),
+  cn: vi.fn((...args: unknown[]) => args.filter(Boolean).join(' ')),
 }));
 
 describe('Button', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Ensure the mock is working
-    (cn as ReturnType<typeof vi.fn>).mockImplementation((...args: any[]) => args.filter(Boolean).join(' '));
+    (cn as ReturnType<typeof vi.fn>).mockImplementation((...args: unknown[]) => args.filter(Boolean).join(' '));
   });
 
   it('renders with default props', () => {

@@ -299,7 +299,7 @@ export function TokenManagement() {
       await tokenService.revokeToken(tokenId);
       setSuccess('Token revoked successfully');
       await fetchTokens();
-    } catch (err) {
+    } catch {
       setError('Failed to revoke token');
     } finally {
       setLoading(false);
@@ -691,7 +691,7 @@ export function TokenManagement() {
                               <h4 className="text-xs font-semibold text-muted-foreground uppercase">Operation Breakdown</h4>
                               <div className="space-y-1 max-h-32 overflow-y-auto">
                                 {Object.entries(token.usage_stats)
-                                  .filter(([_, count]) => count && count > 0)
+                                  .filter(([, count]) => count && count > 0)
                                   .sort((a, b) => (b[1] || 0) - (a[1] || 0))
                                   .map(([operation, count]) => {
                                     const operationLabel = operation
@@ -740,7 +740,7 @@ export function TokenManagement() {
                               <DialogHeader>
                                 <DialogTitle>Revoke API Token</DialogTitle>
                                 <DialogDescription>
-                                  Are you sure you want to revoke the token <strong>"{token.name}"</strong>? This action cannot be undone and any applications using this token will lose access immediately.
+                                  Are you sure you want to revoke the token <strong>"{token.name}"</strong>? This action cannot be undone and unknown applications using this token will lose access immediately.
                                 </DialogDescription>
                               </DialogHeader>
                               <DialogFooter>
@@ -1069,7 +1069,7 @@ export function TokenManagement() {
                     <CardContent>
                       <div className="space-y-3">
                         {Object.entries(selectedToken.usage_stats)
-                          .filter(([_, count]) => count && count > 0)
+                          .filter(([, count]) => count && count > 0)
                           .sort((a, b) => (b[1] || 0) - (a[1] || 0))
                           .map(([operation, count]) => {
                             const operationLabel = operation

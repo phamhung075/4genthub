@@ -2,6 +2,7 @@ import { Check, Copy, Eye, Pencil, Trash2, FileText } from "lucide-react";
 import React, { useCallback, useEffect, useState } from "react";
 import { Subtask } from "../api";
 import { SubtaskSummary } from "../api-lazy";
+import type { TaskPriority, TaskStatus } from "../types";
 import { useSubtaskAnimation } from "../hooks/useSubtaskAnimation";
 import { parseProgressHistory } from "../utils/progressHistoryUtils";
 import { Badge } from "./ui/badge";
@@ -90,6 +91,17 @@ const SubtaskRow: React.FC<SubtaskRowProps> = ({
     onUnregisterCallbacks
   });
 
+  // Debug log to verify component mounts. Called unconditionally because the early return below
+  // would otherwise change the hook order between the visible and hidden renders.
+  useEffect(() => {
+    if (!isVisible) return;
+    logger.debug('🏗️ [SubtaskRow] Mounted', {
+      subtaskId: summary.id,
+      title: summary.title,
+      timestamp: Date.now()
+    });
+  }, [summary.id, summary.title, isVisible]);
+
   // Don't render if not visible (after delete animation)
   if (!isVisible) {
     return null;
@@ -114,15 +126,6 @@ const SubtaskRow: React.FC<SubtaskRowProps> = ({
         return `${baseClasses} hover:bg-gray-50 dark:hover:bg-gray-800/20 ${newClass}`;
     }
   };
-
-  // Debug log to verify component mounts
-  useEffect(() => {
-    logger.debug('🏗️ [SubtaskRow] Mounted', {
-      subtaskId: summary.id,
-      title: summary.title,
-      timestamp: Date.now()
-    });
-  }, [summary.id]);
 
   return (
     <React.Fragment>
@@ -169,12 +172,13 @@ const SubtaskRow: React.FC<SubtaskRowProps> = ({
 
         {/* Status column - align with parent */}
         <TableCell className="hidden sm:table-cell">
-          <HolographicStatusBadge status={summary.status as any} size="xs" />
+          {/* `SubtaskSummary.status` is the wire's plain string; the badge's union is the domain contract. */}
+          <HolographicStatusBadge status={summary.status as TaskStatus} size="xs" />
         </TableCell>
 
         {/* Priority column - align with parent */}
         <TableCell className="hidden md:table-cell">
-          <HolographicPriorityBadge priority={summary.priority as any} size="xs" />
+          <HolographicPriorityBadge priority={summary.priority as TaskPriority} size="xs" />
         </TableCell>
 
         {/* Assignees column - align with parent */}

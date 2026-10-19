@@ -30,7 +30,7 @@ import { TaskSummary } from '../../../types/taskTypes';
 
 // Mock all UI components
 vi.mock('../../../components/ui/badge', () => ({
-  Badge: ({ children, variant, className }: any) => (
+  Badge: ({ children, variant, className }: unknown) => (
     <span data-testid="badge" data-variant={variant} className={className}>
       {children}
     </span>
@@ -38,7 +38,7 @@ vi.mock('../../../components/ui/badge', () => ({
 }));
 
 vi.mock('../../../components/ui/button', () => ({
-  Button: ({ children, onClick, disabled }: any) => (
+  Button: ({ children, onClick, disabled }: unknown) => (
     <button onClick={onClick} disabled={disabled}>
       {children}
     </button>
@@ -46,12 +46,12 @@ vi.mock('../../../components/ui/button', () => ({
 }));
 
 vi.mock('../../../components/ui/table', () => ({
-  TableRow: ({ children, className, onMouseEnter, onMouseLeave }: any) => (
+  TableRow: ({ children, className, onMouseEnter, onMouseLeave }: unknown) => (
     <tr className={className} onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>
       {children}
     </tr>
   ),
-  TableCell: ({ children, className, colSpan }: any) => (
+  TableCell: ({ children, className, colSpan }: unknown) => (
     <td className={className} colSpan={colSpan}>
       {children}
     </td>
@@ -59,8 +59,8 @@ vi.mock('../../../components/ui/table', () => ({
 }));
 
 vi.mock('../../../components/ui/holographic-badges', () => ({
-  HolographicStatusBadge: ({ status }: any) => <span data-testid="status-badge">{status}</span>,
-  HolographicPriorityBadge: ({ priority }: any) => <span data-testid="priority-badge">{priority}</span>
+  HolographicStatusBadge: ({ status }: unknown) => <span data-testid="status-badge">{status}</span>,
+  HolographicPriorityBadge: ({ priority }: unknown) => <span data-testid="priority-badge">{priority}</span>
 }));
 
 vi.mock('../../../components/ui/ProgressDisplay', () => ({

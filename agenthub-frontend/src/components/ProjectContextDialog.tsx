@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Textarea } from "./ui/textarea";
 import { FolderOpen, Save, Edit, X, Copy, Check as CheckIcon, Settings, Code, Users, Workflow, FileText, Cog, Wrench, Globe, Layers } from "lucide-react";
 import { getProjectContext, updateProjectContext, getGlobalContext } from "../api";
+import type { GlobalContext, ProjectContextData } from "../types/context.types";
 import logger from "../utils/logger";
 
 interface ProjectContextDialogProps {
@@ -12,6 +13,12 @@ interface ProjectContextDialogProps {
   onClose: () => void;
   projectId: string;
 }
+
+// The context API hands back an untyped payload: either the context fields directly or an envelope
+// with the fields under `data`. State keeps whichever shape arrived, typed with the domain model.
+type ProjectContextState = ProjectContextData & { data?: ProjectContextData };
+
+type GlobalContextResponse = GlobalContext & { data?: GlobalContext };
 
 // Parse markdown for Project Settings (key: value format)
 const parseKeyValueMarkdown = (content: string): Record<string, string> => {
@@ -25,11 +32,11 @@ const parseKeyValueMarkdown = (content: string): Record<string, string> => {
       if (currentKey && currentValue.length > 0) {
         result[currentKey] = currentValue.join('\n').trim();
       }
-      
+
       const [key, ...valueParts] = line.split(':');
       currentKey = key.trim();
       const value = valueParts.join(':').trim();
-      
+
       if (value) {
         result[currentKey] = value;
         currentKey = '';
@@ -56,8 +63,8 @@ const parseKeyValueMarkdown = (content: string): Record<string, string> => {
 };
 
 // Parse markdown for Technology Stack (structured format)
-const parseTechStackMarkdown = (content: string): Record<string, any> => {
-  const result: Record<string, any> = {};
+const parseTechStackMarkdown = (content: string): Record<string, unknown> => {
+  const result: Record<string, unknown> = {};
   const lines = content.split('\n');
   let currentSection = '';
   let currentItems: string[] = [];
@@ -67,7 +74,7 @@ const parseTechStackMarkdown = (content: string): Record<string, any> => {
       if (currentSection && currentItems.length > 0) {
         result[currentSection] = currentItems;
       }
-      
+
       currentSection = line.trim().slice(0, -1);
       currentItems = [];
     } else if (currentSection && line.trim().startsWith('- ')) {
@@ -83,11 +90,11 @@ const parseTechStackMarkdown = (content: string): Record<string, any> => {
 };
 
 // Convert to markdown format for each section
-const keyValueToMarkdown = (data: Record<string, any>): string => {
+const keyValueToMarkdown = (data: Record<string, unknown>): string => {
   if (!data || Object.keys(data).length === 0) {
     return '';
   }
-  
+
   return Object.entries(data).map(([key, value]) => {
     if (typeof value === 'object' && value !== null) {
       if (Array.isArray(value)) {
@@ -100,11 +107,11 @@ const keyValueToMarkdown = (data: Record<string, any>): string => {
   }).join('\n');
 };
 
-const techStackToMarkdown = (data: Record<string, any>): string => {
+const techStackToMarkdown = (data: Record<string, unknown>): string => {
   if (!data || Object.keys(data).length === 0) {
     return '';
   }
-  
+
   return Object.entries(data).map(([category, items]) => {
     if (Array.isArray(items)) {
       const itemList = items.map(item => `- ${item}`).join('\n');
@@ -120,14 +127,14 @@ export const ProjectContextDialog: React.FC<ProjectContextDialogProps> = ({
   onClose,
   projectId
 }) => {
-  const [projectContext, setProjectContext] = useState<any>(null);
-  const [globalContext, setGlobalContext] = useState<any>(null);
+  const [projectContext, setProjectContext] = useState<ProjectContextState | null>(null);
+  const [globalContext, setGlobalContext] = useState<GlobalContext | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [jsonCopied, setJsonCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<'project_info' | 'team_preferences' | 'technology_stack' | 'project_workflow' | 'local_standards' | 'project_settings' | 'technical_specifications' | 'inheritance'>('project_info');
-  
+
   // Separate markdown content for each section
   const [projectInfoMarkdown, setProjectInfoMarkdown] = useState('');
   const [teamPreferencesMarkdown, setTeamPreferencesMarkdown] = useState('');
@@ -137,42 +144,32 @@ export const ProjectContextDialog: React.FC<ProjectContextDialogProps> = ({
   const [projectSettingsMarkdown, setProjectSettingsMarkdown] = useState('');
   const [technicalSpecificationsMarkdown, setTechnicalSpecificationsMarkdown] = useState('');
 
-  // Fetch project context when dialog opens
-  useEffect(() => {
-    if (open && projectId) {
-      fetchProjectContext();
-      fetchGlobalContext();
-    } else {
-      setEditMode(false);
-      setProjectContext(null);
-      setGlobalContext(null);
-      setActiveTab('project_info');
-    }
-  }, [open, projectId]);
-
-  const fetchGlobalContext = async () => {
+  const fetchGlobalContext = useCallback(async () => {
     try {
-      const context = await getGlobalContext();
+      const response = await getGlobalContext();
+      // The API response is a context envelope or the context fields at the top level.
+      const context = response as GlobalContextResponse | null;
       if (context) {
         setGlobalContext(context.data || context);
       }
     } catch (error) {
       logger.error('Error fetching global context:', error);
     }
-  };
+  }, []);
 
-  const fetchProjectContext = async () => {
+  const fetchProjectContext = useCallback(async () => {
     setLoading(true);
     try {
-      const context = await getProjectContext(projectId);
+      // The API response is a context envelope or the context fields at the top level.
+      const context = (await getProjectContext(projectId)) as ProjectContextState | null;
       logger.debug('Fetched project context:', context);
-      
+
       if (context) {
         setProjectContext(context);
-        
+
         // Handle the actual API response structure
         const contextData = context.data || context;
-        
+
         // Extract project-specific fields
         const projectInfo = contextData.project_info || {};
         const teamPreferences = contextData.team_preferences || {};
@@ -181,7 +178,7 @@ export const ProjectContextDialog: React.FC<ProjectContextDialogProps> = ({
         const localStandards = contextData.local_standards || {};
         const projectSettings = contextData.project_settings || {};
         const technicalSpecifications = contextData.technical_specifications || {};
-        
+
         // Convert each section to markdown format
         setProjectInfoMarkdown(keyValueToMarkdown(projectInfo));
         setTeamPreferencesMarkdown(keyValueToMarkdown(teamPreferences));
@@ -196,7 +193,20 @@ export const ProjectContextDialog: React.FC<ProjectContextDialogProps> = ({
     } finally {
       setLoading(false);
     }
-  };
+  }, [projectId]);
+
+  // Fetch project context when dialog opens
+  useEffect(() => {
+    if (open && projectId) {
+      fetchProjectContext();
+      fetchGlobalContext();
+    } else {
+      setEditMode(false);
+      setProjectContext(null);
+      setGlobalContext(null);
+      setActiveTab('project_info');
+    }
+  }, [open, projectId, fetchProjectContext, fetchGlobalContext]);
 
   const handleSave = async () => {
     setSaving(true);
@@ -209,7 +219,7 @@ export const ProjectContextDialog: React.FC<ProjectContextDialogProps> = ({
       const localStandards = parseKeyValueMarkdown(localStandardsMarkdown);
       const projectSettings = parseKeyValueMarkdown(projectSettingsMarkdown);
       const technicalSpecifications = parseKeyValueMarkdown(technicalSpecificationsMarkdown);
-      
+
       // Prepare the data to save
       const dataToSave = {
         project_info: projectInfo,
@@ -223,10 +233,10 @@ export const ProjectContextDialog: React.FC<ProjectContextDialogProps> = ({
 
       // Call the update API
       await updateProjectContext(projectId, dataToSave);
-      
+
       // Refresh the context
       await fetchProjectContext();
-      
+
       // Exit edit mode
       setEditMode(false);
     } catch (error) {
@@ -240,7 +250,7 @@ export const ProjectContextDialog: React.FC<ProjectContextDialogProps> = ({
   const handleCancel = () => {
     if (projectContext) {
       const contextData = projectContext.data || projectContext;
-      
+
       setProjectInfoMarkdown(keyValueToMarkdown(contextData.project_info || {}));
       setTeamPreferencesMarkdown(keyValueToMarkdown(contextData.team_preferences || {}));
       setTechnologyStackMarkdown(techStackToMarkdown(contextData.technology_stack || {}));
@@ -408,7 +418,7 @@ export const ProjectContextDialog: React.FC<ProjectContextDialogProps> = ({
             </div>
           </DialogTitle>
         </DialogHeader>
-        
+
         {/* Tab Navigation */}
         <div className="flex gap-1 border-b pb-2 overflow-x-auto">
           {(['project_info', 'team_preferences', 'technology_stack', 'project_workflow', 'local_standards', 'project_settings', 'technical_specifications', 'inheritance'] as const).map((tab) => (
@@ -425,7 +435,7 @@ export const ProjectContextDialog: React.FC<ProjectContextDialogProps> = ({
             </Button>
           ))}
         </div>
-        
+
         <div className="flex-1 overflow-y-auto">
           {loading ? (
             <div className="text-center py-8">
@@ -510,10 +520,10 @@ export const ProjectContextDialog: React.FC<ProjectContextDialogProps> = ({
                                 </pre>
                               </div>
                             )}
-                            {!globalContext.organization_standards && 
-                             !globalContext.compliance_requirements && 
-                             !globalContext.shared_resources && 
-                             !globalContext.reusable_patterns && 
+                            {!globalContext.organization_standards &&
+                             !globalContext.compliance_requirements &&
+                             !globalContext.shared_resources &&
+                             !globalContext.reusable_patterns &&
                              !globalContext.global_preferences && (
                               <p className="text-sm text-gray-500 dark:text-gray-400 italic">
                                 No global context fields defined.
@@ -614,7 +624,7 @@ export const ProjectContextDialog: React.FC<ProjectContextDialogProps> = ({
                       )}
                     </div>
                   )}
-                  
+
                   {/* Show raw JSON at the bottom in view mode */}
                   <details className="cursor-pointer">
                     <summary className="font-semibold text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100">
@@ -636,8 +646,8 @@ export const ProjectContextDialog: React.FC<ProjectContextDialogProps> = ({
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
                 Project context has not been initialized yet.
               </p>
-              <Button 
-                variant="default" 
+              <Button
+                variant="default"
                 className="mt-4"
                 onClick={() => {
                   // Initialize with empty values
@@ -648,7 +658,7 @@ export const ProjectContextDialog: React.FC<ProjectContextDialogProps> = ({
                   setLocalStandardsMarkdown('');
                   setProjectSettingsMarkdown('');
                   setTechnicalSpecificationsMarkdown('');
-                  setProjectContext({ 
+                  setProjectContext({
                     data: {
                       project_info: {},
                       team_preferences: {},

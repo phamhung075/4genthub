@@ -9,18 +9,13 @@ import type {
   TaskResponse,
   TasksResponse,
   SubtaskResponse,
-  SubtasksResponse,
   ProjectResponse,
-  ProjectsResponse,
-  BranchResponse,
-  BranchesResponse,
   ContextResponse,
   DeleteResponse,
   HealthResponse,
   BulkSummaryRequest,
   BranchSummary,
   ProjectSummary,
-  BulkSummaryMetadata,
   BulkSummaryResponse,
   LegacyBranchResponse
 } from '../../types/api.types';

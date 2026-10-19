@@ -3,11 +3,17 @@ import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Separator } from "./ui/separator";
-import { getProjectContext, Project } from "../api";
+import { getProjectContext } from "../api";
+import type { Branch, ContextMetadata, Project, ProjectContextData } from "../types";
 import logger from "../utils/logger";
 import { FileText, Info, ChevronDown, ChevronRight, Copy, Check as CheckIcon, Folder, Code, Settings, Shield, Database, GitBranch } from "lucide-react";
 import { EnhancedJSONViewer } from "./ui/EnhancedJSONViewer";
 import RawJSONDisplay from "./ui/RawJSONDisplay";
+
+/** Project context as returned by the API: `ProjectContextData` plus the metadata block it renders. */
+type ProjectContextView = ProjectContextData & {
+  metadata?: ContextMetadata & { created_at?: string; updated_at?: string };
+};
 
 interface ProjectDetailsDialogProps {
   open: boolean;
@@ -22,44 +28,44 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
   project,
   onClose
 }) => {
-  const [projectContext, setProjectContext] = useState<any>(null);
+  const [projectContext, setProjectContext] = useState<ProjectContextView | null>(null);
   const [contextLoading, setContextLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'details' | 'context'>('details');
   const [jsonCopied, setJsonCopied] = useState(false);
+
+  // The project record is typed, but the details view also renders fields the server decorates
+  // onto it (`metadata`) and the task counters on its nested branch records.
+  const projectFields = (project ?? {}) as Record<string, unknown>;
+  const gitBranches: Record<string, Branch & { total_tasks?: number }> | undefined = project?.git_branchs;
 
   // Fetch project context when dialog opens
   useEffect(() => {
     if (open && project?.id) {
       setContextLoading(true);
-      
+
       // Fetch project context
       getProjectContext(project.id)
-        .then(context => {
+        .then((context: unknown) => {
           logger.debug('Raw project context response received', { context, component: 'ProjectDetailsDialog' });
-          
-          // Extract the actual context data from the response
-          if (context) {
-            if (context.data && context.data.resolved_context) {
-              // New format: data.resolved_context contains the actual context
-              logger.debug('Using resolved_context from data', { resolvedContext: context.data.resolved_context, component: 'ProjectDetailsDialog' });
-              setProjectContext(context.data.resolved_context);
-            } else if (context.resolved_context) {
-              // Alternative format: resolved_context at root level
-              logger.debug('Using resolved_context from root', { resolvedContext: context.resolved_context, component: 'ProjectDetailsDialog' });
-              setProjectContext(context.resolved_context);
-            } else if (context.data) {
-              // Fallback: use data object if it exists
-              logger.debug('Using data object as fallback', { data: context.data, component: 'ProjectDetailsDialog' });
-              setProjectContext(context.data);
-            } else {
-              // Last resort: use the whole response
-              logger.debug('Using full response as fallback', { context, component: 'ProjectDetailsDialog' });
-              setProjectContext(context);
-            }
-          } else {
+
+          if (!context) {
             logger.warn('No context data received from API', { projectId: project.id, component: 'ProjectDetailsDialog' });
             setProjectContext(null);
+            return;
           }
+
+          // `getProjectContext` returns untyped JSON; this is the boundary where the endpoint
+          // contract - `data.resolved_context` (or a plain `resolved_context`) - is asserted.
+          const response = context as Record<string, unknown>;
+          const data = response.data;
+          const nestedContext =
+            data !== null && typeof data === 'object' && 'resolved_context' in data
+              ? data.resolved_context
+              : undefined;
+          const nextContext = nestedContext ?? response.resolved_context ?? data ?? response;
+
+          logger.debug('Using project context payload', { resolvedContext: nextContext, component: 'ProjectDetailsDialog' });
+          setProjectContext(nextContext as ProjectContextView);
         })
         .catch(error => {
           logger.error('Failed to fetch project context', { error, projectId: project?.id, component: 'ProjectDetailsDialog' });
@@ -87,26 +93,26 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
             </DialogTitle>
           </div>
         </DialogHeader>
-        
+
         {/* Tab Navigation */}
         <div className="flex gap-1 border-b px-6 -mt-2">
           <button
             onClick={() => setActiveTab('details')}
             className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-[1px] ${
-              activeTab === 'details' 
-                ? 'text-blue-700 dark:text-blue-300 border-blue-400 dark:border-blue-500 bg-blue-50 dark:bg-blue-900/20' 
+              activeTab === 'details'
+                ? 'text-blue-700 dark:text-blue-300 border-blue-400 dark:border-blue-500 bg-blue-50 dark:bg-blue-900/20'
                 : 'text-gray-500 border-transparent hover:text-gray-700'
             }`}
           >
             <Info className="w-4 h-4" />
             Details
           </button>
-          
+
           <button
             onClick={() => setActiveTab('context')}
             className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-[1px] ${
-              activeTab === 'context' 
-                ? 'text-blue-700 dark:text-blue-300 border-blue-400 dark:border-blue-500 bg-blue-50 dark:bg-blue-900/20' 
+              activeTab === 'context'
+                ? 'text-blue-700 dark:text-blue-300 border-blue-400 dark:border-blue-500 bg-blue-50 dark:bg-blue-900/20'
                 : 'text-gray-500 border-transparent hover:text-gray-700'
             }`}
           >
@@ -118,7 +124,7 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
             )}
           </button>
         </div>
-        
+
         <div className="flex-1 overflow-hidden flex flex-col">
           {/* Details Tab Content */}
           {activeTab === 'details' && (
@@ -139,19 +145,19 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
                     <span className="text-muted-foreground">Description:</span>
                     <span className="ml-2">{project?.description || "No description"}</span>
                   </div>
-                  {(project as any)?.created_at && (
+                  {project?.created_at && (
                     <div>
                       <span className="text-muted-foreground">Created:</span>
                       <span className="ml-2">
-                        {new Date((project as any).created_at).toLocaleString()}
+                        {new Date(project.created_at).toLocaleString()}
                       </span>
                     </div>
                   )}
-                  {(project as any)?.updated_at && (
+                  {project?.updated_at && (
                     <div>
                       <span className="text-muted-foreground">Updated:</span>
                       <span className="ml-2">
-                        {new Date((project as any).updated_at).toLocaleString()}
+                        {new Date(project.updated_at).toLocaleString()}
                       </span>
                     </div>
                   )}
@@ -161,15 +167,15 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
               <Separator />
 
               {/* Git Branches */}
-              {project?.git_branchs && Object.keys(project.git_branchs).length > 0 && (
+              {gitBranches && Object.keys(gitBranches).length > 0 && (
                 <>
                   <div className="bg-surface-hover p-4 rounded-lg">
                     <h3 className="text-lg font-semibold mb-3 text-blue-700">
-                      Git Branches ({Object.keys(project.git_branchs).length})
+                      Git Branches ({Object.keys(gitBranches).length})
                     </h3>
                     <div className="bg-surface p-3 rounded border border-surface-border">
                       <div className="space-y-2">
-                        {Object.entries(project.git_branchs).map(([key, branch]: [string, any]) => (
+                        {Object.entries(gitBranches).map(([key, branch]) => (
                           <div key={key} className="flex items-center justify-between p-2 hover:bg-surface-hover rounded">
                             <div className="flex items-center gap-2">
                               <div className="w-2 h-2 rounded-full bg-primary"></div>
@@ -191,15 +197,15 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
               )}
 
               {/* Project Status */}
-              {project && (project as any)['status'] && (
+              {project && Boolean(projectFields.status) && (
                 <>
                   <div className="bg-surface-hover p-4 rounded-lg">
                     <h3 className="text-lg font-semibold mb-3 text-green-700">Project Status</h3>
                     <div className="bg-surface p-3 rounded border border-surface-border">
                       <pre className="text-xs overflow-x-auto whitespace-pre-wrap">
-                        {typeof (project as any)['status'] === 'object' 
-                          ? JSON.stringify((project as any)['status'], null, 2)
-                          : (project as any)['status']}
+                        {typeof projectFields.status === 'object'
+                          ? JSON.stringify(projectFields.status, null, 2)
+                          : String(projectFields.status)}
                       </pre>
                     </div>
                   </div>
@@ -208,15 +214,15 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
               )}
 
               {/* Project Metadata */}
-              {project && (project as any)['metadata'] && (
+              {project && Boolean(projectFields.metadata) && (
                 <>
                   <div className="bg-surface-hover p-4 rounded-lg">
                     <h3 className="text-lg font-semibold mb-3 text-orange-700">Project Metadata</h3>
                     <div className="bg-surface p-3 rounded border border-surface-border">
                       <pre className="text-xs overflow-x-auto whitespace-pre-wrap">
-                        {typeof (project as any)['metadata'] === 'object' 
-                          ? JSON.stringify((project as any)['metadata'], null, 2)
-                          : (project as any)['metadata']}
+                        {typeof projectFields.metadata === 'object'
+                          ? JSON.stringify(projectFields.metadata, null, 2)
+                          : String(projectFields.metadata)}
                       </pre>
                     </div>
                   </div>
@@ -227,11 +233,11 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
               {/* Additional Fields - Display any other fields */}
               {project && (
                 <>
-                  {Object.entries(project).filter(([key]) => 
+                  {Object.entries(projectFields).filter(([key]) =>
                     !['id', 'name', 'description', 'git_branchs', 'status', 'metadata'].includes(key)
                   ).map(([key, value]) => {
                     if (value === null || value === undefined) return null;
-                    
+
                     return (
                       <React.Fragment key={key}>
                         <div className="bg-surface-hover p-4 rounded-lg">
@@ -259,7 +265,7 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
                   View Complete Raw Project Data (JSON)
                 </summary>
                 <div className="mt-3">
-                  <RawJSONDisplay 
+                  <RawJSONDisplay
                     jsonData={project}
                     title="Project Data"
                     fileName="project.json"
@@ -268,7 +274,7 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
               </details>
             </div>
           )}
-          
+
           {/* Context Tab Content */}
           {activeTab === 'context' && (
             <div className="space-y-4 overflow-y-auto flex-1 p-4">
@@ -289,7 +295,7 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
                       Complete project context with configuration and settings
                     </p>
                   </div>
-                  
+
                   {/* Organized Context Sections */}
                   <div className="space-y-4">
                     {/* Team Preferences */}
@@ -395,7 +401,7 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
                     {(() => {
                       const knownFields = ['team_preferences', 'technology_stack', 'project_workflow', 'local_standards', 'metadata', '_originalResponse', '_inheritance'];
                       const customFields = Object.entries(projectContext).filter(([key]) => !knownFields.includes(key) && !key.startsWith('_'));
-                      
+
                       if (customFields.length > 0) {
                         return (
                           <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
@@ -439,7 +445,7 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
                         </div>
                       </summary>
                       <div className="p-4">
-                        <RawJSONDisplay 
+                        <RawJSONDisplay
                           jsonData={projectContext}
                           title="Project Context Data"
                           fileName="project_context.json"
@@ -459,7 +465,7 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
               )}
             </div>
           )}
-          
+
         </div>
         <DialogFooter className="flex justify-between">
           <div className="flex gap-2">
@@ -474,8 +480,8 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
                       details.open = true;
                     });
                     // Also expand all JSON viewers
-                    window.dispatchEvent(new CustomEvent('json-expand-all', { 
-                      detail: { viewerId: 'all' } 
+                    window.dispatchEvent(new CustomEvent('json-expand-all', {
+                      detail: { viewerId: 'all' }
                     }));
                   }}
                   className="flex items-center gap-2"
@@ -492,8 +498,8 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
                       details.open = false;
                     });
                     // Also collapse all JSON viewers
-                    window.dispatchEvent(new CustomEvent('json-collapse-all', { 
-                      detail: { viewerId: 'all' } 
+                    window.dispatchEvent(new CustomEvent('json-collapse-all', {
+                      detail: { viewerId: 'all' }
                     }));
                   }}
                   className="flex items-center gap-2"

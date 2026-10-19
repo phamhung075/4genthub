@@ -68,7 +68,7 @@ vi.mock('../../components/ui/toast', () => {
 
 describe('E2E: WebSocket Protocol v2.0 Integration', () => {
   let queryClient: QueryClient;
-  let mockWebSocketClient: any;
+  let mockWebSocketClient: unknown;
   let messageHandler: ((msg: WSMessage) => void) | null;
 
   // Helper to create wrapper with QueryClient
@@ -175,7 +175,6 @@ describe('E2E: WebSocket Protocol v2.0 Integration', () => {
       sendWSMessage(message);
 
       await waitFor(() => {
-        const projects = queryClient.getQueryData<Project[]>(['projects']);
         // Note: In real scenario, cache would be invalidated and refetched
         // Here we're testing that the message was processed without errors
         expect(mockWebSocketClient.on).toHaveBeenCalledWith('update', expect.any(Function));
@@ -200,7 +199,7 @@ describe('E2E: WebSocket Protocol v2.0 Integration', () => {
       ];
       queryClient.setQueryData(['projects'], existingProjects);
 
-      const { result } = renderHook(() => useRealtimeSync(mockWebSocketClient, true), {
+      renderHook(() => useRealtimeSync(mockWebSocketClient, true), {
         wrapper: createWrapper(),
       });
 
@@ -242,7 +241,7 @@ describe('E2E: WebSocket Protocol v2.0 Integration', () => {
       // Verify payload fails type guard
       expect(isProjectDeletePayload(invalidPayload)).toBe(false);
 
-      const message = createWSMessage('project', 'deleted', invalidPayload as any);
+      const message = createWSMessage('project', 'deleted', invalidPayload as unknown);
 
       // Message should be processed but delete should be skipped
       sendWSMessage(message);
@@ -351,7 +350,7 @@ describe('E2E: WebSocket Protocol v2.0 Integration', () => {
         project_id: 'project-789',
       };
 
-      const message = createWSMessage('branch', 'deleted', invalidPayload as any, {
+      const message = createWSMessage('branch', 'deleted', invalidPayload as unknown, {
         entity_id: 'fallback-branch-id', // ID in metadata
       });
 
@@ -522,7 +521,7 @@ describe('E2E: WebSocket Protocol v2.0 Integration', () => {
       // Verify type guard rejects it
       expect(isSubtaskDeletePayload(invalidPayload)).toBe(false);
 
-      const message = createWSMessage('subtask', 'deleted', invalidPayload as any);
+      const message = createWSMessage('subtask', 'deleted', invalidPayload as unknown);
 
       sendWSMessage(message);
 
@@ -644,7 +643,7 @@ describe('E2E: WebSocket Protocol v2.0 Integration', () => {
       const message = createWSMessage(
         'task',
         'deleted',
-        { title: 'No ID Task' } as any, // Missing id in primary
+        { title: 'No ID Task' } as unknown, // Missing id in primary
         { entity_id: 'metadata-task-id' } // ID in metadata
       );
 
@@ -656,7 +655,7 @@ describe('E2E: WebSocket Protocol v2.0 Integration', () => {
       const message = createWSMessage('project', 'deleted', {
         id: 'project-no-name',
         // Missing name
-      } as any);
+      } as unknown);
 
       const displayName = getDisplayName(message);
       expect(displayName).toContain('project');
@@ -696,7 +695,7 @@ describe('E2E: WebSocket Protocol v2.0 Integration', () => {
         // Missing required fields
         version: '1.0', // Wrong version
         payload: null,
-      } as any;
+      } as unknown;
 
       // Should not throw
       expect(() => sendWSMessage(malformedMessage)).not.toThrow();
@@ -707,7 +706,7 @@ describe('E2E: WebSocket Protocol v2.0 Integration', () => {
         wrapper: createWrapper(),
       });
 
-      const message = createWSMessage('task', 'deleted', null as any);
+      const message = createWSMessage('task', 'deleted', null as unknown);
 
       // Should not throw
       expect(() => sendWSMessage(message)).not.toThrow();

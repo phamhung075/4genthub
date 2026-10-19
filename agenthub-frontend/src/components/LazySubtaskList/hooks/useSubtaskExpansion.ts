@@ -9,7 +9,7 @@ import type {
   AnimationTriggers,
   RowAnimationCallbacks
 } from "../../../types/subtaskTypes";
-import { detectSubtaskChanges } from "../utils/subtaskHelpers";
+import { detectSubtaskChanges, isSubtask } from "../utils/subtaskHelpers";
 import { ANIMATION_CONFIG } from "../constants/subtaskConstants";
 import logger from "../../../utils/logger";
 
@@ -115,9 +115,10 @@ export function useSubtaskExpansion(
   /**
    * Set editing subtask state
    */
-  const setEditingSubtaskState = useCallback((subtask: Subtask | null) => {
-    setEditingSubtask(subtask);
-    logger.debug('Editing subtask state updated:', subtask?.id);
+  const setEditingSubtaskState = useCallback((subtask: unknown | null) => {
+    const next = isSubtask(subtask) ? subtask : null;
+    setEditingSubtask(next);
+    logger.debug('Editing subtask state updated:', next?.id);
   }, []);
 
   /**
@@ -213,12 +214,13 @@ export function useSubtaskExpansion(
   // Cleanup on unmount
   useEffect(() => {
     const timers = pendingTimers.current;
+    const callbacks = rowAnimationCallbacks.current;
     unmounted.current = false;
     return () => {
       unmounted.current = true;
       timers.forEach(clearTimeout);
       timers.clear();
-      rowAnimationCallbacks.current.clear();
+      callbacks.clear();
     };
   }, []);
 

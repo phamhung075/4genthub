@@ -22,10 +22,10 @@ await import('../setupTests');
 console.error = loadTimeConsoleError;
 
 describe('setupTests', () => {
-  let originalMatchMedia: any;
-  let originalIntersectionObserver: any;
-  let originalResizeObserver: any;
-  let originalConsoleError: any;
+  let originalMatchMedia: unknown;
+  let originalIntersectionObserver: unknown;
+  let originalResizeObserver: unknown;
+  let originalConsoleError: unknown;
 
   beforeEach(() => {
     // Save originals

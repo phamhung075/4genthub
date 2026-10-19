@@ -11,7 +11,7 @@
  * 4. Handle both valid and invalid payloads gracefully
  */
 
-import { renderHook, waitFor } from '@testing-library/react';
+import { renderHook } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactNode } from 'react';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
@@ -211,7 +211,7 @@ describe('useRealtimeSync - Branch Handler Type Guard Validation (TDD)', () => {
     // They will PASS once the type guard validation is added to handleBranchUpdate
 
     it('should log warning when branch delete payload is invalid (missing id)', async () => {
-      const { result } = renderHook(() => useRealtimeSync(), { wrapper });
+      renderHook(() => useRealtimeSync(), { wrapper });
 
       // Simulate receiving invalid branch delete message
       const invalidMessage = {

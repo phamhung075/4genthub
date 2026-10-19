@@ -1,5 +1,5 @@
 import { AlertCircle, ChevronDown, ChevronRight, Code, Copy, Database, Edit, FileText, Globe, Info, Package, Save, X } from "lucide-react";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { getGlobalContext, updateGlobalContext } from "../api";
 import { GlobalContext } from "../types/context.types";
 import logger from "../utils/logger";
@@ -16,6 +16,81 @@ interface GlobalContextDialogProps {
   onOpenChange: (open: boolean) => void;
   onClose: () => void;
 }
+
+// The API may return the context fields directly or wrapped in `data`, `context`, or
+// `global_settings`; all four shapes are the same domain object.
+type GlobalContextResponse = GlobalContext & {
+  data?: GlobalContext;
+  context?: GlobalContext;
+  global_settings?: GlobalContext;
+};
+
+// Helper function to recursively filter out properties with no data
+const filterEmptyProperties = (obj: unknown): unknown => {
+  if (!obj || typeof obj !== 'object') return obj;
+
+  if (Array.isArray(obj)) {
+    // Filter out null/undefined/empty arrays
+    return obj
+      .filter(item => item !== null && item !== undefined)
+      .map(filterEmptyProperties)
+      .filter(item => {
+        if (Array.isArray(item)) return item.length > 0;
+        if (typeof item === 'object' && item !== null) return Object.keys(item).length > 0;
+        return true;
+      });
+  }
+
+  const filtered: Record<string, unknown> = {};
+  Object.entries(obj).forEach(([key, value]) => {
+    // Skip null and undefined
+    if (value === null || value === undefined) {
+      return;
+    }
+
+    // Handle strings - keep if not empty
+    if (typeof value === 'string') {
+      if (value.trim().length > 0) {
+        filtered[key] = value;
+      }
+      return;
+    }
+
+    // Always keep numbers and booleans
+    if (typeof value === 'number' || typeof value === 'boolean') {
+      filtered[key] = value;
+      return;
+    }
+
+    // Handle arrays - recurse and keep if not empty
+    if (Array.isArray(value)) {
+      const arrayFiltered = filterEmptyProperties(value);
+      if (Array.isArray(arrayFiltered) && arrayFiltered.length > 0) {
+        filtered[key] = arrayFiltered;
+      }
+      return;
+    }
+
+    // Handle objects - recurse and keep if not empty
+    if (typeof value === 'object') {
+      const nestedFiltered = filterEmptyProperties(value);
+      if (
+        typeof nestedFiltered === 'object' &&
+        nestedFiltered !== null &&
+        !Array.isArray(nestedFiltered) &&
+        Object.keys(nestedFiltered).length > 0
+      ) {
+        filtered[key] = nestedFiltered;
+      }
+      return;
+    }
+
+    // Default: keep the value
+    filtered[key] = value;
+  });
+
+  return filtered;
+};
 
 export const GlobalContextDialog: React.FC<GlobalContextDialogProps> = ({
   open,
@@ -48,84 +123,7 @@ export const GlobalContextDialog: React.FC<GlobalContextDialogProps> = ({
     };
   }, []);
 
-  // Fetch global context when dialog opens
-  useEffect(() => {
-    if (open) {
-      fetchGlobalContext();
-    } else {
-      // Reset state when dialog closes
-      setEditMode(false);
-      setGlobalContext(null);
-      setEditingData(null);
-      setActiveTab('view');
-      setRawJsonText('');
-      setJsonValidationError('');
-    }
-  }, [open]);
-
-  // Helper function to recursively filter out properties with no data
-  const filterEmptyProperties = (obj: any): any => {
-    if (!obj || typeof obj !== 'object') return obj;
-
-    if (Array.isArray(obj)) {
-      // Filter out null/undefined/empty arrays
-      return obj
-        .filter(item => item !== null && item !== undefined)
-        .map(filterEmptyProperties)
-        .filter(item => {
-          if (Array.isArray(item)) return item.length > 0;
-          if (typeof item === 'object') return Object.keys(item).length > 0;
-          return true;
-        });
-    }
-
-    const filtered: any = {};
-    Object.entries(obj).forEach(([key, value]) => {
-      // Skip null and undefined
-      if (value === null || value === undefined) {
-        return;
-      }
-
-      // Handle strings - keep if not empty
-      if (typeof value === 'string') {
-        if (value.trim().length > 0) {
-          filtered[key] = value;
-        }
-        return;
-      }
-
-      // Always keep numbers and booleans
-      if (typeof value === 'number' || typeof value === 'boolean') {
-        filtered[key] = value;
-        return;
-      }
-
-      // Handle arrays - recurse and keep if not empty
-      if (Array.isArray(value)) {
-        const arrayFiltered = filterEmptyProperties(value);
-        if (arrayFiltered.length > 0) {
-          filtered[key] = arrayFiltered;
-        }
-        return;
-      }
-
-      // Handle objects - recurse and keep if not empty
-      if (typeof value === 'object') {
-        const nestedFiltered = filterEmptyProperties(value);
-        if (Object.keys(nestedFiltered).length > 0) {
-          filtered[key] = nestedFiltered;
-        }
-        return;
-      }
-
-      // Default: keep the value
-      filtered[key] = value;
-    });
-
-    return filtered;
-  };
-
-  const fetchGlobalContext = async () => {
+  const fetchGlobalContext = useCallback(async () => {
     if (!aliveRef.current) return;
     setLoading(true);
     try {
@@ -143,36 +141,41 @@ export const GlobalContextDialog: React.FC<GlobalContextDialogProps> = ({
         return;
       }
 
+      // The API response is one of the context shapes; the assertion below picks the payload.
+      const context = response as GlobalContextResponse;
+
       // Extract the actual context data from the nested structure
-      let contextData = response;
+      let contextData: unknown = context;
 
       // Try different nested paths for context data
-      if (response?.global_settings) {
-        contextData = response.global_settings;
-      } else if (response?.data?.global_settings) {
-        contextData = response.data.global_settings;
-      } else if (response?.context?.global_settings) {
-        contextData = response.context.global_settings;
-      } else if (response?.data) {
-        contextData = response.data;
-      } else if (response?.context) {
-        contextData = response.context;
+      if (context.global_settings) {
+        contextData = context.global_settings;
+      } else if (context.data?.global_settings) {
+        contextData = context.data.global_settings;
+      } else if (context.context?.global_settings) {
+        contextData = context.context.global_settings;
+      } else if (context.data) {
+        contextData = context.data;
+      } else if (context.context) {
+        contextData = context.context;
       }
 
       logger.debug('Extracted context data:', contextData);
       logger.debug('Context data type:', typeof contextData);
-      logger.debug('Context data keys:', contextData ? Object.keys(contextData) : 'none');
+      logger.debug('Context data keys:', typeof contextData === 'object' && contextData !== null ? Object.keys(contextData) : 'none');
 
       // Filter out empty properties to only show data that exists
       const filteredContextData = filterEmptyProperties(contextData);
 
       logger.debug('Filtered context data:', filteredContextData);
-      logger.debug('Filtered data keys:', filteredContextData ? Object.keys(filteredContextData) : 'none');
+      logger.debug('Filtered data keys:', typeof filteredContextData === 'object' && filteredContextData !== null ? Object.keys(filteredContextData) : 'none');
 
       // Check if filtered data is truly empty
-      const hasAnyData = filteredContextData &&
-                         typeof filteredContextData === 'object' &&
-                         Object.keys(filteredContextData).length > 0;
+      const hasAnyData =
+        typeof filteredContextData === 'object' &&
+        filteredContextData !== null &&
+        !Array.isArray(filteredContextData) &&
+        Object.keys(filteredContextData).length > 0;
 
       logger.debug('Has any data:', hasAnyData);
 
@@ -184,7 +187,7 @@ export const GlobalContextDialog: React.FC<GlobalContextDialogProps> = ({
         setRawJsonText('{}');
       } else {
         // Store both the raw context and a copy for editing
-        setGlobalContext(filteredContextData);
+        setGlobalContext(filteredContextData as GlobalContext);
         setEditingData(JSON.parse(JSON.stringify(filteredContextData))); // Deep copy for editing
         setRawJsonText(JSON.stringify(filteredContextData, null, 2));
       }
@@ -202,10 +205,25 @@ export const GlobalContextDialog: React.FC<GlobalContextDialogProps> = ({
         setLoading(false);
       }
     }
-  };
+  }, []);
+
+  // Fetch global context when dialog opens
+  useEffect(() => {
+    if (open) {
+      fetchGlobalContext();
+    } else {
+      // Reset state when dialog closes
+      setEditMode(false);
+      setGlobalContext(null);
+      setEditingData(null);
+      setActiveTab('view');
+      setRawJsonText('');
+      setJsonValidationError('');
+    }
+  }, [open, fetchGlobalContext]);
 
   // Validate JSON text and return parsed object or error
-  const validateJsonText = (jsonText: string): { isValid: boolean; data?: any; error?: string } => {
+  const validateJsonText = (jsonText: string): { isValid: boolean; data?: unknown; error?: string } => {
     try {
       if (!jsonText.trim()) {
         return { isValid: false, error: 'JSON cannot be empty' };
@@ -233,8 +251,9 @@ export const GlobalContextDialog: React.FC<GlobalContextDialogProps> = ({
         return;
       }
 
+      const parsedData = validation.data;
       const dataToSave = {
-        ...validation.data,
+        ...(typeof parsedData === 'object' && parsedData !== null ? parsedData : {}),
         last_updated: new Date().toISOString()
       };
 
@@ -468,7 +487,7 @@ export const GlobalContextDialog: React.FC<GlobalContextDialogProps> = ({
                                   const formatted = JSON.stringify(JSON.parse(rawJsonText), null, 2);
                                   setRawJsonText(formatted);
                                   setJsonValidationError('');
-                                } catch (error) {
+                                } catch {
                                   setJsonValidationError('Invalid JSON - cannot format');
                                 }
                               }}

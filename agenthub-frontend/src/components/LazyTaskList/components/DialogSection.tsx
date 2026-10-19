@@ -1,4 +1,5 @@
 import React, { lazy, Suspense } from 'react';
+import type { Task } from "../../../types";
 import { TaskSummary, TaskActiveDialog } from "../../../types/taskTypes";
 
 // Lazy-loaded dialog components
@@ -10,15 +11,15 @@ const DeleteConfirmDialog = lazy(() => import("../../DeleteConfirmDialog"));
 
 interface DialogSectionProps {
   activeDialog: TaskActiveDialog;
-  fullTasks: Map<string, any>;
+  fullTasks: Map<string, Task>;
   taskSummaries: TaskSummary[];
   availableSeats: string[];
   availableSeatsError: boolean;
   saving: boolean;
   onCloseDialog: () => void;
-  onOpenDialog: (type: string, taskId?: string, data?: any) => void;
-  onUpdateTask: (taskId: string, updates: any) => Promise<void>;
-  onCreateTask: (taskData: any) => Promise<void>;
+  onOpenDialog: (type: string, taskId?: string, data?: unknown) => void;
+  onUpdateTask: (taskId: string, updates: Partial<Task>) => Promise<void>;
+  onCreateTask: (taskData: Partial<Task>) => Promise<void>;
   onDeleteTask: (taskId: string) => Promise<void>;
 }
 

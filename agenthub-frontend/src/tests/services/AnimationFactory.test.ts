@@ -24,7 +24,7 @@ const createMockElement = () => {
     },
     addEventListener: vi.fn(),
     removeEventListener: vi.fn()
-  } as any;
+  } as unknown;
   return element;
 };
 
@@ -403,7 +403,7 @@ describe('AnimationFactory', () => {
     });
 
     it('should throw when a registered element is null (element is required)', () => {
-      animationFactory.registerElement('test-task', null as any, 'task');
+      animationFactory.registerElement('test-task', null as unknown, 'task');
 
       // registerElement types `element` as HTMLElement; a null element is not a
       // supported input and animation throws instead of silently returning false.
@@ -413,7 +413,7 @@ describe('AnimationFactory', () => {
     it('should handle invalid animation types gracefully', () => {
       animationFactory.registerElement('test-task', mockElement, 'task');
 
-      const result = animationFactory.animate('test-task', 'invalid' as any);
+      const result = animationFactory.animate('test-task', 'invalid' as unknown);
       expect(result).toBe(false);
     });
   });

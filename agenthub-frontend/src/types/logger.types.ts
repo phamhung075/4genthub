@@ -33,7 +33,7 @@ export interface LogEntry {
   timestamp: string;
   level: LogLevel;
   message: string;
-  data?: any;
+  data?: unknown;
   filepath?: string;
   loggerId: string;
   sessionId: string;

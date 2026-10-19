@@ -3,6 +3,19 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Input } from "../../ui/input";
 import { ShimmerButton } from "../../ui/shimmer-button";
 import type { ProjectDialogsProps } from "../../../types/componentTypes";
+import type { Branch } from "../../../types";
+
+// The API decorates nested branch records with task counts that `Branch` does
+// not model yet.
+type BranchWithCounts = Branch & { task_count?: number; total_tasks?: number };
+
+// `DeleteBranchDialogState.branch` is typed `unknown` in componentTypes; the
+// dialog is only ever opened from the branch row that was clicked.
+interface DeleteBranchTarget {
+  name?: string;
+  git_branch_name?: string;
+  task_count?: number;
+}
 
 export const ProjectDialogs: React.FC<ProjectDialogsProps> = ({
   showCreate,
@@ -24,6 +37,19 @@ export const ProjectDialogs: React.FC<ProjectDialogsProps> = ({
   onCreateBranch,
   onDeleteBranch,
 }) => {
+  const deleteBranches = showDelete?.git_branchs as Record<string, BranchWithCounts> | undefined;
+  const deleteBranchCount = deleteBranches ? Object.keys(deleteBranches).length : 0;
+  const deleteProjectTaskCount = deleteBranches
+    ? Object.values(deleteBranches).reduce((sum, branch) => sum + (branch.task_count || 0), 0)
+    : 0;
+  const deleteProjectTotalTasks = deleteBranches
+    ? Object.values(deleteBranches).reduce((sum, branch) => sum + (branch.total_tasks || 0), 0)
+    : 0;
+
+  const deleteBranch = showDeleteBranch?.branch as DeleteBranchTarget | undefined;
+  const deleteBranchName = deleteBranch?.git_branch_name || deleteBranch?.name;
+  const deleteBranchTaskCount = deleteBranch?.task_count || 0;
+
   return (
     <>
       {/* Create Project Dialog */}
@@ -126,28 +152,23 @@ export const ProjectDialogs: React.FC<ProjectDialogsProps> = ({
           </DialogHeader>
           <div className="space-y-2">
             <p className="text-sm">Are you sure you want to delete the project <strong>{showDelete?.name}</strong>?</p>
-            {showDelete && showDelete.git_branchs && Object.keys(showDelete.git_branchs as Record<string, any>).length > 1 && (
+            {deleteBranchCount > 1 && (
               <p className="text-sm text-amber-600 dark:text-amber-400">
-                ⚠️ This project has {Object.keys(showDelete.git_branchs as Record<string, any>).length} branches. You must delete all branches except "main" before deleting the project.
+                ⚠️ This project has {deleteBranchCount} branches. You must delete all branches except "main" before deleting the project.
               </p>
             )}
-            {showDelete && showDelete.git_branchs && (() => {
-              const branches = showDelete.git_branchs as Record<string, any>;
-              const totalTasks = Object.values(branches).reduce((sum, branch) => sum + ((branch as any).task_count || 0), 0);
-              return totalTasks > 0 ? (
-                <p className="text-sm text-amber-600 dark:text-amber-400">
-                  ⚠️ This project contains {totalTasks} task{totalTasks === 1 ? '' : 's'}. All tasks must be deleted first.
-                </p>
-              ) : null;
-            })()}
+            {deleteProjectTaskCount > 0 && (
+              <p className="text-sm text-amber-600 dark:text-amber-400">
+                ⚠️ This project contains {deleteProjectTaskCount} task{deleteProjectTaskCount === 1 ? '' : 's'}. All tasks must be deleted first.
+              </p>
+            )}
             <p className="text-sm text-muted-foreground">This action cannot be undone.</p>
           </div>
           <DialogFooter className="mt-3">
             <ShimmerButton variant="secondary" onClick={onCloseDelete} size="sm">Cancel</ShimmerButton>
             <ShimmerButton
               variant={
-                (showDelete && showDelete.git_branchs && Object.keys(showDelete.git_branchs as Record<string, any>).length > 1) ||
-                (showDelete && showDelete.git_branchs && Object.values(showDelete.git_branchs as Record<string, any>).reduce((sum, branch) => sum + ((branch as any).task_count || 0), 0) > 0)
+                deleteBranchCount > 1 || deleteProjectTaskCount > 0
                   ? "secondary"
                   : "destructive"
               }
@@ -155,19 +176,18 @@ export const ProjectDialogs: React.FC<ProjectDialogsProps> = ({
               size="sm"
               disabled={
                 saving ||
-                Boolean(showDelete && showDelete.git_branchs && Object.keys(showDelete.git_branchs as Record<string, any>).length > 1) ||
-                Boolean(showDelete && showDelete.git_branchs && Object.values(showDelete.git_branchs as Record<string, any>).reduce((sum, branch) => sum + ((branch as any).task_count || 0), 0) > 0)
+                deleteBranchCount > 1 ||
+                deleteProjectTaskCount > 0
               }
               title={
-                (showDelete && showDelete.git_branchs && Object.keys(showDelete.git_branchs as Record<string, any>).length > 1)
+                deleteBranchCount > 1
                   ? "Delete all branches except 'main' first"
-                  : (showDelete && showDelete.git_branchs && Object.values(showDelete.git_branchs as Record<string, any>).reduce((sum, branch) => sum + ((branch as any).total_tasks || 0), 0) > 0)
+                  : deleteProjectTotalTasks > 0
                     ? "Delete all tasks first"
                     : undefined
               }
               className={
-                (showDelete && showDelete.git_branchs && Object.keys(showDelete.git_branchs as Record<string, any>).length > 1) ||
-                (showDelete && showDelete.git_branchs && Object.values(showDelete.git_branchs as Record<string, any>).reduce((sum, branch) => sum + ((branch as any).task_count || 0), 0) > 0)
+                deleteBranchCount > 1 || deleteProjectTaskCount > 0
                   ? "opacity-50 cursor-not-allowed"
                   : ""
               }
@@ -185,10 +205,10 @@ export const ProjectDialogs: React.FC<ProjectDialogsProps> = ({
             <DialogTitle className="text-base">Delete Branch</DialogTitle>
           </DialogHeader>
           <div className="space-y-2">
-            <p className="text-sm">Are you sure you want to delete the branch <strong>{showDeleteBranch?.branch.git_branch_name || showDeleteBranch?.branch.name}</strong> from project <strong>{showDeleteBranch?.project.name}</strong>?</p>
-            {showDeleteBranch && (showDeleteBranch.branch.task_count || 0) > 0 && (
+            <p className="text-sm">Are you sure you want to delete the branch <strong>{deleteBranchName}</strong> from project <strong>{showDeleteBranch?.project.name}</strong>?</p>
+            {deleteBranchTaskCount > 0 && (
               <p className="text-sm text-destructive">
-                Warning: This branch contains {showDeleteBranch.branch.task_count || 0} task(s) that will also be deleted.
+                Warning: This branch contains {deleteBranchTaskCount} task(s) that will also be deleted.
               </p>
             )}
             <p className="text-sm text-muted-foreground">This action cannot be undone.</p>

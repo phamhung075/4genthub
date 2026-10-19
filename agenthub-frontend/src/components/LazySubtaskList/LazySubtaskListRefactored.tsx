@@ -8,7 +8,6 @@ import { useErrorToast } from "../ui/toast";
 import logger from "../../utils/logger";
 
 // React Query hooks
-import { useQueryClient } from '@tanstack/react-query';
 import { useSubtasks, useSubtaskMutations } from "../../hooks/useSubtasks";
 import { useWebSocket } from "../../hooks/useWebSocketV2";
 import { useRealtimeSync } from "../../hooks/useRealtimeSync";
@@ -29,6 +28,7 @@ import { SubtaskDialogs } from "./components/SubtaskDialogs";
 import { calculateProgressSummary } from "./utils/subtaskHelpers";
 
 // Import types
+import type { Subtask } from "../../types";
 import type { LazySubtaskListProps } from "../../types/subtaskTypes";
 
 /**
@@ -78,13 +78,13 @@ export function LazySubtaskListRefactored({
 
   // Track full subtask loads
   const [loadedSubtaskIds, setLoadedSubtaskIds] = React.useState<Set<string>>(new Set());
-  const fullSubtasksMap = useRef<Map<string, any>>(new Map());
+  const fullSubtasksMap = useRef<Map<string, Subtask>>(new Map());
 
   // Load full subtask on demand
-  const loadSubtaskById = useCallback(async (subtaskId: string): Promise<any | null> => {
+  const loadSubtaskById = useCallback(async (subtaskId: string): Promise<Subtask | null> => {
     // Check if already loaded in fullSubtasksMap
     if (fullSubtasksMap.current.has(subtaskId)) {
-      return fullSubtasksMap.current.get(subtaskId);
+      return fullSubtasksMap.current.get(subtaskId) ?? null;
     }
 
     try {
@@ -117,8 +117,6 @@ export function LazySubtaskListRefactored({
     showDetails,
     registerRowCallbacks,
     unregisterRowCallbacks,
-    setEditingSubtask,
-    editingSubtask,
     isOpeningDialog
   } = useSubtaskExpansion(filteredSubtasks);
 
@@ -156,7 +154,7 @@ export function LazySubtaskListRefactored({
 
         if (subtaskId && !detailsDialog.open) {
           // Check if subtask is already loaded
-          let subtask = fullSubtasksMap.current.get(subtaskId);
+          let subtask: Subtask | null = fullSubtasksMap.current.get(subtaskId) ?? null;
 
           // If not loaded, fetch it
           if (!subtask && loadSubtaskById) {
@@ -186,7 +184,7 @@ export function LazySubtaskListRefactored({
   // Handle subtask actions
   const handleSubtaskAction = async (action: 'details' | 'edit' | 'complete', subtaskId: string) => {
     // For edit and complete actions, ensure we have full subtask data (not just summary)
-    let subtask = fullSubtasksMap.current.get(subtaskId);
+    let subtask: Subtask | null = fullSubtasksMap.current.get(subtaskId) ?? null;
 
     if (!subtask && (action === 'edit' || action === 'complete')) {
       // Load full subtask data if not already loaded
@@ -195,7 +193,7 @@ export function LazySubtaskListRefactored({
 
     // Fallback to summary if full data not available (shouldn't happen but defensive)
     if (!subtask) {
-      subtask = subtasks.find(s => s.id === subtaskId);
+      subtask = subtasks.find(s => s.id === subtaskId) ?? null;
     }
 
     switch (action) {
@@ -236,7 +234,7 @@ export function LazySubtaskListRefactored({
   };
 
   // Handle complete subtask
-  const handleCompleteSubtask = (subtask: any) => {
+  const handleCompleteSubtask = (subtask: Subtask) => {
     // Implementation would go here - delegated to parent or service
     logger.debug('Complete subtask:', subtask);
   };
@@ -249,7 +247,7 @@ export function LazySubtaskListRefactored({
 
   // Build fullSubtasks map from loaded subtasks
   const fullSubtasks = useMemo(() => {
-    const map = new Map();
+    const map = new Map<string, Subtask>();
     subtasks.forEach(subtask => {
       map.set(subtask.id, subtask);
     });
@@ -299,14 +297,12 @@ export function LazySubtaskListRefactored({
           activeDialog={activeDialog}
           detailsDialog={detailsDialog}
           createSubtaskDialogOpen={createSubtaskDialogOpen}
-          editingSubtask={editingSubtask}
           isOpeningDialog={isOpeningDialog}
           subtaskSummaries={filteredSubtasks}
           parentTaskId={parentTaskId}
           onDeleteDialogChange={(open) => !open && closeAllDialogs()}
           onActiveDialogChange={setActiveDialog}
           onCreateDialogChange={(open) => !open && closeAllDialogs()}
-          onEditingSubtaskChange={setEditingSubtask}
           onDeleteSubtask={handleDeleteSubtask}
           onCompleteSubtask={handleCompleteSubtask}
           onSubtaskCreated={handleSubtaskCreated}
@@ -346,14 +342,12 @@ export function LazySubtaskListRefactored({
         activeDialog={activeDialog}
         detailsDialog={detailsDialog}
         createSubtaskDialogOpen={createSubtaskDialogOpen}
-        editingSubtask={editingSubtask}
         isOpeningDialog={isOpeningDialog}
         subtaskSummaries={filteredSubtasks}
         parentTaskId={parentTaskId}
         onDeleteDialogChange={(open) => !open && closeAllDialogs()}
         onActiveDialogChange={setActiveDialog}
         onCreateDialogChange={(open) => !open && closeAllDialogs()}
-        onEditingSubtaskChange={setEditingSubtask}
         onDeleteSubtask={handleDeleteSubtask}
         onCompleteSubtask={handleCompleteSubtask}
         onSubtaskCreated={handleSubtaskCreated}

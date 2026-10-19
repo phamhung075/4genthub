@@ -16,11 +16,8 @@ import type {
   ProjectDialogsProps,
 } from '../../types/componentTypes';
 import type { DialogProps } from '../../components/ui/dialog';
-import type { TextareaProps } from '../../components/ui/textarea';
-import type { SelectProps } from '../../components/ui/select-simple';
 import type { EnhancedButtonProps } from '../../components/ui/EnhancedButton';
 import type { Task, Subtask, Project } from '../../api';
-import type { BranchSummary } from '../../types/api.types';
 import type { User, AuthTokens, SignupResult } from '../../types/authTypes';
 
 describe('componentTypes Type Definitions', () => {
@@ -39,8 +36,8 @@ describe('componentTypes Type Definitions', () => {
       const propsWithCallbacks: TaskSearchProps = {
         projectId: 'proj-123',
         taskTreeId: 'tree-456',
-        onTaskSelect: (task: Task) => {},
-        onSubtaskSelect: (subtask: Subtask, parentTask: Task) => {},
+        onTaskSelect: () => {},
+        onSubtaskSelect: () => {},
       };
 
       expect(propsWithCallbacks.onTaskSelect).toBeDefined();
@@ -94,11 +91,11 @@ describe('componentTypes Type Definitions', () => {
         tokens: mockTokens,
         isAuthenticated: true,
         isLoading: false,
-        login: async (email: string, password: string) => {},
-        signup: async (email: string, username: string, password: string) => ({ success: true } as SignupResult),
+        login: async () => {},
+        signup: async () => ({ success: true } as SignupResult),
         logout: () => {},
         refreshToken: async () => {},
-        setTokens: (tokens: AuthTokens) => {},
+        setTokens: () => {},
       };
 
       expect(authContext.user).toBe(mockUser);
@@ -114,7 +111,7 @@ describe('componentTypes Type Definitions', () => {
         type: 'text',
         placeholder: 'Enter text',
         value: 'test',
-        onChange: (e) => {},
+        onChange: () => {},
       };
 
       expect(inputProps.type).toBe('text');
@@ -124,7 +121,7 @@ describe('componentTypes Type Definitions', () => {
     it('should define Dialog props with open state', () => {
       const dialogProps: DialogProps = {
         open: true,
-        onOpenChange: (open: boolean) => {},
+        onOpenChange: () => {},
         children: 'Dialog content',
       };
 
@@ -241,12 +238,12 @@ describe('componentTypes Type Definitions', () => {
         fadingOutBranches: new Set(),
         deletingBranches: new Set(),
         animatingCounts: new Map([['branch-1', 'up']]),
-        onToggleProject: (projectId: string) => {},
-        onSelectBranch: (projectId: string, branchId: string) => {},
-        onCreateBranch: (project: Project) => {},
-        onEditProject: (project: Project) => {},
-        onDeleteProject: (project: Project) => {},
-        onDeleteBranch: (dialogState: DeleteBranchDialogState) => {},
+        onToggleProject: () => {},
+        onSelectBranch: () => {},
+        onCreateBranch: () => {},
+        onEditProject: () => {},
+        onDeleteProject: () => {},
+        onDeleteBranch: () => {},
       };
 
       expect(contentProps.projects).toHaveLength(1);
@@ -298,7 +295,7 @@ describe('componentTypes Type Definitions', () => {
         onCloseDelete: () => {},
         onCloseCreateBranch: () => {},
         onCloseDeleteBranch: () => {},
-        onFormChange: (e: React.ChangeEvent<HTMLInputElement>, field: 'name' | 'description') => {},
+        onFormChange: () => {},
         onCreateProject: () => {},
         onEditProject: () => {},
         onDeleteProject: () => {},
@@ -331,7 +328,7 @@ describe('componentTypes Type Definitions', () => {
           expect(typeof email).toBe('string');
           expect(typeof password).toBe('string');
         },
-        signup: async (email: string, username: string, password: string) => {
+        signup: async () => {
           // Function should accept three string parameters and return Promise<SignupResult>
           return { success: true } as SignupResult;
         },

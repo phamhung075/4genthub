@@ -6,7 +6,7 @@ import { vi } from 'vitest';
 interface ProgressDisplayProps {
   status?: string;
   progressPercentage?: number;
-  progressState?: any;
+  progressState?: unknown;
   progressHistory?: string | object;
   size?: 'sm' | 'md' | 'lg';
   variant?: 'default' | 'compact';

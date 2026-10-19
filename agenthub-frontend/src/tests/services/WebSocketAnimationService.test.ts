@@ -47,8 +47,8 @@ vi.mock('../../utils/logger', () => ({
 }));
 
 describe('WebSocketAnimationService', () => {
-  let mockWebSocketClient: any;
-  let animateSpyOriginal: any;
+  let mockWebSocketClient: unknown;
+  let animateSpyOriginal: unknown;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -69,8 +69,8 @@ describe('WebSocketAnimationService', () => {
     vi.useFakeTimers();
 
     // Mock requestAnimationFrame and setTimeout
-    vi.stubGlobal('requestAnimationFrame', (cb: Function) => {
-      cb();
+    vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
+      cb(0);
     });
   });
 

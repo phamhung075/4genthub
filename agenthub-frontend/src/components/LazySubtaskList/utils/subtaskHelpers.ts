@@ -121,8 +121,8 @@ export function sortSubtasks(
   direction: 'asc' | 'desc' = 'asc'
 ): SubtaskSummary[] {
   return [...subtasks].sort((a, b) => {
-    let aValue: any = a[sortField];
-    let bValue: any = b[sortField];
+    let aValue: unknown = a[sortField];
+    let bValue: unknown = b[sortField];
 
     // Handle priority sorting with custom order
     if (sortField === 'priority') {
@@ -216,7 +216,7 @@ export function generateBranchUrl(
 /**
  * Debounce function for performance optimization
  */
-export function debounce<T extends (...args: any[]) => any>(
+export function debounce<T extends (...args: unknown[]) => unknown>(
   func: T,
   wait: number
 ): (...args: Parameters<T>) => void {
@@ -229,22 +229,82 @@ export function debounce<T extends (...args: any[]) => any>(
 }
 
 /**
+ * Shape of the errors the API client throws: Axios errors carry `status`/`response.status`, plain
+ * `Error`s carry `name`/`message`.
+ */
+interface ApiErrorLike {
+  status?: number;
+  name?: string;
+  message?: string;
+  response?: { status?: number };
+}
+
+/**
+ * Narrow an unknown thrown value to the error fields the subtask code reads.
+ */
+export function isApiError(value: unknown): value is ApiErrorLike {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+
+  const response = 'response' in value ? value.response : undefined;
+  const hasValidResponse =
+    response === undefined ||
+    (typeof response === 'object' &&
+      response !== null &&
+      (!('status' in response) || typeof response.status === 'number'));
+
+  return (
+    (!('status' in value) || typeof value.status === 'number') &&
+    (!('name' in value) || typeof value.name === 'string') &&
+    (!('message' in value) || typeof value.message === 'string') &&
+    hasValidResponse
+  );
+}
+
+/**
+ * Narrow an API payload to a Subtask.
+ *
+ * The shared dialog types widen their subtask parameters to `unknown`; every caller in this feature
+ * passes either a full record or its list summary (`SubtaskSummary`), so the dialog and hook code
+ * narrows once here instead of casting at each property access. `task_id` is deliberately not
+ * required: a subtask nested in a parent task payload carries `parent_task_id` instead (see
+ * `Subtask.parent_task_id`), and the dialogs only read the fields checked below.
+ */
+export function isSubtask(value: unknown): value is Subtask {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+
+  return (
+    'id' in value && typeof value.id === 'string' &&
+    'title' in value && typeof value.title === 'string' &&
+    'status' in value && typeof value.status === 'string' &&
+    'priority' in value && typeof value.priority === 'string'
+  );
+}
+
+/**
  * Safe error logging for subtask operations
  */
 export function logSubtaskError(
   operation: string,
-  error: any,
-  context?: Record<string, any>
+  error: unknown,
+  context?: Record<string, unknown>
 ): void {
+  const apiError = isApiError(error) ? error : undefined;
+  const status = apiError?.status ?? apiError?.response?.status;
+  const message = apiError?.message ?? error;
+
   // Only log non-404 errors to avoid console noise
-  if (error?.status !== 404 && error?.response?.status !== 404) {
+  if (status !== 404) {
     logger.error(`Subtask ${operation} error:`, {
-      error: error?.message || error,
+      error: message,
       ...context
     });
   } else {
     logger.debug(`Subtask ${operation} not found (expected):`, {
-      error: error?.message || error,
+      error: message,
       ...context
     });
   }

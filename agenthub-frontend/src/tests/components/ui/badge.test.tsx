@@ -4,7 +4,7 @@ import { Badge, BadgeProps } from '../../../components/ui/badge';
 
 // Mock the utils module
 vi.mock('../../../lib/utils', () => ({
-  cn: (...classes: any[]) => classes.filter(Boolean).join(' ')
+  cn: (...classes: unknown[]) => classes.filter(Boolean).join(' ')
 }));
 
 describe('Badge', () => {
@@ -83,21 +83,21 @@ describe('Badge', () => {
 
   describe('Variant Validation', () => {
     it('handles invalid variant string by defaulting to default variant', () => {
-      renderBadge({ variant: 'invalid' as any });
+      renderBadge({ variant: 'invalid' as unknown });
       const badge = screen.getByText('Test Badge');
       expect(badge.className).toContain('bg-green-50');
       expect(badge.className).toContain('text-green-700');
     });
 
     it('handles non-string variant by defaulting to default variant', () => {
-      renderBadge({ variant: {} as any });
+      renderBadge({ variant: {} as unknown });
       const badge = screen.getByText('Test Badge');
       expect(badge.className).toContain('bg-green-50');
       expect(badge.className).toContain('text-green-700');
     });
 
     it('handles null variant by defaulting to default variant', () => {
-      renderBadge({ variant: null as any });
+      renderBadge({ variant: null as unknown });
       const badge = screen.getByText('Test Badge');
       expect(badge.className).toContain('bg-green-50');
       expect(badge.className).toContain('text-green-700');
@@ -111,14 +111,14 @@ describe('Badge', () => {
     });
 
     it('handles number variant by defaulting to default variant', () => {
-      renderBadge({ variant: 123 as any });
+      renderBadge({ variant: 123 as unknown });
       const badge = screen.getByText('Test Badge');
       expect(badge.className).toContain('bg-green-50');
       expect(badge.className).toContain('text-green-700');
     });
 
     it('handles array variant by defaulting to default variant', () => {
-      renderBadge({ variant: ['secondary'] as any });
+      renderBadge({ variant: ['secondary'] as unknown });
       const badge = screen.getByText('Test Badge');
       expect(badge.className).toContain('bg-green-50');
       expect(badge.className).toContain('text-green-700');

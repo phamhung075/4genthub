@@ -8,15 +8,14 @@ interface TaskListContentProps {
   isMobile: boolean;
   expandedTasks: Set<string>;
   loadingTasks: Set<string>;
-  fullTasks: Map<string, any>;
+  fullTasks: Map<string, unknown>;
   highlightedDependencies: Set<string>;
   hoveredTaskId: string | null;
   projectId: string;
   taskTreeId: string;
   onToggleExpand: (taskId: string) => void;
-  onOpenDialog: (type: string, taskId?: string, data?: any) => void;
+  onOpenDialog: (type: string, taskId?: string, data?: unknown) => void;
   onHoverTask: (taskId: string | null) => void;
-  onHighlightDependencies: (dependencies: Set<string>) => void;
 }
 
 export const TaskListContent: React.FC<TaskListContentProps> = ({
@@ -31,8 +30,7 @@ export const TaskListContent: React.FC<TaskListContentProps> = ({
   taskTreeId,
   onToggleExpand,
   onOpenDialog,
-  onHoverTask,
-  onHighlightDependencies
+  onHoverTask
 }) => {
   const renderTaskRow = (summary: TaskSummary, isMobileView: boolean) => {
     return (

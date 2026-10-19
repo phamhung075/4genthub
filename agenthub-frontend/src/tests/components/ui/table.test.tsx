@@ -13,14 +13,14 @@ import { cn } from '../../../lib/utils';
 
 // Mock the cn utility
 vi.mock('../../../lib/utils', () => ({
-  cn: vi.fn((...args: any[]) => args.filter(Boolean).join(' ')),
+  cn: vi.fn((...args: unknown[]) => args.filter(Boolean).join(' ')),
 }));
 
 describe('Table components', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Ensure the mock is working
-    (cn as any).mockImplementation((...args: any[]) => args.filter(Boolean).join(' '));
+    (cn as unknown).mockImplementation((...args: unknown[]) => args.filter(Boolean).join(' '));
   });
 
   describe('Table', () => {
@@ -34,7 +34,7 @@ describe('Table components', () => {
           </tbody>
         </Table>
       );
-      
+
       const table = screen.getByRole('table');
       expect(table).toBeInTheDocument();
       expect(table.className).toContain('theme-table');
@@ -47,7 +47,7 @@ describe('Table components', () => {
       render(<Table className="custom-table">
         <tbody><tr><td>Content</td></tr></tbody>
       </Table>);
-      
+
       const table = screen.getByRole('table');
       expect(table.className).toContain('theme-table');
       expect(table.className).toContain('w-full');
@@ -61,7 +61,7 @@ describe('Table components', () => {
       render(<Table ref={ref}>
         <tbody><tr><td>Content</td></tr></tbody>
       </Table>);
-      
+
       expect(ref.current).toBeInstanceOf(HTMLTableElement);
       expect(ref.current?.tagName).toBe('TABLE');
     });
@@ -82,7 +82,7 @@ describe('Table components', () => {
           </TableHeader>
         </table>
       );
-      
+
       const thead = document.querySelector('thead');
       expect(thead).toBeInTheDocument();
       expect(thead.className).toContain('theme-table-header');
@@ -97,7 +97,7 @@ describe('Table components', () => {
           </TableHeader>
         </table>
       );
-      
+
       const thead = document.querySelector('thead');
       expect(thead.className).toContain('custom-header');
     });
@@ -111,7 +111,7 @@ describe('Table components', () => {
           </TableHeader>
         </table>
       );
-      
+
       expect(ref.current).toBeInstanceOf(HTMLTableSectionElement);
       expect(ref.current?.tagName).toBe('THEAD');
     });
@@ -132,7 +132,7 @@ describe('Table components', () => {
           </TableBody>
         </table>
       );
-      
+
       const tbody = document.querySelector('tbody');
       expect(tbody).toBeInTheDocument();
       expect(tbody.className).toContain('[&_tr:last-child]:border-0');
@@ -146,7 +146,7 @@ describe('Table components', () => {
           </TableBody>
         </table>
       );
-      
+
       const tbody = document.querySelector('tbody');
       expect(tbody.className).toContain('custom-body');
     });
@@ -167,7 +167,7 @@ describe('Table components', () => {
           </tbody>
         </table>
       );
-      
+
       const row = screen.getByRole('row');
       expect(row).toBeInTheDocument();
       expect(row.className).toContain('theme-table-row');
@@ -184,7 +184,7 @@ describe('Table components', () => {
           </tbody>
         </table>
       );
-      
+
       const row = screen.getByRole('row');
       expect(row.className).toContain('custom-row');
     });
@@ -199,7 +199,7 @@ describe('Table components', () => {
           </tbody>
         </table>
       );
-      
+
       const row = screen.getByRole('row');
       expect(row).toHaveAttribute('data-state', 'selected');
     });
@@ -220,7 +220,7 @@ describe('Table components', () => {
           </thead>
         </table>
       );
-      
+
       const th = screen.getByRole('columnheader');
       expect(th).toHaveTextContent('Column Header');
       expect(th.className).toContain('theme-table-cell');
@@ -242,7 +242,7 @@ describe('Table components', () => {
           </thead>
         </table>
       );
-      
+
       const th = screen.getByRole('columnheader');
       expect(th.className).toContain('custom-head');
     });
@@ -257,7 +257,7 @@ describe('Table components', () => {
           </thead>
         </table>
       );
-      
+
       const th = screen.getByRole('columnheader');
       expect(th).toHaveAttribute('scope', 'col');
       expect(th).toHaveAttribute('colspan', '2');
@@ -279,7 +279,7 @@ describe('Table components', () => {
           </tbody>
         </table>
       );
-      
+
       const td = screen.getByRole('cell');
       expect(td).toHaveTextContent('Cell content');
       expect(td.className).toContain('theme-table-cell');
@@ -297,7 +297,7 @@ describe('Table components', () => {
           </tbody>
         </table>
       );
-      
+
       const td = screen.getByRole('cell');
       expect(td.className).toContain('custom-cell');
     });
@@ -312,7 +312,7 @@ describe('Table components', () => {
           </tbody>
         </table>
       );
-      
+
       const td = screen.getByRole('cell');
       expect(td).toHaveAttribute('colspan', '3');
       expect(td).toHaveAttribute('rowspan', '2');
@@ -335,7 +335,7 @@ describe('Table components', () => {
           </tbody>
         </table>
       );
-      
+
       const caption = screen.getByText('Table caption text');
       expect(caption.tagName).toBe('CAPTION');
       expect(caption.className).toContain('mt-4');
@@ -350,7 +350,7 @@ describe('Table components', () => {
           <tbody><tr><td>Content</td></tr></tbody>
         </table>
       );
-      
+
       const caption = screen.getByText('Caption');
       expect(caption.className).toContain('custom-caption');
     });
@@ -386,7 +386,7 @@ describe('Table components', () => {
           </TableBody>
         </Table>
       );
-      
+
       expect(screen.getByRole('table')).toBeInTheDocument();
       expect(screen.getByText('A list of recent transactions')).toBeInTheDocument();
       expect(screen.getAllByRole('columnheader')).toHaveLength(3);
@@ -407,10 +407,10 @@ describe('Table components', () => {
           </TableBody>
         </Table>
       );
-      
+
       const checkbox = screen.getByRole('checkbox');
       expect(checkbox).toBeInTheDocument();
-      
+
       // The cell containing checkbox should have special styling
       const checkboxCell = checkbox.closest('td');
       expect(checkboxCell.className).toContain('[&:has([role=checkbox])]:pr-0');
@@ -432,7 +432,7 @@ describe('Table components', () => {
           </TableBody>
         </Table>
       );
-      
+
       expect(cn).toHaveBeenCalledWith('theme-table w-full caption-bottom text-sm', 'table-class');
       expect(cn).toHaveBeenCalledWith('mt-4 text-sm text-base-secondary', 'caption-class');
       expect(cn).toHaveBeenCalledWith('theme-table-header [&_tr]:border-b', 'header-class');

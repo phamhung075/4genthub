@@ -53,10 +53,10 @@ describe('apiV2.ts', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    (global.fetch as any).mockReset();
-    (Cookies.get as any).mockReset();
-    (Cookies.set as any).mockReset();
-    (Cookies.remove as any).mockReset();
+    (global.fetch as unknown).mockReset();
+    (Cookies.get as unknown).mockReset();
+    (Cookies.set as unknown).mockReset();
+    (Cookies.remove as unknown).mockReset();
     // Mock window.dispatchEvent
     window.dispatchEvent = vi.fn();
   });
@@ -73,11 +73,11 @@ describe('apiV2.ts', () => {
         const newRefreshToken = 'new-refresh-token';
         const mockTasks = [{ id: '1', title: 'Task 1' }];
 
-        (Cookies.get as any).mockImplementation((key: string) =>
+        (Cookies.get as unknown).mockImplementation((key: string) =>
           key === 'access_token' ? mockToken : key === 'refresh_token' ? mockRefreshToken : undefined
         );
 
-        (global.fetch as any)
+        (global.fetch as unknown)
           .mockResolvedValueOnce({
             ok: false,
             status: 401,
@@ -115,11 +115,11 @@ describe('apiV2.ts', () => {
       });
 
       it('should handle refresh failure', async () => {
-        (Cookies.get as any).mockImplementation((key: string) =>
+        (Cookies.get as unknown).mockImplementation((key: string) =>
           key === 'access_token' ? mockToken : key === 'refresh_token' ? mockRefreshToken : undefined
         );
 
-        (global.fetch as any)
+        (global.fetch as unknown)
           .mockResolvedValueOnce({
             ok: false,
             status: 401,
@@ -141,7 +141,7 @@ describe('apiV2.ts', () => {
   describe('Authentication Helpers', () => {
     describe('isAuthenticated', () => {
       it('should return true when token exists', () => {
-        (Cookies.get as any).mockReturnValue(mockToken);
+        (Cookies.get as unknown).mockReturnValue(mockToken);
 
         const result = isAuthenticated();
 
@@ -150,7 +150,7 @@ describe('apiV2.ts', () => {
       });
 
       it('should return false when token does not exist', () => {
-        (Cookies.get as any).mockReturnValue(null);
+        (Cookies.get as unknown).mockReturnValue(null);
 
         const result = isAuthenticated();
 
@@ -160,7 +160,7 @@ describe('apiV2.ts', () => {
 
     describe('getCurrentUserId', () => {
       it('should extract user ID from JWT token', () => {
-        (Cookies.get as any).mockReturnValue(mockToken);
+        (Cookies.get as unknown).mockReturnValue(mockToken);
 
         const userId = getCurrentUserId();
 
@@ -168,7 +168,7 @@ describe('apiV2.ts', () => {
       });
 
       it('should return null when no token exists', () => {
-        (Cookies.get as any).mockReturnValue(null);
+        (Cookies.get as unknown).mockReturnValue(null);
 
         const userId = getCurrentUserId();
 
@@ -176,7 +176,7 @@ describe('apiV2.ts', () => {
       });
 
       it('should return null for invalid token format', () => {
-        (Cookies.get as any).mockReturnValue('invalid-token');
+        (Cookies.get as unknown).mockReturnValue('invalid-token');
 
         const userId = getCurrentUserId();
 
@@ -184,7 +184,7 @@ describe('apiV2.ts', () => {
       });
 
       it('should handle malformed JWT payload', () => {
-        (Cookies.get as any).mockReturnValue('header.invalidbase64.signature');
+        (Cookies.get as unknown).mockReturnValue('header.invalidbase64.signature');
 
         const userId = getCurrentUserId();
 
@@ -193,7 +193,7 @@ describe('apiV2.ts', () => {
 
       it('should use user_id field if sub is not present', () => {
         const tokenWithUserId = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoidXNlci00NTYiLCJuYW1lIjoiVGVzdCBVc2VyIiwiaWF0IjoxNTE2MjM5MDIyfQ.vYD6h5b8_3olg6eKvLkYLpH6hR-WzG65P0-qGLKNc7M';
-        (Cookies.get as any).mockReturnValue(tokenWithUserId);
+        (Cookies.get as unknown).mockReturnValue(tokenWithUserId);
 
         const userId = getCurrentUserId();
 
@@ -204,7 +204,7 @@ describe('apiV2.ts', () => {
 
   describe('Task API V2', () => {
     beforeEach(() => {
-      (Cookies.get as any).mockReturnValue(mockToken);
+      (Cookies.get as unknown).mockReturnValue(mockToken);
     });
 
     describe('getTasks', () => {
@@ -213,7 +213,7 @@ describe('apiV2.ts', () => {
           { id: '1', title: 'Task 1' },
           { id: '2', title: 'Task 2' }
         ];
-        (global.fetch as any).mockResolvedValue({
+        (global.fetch as unknown).mockResolvedValue({
           ok: true,
           json: vi.fn().mockResolvedValue(mockTasks)
         });
@@ -235,7 +235,7 @@ describe('apiV2.ts', () => {
 
       it('should fetch tasks with git_branch_id filter', async () => {
         const mockTasks = [{ id: '1', title: 'Branch Task' }];
-        (global.fetch as any).mockResolvedValue({
+        (global.fetch as unknown).mockResolvedValue({
           ok: true,
           json: vi.fn().mockResolvedValue(mockTasks)
         });
@@ -256,7 +256,7 @@ describe('apiV2.ts', () => {
       });
 
       it('should handle 401 authentication error', async () => {
-        (global.fetch as any).mockResolvedValue({
+        (global.fetch as unknown).mockResolvedValue({
           ok: false,
           status: 401,
           json: vi.fn().mockResolvedValue({ detail: 'Token expired' })
@@ -270,7 +270,7 @@ describe('apiV2.ts', () => {
       });
 
       it('should handle generic errors', async () => {
-        (global.fetch as any).mockResolvedValue({
+        (global.fetch as unknown).mockResolvedValue({
           ok: false,
           status: 500,
           json: vi.fn().mockResolvedValue({ detail: 'Server error' })
@@ -280,7 +280,7 @@ describe('apiV2.ts', () => {
       });
 
       it('should handle response without detail', async () => {
-        (global.fetch as any).mockResolvedValue({
+        (global.fetch as unknown).mockResolvedValue({
           ok: false,
           status: 400,
           json: vi.fn().mockRejectedValue(new Error('Parse error'))
@@ -298,7 +298,7 @@ describe('apiV2.ts', () => {
 
       it('should fetch a specific task', async () => {
         const mockTask = { id: taskId, title: 'Test Task' };
-        (global.fetch as any).mockResolvedValue({
+        (global.fetch as unknown).mockResolvedValue({
           ok: true,
           json: vi.fn().mockResolvedValue(mockTask)
         });
@@ -330,7 +330,7 @@ describe('apiV2.ts', () => {
 
       it('should create a new task', async () => {
         const mockCreatedTask = { id: 'new-id', ...taskData };
-        (global.fetch as any).mockResolvedValue({
+        (global.fetch as unknown).mockResolvedValue({
           ok: true,
           json: vi.fn().mockResolvedValue(mockCreatedTask)
         });
@@ -354,14 +354,14 @@ describe('apiV2.ts', () => {
       it('should handle minimal task data', async () => {
         const minimalData = { title: 'Minimal Task' };
         const mockCreatedTask = { id: 'new-id', ...minimalData };
-        (global.fetch as any).mockResolvedValue({
+        (global.fetch as unknown).mockResolvedValue({
           ok: true,
           json: vi.fn().mockResolvedValue(mockCreatedTask)
         });
 
         const result = await taskApiV2.createTask(minimalData);
 
-        const fetchCall = (global.fetch as any).mock.calls[0];
+        const fetchCall = (global.fetch as unknown).mock.calls[0];
         const body = JSON.parse(fetchCall[1].body);
         expect(body).toEqual(minimalData);
         expect(result).toEqual(mockCreatedTask);
@@ -378,7 +378,7 @@ describe('apiV2.ts', () => {
 
       it('should update a task', async () => {
         const mockUpdatedTask = { id: taskId, ...updates };
-        (global.fetch as any).mockResolvedValue({
+        (global.fetch as unknown).mockResolvedValue({
           ok: true,
           json: vi.fn().mockResolvedValue(mockUpdatedTask)
         });
@@ -406,7 +406,7 @@ describe('apiV2.ts', () => {
 
       it('should delete a task', async () => {
         const mockResponse = { success: true };
-        (global.fetch as any).mockResolvedValue({
+        (global.fetch as unknown).mockResolvedValue({
           ok: true,
           json: vi.fn().mockResolvedValue(mockResponse)
         });
@@ -439,14 +439,14 @@ describe('apiV2.ts', () => {
       // 422 - so the request must carry completion_summary in the URL's query. A form body, which
       // is what this call used to send, is never read, so the action failed every time.
       it('sends completion_summary as a query parameter, where the server reads it', async () => {
-        (global.fetch as any).mockResolvedValue({
+        (global.fetch as unknown).mockResolvedValue({
           ok: true,
           json: vi.fn().mockResolvedValue({ id: taskId, status: 'done' })
         });
 
         await taskApiV2.completeTask(taskId, completionData);
 
-        const [url, init] = (global.fetch as any).mock.calls[0];
+        const [url, init] = (global.fetch as unknown).mock.calls[0];
         const query = new URL(url).searchParams;
         // The PATH is asserted as well as the query: without it, pointing this call at
         // .../completed leaves the query assertions satisfied and the action broken.
@@ -465,14 +465,14 @@ describe('apiV2.ts', () => {
       it('should handle completion without testing notes', async () => {
         const minimalData = { completion_summary: 'Done' };
         const mockResponse = { id: taskId, status: 'done' };
-        (global.fetch as any).mockResolvedValue({
+        (global.fetch as unknown).mockResolvedValue({
           ok: true,
           json: vi.fn().mockResolvedValue(mockResponse)
         });
 
         await taskApiV2.completeTask(taskId, minimalData);
 
-        const [url, init] = (global.fetch as any).mock.calls[0];
+        const [url, init] = (global.fetch as unknown).mock.calls[0];
         const query = new URL(url).searchParams;
         expect(new URL(url).pathname).toBe(`/api/v2/tasks/${taskId}/complete`);
         expect(query.get('completion_summary')).toBe('Done');
@@ -486,7 +486,7 @@ describe('apiV2.ts', () => {
       const taskId = 'task-456';
 
       it('should handle 204 No Content response', async () => {
-        (global.fetch as any).mockResolvedValue({
+        (global.fetch as unknown).mockResolvedValue({
           ok: true,
           status: 204,
           json: vi.fn().mockRejectedValue(new Error('No content'))
@@ -582,7 +582,7 @@ describe('apiV2.ts', () => {
 
   describe('Project API V2', () => {
     beforeEach(() => {
-      (Cookies.get as any).mockReturnValue(mockToken);
+      (Cookies.get as unknown).mockReturnValue(mockToken);
     });
 
     describe('getProjects', () => {
@@ -591,7 +591,7 @@ describe('apiV2.ts', () => {
           { id: '1', name: 'Project 1' },
           { id: '2', name: 'Project 2' }
         ];
-        (global.fetch as any).mockResolvedValue({
+        (global.fetch as unknown).mockResolvedValue({
           ok: true,
           json: vi.fn().mockResolvedValue(mockProjects)
         });
@@ -620,7 +620,7 @@ describe('apiV2.ts', () => {
 
       it('should create a new project', async () => {
         const mockCreatedProject = { id: 'proj-123', ...projectData };
-        (global.fetch as any).mockResolvedValue({
+        (global.fetch as unknown).mockResolvedValue({
           ok: true,
           json: vi.fn().mockResolvedValue(mockCreatedProject)
         });
@@ -628,7 +628,7 @@ describe('apiV2.ts', () => {
         const result = await projectApiV2.createProject(projectData);
 
         // createProject sends URL-encoded form data, not JSON
-        const fetchCall = (global.fetch as any).mock.calls[0];
+        const fetchCall = (global.fetch as unknown).mock.calls[0];
         expect(fetchCall[0]).toBe('http://localhost:8000/api/v2/projects/');
         expect(fetchCall[1].method).toBe('POST');
         expect(fetchCall[1].headers).toEqual({
@@ -653,7 +653,7 @@ describe('apiV2.ts', () => {
 
       it('should update a project', async () => {
         const mockUpdatedProject = { id: projectId, ...updates };
-        (global.fetch as any).mockResolvedValue({
+        (global.fetch as unknown).mockResolvedValue({
           ok: true,
           status: 200,
           url: `http://localhost:8000/api/v2/projects/${projectId}`,
@@ -663,7 +663,7 @@ describe('apiV2.ts', () => {
         const result = await projectApiV2.updateProject(projectId, updates);
 
         // updateProject sends URL-encoded form data and only forwards name/description
-        const fetchCall = (global.fetch as any).mock.calls[0];
+        const fetchCall = (global.fetch as unknown).mock.calls[0];
         expect(fetchCall[0]).toBe(`http://localhost:8000/api/v2/projects/${projectId}`);
         expect(fetchCall[1].method).toBe('PUT');
         expect(fetchCall[1].headers).toEqual({
@@ -683,7 +683,7 @@ describe('apiV2.ts', () => {
 
       it('should delete a project', async () => {
         const mockResponse = { success: true };
-        (global.fetch as any).mockResolvedValue({
+        (global.fetch as unknown).mockResolvedValue({
           ok: true,
           status: 200,
           url: `http://localhost:8000/api/v2/projects/${projectId}`,
@@ -733,17 +733,17 @@ describe('apiV2.ts', () => {
 
   describe('Error Handling', () => {
     beforeEach(() => {
-      (Cookies.get as any).mockReturnValue(mockToken);
+      (Cookies.get as unknown).mockReturnValue(mockToken);
     });
 
     it('should handle network errors', async () => {
-      (global.fetch as any).mockRejectedValue(new Error('Network error'));
+      (global.fetch as unknown).mockRejectedValue(new Error('Network error'));
 
       await expect(taskApiV2.getTasks()).rejects.toThrow('Network error');
     });
 
     it('should handle JSON parsing errors in response', async () => {
-      (global.fetch as any).mockResolvedValue({
+      (global.fetch as unknown).mockResolvedValue({
         ok: true,
         json: vi.fn().mockRejectedValue(new Error('Invalid JSON'))
       });
@@ -752,17 +752,17 @@ describe('apiV2.ts', () => {
     });
 
     it('should handle missing authorization header when no token', async () => {
-      (Cookies.get as any).mockReturnValue(null);
+      (Cookies.get as unknown).mockReturnValue(null);
 
       const mockResponse = { tasks: [] };
-      (global.fetch as any).mockResolvedValue({
+      (global.fetch as unknown).mockResolvedValue({
         ok: true,
         json: vi.fn().mockResolvedValue(mockResponse)
       });
 
       await taskApiV2.getTasks();
 
-      const fetchCall = (global.fetch as any).mock.calls[0];
+      const fetchCall = (global.fetch as unknown).mock.calls[0];
       expect(fetchCall[1].headers).toEqual({
         'Content-Type': 'application/json'
       });
@@ -779,8 +779,8 @@ describe('apiV2.ts', () => {
       vi.resetModules();
       const { taskApiV2: freshTaskApiV2 } = await import('../../services/apiV2');
 
-      (Cookies.get as any).mockReturnValue(mockToken);
-      (global.fetch as any).mockResolvedValue({
+      (Cookies.get as unknown).mockReturnValue(mockToken);
+      (global.fetch as unknown).mockResolvedValue({
         ok: true,
         json: vi.fn().mockResolvedValue([])
       });

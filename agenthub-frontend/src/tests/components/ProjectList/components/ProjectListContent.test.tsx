@@ -7,13 +7,13 @@ import type { ProjectListContentProps } from '../../../../types/componentTypes';
 
 // Mock the UI components
 vi.mock('../../../../components/ui/shimmer-badge', () => ({
-  ShimmerBadge: ({ children, className, ...props }: any) => (
+  ShimmerBadge: ({ children, className, ...props }: unknown) => (
     <span className={className} {...props}>{children}</span>
   ),
 }));
 
 vi.mock('../../../../components/ui/shimmer-button', () => ({
-  ShimmerButton: ({ children, onClick, className, ...props }: any) => (
+  ShimmerButton: ({ children, onClick, className, ...props }: unknown) => (
     <button onClick={onClick} className={className} {...props}>
       {children}
     </button>
@@ -22,7 +22,7 @@ vi.mock('../../../../components/ui/shimmer-button', () => ({
 
 // Mock the BranchItem component
 vi.mock('../../../../components/ProjectList/components/BranchItem', () => ({
-  BranchItem: ({ branch, onSelect, onShowDetails, onDelete, taskCount }: any) => (
+  BranchItem: ({ branch, onSelect, onShowDetails, onDelete, taskCount }: unknown) => (
     <li data-testid={`branch-${branch.id}`}>
       <button onClick={() => onSelect('project-1', branch.id)}>
         {branch.git_branch_name || branch.name} ({taskCount})

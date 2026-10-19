@@ -4,18 +4,18 @@ import { cn } from "../../../lib/utils";
 import { ShimmerBadge } from "../../ui/shimmer-badge";
 import { ShimmerButton } from "../../ui/shimmer-button";
 import { useBranchAnimation } from "../../../hooks/useBranchAnimation";
-import type { BranchSummary } from "../../../types";
+import type { BranchLike, Project } from "../../../types";
 
 interface BranchItemProps {
-  branch: BranchSummary;
+  branch: BranchLike;
   projectId: string;
   selected: string | null;
   taskCount: number;
   isAnimatingCount: 'up' | 'down' | null;
   onSelect: (projectId: string, branchId: string) => void;
-  onShowDetails?: (project: any, branch: any) => void;
-  onDelete: (data: { project: any; branch: any }) => void;
-  project: any;
+  onShowDetails?: (project: Project, branch: BranchLike) => void;
+  onDelete: (data: { project: Project; branch: BranchLike }) => void;
+  project: Project;
 }
 
 export const BranchItem: React.FC<BranchItemProps> = ({
@@ -62,7 +62,7 @@ export const BranchItem: React.FC<BranchItemProps> = ({
             isSelected && "bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-300 dark:border-blue-700"
           )}
           onClick={() => {
-            onSelect && onSelect(projectId, branch.id);
+            onSelect(projectId, branch.id);
           }}
         >
           <span className="truncate text-left flex-1">{branch.git_branch_name || branch.name}</span>

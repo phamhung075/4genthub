@@ -4,8 +4,8 @@ import TaskSearch from "../../TaskSearch";
 interface TaskSearchSectionProps {
   projectId: string;
   taskTreeId: string;
-  onTaskSelect: (task: any) => void;
-  onSubtaskSelect: (subtask: any, parentTask: any) => void;
+  onTaskSelect: (task: unknown) => void;
+  onSubtaskSelect: (subtask: unknown, parentTask: unknown) => void;
 }
 
 export const TaskSearchSection: React.FC<TaskSearchSectionProps> = ({

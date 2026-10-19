@@ -136,7 +136,7 @@ class TokenService {
     return { data: tokenResponse };
   }
 
-  async getTokenUsageStats(tokenId: string): Promise<any> {
+  async getTokenUsageStats(tokenId: string): Promise<unknown> {
     const response = await authenticatedFetch(`${this.baseUrl}/${tokenId}/usage`, {
       method: 'GET',
     });

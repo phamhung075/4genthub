@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Separator } from "./ui/separator";
 import { Subtask, getSubtask } from "../api";
+import type { TaskPriority, TaskStatus } from "../types";
 import logger from "../utils/logger";
 import ClickableAssignees from "./ClickableAssignees";
 import { FileText, Info, ChevronDown, ChevronRight, Hash, Calendar, Tag, Layers, Copy, Check as CheckIcon } from "lucide-react";
@@ -42,37 +43,30 @@ export const SubtaskDetailsDialog: React.FC<SubtaskDetailsDialogProps> = ({
     }
   }, [subtask]);
 
-  // Fetch full subtask when dialog opens
-  useEffect(() => {
-    const taskId = subtask?.id || fullSubtask?.id;
-    if (open && taskId && parentTaskId) {
-      // Validate subtask ID format (should be a valid UUID)
-      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-      if (uuidRegex.test(taskId)) {
-        fetchFullSubtask(parentTaskId, taskId);
-      } else {
-        logger.warn('Invalid subtask ID format, closing dialog', { subtaskId: taskId, parentTaskId });
-        setFullSubtask(null);
-        onOpenChange(false);
-      }
-    }
-  }, [open, subtask?.id, fullSubtask?.id, parentTaskId]);
-
-  const fetchFullSubtask = async (parentId: string, subtaskId: string) => {
+  const fetchFullSubtask = useCallback(async (parentId: string, subtaskId: string) => {
     setLoading(true);
     try {
       const data = await getSubtask(parentId, subtaskId);
       setFullSubtask(data);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      // The rejection is the API layer's error object rather than an Error subclass we own, so
+      // this is the boundary where its shape is named.
+      const errorDetails = error as {
+        name?: unknown;
+        status?: unknown;
+        resourceType?: unknown;
+        message?: unknown;
+      } | null;
+
       // Handle structured 404 errors from the improved API layer
-      if (error?.name === 'NotFoundError' || error?.status === 404) {
+      if (errorDetails?.name === 'NotFoundError' || errorDetails?.status === 404) {
         // Use debug level logging to reduce console noise
         logger.debug('Subtask not found, closing dialog gracefully', {
           subtaskId,
           parentTaskId: parentId,
           errorType: 'NOT_FOUND',
           userAction: 'dialog_auto_closed',
-          resourceType: error?.resourceType || 'subtask'
+          resourceType: errorDetails?.resourceType || 'subtask'
         });
 
         // Clear the subtask state and close dialog
@@ -97,7 +91,7 @@ export const SubtaskDetailsDialog: React.FC<SubtaskDetailsDialogProps> = ({
 
       // For other errors (network, server, etc.), log as error and clear state
       logger.error('Failed to fetch subtask details', {
-        error: error?.message || error,
+        error: errorDetails?.message || error,
         parentTaskId: parentId,
         subtaskId,
         component: 'SubtaskDetailsDialog',
@@ -110,7 +104,23 @@ export const SubtaskDetailsDialog: React.FC<SubtaskDetailsDialogProps> = ({
     } finally {
       setLoading(false);
     }
-  };
+  }, [onOpenChange]);
+
+  // Fetch full subtask when dialog opens
+  useEffect(() => {
+    const taskId = subtask?.id || fullSubtask?.id;
+    if (open && taskId && parentTaskId) {
+      // Validate subtask ID format (should be a valid UUID)
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      if (uuidRegex.test(taskId)) {
+        fetchFullSubtask(parentTaskId, taskId);
+      } else {
+        logger.warn('Invalid subtask ID format, closing dialog', { subtaskId: taskId, parentTaskId });
+        setFullSubtask(null);
+        onOpenChange(false);
+      }
+    }
+  }, [open, subtask?.id, fullSubtask?.id, parentTaskId, fetchFullSubtask, onOpenChange]);
 
   const toggleSection = (section: string) => {
     setExpandedSections(prev => {
@@ -270,11 +280,12 @@ export const SubtaskDetailsDialog: React.FC<SubtaskDetailsDialogProps> = ({
                     <div className="flex items-center gap-4">
                       <div className="flex items-center gap-2">
                         <span className="text-sm text-gray-600 dark:text-gray-400">Status:</span>
-                        <HolographicStatusBadge status={fullSubtask.status as any} size="xs" />
+                        {/* `Subtask.status` is the wire's plain string; the badge's union is the domain contract. */}
+                        <HolographicStatusBadge status={fullSubtask.status as TaskStatus} size="xs" />
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-sm text-gray-600 dark:text-gray-400">Priority:</span>
-                        <HolographicPriorityBadge priority={fullSubtask.priority as any} size="xs" />
+                        <HolographicPriorityBadge priority={fullSubtask.priority as TaskPriority} size="xs" />
                       </div>
                     </div>
                   </div>

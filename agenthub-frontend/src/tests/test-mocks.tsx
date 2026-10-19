@@ -19,7 +19,7 @@ import type { BranchSummary } from '../types/api.types';
 
 export interface MockBranchSummariesReturn {
   summaries: BranchSummary[];
-  projects: any[];
+  projects: unknown[];
   loading: boolean;
   error: string | null;
   refresh: ReturnType<typeof vi.fn>;
@@ -85,7 +85,7 @@ export const mockUseEntityChanges = vi.fn(() => []);
  * vi.mock('../hooks/useChangeSubscription', () => ({ useEntityChanges: customMock }));
  * ```
  */
-export function createEntityChangesMock(changes: any[] = []) {
+export function createEntityChangesMock(changes: unknown[] = []) {
   return vi.fn(() => changes);
 }
 
@@ -191,7 +191,7 @@ export function createControllableApiMock<T>() {
  * ```
  */
 export function createMockComponent(testId: string) {
-  return ({ children, ...props }: any) => (
+  return ({ children, ...props }: unknown) => (
     <div data-testid={testId} {...props}>
       {children}
     </div>
@@ -214,7 +214,7 @@ export function createConditionalMockComponent(
   testId: string,
   openProp: string = 'open'
 ) {
-  return ({ children, ...props }: any) =>
+  return ({ children, ...props }: unknown) =>
     props[openProp] ? (
       <div data-testid={testId} {...props}>
         {children}
@@ -251,11 +251,11 @@ export const mockToastModule = {
   useToast: () => ({ toast: vi.fn() }),
   useSuccessToast: () => vi.fn(),
   useErrorToast: () => vi.fn(),
-  Toast: ({ children }: any) => <div>{children}</div>,
-  ToastAction: ({ children }: any) => <button>{children}</button>,
+  Toast: ({ children }: unknown) => <div>{children}</div>,
+  ToastAction: ({ children }: unknown) => <button>{children}</button>,
   ToastClose: () => <button>Close</button>,
-  ToastDescription: ({ children }: any) => <div>{children}</div>,
-  ToastTitle: ({ children }: any) => <div>{children}</div>,
+  ToastDescription: ({ children }: unknown) => <div>{children}</div>,
+  ToastTitle: ({ children }: unknown) => <div>{children}</div>,
   ToastViewport: () => <div />,
 };
 

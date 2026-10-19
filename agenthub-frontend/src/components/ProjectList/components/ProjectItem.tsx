@@ -1,6 +1,7 @@
 import { ChevronDown, ChevronRight, Eye, Folder, GitBranchPlus, Pencil, Trash2 } from "lucide-react";
 import React from "react";
 import { Project } from "../../../api";
+import type { Branch } from "../../../types";
 import { cn } from "../../../lib/utils";
 import { ShimmerBadge } from "../../ui/shimmer-badge";
 import { ShimmerButton } from "../../ui/shimmer-button";
@@ -37,11 +38,12 @@ export const ProjectItem: React.FC<ProjectItemProps> = ({
     return null;
   }
 
-  // Calculate total tasks across all branches
-  const branches = project.git_branchs as Record<string, any>;
+  // Calculate total tasks across all branches. The API decorates each nested
+  // branch record with a task_count that `Branch` does not model yet.
+  const branches = project.git_branchs as Record<string, Branch & { task_count?: number }> | undefined;
   const branchCount = branches ? Object.keys(branches).length : 0;
   const totalTasks = branches
-    ? Object.values(branches).reduce((sum, branch) => sum + ((branch as any).task_count || 0), 0)
+    ? Object.values(branches).reduce((sum, branch) => sum + (branch.task_count || 0), 0)
     : 0;
 
   return (

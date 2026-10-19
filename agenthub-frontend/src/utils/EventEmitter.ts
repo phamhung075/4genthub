@@ -3,7 +3,7 @@
  * Replaces Node.js 'events' module for browser use
  */
 import logger from './logger';
-type EventHandler = (...args: any[]) => void;
+type EventHandler = (...args: unknown[]) => void;
 
 export class EventEmitter {
   private events: Map<string, Set<EventHandler>> = new Map();
@@ -27,7 +27,7 @@ export class EventEmitter {
     return this;
   }
 
-  emit(event: string, ...args: any[]): boolean {
+  emit(event: string, ...args: unknown[]): boolean {
     let hasListeners = false;
 
     // Emit to specific event listeners
@@ -60,7 +60,7 @@ export class EventEmitter {
   }
 
   once(event: string, handler: EventHandler): this {
-    const onceHandler = (...args: any[]) => {
+    const onceHandler = (...args: unknown[]) => {
       this.off(event, onceHandler);
       handler(...args);
     };

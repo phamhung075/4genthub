@@ -1,7 +1,7 @@
 import { Folder, Menu, X } from 'lucide-react';
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { Navigate, Route, Routes, useParams, useNavigate } from 'react-router-dom';
-import { Project } from './api';
+import type { BranchLike, Project } from './api';
 import './App.css';
 import './styles/animations.css';
 import './styles/task-animations.css';
@@ -62,7 +62,6 @@ function Dashboard() {
     subtaskId?: string;
   }>();
   const navigate = useNavigate();
-  const { user, tokens } = useAuth();
 
   // WebSocket is already initialized in AuthContext, no need to duplicate here
 
@@ -73,7 +72,7 @@ function Dashboard() {
   const [isLargeScreen, setIsLargeScreen] = useState(false);
   const [showGlobalContext, setShowGlobalContext] = useState(false);
   const [showProjectDetails, setShowProjectDetails] = useState<Project | null>(null);
-  const [showBranchDetails, setShowBranchDetails] = useState<{ project: Project; branch: any } | null>(null);
+  const [showBranchDetails, setShowBranchDetails] = useState<{ project: Project; branch: BranchLike } | null>(null);
 
   // Initialize sidebar state based on screen size
   useEffect(() => {

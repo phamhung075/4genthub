@@ -153,7 +153,7 @@ export function setupConsoleErrorFilter(): () => void {
   const originalWarn = console.warn;
 
   // Override console.error to filter extension errors
-  console.error = (...args: any[]) => {
+  console.error = (...args: unknown[]) => {
     const message = args.join(' ');
     if (isExtensionError(message)) {
       // Log as debug instead of error for extension issues
@@ -165,7 +165,7 @@ export function setupConsoleErrorFilter(): () => void {
   };
 
   // Override console.warn for extension warnings
-  console.warn = (...args: any[]) => {
+  console.warn = (...args: unknown[]) => {
     const message = args.join(' ');
     if (isExtensionError(message)) {
       // Log as debug instead of warning for extension issues

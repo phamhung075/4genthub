@@ -2,14 +2,14 @@ import { ChevronDown, ChevronRight } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 
 interface EnhancedJSONViewerProps {
-  data: any;
+  data: unknown;
   defaultExpanded?: boolean;
   maxHeight?: string;
   viewerId?: string;
 }
 
-export const EnhancedJSONViewer: React.FC<EnhancedJSONViewerProps> = ({ 
-  data, 
+export const EnhancedJSONViewer: React.FC<EnhancedJSONViewerProps> = ({
+  data,
   defaultExpanded = false,
   maxHeight = 'max-h-96',
   viewerId = 'default'
@@ -20,22 +20,20 @@ export const EnhancedJSONViewer: React.FC<EnhancedJSONViewerProps> = ({
 
   // Listen for expand/collapse all events
   useEffect(() => {
-    const handleExpandAll = (event: CustomEvent) => {
+    const handleExpandAll = (event: CustomEvent<{ viewerId?: string }>) => {
       if (event.detail.viewerId === viewerId || event.detail.viewerId === 'all') {
         // Expand all paths
         const allPaths = new Set<string>();
-        const collectPaths = (obj: any, path: string = 'root') => {
+        const collectPaths = (obj: unknown, path: string = 'root') => {
           allPaths.add(path);
-          if (obj && typeof obj === 'object') {
-            if (Array.isArray(obj)) {
-              obj.forEach((_, index) => {
-                collectPaths(obj[index], `${path}[${index}]`);
-              });
-            } else {
-              Object.keys(obj).forEach(key => {
-                collectPaths(obj[key], path ? `${path}.${key}` : key);
-              });
-            }
+          if (Array.isArray(obj)) {
+            obj.forEach((_, index) => {
+              collectPaths(obj[index], `${path}[${index}]`);
+            });
+          } else if (obj && typeof obj === 'object') {
+            Object.entries(obj).forEach(([key, entry]) => {
+              collectPaths(entry, path ? `${path}.${key}` : key);
+            });
           }
         };
         collectPaths(data);
@@ -43,18 +41,25 @@ export const EnhancedJSONViewer: React.FC<EnhancedJSONViewerProps> = ({
       }
     };
 
-    const handleCollapseAll = (event: CustomEvent) => {
+    const handleCollapseAll = (event: CustomEvent<{ viewerId?: string }>) => {
       if (event.detail.viewerId === viewerId || event.detail.viewerId === 'all') {
         setExpandedPaths(new Set());
       }
     };
 
-    window.addEventListener('json-expand-all' as any, handleExpandAll as any);
-    window.addEventListener('json-collapse-all' as any, handleCollapseAll as any);
+    // Custom event names are outside WindowEventMap, so the DOM event is the boundary at which the
+    // generic CustomEvent shape is restored.
+    const expandListener = (event: Event) =>
+      handleExpandAll(event as CustomEvent<{ viewerId?: string }>);
+    const collapseListener = (event: Event) =>
+      handleCollapseAll(event as CustomEvent<{ viewerId?: string }>);
+
+    window.addEventListener('json-expand-all', expandListener);
+    window.addEventListener('json-collapse-all', collapseListener);
 
     return () => {
-      window.removeEventListener('json-expand-all' as any, handleExpandAll as any);
-      window.removeEventListener('json-collapse-all' as any, handleCollapseAll as any);
+      window.removeEventListener('json-expand-all', expandListener);
+      window.removeEventListener('json-collapse-all', collapseListener);
     };
   }, [data, viewerId]);
 
@@ -70,7 +75,7 @@ export const EnhancedJSONViewer: React.FC<EnhancedJSONViewerProps> = ({
     });
   };
 
-  const renderValue = (value: any, path: string = '', depth: number = 0): React.ReactElement => {
+  const renderValue = (value: unknown, path: string = '', depth: number = 0): React.ReactElement => {
     // Handle null/undefined
     if (value === null || value === undefined) {
       return <span className="text-gray-400 italic">null</span>;
@@ -83,12 +88,10 @@ export const EnhancedJSONViewer: React.FC<EnhancedJSONViewerProps> = ({
         return <span className="text-purple-600 dark:text-purple-400 font-mono text-xs">"{value}"</span>;
       }
       if (value.match(/^\d{4}-\d{2}-\d{2}/) || value.includes('T')) {
-        try {
-          const date = new Date(value);
-          if (!isNaN(date.getTime())) {
-            return <span className="text-blue-600 dark:text-blue-400">"{value}"</span>;
-          }
-        } catch {}
+        const date = new Date(value);
+        if (!isNaN(date.getTime())) {
+          return <span className="text-blue-600 dark:text-blue-400">"{value}"</span>;
+        }
       }
       return <span className="text-emerald-600 dark:text-emerald-400">"{value}"</span>;
     }
@@ -120,8 +123,8 @@ export const EnhancedJSONViewer: React.FC<EnhancedJSONViewerProps> = ({
             onClick={() => togglePath(path)}
             className="inline-flex items-center gap-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded px-1 py-0.5"
           >
-            {isExpanded ? 
-              <ChevronDown className="w-3 h-3 text-gray-500" /> : 
+            {isExpanded ?
+              <ChevronDown className="w-3 h-3 text-gray-500" /> :
               <ChevronRight className="w-3 h-3 text-gray-500" />
             }
             <span className="text-gray-600 dark:text-gray-400 text-xs">
@@ -168,8 +171,8 @@ export const EnhancedJSONViewer: React.FC<EnhancedJSONViewerProps> = ({
             onClick={() => togglePath(path)}
             className="inline-flex items-center gap-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded px-1 py-0.5"
           >
-            {isExpanded ? 
-              <ChevronDown className="w-3 h-3 text-gray-500" /> : 
+            {isExpanded ?
+              <ChevronDown className="w-3 h-3 text-gray-500" /> :
               <ChevronRight className="w-3 h-3 text-gray-500" />
             }
             <span className="text-gray-600 dark:text-gray-400 text-xs">
@@ -183,7 +186,7 @@ export const EnhancedJSONViewer: React.FC<EnhancedJSONViewerProps> = ({
               {entries.map(([key, val], index) => {
                 const currentPath = path ? `${path}.${key}` : key;
                 const isLast = index === entries.length - 1;
-                
+
                 // Special formatting for certain keys
                 let keyColor = 'text-blue-700 dark:text-blue-300';
                 if (key.includes('id') || key.includes('_id')) {

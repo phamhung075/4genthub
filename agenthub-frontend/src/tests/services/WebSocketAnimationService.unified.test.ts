@@ -28,10 +28,10 @@ type FixtureMessage = {
   source: string;
   timestamp: string;
   priority: string;
-  payload: { entity: string; action: string; data: Record<string, any> };
-  metadata: Record<string, any>;
+  payload: { entity: string; action: string; data: Record<string, unknown> };
+  metadata: Record<string, unknown>;
   aiProcessed: boolean;
-  [key: string]: any;
+  [key: string]: unknown;
 };
 
 // Mock dependencies
@@ -53,7 +53,7 @@ vi.mock('../../utils/logger', () => ({
 }));
 
 describe('WebSocketAnimationService - Unified 4-Entity Support', () => {
-  let animateSpyOriginal: any;
+  let animateSpyOriginal: unknown;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -71,8 +71,8 @@ describe('WebSocketAnimationService - Unified 4-Entity Support', () => {
     vi.useFakeTimers();
 
     // Mock requestAnimationFrame and setTimeout
-    vi.stubGlobal('requestAnimationFrame', (cb: Function) => {
-      cb();
+    vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
+      cb(0);
     });
   });
 

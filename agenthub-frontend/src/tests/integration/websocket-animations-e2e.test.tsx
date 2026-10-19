@@ -42,8 +42,8 @@ describe('WebSocket Animations E2E Flow', () => {
     vi.useFakeTimers();
 
     // Mock requestAnimationFrame and setTimeout
-    vi.stubGlobal('requestAnimationFrame', (cb: Function) => {
-      cb();
+    vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
+      cb(0);
       return 1;
     });
 
@@ -400,7 +400,7 @@ describe('WebSocket Animations E2E Flow', () => {
 
     it('should cleanup properly with unregisterElement', () => {
       const taskId = 'task-cleanup';
-      const taskElement = createAndRegisterElement(taskId, 'task');
+      createAndRegisterElement(taskId, 'task');
 
       // Unregister element (simulating component unmount)
       animationFactory.unregisterElement(taskId);

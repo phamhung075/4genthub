@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { render, screen } from './../test-utils';
+import { render } from './../test-utils';
 import { ThemeProvider } from '../../contexts/ThemeContext';
 import { LandingPage, PAGE_TITLE, PAGE_DESCRIPTION } from '../../pages/LandingPage';
 
@@ -142,7 +142,7 @@ describe('the page body claims only what ships', () => {
     /battle-tested/i,
     /industrial-strength/i,
   ];
-  const THIRD_PARTY_COMPATIBILITY = [/compatible with any/i, /any AI (client|model|tool)/i, /AI-agnostic/i];
+  const THIRD_PARTY_COMPATIBILITY = [/compatible with unknown/i, /unknown AI (client|model|tool)/i, /AI-agnostic/i];
 
   it('rule: no unmeasured quantifier, multiplier, percentage or comparative', () => {
     const text = pageText();

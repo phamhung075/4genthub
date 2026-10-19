@@ -310,17 +310,17 @@ export interface WSMetadata {
 /**
  * WebSocket payload structure
  */
-export interface WSPayload<T = any> {
+export interface WSPayload<T = unknown> {
   entity: 'project' | 'branch' | 'task' | 'subtask' | 'context' | 'seat' | 'room';
   action: 'created' | 'updated' | 'deleted' | 'completed' | 'assigned' | 'unassigned';
   data: {
     primary: T;           // Main entity data (MUST include 'id' field)
     cascade?: {           // Related entities updated by this action
-      branches?: any[];
-      tasks?: any[];
-      subtasks?: any[];
-      projects?: any[];
-      contexts?: any[];
+      branches?: unknown[];
+      tasks?: unknown[];
+      subtasks?: unknown[];
+      projects?: unknown[];
+      contexts?: unknown[];
     };
   };
 }
@@ -328,7 +328,7 @@ export interface WSPayload<T = any> {
 /**
  * Complete WebSocket message (v2.0 protocol)
  */
-export interface WSMessage<T = any> {
+export interface WSMessage<T = unknown> {
   id: string;
   version: '2.0';
   type: 'update' | 'bulk' | 'sync' | 'heartbeat' | 'error';
@@ -383,19 +383,27 @@ export type SubtaskMessage =
 /**
  * Check if payload has required 'id' field
  */
-export function hasId(data: any): data is { id: string } {
-  return data && typeof data === 'object' && typeof data.id === 'string' && data.id.length > 0;
+export function hasId(data: unknown): data is { id: string } {
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    'id' in data &&
+    typeof data.id === 'string' &&
+    data.id.length > 0
+  );
 }
 
 /**
  * Validate project delete payload
  */
-export function isProjectDeletePayload(data: any): data is ProjectDeletePayload {
+export function isProjectDeletePayload(data: unknown): data is ProjectDeletePayload {
   return (
-    data &&
     typeof data === 'object' &&
+    data !== null &&
+    'id' in data &&
     typeof data.id === 'string' &&
     data.id.length > 0 &&
+    'name' in data &&
     typeof data.name === 'string'
   );
 }
@@ -403,13 +411,16 @@ export function isProjectDeletePayload(data: any): data is ProjectDeletePayload 
 /**
  * Validate branch delete payload
  */
-export function isBranchDeletePayload(data: any): data is BranchDeletePayload {
+export function isBranchDeletePayload(data: unknown): data is BranchDeletePayload {
   return (
-    data &&
     typeof data === 'object' &&
+    data !== null &&
+    'id' in data &&
     typeof data.id === 'string' &&
     data.id.length > 0 &&
+    'name' in data &&
     typeof data.name === 'string' &&
+    'project_id' in data &&
     typeof data.project_id === 'string'
   );
 }
@@ -417,13 +428,14 @@ export function isBranchDeletePayload(data: any): data is BranchDeletePayload {
 /**
  * Validate task delete payload
  */
-export function isTaskDeletePayload(data: any): data is TaskDeletePayload {
+export function isTaskDeletePayload(data: unknown): data is TaskDeletePayload {
   return (
-    data !== null &&
-    data !== undefined &&
     typeof data === 'object' &&
+    data !== null &&
+    'id' in data &&
     typeof data.id === 'string' &&
     data.id.length > 0 &&
+    'title' in data &&
     typeof data.title === 'string'
   );
 }
@@ -431,12 +443,14 @@ export function isTaskDeletePayload(data: any): data is TaskDeletePayload {
 /**
  * Validate subtask delete payload
  */
-export function isSubtaskDeletePayload(data: any): data is SubtaskDeletePayload {
+export function isSubtaskDeletePayload(data: unknown): data is SubtaskDeletePayload {
   return (
-    data &&
     typeof data === 'object' &&
+    data !== null &&
+    'id' in data &&
     typeof data.id === 'string' &&
     data.id.length > 0 &&
+    'task_id' in data &&
     typeof data.task_id === 'string'
   );
 }
@@ -448,17 +462,20 @@ export function isSubtaskDeletePayload(data: any): data is SubtaskDeletePayload 
 /**
  * Validate WebSocket message structure
  */
-export function isValidWSMessage(msg: any): msg is WSMessage {
-  return (
-    msg &&
-    typeof msg === 'object' &&
-    msg.version === '2.0' &&
-    msg.payload &&
-    msg.payload.entity &&
-    msg.payload.action &&
-    msg.payload.data &&
-    msg.payload.data.primary
-  );
+export function isValidWSMessage(msg: unknown): msg is WSMessage {
+  if (typeof msg !== 'object' || msg === null) return false;
+  if (!('version' in msg) || msg.version !== '2.0') return false;
+  if (!('payload' in msg)) return false;
+
+  const payload = msg.payload;
+  if (typeof payload !== 'object' || payload === null) return false;
+  if (!('entity' in payload) || !payload.entity) return false;
+  if (!('action' in payload) || !payload.action) return false;
+  if (!('data' in payload)) return false;
+
+  const data = payload.data;
+  if (typeof data !== 'object' || data === null) return false;
+  return 'primary' in data && Boolean(data.primary);
 }
 
 /**
@@ -483,12 +500,24 @@ export function getEntityId(msg: WSMessage): string | null {
  */
 export function getDisplayName(msg: WSMessage): string {
   const { entity, data } = msg.payload;
-  const primary = data.primary as any;
+  const primary = data.primary;
 
   // Try common name fields
-  if (primary.name) return primary.name;
-  if (primary.title) return primary.title;
-  if (primary.git_branch_name) return primary.git_branch_name;
+  if (typeof primary === 'object' && primary !== null) {
+    if ('name' in primary && typeof primary.name === 'string' && primary.name) {
+      return primary.name;
+    }
+    if ('title' in primary && typeof primary.title === 'string' && primary.title) {
+      return primary.title;
+    }
+    if (
+      'git_branch_name' in primary &&
+      typeof primary.git_branch_name === 'string' &&
+      primary.git_branch_name
+    ) {
+      return primary.git_branch_name;
+    }
+  }
 
   // Fallback to metadata
   if (msg.metadata?.branch_title) return msg.metadata.branch_title;
@@ -524,16 +553,28 @@ export type DeletePayloadPattern = {
 /**
  * Validate delete payload follows required pattern
  */
-export function validateDeletePayload(data: any): { valid: boolean; errors: string[] } {
+export function validateDeletePayload(data: unknown): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
 
+  if (typeof data !== 'object' || data === null) {
+    return {
+      valid: false,
+      errors: [
+        'Missing required field: id (string)',
+        'Missing required field: name or title (string)',
+      ],
+    };
+  }
+
   // Check required: id
-  if (!data?.id || typeof data.id !== 'string') {
+  if (!('id' in data) || typeof data.id !== 'string' || data.id.length === 0) {
     errors.push('Missing required field: id (string)');
   }
 
   // Check required: name OR title
-  if (!data?.name && !data?.title) {
+  const hasName = 'name' in data && Boolean(data.name);
+  const hasTitle = 'title' in data && Boolean(data.title);
+  if (!hasName && !hasTitle) {
     errors.push('Missing required field: name or title (string)');
   }
 

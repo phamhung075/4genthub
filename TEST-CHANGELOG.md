@@ -7121,3 +7121,18 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
   absent.
 - At this change: `go test ./fastmcp/server/... -count=1` -> ok; `go test ./internal/apiref/ -count=1`
   -> ok.
+
+## 2026-10-19 - the frontend test tree type-checks under the new lint gate (frontend, branch 4genthub-min/fe-deploy-walk)
+
+- The whole `agenthub-frontend/src/tests` tree lost its `any`s so the new `typecheck` and `lint`
+  gates cover tests too: typed mock components, typed fixtures (the branch/project payloads use the
+  shared `BranchLike`), `vi.fn()` generics, and `catch (error: unknown)` with a real narrowing where
+  a message is read. No test's asserted behavior changed; 57 files, no test case added or removed
+  except the one below.
+- `src/tests/components/ProjectList/components/BranchItem.test.tsx`: deleted "handles onSelect being
+  undefined gracefully". `onSelect` is a required prop, so the state cannot occur, and clicking with
+  it undefined threw an unhandled `TypeError` from the component while the test passed.
+- `src/tests/types/api.types.test.ts`: the unused type imports were removed; the assertions are
+  unchanged.
+- At this change: `npx vitest run` -> 131 files, 1925 tests, 0 failures, 0 unhandled errors;
+  `npx tsc --noEmit -p .` -> 0 errors; `npx eslint src --max-warnings=0` -> 0 problems.

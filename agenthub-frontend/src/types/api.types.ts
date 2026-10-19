@@ -44,7 +44,7 @@ export interface Context {
     metadata?: {
       // Conditional fields - only included in standalone context responses:
       // task_id, status, priority, timestamp are omitted when context is embedded
-      [key: string]: any;
+      [key: string]: unknown;
     };
     progress?: {
       current_session_summary?: string;
@@ -52,7 +52,7 @@ export interface Context {
       next_steps?: string[];
       completed_actions?: string[];
     };
-    [key: string]: any; // Additional context-level specific fields
+    [key: string]: unknown; // Additional context-level specific fields
   };
   created_at?: string;
   updated_at?: string;
@@ -88,7 +88,7 @@ export interface Task {
   scope?: string[];
   details?: string;
   progress_percentage?: number;
-  progress_state?: any; // Optional progress state (computed from status/percentage if not provided)
+  progress_state?: unknown; // Optional progress state (computed from status/percentage if not provided)
   subtasks?: Subtask[] | string[]; // Phase 2: Can be array of subtask objects (without parent_task_id) or subtask IDs
   parent_task_id?: string; // Identifies if this task is actually a subtask
   subtask_count?: number; // Total number of subtasks
@@ -162,7 +162,7 @@ export interface Rule {
 // API Response Types
 // ============================================
 
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
   error?: string;
@@ -209,9 +209,9 @@ export interface BranchesResponse extends ApiResponse {
 }
 
 export interface ContextResponse extends ApiResponse {
-  context: any;
+  context: unknown;
   level?: string;
-  inherited?: any;
+  inherited?: unknown;
 }
 
 export interface DeleteResponse extends ApiResponse {
@@ -256,9 +256,12 @@ export interface BranchSummary {
   is_completed?: boolean; // Flag for completed branches
   task_counts?: { // Additional task count details
     total: number;
-    [key: string]: any;
+    [key: string]: unknown;
   };
 }
+
+/** A branch as it arrives from a list (summary) or a detail endpoint (full record). */
+export type BranchLike = Branch | BranchSummary;
 
 export interface ProjectSummary {
   id: string;

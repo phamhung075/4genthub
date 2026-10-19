@@ -348,7 +348,7 @@ export type { AnimationType, AnimationSource, AnimationState, AnimationDefinitio
 
 // DEBUG: Export to window for debugging and testing
 if (typeof window !== 'undefined') {
-  (window as any).animationFactory = animationFactory;
+  (window as Window & { animationFactory?: typeof animationFactory }).animationFactory = animationFactory;
   logger.debug('🎬 AnimationFactory: Exposed to window.animationFactory for debugging', {}, 'AnimationFactory.ts');
 }
 

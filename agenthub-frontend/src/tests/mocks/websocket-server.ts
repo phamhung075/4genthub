@@ -13,6 +13,8 @@
 import { WSMessage } from '../../services/WebSocketClient';
 import type { MockWebSocketServerConfig, ClientSubscription, MockWebSocketClient } from '../../types/testTypes';
 
+type MockServerEventListener = (...args: unknown[]) => void;
+
 export class MockWebSocketServer {
   private config: MockWebSocketServerConfig;
   private clients: Map<string, MockWebSocketClient> = new Map();
@@ -20,7 +22,7 @@ export class MockWebSocketServer {
   private heartbeatTimer: NodeJS.Timeout | null = null;
   private messageSequence: number = 0;
   private networkIssueTimer: NodeJS.Timeout | null = null;
-  private eventListeners: Map<string, Function[]> = new Map();
+  private eventListeners: Map<string, MockServerEventListener[]> = new Map();
 
   constructor(config: Partial<MockWebSocketServerConfig> = {}) {
     this.config = {
@@ -175,7 +177,7 @@ export class MockWebSocketServer {
   /**
    * Simulate receiving message from client
    */
-  receiveFromClient(clientId: string, message: Record<string, any>): void {
+  receiveFromClient(clientId: string, message: Record<string, unknown>): void {
     const client = this.clients.get(clientId);
     if (!client || !client.connected) {
       console.warn('[MockWebSocketServer] Cannot receive from disconnected client:', clientId);
@@ -196,7 +198,7 @@ export class MockWebSocketServer {
         this.handleUnsubscription(clientId, message);
         break;
       case 'heartbeat':
-        this.handleHeartbeat(clientId, message);
+        this.handleHeartbeat(clientId);
         break;
       case 'update':
         this.handleUpdate(clientId, message);
@@ -209,7 +211,7 @@ export class MockWebSocketServer {
   /**
    * Handle client subscription
    */
-  private handleSubscription(clientId: string, message: any): void {
+  private handleSubscription(clientId: string, message: unknown): void {
     const client = this.clients.get(clientId);
     if (!client) return;
 
@@ -233,7 +235,7 @@ export class MockWebSocketServer {
   /**
    * Handle client unsubscription
    */
-  private handleUnsubscription(clientId: string, message: any): void {
+  private handleUnsubscription(clientId: string, message: unknown): void {
     const client = this.clients.get(clientId);
     if (!client) return;
 
@@ -247,7 +249,7 @@ export class MockWebSocketServer {
   /**
    * Handle heartbeat from client
    */
-  private handleHeartbeat(clientId: string, message: any): void {
+  private handleHeartbeat(clientId: string): void {
     const client = this.clients.get(clientId);
     if (!client) return;
 
@@ -262,7 +264,7 @@ export class MockWebSocketServer {
   /**
    * Handle update from client
    */
-  private handleUpdate(clientId: string, message: any): void {
+  private handleUpdate(clientId: string, message: unknown): void {
     console.log('[MockWebSocketServer] 🔄 Processing update from client:', clientId);
 
     // Echo the update to subscribed clients
@@ -310,7 +312,7 @@ export class MockWebSocketServer {
   /**
    * Create standardized WebSocket message
    */
-  createMessage(entity: string, action: string, data: any, metadata: any = {}): WSMessage {
+  createMessage(entity: string, action: string, data: unknown, metadata: unknown = {}): WSMessage {
     return {
       id: `mock-msg-${++this.messageSequence}`,
       version: '2.0',
@@ -332,7 +334,7 @@ export class MockWebSocketServer {
   /**
    * Simulate task creation
    */
-  createTask(task: any, branchId: string): void {
+  createTask(task: unknown, branchId: string): void {
     const message = this.createMessage('task', 'create', {
       primary: {
         id: task.id || `task-${Date.now()}`,
@@ -357,7 +359,7 @@ export class MockWebSocketServer {
   /**
    * Simulate task update
    */
-  updateTask(taskId: string, updates: any, branchId: string): void {
+  updateTask(taskId: string, updates: unknown, branchId: string): void {
     const message = this.createMessage('task', 'update', {
       primary: {
         id: taskId,
@@ -452,7 +454,7 @@ export class MockWebSocketServer {
   /**
    * Get server statistics
    */
-  getStats(): any {
+  getStats(): unknown {
     return {
       isRunning: this.isRunning,
       clientCount: this.clients.size,
@@ -480,14 +482,14 @@ export class MockWebSocketServer {
   /**
    * Event listener management
    */
-  on(event: string, listener: Function): void {
+  on(event: string, listener: MockServerEventListener): void {
     if (!this.eventListeners.has(event)) {
       this.eventListeners.set(event, []);
     }
     this.eventListeners.get(event)!.push(listener);
   }
 
-  off(event: string, listener: Function): void {
+  off(event: string, listener: MockServerEventListener): void {
     const listeners = this.eventListeners.get(event);
     if (listeners) {
       const index = listeners.indexOf(listener);
@@ -497,7 +499,7 @@ export class MockWebSocketServer {
     }
   }
 
-  private emit(event: string, data?: any): void {
+  private emit(event: string, data?: unknown): void {
     const listeners = this.eventListeners.get(event);
     if (listeners) {
       listeners.forEach(listener => listener(data));
@@ -532,7 +534,7 @@ export function createTestWebSocketServer(): MockWebSocketServer {
   });
 
   // Add some test data methods
-  (server as any).createTestScenario = function(scenario: string) {
+  (server as unknown).createTestScenario = function(scenario: string) {
     switch (scenario) {
       case 'multiple_tasks':
         this.createTask({ id: 'test-task-1', title: 'Test Task 1', status: 'todo' }, 'test-branch-1');
@@ -540,13 +542,14 @@ export function createTestWebSocketServer(): MockWebSocketServer {
         this.createTask({ id: 'test-task-3', title: 'Test Task 3', status: 'done' }, 'test-branch-1');
         break;
 
-      case 'rapid_updates':
+      case 'rapid_updates': {
         const taskId = 'rapid-task-1';
         this.createTask({ id: taskId, title: 'Rapid Task', status: 'todo' }, 'test-branch-1');
         setTimeout(() => this.updateTask(taskId, { status: 'in_progress' }, 'test-branch-1'), 100);
         setTimeout(() => this.updateTask(taskId, { status: 'review' }, 'test-branch-1'), 200);
         setTimeout(() => this.updateTask(taskId, { status: 'done' }, 'test-branch-1'), 300);
         break;
+      }
 
       case 'delete_sequence':
         this.createTask({ id: 'delete-task-1', title: 'Delete Task 1' }, 'test-branch-1');

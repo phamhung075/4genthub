@@ -37,7 +37,7 @@ async function waitForWebSocketConnection(page: Page, timeout = TEST_CONFIG.conn
       timeout
     });
     return true;
-  } catch (error) {
+  } catch {
     console.warn('WebSocket connection not established within timeout');
     return false;
   }
@@ -50,7 +50,7 @@ async function waitForTaskToAppear(page: Page, taskTitle: string, timeout = 1000
       timeout
     });
     return true;
-  } catch (error) {
+  } catch {
     console.warn(`Task "${taskTitle}" did not appear within timeout`);
     return false;
   }
@@ -64,7 +64,7 @@ async function waitForTaskToDisappear(page: Page, taskTitle: string, timeout = 1
       timeout
     });
     return true;
-  } catch (error) {
+  } catch {
     console.warn(`Task "${taskTitle}" did not disappear within timeout`);
     return false;
   }
@@ -522,7 +522,7 @@ test.describe('WebSocket Live Updates E2E Tests', () => {
 
     test('should handle WebSocket connection failure gracefully', async () => {
       // Step 1: Check if offline indicator appears when WebSocket fails
-      const isOffline = await page.locator('[data-testid="websocket-status"] >> text=Offline').isVisible();
+      await page.locator('[data-testid="websocket-status"] >> text=Offline').isVisible();
 
       // Step 2: Verify UI remains functional even without WebSocket
       await expect(page.locator('[data-testid="new-task-button"]')).toBeEnabled();

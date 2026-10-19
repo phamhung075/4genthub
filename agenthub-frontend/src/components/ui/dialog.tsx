@@ -89,16 +89,18 @@ export function DialogContent({ children, className }: { children: React.ReactNo
   // Controls that are hidden (the hidden attribute, display: none on the control or an ancestor
   // inside the dialog, visibility: hidden) cannot take focus, so the trap must not land on them.
   // Computed style rather than offsetParent or getClientRects: jsdom has no layout.
-  const isRendered = (el: HTMLElement) => {
+  const isRendered = React.useCallback((el: HTMLElement) => {
     if (getComputedStyle(el).visibility === "hidden") return false;
     for (let node: HTMLElement | null = el; node && node !== contentRef.current; node = node.parentElement) {
       if (node.hidden || getComputedStyle(node).display === "none") return false;
     }
     return true;
-  };
+  }, []);
 
-  const getFocusable = () =>
-    Array.from(contentRef.current?.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR) ?? []).filter(isRendered);
+  const getFocusable = React.useCallback(
+    () => Array.from(contentRef.current?.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR) ?? []).filter(isRendered),
+    [isRendered]
+  );
 
   // aria-modal: move focus in on open (unless a child already took it, e.g. autoFocus) and give it
   // back to the element that was focused before the dialog rendered on close.
@@ -110,7 +112,7 @@ export function DialogContent({ children, className }: { children: React.ReactNo
     return () => {
       if (opener?.isConnected) opener.focus();
     };
-  }, [opener]);
+  }, [opener, getFocusable]);
 
   // aria-modal: Tab and Shift+Tab wrap inside the dialog.
   const trapTab = (e: React.KeyboardEvent<HTMLDivElement>) => {
@@ -175,6 +177,6 @@ export function DialogDescription({ children, className }: { children: React.Rea
   return <p className={cn("text-sm text-muted-foreground mb-4", className)}>{children}</p>;
 }
 
-export function DialogTrigger({ children, asChild }: { children: React.ReactNode; asChild?: boolean }) {
+export function DialogTrigger({ children }: { children: React.ReactNode; asChild?: boolean }) {
   return <>{children}</>;
 }

@@ -28,7 +28,7 @@ export function useDialogManager(
     pendingCloseTimersRef.current = [];
   }, []);
 
-  const openDialog = useCallback((type: string, taskId?: string, extraData?: any) => {
+  const openDialog = useCallback((type: string, taskId?: string, extraData?: unknown) => {
     // Opening supersedes a close still in flight: cancel its deferred writes and lift the guard.
     clearPendingClose();
     isClosingRef.current = false;

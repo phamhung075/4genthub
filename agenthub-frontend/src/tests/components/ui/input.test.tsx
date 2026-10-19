@@ -6,19 +6,19 @@ import { cn } from '../../../lib/utils';
 
 // Mock the cn utility
 vi.mock('../../../lib/utils', () => ({
-  cn: vi.fn((...args: any[]) => args.filter(Boolean).join(' ')),
+  cn: vi.fn((...args: unknown[]) => args.filter(Boolean).join(' ')),
 }));
 
 describe('Input', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Ensure the mock is working
-    (cn as any).mockImplementation((...args: any[]) => args.filter(Boolean).join(' '));
+    (cn as unknown).mockImplementation((...args: unknown[]) => args.filter(Boolean).join(' '));
   });
 
   it('renders with default props', () => {
     render(<Input />);
-    
+
     const input = screen.getByRole('textbox');
     expect(input).toBeInTheDocument();
     expect(input).toHaveAttribute('type', 'text');
@@ -33,16 +33,16 @@ describe('Input', () => {
 
   it('renders with custom type', () => {
     render(<Input type="email" />);
-    
+
     const input = document.querySelector('input[type="email"]');
     expect(input).toBeInTheDocument();
   });
 
   it('renders with different input types', () => {
     const types = ['password', 'number', 'tel', 'url', 'search', 'date'];
-    
+
     types.forEach(type => {
-      const { container } = render(<Input type={type as any} />);
+      const { container } = render(<Input type={type as unknown} />);
       const input = container.querySelector(`input[type="${type}"]`);
       expect(input).toBeInTheDocument();
     });
@@ -50,7 +50,7 @@ describe('Input', () => {
 
   it('applies custom className', () => {
     render(<Input className="custom-input" />);
-    
+
     const input = screen.getByRole('textbox');
     expect(input.className).toContain('theme-input');
     expect(input.className).toContain('flex');
@@ -65,7 +65,7 @@ describe('Input', () => {
   it('forwards ref correctly', () => {
     const ref = React.createRef<HTMLInputElement>();
     render(<Input ref={ref} />);
-    
+
     expect(ref.current).toBeInstanceOf(HTMLInputElement);
     expect(ref.current?.tagName).toBe('INPUT');
   });
@@ -73,24 +73,24 @@ describe('Input', () => {
   it('handles value and onChange', () => {
     const handleChange = vi.fn();
     render(<Input value="test" onChange={handleChange} />);
-    
+
     const input = screen.getByRole('textbox');
     expect(input).toHaveValue('test');
-    
+
     userEvent.type(input, 'a');
     expect(handleChange).toHaveBeenCalled();
   });
 
   it('handles placeholder', () => {
     render(<Input placeholder="Enter text here" />);
-    
+
     const input = screen.getByPlaceholderText('Enter text here');
     expect(input).toBeInTheDocument();
   });
 
   it('respects disabled state', () => {
     render(<Input disabled />);
-    
+
     const input = screen.getByRole('textbox');
     expect(input).toBeDisabled();
     expect(input.className).toContain('disabled:opacity-50');
@@ -99,7 +99,7 @@ describe('Input', () => {
 
   it('handles readonly state', () => {
     render(<Input readOnly value="readonly text" />);
-    
+
     const input = screen.getByRole('textbox');
     expect(input).toHaveAttribute('readonly');
     expect(input).toHaveValue('readonly text');
@@ -107,21 +107,21 @@ describe('Input', () => {
 
   it('handles required attribute', () => {
     render(<Input required />);
-    
+
     const input = screen.getByRole('textbox');
     expect(input).toBeRequired();
   });
 
   it('handles autofocus', () => {
     render(<Input autoFocus />);
-    
+
     const input = screen.getByRole('textbox');
     expect(input).toHaveFocus();
   });
 
   it('handles maxLength and minLength', () => {
     render(<Input maxLength={10} minLength={5} />);
-    
+
     const input = screen.getByRole('textbox');
     expect(input).toHaveAttribute('maxLength', '10');
     expect(input).toHaveAttribute('minLength', '5');
@@ -129,14 +129,14 @@ describe('Input', () => {
 
   it('handles pattern attribute', () => {
     render(<Input pattern="[0-9]*" />);
-    
+
     const input = screen.getByRole('textbox');
     expect(input).toHaveAttribute('pattern', '[0-9]*');
   });
 
   it('handles name and id attributes', () => {
     render(<Input name="username" id="user-input" />);
-    
+
     const input = screen.getByRole('textbox');
     expect(input).toHaveAttribute('name', 'username');
     expect(input).toHaveAttribute('id', 'user-input');
@@ -144,7 +144,7 @@ describe('Input', () => {
 
   it('handles autoComplete attribute', () => {
     render(<Input autoComplete="email" />);
-    
+
     const input = screen.getByRole('textbox');
     expect(input).toHaveAttribute('autocomplete', 'email');
   });
@@ -152,14 +152,14 @@ describe('Input', () => {
   it('handles onFocus and onBlur events', () => {
     const handleFocus = vi.fn();
     const handleBlur = vi.fn();
-    
+
     render(<Input onFocus={handleFocus} onBlur={handleBlur} />);
-    
+
     const input = screen.getByRole('textbox');
-    
+
     fireEvent.focus(input);
     expect(handleFocus).toHaveBeenCalledTimes(1);
-    
+
     fireEvent.blur(input);
     expect(handleBlur).toHaveBeenCalledTimes(1);
   });
@@ -167,10 +167,10 @@ describe('Input', () => {
   it('handles onKeyDown event', () => {
     const handleKeyDown = vi.fn();
     render(<Input onKeyDown={handleKeyDown} />);
-    
+
     const input = screen.getByRole('textbox');
     fireEvent.keyDown(input, { key: 'Enter' });
-    
+
     expect(handleKeyDown).toHaveBeenCalledTimes(1);
     expect(handleKeyDown).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -188,7 +188,7 @@ describe('Input', () => {
         aria-required="true"
       />
     );
-    
+
     const input = screen.getByRole('textbox');
     expect(input).toHaveAttribute('aria-label', 'Test input');
     expect(input).toHaveAttribute('aria-describedby', 'input-help');
@@ -198,7 +198,7 @@ describe('Input', () => {
 
   it('passes through data attributes', () => {
     render(<Input data-testid="custom-input" data-value="test" />);
-    
+
     const input = screen.getByTestId('custom-input');
     expect(input).toHaveAttribute('data-value', 'test');
   });
@@ -210,7 +210,7 @@ describe('Input', () => {
   it('calls cn utility with correct arguments', () => {
     const customClass = 'my-custom-class';
     render(<Input className={customClass} />);
-    
+
     expect(cn).toHaveBeenCalledWith(
       'theme-input flex h-10 w-full text-sm disabled:opacity-50 disabled:pointer-events-none',
       customClass
@@ -225,10 +225,10 @@ describe('Input', () => {
         <button type="submit">Submit</button>
       </form>
     );
-    
+
     const button = screen.getByRole('button', { name: 'Submit' });
     fireEvent.click(button);
-    
+
     expect(handleSubmit).toHaveBeenCalledTimes(1);
   });
 });

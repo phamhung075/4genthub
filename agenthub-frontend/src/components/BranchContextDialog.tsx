@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog";
 import { GitBranch, Edit, Copy, Check as CheckIcon, ChevronDown, ChevronUp } from "lucide-react";
 import { getBranchContext } from "../api";
+import type { BranchContextData } from "../types/context.types";
 import logger from "../utils/logger";
 
 interface BranchContextDialogProps {
@@ -12,17 +13,38 @@ interface BranchContextDialogProps {
   branchId: string;
 }
 
+// The context API hands back an untyped payload: either the context fields directly or an envelope
+// with the fields under `data`. State keeps whichever shape arrived, typed with the domain model.
+type BranchContextState = BranchContextData & { data?: BranchContextData };
+
 export const BranchContextDialog: React.FC<BranchContextDialogProps> = ({
   open,
   onOpenChange,
   onClose,
   branchId
 }) => {
-  const [branchContext, setBranchContext] = useState<any>(null);
+  const [branchContext, setBranchContext] = useState<BranchContextState | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [loading, setLoading] = useState(false);
   const [jsonCopied, setJsonCopied] = useState(false);
   const [rawJsonExpanded, setRawJsonExpanded] = useState(false);
+
+  const fetchBranchContext = useCallback(async () => {
+    setLoading(true);
+    try {
+      // The API response is a context envelope or the context fields at the top level.
+      const context = (await getBranchContext(branchId)) as BranchContextState | null;
+      logger.debug('Fetched branch context:', context);
+
+      if (context) {
+        setBranchContext(context);
+      }
+    } catch (error) {
+      logger.error('Error fetching branch context:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [branchId]);
 
   // Fetch branch context when dialog opens
   useEffect(() => {
@@ -32,23 +54,7 @@ export const BranchContextDialog: React.FC<BranchContextDialogProps> = ({
       setEditMode(false);
       setBranchContext(null);
     }
-  }, [open, branchId]);
-
-  const fetchBranchContext = async () => {
-    setLoading(true);
-    try {
-      const context = await getBranchContext(branchId);
-      logger.debug('Fetched branch context:', context);
-      
-      if (context) {
-        setBranchContext(context);
-      }
-    } catch (error) {
-      logger.error('Error fetching branch context:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [open, branchId, fetchBranchContext]);
 
   const copyJsonToClipboard = () => {
     if (branchContext) {
@@ -94,22 +100,22 @@ export const BranchContextDialog: React.FC<BranchContextDialogProps> = ({
         padding: 'pl-12',
       },
     ];
-    
+
     return styles[Math.min(depth, styles.length - 1)];
   };
 
   // Render nested data with level-based styling
-  const renderNestedData = (data: any, depth: number = 0): React.ReactElement => {
+  const renderNestedData = (data: unknown, depth: number = 0): React.ReactElement => {
     const style = getLevelStyling(depth);
-    
+
     if (data === null || data === undefined) {
       return <span className="text-gray-400 italic">null</span>;
     }
-    
+
     if (typeof data === 'string' || typeof data === 'number' || typeof data === 'boolean') {
       return <span className={style.text}>{String(data)}</span>;
     }
-    
+
     if (Array.isArray(data)) {
       return (
         <div className="space-y-1">
@@ -124,7 +130,7 @@ export const BranchContextDialog: React.FC<BranchContextDialogProps> = ({
         </div>
       );
     }
-    
+
     if (typeof data === 'object') {
       return (
         <div className="space-y-2">
@@ -150,7 +156,7 @@ export const BranchContextDialog: React.FC<BranchContextDialogProps> = ({
         </div>
       );
     }
-    
+
     return <span>{String(data)}</span>;
   };
 
@@ -163,7 +169,7 @@ export const BranchContextDialog: React.FC<BranchContextDialogProps> = ({
             Branch Context
           </DialogTitle>
         </DialogHeader>
-        
+
         <div className="flex-1 overflow-y-auto">
           {loading ? (
             <div className="text-center py-8">
@@ -175,15 +181,15 @@ export const BranchContextDialog: React.FC<BranchContextDialogProps> = ({
               {/* Context Header */}
               <div className="bg-surface-hover rounded-lg p-6">
                 <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                  <GitBranch className="w-5 h-5" /> 
+                  <GitBranch className="w-5 h-5" />
                   Branch Context Data
                 </h3>
-                
+
                 {/* Render nested data with level-based styling */}
                 <div className="space-y-2">
                   {renderNestedData(branchContext.data || branchContext)}
                 </div>
-                
+
                 {/* Raw JSON Section with expand/collapse and copy */}
                 <div className="mt-6 border-t pt-4">
                   <div className="flex items-center justify-between mb-2">
@@ -198,7 +204,7 @@ export const BranchContextDialog: React.FC<BranchContextDialogProps> = ({
                       )}
                       View Complete JSON Context
                     </button>
-                    
+
                     <Button
                       variant="outline"
                       size="sm"
@@ -218,7 +224,7 @@ export const BranchContextDialog: React.FC<BranchContextDialogProps> = ({
                       )}
                     </Button>
                   </div>
-                  
+
                   {rawJsonExpanded && (
                     <div className="mt-3 bg-gray-50 dark:bg-gray-800 p-3 rounded border border-gray-200 dark:border-gray-700">
                       <pre className="text-xs overflow-x-auto whitespace-pre-wrap text-gray-800 dark:text-gray-200">
@@ -236,8 +242,8 @@ export const BranchContextDialog: React.FC<BranchContextDialogProps> = ({
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
                 Branch context has not been initialized yet.
               </p>
-              <Button 
-                variant="default" 
+              <Button
+                variant="default"
                 className="mt-4"
                 onClick={() => {
                   // Initialize with empty values

@@ -20,8 +20,10 @@ const getEnvVar = (key: string): string | undefined => {
     return process.env[key];
   }
   // Additional fallback for browser environment
-  // @ts-ignore
-  return typeof window !== 'undefined' && window._env_ ? window._env_[key] : undefined;
+  const runtimeEnv = typeof window !== 'undefined'
+    ? (window as Window & { _env_?: Record<string, string> })._env_
+    : undefined;
+  return runtimeEnv?.[key];
 };
 
 /**

@@ -18,7 +18,6 @@ export const supportsCssProperty = (): boolean => {
   if (propertySupport !== null) return propertySupport;
 
   try {
-    // @ts-ignore
     propertySupport = !!(CSS && CSS.supports && CSS.supports('@property', '--test'));
   } catch {
     propertySupport = false;

@@ -51,7 +51,7 @@ const SubtaskCreateDialog: React.FC<SubtaskCreateDialogProps> = ({
 
       onCreated(result);
       onClose();
-    } catch (e: any) {
+    } catch (e: unknown) {
       // Error is already handled by the mutation hook
       console.error('Failed to create subtask:', e);
     }

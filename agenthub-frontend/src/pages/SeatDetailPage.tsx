@@ -66,7 +66,6 @@ import { useRealtimeSync } from '../hooks/useRealtimeSync';
 import { SEAT_LINK_KINDS } from '../types/seatTypes';
 import type {
   EffectiveSeatModule,
-  Seat,
   SeatLinkKind,
   SeatLinksTabProps,
   SeatModulesTabProps,
