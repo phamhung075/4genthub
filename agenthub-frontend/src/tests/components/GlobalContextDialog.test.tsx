@@ -13,21 +13,21 @@ vi.mock('../../api', () => ({
 
 // Mock shadcn/ui components
 vi.mock('../../components/ui/dialog', () => ({
-  Dialog: ({ open, children }: any) => open ? <div data-testid="dialog">{children}</div> : null,
-  DialogContent: ({ children, className }: any) => <div className={className}>{children}</div>,
-  DialogHeader: ({ children }: any) => <div>{children}</div>,
-  DialogTitle: ({ children }: any) => <h2>{children}</h2>,
-  DialogFooter: ({ children }: any) => <div>{children}</div>,
+  Dialog: ({ open, children }: unknown) => open ? <div data-testid="dialog">{children}</div> : null,
+  DialogContent: ({ children, className }: unknown) => <div className={className}>{children}</div>,
+  DialogHeader: ({ children }: unknown) => <div>{children}</div>,
+  DialogTitle: ({ children }: unknown) => <h2>{children}</h2>,
+  DialogFooter: ({ children }: unknown) => <div>{children}</div>,
 }));
 
 vi.mock('../../components/ui/button', () => ({
-  Button: ({ onClick, children, disabled, variant, size }: any) => (
+  Button: ({ onClick, children, disabled, variant, size }: unknown) => (
     <button onClick={onClick} disabled={disabled} data-variant={variant} data-size={size}>{children}</button>
   ),
 }));
 
 vi.mock('../../components/ui/textarea', () => ({
-  Textarea: ({ placeholder, value, onChange, className, rows }: any) => (
+  Textarea: ({ placeholder, value, onChange, className, rows }: unknown) => (
     <textarea
       placeholder={placeholder}
       value={value}
@@ -41,11 +41,11 @@ vi.mock('../../components/ui/textarea', () => ({
 
 // Mock additional UI components
 vi.mock('../../components/ui/EnhancedJSONViewer', () => ({
-  EnhancedJSONViewer: ({ data }: any) => <div data-testid="json-viewer">{JSON.stringify(data)}</div>,
+  EnhancedJSONViewer: ({ data }: unknown) => <div data-testid="json-viewer">{JSON.stringify(data)}</div>,
 }));
 
 vi.mock('../../components/ui/badge', () => ({
-  Badge: ({ children, variant }: any) => <span data-variant={variant}>{children}</span>,
+  Badge: ({ children, variant }: unknown) => <span data-variant={variant}>{children}</span>,
 }));
 
 // Mock lucide-react icons
@@ -121,7 +121,7 @@ describe('GlobalContextDialog', () => {
   });
 
   it('displays loading state when fetching context', async () => {
-    (api.getGlobalContext as any).mockReturnValue(new Promise(() => {})); // Never resolves
+    (api.getGlobalContext as unknown).mockReturnValue(new Promise(() => {})); // Never resolves
 
     render(
       <GlobalContextDialog
@@ -135,7 +135,7 @@ describe('GlobalContextDialog', () => {
   });
 
   it('displays default context structure when API returns null', async () => {
-    (api.getGlobalContext as any).mockResolvedValue(null);
+    (api.getGlobalContext as unknown).mockResolvedValue(null);
 
     render(
       <GlobalContextDialog
@@ -160,7 +160,7 @@ describe('GlobalContextDialog', () => {
       version: '1.0.0'
     };
 
-    (api.getGlobalContext as any).mockResolvedValue(mockContext);
+    (api.getGlobalContext as unknown).mockResolvedValue(mockContext);
 
     render(
       <GlobalContextDialog
@@ -188,7 +188,7 @@ describe('GlobalContextDialog', () => {
       version: '1.0.0'
     };
 
-    (api.getGlobalContext as any).mockResolvedValue(mockContext);
+    (api.getGlobalContext as unknown).mockResolvedValue(mockContext);
 
     render(
       <GlobalContextDialog
@@ -219,7 +219,7 @@ describe('GlobalContextDialog', () => {
       version: '1.0.0'
     };
 
-    (api.getGlobalContext as any).mockResolvedValue(mockContext);
+    (api.getGlobalContext as unknown).mockResolvedValue(mockContext);
 
     render(
       <GlobalContextDialog
@@ -250,7 +250,7 @@ describe('GlobalContextDialog', () => {
       version: '1.0.0'
     };
 
-    (api.getGlobalContext as any).mockResolvedValue(mockContext);
+    (api.getGlobalContext as unknown).mockResolvedValue(mockContext);
 
     render(
       <GlobalContextDialog
@@ -281,8 +281,8 @@ describe('GlobalContextDialog', () => {
       version: '1.0.0'
     };
 
-    (api.getGlobalContext as any).mockResolvedValue(mockContext);
-    (api.updateGlobalContext as any).mockResolvedValue({ success: true });
+    (api.getGlobalContext as unknown).mockResolvedValue(mockContext);
+    (api.updateGlobalContext as unknown).mockResolvedValue({ success: true });
 
     render(
       <GlobalContextDialog
@@ -327,7 +327,7 @@ describe('GlobalContextDialog', () => {
       version: '1.0.0'
     };
 
-    (api.getGlobalContext as any).mockResolvedValue(mockContext);
+    (api.getGlobalContext as unknown).mockResolvedValue(mockContext);
 
     render(
       <GlobalContextDialog
@@ -368,8 +368,8 @@ describe('GlobalContextDialog', () => {
       version: '1.0.0'
     };
 
-    (api.getGlobalContext as any).mockResolvedValue(mockContext);
-    (api.updateGlobalContext as any).mockResolvedValue({ success: true });
+    (api.getGlobalContext as unknown).mockResolvedValue(mockContext);
+    (api.updateGlobalContext as unknown).mockResolvedValue({ success: true });
 
     render(
       <GlobalContextDialog
@@ -398,7 +398,7 @@ describe('GlobalContextDialog', () => {
       version: '1.0.0'
     };
 
-    (api.getGlobalContext as any).mockResolvedValue(mockContext);
+    (api.getGlobalContext as unknown).mockResolvedValue(mockContext);
 
     render(
       <GlobalContextDialog
@@ -435,7 +435,7 @@ describe('GlobalContextDialog', () => {
       version: '1.0.0'
     };
 
-    (api.getGlobalContext as any).mockResolvedValue(mockContext);
+    (api.getGlobalContext as unknown).mockResolvedValue(mockContext);
 
     // Mock clipboard API
     const mockWriteText = vi.fn().mockResolvedValue(undefined);
@@ -499,7 +499,7 @@ describe('GlobalContextDialog', () => {
 
   it('handles API errors gracefully', async () => {
     const networkError = new Error('Network error');
-    (api.getGlobalContext as any).mockRejectedValue(networkError);
+    (api.getGlobalContext as unknown).mockRejectedValue(networkError);
 
     // The component logs fetch failures through the app logger (which formats console output)
     const loggerError = vi.spyOn(logger, 'error').mockImplementation(() => {});
@@ -536,7 +536,7 @@ describe('GlobalContextDialog', () => {
       version: '1.0.0'
     };
 
-    (api.getGlobalContext as any).mockResolvedValue(mockContext);
+    (api.getGlobalContext as unknown).mockResolvedValue(mockContext);
 
     render(
       <GlobalContextDialog

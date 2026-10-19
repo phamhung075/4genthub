@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
 import { X, CheckCircle, AlertCircle, XCircle, Info } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import type { ToastType, Toast } from '../../types/componentTypes';
+import type { Toast } from '../../types/componentTypes';
 import logger from '../../utils/logger';
 
 interface ToastContextType {

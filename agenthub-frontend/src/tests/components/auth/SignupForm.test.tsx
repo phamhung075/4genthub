@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor, within } from './../../test-utils';
+import { render, screen, waitFor, within } from './../../test-utils';
 import userEvent from '@testing-library/user-event';
 import { useNavigate } from 'react-router-dom';
 import { SignupForm } from '../../../components/auth/SignupForm';
@@ -44,13 +44,13 @@ Object.defineProperty(global, 'import', {
 describe('SignupForm', () => {
   const mockNavigate = vi.fn();
   const mockSignup = vi.fn();
-  let user: any;
+  let user: unknown;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    (useNavigate as any).mockReturnValue(mockNavigate);
-    (useAuth as any).mockReturnValue({ signup: mockSignup });
-    (global.fetch as any).mockReset();
+    (useNavigate as unknown).mockReturnValue(mockNavigate);
+    (useAuth as unknown).mockReturnValue({ signup: mockSignup });
+    (global.fetch as unknown).mockReset();
     // user-event v13 exposes the API directly (no setup()).
     user = userEvent;
   });
@@ -413,7 +413,7 @@ describe('SignupForm', () => {
         message: 'Please verify your email'
       });
 
-      (global.fetch as any).mockResolvedValueOnce({
+      (global.fetch as unknown).mockResolvedValueOnce({
         ok: true,
         json: async () => ({ success: true })
       });
@@ -451,7 +451,7 @@ describe('SignupForm', () => {
     it('handles resend verification error', async () => {
       mockSignup.mockRejectedValueOnce(new Error('User already registered'));
 
-      (global.fetch as any).mockResolvedValueOnce({
+      (global.fetch as unknown).mockResolvedValueOnce({
         ok: false,
         json: async () => ({ detail: 'Invalid email' })
       });
@@ -479,7 +479,7 @@ describe('SignupForm', () => {
     it('handles resend verification network error', async () => {
       mockSignup.mockRejectedValueOnce(new Error('User already registered'));
 
-      (global.fetch as any).mockRejectedValueOnce(new Error('Network error'));
+      (global.fetch as unknown).mockRejectedValueOnce(new Error('Network error'));
 
       renderComponent();
 
@@ -539,7 +539,7 @@ describe('SignupForm', () => {
   describe('Environment Variables', () => {
     it('resends verification to the configured API base URL', async () => {
       mockSignup.mockRejectedValueOnce(new Error('User already registered'));
-      (global.fetch as any).mockResolvedValueOnce({
+      (global.fetch as unknown).mockResolvedValueOnce({
         ok: true,
         json: async () => ({ success: true })
       });

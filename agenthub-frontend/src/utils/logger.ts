@@ -82,7 +82,7 @@ class ComprehensiveLogger {
     return LOG_LEVELS[level] >= LOG_LEVELS[this.config.level];
   }
 
-  private createLogEntry(level: LogLevel, message: string, data?: any, filepath?: string): LogEntry {
+  private createLogEntry(level: LogLevel, message: string, data?: unknown, filepath?: string): LogEntry {
     return {
       timestamp: new Date().toISOString(),
       level,
@@ -95,7 +95,7 @@ class ComprehensiveLogger {
   }
 
   private formatConsoleMessage(entry: LogEntry): string {
-    let parts: string[] = [];
+    const parts: string[] = [];
 
     // Add timestamp if enabled
     if (this.config.showTimestamp) {
@@ -164,7 +164,7 @@ class ComprehensiveLogger {
     try {
       const storageKey = 'app_logs';
       const existingLogs = localStorage.getItem(storageKey);
-      let logs: LogEntry[] = existingLogs ? JSON.parse(existingLogs) : [];
+      const logs: LogEntry[] = existingLogs ? JSON.parse(existingLogs) : [];
 
       // Add new log
       logs.push(entry);
@@ -217,7 +217,7 @@ class ComprehensiveLogger {
     }
   }
 
-  private log(level: LogLevel, message: string, data?: any, filepath?: string): void {
+  private log(level: LogLevel, message: string, data?: unknown, filepath?: string): void {
     if (!this.shouldLog(level)) {
       return;
     }
@@ -268,42 +268,42 @@ class ComprehensiveLogger {
   /**
    * Log debug message (most verbose level)
    */
-  debug(message: string, data?: any, filepath?: string): void {
+  debug(message: string, data?: unknown, filepath?: string): void {
     this.log('debug', message, data, filepath);
   }
 
   /**
    * Log informational message
    */
-  info(message: string, data?: any, filepath?: string): void {
+  info(message: string, data?: unknown, filepath?: string): void {
     this.log('info', message, data, filepath);
   }
 
   /**
    * Log warning message
    */
-  warn(message: string, data?: any, filepath?: string): void {
+  warn(message: string, data?: unknown, filepath?: string): void {
     this.log('warn', message, data, filepath);
   }
 
   /**
    * Log error message
    */
-  error(message: string, data?: any, filepath?: string): void {
+  error(message: string, data?: unknown, filepath?: string): void {
     this.log('error', message, data, filepath);
   }
 
   /**
    * Log critical error message (highest priority)
    */
-  critical(message: string, data?: any, filepath?: string): void {
+  critical(message: string, data?: unknown, filepath?: string): void {
     this.log('critical', message, data, filepath);
   }
 
   /**
    * Conditional debug logging
    */
-  debugIf(condition: boolean, message: string, data?: any, filepath?: string): void {
+  debugIf(condition: boolean, message: string, data?: unknown, filepath?: string): void {
     if (condition) {
       this.debug(message, data, filepath);
     }
@@ -312,7 +312,7 @@ class ComprehensiveLogger {
   /**
    * Conditional info logging
    */
-  infoIf(condition: boolean, message: string, data?: any, filepath?: string): void {
+  infoIf(condition: boolean, message: string, data?: unknown, filepath?: string): void {
     if (condition) {
       this.info(message, data, filepath);
     }

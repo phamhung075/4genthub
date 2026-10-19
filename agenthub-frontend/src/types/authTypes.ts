@@ -99,5 +99,5 @@ export interface DecodedToken {
   };
 
   // Additional custom claims
-  [key: string]: any;
+  [key: string]: unknown;
 }

@@ -5,6 +5,7 @@ import { Input } from "./ui/input";
 import { Badge } from "./ui/badge";
 import { Save, FileText, Users } from "lucide-react";
 import { Subtask, getAvailableAgents } from "../api";
+import type { Task } from "../types";
 import { useSubtaskMutations } from "../hooks/useSubtasks";
 import AgentAssignmentDialog from "./AgentAssignmentDialog";
 import logger from "../utils/logger";
@@ -86,8 +87,8 @@ export const SubtaskEditDialog: React.FC<SubtaskEditDialogProps> = ({
       const updates: Partial<Subtask> = {
         title: title.trim(),
         description: description.trim() || undefined,
-        status: status as any,
-        priority: priority as any,
+        status,
+        priority,
         assignees: assignees.length > 0 ? assignees : undefined,
       };
 
@@ -100,7 +101,7 @@ export const SubtaskEditDialog: React.FC<SubtaskEditDialogProps> = ({
         onUpdated(result);
       }
       onClose();
-    } catch (e: any) {
+    } catch (e: unknown) {
       // Error is already handled by the mutation hook
       console.error('Failed to update subtask:', e);
     }
@@ -137,6 +138,17 @@ export const SubtaskEditDialog: React.FC<SubtaskEditDialogProps> = ({
     status !== (subtask.status || "todo") ||
     priority !== (subtask.priority || "medium") ||
     JSON.stringify(assignees.sort()) !== JSON.stringify((subtask.assignees || []).sort());
+
+  // AgentAssignmentDialog declares a Task but reads only `assignees`; a subtask carries that field
+  // and none of the task-only columns the picker never renders.
+  const assignmentTask: Task = {
+    ...subtask,
+    assignees,
+    has_dependencies: false,
+    has_context: false,
+    git_branch_id: '',
+    project_id: '',
+  };
 
   return (
     <>
@@ -315,7 +327,7 @@ export const SubtaskEditDialog: React.FC<SubtaskEditDialogProps> = ({
     <AgentAssignmentDialog
       open={agentDialogOpen}
       onOpenChange={setAgentDialogOpen}
-      task={{ ...subtask, assignees } as any}
+      task={assignmentTask}
       onClose={() => setAgentDialogOpen(false)}
       onAssign={handleAssignSeats}
       availableSeats={availableSeats}

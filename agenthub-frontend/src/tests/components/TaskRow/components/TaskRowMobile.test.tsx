@@ -16,16 +16,16 @@ import { TaskRowMobile } from '../../../../components/TaskRow/components/TaskRow
 import type { TaskSummary } from '../../../../types/taskTypes';
 
 vi.mock('../../../../components/ui/holographic-badges', () => ({
-  HolographicStatusBadge: ({ status, size }: any) => (
+  HolographicStatusBadge: ({ status, size }: unknown) => (
     <span data-testid="status-badge" data-status={status} data-size={size} />
   ),
-  HolographicPriorityBadge: ({ priority, size }: any) => (
+  HolographicPriorityBadge: ({ priority, size }: unknown) => (
     <span data-testid="priority-badge" data-priority={priority} data-size={size} />
   )
 }));
 
 vi.mock('../../../../components/ui/ProgressDisplay', () => ({
-  ProgressDisplayEnhanced: ({ status, progressPercentage }: any) => (
+  ProgressDisplayEnhanced: ({ status, progressPercentage }: unknown) => (
     <div
       data-testid="progress-display"
       data-status={status}
@@ -35,13 +35,13 @@ vi.mock('../../../../components/ui/ProgressDisplay', () => ({
 }));
 
 vi.mock('../../../../components/TaskRow/components/TaskCopyButtons', () => ({
-  TaskCopyButtons: ({ taskId, taskName }: any) => (
+  TaskCopyButtons: ({ taskId, taskName }: unknown) => (
     <div data-testid="task-copy-buttons" data-task-id={taskId} data-task-name={taskName} />
   )
 }));
 
 vi.mock('../../../../components/TaskRow/components/TaskRowActions', () => ({
-  TaskRowActions: ({ taskId, projectId, taskTreeId, onOpenDialog, variant }: any) => (
+  TaskRowActions: ({ taskId, projectId, taskTreeId, onOpenDialog, variant }: unknown) => (
     <div
       data-testid="task-row-actions"
       data-task-id={taskId}
@@ -70,7 +70,7 @@ vi.mock('../../../../components/ClickableAssignees', () => ({
 }));
 
 vi.mock('../../../../components/LazySubtaskList', () => ({
-  default: ({ projectId, taskTreeId, parentTaskId }: any) => (
+  default: ({ projectId, taskTreeId, parentTaskId }: unknown) => (
     <div
       data-testid="lazy-subtask-list"
       data-project-id={projectId}
@@ -96,7 +96,7 @@ describe('TaskRowMobile', () => {
 
   const defaultProps = {
     summary: mockSummary,
-    fullTask: null as any,
+    fullTask: null as unknown,
     isHighlighted: false,
     isHovered: false,
     isExpanded: false,

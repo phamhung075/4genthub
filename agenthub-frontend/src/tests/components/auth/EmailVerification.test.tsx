@@ -27,11 +27,11 @@ describe('EmailVerification', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    (useNavigate as any).mockReturnValue(mockNavigate);
-    (useAuth as any).mockReturnValue({ setTokens: mockSetTokens });
+    (useNavigate as unknown).mockReturnValue(mockNavigate);
+    (useAuth as unknown).mockReturnValue({ setTokens: mockSetTokens });
 
     // Reset fetch mock
-    (global.fetch as any).mockReset();
+    (global.fetch as unknown).mockReset();
 
     // Clear window.location.hash
     window.location.hash = '';
@@ -193,7 +193,7 @@ describe('EmailVerification', () => {
     });
 
     it('successfully resends verification email', async () => {
-      (global.fetch as any).mockResolvedValueOnce({
+      (global.fetch as unknown).mockResolvedValueOnce({
         ok: true,
         json: async () => ({ success: true }),
       });
@@ -238,7 +238,7 @@ describe('EmailVerification', () => {
     });
 
     it('handles resend verification API error', async () => {
-      (global.fetch as any).mockResolvedValueOnce({
+      (global.fetch as unknown).mockResolvedValueOnce({
         ok: false,
         json: async () => ({ detail: 'Email not found' }),
       });
@@ -259,7 +259,7 @@ describe('EmailVerification', () => {
     });
 
     it('handles resend verification network error', async () => {
-      (global.fetch as any).mockRejectedValueOnce(new Error('Network error'));
+      (global.fetch as unknown).mockRejectedValueOnce(new Error('Network error'));
 
       renderComponent();
 
@@ -277,7 +277,7 @@ describe('EmailVerification', () => {
     });
 
     it('posts to the configured API base URL', async () => {
-      (global.fetch as any).mockResolvedValueOnce({
+      (global.fetch as unknown).mockResolvedValueOnce({
         ok: true,
         json: async () => ({ success: true }),
       });

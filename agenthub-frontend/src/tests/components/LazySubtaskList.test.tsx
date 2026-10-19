@@ -33,7 +33,7 @@ vi.mock('../../hooks/useSubtaskAnimation', () => ({
 // Mock lazy-loaded components
 vi.mock('../../components/DeleteConfirmDialog', () => ({
   __esModule: true,
-  default: ({ open, onOpenChange, onConfirm, itemName }: any) => open ? (
+  default: ({ open, onOpenChange, onConfirm, itemName }: unknown) => open ? (
     <div data-testid="delete-confirm-dialog">
       <div>Delete {itemName}?</div>
       <button onClick={onConfirm}>Confirm</button>
@@ -44,7 +44,7 @@ vi.mock('../../components/DeleteConfirmDialog', () => ({
 
 vi.mock('../../components/SubtaskCompleteDialog', () => ({
   __esModule: true,
-  default: ({ open, onOpenChange, subtask, onComplete }: any) => open ? (
+  default: ({ open, onOpenChange, subtask, onComplete }: unknown) => open ? (
     <div data-testid="subtask-complete-dialog">
       <div>Complete {subtask?.title}?</div>
       <button onClick={() => {
@@ -59,7 +59,7 @@ vi.mock('../../components/SubtaskCompleteDialog', () => ({
 
 vi.mock('../../components/SubtaskDetailsDialog', () => ({
   __esModule: true,
-  default: ({ open, subtask, onClose }: any) => open ? (
+  default: ({ open, subtask, onClose }: unknown) => open ? (
     <div data-testid="subtask-details-dialog">
       <div>Details for {subtask?.title}</div>
       <div>{subtask?.description}</div>

@@ -1,6 +1,6 @@
 import { tokenService } from '../../services/tokenService';
 import { authenticatedFetch } from '../../hooks/useAuthenticatedFetch';
-import { API_BASE_URL, DEBUG_MODE } from '../../config/environment';
+import { API_BASE_URL } from '../../config/environment';
 import { vi } from 'vitest';
 import logger from '../../utils/logger';
 

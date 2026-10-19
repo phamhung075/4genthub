@@ -54,7 +54,7 @@ export const useParentTaskInfo = (parentTaskId: string): UseParentTaskInfoReturn
         }
 
         throw new Error('Invalid task data received');
-      } catch (err: any) {
+      } catch (err: unknown) {
         logger.error('[useParentTaskInfo] Error fetching parent task:', err);
 
         // Return fallback info on error

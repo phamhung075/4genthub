@@ -3,13 +3,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Alert, AlertDescription } from './ui/alert';
-import { 
-  Activity, 
-  Database, 
-  Layers, 
-  TrendingUp, 
-  AlertTriangle, 
-  CheckCircle, 
+import {
+  Activity,
+  Database,
+  Layers,
+  TrendingUp,
+  AlertTriangle,
+  CheckCircle,
   RefreshCw,
   Zap,
   Clock,
@@ -21,7 +21,10 @@ import logger from '../utils/logger';
 
 // Temporary stub for legacy api.get() calls
 const api = {
-  get: async (url: string) => ({ data: null })
+  get: async (url: string) => {
+    void url;
+    return { data: null };
+  }
 };
 
 // Types for performance data
@@ -105,7 +108,7 @@ const PerformanceDashboard: React.FC = () => {
         api.get('/api/v1/performance/metrics/overview?include_details=true'),
         api.get('/api/v1/performance/metrics/alerts')
       ]);
-      
+
       setMetrics(metricsResponse.data);
       setAlerts(alertsResponse.data);
       setLastUpdated(new Date());
@@ -358,7 +361,7 @@ const PerformanceDashboard: React.FC = () => {
             <div className="space-y-4">
               {Object.entries(metrics.metrics.caching).map(([cacheName, cacheData]) => {
                 if (typeof cacheData !== 'object' || !cacheData.hit_rate) return null;
-                
+
                 return (
                   <div key={cacheName} className="border rounded-lg p-4">
                     <div className="flex items-center justify-between mb-2">

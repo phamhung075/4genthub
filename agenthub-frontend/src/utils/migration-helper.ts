@@ -149,23 +149,23 @@ export const suggestLoggerReplacement = (consoleStatement: string): string => {
  * @deprecated Use logger directly instead
  */
 export const migrationConsole = {
-  log: (message: string, ...args: any[]) => {
+  log: (message: string, ...args: unknown[]) => {
     logger.info(message, { args, migration: true });
   },
 
-  info: (message: string, ...args: any[]) => {
+  info: (message: string, ...args: unknown[]) => {
     logger.info(message, { args, migration: true });
   },
 
-  warn: (message: string, ...args: any[]) => {
+  warn: (message: string, ...args: unknown[]) => {
     logger.warn(message, { args, migration: true });
   },
 
-  error: (message: string, ...args: any[]) => {
+  error: (message: string, ...args: unknown[]) => {
     logger.error(message, { args, migration: true });
   },
 
-  debug: (message: string, ...args: any[]) => {
+  debug: (message: string, ...args: unknown[]) => {
     logger.debug(message, { args, migration: true });
   }
 };

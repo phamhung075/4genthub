@@ -127,7 +127,7 @@ export interface TaskSummary {
   completed_subtasks?: number; // Number of completed subtasks
   dependency_count?: number; // Total number of dependencies
   dependencies?: string[]; // Array of dependency task IDs
-  subtasks?: any[]; // Array of subtask objects or IDs
+  subtasks?: unknown[]; // Array of subtask objects or IDs
 }
 
 /**
@@ -167,7 +167,7 @@ export interface TaskListBranchSummary {
     pending?: number;
     [key: string]: number | undefined;
   };
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 // ============================================
@@ -198,13 +198,13 @@ export type DialogType = TaskDialogType | SubtaskDialogType;
 export interface ActiveDialog {
   type: DialogType | null;
   taskId?: string;
-  data?: any;
+  data?: unknown;
 }
 
 export interface TaskActiveDialog {
   type: TaskDialogType | null;
   taskId?: string;
-  data?: any;
+  data?: unknown;
 }
 
 export interface DialogManagerState {
@@ -221,20 +221,20 @@ export interface TaskRowProps {
   summary: TaskSummary;
   isExpanded: boolean;
   isLoading: boolean;
-  fullTask: any; // Task from API
+  fullTask: unknown; // Task from API
   isHighlighted: boolean;
   isHovered: boolean;
   projectId: string;
   taskTreeId: string;
   isMobile: boolean;
   onToggleExpansion: () => void;
-  onOpenDialog: (type: string, taskId?: string, extraData?: any) => void;
+  onOpenDialog: (type: string, taskId?: string, extraData?: unknown) => void;
   onHover: (taskId: string | null) => void;
 }
 
 export interface TaskRowMobileProps {
   summary: TaskSummary;
-  fullTask: any; // Task from API
+  fullTask: unknown; // Task from API
   isHighlighted: boolean;
   isHovered: boolean;
   isExpanded: boolean;
@@ -242,7 +242,7 @@ export interface TaskRowMobileProps {
   projectId: string;
   taskTreeId: string;
   onToggleExpansion: () => void;
-  onOpenDialog: (type: string, taskId?: string, extraData?: any) => void;
+  onOpenDialog: (type: string, taskId?: string, extraData?: unknown) => void;
   onHover: (taskId: string | null) => void;
   elementRef: React.RefObject<HTMLDivElement | null>;
   animationClass?: string; // Fallback animation CSS class
@@ -250,7 +250,7 @@ export interface TaskRowMobileProps {
 
 export interface TaskRowDesktopProps {
   summary: TaskSummary;
-  fullTask: any; // Task from API
+  fullTask: unknown; // Task from API
   isHighlighted: boolean;
   isHovered: boolean;
   isExpanded: boolean;
@@ -258,7 +258,7 @@ export interface TaskRowDesktopProps {
   projectId: string;
   taskTreeId: string;
   onToggleExpansion: () => void;
-  onOpenDialog: (type: string, taskId?: string, extraData?: any) => void;
+  onOpenDialog: (type: string, taskId?: string, extraData?: unknown) => void;
   onHover: (taskId: string | null) => void;
   elementRef: React.RefObject<HTMLTableRowElement | null>;
   animationClass?: string; // Fallback animation CSS class
@@ -268,6 +268,6 @@ export interface TaskRowActionsProps {
   taskId: string;
   projectId: string;
   taskTreeId: string;
-  onOpenDialog: (type: string, taskId?: string, extraData?: any) => void;
+  onOpenDialog: (type: string, taskId?: string, extraData?: unknown) => void;
   variant?: 'mobile' | 'desktop';
 }

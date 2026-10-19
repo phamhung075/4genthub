@@ -121,6 +121,8 @@ export function useProjectAnimation(
     };
   }, [project.id, isMobile]);
 
+  const createdAt = project.created_at;
+
   // Mount-time animation check for newly created projects
   useEffect(() => {
     // KEPT SO THE EFFECT CAN CLEAR IT. This timer used to outlive the row: it fires
@@ -131,10 +133,10 @@ export function useProjectAnimation(
 
     // Only animate if project was created recently (within last 2 seconds)
     // This prevents ALL projects from animating when the list re-renders
-    if (project.created_at) {
-      const createdAt = new Date(project.created_at);
+    if (createdAt) {
+      const createdAtDate = new Date(createdAt);
       const now = new Date();
-      const ageInMs = now.getTime() - createdAt.getTime();
+      const ageInMs = now.getTime() - createdAtDate.getTime();
       const isNewProject = ageInMs < 2000; // Created within last 2 seconds
 
       if (isNewProject) {
@@ -148,7 +150,7 @@ export function useProjectAnimation(
     return () => {
       clearTimeout(timer);
     };
-  }, []); // Only run on mount
+  }, [createdAt, playCreateAnimation]);
 
   // NO prop-change update animation. The effect that used to sit here compared the
   // previous props and called playUpdateAnimation('websocket') - passing 'websocket'

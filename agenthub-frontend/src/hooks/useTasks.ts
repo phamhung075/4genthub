@@ -1,8 +1,15 @@
 // Custom hook for task management with React Query
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { completeTask, createTask, deleteTask, getTask, getTaskEvents, getTasks, updateTask } from '../api';
-import type { Task } from '../types/api.types';
+import type { Task, TasksResponse } from '../types/api.types';
 import logger from '../utils/logger';
+
+/** Optimistic-update snapshot carried from `onMutate` to `onError`/`onSuccess`. */
+type TaskMutationContext = {
+  previousTask?: Task;
+  previousTasks?: Task[];
+  git_branch_id?: string;
+};
 
 /**
  * Hook to fetch all tasks for a git branch with caching
@@ -17,7 +24,8 @@ export const useTasks = (git_branch_id: string | undefined) => {
 
       logger.debug('[useTasks] Fetching tasks for branch:', git_branch_id);
       const response = await getTasks(git_branch_id);
-      const tasks = response.tasks || [];
+      // `getTasks` is declared `Promise<unknown>` at the API boundary; its body is a TasksResponse.
+      const tasks = (response as TasksResponse).tasks || [];
       logger.debug('[useTasks] Fetched tasks:', tasks.length);
       return tasks;
     },
@@ -92,7 +100,7 @@ export const useTaskMutations = () => {
       logger.debug('[useTaskMutations] Creating task:', newTask);
       return await createTask(newTask);
     },
-    onMutate: async (newTask) => {
+    onMutate: async (newTask): Promise<TaskMutationContext> => {
       if (!newTask.git_branch_id) return {};
 
       // Cancel outgoing refetches
@@ -129,7 +137,7 @@ export const useTaskMutations = () => {
 
       return { previousTasks, git_branch_id: newTask.git_branch_id };
     },
-    onError: (err, _, context: any) => {
+    onError: (err, _, context) => {
       logger.error('[useTaskMutations] Create failed:', err);
       // Rollback on error
       if (context?.previousTasks && context?.git_branch_id) {
@@ -169,7 +177,7 @@ export const useTaskMutations = () => {
       logger.debug('[useTaskMutations] Updating task', { taskId, updates });
       return await updateTask(taskId, updates);
     },
-    onMutate: async ({ taskId, updates }) => {
+    onMutate: async ({ taskId, updates }): Promise<TaskMutationContext> => {
       await queryClient.cancelQueries({ queryKey: ['task', taskId] });
 
       const previousTask = queryClient.getQueryData<Task>(['task', taskId, false]);
@@ -220,7 +228,7 @@ export const useTaskMutations = () => {
 
       return { previousTask, previousTasks, git_branch_id };
     },
-    onError: (err, { taskId }, context: any) => {
+    onError: (err, { taskId }, context) => {
       logger.error('[useTaskMutations] Update failed:', err);
       if (context?.previousTask) {
         queryClient.setQueryData(['task', taskId, false], context.previousTask);
@@ -229,7 +237,7 @@ export const useTaskMutations = () => {
         queryClient.setQueryData(['tasks', context.git_branch_id], context.previousTasks);
       }
     },
-    onSuccess: (data, { taskId }, context: any) => {
+    onSuccess: (data, { taskId }, context) => {
       logger.debug('[useTaskMutations] Task updated:', data);
       // The response is not the only place the branch id can come from: the delete and complete
       // mutations in this file already take it from the mutation context, and onMutate has just
@@ -251,7 +259,7 @@ export const useTaskMutations = () => {
       await deleteTask(taskId);
       return taskId;
     },
-    onMutate: async (taskId) => {
+    onMutate: async (taskId): Promise<TaskMutationContext> => {
       const previousTask = queryClient.getQueryData<Task>(['task', taskId, false]);
       const git_branch_id = previousTask?.git_branch_id;
 
@@ -273,13 +281,13 @@ export const useTaskMutations = () => {
 
       return { previousTask, previousTasks, git_branch_id };
     },
-    onError: (err, _, context: any) => {
+    onError: (err, _, context) => {
       logger.error('[useTaskMutations] Delete failed:', err);
       if (context?.previousTasks && context?.git_branch_id) {
         queryClient.setQueryData(['tasks', context.git_branch_id], context.previousTasks);
       }
     },
-    onSuccess: (taskId, _, context: any) => {
+    onSuccess: (taskId, _, context) => {
       logger.debug('[useTaskMutations] Task deleted:', taskId);
       // Remove from cache and invalidate
       queryClient.removeQueries({ queryKey: ['task', taskId] });
@@ -303,7 +311,7 @@ export const useTaskMutations = () => {
       logger.debug('[useTaskMutations] Completing task:', taskId);
       return await completeTask(taskId, { completion_summary, testing_notes });
     },
-    onMutate: async ({ taskId }) => {
+    onMutate: async ({ taskId }): Promise<TaskMutationContext> => {
       await queryClient.cancelQueries({ queryKey: ['task', taskId] });
 
       const previousTask = queryClient.getQueryData<Task>(['task', taskId, false]);
@@ -340,7 +348,7 @@ export const useTaskMutations = () => {
 
       return { previousTask, previousTasks, git_branch_id };
     },
-    onError: (err, { taskId }, context: any) => {
+    onError: (err, { taskId }, context) => {
       logger.error('[useTaskMutations] Complete failed:', err);
       if (context?.previousTask) {
         queryClient.setQueryData(['task', taskId, false], context.previousTask);

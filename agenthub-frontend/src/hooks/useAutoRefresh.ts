@@ -7,7 +7,6 @@ import logger from '../utils/logger';
  */
 export function useAutoRefresh(
   refreshCallback: () => void,
-  dependencies: any[] = [],
   intervalMs: number = 5000 // Poll every 5 seconds
 ) {
   const intervalRef = useRef<NodeJS.Timeout | undefined>(undefined);
@@ -28,7 +27,7 @@ export function useAutoRefresh(
         clearInterval(intervalRef.current);
       }
     };
-  }, dependencies);
+  }, [refreshCallback, intervalMs]);
 
   // Manual refresh function
   const refresh = () => {

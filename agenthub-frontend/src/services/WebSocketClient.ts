@@ -193,8 +193,8 @@ export class WebSocketClient extends EventEmitter {
    * Merge multiple AI updates into single message with cascade deduplication
    */
   private mergeAIUpdates(updates: WSMessage[]): WSMessage {
-    const primaryUpdates: any[] = [];
-    const cascade: Record<string, any[]> = {
+    const primaryUpdates: unknown[] = [];
+    const cascade: Record<string, unknown[]> = {
       branches: [],
       tasks: [],
       projects: [],
@@ -235,10 +235,11 @@ export class WebSocketClient extends EventEmitter {
 
     // Deduplicate cascade data by ID
     Object.keys(cascade).forEach(key => {
-      const seen = new Set<string>();
-      cascade[key] = cascade[key].filter((item: any) => {
-        if (seen.has(item.id)) return false;
-        seen.add(item.id);
+      const seen = new Set<unknown>();
+      cascade[key] = cascade[key].filter((item: unknown) => {
+        const id = typeof item === 'object' && item !== null && 'id' in item ? item.id : undefined;
+        if (seen.has(id)) return false;
+        seen.add(id);
         return true;
       });
     });
@@ -423,6 +424,20 @@ export class WebSocketClient extends EventEmitter {
    */
   isConnected(): boolean {
     return this.ws !== null && this.ws.readyState === WebSocket.OPEN;
+  }
+
+  /**
+   * Whether a connection attempt is in flight
+   */
+  get isConnectingNow(): boolean {
+    return this.isConnecting;
+  }
+
+  /**
+   * The credentials this client was created with
+   */
+  get credentials(): { token: string; userId?: string } {
+    return { token: this.token, userId: this.userId };
   }
 
   /**

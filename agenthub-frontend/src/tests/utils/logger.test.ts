@@ -308,7 +308,7 @@ describe('ComprehensiveLogger', () => {
         batchInterval: 1000
       });
 
-      (global.fetch as any).mockResolvedValue({ ok: true });
+      (global.fetch as unknown).mockResolvedValue({ ok: true });
 
       logger.info('Message 1');
       logger.info('Message 2');
@@ -330,7 +330,7 @@ describe('ComprehensiveLogger', () => {
         batchSize: 1
       });
 
-      (global.fetch as any).mockRejectedValue(new Error('Network error'));
+      (global.fetch as unknown).mockRejectedValue(new Error('Network error'));
 
       // Should not throw
       logger.info('Message despite network error');
@@ -346,7 +346,7 @@ describe('ComprehensiveLogger', () => {
         remoteEndpoint: 'https://api.example.com/logs'
       });
 
-      (global.fetch as any).mockResolvedValue({ ok: true });
+      (global.fetch as unknown).mockResolvedValue({ ok: true });
 
       logger.error('Error that should flush immediately');
 
@@ -592,7 +592,7 @@ describe('ComprehensiveLogger', () => {
 
   describe('edge cases', () => {
     it('should handle circular references in data', () => {
-      const circular: any = { a: 1 };
+      const circular: unknown = { a: 1 };
       circular.self = circular;
 
       // Should not throw

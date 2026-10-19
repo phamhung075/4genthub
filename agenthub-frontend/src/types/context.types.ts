@@ -18,12 +18,12 @@ export type {
 // =============================================================================
 
 export interface GlobalContext {
-  [key: string]: any;
-  organization_standards?: Record<string, any>;
-  compliance_requirements?: Record<string, any>;
-  shared_resources?: Record<string, any>;
-  reusable_patterns?: Record<string, any>;
-  global_preferences?: Record<string, any>;
+  [key: string]: unknown;
+  organization_standards?: Record<string, unknown>;
+  compliance_requirements?: Record<string, unknown>;
+  shared_resources?: Record<string, unknown>;
+  reusable_patterns?: Record<string, unknown>;
+  global_preferences?: Record<string, unknown>;
 }
 
 // =============================================================================

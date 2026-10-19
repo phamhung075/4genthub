@@ -17,7 +17,7 @@ vi.mock('../../hooks/useAuth', () => ({
   })
 }));
 vi.mock('date-fns', () => ({
-  format: vi.fn((date) => 'formatted-date'),
+  format: vi.fn(() => 'formatted-date'),
 }));
 
 const mockTokenService = vi.mocked(tokenService);

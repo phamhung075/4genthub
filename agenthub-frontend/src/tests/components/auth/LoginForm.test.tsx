@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from './../../test-utils';
+import { render, screen, waitFor } from './../../test-utils';
 import { LoginForm } from '../../../components/auth/LoginForm';
 import { useAuth } from '../../../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
@@ -33,8 +33,8 @@ describe('LoginForm', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    (useAuth as any).mockReturnValue({ login: mockLogin });
-    (useNavigate as any).mockReturnValue(mockNavigate);
+    (useAuth as unknown).mockReturnValue({ login: mockLogin });
+    (useNavigate as unknown).mockReturnValue(mockNavigate);
   });
 
   // The user lands on this form when a stored token cannot form a session; the reason comes from

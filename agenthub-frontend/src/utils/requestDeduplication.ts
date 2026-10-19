@@ -4,7 +4,7 @@
 import logger from './logger';
 
 interface PendingRequest {
-  promise: Promise<any>;
+  promise: Promise<unknown>;
   timestamp: number;
   callers: string[];
 }
@@ -18,7 +18,7 @@ const DEDUPLICATION_TIMEOUT = 500; // 500ms window for deduplication
 /**
  * Generate a unique key for a request based on URL and method
  */
-function generateRequestKey(url: string, method: string = 'GET', body?: any): string {
+function generateRequestKey(url: string, method: string = 'GET', body?: unknown): string {
   const bodyHash = body ? JSON.stringify(body) : '';
   return `${method}:${url}:${bodyHash}`;
 }
@@ -60,7 +60,7 @@ function cleanupExpiredRequests(): void {
 export function deduplicateRequest<T>(
   url: string,
   method: string = 'GET',
-  body?: any,
+  body?: unknown,
   requestExecutor?: () => Promise<T>
 ): Promise<T> | null {
   const key = generateRequestKey(url, method, body);
@@ -86,7 +86,9 @@ export function deduplicateRequest<T>(
     // Add this caller to the list
     existingRequest.callers.push(caller);
 
-    return existingRequest.promise;
+    // The stored promise belongs to a request with the same key, so it resolves with the
+    // same T the caller would have produced; the map cannot carry that generic per entry.
+    return existingRequest.promise as Promise<T>;
   }
 
   // No existing request, check if we have a request executor
@@ -124,7 +126,7 @@ export function deduplicateRequest<T>(
 /**
  * Check if a request is currently pending
  */
-export function isRequestPending(url: string, method: string = 'GET', body?: any): boolean {
+export function isRequestPending(url: string, method: string = 'GET', body?: unknown): boolean {
   const key = generateRequestKey(url, method, body);
   const request = pendingRequests.get(key);
 
@@ -194,7 +196,7 @@ export function invalidateRequestCache(url: string, method: string = 'GET'): voi
 // Make stats available globally for debugging
 declare global {
   interface Window {
-    getRequestDeduplicationStats: () => any;
+    getRequestDeduplicationStats: () => unknown;
     clearRequestDeduplicationCache: () => void;
     invalidateRequestCache: (url: string, method?: string) => void;
   }

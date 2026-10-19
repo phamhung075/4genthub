@@ -25,7 +25,7 @@ export const TopologySeatsTable: React.FC<{ rooms: RoomTopology[] }> = ({ rooms 
   );
 
   if (rows.length === 0) {
-    return <p className="p-4 text-sm text-base-secondary">No seats in any room yet.</p>;
+    return <p className="p-4 text-sm text-base-secondary">No seats in unknown room yet.</p>;
   }
 
   return (

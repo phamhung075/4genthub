@@ -11,13 +11,20 @@
 // - Console usage here is for critical startup configuration errors/warnings only
 
 // Helper to get runtime environment variable if available, fallback to build-time
+type RuntimeEnvWindow = Window & { _env_?: Record<string, string> };
+
+function getRuntimeEnv(): Record<string, string> | undefined {
+  if (typeof window === 'undefined') return undefined;
+  return (window as RuntimeEnvWindow)._env_;
+}
+
 function getEnvVar(key: string, defaultValue: string = ''): string {
   // Check runtime config first (injected by Docker at startup)
-  if (typeof window !== 'undefined' && (window as any)._env_ && (window as any)._env_[key]) {
-    const value = (window as any)._env_[key];
+  const runtimeValue = getRuntimeEnv()?.[key];
+  if (runtimeValue) {
     // Ignore placeholder values and use runtime value if valid
-    if (!value.startsWith('__') && !value.endsWith('__')) {
-      return value;
+    if (!runtimeValue.startsWith('__') && !runtimeValue.endsWith('__')) {
+      return runtimeValue;
     }
   }
 
@@ -137,7 +144,7 @@ if (IS_DEVELOPMENT || DEBUG_MODE) {
     console.warn('⚠️ CRITICAL: WebSocket URL is not configured! Real-time features will not work.');
     console.warn('💡 Fix: Set VITE_WS_URL environment variable or ensure API_BASE_URL is set for auto-derivation');
     console.warn('🚨 DEBUG: Environment variable access test:');
-    console.warn('  - window._env_:', typeof window !== 'undefined' ? (window as any)._env_ : 'not available');
+    console.warn('  - window._env_:', getRuntimeEnv() ?? 'not available');
     console.warn('  - import.meta.env.VITE_WS_URL:', import.meta.env.VITE_WS_URL);
     console.warn('  - import.meta.env:', import.meta.env);
   }

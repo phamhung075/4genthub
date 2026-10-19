@@ -6,8 +6,8 @@ import React from 'react';
 
 interface ClickableAssigneesProps {
   assignees: string[];
-  task: any;
-  onAgentClick: (agentName: string, task: any) => void;
+  task: unknown;
+  onAgentClick: (agentName: string, task: unknown) => void;
   variant?: "default" | "secondary" | "destructive" | "outline";
   className?: string;
   showAsString?: boolean;

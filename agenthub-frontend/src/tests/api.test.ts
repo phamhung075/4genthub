@@ -93,7 +93,6 @@ const {
   projectApiV2,
   branchApiV2,
   contextApiV2,
-  connectionApiV2,
 } = vi.mocked(apiV2, { deep: true });
 
 describe('API V2 Module', () => {
@@ -925,11 +924,11 @@ describe('API V2 Module', () => {
       const seat = (seat_key: string) => ({ seat_key });
 
       it('offers the seat keys of every room as @-prefixed assignees', async () => {
-        vi.mocked(seatApi.listRooms).mockResolvedValue({ success: true, rooms: [room('dev'), room('ops')] } as any);
+        vi.mocked(seatApi.listRooms).mockResolvedValue({ success: true, rooms: [room('dev'), room('ops')] } as unknown);
         vi.mocked(seatApi.listSeats).mockImplementation(async (slug: string) => ({
           success: true,
           seats: slug === 'dev' ? [seat('lead'), seat('go-dev')] : [seat('reviewer')],
-        }) as any);
+        }) as unknown);
 
         const result = await getAvailableAgents();
 
@@ -939,14 +938,14 @@ describe('API V2 Module', () => {
       });
 
       it('lists a seat key used in several rooms once', async () => {
-        vi.mocked(seatApi.listRooms).mockResolvedValue({ success: true, rooms: [room('a'), room('b')] } as any);
-        vi.mocked(seatApi.listSeats).mockResolvedValue({ success: true, seats: [seat('lead')] } as any);
+        vi.mocked(seatApi.listRooms).mockResolvedValue({ success: true, rooms: [room('a'), room('b')] } as unknown);
+        vi.mocked(seatApi.listSeats).mockResolvedValue({ success: true, seats: [seat('lead')] } as unknown);
 
         expect(await getAvailableAgents()).toEqual(['@lead']);
       });
 
       it('returns nothing for a user without rooms', async () => {
-        vi.mocked(seatApi.listRooms).mockResolvedValue({ success: true, rooms: [] } as any);
+        vi.mocked(seatApi.listRooms).mockResolvedValue({ success: true, rooms: [] } as unknown);
 
         expect(await getAvailableAgents()).toEqual([]);
         expect(seatApi.listSeats).not.toHaveBeenCalled();

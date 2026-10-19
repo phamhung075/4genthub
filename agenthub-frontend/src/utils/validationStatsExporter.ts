@@ -7,6 +7,19 @@ import { ValidationStats } from './responseValidator';
 import { WSValidationStats } from './websocketValidator';
 import logger from './logger';
 
+declare global {
+  interface Window {
+    __validationUtils?: {
+      getReport: typeof generateValidationReport;
+      exportJSON: typeof exportValidationReportJSON;
+      exportMarkdown: typeof exportValidationReportMarkdown;
+      download: typeof downloadValidationReport;
+      log: typeof logValidationReport;
+      reset: typeof resetValidationStats;
+    };
+  }
+}
+
 export interface ValidationReport {
   timestamp: string;
   apiValidation: ReturnType<typeof ValidationStats.getStats>;
@@ -186,7 +199,7 @@ export function resetValidationStats() {
 
 // Make utilities available globally in development
 if (import.meta.env.DEV) {
-  (window as any).__validationUtils = {
+  window.__validationUtils = {
     getReport: generateValidationReport,
     exportJSON: exportValidationReportJSON,
     exportMarkdown: exportValidationReportMarkdown,

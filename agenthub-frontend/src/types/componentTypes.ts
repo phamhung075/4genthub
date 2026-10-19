@@ -4,6 +4,7 @@
  */
 
 import { Task, Subtask } from '../api';
+import type { BranchLike } from './api.types';
 
 // ========================================
 // COMPONENT PROPS INTERFACES
@@ -61,7 +62,7 @@ export interface AuthContextType {
 /**
  * Input component props extending React HTML input attributes
  */
-export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {}
+export type InputProps = React.InputHTMLAttributes<HTMLInputElement>;
 
 /**
  * Badge component props
@@ -142,11 +143,11 @@ export interface ProjectListContentProps {
   onToggleProject: (projectId: string) => void;
   onSelectBranch?: (projectId: string, branchId: string) => void;
   onShowProjectDetails?: (project: Project) => void;
-  onShowBranchDetails?: (project: Project, branch: any) => void;
+  onShowBranchDetails?: (project: Project, branch: BranchLike) => void;
   onCreateBranch: (project: Project) => void;
   onEditProject: (project: Project) => void;
   onDeleteProject: (project: Project) => void;
-  onDeleteBranch: (dialogState: { project: Project; branch: any }) => void;
+  onDeleteBranch: (dialogState: { project: Project; branch: BranchLike }) => void;
 }
 
 /**
@@ -154,7 +155,7 @@ export interface ProjectListContentProps {
  */
 export interface DeleteBranchDialogState {
   project: Project;
-  branch: any;
+  branch: unknown;
 }
 
 /**

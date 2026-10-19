@@ -18,7 +18,7 @@ import type { TaskSummary } from '../../../../types/taskTypes';
 
 // Mock dependencies
 vi.mock('../../../../components/ui/badge', () => ({
-  Badge: ({ children, variant, className, title }: any) => (
+  Badge: ({ children, variant, className, title }: unknown) => (
     <span data-testid="badge" data-variant={variant} className={className} title={title}>
       {children}
     </span>
@@ -26,7 +26,7 @@ vi.mock('../../../../components/ui/badge', () => ({
 }));
 
 vi.mock('../../../../components/ui/button', () => ({
-  Button: ({ children, onClick, disabled, variant, size, className }: any) => (
+  Button: ({ children, onClick, disabled, variant, size, className }: unknown) => (
     <button
       onClick={onClick}
       disabled={disabled}
@@ -40,12 +40,12 @@ vi.mock('../../../../components/ui/button', () => ({
 }));
 
 vi.mock('../../../../components/ui/holographic-badges', () => ({
-  HolographicStatusBadge: ({ status, size }: any) => (
+  HolographicStatusBadge: ({ status, size }: unknown) => (
     <span data-testid="status-badge" data-status={status} data-size={size}>
       {status}
     </span>
   ),
-  HolographicPriorityBadge: ({ priority, size }: any) => (
+  HolographicPriorityBadge: ({ priority, size }: unknown) => (
     <span data-testid="priority-badge" data-priority={priority} data-size={size}>
       {priority}
     </span>
@@ -57,7 +57,7 @@ vi.mock('../../../../components/ui/ProgressDisplay', () => ({
 }));
 
 vi.mock('../../../../components/ClickableAssignees', () => ({
-  default: ({ assignees }: any) => (
+  default: ({ assignees }: unknown) => (
     <div data-testid="assignees">
       {assignees.join(', ')}
     </div>
@@ -97,7 +97,7 @@ describe('TaskRowMobile - Phase 1 Count Calculations', () => {
     assignees: ['coding-agent', 'test-agent'],
     has_dependencies: true,
     dependencies: ['dep-1', 'dep-2', 'dep-3'],
-    subtasks: [{ id: 'sub-1' }, { id: 'sub-2' }] as any
+    subtasks: [{ id: 'sub-1' }, { id: 'sub-2' }] as unknown
   };
 
   const defaultProps = {
@@ -112,7 +112,7 @@ describe('TaskRowMobile - Phase 1 Count Calculations', () => {
     onToggleExpansion: vi.fn(),
     onOpenDialog: vi.fn(),
     onHover: vi.fn(),
-    elementRef: { current: null } as any,
+    elementRef: { current: null } as unknown,
     animationClass: ''
   };
 
@@ -147,7 +147,7 @@ describe('TaskRowMobile - Phase 1 Count Calculations', () => {
       const fullTask = {
         ...mockSummary,
         subtasks: [{ id: 'sub-1' }, { id: 'sub-2' }, { id: 'sub-3' }]
-      } as any;
+      } as unknown;
 
       render(
         <TaskRowMobile {...defaultProps} fullTask={fullTask} />
@@ -162,7 +162,7 @@ describe('TaskRowMobile - Phase 1 Count Calculations', () => {
       const fullTask = {
         ...mockSummary,
         subtasks: []
-      } as any;
+      } as unknown;
 
       render(
         <TaskRowMobile {...defaultProps} fullTask={fullTask} />
@@ -176,7 +176,7 @@ describe('TaskRowMobile - Phase 1 Count Calculations', () => {
       const fullTask = {
         ...mockSummary,
         subtasks: undefined
-      } as any;
+      } as unknown;
 
       render(
         <TaskRowMobile {...defaultProps} fullTask={fullTask} />
@@ -190,7 +190,7 @@ describe('TaskRowMobile - Phase 1 Count Calculations', () => {
       const fullTask = {
         ...mockSummary,
         subtasks: null
-      } as any;
+      } as unknown;
 
       render(
         <TaskRowMobile {...defaultProps} fullTask={fullTask} />
@@ -206,7 +206,7 @@ describe('TaskRowMobile - Phase 1 Count Calculations', () => {
       const fullTask = {
         ...mockSummary,
         dependencies: ['dep-1', 'dep-2', 'dep-3', 'dep-4']
-      } as any;
+      } as unknown;
 
       render(
         <TaskRowMobile {...defaultProps} fullTask={fullTask} />
@@ -221,7 +221,7 @@ describe('TaskRowMobile - Phase 1 Count Calculations', () => {
       const fullTask = {
         ...mockSummary,
         dependencies: ['dep-1']
-      } as any;
+      } as unknown;
 
       render(
         <TaskRowMobile {...defaultProps} fullTask={fullTask} />
@@ -250,7 +250,7 @@ describe('TaskRowMobile - Phase 1 Count Calculations', () => {
       const fullTask = {
         ...mockSummary,
         dependencies: undefined
-      } as any;
+      } as unknown;
 
       render(
         <TaskRowMobile {...defaultProps} fullTask={fullTask} />
@@ -288,7 +288,7 @@ describe('TaskRowMobile - Phase 1 Count Calculations', () => {
     it('should handle undefined assignees', () => {
       const summaryNoAssignees = {
         ...mockSummary,
-        assignees: undefined as any
+        assignees: undefined as unknown
       };
 
       render(
@@ -333,7 +333,7 @@ describe('TaskRowMobile - Phase 1 Count Calculations', () => {
       const fullTask = {
         ...mockSummary,
         subtasks: [{ id: 'sub-1' }]
-      } as any;
+      } as unknown;
 
       render(
         <TaskRowMobile
@@ -350,7 +350,7 @@ describe('TaskRowMobile - Phase 1 Count Calculations', () => {
       const fullTask = {
         ...mockSummary,
         subtasks: [{ id: 'sub-1' }]
-      } as any;
+      } as unknown;
 
       render(
         <TaskRowMobile

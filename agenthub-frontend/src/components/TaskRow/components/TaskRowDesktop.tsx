@@ -10,6 +10,7 @@ import LazySubtaskList from '../../LazySubtaskList';
 import { TaskRowActions } from './TaskRowActions';
 import { TaskCopyButtons } from './TaskCopyButtons';
 import { TaskRowDesktopProps } from '../../../types/taskTypes';
+import type { ProgressState, Task } from '../../../types';
 import { useTaskRowState } from '../hooks/useTaskRowState';
 
 // CSS classes are now global (defined in src/styles/task-animations.css)
@@ -40,9 +41,19 @@ export const TaskRowDesktop: React.FC<TaskRowDesktopProps> = ({
 
   const { getBaseClasses } = useTaskRowState();
 
+  // `TaskRowDesktopProps.fullTask` is widened to `unknown` at the shared type boundary; the row is
+  // only ever handed a full Task (or null) by the list.
+  const task = fullTask as Task | null;
+
   // Use subtask_count from summary (from backend), fallback to fullTask array
-  const subtaskCount = summary.subtask_count ?? fullTask?.subtasks?.length ?? 0;
-  const dependencyCount = summary.dependency_count ?? fullTask?.dependencies?.length ?? 0;
+  const subtaskCount = summary.subtask_count ?? task?.subtasks?.length ?? 0;
+  const dependencyCount = summary.dependency_count ?? task?.dependencies?.length ?? 0;
+
+  // Badges render a fixed set of wire strings; TaskSummary keeps the raw string.
+  const status = summary.status as React.ComponentProps<typeof HolographicStatusBadge>['status'];
+  const priority = summary.priority as React.ComponentProps<typeof HolographicPriorityBadge>['priority'];
+  // `Task.progress_state` is `unknown` on the wire; the display derives it when absent.
+  const progressState = task?.progress_state as ProgressState | undefined;
 
   // Combine animation classes with loading state
   const loadingClass = isLoading ? 'loading' : '';
@@ -101,10 +112,10 @@ export const TaskRowDesktop: React.FC<TaskRowDesktopProps> = ({
               )}
             </div>
             <ProgressDisplayEnhanced
-              status={fullTask?.status || summary.status}
-              progressPercentage={fullTask?.progress_percentage}
-              progressState={fullTask?.progress_state}
-              progressHistory={fullTask?.details}
+              status={task?.status || summary.status}
+              progressPercentage={task?.progress_percentage}
+              progressState={progressState}
+              progressHistory={task?.details}
               size="sm"
               variant="compact"
               showLabels={false}
@@ -117,12 +128,12 @@ export const TaskRowDesktop: React.FC<TaskRowDesktopProps> = ({
 
         {/* Status */}
         <TableCell className="hidden sm:table-cell">
-          <HolographicStatusBadge status={summary.status as any} size="sm" />
+          <HolographicStatusBadge status={status} size="sm" />
         </TableCell>
 
         {/* Priority */}
         <TableCell className="hidden md:table-cell">
-          <HolographicPriorityBadge priority={summary.priority as any} size="sm" />
+          <HolographicPriorityBadge priority={priority} size="sm" />
         </TableCell>
 
         {/* Dependencies */}
@@ -145,7 +156,7 @@ export const TaskRowDesktop: React.FC<TaskRowDesktopProps> = ({
           {summary.assignees && summary.assignees.length > 0 ? (
             <ClickableAssignees
               assignees={summary.assignees}
-              task={fullTask || summary as any}
+              task={task ?? (summary as Task)}
               variant="secondary"
               className=""
               compact={true}
@@ -168,7 +179,7 @@ export const TaskRowDesktop: React.FC<TaskRowDesktopProps> = ({
       </TableRow>
 
       {/* Always show LazySubtaskList when expanded */}
-      {isExpanded && fullTask && (
+      {isExpanded && task && (
         <TableRow className="theme-context-section">
           <TableCell colSpan={7} className="p-0">
             <div className="border-blue-400 dark:border-blue-600 ml-8">

@@ -69,7 +69,6 @@ const getPriorityColor = (priority: string) => {
 };
 
 export const TaskSearch: React.FC<TaskSearchProps> = ({
-  projectId: _projectId, // Currently unused but kept for compatibility
   taskTreeId,
   onTaskSelect,
   onSubtaskSelect
@@ -153,7 +152,9 @@ export const TaskSearch: React.FC<TaskSearchProps> = ({
 
   // Debounced search
   const debouncedSearch = useMemo(
-    () => debounce((query: string) => performSearch(query), 300),
+    () => debounce((query: unknown) => {
+      if (typeof query === 'string') void performSearch(query);
+    }, 300),
     [performSearch]
   );
 

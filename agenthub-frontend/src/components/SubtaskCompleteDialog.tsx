@@ -2,22 +2,25 @@ import React, { useState } from "react";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Check, FileText } from "lucide-react";
+import type { Subtask } from "../types";
 import { useSubtaskMutations } from "../hooks/useSubtasks";
 
 interface SubtaskCompleteDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  subtask: any | null;
+  subtask: Subtask | null;
   parentTaskId: string;
   onClose: () => void;
-  onComplete: (subtask: any) => void;
+  onComplete: (subtask: Subtask) => void;
 }
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
 
 export const SubtaskCompleteDialog: React.FC<SubtaskCompleteDialogProps> = ({
   open,
   onOpenChange,
   subtask,
-  parentTaskId,
   onClose,
   onComplete,
 }) => {
@@ -95,12 +98,14 @@ export const SubtaskCompleteDialog: React.FC<SubtaskCompleteDialogProps> = ({
       } else {
         console.error('[SubtaskCompleteDialog] Result is null/undefined - API call might have failed silently');
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       // Error is handled by the mutation hook and displayed in UI
+      const errorRecord = isRecord(e) ? e : undefined;
+      const errorResponse = errorRecord && isRecord(errorRecord.response) ? errorRecord.response : undefined;
       console.error('[SubtaskCompleteDialog] Failed to complete subtask:', {
         error: e,
-        message: e?.message,
-        response: e?.response?.data
+        message: errorRecord?.message,
+        response: errorResponse?.data
       });
       // Don't close dialog - let user see the error and retry
     }
@@ -137,7 +142,7 @@ export const SubtaskCompleteDialog: React.FC<SubtaskCompleteDialogProps> = ({
         <DialogHeader>
           <DialogTitle>Complete Subtask</DialogTitle>
         </DialogHeader>
-        
+
         <div className="space-y-4">
           {/* Subtask Information */}
           <div className="bg-muted/50 dark:bg-muted/30 p-3 rounded border border-border">
@@ -236,7 +241,7 @@ export const SubtaskCompleteDialog: React.FC<SubtaskCompleteDialogProps> = ({
             </div>
           )}
         </div>
-        
+
         <DialogFooter>
           <Button variant="outline" onClick={handleCancel} disabled={isCompleting || isCompleted}>
             Cancel

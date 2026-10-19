@@ -3,7 +3,7 @@
 // ============================================
 
 import type { SubtaskSummary } from "./taskTypes";
-import type { AnimationCallbacks, SubtaskAnimationState } from "./animationTypes";
+import type { AnimationCallbacks } from "./animationTypes";
 
 /**
  * Main props for LazySubtaskList component
@@ -51,7 +51,7 @@ export interface DeleteDialogState {
 export interface ActiveDialogState {
   type: 'details' | 'edit' | 'complete' | null;
   subtaskId?: string;
-  subtask?: any; // Subtask from API
+  subtask?: unknown; // Subtask from API
 }
 
 /**
@@ -59,7 +59,7 @@ export interface ActiveDialogState {
  */
 export interface DetailsDialogState {
   open: boolean;
-  subtask: any | null; // Subtask from API
+  subtask: unknown | null; // Subtask from API
 }
 
 /**
@@ -67,7 +67,7 @@ export interface DetailsDialogState {
  */
 export interface SubtaskDataState {
   subtaskSummaries: SubtaskSummary[];
-  fullSubtasks: Map<string, any>; // Map of Subtask from API
+  fullSubtasks: Map<string, unknown>; // Map of Subtask from API
   loading: boolean;
   error: string | null;
   loadingSubtasks: Set<string>;
@@ -82,7 +82,7 @@ export interface SubtaskExpansionState {
   previousSubtaskIds: Set<string>;
   animationTriggers: AnimationTriggers;
   isOpeningDialog: boolean;
-  editingSubtask: any | null; // Subtask from API
+  editingSubtask: unknown | null; // Subtask from API
   showDetails: string | null;
 }
 
@@ -101,7 +101,7 @@ export interface DialogState {
  */
 export interface SubtaskChangePayload {
   type: 'created' | 'updated' | 'deleted';
-  subtask: any | SubtaskSummary; // Subtask from API or summary
+  subtask: unknown | SubtaskSummary; // Subtask from API or summary
   timestamp: string;
 }
 
@@ -132,9 +132,9 @@ export interface SubtaskListConfig {
  */
 export interface UseSubtaskDataReturn extends SubtaskDataState {
   loadSubtaskSummaries: () => Promise<void>;
-  loadFullSubtasksFallback: () => Promise<Map<string, any>>; // Map of Subtask from API
-  loadSubtaskById: (subtaskId: string) => Promise<any | null>; // Load individual subtask
-  handleSubtaskCreated: (newSubtask: any) => void; // Subtask from API
+  loadFullSubtasksFallback: () => Promise<Map<string, unknown>>; // Map of Subtask from API
+  loadSubtaskById: (subtaskId: string) => Promise<unknown | null>; // Load individual subtask
+  handleSubtaskCreated: (newSubtask: unknown) => void; // Subtask from API
   refreshData: () => Promise<void>;
 }
 
@@ -181,22 +181,22 @@ export interface UseSubtaskExpansionReturn extends SubtaskExpansionState {
   unregisterRowCallbacks: (subtaskId: string) => void;
   triggerAnimation: (subtaskId: string, type: 'create' | 'update' | 'delete') => void;
   setShowDetails: (subtaskId: string | null) => void;
-  setEditingSubtask: (subtask: any | null) => void; // Subtask from API
+  setEditingSubtask: (subtask: unknown | null) => void; // Subtask from API
   setIsOpeningDialog: (opening: boolean) => void;
 }
 
 export interface UseSubtaskDialogsReturn extends DialogState {
   handleSubtaskDialogClose: () => void;
   handleOpenCreateSubtask: () => void;
-  openDetailsDialog: (subtask: any) => void; // Subtask from API
-  openEditDialog: (subtask: any) => void; // Subtask from API
-  openCompleteDialog: (subtask: any) => void; // Subtask from API
+  openDetailsDialog: (subtask: unknown) => void; // Subtask from API
+  openEditDialog: (subtask: unknown) => void; // Subtask from API
+  openCompleteDialog: (subtask: unknown) => void; // Subtask from API
   openDeleteDialog: (subtaskId: string) => void;
   closeDeleteDialog: () => void;
   closeDetailsDialog: () => void;
   closeCreateSubtaskDialog: () => void;
   closeAllDialogs: () => void;
-  handleDialogAction: (action: 'details' | 'edit' | 'complete', subtaskId: string, subtask?: any) => void;
+  handleDialogAction: (action: 'details' | 'edit' | 'complete', subtaskId: string, subtask?: unknown) => void;
   setActiveDialog: React.Dispatch<React.SetStateAction<ActiveDialogState>>;
   hasOpenDialog: boolean;
   isClosingRef: React.MutableRefObject<boolean>; // Ref to prevent race condition on close
@@ -208,7 +208,7 @@ export interface UseSubtaskDialogsReturn extends DialogState {
 
 export interface SubtaskRowProps {
   summary: SubtaskSummary;
-  fullSubtask: any | null; // Full Subtask from API
+  fullSubtask: unknown | null; // Full Subtask from API
   isLoading: boolean;
   showDetails: boolean;
   parentTaskId: string;

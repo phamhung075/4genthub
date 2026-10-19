@@ -21,94 +21,94 @@ export interface ContextMetadata {
   task_id?: string; // Only included in standalone context responses, omitted when embedded
   priority?: string; // Only included in standalone context responses, omitted when embedded
   timestamp?: string; // Only included in standalone context responses, omitted when embedded
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 // New context structures based on CONTEXT_DATA_MODELS.md
 export interface GlobalContextData {
-  organization_standards?: Record<string, any>;
-  compliance_requirements?: Record<string, any>;
-  shared_resources?: Record<string, any>;
-  reusable_patterns?: Record<string, any>;
-  global_preferences?: Record<string, any>;
-  [key: string]: any;
+  organization_standards?: Record<string, unknown>;
+  compliance_requirements?: Record<string, unknown>;
+  shared_resources?: Record<string, unknown>;
+  reusable_patterns?: Record<string, unknown>;
+  global_preferences?: Record<string, unknown>;
+  [key: string]: unknown;
 }
 
 export interface ProjectContextData {
-  project_info?: Record<string, any>;
-  team_preferences?: Record<string, any>;
-  technology_stack?: Record<string, any>;
-  project_workflow?: Record<string, any>;
-  local_standards?: Record<string, any>;
-  project_settings?: Record<string, any>;
-  technical_specifications?: Record<string, any>;
-  [key: string]: any;
+  project_info?: Record<string, unknown>;
+  team_preferences?: Record<string, unknown>;
+  technology_stack?: Record<string, unknown>;
+  project_workflow?: Record<string, unknown>;
+  local_standards?: Record<string, unknown>;
+  project_settings?: Record<string, unknown>;
+  technical_specifications?: Record<string, unknown>;
+  [key: string]: unknown;
 }
 
 export interface BranchContextData {
-  branch_info?: Record<string, any>;
-  branch_workflow?: Record<string, any>;
-  feature_flags?: Record<string, any>;
-  discovered_patterns?: Record<string, any>;
-  branch_decisions?: Record<string, any>;
-  branch_settings?: Record<string, any>;
-  active_patterns?: Record<string, any>;
-  local_overrides?: Record<string, any>;
-  delegation_rules?: Record<string, any>;
-  [key: string]: any;
+  branch_info?: Record<string, unknown>;
+  branch_workflow?: Record<string, unknown>;
+  feature_flags?: Record<string, unknown>;
+  discovered_patterns?: Record<string, unknown>;
+  branch_decisions?: Record<string, unknown>;
+  branch_settings?: Record<string, unknown>;
+  active_patterns?: Record<string, unknown>;
+  local_overrides?: Record<string, unknown>;
+  delegation_rules?: Record<string, unknown>;
+  [key: string]: unknown;
 }
 
 export interface TaskContextData {
-  task_data?: Record<string, any>;
-  execution_context?: Record<string, any>;
-  discovered_patterns?: Record<string, any>;
-  implementation_notes?: Record<string, any>;
-  test_results?: Record<string, any>;
-  blockers?: Record<string, any>;
-  local_decisions?: Record<string, any>;
-  delegation_queue?: Record<string, any>;
-  local_overrides?: Record<string, any>;
-  delegation_triggers?: Record<string, any>;
-  [key: string]: any;
+  task_data?: Record<string, unknown>;
+  execution_context?: Record<string, unknown>;
+  discovered_patterns?: Record<string, unknown>;
+  implementation_notes?: Record<string, unknown>;
+  test_results?: Record<string, unknown>;
+  blockers?: Record<string, unknown>;
+  local_decisions?: Record<string, unknown>;
+  delegation_queue?: Record<string, unknown>;
+  local_overrides?: Record<string, unknown>;
+  delegation_triggers?: Record<string, unknown>;
+  [key: string]: unknown;
 }
 
 export interface ContextData {
   progress?: ContextProgress;
   metadata?: ContextMetadata;
   // Support all context level structures - Global Context
-  organization_standards?: Record<string, any>;
-  compliance_requirements?: Record<string, any>;
-  shared_resources?: Record<string, any>;
-  reusable_patterns?: Record<string, any>;
-  global_preferences?: Record<string, any>;
+  organization_standards?: Record<string, unknown>;
+  compliance_requirements?: Record<string, unknown>;
+  shared_resources?: Record<string, unknown>;
+  reusable_patterns?: Record<string, unknown>;
+  global_preferences?: Record<string, unknown>;
   // Project Context
-  project_info?: Record<string, any>;
-  team_preferences?: Record<string, any>;
-  technology_stack?: Record<string, any>;
-  project_workflow?: Record<string, any>;
-  local_standards?: Record<string, any>;
-  project_settings?: Record<string, any>;
-  technical_specifications?: Record<string, any>;
+  project_info?: Record<string, unknown>;
+  team_preferences?: Record<string, unknown>;
+  technology_stack?: Record<string, unknown>;
+  project_workflow?: Record<string, unknown>;
+  local_standards?: Record<string, unknown>;
+  project_settings?: Record<string, unknown>;
+  technical_specifications?: Record<string, unknown>;
   // Branch Context
-  branch_info?: Record<string, any>;
-  branch_workflow?: Record<string, any>;
-  feature_flags?: Record<string, any>;
-  discovered_patterns?: Record<string, any>;
-  branch_decisions?: Record<string, any>;
-  branch_settings?: Record<string, any>;
-  active_patterns?: Record<string, any>;
-  local_overrides?: Record<string, any>;
-  delegation_rules?: Record<string, any>;
+  branch_info?: Record<string, unknown>;
+  branch_workflow?: Record<string, unknown>;
+  feature_flags?: Record<string, unknown>;
+  discovered_patterns?: Record<string, unknown>;
+  branch_decisions?: Record<string, unknown>;
+  branch_settings?: Record<string, unknown>;
+  active_patterns?: Record<string, unknown>;
+  local_overrides?: Record<string, unknown>;
+  delegation_rules?: Record<string, unknown>;
   // Task Context
-  task_data?: Record<string, any>;
-  execution_context?: Record<string, any>;
-  implementation_notes?: Record<string, any>;
-  test_results?: Record<string, any>;
-  blockers?: Record<string, any>;
-  local_decisions?: Record<string, any>;
-  delegation_queue?: Record<string, any>;
-  delegation_triggers?: Record<string, any>;
-  [key: string]: any;
+  task_data?: Record<string, unknown>;
+  execution_context?: Record<string, unknown>;
+  implementation_notes?: Record<string, unknown>;
+  test_results?: Record<string, unknown>;
+  blockers?: Record<string, unknown>;
+  local_decisions?: Record<string, unknown>;
+  delegation_queue?: Record<string, unknown>;
+  delegation_triggers?: Record<string, unknown>;
+  [key: string]: unknown;
 }
 
 /**
@@ -122,8 +122,9 @@ export function getCompletionSummary(contextData?: ContextData): string | null {
 /**
  * Check if context data is using legacy format (always false now)
  */
-export function isLegacyFormat(_contextData?: ContextData): boolean {
-  return false; // No legacy support
+export function isLegacyFormat(contextData?: ContextData): boolean {
+  void contextData; // Signature kept for callers; no legacy support.
+  return false;
 }
 
 /**
@@ -145,9 +146,9 @@ export function getTaskStatus(contextData?: ContextData): string | null {
  */
 export function getTestingNotes(contextData?: ContextData): string[] {
   if (!contextData?.progress?.next_steps) return [];
-  
-  return Array.isArray(contextData.progress.next_steps) 
-    ? contextData.progress.next_steps 
+
+  return Array.isArray(contextData.progress.next_steps)
+    ? contextData.progress.next_steps
     : [];
 }
 
@@ -171,7 +172,7 @@ export function formatContextDisplay(contextData?: ContextData) {
   const completionPercentage = getCompletionPercentage(contextData);
   const taskStatus = getTaskStatus(contextData);
   const testingNotes = getTestingNotes(contextData);
-  
+
   return {
     completionSummary,
     isLegacy,
@@ -187,44 +188,44 @@ export function formatContextDisplay(contextData?: ContextData) {
  */
 export function getContextLevel(contextData?: ContextData): string | null {
   if (!contextData) return null;
-  
-  if (contextData.organization_standards || contextData.compliance_requirements || 
-      contextData.shared_resources || contextData.reusable_patterns || 
+
+  if (contextData.organization_standards || contextData.compliance_requirements ||
+      contextData.shared_resources || contextData.reusable_patterns ||
       contextData.global_preferences) {
     return 'global';
   }
-  
-  if (contextData.project_info || contextData.team_preferences || 
-      contextData.technology_stack || contextData.project_workflow || 
+
+  if (contextData.project_info || contextData.team_preferences ||
+      contextData.technology_stack || contextData.project_workflow ||
       contextData.local_standards) {
     return 'project';
   }
-  
-  if (contextData.branch_info || contextData.branch_workflow || 
-      contextData.feature_flags || contextData.branch_decisions || 
+
+  if (contextData.branch_info || contextData.branch_workflow ||
+      contextData.feature_flags || contextData.branch_decisions ||
       contextData.active_patterns || contextData.delegation_rules) {
     return 'branch';
   }
-  
-  if (contextData.task_data || contextData.execution_context || 
-      contextData.implementation_notes || contextData.test_results || 
-      contextData.blockers || contextData.local_decisions || 
+
+  if (contextData.task_data || contextData.execution_context ||
+      contextData.implementation_notes || contextData.test_results ||
+      contextData.blockers || contextData.local_decisions ||
       contextData.delegation_queue || contextData.delegation_triggers) {
     return 'task';
   }
-  
+
   return null;
 }
 
 /**
  * Get formatted context fields based on context level
  */
-export function getContextFields(contextData?: ContextData): Record<string, any> {
+export function getContextFields(contextData?: ContextData): Record<string, unknown> {
   if (!contextData) return {};
-  
+
   const level = getContextLevel(contextData);
-  const fields: Record<string, any> = {};
-  
+  const fields: Record<string, unknown> = {};
+
   switch (level) {
     case 'global':
       if (contextData.organization_standards) fields['Organization Standards'] = contextData.organization_standards;
@@ -233,7 +234,7 @@ export function getContextFields(contextData?: ContextData): Record<string, any>
       if (contextData.reusable_patterns) fields['Reusable Patterns'] = contextData.reusable_patterns;
       if (contextData.global_preferences) fields['Global Preferences'] = contextData.global_preferences;
       break;
-      
+
     case 'project':
       if (contextData.project_info) fields['Project Info'] = contextData.project_info;
       if (contextData.team_preferences) fields['Team Preferences'] = contextData.team_preferences;
@@ -243,7 +244,7 @@ export function getContextFields(contextData?: ContextData): Record<string, any>
       if (contextData.project_settings) fields['Project Settings'] = contextData.project_settings;
       if (contextData.technical_specifications) fields['Technical Specifications'] = contextData.technical_specifications;
       break;
-      
+
     case 'branch':
       if (contextData.branch_info) fields['Branch Info'] = contextData.branch_info;
       if (contextData.branch_workflow) fields['Branch Workflow'] = contextData.branch_workflow;
@@ -255,7 +256,7 @@ export function getContextFields(contextData?: ContextData): Record<string, any>
       if (contextData.local_overrides) fields['Local Overrides'] = contextData.local_overrides;
       if (contextData.delegation_rules) fields['Delegation Rules'] = contextData.delegation_rules;
       break;
-      
+
     case 'task':
       if (contextData.task_data) fields['Task Data'] = contextData.task_data;
       if (contextData.execution_context) fields['Execution Context'] = contextData.execution_context;
@@ -269,6 +270,6 @@ export function getContextFields(contextData?: ContextData): Record<string, any>
       if (contextData.delegation_triggers) fields['Delegation Triggers'] = contextData.delegation_triggers;
       break;
   }
-  
+
   return fields;
 }

@@ -40,7 +40,7 @@ const getDisplayNameSpy = vi.spyOn(websocketProtocol, 'getDisplayName');
 
 describe('useRealtimeSync - Project Handler Type Guards (TDD)', () => {
   let queryClient: QueryClient;
-  let mockWebSocketClient: any;
+  let mockWebSocketClient: unknown;
   let messageHandler: ((msg: WSMessage) => void) | null;
 
   beforeEach(() => {
@@ -88,7 +88,7 @@ describe('useRealtimeSync - Project Handler Type Guards (TDD)', () => {
 
   describe('Type Guard Validation - isProjectDeletePayload', () => {
     it('should call isProjectDeletePayload to validate delete payload', async () => {
-      const { result } = renderHook(
+      renderHook(
         () => useRealtimeSync(mockWebSocketClient, true),
         { wrapper: createWrapper() }
       );
@@ -137,7 +137,7 @@ describe('useRealtimeSync - Project Handler Type Guards (TDD)', () => {
     });
 
     it('should reject payload missing required id field', async () => {
-      const { result } = renderHook(
+      renderHook(
         () => useRealtimeSync(mockWebSocketClient, true),
         { wrapper: createWrapper() }
       );
@@ -160,7 +160,7 @@ describe('useRealtimeSync - Project Handler Type Guards (TDD)', () => {
             primary: {
               // Missing 'id' field
               name: 'Test Project',
-            } as any,
+            } as unknown,
           },
         },
         metadata: {
@@ -189,7 +189,7 @@ describe('useRealtimeSync - Project Handler Type Guards (TDD)', () => {
     });
 
     it('should reject payload missing required name field', async () => {
-      const { result } = renderHook(
+      renderHook(
         () => useRealtimeSync(mockWebSocketClient, true),
         { wrapper: createWrapper() }
       );
@@ -212,7 +212,7 @@ describe('useRealtimeSync - Project Handler Type Guards (TDD)', () => {
             primary: {
               id: 'project-1',
               // Missing 'name' field
-            } as any,
+            } as unknown,
           },
         },
         metadata: {
@@ -246,7 +246,7 @@ describe('useRealtimeSync - Project Handler Type Guards (TDD)', () => {
 
   describe('getDisplayName Helper Usage', () => {
     it('should use getDisplayName for toast messages instead of direct property access', async () => {
-      const { result } = renderHook(
+      renderHook(
         () => useRealtimeSync(mockWebSocketClient, true),
         { wrapper: createWrapper() }
       );
@@ -296,7 +296,7 @@ describe('useRealtimeSync - Project Handler Type Guards (TDD)', () => {
     });
 
     it('should handle projects with different name structures using getDisplayName', async () => {
-      const { result } = renderHook(
+      renderHook(
         () => useRealtimeSync(mockWebSocketClient, true),
         { wrapper: createWrapper() }
       );
@@ -345,7 +345,7 @@ describe('useRealtimeSync - Project Handler Type Guards (TDD)', () => {
 
   describe('Integration - Full Delete Flow with Type Guards', () => {
     it('should complete full delete flow when payload passes validation', async () => {
-      const { result } = renderHook(
+      renderHook(
         () => useRealtimeSync(mockWebSocketClient, true),
         { wrapper: createWrapper() }
       );
@@ -406,7 +406,7 @@ describe('useRealtimeSync - Project Handler Type Guards (TDD)', () => {
     it('should not delete when type guard validation fails', async () => {
       const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-      const { result } = renderHook(
+      renderHook(
         () => useRealtimeSync(mockWebSocketClient, true),
         { wrapper: createWrapper() }
       );
@@ -427,7 +427,7 @@ describe('useRealtimeSync - Project Handler Type Guards (TDD)', () => {
           payload: {
             entity: 'project' as const,
             action: 'deleted' as const,
-            data: { primary: { name: 'No ID Project' } as any },
+            data: { primary: { name: 'No ID Project' } as unknown },
           },
           metadata: { source: 'mcp-ai' as const },
         },
@@ -441,7 +441,7 @@ describe('useRealtimeSync - Project Handler Type Guards (TDD)', () => {
           payload: {
             entity: 'project' as const,
             action: 'deleted' as const,
-            data: { primary: { id: 'project-1' } as any },
+            data: { primary: { id: 'project-1' } as unknown },
           },
           metadata: { source: 'mcp-ai' as const },
         },

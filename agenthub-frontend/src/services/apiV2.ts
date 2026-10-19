@@ -123,14 +123,15 @@ const handleResponse = async <T>(response: Response, originalUrl?: string, origi
 
       // Create a structured 404 error with context
       const serverDetail = typeof error.detail === 'string' && error.detail !== '' ? error.detail : undefined;
-      const notFoundError = new Error(
+      const notFoundError = Object.assign(new Error(
         serverDetail ?? `${resourceType.charAt(0).toUpperCase() + resourceType.slice(1)} not found`
-      ) as any;
-      notFoundError.name = 'NotFoundError';
-      notFoundError.status = 404;
-      notFoundError.resourceType = resourceType;
-      notFoundError.resourceId = resourceId;
-      notFoundError.url = url;
+      ), {
+        name: 'NotFoundError',
+        status: 404,
+        resourceType,
+        resourceId,
+        url,
+      });
 
       // Log 404 as debug level instead of error to reduce console noise
       logger.debug(`V2 API: ${resourceType} not found`, {
@@ -152,9 +153,12 @@ const handleResponse = async <T>(response: Response, originalUrl?: string, origi
       if (error.detail) {
         // If detail is an array of validation errors (FastAPI format)
         if (Array.isArray(error.detail)) {
-          const errors = error.detail.map((err: any) => {
-            const field = err.loc ? err.loc[err.loc.length - 1] : 'field';
-            return `${field}: ${err.msg}`;
+          const errors = error.detail.map((err: unknown) => {
+            const field = typeof err === 'object' && err !== null && 'loc' in err && Array.isArray(err.loc)
+              ? err.loc[err.loc.length - 1]
+              : 'field';
+            const message = typeof err === 'object' && err !== null && 'msg' in err ? err.msg : undefined;
+            return `${String(field)}: ${String(message)}`;
           }).join(', ');
           validationDetails = `Validation errors: ${errors}`;
         } else if (typeof error.detail === 'string') {
@@ -165,11 +169,12 @@ const handleResponse = async <T>(response: Response, originalUrl?: string, origi
         }
       }
 
-      const validationError = new Error(validationDetails) as any;
-      validationError.name = 'ValidationError';
-      validationError.status = 422;
-      validationError.detail = error.detail;
-      validationError.userFriendly = 'Please check your input and try again';
+      const validationError = Object.assign(new Error(validationDetails), {
+        name: 'ValidationError',
+        status: 422,
+        detail: error.detail,
+        userFriendly: 'Please check your input and try again',
+      });
 
       logger.error('V2 API: Validation error', {
         status: 422,
@@ -203,7 +208,7 @@ const handleResponse = async <T>(response: Response, originalUrl?: string, origi
     // Handle array responses (list endpoints)
     if (Array.isArray(data)) {
       // Validate each item in the array
-      data.forEach((item: any, index: number) => {
+      data.forEach((item: unknown, index: number) => {
         const result = validateResponse(item, responseType, `${endpoint}[${index}]`);
         logValidationResult(result, item);
         ValidationStats.record(result);
@@ -213,7 +218,7 @@ const handleResponse = async <T>(response: Response, originalUrl?: string, origi
     else if (responseType === 'branch_summary' && data.summaries && typeof data.summaries === 'object') {
       // Extract individual BranchSummary objects from the summaries Record
       const summariesArray = Object.values(data.summaries);
-      summariesArray.forEach((summary: any, index: number) => {
+      summariesArray.forEach((summary: unknown, index: number) => {
         const result = validateResponse(summary, 'branch_summary', `${endpoint}[summaries.${index}]`);
         logValidationResult(result, summary);
         ValidationStats.record(result);
@@ -222,7 +227,7 @@ const handleResponse = async <T>(response: Response, originalUrl?: string, origi
     // Handle projects list response (array of Project objects)
     else if (responseType === 'project' && data.projects && Array.isArray(data.projects)) {
       // Extract individual Project objects from the projects array
-      data.projects.forEach((project: any, index: number) => {
+      data.projects.forEach((project: unknown, index: number) => {
         const result = validateResponse(project, 'project', `${endpoint}[projects.${index}]`);
         logValidationResult(result, project);
         ValidationStats.record(result);
@@ -231,7 +236,7 @@ const handleResponse = async <T>(response: Response, originalUrl?: string, origi
     // Handle tasks list response (array of Task objects)
     else if (responseType === 'task' && data.tasks && Array.isArray(data.tasks)) {
       // Extract individual Task objects from the tasks array
-      data.tasks.forEach((task: any, index: number) => {
+      data.tasks.forEach((task: unknown, index: number) => {
         const result = validateResponse(task, 'task', `${endpoint}[tasks.${index}]`);
         logValidationResult(result, task);
         ValidationStats.record(result);
@@ -240,7 +245,7 @@ const handleResponse = async <T>(response: Response, originalUrl?: string, origi
     // Handle subtasks list response (array of Subtask objects)
     else if (responseType === 'subtask' && data.subtasks && Array.isArray(data.subtasks)) {
       // Extract individual Subtask objects from the subtasks array
-      data.subtasks.forEach((subtask: any, index: number) => {
+      data.subtasks.forEach((subtask: unknown, index: number) => {
         const result = validateResponse(subtask, 'subtask', `${endpoint}[subtasks.${index}]`);
         logValidationResult(result, subtask);
         ValidationStats.record(result);
@@ -422,7 +427,7 @@ export const taskApiV2 = {
     estimated_effort?: string;
     due_date?: string;
     dependencies?: string[];
-    context_data?: any;
+    context_data?: unknown;
     details?: string;  // Progress notes field
   }) => {
     logger.debug('=== API V2 UPDATE TASK ===');
@@ -659,8 +664,10 @@ export const subtaskApiV2 = {
     const result = await handleResponse(response);
     console.log('🔍 [apiV2.listSubtasksForTask] HANDLED RESPONSE:', {
       resultType: typeof result,
-      resultKeys: Object.keys(result || {}),
-      subtasksCount: (result as any)?.subtasks?.length || 0,
+      resultKeys: typeof result === 'object' && result !== null ? Object.keys(result) : [],
+      subtasksCount: typeof result === 'object' && result !== null && 'subtasks' in result && Array.isArray(result.subtasks)
+        ? result.subtasks.length
+        : 0,
       result: result
     });
 
@@ -709,7 +716,7 @@ export const contextApiV2 = {
   },
 
   // Create or update context
-  updateContext: async (level: string, contextId: string, data: any) => {
+  updateContext: async (level: string, contextId: string, data: unknown) => {
     const response = await fetch(`${API_BASE_URL}/api/v2/contexts/${level}/${contextId}`, {
       method: 'PUT',
       headers: getAuthHeaders(),
@@ -785,7 +792,7 @@ export const branchApiV2 = {
 
   // Get bulk summaries for all or selected projects
   getBulkSummaries: async (projectIds?: string[], includeArchived: boolean = false, bustCache: boolean = false) => {
-    const requestBody: any = {
+    const requestBody: Record<string, unknown> = {
       project_ids: projectIds,
       include_archived: includeArchived
     };
@@ -805,7 +812,7 @@ export const branchApiV2 = {
 
   // Force refresh bulk summaries with aggressive cache busting
   forceGetBulkSummaries: async (projectIds?: string[], includeArchived: boolean = false) => {
-    const requestBody: any = {
+    const requestBody: unknown = {
       project_ids: projectIds,
       include_archived: includeArchived,
       // Aggressive cache busting

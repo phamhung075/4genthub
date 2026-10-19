@@ -1,7 +1,7 @@
 // Custom hook for WebSocket → React Query cache synchronization
 import { useEffect, useRef, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import type { Branch, Project, Subtask, Task } from '../types/api.types';
+import type { Branch, BranchSummary, Project, Subtask, Task } from '../types/api.types';
 import logger from '../utils/logger';
 import { useSuccessToast, useInfoToast, useWarningToast } from '../components/ui/toast';
 import {
@@ -26,6 +26,25 @@ import { useNotificationStore } from '../store/notifications';
 // 🔥 GLOBAL toast deduplication tracker (module-level, shared across ALL hook instances)
 // This prevents duplicate toasts when multiple components use useRealtimeSync
 const globalRecentToastsMap = new Map<string, number>();
+
+/** The slice of the WebSocket client this hook drives; both methods come from EventEmitter. */
+interface RealtimeWebSocketClient {
+  on(event: string, handler: (...args: unknown[]) => void): unknown;
+  off(event: string, handler: (...args: unknown[]) => void): unknown;
+}
+
+/**
+ * The hook's client parameter is `unknown` so callers (and tests) are not forced to import the
+ * concrete class. Narrow it once here: anything object-shaped exposing EventEmitter's `on`/`off`
+ * is a client this hook can subscribe to.
+ */
+const asRealtimeWebSocketClient = (value: unknown): RealtimeWebSocketClient | null => {
+  if (!value || typeof value !== 'object') return null;
+  const candidate = value as Partial<RealtimeWebSocketClient>;
+  return typeof candidate.on === 'function' && typeof candidate.off === 'function'
+    ? (candidate as RealtimeWebSocketClient)
+    : null;
+};
 
 /**
  * The dashboard inbox line for one safeguard alert.
@@ -63,7 +82,7 @@ const describeSafeguardAlert = (row: RigSafeguardAlertPayload): string => {
  * @param enabled Whether to enable real-time sync
  */
 export const useRealtimeSync = (
-  webSocketClient: any | null,
+  webSocketClient: unknown | null,
   enabled: boolean = true
 ) => {
   const queryClient = useQueryClient();
@@ -102,7 +121,9 @@ export const useRealtimeSync = (
   }, []);
 
   useEffect(() => {
-    if (!enabled || !webSocketClient) {
+    const client = asRealtimeWebSocketClient(webSocketClient);
+    const handlers = handlersRef.current;
+    if (!enabled || !client) {
       return;
     }
 
@@ -200,7 +221,7 @@ export const useRealtimeSync = (
           });
           break;
 
-        case 'updated':
+        case 'updated': {
           // ✅ FIX 2025-11-22: Backend NOW sends complete data (fixed facade to return complete task)
           // Directly update cache with WebSocket payload instead of invalidating
           // This is faster and prevents stale data in fullTasksMap
@@ -233,6 +254,7 @@ export const useRealtimeSync = (
               showInfo(`Task "${taskTitle}" updated`);
             });
           }
+        }
           break;
 
         case 'deleted':
@@ -491,10 +513,19 @@ export const useRealtimeSync = (
 
           // Validate delete payload using type guard
           if (!isSubtaskDeletePayload(subtaskData)) {
-            const data = subtaskData as any; // Cast for error checking
-            const missingFields = [];
-            if (!data?.id) missingFields.push('id');
-            if (!data?.task_id && !data?.parent_task_id) missingFields.push('task_id');
+            const payload = data.primary;
+            const missingFields: string[] = [];
+            if (typeof payload !== 'object' || payload === null ||
+                !('id' in payload) || typeof payload.id !== 'string') {
+              missingFields.push('id');
+            }
+            const hasTaskId = typeof payload === 'object' && payload !== null &&
+              'task_id' in payload && typeof payload.task_id === 'string';
+            const hasParentTaskId = typeof payload === 'object' && payload !== null &&
+              'parent_task_id' in payload && typeof payload.parent_task_id === 'string';
+            if (!hasTaskId && !hasParentTaskId) {
+              missingFields.push('task_id');
+            }
 
             logger.warn('[useRealtimeSync] Invalid subtask delete payload', {
               data: subtaskData,
@@ -535,7 +566,6 @@ export const useRealtimeSync = (
               );
 
               queryClient.invalidateQueries({ queryKey: ['task', taskId] });
-            } else {
             }
           }, 600);
           break;
@@ -643,7 +673,8 @@ export const useRealtimeSync = (
             showToastOnce(`project-deleted-${projectData.id}`, () => {
               showWarning(`Project "${displayName}" deleted`);
             });
-          } catch (err) {
+          } catch (error) {
+            logger.warn('[useRealtimeSync] Could not build project delete toast', { error });
           }
 
           // CRITICAL: Delay cache update to allow delete animation to play (~600ms)
@@ -661,15 +692,6 @@ export const useRealtimeSync = (
 
             // Also remove individual project query cache
             queryClient.setQueryData(['projects', projectData.id], undefined);
-
-            // Verify deletion persisted after another 400ms (total 1 second from start)
-            setTimeout(() => {
-              const currentProjects = queryClient.getQueryData<Project[]>(['projects']);
-              const projectExists = currentProjects?.some(p => p.id === projectData.id);
-              if (projectExists) {
-              } else {
-              }
-            }, 400);
           }, 600);
           break;
 
@@ -714,19 +736,19 @@ export const useRealtimeSync = (
             );
 
             // 2. Update ['branchSummaries'] cache
-            const branchSummariesQueries = queryClient.getQueriesData<{ branches: any[]; projects: any[] }>({
+            const branchSummariesQueries = queryClient.getQueriesData<{ branches: BranchSummary[]; projects: unknown[] }>({
               queryKey: ['branchSummaries']
             });
 
             branchSummariesQueries.forEach(([queryKey, data]) => {
               if (data?.branches) {
                 // ✨ FIX: Check if branch summary already exists
-                const exists = data.branches.some((b: any) => b.id === branchData.id);
+                const exists = data.branches.some((b) => b.id === branchData.id);
 
                 if (exists) {
                   queryClient.setQueryData(queryKey, {
                     ...data,
-                    branches: data.branches.map((b: any) =>
+                    branches: data.branches.map((b) =>
                       b.id === branchData.id ? {
                         ...b,
                         name: branchData.name || branchData.git_branch_name || b.name,
@@ -737,7 +759,7 @@ export const useRealtimeSync = (
                   });
                 } else {
                   // Create a branch summary object from the branch data
-                  const newSummary = {
+                  const newSummary: BranchSummary = {
                     id: branchData.id,
                     project_id: branchData.project_id,
                     name: branchData.name || branchData.git_branch_name || '',
@@ -787,7 +809,7 @@ export const useRealtimeSync = (
               );
 
               // 2. Update ['branchSummaries'] cache
-              const branchSummariesQueries = queryClient.getQueriesData<{ branches: any[]; projects: any[] }>({
+              const branchSummariesQueries = queryClient.getQueriesData<{ branches: BranchSummary[]; projects: unknown[] }>({
                 queryKey: ['branchSummaries']
               });
 
@@ -795,7 +817,7 @@ export const useRealtimeSync = (
                 if (data?.branches) {
                   queryClient.setQueryData(queryKey, {
                     ...data,
-                    branches: data.branches.map((b: any) => {
+                    branches: data.branches.map((b) => {
                       if (b.id === branchData.id) {
                         // Update summary with new branch data
                         return {
@@ -852,7 +874,7 @@ export const useRealtimeSync = (
 
               // 2. Update ['branchSummaries'] cache (for ProjectList component)
               // Get all branchSummaries queries (there might be multiple with different projectIds filters)
-              const branchSummariesQueries = queryClient.getQueriesData<{ branches: any[]; projects: any[] }>({
+              const branchSummariesQueries = queryClient.getQueriesData<{ branches: BranchSummary[]; projects: unknown[] }>({
                 queryKey: ['branchSummaries']
               });
 
@@ -862,7 +884,7 @@ export const useRealtimeSync = (
                 if (data?.branches) {
                   queryClient.setQueryData(queryKey, {
                     ...data,
-                    branches: data.branches.filter((b: any) => b.id !== branchData.id)
+                    branches: data.branches.filter((b) => b.id !== branchData.id)
                   });
                 }
               });
@@ -877,7 +899,6 @@ export const useRealtimeSync = (
               queryClient.invalidateQueries({ queryKey: ['projects', projectId] });
               queryClient.invalidateQueries({ queryKey: ['projects'] }); // ✅ FIX: Invalidate projects list to update sidebar badge
 
-            } else {
             }
           }, 600);
           break;
@@ -1166,17 +1187,20 @@ export const useRealtimeSync = (
     };
 
     // Store handler reference
-    handlersRef.current.set('update', handleMessage);
+    handlers.set('update', handleMessage);
 
-    // Subscribe to WebSocket update events (WebSocketClient emits 'update', not 'message')
-    webSocketClient.on('update', handleMessage);
+    // Subscribe to WebSocket update events (WebSocketClient emits 'update', not 'message').
+    // EventEmitter declares listeners as `(...args: unknown[]) => void`; 'update' always carries
+    // a WSMessage, so this is a boundary assertion, not a widening.
+    const updateHandler = handleMessage as (...args: unknown[]) => void;
+    client.on('update', updateHandler);
     logger.info('[useRealtimeSync] Real-time sync initialized - listening to "update" events');
 
     // Cleanup
     return () => {
       logger.info('[useRealtimeSync] Cleaning up real-time sync');
-      webSocketClient.off('update', handleMessage);
-      handlersRef.current.delete('update');
+      client.off('update', updateHandler);
+      handlers.delete('update');
     };
   }, [webSocketClient, enabled, queryClient, showSuccess, showInfo, showWarning, showToastOnce]);
 

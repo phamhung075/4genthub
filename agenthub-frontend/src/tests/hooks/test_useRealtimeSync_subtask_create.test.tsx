@@ -15,7 +15,7 @@
  * 9. Backend generates compliant payload structure
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { validateSubtask, ValidationResult } from '../../utils/responseValidator';
 
 describe('Subtask CREATE Payload Validation (WebSocket Protocol v2.0)', () => {
@@ -44,7 +44,7 @@ describe('Subtask CREATE Payload Validation (WebSocket Protocol v2.0)', () => {
 
     it('should reject payload missing id field', () => {
       const invalidPayload = { ...VALID_SUBTASK_CREATE_PAYLOAD };
-      delete (invalidPayload as any).id;
+      delete (invalidPayload as unknown).id;
 
       const result = validateSubtask(invalidPayload, 'ws://subtask/created');
 
@@ -67,7 +67,7 @@ describe('Subtask CREATE Payload Validation (WebSocket Protocol v2.0)', () => {
 
     it('should reject payload missing title field', () => {
       const invalidPayload = { ...VALID_SUBTASK_CREATE_PAYLOAD };
-      delete (invalidPayload as any).title;
+      delete (invalidPayload as unknown).title;
 
       const result = validateSubtask(invalidPayload, 'ws://subtask/created');
 
@@ -78,7 +78,7 @@ describe('Subtask CREATE Payload Validation (WebSocket Protocol v2.0)', () => {
 
     it('should reject payload missing task_id field', () => {
       const invalidPayload = { ...VALID_SUBTASK_CREATE_PAYLOAD };
-      delete (invalidPayload as any).task_id;
+      delete (invalidPayload as unknown).task_id;
 
       const result = validateSubtask(invalidPayload, 'ws://subtask/created');
 
@@ -88,7 +88,7 @@ describe('Subtask CREATE Payload Validation (WebSocket Protocol v2.0)', () => {
 
     it('should reject payload missing created_at field', () => {
       const invalidPayload = { ...VALID_SUBTASK_CREATE_PAYLOAD };
-      delete (invalidPayload as any).created_at;
+      delete (invalidPayload as unknown).created_at;
 
       const result = validateSubtask(invalidPayload, 'ws://subtask/created');
 
@@ -99,7 +99,7 @@ describe('Subtask CREATE Payload Validation (WebSocket Protocol v2.0)', () => {
 
     it('should reject payload missing updated_at field', () => {
       const invalidPayload = { ...VALID_SUBTASK_CREATE_PAYLOAD };
-      delete (invalidPayload as any).updated_at;
+      delete (invalidPayload as unknown).updated_at;
 
       const result = validateSubtask(invalidPayload, 'ws://subtask/created');
 

@@ -83,7 +83,7 @@
     });
 
     const duplicates = Object.entries(urlGroups)
-      .filter(([url, calls]) => calls.length > 1)
+      .filter(([, calls]) => calls.length > 1)
       .map(([url, calls]) => ({ url, calls, count: calls.length }));
 
     console.log('🔍 Duplicate API Calls Found:', duplicates);

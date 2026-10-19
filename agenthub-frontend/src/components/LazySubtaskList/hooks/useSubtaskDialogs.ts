@@ -3,14 +3,13 @@
 
 import { useState, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Subtask } from "../../../api";
 import type {
   UseSubtaskDialogsReturn,
   DeleteDialogState,
   ActiveDialogState,
   DetailsDialogState
 } from "../../../types/subtaskTypes";
-import { generateBranchUrl } from "../utils/subtaskHelpers";
+import { generateBranchUrl, isSubtask } from "../utils/subtaskHelpers";
 import { DIALOG_CONFIG } from "../constants/subtaskConstants";
 import logger from "../../../utils/logger";
 
@@ -102,7 +101,12 @@ export function useSubtaskDialogs(
   /**
    * Open details dialog for a subtask
    */
-  const openDetailsDialog = useCallback((subtask: Subtask) => {
+  const openDetailsDialog = useCallback((subtask: unknown) => {
+    if (!isSubtask(subtask)) {
+      logger.warn('Ignoring malformed subtask for the details dialog:', subtask);
+      return;
+    }
+
     // Opening supersedes a close still in flight: cancel its deferred writes and lift the guard, or a
     // dialog opened inside the close's 50ms window is wiped by the close that preceded it.
     clearPendingClose();
@@ -128,7 +132,12 @@ export function useSubtaskDialogs(
   /**
    * Open edit dialog for a subtask
    */
-  const openEditDialog = useCallback((subtask: Subtask) => {
+  const openEditDialog = useCallback((subtask: unknown) => {
+    if (!isSubtask(subtask)) {
+      logger.warn('Ignoring malformed subtask for the edit dialog:', subtask);
+      return;
+    }
+
     logger.debug('Opening edit dialog for subtask:', subtask.id);
 
     setActiveDialog({
@@ -141,7 +150,12 @@ export function useSubtaskDialogs(
   /**
    * Open complete dialog for a subtask
    */
-  const openCompleteDialog = useCallback((subtask: Subtask) => {
+  const openCompleteDialog = useCallback((subtask: unknown) => {
+    if (!isSubtask(subtask)) {
+      logger.warn('Ignoring malformed subtask for the complete dialog:', subtask);
+      return;
+    }
+
     logger.debug('Opening complete dialog for subtask:', subtask.id);
 
     setActiveDialog({
@@ -218,7 +232,7 @@ export function useSubtaskDialogs(
   const handleDialogAction = useCallback((
     action: 'details' | 'edit' | 'complete',
     subtaskId: string,
-    subtask?: Subtask
+    subtask?: unknown
   ) => {
     // Prevent race conditions
     setTimeout(() => {
@@ -227,7 +241,7 @@ export function useSubtaskDialogs(
       setActiveDialog({
         type: action,
         subtaskId,
-        subtask: subtask || null
+        subtask: subtask ?? null
       });
     }, DIALOG_CONFIG.DIALOG_RACE_TIMEOUT);
   }, []);

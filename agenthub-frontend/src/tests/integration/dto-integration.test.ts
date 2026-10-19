@@ -15,8 +15,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { taskApiV2, subtaskApiV2, projectApiV2, branchApiV2 } from '../../services/apiV2';
-import type { TaskSummary, SubtaskSummary } from '../../types/taskTypes';
+import { taskApiV2, subtaskApiV2 } from '../../services/apiV2';
 import Cookies from 'js-cookie';
 
 // Mock js-cookie
@@ -33,8 +32,8 @@ describe('DTO Integration Tests - Backend to Frontend', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    (Cookies.get as any) = vi.fn().mockReturnValue(mockToken);
-    global.fetch = vi.fn() as any;
+    (Cookies.get as unknown) = vi.fn().mockReturnValue(mockToken);
+    global.fetch = vi.fn() as unknown;
   });
 
   describe('Task API DTO Tests', () => {
@@ -61,7 +60,7 @@ describe('DTO Integration Tests - Backend to Frontend', () => {
           count: 1
         };
 
-        (global.fetch as any).mockResolvedValue({
+        (global.fetch as unknown).mockResolvedValue({
           ok: true,
           json: vi.fn().mockResolvedValue(mockBackendResponse)
         });
@@ -103,7 +102,7 @@ describe('DTO Integration Tests - Backend to Frontend', () => {
           count: 1
         };
 
-        (global.fetch as any).mockResolvedValue({
+        (global.fetch as unknown).mockResolvedValue({
           ok: true,
           json: vi.fn().mockResolvedValue(mockBackendResponse)
         });
@@ -151,7 +150,7 @@ describe('DTO Integration Tests - Backend to Frontend', () => {
           progress_percentage: 0
         };
 
-        (global.fetch as any).mockResolvedValue({
+        (global.fetch as unknown).mockResolvedValue({
           ok: true,
           json: vi.fn().mockResolvedValue(mockBackendResponse)
         });
@@ -202,7 +201,7 @@ describe('DTO Integration Tests - Backend to Frontend', () => {
           progress_percentage: 0
         };
 
-        (global.fetch as any).mockResolvedValue({
+        (global.fetch as unknown).mockResolvedValue({
           ok: true,
           json: vi.fn().mockResolvedValue(mockBackendResponse)
         });
@@ -241,7 +240,7 @@ describe('DTO Integration Tests - Backend to Frontend', () => {
           updated_at: '2025-09-30T10:30:00Z'
         };
 
-        (global.fetch as any).mockResolvedValue({
+        (global.fetch as unknown).mockResolvedValue({
           ok: true,
           json: vi.fn().mockResolvedValue(mockBackendResponse)
         });
@@ -262,7 +261,7 @@ describe('DTO Integration Tests - Backend to Frontend', () => {
           message: 'Task deleted successfully'
         };
 
-        (global.fetch as any).mockResolvedValue({
+        (global.fetch as unknown).mockResolvedValue({
           ok: true,
           status: 204,
           json: vi.fn().mockResolvedValue(mockBackendResponse)
@@ -298,7 +297,7 @@ describe('DTO Integration Tests - Backend to Frontend', () => {
           count: 1
         };
 
-        (global.fetch as any).mockResolvedValue({
+        (global.fetch as unknown).mockResolvedValue({
           ok: true,
           url: 'http://localhost:8000/api/v2/subtasks?task_id=task-1',  // a real Response always has one; the subtask calls pass no endpoint to handleResponse
           headers: new Headers(),  // Add headers to prevent logging error
@@ -349,7 +348,7 @@ describe('DTO Integration Tests - Backend to Frontend', () => {
           }
         };
 
-        (global.fetch as any).mockResolvedValue({
+        (global.fetch as unknown).mockResolvedValue({
           ok: true,
           url: `http://localhost:8000/api/v2/subtasks/${validSubtaskId}`,  // a real Response always has one; the subtask calls pass no endpoint to handleResponse
           json: vi.fn().mockResolvedValue(mockBackendResponse)
@@ -398,7 +397,7 @@ describe('DTO Integration Tests - Backend to Frontend', () => {
           }
         };
 
-        (global.fetch as any).mockResolvedValue({
+        (global.fetch as unknown).mockResolvedValue({
           ok: true,
           url: 'http://localhost:8000/api/v2/subtasks',  // a real Response always has one; the subtask calls pass no endpoint to handleResponse
           json: vi.fn().mockResolvedValue(mockBackendResponse)
@@ -414,7 +413,7 @@ describe('DTO Integration Tests - Backend to Frontend', () => {
 
   describe('Error Handling DTO Tests', () => {
     it('should handle 404 Not Found with proper error structure', async () => {
-      (global.fetch as any).mockResolvedValue({
+      (global.fetch as unknown).mockResolvedValue({
         ok: false,
         status: 404,
         url: 'http://localhost:8000/api/v2/tasks/invalid-id',
@@ -435,17 +434,17 @@ describe('DTO Integration Tests - Backend to Frontend', () => {
         ]
       };
 
-      (global.fetch as any).mockResolvedValue({
+      (global.fetch as unknown).mockResolvedValue({
         ok: false,
         status: 422,
         json: vi.fn().mockResolvedValue(mockValidationError)
       });
 
-      await expect(taskApiV2.createTask({ title: '' } as any)).rejects.toThrow();
+      await expect(taskApiV2.createTask({ title: '' } as unknown)).rejects.toThrow();
     });
 
     it('should handle 401 Authentication Error', async () => {
-      (global.fetch as any).mockResolvedValue({
+      (global.fetch as unknown).mockResolvedValue({
         ok: false,
         status: 401,
         json: vi.fn().mockResolvedValue({ detail: 'Token expired' })
@@ -477,7 +476,7 @@ describe('DTO Integration Tests - Backend to Frontend', () => {
         count: 1
       };
 
-      (global.fetch as any).mockResolvedValue({
+      (global.fetch as unknown).mockResolvedValue({
         ok: true,
         json: vi.fn().mockResolvedValue(mockBackendResponse)
       });
@@ -511,7 +510,7 @@ describe('DTO Integration Tests - Backend to Frontend', () => {
         count: 1
       };
 
-      (global.fetch as any).mockResolvedValue({
+      (global.fetch as unknown).mockResolvedValue({
         ok: true,
         json: vi.fn().mockResolvedValue(mockBackendResponse)
       });
@@ -549,7 +548,7 @@ describe('DTO Integration Tests - Backend to Frontend', () => {
         count: 1
       };
 
-      (global.fetch as any).mockResolvedValue({
+      (global.fetch as unknown).mockResolvedValue({
         ok: true,
         json: vi.fn().mockResolvedValue(mockBackendResponse)
       });

@@ -102,7 +102,7 @@ export interface UsePermissionsReturn {
 // Dialog Manager Hook Types
 // =============================================================================
 
-import type { DialogType, ActiveDialog } from './taskTypes';
+import type { ActiveDialog } from './taskTypes';
 
 /**
  * Return type for useDialogManager hook
@@ -110,7 +110,7 @@ import type { DialogType, ActiveDialog } from './taskTypes';
  */
 export interface UseDialogManagerReturn {
   activeDialog: ActiveDialog;
-  openDialog: (type: string, taskId?: string, extraData?: any) => void;
+  openDialog: (type: string, taskId?: string, extraData?: unknown) => void;
   closeDialog: () => void;
   saving: boolean;
   setSaving: (saving: boolean) => void;
@@ -148,7 +148,7 @@ export interface UseProjectDataReturn {
   handleUpdateProject: (project: Project, data: ProjectFormData) => Promise<void>;
   handleDeleteProject: (project: Project) => Promise<void>;
   handleCreateBranch: (project: Project, data: ProjectFormData) => Promise<void>;
-  handleDeleteBranch: (dialogState: { project: Project; branch: any }) => Promise<void>;
+  handleDeleteBranch: (dialogState: { project: Project; branch: unknown }) => Promise<void>;
   handleRefresh: () => Promise<void>;
 }
 

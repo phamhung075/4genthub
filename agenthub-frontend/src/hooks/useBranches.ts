@@ -4,6 +4,12 @@ import { createBranch, deleteBranch } from '../api';
 import type { Branch } from '../types/api.types';
 import logger from '../utils/logger';
 
+/** Optimistic-update snapshot carried from `onMutate` to `onError`/`onSuccess`. */
+type BranchMutationContext = {
+  previousBranches?: Branch[];
+  projectId?: string;
+};
+
 /**
  * Hook to fetch a single branch by ID
  * @param branchId Branch ID to fetch
@@ -51,7 +57,7 @@ export const useBranchMutations = () => {
       logger.debug('[useBranchMutations] Creating branch for project', { projectId, branch });
       return await createBranch(projectId, branch);
     },
-    onMutate: async ({ projectId, branch }) => {
+    onMutate: async ({ projectId, branch }): Promise<BranchMutationContext> => {
       // Cancel outgoing refetches
       await queryClient.cancelQueries({ queryKey: ['branches', projectId] });
       await queryClient.cancelQueries({ queryKey: ['projects', projectId] });
@@ -81,7 +87,7 @@ export const useBranchMutations = () => {
 
       return { previousBranches, projectId };
     },
-    onError: (err, _, context: any) => {
+    onError: (err, _, context) => {
       logger.error('[useBranchMutations] Create failed:', err);
       // Rollback on error
       if (context?.previousBranches) {
@@ -105,7 +111,7 @@ export const useBranchMutations = () => {
       await deleteBranch(branchId);
       return branchId;
     },
-    onMutate: async (branchId) => {
+    onMutate: async (branchId): Promise<BranchMutationContext> => {
       // Find the project_id from existing cache
       let projectId: string | undefined;
       const allBranchesQueries = queryClient.getQueriesData<Branch[]>({ queryKey: ['branches'] });
@@ -138,13 +144,13 @@ export const useBranchMutations = () => {
 
       return { previousBranches, projectId };
     },
-    onError: (err, _, context: any) => {
+    onError: (err, _, context) => {
       logger.error('[useBranchMutations] Delete failed:', err);
       if (context?.previousBranches && context?.projectId) {
         queryClient.setQueryData(['branches', context.projectId], context.previousBranches);
       }
     },
-    onSuccess: (branchId, _, context: any) => {
+    onSuccess: (branchId, _, context) => {
       logger.debug('[useBranchMutations] Branch deleted:', branchId);
 
       if (context?.projectId) {

@@ -1,19 +1,19 @@
 import React from 'react';
 import userEvent from '@testing-library/user-event';
-import { render, screen, fireEvent, waitFor } from './../../test-utils';
+import { render, screen, fireEvent } from './../../test-utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../../../components/ui/dialog';
 import { cn } from '../../../lib/utils';
 
 // Mock the cn utility
 vi.mock('../../../lib/utils', () => ({
-  cn: vi.fn((...args: any[]) => args.filter(Boolean).join(' ')),
+  cn: vi.fn((...args: unknown[]) => args.filter(Boolean).join(' ')),
 }));
 
 describe('Dialog components', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Ensure the mock is working
-    (cn as any).mockImplementation((...args: any[]) => args.filter(Boolean).join(' '));
+    (cn as unknown).mockImplementation((...args: unknown[]) => args.filter(Boolean).join(' '));
     // Reset body overflow style
     document.body.style.overflow = 'unset';
   });

@@ -3,8 +3,6 @@ import React from 'react';
 // auth-provider element around the one AuthWrapper renders.
 import { render, screen } from '@testing-library/react';
 import { AuthWrapper } from '../../../components/auth/AuthWrapper';
-import { AuthProvider } from '../../../contexts/AuthContext';
-import { MuiThemeWrapper } from '../../../contexts/MuiThemeProvider';
 
 // Mock the context providers
 vi.mock('../../../contexts/AuthContext', () => ({

@@ -6,6 +6,7 @@ import { Separator } from "./ui/separator";
 import { Task, Subtask, getTaskContext } from "../api";
 import ClickableAssignees from "./ClickableAssignees";
 import { formatContextDisplay } from "../utils/contextHelpers";
+import type { ContextData } from "../utils/contextHelpers";
 import logger from "../utils/logger";
 import { FileText, Info, ChevronRight, Layers, Copy, Check as CheckIcon, Settings } from "lucide-react";
 import RawJSONDisplay from "./ui/RawJSONDisplay";
@@ -23,6 +24,25 @@ interface TaskDetailsDialogProps {
   onAgentClick: (agentName: string, task: Task | Subtask) => void;
 }
 
+/**
+ * The context payload `getTaskContext` resolves as this dialog reads it: the `ContextData` fields
+ * plus the inheritance flags the service adds at the root, which have no domain type of their own.
+ */
+interface TaskContextPayload extends ContextData {
+  _inheritance?: {
+    chain?: string[];
+    inheritance_depth?: number;
+    [key: string]: unknown;
+  };
+  inheritance_metadata?: {
+    inheritance_chain?: string[];
+    inheritance_depth?: number;
+    [key: string]: unknown;
+  };
+  inheritance_disabled?: boolean;
+  force_local_only?: boolean;
+}
+
 export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
   open,
   onOpenChange,
@@ -30,7 +50,7 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
   onClose,
   onAgentClick
 }) => {
-  const [taskContext, setTaskContext] = useState<any>(null);
+  const [taskContext, setTaskContext] = useState<TaskContextPayload | null>(null);
   const [contextLoading, setContextLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'details' | 'context'>('details');
   const [jsonCopied, setJsonCopied] = useState(false);
@@ -61,24 +81,30 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
         .then(context => {
           logger.debug('Raw context response:', context);
 
-          // Extract the actual context data from the response
+          // Extract the actual context data from the response. `getTaskContext` resolves the raw
+          // JSON body, so this is the boundary where its wire keys are named.
           if (context) {
-            if (context.data && context.data.resolved_context) {
+            const response = context as {
+              data?: { resolved_context?: TaskContextPayload };
+              resolved_context?: TaskContextPayload;
+            };
+
+            if (response.data && response.data.resolved_context) {
               // New format: data.resolved_context contains the actual context
-              logger.debug('Using resolved_context from data:', context.data.resolved_context);
-              setTaskContext(context.data.resolved_context);
-            } else if (context.resolved_context) {
+              logger.debug('Using resolved_context from data:', response.data.resolved_context);
+              setTaskContext(response.data.resolved_context);
+            } else if (response.resolved_context) {
               // Alternative format: resolved_context at root level
-              logger.debug('Using resolved_context from root:', context.resolved_context);
-              setTaskContext(context.resolved_context);
-            } else if (context.data) {
+              logger.debug('Using resolved_context from root:', response.resolved_context);
+              setTaskContext(response.resolved_context);
+            } else if (response.data) {
               // Fallback: use data object if it exists
-              logger.debug('Using data object:', context.data);
-              setTaskContext(context.data);
+              logger.debug('Using data object:', response.data);
+              setTaskContext(response.data);
             } else {
               // Last resort: use the whole response
               logger.debug('Using full response:', context);
-              setTaskContext(context);
+              setTaskContext(context as TaskContextPayload);
             }
           } else {
             logger.warn('No context data received');
@@ -93,7 +119,7 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
           setContextLoading(false);
         });
     }
-  }, [open, task?.id]);
+  }, [open, task]);
 
   // Clear data when dialog closes
   useEffect(() => {
@@ -108,7 +134,9 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
   }, [open]);
 
   // Format context data using helper functions
-  const contextDisplay = formatContextDisplay(displayTask?.context_data);
+  // The task's embedded `context_data` is the wire's loose `Context`; the display helpers read the
+  // flattened `ContextData` keys, so name that boundary once here.
+  const contextDisplay = formatContextDisplay(displayTask?.context_data as ContextData | undefined);
 
 
   // Copy JSON to clipboard

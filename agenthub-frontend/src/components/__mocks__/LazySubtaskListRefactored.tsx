@@ -6,9 +6,9 @@ import React from 'react';
 
 interface LazySubtaskListProps {
   taskId: string;
-  onSubtaskUpdate?: (subtask: any) => void;
+  onSubtaskUpdate?: (subtask: unknown) => void;
   onSubtaskDelete?: (subtaskId: string) => void;
-  onSubtaskCreate?: (subtask: any) => void;
+  onSubtaskCreate?: (subtask: unknown) => void;
   className?: string;
   readonly?: boolean;
   showHeader?: boolean;

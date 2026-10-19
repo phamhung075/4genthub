@@ -29,7 +29,7 @@ export interface ValidationWarning {
 /**
  * Check if value is a valid UUID
  */
-function isValidUUID(value: any): boolean {
+function isValidUUID(value: unknown): boolean {
   if (typeof value !== 'string') return false;
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   return uuidRegex.test(value);
@@ -38,16 +38,52 @@ function isValidUUID(value: any): boolean {
 /**
  * Check if value is a valid ISO 8601 datetime string
  */
-function isValidISO8601(value: any): boolean {
+function isValidISO8601(value: unknown): boolean {
   if (typeof value !== 'string') return false;
   const isoRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})?$/;
   return isoRegex.test(value);
 }
 
 /**
+ * Narrow an unknown API payload to an object we can inspect field by field
+ */
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+/**
+ * Convert a timestamp field to a Date, ignoring values that are not dates
+ */
+function toDate(value: unknown): Date | null {
+  if (typeof value === 'string' || typeof value === 'number') return new Date(value);
+  if (value instanceof Date) return value;
+  return null;
+}
+
+/**
+ * Build a result for a payload that is not an object at all
+ */
+function invalidResult(endpoint: string, actual: string): ValidationResult {
+  return {
+    isValid: false,
+    errors: [
+      {
+        field: 'response',
+        expected: 'object',
+        actual,
+        message: 'Response is not an object'
+      }
+    ],
+    warnings: [],
+    timestamp: new Date().toISOString(),
+    endpoint
+  };
+}
+
+/**
  * Detect if response is in minimal/performance mode
  */
-function isMinimalMode(data: any): boolean {
+function isMinimalMode(data: Record<string, unknown>): boolean {
   // Check if this is a minimal response (missing typically-required fields)
   // Minimal mode responses omit project_id, subtasks, context_data, etc.
   return !data.project_id && !data.subtasks && !data.context_data;
@@ -56,7 +92,11 @@ function isMinimalMode(data: any): boolean {
 /**
  * Validate Task response structure
  */
-export function validateTask(data: any, endpoint: string): ValidationResult {
+export function validateTask(data: unknown, endpoint: string): ValidationResult {
+  if (!isRecord(data)) {
+    return invalidResult(endpoint, typeof data);
+  }
+
   const errors: ValidationError[] = [];
   const warnings: ValidationWarning[] = [];
   const minimal = isMinimalMode(data);
@@ -139,7 +179,7 @@ export function validateTask(data: any, endpoint: string): ValidationResult {
     });
   } else if (Array.isArray(data.assignees)) {
     // Check each assignee has @ prefix
-    data.assignees.forEach((assignee: any, index: number) => {
+    data.assignees.forEach((assignee: unknown, index: number) => {
       if (typeof assignee !== 'string') {
         warnings.push({
           field: `assignees[${index}]`,
@@ -177,9 +217,9 @@ export function validateTask(data: any, endpoint: string): ValidationResult {
 
   // updated_at should be >= created_at
   if (data.created_at && data.updated_at) {
-    const created = new Date(data.created_at);
-    const updated = new Date(data.updated_at);
-    if (updated < created) {
+    const created = toDate(data.created_at);
+    const updated = toDate(data.updated_at);
+    if (created && updated && updated < created) {
       warnings.push({
         field: 'updated_at',
         message: `updated_at (${data.updated_at}) is before created_at (${data.created_at})`
@@ -200,26 +240,30 @@ export function validateTask(data: any, endpoint: string): ValidationResult {
     }
 
     // Subtask count fields (only validate if subtasks array is present)
-    if (typeof data.subtask_count === 'number' && Array.isArray(data.subtasks)) {
-      if (data.subtask_count !== data.subtasks.length) {
+    const subtaskCount = data.subtask_count;
+    if (typeof subtaskCount === 'number' && Array.isArray(data.subtasks)) {
+      if (subtaskCount !== data.subtasks.length) {
         errors.push({
           field: 'subtask_count',
           expected: String(data.subtasks.length),
-          actual: String(data.subtask_count),
-          message: `subtask_count (${data.subtask_count}) doesn't match subtasks.length (${data.subtasks.length})`
+          actual: String(subtaskCount),
+          message: `subtask_count (${subtaskCount}) doesn't match subtasks.length (${data.subtasks.length})`
         });
       }
     }
 
     // Completed subtasks count (only validate if subtasks array is present)
-    if (typeof data.completed_subtasks === 'number' && Array.isArray(data.subtasks)) {
-      const actualCompleted = data.subtasks.filter((s: any) => s.status === 'done' || s.status === 'completed').length;
-      if (data.completed_subtasks !== actualCompleted) {
+    const completedSubtasks = data.completed_subtasks;
+    if (typeof completedSubtasks === 'number' && Array.isArray(data.subtasks)) {
+      const actualCompleted = data.subtasks.filter((s: unknown) =>
+        isRecord(s) && (s.status === 'done' || s.status === 'completed')
+      ).length;
+      if (completedSubtasks !== actualCompleted) {
         errors.push({
           field: 'completed_subtasks',
           expected: String(actualCompleted),
-          actual: String(data.completed_subtasks),
-          message: `completed_subtasks (${data.completed_subtasks}) doesn't match actual completed count (${actualCompleted})`
+          actual: String(completedSubtasks),
+          message: `completed_subtasks (${completedSubtasks}) doesn't match actual completed count (${actualCompleted})`
         });
       }
     }
@@ -241,13 +285,14 @@ export function validateTask(data: any, endpoint: string): ValidationResult {
   }
 
   // Progress percentage should be 0-100
-  if (typeof data.progress_percentage === 'number') {
-    if (data.progress_percentage < 0 || data.progress_percentage > 100) {
+  const progressPercentage = data.progress_percentage;
+  if (typeof progressPercentage === 'number') {
+    if (progressPercentage < 0 || progressPercentage > 100) {
       errors.push({
         field: 'progress_percentage',
         expected: '0-100',
-        actual: String(data.progress_percentage),
-        message: `progress_percentage (${data.progress_percentage}) is out of range`
+        actual: String(progressPercentage),
+        message: `progress_percentage (${progressPercentage}) is out of range`
       });
     }
   }
@@ -264,7 +309,11 @@ export function validateTask(data: any, endpoint: string): ValidationResult {
 /**
  * Validate Subtask response structure
  */
-export function validateSubtask(data: any, endpoint: string): ValidationResult {
+export function validateSubtask(data: unknown, endpoint: string): ValidationResult {
+  if (!isRecord(data)) {
+    return invalidResult(endpoint, typeof data);
+  }
+
   const errors: ValidationError[] = [];
   const warnings: ValidationWarning[] = [];
 
@@ -320,13 +369,14 @@ export function validateSubtask(data: any, endpoint: string): ValidationResult {
   });
 
   // Progress percentage should be 0-100
-  if (typeof data.progress_percentage === 'number') {
-    if (data.progress_percentage < 0 || data.progress_percentage > 100) {
+  const progressPercentage = data.progress_percentage;
+  if (typeof progressPercentage === 'number') {
+    if (progressPercentage < 0 || progressPercentage > 100) {
       errors.push({
         field: 'progress_percentage',
         expected: '0-100',
-        actual: String(data.progress_percentage),
-        message: `progress_percentage (${data.progress_percentage}) is out of range`
+        actual: String(progressPercentage),
+        message: `progress_percentage (${progressPercentage}) is out of range`
       });
     }
   }
@@ -355,7 +405,11 @@ export function validateSubtask(data: any, endpoint: string): ValidationResult {
 /**
  * Validate Project response structure
  */
-export function validateProject(data: any, endpoint: string): ValidationResult {
+export function validateProject(data: unknown, endpoint: string): ValidationResult {
+  if (!isRecord(data)) {
+    return invalidResult(endpoint, typeof data);
+  }
+
   const errors: ValidationError[] = [];
   const warnings: ValidationWarning[] = [];
 
@@ -403,7 +457,11 @@ export function validateProject(data: any, endpoint: string): ValidationResult {
  * Validate BranchSummary response structure
  * Used for performance-optimized bulk summary endpoints
  */
-export function validateBranchSummary(data: any, endpoint: string): ValidationResult {
+export function validateBranchSummary(data: unknown, endpoint: string): ValidationResult {
+  if (!isRecord(data)) {
+    return invalidResult(endpoint, typeof data);
+  }
+
   const errors: ValidationError[] = [];
   const warnings: ValidationWarning[] = [];
 
@@ -455,13 +513,14 @@ export function validateBranchSummary(data: any, endpoint: string): ValidationRe
   }
 
   // progress_percentage should be 0-100
-  if (typeof data.progress_percentage === 'number') {
-    if (data.progress_percentage < 0 || data.progress_percentage > 100) {
+  const progressPercentage = data.progress_percentage;
+  if (typeof progressPercentage === 'number') {
+    if (progressPercentage < 0 || progressPercentage > 100) {
       errors.push({
         field: 'progress_percentage',
         expected: '0-100',
-        actual: String(data.progress_percentage),
-        message: `progress_percentage (${data.progress_percentage}) is out of range`
+        actual: String(progressPercentage),
+        message: `progress_percentage (${progressPercentage}) is out of range`
       });
     }
   }
@@ -478,7 +537,11 @@ export function validateBranchSummary(data: any, endpoint: string): ValidationRe
 /**
  * Validate GitBranch response structure
  */
-export function validateGitBranch(data: any, endpoint: string): ValidationResult {
+export function validateGitBranch(data: unknown, endpoint: string): ValidationResult {
+  if (!isRecord(data)) {
+    return invalidResult(endpoint, typeof data);
+  }
+
   const errors: ValidationError[] = [];
   const warnings: ValidationWarning[] = [];
 
@@ -541,7 +604,7 @@ export function validateGitBranch(data: any, endpoint: string): ValidationResult
 /**
  * Log validation result
  */
-export function logValidationResult(result: ValidationResult, data: any) {
+export function logValidationResult(result: ValidationResult, data: unknown) {
   if (!result.isValid) {
     logger.error('🚨 [Response Validation] FAILED', {
       endpoint: result.endpoint,
@@ -572,7 +635,7 @@ export function logValidationResult(result: ValidationResult, data: any) {
  * Main validation dispatcher
  */
 export function validateResponse(
-  data: any,
+  data: unknown,
   type: 'task' | 'subtask' | 'project' | 'branch' | 'branch_summary' | 'context' | 'unknown',
   endpoint: string
 ): ValidationResult {

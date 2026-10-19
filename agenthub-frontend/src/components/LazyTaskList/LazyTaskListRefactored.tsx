@@ -19,8 +19,19 @@ import { useDialogManager } from "./hooks/useDialogManager";
 import { TaskListHeader, TaskListContent, TaskSearchSection, DialogSection } from "./components";
 
 // Types
+import type { Task } from "../../types";
 import type { TaskSummary } from "../../types/taskTypes";
 import { LazyTaskListProps, TASKS_PER_PAGE, TaskActiveDialog } from "../../types/taskTypes";
+
+/** TaskSearchSection reports its selections as `unknown`; only an id-bearing object is usable. */
+function hasStringId(value: unknown): value is { id: string } {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'id' in value &&
+    typeof value.id === 'string'
+  );
+}
 
 const LazyTaskListRefactored: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTasksChanged }) => {
   // Get URL parameters
@@ -43,10 +54,10 @@ const LazyTaskListRefactored: React.FC<LazyTaskListProps> = ({ projectId, taskTr
 
   // Track full task loads
   const [loadedTaskIds, setLoadedTaskIds] = useState<Set<string>>(new Set());
-  const fullTasksMap = useRef<Map<string, any>>(new Map());
+  const fullTasksMap = useRef<Map<string, Task>>(new Map());
 
   // Load full task on demand
-  const loadFullTask = useCallback(async (taskId: string): Promise<any | null> => {
+  const loadFullTask = useCallback(async (taskId: string): Promise<Task | null> => {
     // ✅ FIX 2025-11-22: Always fetch from React Query cache (might have fresh data from WebSocket)
     // Don't return from fullTasksMap early - it can be stale after WebSocket updates
     // React Query cache is updated by WebSocket (useRealtimeSync.ts:144-145)
@@ -80,7 +91,7 @@ const LazyTaskListRefactored: React.FC<LazyTaskListProps> = ({ projectId, taskTr
   const [availableSeatsError, setAvailableSeatsError] = useState(false);
   const [availableSeats, setAvailableSeats] = useState<string[]>([]);
   const [hoveredTaskId, setHoveredTaskId] = useState<string | null>(null);
-  const [highlightedDependencies, setHighlightedDependencies] = useState<Set<string>>(new Set());
+  const [highlightedDependencies] = useState<Set<string>>(new Set());
 
   // Load seats on demand
   const loadSeatsOnDemand = useCallback(async () => {
@@ -170,7 +181,7 @@ const LazyTaskListRefactored: React.FC<LazyTaskListProps> = ({ projectId, taskTr
   }, [expandedTasks, loadFullTask]);
 
   // Task CRUD handlers using React Query mutations
-  const handleCreateTask = useCallback(async (taskData: any) => {
+  const handleCreateTask = useCallback(async (taskData: Partial<Task>) => {
     if (!taskTreeId) {
       showError('Cannot create task: No branch selected.');
       return;
@@ -186,14 +197,14 @@ const LazyTaskListRefactored: React.FC<LazyTaskListProps> = ({ projectId, taskTr
       // Note: Success toast is handled by WebSocket (backend confirmation)
       closeDialog();
       if (onTasksChanged) onTasksChanged();
-    } catch (error: any) {
-      showError(`Failed to create task: ${error.message || 'Unknown error'}`);
+    } catch (error: unknown) {
+      showError(`Failed to create task: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setSaving(false);
     }
   }, [closeDialog, onTasksChanged, taskTreeId, showError, setSaving, taskMutations]);
 
-  const handleUpdateTask = useCallback(async (taskId: string, updates: any) => {
+  const handleUpdateTask = useCallback(async (taskId: string, updates: Partial<Task>) => {
     setSaving(true);
     try {
       await taskMutations.updateTaskAsync({
@@ -204,8 +215,8 @@ const LazyTaskListRefactored: React.FC<LazyTaskListProps> = ({ projectId, taskTr
       // Note: Success toast is handled by WebSocket (backend confirmation)
       closeDialog();
       if (onTasksChanged) onTasksChanged();
-    } catch (error: any) {
-      showError(`Failed to update task: ${error.message || 'Unknown error'}`);
+    } catch (error: unknown) {
+      showError(`Failed to update task: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setSaving(false);
     }
@@ -218,8 +229,8 @@ const LazyTaskListRefactored: React.FC<LazyTaskListProps> = ({ projectId, taskTr
 
       // Note: Success toast is handled by WebSocket (backend confirmation)
       if (onTasksChanged) onTasksChanged();
-    } catch (error: any) {
-      showError(`Failed to delete task: ${error.message || 'Unknown error'}`);
+    } catch (error: unknown) {
+      showError(`Failed to delete task: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }, [closeDialog, onTasksChanged, showError, taskMutations]);
 
@@ -246,8 +257,8 @@ const LazyTaskListRefactored: React.FC<LazyTaskListProps> = ({ projectId, taskTr
       subtask_count: task.subtask_count ?? 0,
       assignees_count: task.assignees?.length ?? 0,
       assignees: task.assignees || [],
-      has_dependencies: task.dependencies?.length > 0 || task.dependency_summary?.total_dependencies > 0,
-      dependency_count: task.dependencies?.length ?? task.dependency_summary?.total_dependencies ?? 0,
+      has_dependencies: (task.dependencies?.length ?? 0) > 0 || (task.dependency_count ?? 0) > 0,
+      dependency_count: task.dependencies?.length ?? task.dependency_count ?? 0,
       has_context: Boolean(task.context_id || task.context_data),
       created_at: task.created_at
     }));
@@ -271,7 +282,7 @@ const LazyTaskListRefactored: React.FC<LazyTaskListProps> = ({ projectId, taskTr
 
   // Build fullTasks map from loaded tasks
   const fullTasks = useMemo(() => {
-    const map = new Map();
+    const map = new Map<string, Task>();
     loadedTaskIds.forEach(taskId => {
       const fullTask = fullTasksMap.current.get(taskId);
       if (fullTask) {
@@ -291,8 +302,16 @@ const LazyTaskListRefactored: React.FC<LazyTaskListProps> = ({ projectId, taskTr
       <TaskSearchSection
         projectId={projectId}
         taskTreeId={taskTreeId}
-        onTaskSelect={(task) => openDialog('details', task.id)}
-        onSubtaskSelect={(_subtask, parentTask) => openDialog('details', parentTask.id)}
+        onTaskSelect={(task) => {
+          if (hasStringId(task)) {
+            openDialog('details', task.id);
+          }
+        }}
+        onSubtaskSelect={(_subtask, parentTask) => {
+          if (hasStringId(parentTask)) {
+            openDialog('details', parentTask.id);
+          }
+        }}
       />
 
       <TaskListHeader
@@ -320,7 +339,6 @@ const LazyTaskListRefactored: React.FC<LazyTaskListProps> = ({ projectId, taskTr
         onToggleExpand={toggleTaskExpansion}
         onOpenDialog={openDialog}
         onHoverTask={setHoveredTaskId}
-        onHighlightDependencies={setHighlightedDependencies}
       />
 
       <DialogSection

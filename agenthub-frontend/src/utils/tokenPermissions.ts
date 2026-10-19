@@ -52,7 +52,7 @@ export class TokenPermissionParser {
     }
 
     // Check scope-based permissions
-    const scope = decoded.scope || '';
+    const scope = typeof decoded.scope === 'string' ? decoded.scope : '';
     const scopes = scope.split(' ');
 
     return {
@@ -90,8 +90,9 @@ export class TokenPermissionParser {
     }
 
     // Check direct allowed_resources
-    if (decoded.allowed_resources) {
-      return decoded.allowed_resources;
+    const allowedResources = decoded.allowed_resources;
+    if (Array.isArray(allowedResources)) {
+      return allowedResources.filter((resource: unknown): resource is string => typeof resource === 'string');
     }
 
     // Default resources based on role

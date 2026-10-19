@@ -55,11 +55,11 @@ vi.mock('../../utils/contextHelpers', () => ({
 
 vi.mock('../../components/ClickableAssignees', () => ({
   __esModule: true,
-  default: ({ assignees }: any) => (
+  default: ({ assignees }: unknown) => (
     <div data-testid="clickable-assignees">{(assignees ?? []).join(',')}</div>
   ),
 }));
-vi.mock('../../components/ui/CopyableId', () => ({ CopyableId: ({ id }: any) => <span>{id}</span> }));
+vi.mock('../../components/ui/CopyableId', () => ({ CopyableId: ({ id }: unknown) => <span>{id}</span> }));
 vi.mock('../../components/ui/RawJSONDisplay', () => ({ __esModule: true, default: () => <div /> }));
 vi.mock('../../components/ui/EnhancedJSONViewer', () => ({ EnhancedJSONViewer: () => <div /> }));
 
@@ -85,8 +85,8 @@ describe('TaskDetailsDialog - an OPEN dialog takes an arriving status change', (
       updated_at: '2026-10-09T18:00:00Z',
     } as unknown as Task;
 
-    (api.getTask as any).mockResolvedValue(serverTask);
-    (api.getTaskContext as any).mockResolvedValue(null);
+    (api.getTask as unknown).mockResolvedValue(serverTask);
+    (api.getTaskContext as unknown).mockResolvedValue(null);
 
     const queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false, gcTime: Infinity }, mutations: { retry: false } },

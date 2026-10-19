@@ -217,12 +217,13 @@ export const SessionLiveView: React.FC<SessionLiveViewProps> = ({
   const stickToBottom = useRef(true);
   const newestSeq = events.length > 0 ? events[events.length - 1].seq : 0;
   const oldestSeq = events.length > 0 ? events[0].seq : 0;
+  const atStart = oldestSeq === 0;
 
   // Follow the newest step while the reader is at the bottom; reading history leaves the scroll alone.
   useEffect(() => {
     const node = scroller.current;
     if (node && stickToBottom.current) node.scrollTop = node.scrollHeight;
-  }, [newestSeq, oldestSeq === 0]);
+  }, [newestSeq, atStart]);
 
   if (status === 'idle') {
     return (

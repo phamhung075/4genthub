@@ -158,7 +158,7 @@ describe('useAuthenticatedFetch', () => {
     // Mock cookie access
     mockCookies.get.mockReturnValue('cookie-token');
 
-    const response = await authenticatedFetch('/api/standalone', {
+    await authenticatedFetch('/api/standalone', {
       method: 'GET',
     });
 

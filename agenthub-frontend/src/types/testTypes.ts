@@ -28,7 +28,7 @@ export interface MockWebSocketServerConfig {
 export interface ClientSubscription {
   clientId: string;
   scope: 'branch' | 'task' | 'project' | 'global';
-  filters: Record<string, any>;
+  filters: Record<string, unknown>;
   active: boolean;
 }
 

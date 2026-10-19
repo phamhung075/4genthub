@@ -19,7 +19,7 @@ export const EmailVerification: React.FC = () => {
     // Parse the URL hash to extract tokens
     const hash = window.location.hash.substring(1);
     const params = new URLSearchParams(hash);
-    
+
     const accessToken = params.get('access_token');
     const refreshToken = params.get('refresh_token');
     const type = params.get('type');
@@ -40,7 +40,7 @@ export const EmailVerification: React.FC = () => {
       });
 
       setStatus('success');
-      
+
       if (type === 'signup') {
         setMessage('Email verified successfully! Welcome to agenthub.');
       } else if (type === 'recovery') {
@@ -67,7 +67,7 @@ export const EmailVerification: React.FC = () => {
 
   const handleResendVerification = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!resendEmail) {
       setResendMessage('Please enter your email address');
       return;
@@ -86,7 +86,7 @@ export const EmailVerification: React.FC = () => {
       });
 
       const data = await response.json();
-      
+
       if (response.ok && data.success) {
         setStatus('success');
         setMessage('Verification email sent! Please check your inbox.');
@@ -94,7 +94,7 @@ export const EmailVerification: React.FC = () => {
       } else {
         setResendMessage(data.detail || 'Failed to resend verification email. Please try again.');
       }
-    } catch (err) {
+    } catch {
       setResendMessage('Failed to resend verification email. Please try again.');
     } finally {
       setResendLoading(false);
@@ -122,7 +122,7 @@ export const EmailVerification: React.FC = () => {
           {status === 'error' && (
             <XCircle className="h-12 w-12 text-red-500" />
           )}
-          
+
           <p className="text-center text-sm text-gray-600 dark:text-gray-400">
             {message}
           </p>
@@ -156,11 +156,11 @@ export const EmailVerification: React.FC = () => {
                   )}
                 </button>
               </form>
-              
+
               {resendMessage && (
                 <p className="text-sm text-red-500 text-center">{resendMessage}</p>
               )}
-              
+
               <div className="flex flex-col space-y-2">
                 <button
                   onClick={() => navigate('/signup')}
@@ -177,7 +177,7 @@ export const EmailVerification: React.FC = () => {
               </div>
             </div>
           )}
-          
+
           {status === 'error' && !showResendForm && (
             <div className="flex flex-col space-y-2 w-full">
               <button

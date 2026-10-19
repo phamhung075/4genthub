@@ -13,11 +13,18 @@ const mocks = vi.hoisted(() => ({
   debugLoggerConfig: vi.fn(),
 }));
 
-const loggerState = vi.hoisted(() => ({
-  imported: false,
-  promise: Promise.resolve({}) as Promise<unknown>,
-  reject: (_error: Error) => {},
-}));
+const loggerState = vi.hoisted(() => {
+  const state: {
+    imported: boolean;
+    promise: Promise<unknown>;
+    reject: (error: Error) => void;
+  } = {
+    imported: false,
+    promise: Promise.resolve({}) as Promise<unknown>,
+    reject: () => {},
+  };
+  return state;
+});
 
 // Mock dependencies
 vi.mock('react-dom/client', () => ({
@@ -51,7 +58,7 @@ vi.mock('../config/logger.config', () => ({
 }));
 
 describe('index.tsx', () => {
-  let mockRoot: any;
+  let mockRoot: unknown;
   let mockRender: ReturnType<typeof vi.fn>;
   let container: HTMLElement;
   let originalGetElementById: typeof document.getElementById;
@@ -168,7 +175,7 @@ describe('index.tsx', () => {
 
     // Real react-dom raises when handed a null container; emulate it here so the
     // entry's forwarding of the missing element is observable.
-    (ReactDOM.createRoot as unknown as ReturnType<typeof vi.fn>).mockImplementation((element: any) => {
+    (ReactDOM.createRoot as unknown as ReturnType<typeof vi.fn>).mockImplementation((element: unknown) => {
       if (!element) {
         throw new Error('Target container is not a DOM element');
       }

@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from './../test-utils';
 import * as api from '../../api';
 import * as apiV2 from '../../services/apiV2';
 
@@ -10,7 +9,7 @@ vi.mock('../../services/apiV2');
 describe('CRUD Operations Integration Tests', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    (apiV2.isAuthenticated as any).mockReturnValue(true);
+    (apiV2.isAuthenticated as unknown).mockReturnValue(true);
   });
 
   describe('Project V2 API Operations', () => {
@@ -22,8 +21,8 @@ describe('CRUD Operations Integration Tests', () => {
         git_branchs: {}
       };
 
-      (apiV2.projectApiV2.createProject as any).mockResolvedValue(mockProject);
-      (api.createProject as any).mockResolvedValue(mockProject);
+      (apiV2.projectApiV2.createProject as unknown).mockResolvedValue(mockProject);
+      (api.createProject as unknown).mockResolvedValue(mockProject);
 
       const result = await api.createProject({
         name: 'New V2 Project',
@@ -40,8 +39,8 @@ describe('CRUD Operations Integration Tests', () => {
         description: 'Updated via V2 API'
       };
 
-      (apiV2.projectApiV2.updateProject as any).mockResolvedValue(mockProject);
-      (api.updateProject as any).mockResolvedValue(mockProject);
+      (apiV2.projectApiV2.updateProject as unknown).mockResolvedValue(mockProject);
+      (api.updateProject as unknown).mockResolvedValue(mockProject);
 
       const result = await api.updateProject('proj-123', {
         name: 'Updated V2 Project Name',
@@ -52,8 +51,8 @@ describe('CRUD Operations Integration Tests', () => {
     });
 
     it('should delete project via V2 API when authenticated', async () => {
-      (apiV2.projectApiV2.deleteProject as any).mockResolvedValue(undefined);
-      (api.deleteProject as any).mockResolvedValue({
+      (apiV2.projectApiV2.deleteProject as unknown).mockResolvedValue(undefined);
+      (api.deleteProject as unknown).mockResolvedValue({
         success: true,
         message: undefined,
         error: undefined
@@ -72,8 +71,8 @@ describe('CRUD Operations Integration Tests', () => {
   describe('V2 API Fallback Mechanism', () => {
     it('should fallback to V1 MCP when V2 API fails', async () => {
       // Mock V2 API failure and V1 success
-      (apiV2.projectApiV2.createProject as any).mockRejectedValue(new Error('V2 API error'));
-      (api.createProject as any).mockImplementation(async (project) => {
+      (apiV2.projectApiV2.createProject as unknown).mockRejectedValue(new Error('V2 API error'));
+      (api.createProject as unknown).mockImplementation(async (project) => {
         // Simulate calling both V2 (failing) and V1 (succeeding)
         try {
           await apiV2.projectApiV2.createProject(project);
@@ -97,8 +96,8 @@ describe('CRUD Operations Integration Tests', () => {
 
   describe('Error Handling', () => {
     it('should handle network errors gracefully', async () => {
-      (api.createProject as any).mockRejectedValue(new Error('Network error'));
-      (api.deleteProject as any).mockRejectedValue(new Error('Network error'));
+      (api.createProject as unknown).mockRejectedValue(new Error('Network error'));
+      (api.deleteProject as unknown).mockRejectedValue(new Error('Network error'));
 
       // All operations should handle errors without crashing
       await expect(api.createProject({})).rejects.toThrow('Network error');
@@ -106,7 +105,7 @@ describe('CRUD Operations Integration Tests', () => {
     });
 
     it('should handle malformed responses', async () => {
-      (api.createProject as any).mockResolvedValue(null);
+      (api.createProject as unknown).mockResolvedValue(null);
 
       const projectResult = await api.createProject({ name: 'test' });
 
@@ -116,8 +115,8 @@ describe('CRUD Operations Integration Tests', () => {
 
   describe('Authentication State Handling', () => {
     it('should use V1 API when not authenticated', async () => {
-      (apiV2.isAuthenticated as any).mockReturnValue(false);
-      (api.createProject as any).mockImplementation(async (project) => {
+      (apiV2.isAuthenticated as unknown).mockReturnValue(false);
+      (api.createProject as unknown).mockImplementation(async (project) => {
         // When not authenticated, should skip V2 API entirely
         return { id: 'proj-v1-only', ...project };
       });

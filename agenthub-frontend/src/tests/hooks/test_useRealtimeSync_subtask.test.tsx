@@ -36,7 +36,7 @@ vi.mock('../../components/ui/toast', () => ({
 
 describe('useRealtimeSync - Subtask Delete Handler with Type Guards (TDD)', () => {
   let queryClient: QueryClient;
-  let mockWebSocketClient: any;
+  let mockWebSocketClient: unknown;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -126,7 +126,7 @@ describe('useRealtimeSync - Subtask Delete Handler with Type Guards (TDD)', () =
    * Should process normally when all required fields present
    */
   it('should process valid subtask delete payload with all required fields', async () => {
-    const { result } = renderHook(
+    renderHook(
       () => useRealtimeSync(mockWebSocketClient, true),
       { wrapper }
     );
@@ -181,7 +181,7 @@ describe('useRealtimeSync - Subtask Delete Handler with Type Guards (TDD)', () =
    * Should log error and skip processing
    */
   it('should reject subtask delete payload missing required id field', async () => {
-    const { result } = renderHook(
+    renderHook(
       () => useRealtimeSync(mockWebSocketClient, true),
       { wrapper }
     );
@@ -203,7 +203,7 @@ describe('useRealtimeSync - Subtask Delete Handler with Type Guards (TDD)', () =
             // id: 'subtask-invalid', // MISSING
             title: 'Invalid Subtask',
             task_id: 'task-123',
-          } as any,
+          } as unknown,
         },
       },
       metadata: {
@@ -231,7 +231,7 @@ describe('useRealtimeSync - Subtask Delete Handler with Type Guards (TDD)', () =
    * Should log error and skip processing
    */
   it('should reject subtask delete payload missing required task_id field', async () => {
-    const { result } = renderHook(
+    renderHook(
       () => useRealtimeSync(mockWebSocketClient, true),
       { wrapper }
     );
@@ -253,7 +253,7 @@ describe('useRealtimeSync - Subtask Delete Handler with Type Guards (TDD)', () =
             id: 'subtask-invalid',
             title: 'Invalid Subtask',
             // task_id: 'task-123', // MISSING
-          } as any,
+          } as unknown,
         },
       },
       metadata: {
@@ -281,7 +281,7 @@ describe('useRealtimeSync - Subtask Delete Handler with Type Guards (TDD)', () =
    * Should log error and skip processing
    */
   it('should reject completely invalid subtask delete payload', async () => {
-    const { result } = renderHook(
+    renderHook(
       () => useRealtimeSync(mockWebSocketClient, true),
       { wrapper }
     );
@@ -299,7 +299,7 @@ describe('useRealtimeSync - Subtask Delete Handler with Type Guards (TDD)', () =
         entity: 'subtask',
         action: 'deleted',
         data: {
-          primary: {} as any, // Empty object
+          primary: {} as unknown, // Empty object
         },
       },
       metadata: {

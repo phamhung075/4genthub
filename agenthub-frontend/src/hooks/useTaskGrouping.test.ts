@@ -194,7 +194,7 @@ describe('useTaskGrouping', () => {
 
     expect(result.current.isGrouped).toBe(true);
     expect(Array.isArray(result.current.processedTasks)).toBe(true);
-    expect((result.current.processedTasks as any[]).length).toBe(3); // 3 groups
-    expect((result.current.processedTasks as any[])[0]).toHaveProperty('groupKey');
+    expect((result.current.processedTasks as unknown[]).length).toBe(3); // 3 groups
+    expect((result.current.processedTasks as unknown[])[0]).toHaveProperty('groupKey');
   });
 });

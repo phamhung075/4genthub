@@ -61,7 +61,7 @@ export function cleanProgressText(text: string): string {
   if (!text) return '';
 
   // Remove === Progress X === headers and similar patterns
-  let cleaned = text
+  const cleaned = text
     .replace(/^=+\s*Progress\s+\d+\s*=+\s*$/gm, '') // Remove === Progress N === lines
     .replace(/^#+\s*Progress\s+\d+\s*$/gm, '') // Remove ## Progress N headers
     .replace(/^-+\s*Progress\s+\d+\s*-+\s*$/gm, '') // Remove --- Progress N --- lines

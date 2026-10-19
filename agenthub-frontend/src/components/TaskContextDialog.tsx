@@ -1,10 +1,11 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Textarea } from "./ui/textarea";
-import { FileText, Save, Edit, X, Copy, Check as CheckIcon, Info, CheckSquare, GitBranch, History, Settings, Lightbulb, AlertCircle, Layers, Globe, FolderOpen, ChevronDown, ChevronUp, ChevronRight } from "lucide-react";
+import { FileText, Save, Edit, X, Copy, Check as CheckIcon, Info, CheckSquare, GitBranch, History, Settings, Lightbulb, AlertCircle, Layers, Globe, FolderOpen, ChevronDown, ChevronUp } from "lucide-react";
 import { Task } from "../api";
 import { getTaskContext, updateTaskContext, getBranchContext, getProjectContext, getGlobalContext } from "../api";
+import type { BranchContextData, GlobalContext, ProjectContextData, TaskContextData } from "../types/context.types";
 import { EnhancedJSONViewer } from "./ui/EnhancedJSONViewer";
 import logger from "../utils/logger";
 
@@ -12,10 +13,17 @@ interface TaskContextDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   task: Task | null;
-  context?: any | null;
+  context?: unknown | null;
   onClose: () => void;
   loading?: boolean;
 }
+
+// The context API hands back an untyped payload: either the context fields directly or an envelope
+// with the fields under `data`. State keeps whichever shape arrived, typed with the domain model.
+type TaskContextState = TaskContextData & { data?: TaskContextData };
+type BranchContextResponse = BranchContextData & { data?: BranchContextData };
+type ProjectContextResponse = ProjectContextData & { data?: ProjectContextData };
+type GlobalContextResponse = GlobalContext & { data?: GlobalContext };
 
 // Parse markdown for key-value format
 const parseKeyValueMarkdown = (content: string): Record<string, string> => {
@@ -29,11 +37,11 @@ const parseKeyValueMarkdown = (content: string): Record<string, string> => {
       if (currentKey && currentValue.length > 0) {
         result[currentKey] = currentValue.join('\n').trim();
       }
-      
+
       const [key, ...valueParts] = line.split(':');
       currentKey = key.trim();
       const value = valueParts.join(':').trim();
-      
+
       if (value) {
         result[currentKey] = value;
         currentKey = '';
@@ -81,11 +89,11 @@ const parseListMarkdown = (content: string): string[] => {
 };
 
 // Convert to markdown format for each section
-const keyValueToMarkdown = (data: Record<string, any>): string => {
-  if (!data || Object.keys(data).length === 0) {
+const keyValueToMarkdown = (data: unknown): string => {
+  if (!data || typeof data !== 'object' || Object.keys(data).length === 0) {
     return '';
   }
-  
+
   return Object.entries(data).map(([key, value]) => {
     if (typeof value === 'object' && value !== null) {
       if (Array.isArray(value)) {
@@ -98,19 +106,19 @@ const keyValueToMarkdown = (data: Record<string, any>): string => {
   }).join('\n');
 };
 
-const listToMarkdown = (data: string[] | Record<string, any>): string => {
+const listToMarkdown = (data: unknown): string => {
   if (!data) {
     return '';
   }
-  
+
   if (Array.isArray(data)) {
     return data.map(item => `- ${item}`).join('\n');
   }
-  
+
   if (typeof data === 'object') {
     return Object.entries(data).map(([key, value]) => `- ${key}: ${value}`).join('\n');
   }
-  
+
   return '';
 };
 
@@ -122,17 +130,17 @@ export const TaskContextDialog: React.FC<TaskContextDialogProps> = ({
   onClose,
   loading: initialLoading = false
 }) => {
-  const [taskContext, setTaskContext] = useState<any>(null);
-  const [branchContext, setBranchContext] = useState<any>(null);
-  const [projectContext, setProjectContext] = useState<any>(null);
-  const [globalContext, setGlobalContext] = useState<any>(null);
+  const [taskContext, setTaskContext] = useState<TaskContextState | null>(null);
+  const [branchContext, setBranchContext] = useState<BranchContextData | null>(null);
+  const [projectContext, setProjectContext] = useState<ProjectContextData | null>(null);
+  const [globalContext, setGlobalContext] = useState<GlobalContext | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [loading, setLoading] = useState(initialLoading);
   const [saving, setSaving] = useState(false);
   const [jsonCopied, setJsonCopied] = useState(false);
   const [rawJsonExpanded, setRawJsonExpanded] = useState(false);
   const [activeTab, setActiveTab] = useState<'task_info' | 'task_progress' | 'completion_summary' | 'testing_notes' | 'blockers' | 'insights' | 'next_steps' | 'task_metadata' | 'inheritance'>('task_info');
-  
+
   // Separate markdown content for each section
   const [taskInfoMarkdown, setTaskInfoMarkdown] = useState('');
   const [taskProgressMarkdown, setTaskProgressMarkdown] = useState('');
@@ -143,13 +151,22 @@ export const TaskContextDialog: React.FC<TaskContextDialogProps> = ({
   const [nextStepsMarkdown, setNextStepsMarkdown] = useState('');
   const [taskMetadataMarkdown, setTaskMetadataMarkdown] = useState('');
 
+  // Only the current task's fields matter, and the initial context is read through a ref so the
+  // dialog does not refetch when the parent hands over a new object identity.
+  const taskId = task?.id;
+  const taskBranchId = task?.git_branch_id;
+  const taskProjectId = task?.project_id;
+  const initialContextRef = useRef(initialContext);
+  initialContextRef.current = initialContext;
+
   // Fetch task context function (defined early for use in WebSocket handler)
   const fetchTaskContext = useCallback(async () => {
-    if (!task?.id) return;
+    if (!taskId) return;
 
     setLoading(true);
     try {
-      const context = await getTaskContext(task.id);
+      // The API response is a context envelope or the context fields at the top level.
+      const context = (await getTaskContext(taskId)) as TaskContextState | null;
       logger.debug('Fetched task context:', context);
 
       if (context) {
@@ -177,15 +194,16 @@ export const TaskContextDialog: React.FC<TaskContextDialogProps> = ({
         setInsightsMarkdown(listToMarkdown(insights));
         setNextStepsMarkdown(listToMarkdown(nextSteps));
         setTaskMetadataMarkdown(keyValueToMarkdown(taskMetadata));
-      } else if (initialContext) {
-        // Use initial context if provided
-        setTaskContext(initialContext);
-        const contextData = initialContext.data || initialContext;
+      } else if (initialContextRef.current) {
+        // Use initial context if provided; the prop arrives untyped from the parent.
+        const initial = initialContextRef.current as TaskContextState;
+        setTaskContext(initial);
+        const contextData = initial.data || initial;
 
         setTaskInfoMarkdown(keyValueToMarkdown(contextData.task_info || contextData.task_data || {}));
         setTaskProgressMarkdown(keyValueToMarkdown(contextData.task_progress || contextData.progress || {}));
-        setCompletionSummaryMarkdown(contextData.completion_summary || '');
-        setTestingNotesMarkdown(contextData.testing_notes || '');
+        setCompletionSummaryMarkdown(typeof contextData.completion_summary === 'string' ? contextData.completion_summary : '');
+        setTestingNotesMarkdown(typeof contextData.testing_notes === 'string' ? contextData.testing_notes : '');
         setBlockersMarkdown(listToMarkdown(contextData.blockers || []));
         setInsightsMarkdown(listToMarkdown(contextData.insights || []));
         setNextStepsMarkdown(listToMarkdown(contextData.next_steps || []));
@@ -196,7 +214,31 @@ export const TaskContextDialog: React.FC<TaskContextDialogProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [task?.id, initialContext]);
+  }, [taskId]);
+
+  const fetchInheritedContexts = useCallback(async () => {
+    if (!taskId) return;
+
+    try {
+      // Fetch branch context if available
+      if (taskBranchId) {
+        const branch = (await getBranchContext(taskBranchId)) as BranchContextResponse | null;
+        if (branch) setBranchContext(branch.data || branch);
+      }
+
+      // Fetch project context if available
+      if (taskProjectId) {
+        const project = (await getProjectContext(taskProjectId)) as ProjectContextResponse | null;
+        if (project) setProjectContext(project.data || project);
+      }
+
+      // Fetch global context
+      const global = (await getGlobalContext()) as GlobalContextResponse | null;
+      if (global) setGlobalContext(global.data || global);
+    } catch (error) {
+      logger.error('Error fetching inherited contexts:', error);
+    }
+  }, [taskId, taskBranchId, taskProjectId]);
 
   // Real-time updates now handled by useRealtimeSync + React Query cache
   // When AI agents use MCP tools, backend broadcasts WebSocket 'update' events
@@ -208,7 +250,7 @@ export const TaskContextDialog: React.FC<TaskContextDialogProps> = ({
 
   // Fetch context when dialog opens
   useEffect(() => {
-    if (open && task?.id) {
+    if (open && taskId) {
       fetchTaskContext();
       fetchInheritedContexts();
     } else {
@@ -216,35 +258,11 @@ export const TaskContextDialog: React.FC<TaskContextDialogProps> = ({
       setTaskContext(null);
       setActiveTab('task_info');
     }
-  }, [open, task?.id]);
-
-  const fetchInheritedContexts = async () => {
-    if (!task) return;
-    
-    try {
-      // Fetch branch context if available
-      if (task.git_branch_id) {
-        const branch = await getBranchContext(task.git_branch_id);
-        if (branch) setBranchContext(branch.data || branch);
-      }
-      
-      // Fetch project context if available
-      if (task.project_id) {
-        const project = await getProjectContext(task.project_id);
-        if (project) setProjectContext(project.data || project);
-      }
-      
-      // Fetch global context
-      const global = await getGlobalContext();
-      if (global) setGlobalContext(global.data || global);
-    } catch (error) {
-      logger.error('Error fetching inherited contexts:', error);
-    }
-  };
+  }, [open, taskId, fetchTaskContext, fetchInheritedContexts]);
 
   const handleSave = async () => {
     if (!task?.id) return;
-    
+
     setSaving(true);
     try {
       // Parse markdown content from each section
@@ -256,7 +274,7 @@ export const TaskContextDialog: React.FC<TaskContextDialogProps> = ({
       const insights = parseListMarkdown(insightsMarkdown);
       const nextSteps = parseListMarkdown(nextStepsMarkdown);
       const taskMetadata = parseKeyValueMarkdown(taskMetadataMarkdown);
-      
+
       // Prepare the data to save
       const dataToSave = {
         task_info: taskInfo,
@@ -271,10 +289,10 @@ export const TaskContextDialog: React.FC<TaskContextDialogProps> = ({
 
       // Call the update API
       await updateTaskContext(task.id, dataToSave);
-      
+
       // Refresh the context
       await fetchTaskContext();
-      
+
       // Exit edit mode
       setEditMode(false);
     } catch (error) {
@@ -288,11 +306,11 @@ export const TaskContextDialog: React.FC<TaskContextDialogProps> = ({
   const handleCancel = () => {
     if (taskContext) {
       const contextData = taskContext.data || taskContext;
-      
+
       setTaskInfoMarkdown(keyValueToMarkdown(contextData.task_info || contextData.task_data || {}));
       setTaskProgressMarkdown(keyValueToMarkdown(contextData.task_progress || contextData.progress || {}));
-      setCompletionSummaryMarkdown(contextData.completion_summary || '');
-      setTestingNotesMarkdown(contextData.testing_notes || '');
+      setCompletionSummaryMarkdown(typeof contextData.completion_summary === 'string' ? contextData.completion_summary : '');
+      setTestingNotesMarkdown(typeof contextData.testing_notes === 'string' ? contextData.testing_notes : '');
       setBlockersMarkdown(listToMarkdown(contextData.blockers || []));
       setInsightsMarkdown(listToMarkdown(contextData.insights || []));
       setNextStepsMarkdown(listToMarkdown(contextData.next_steps || []));
@@ -311,98 +329,6 @@ export const TaskContextDialog: React.FC<TaskContextDialogProps> = ({
         logger.error('Failed to copy JSON:', err);
       });
     }
-  };
-
-  // Get level-based styling for nested data visualization
-  const getLevelStyling = (depth: number) => {
-    const styles = [
-      { // Level 0 - Root level fields
-        bg: 'bg-blue-50 dark:bg-blue-900/10',
-        border: 'border-l-4 border-blue-500',
-        text: 'text-blue-900 dark:text-blue-100',
-        keySize: 'text-base font-semibold',
-        padding: 'pl-3',
-      },
-      { // Level 1
-        bg: 'bg-green-50 dark:bg-green-900/10',
-        border: 'border-l-4 border-green-500',
-        text: 'text-green-900 dark:text-green-100',
-        keySize: 'text-sm font-medium',
-        padding: 'pl-6',
-      },
-      { // Level 2
-        bg: 'bg-purple-50 dark:bg-purple-900/10',
-        border: 'border-l-4 border-purple-500',
-        text: 'text-purple-900 dark:text-purple-100',
-        keySize: 'text-sm',
-        padding: 'pl-9',
-      },
-      { // Level 3+
-        bg: 'bg-orange-50 dark:bg-orange-900/10',
-        border: 'border-l-4 border-orange-500',
-        text: 'text-orange-900 dark:text-orange-100',
-        keySize: 'text-xs',
-        padding: 'pl-12',
-      },
-    ];
-    
-    return styles[Math.min(depth, styles.length - 1)];
-  };
-
-  // Render nested data with level-based styling
-  const renderNestedData = (data: any, depth: number = 0): React.ReactElement => {
-    const style = getLevelStyling(depth);
-    
-    if (data === null || data === undefined) {
-      return <span className="text-gray-400 italic">null</span>;
-    }
-    
-    if (typeof data === 'string' || typeof data === 'number' || typeof data === 'boolean') {
-      return <span className={style.text}>{String(data)}</span>;
-    }
-    
-    if (Array.isArray(data)) {
-      return (
-        <div className="space-y-1">
-          {data.map((item, index) => (
-            <div key={index} className={`${style.padding} py-1`}>
-              <span className={`${style.text} ${style.keySize}`}>[{index}]:</span>
-              <div className="ml-4">
-                {renderNestedData(item, depth + 1)}
-              </div>
-            </div>
-          ))}
-        </div>
-      );
-    }
-    
-    if (typeof data === 'object') {
-      return (
-        <div className="space-y-2">
-          {Object.entries(data).map(([key, value]) => (
-            <div
-              key={key}
-              className={`${style.bg} ${style.border} ${style.padding} py-2 rounded-r transition-colors hover:opacity-90`}
-            >
-              <div>
-                <span className={`${style.text} ${style.keySize} capitalize`}>
-                  {key.replace(/_/g, ' ')}:
-                </span>
-                {typeof value === 'object' && value !== null ? (
-                  <div className="mt-2">
-                    {renderNestedData(value, depth + 1)}
-                  </div>
-                ) : (
-                  <span className="ml-2">{renderNestedData(value, depth + 1)}</span>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      );
-    }
-    
-    return <span>{String(data)}</span>;
   };
 
   // Get the appropriate markdown content based on active tab
@@ -555,7 +481,7 @@ export const TaskContextDialog: React.FC<TaskContextDialogProps> = ({
             </div>
           </DialogTitle>
         </DialogHeader>
-        
+
         {/* Tab Navigation */}
         <div className="flex gap-1 border-b pb-2 overflow-x-auto">
           {(['task_info', 'task_progress', 'completion_summary', 'testing_notes', 'blockers', 'insights', 'next_steps', 'task_metadata', 'inheritance'] as const).map((tab) => (
@@ -572,7 +498,7 @@ export const TaskContextDialog: React.FC<TaskContextDialogProps> = ({
             </Button>
           ))}
         </div>
-        
+
         <div className="flex-1 overflow-y-auto">
           {loading ? (
             <div className="text-center py-8">
@@ -720,7 +646,7 @@ export const TaskContextDialog: React.FC<TaskContextDialogProps> = ({
                           {(() => {
                           const contextData = taskContext?.data || taskContext || {};
                           let dataToRender = null;
-                          
+
                           switch (activeTab) {
                             case 'task_info':
                               dataToRender = contextData.task_info || contextData.task_data || null;
@@ -732,28 +658,28 @@ export const TaskContextDialog: React.FC<TaskContextDialogProps> = ({
                               dataToRender = contextData.completion_summary ? { summary: contextData.completion_summary } : null;
                               break;
                             case 'testing_notes':
-                              dataToRender = contextData.testing_notes ? 
-                                (typeof contextData.testing_notes === 'string' ? 
-                                  { notes: contextData.testing_notes } : 
+                              dataToRender = contextData.testing_notes ?
+                                (typeof contextData.testing_notes === 'string' ?
+                                  { notes: contextData.testing_notes } :
                                   contextData.testing_notes) : null;
                               break;
                             case 'blockers':
-                              dataToRender = contextData.blockers && contextData.blockers.length > 0 ? 
+                              dataToRender = Array.isArray(contextData.blockers) && contextData.blockers.length > 0 ?
                                 contextData.blockers : null;
                               break;
                             case 'insights':
-                              dataToRender = contextData.insights && contextData.insights.length > 0 ? 
+                              dataToRender = Array.isArray(contextData.insights) && contextData.insights.length > 0 ?
                                 contextData.insights : null;
                               break;
                             case 'next_steps':
-                              dataToRender = contextData.next_steps && contextData.next_steps.length > 0 ? 
+                              dataToRender = Array.isArray(contextData.next_steps) && contextData.next_steps.length > 0 ?
                                 contextData.next_steps : null;
                               break;
                             case 'task_metadata':
                               dataToRender = contextData.task_metadata || contextData.metadata || null;
                               break;
                           }
-                          
+
                           if (dataToRender && (
                             (typeof dataToRender === 'object' && Object.keys(dataToRender).length > 0) ||
                             (Array.isArray(dataToRender) && dataToRender.length > 0) ||
@@ -774,7 +700,7 @@ export const TaskContextDialog: React.FC<TaskContextDialogProps> = ({
                         })()}
                         </div>
                       </div>
-                      
+
                       {/* Raw JSON Section with expand/collapse and copy */}
                       <div className="border-t pt-4">
                         <div className="flex items-center justify-between mb-2">
@@ -790,7 +716,7 @@ export const TaskContextDialog: React.FC<TaskContextDialogProps> = ({
                             View Complete JSON Context
                           </button>
                         </div>
-                        
+
                         {rawJsonExpanded && (
                           <div className="mt-3 bg-gray-50 dark:bg-gray-800 p-3 rounded border border-gray-200 dark:border-gray-700">
                             <pre className="text-xs overflow-x-auto whitespace-pre-wrap text-gray-800 dark:text-gray-200">
@@ -814,8 +740,8 @@ export const TaskContextDialog: React.FC<TaskContextDialogProps> = ({
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                 Task: {task?.title} (ID: {task?.id})
               </p>
-              <Button 
-                variant="default" 
+              <Button
+                variant="default"
                 className="mt-4"
                 onClick={() => {
                   // Initialize with empty values
@@ -827,18 +753,17 @@ export const TaskContextDialog: React.FC<TaskContextDialogProps> = ({
                   setInsightsMarkdown('');
                   setNextStepsMarkdown('');
                   setTaskMetadataMarkdown('');
-                  setTaskContext({ 
-                    data: {
-                      task_info: {},
-                      task_progress: {},
-                      completion_summary: '',
-                      testing_notes: '',
-                      blockers: [],
-                      insights: [],
-                      next_steps: [],
-                      task_metadata: {}
-                    }
-                  });
+                  const emptyContextData: Record<string, unknown> = {
+                    task_info: {},
+                    task_progress: {},
+                    completion_summary: '',
+                    testing_notes: '',
+                    blockers: [],
+                    insights: [],
+                    next_steps: [],
+                    task_metadata: {}
+                  };
+                  setTaskContext({ data: emptyContextData });
                   setEditMode(true);
                 }}
               >

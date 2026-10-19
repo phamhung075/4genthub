@@ -20,7 +20,7 @@ import { isBranchDeletePayload } from '../../types/websocket-protocol';
 
 describe('TDD: Branch DELETE WebSocket Protocol', () => {
   let queryClient: QueryClient;
-  let mockWebSocketClient: any;
+  let mockWebSocketClient: unknown;
 
   beforeEach(() => {
     queryClient = new QueryClient({
@@ -135,7 +135,7 @@ describe('TDD: Branch DELETE WebSocket Protocol', () => {
 
       // Setup WebSocket client to trigger message handler
       let messageHandler: (msg: WSMessage) => void;
-      mockWebSocketClient.on.mockImplementation((event: string, handler: any) => {
+      mockWebSocketClient.on.mockImplementation((event: string, handler: unknown) => {
         if (event === 'update') {
           messageHandler = handler;
         }
@@ -158,7 +158,7 @@ describe('TDD: Branch DELETE WebSocket Protocol', () => {
 
       // ASSERT: Wait for cache update (600ms delay in useRealtimeSync)
       await waitFor(() => {
-        const updatedBranches = queryClient.getQueryData<any[]>(['branches', projectId]);
+        const updatedBranches = queryClient.getQueryData<unknown[]>(['branches', projectId]);
 
         // Branch should be removed from cache
         expect(updatedBranches).toBeDefined();
@@ -203,7 +203,7 @@ describe('TDD: Branch DELETE WebSocket Protocol', () => {
 
       // Setup WebSocket client
       let messageHandler: (msg: WSMessage) => void;
-      mockWebSocketClient.on.mockImplementation((event: string, handler: any) => {
+      mockWebSocketClient.on.mockImplementation((event: string, handler: unknown) => {
         if (event === 'update') {
           messageHandler = handler;
         }
@@ -227,7 +227,7 @@ describe('TDD: Branch DELETE WebSocket Protocol', () => {
       // ASSERT: Cache should NOT be updated (invalid payload rejected)
       await new Promise(resolve => setTimeout(resolve, 700)); // Wait longer than 600ms delay
 
-      const unchangedBranches = queryClient.getQueryData<any[]>(['branches', projectId]);
+      const unchangedBranches = queryClient.getQueryData<unknown[]>(['branches', projectId]);
 
       // Both branches should still be in cache (no deletion occurred)
       expect(unchangedBranches).toHaveLength(2);

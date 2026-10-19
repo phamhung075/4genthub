@@ -36,7 +36,7 @@ vi.mock('js-cookie', () => ({
 // Mock ClickableAssignees component
 vi.mock('../../components/ClickableAssignees', () => ({
   __esModule: true,
-  default: ({ assignees, onAgentClick, variant }: any) => (
+  default: ({ assignees, onAgentClick, variant }: unknown) => (
     <div data-testid="clickable-assignees">
       {assignees.map((assignee: string, index: number) => (
         <button
@@ -53,7 +53,7 @@ vi.mock('../../components/ClickableAssignees', () => ({
 
 // Mock CopyableId component
 vi.mock('../../components/ui/CopyableId', () => ({
-  CopyableId: ({ id, variant, size, abbreviated, showCopyButton, className }: any) => (
+  CopyableId: ({ id, abbreviated, className }: unknown) => (
     <span data-testid="copyable-id" className={className}>
       {abbreviated && id.length > 8 ? id.substring(0, 8) : id}
     </span>
@@ -63,7 +63,7 @@ vi.mock('../../components/ui/CopyableId', () => ({
 // Mock RawJSONDisplay component
 vi.mock('../../components/ui/RawJSONDisplay', () => ({
   __esModule: true,
-  default: ({ jsonData, title, fileName }: any) => (
+  default: ({ jsonData }: unknown) => (
     <div data-testid="raw-json-display">
       <pre>{JSON.stringify(jsonData, null, 2)}</pre>
     </div>
@@ -72,7 +72,7 @@ vi.mock('../../components/ui/RawJSONDisplay', () => ({
 
 // Mock EnhancedJSONViewer component
 vi.mock('../../components/ui/EnhancedJSONViewer', () => ({
-  EnhancedJSONViewer: ({ data, defaultExpanded, maxHeight }: any) => (
+  EnhancedJSONViewer: ({ data, maxHeight }: unknown) => (
     <div data-testid="enhanced-json-viewer" className={maxHeight}>
       {Object.entries(data).map(([key, value]) => (
         <div key={key}>

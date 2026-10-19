@@ -123,7 +123,7 @@ export const SignupForm: React.FC = () => {
     setError(null);
     setSuccess(null);
     setIsLoading(true);
-    
+
     try {
       const response = await fetch(`${API_BASE_URL}/auth/supabase/resend-verification`, {
         method: 'POST',
@@ -134,7 +134,7 @@ export const SignupForm: React.FC = () => {
       });
 
       const data = await response.json();
-      
+
       if (response.ok && data.success) {
         setSuccess('Verification email sent! Please check your inbox.');
         setShowResendOption(false);
@@ -142,7 +142,7 @@ export const SignupForm: React.FC = () => {
       } else {
         setError(data.detail || 'Failed to resend verification email');
       }
-    } catch (err) {
+    } catch {
       setError('Failed to resend verification email. Please try again.');
     } finally {
       setIsLoading(false);
@@ -157,7 +157,7 @@ export const SignupForm: React.FC = () => {
 
     try {
       const result = await signup(data.email, data.username, data.password);
-      
+
       // Check if email verification is required
       if (result?.requires_email_verification) {
         setEmailVerificationRequired(true);
@@ -181,8 +181,8 @@ export const SignupForm: React.FC = () => {
     } catch (err) {
       if (err instanceof Error) {
         // Check if error is about existing unverified user
-        if (err.message.includes('already registered') || 
-            err.message.includes('already exists') || 
+        if (err.message.includes('already registered') ||
+            err.message.includes('already exists') ||
             err.message.includes('User already registered')) {
           setError('This email is already registered but not verified.');
           setShowResendOption(true);
@@ -278,8 +278,8 @@ export const SignupForm: React.FC = () => {
           )}
 
           {success && (
-            <Alert 
-              severity="success" 
+            <Alert
+              severity="success"
               sx={{ mb: 2 }}
               icon={<CheckCircle />}
             >
@@ -382,7 +382,7 @@ export const SignupForm: React.FC = () => {
                   value: 8,
                   message: 'Password must be at least 8 characters',
                 },
-                validate: value => {
+                validate: () => {
                   if (passwordStrength.score < 40) {
                     return 'Password is too weak. Use a mix of uppercase, lowercase, numbers, and special characters';
                   }
@@ -431,7 +431,7 @@ export const SignupForm: React.FC = () => {
                       borderRadius: 4,
                       backgroundColor: 'grey.300',
                       '& .MuiLinearProgress-bar': {
-                        backgroundColor: 
+                        backgroundColor:
                           passwordStrength.color === 'error' ? 'error.main' :
                           passwordStrength.color === 'warning' ? 'warning.main' :
                           'success.main',
@@ -440,9 +440,9 @@ export const SignupForm: React.FC = () => {
                   />
                   <Typography
                     variant="caption"
-                    sx={{ 
+                    sx={{
                       ml: 2,
-                      color: 
+                      color:
                         passwordStrength.color === 'error' ? 'error.main' :
                         passwordStrength.color === 'warning' ? 'warning.main' :
                         'success.main',

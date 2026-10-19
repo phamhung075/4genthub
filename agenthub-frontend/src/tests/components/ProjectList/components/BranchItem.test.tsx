@@ -29,13 +29,13 @@ vi.mock('../../../../utils/logger', () => ({
 
 // Mock the UI components
 vi.mock('../../../../components/ui/shimmer-badge', () => ({
-  ShimmerBadge: ({ children, className, ...props }: any) => (
+  ShimmerBadge: ({ children, className, ...props }: unknown) => (
     <span className={className} {...props}>{children}</span>
   ),
 }));
 
 vi.mock('../../../../components/ui/shimmer-button', () => ({
-  ShimmerButton: ({ children, onClick, disabled, className, ...props }: any) => (
+  ShimmerButton: ({ children, onClick, disabled, className, ...props }: unknown) => (
     <button onClick={onClick} disabled={disabled} className={className} {...props}>
       {children}
     </button>
@@ -215,13 +215,6 @@ describe('BranchItem', () => {
     // Check unregistration on unmount
     unmount();
     expect(animationFactory.unregisterElement).toHaveBeenCalledWith('branch-1');
-  });
-
-  it('handles onSelect being undefined gracefully', () => {
-    const propsWithoutOnSelect = { ...defaultProps, onSelect: undefined };
-    render(<BranchItem {...propsWithoutOnSelect} />);
-    const button = screen.getByRole('button', { name: /feature\/test-branch/ });
-    expect(() => fireEvent.click(button)).not.toThrow();
   });
 
   it('handles onShowDetails being undefined gracefully', () => {

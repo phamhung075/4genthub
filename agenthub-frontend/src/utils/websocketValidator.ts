@@ -92,7 +92,7 @@ export function validateWebSocketMessage(message: WSMessage): WSValidationResult
           // Check cascade structure
           const cascadeLevels = ['parent_task', 'branch', 'project'] as const;
           cascadeLevels.forEach(level => {
-            const cascadeData = data.cascade as Record<string, any>;
+            const cascadeData = data.cascade as Record<string, unknown>;
             if (cascadeData?.[level] && typeof cascadeData[level] !== 'object') {
               errors.push(`cascade.${level} is not an object`);
             }

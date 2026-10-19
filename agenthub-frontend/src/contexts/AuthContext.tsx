@@ -54,9 +54,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // silently; null when there is nothing to explain.
   const [authError, setAuthError] = useState<string | null>(null);
 
-  // Only initialize WebSocket when we have valid user and token
-  const shouldConnectWebSocket = !!(user?.id && tokens?.access_token);
-
   // CRITICAL FIX: Only call useWebSocket when credentials are available
   // This prevents "missing credentials" warnings during initial render
   const {
@@ -438,7 +435,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }, refreshTime);
 
     return () => clearTimeout(timer);
-  }, [tokens, refreshToken]);
+  }, [tokens, refreshToken, logout]);
 
   // Keep-alive mechanism to prevent Keycloak session timeout
   useEffect(() => {
@@ -455,7 +452,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             'Content-Type': 'application/json',
           },
         });
-      } catch (error) {
+      } catch {
         // Don't throw - keep-alive failures shouldn't disrupt user experience
       }
     }, 120000); // 2 minutes (120 seconds)

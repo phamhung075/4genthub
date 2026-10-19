@@ -7,13 +7,13 @@ import type { TaskRowDesktopProps, TaskSummary } from '../../../../types/taskTyp
 // Child components are mocked so the tests cover only what TaskRowDesktop decides:
 // which data reaches each child, what the row shows and which callbacks it fires.
 vi.mock('../../../../components/TaskRow/components/TaskCopyButtons', () => ({
-  TaskCopyButtons: ({ taskId, taskName }: any) => (
+  TaskCopyButtons: ({ taskId, taskName }: unknown) => (
     <span data-testid="copy-buttons" data-task-id={taskId} data-task-name={taskName} />
   )
 }));
 
 vi.mock('../../../../components/TaskRow/components/TaskRowActions', () => ({
-  TaskRowActions: ({ taskId, projectId, taskTreeId, variant }: any) => (
+  TaskRowActions: ({ taskId, projectId, taskTreeId, variant }: unknown) => (
     <span
       data-testid="row-actions"
       data-task-id={taskId}
@@ -25,14 +25,14 @@ vi.mock('../../../../components/TaskRow/components/TaskRowActions', () => ({
 }));
 
 vi.mock('../../../../components/ui/ProgressDisplay', () => ({
-  ProgressDisplayEnhanced: ({ status, progressPercentage }: any) => (
+  ProgressDisplayEnhanced: ({ status, progressPercentage }: unknown) => (
     <span data-testid="progress" data-status={status} data-percentage={progressPercentage} />
   )
 }));
 
 vi.mock('../../../../components/ui/holographic-badges', () => ({
-  HolographicStatusBadge: ({ status }: any) => <span data-testid="status-badge">{status}</span>,
-  HolographicPriorityBadge: ({ priority }: any) => <span data-testid="priority-badge">{priority}</span>
+  HolographicStatusBadge: ({ status }: unknown) => <span data-testid="status-badge">{status}</span>,
+  HolographicPriorityBadge: ({ priority }: unknown) => <span data-testid="priority-badge">{priority}</span>
 }));
 
 vi.mock('../../../../components/ClickableAssignees', () => ({
@@ -44,7 +44,7 @@ vi.mock('../../../../components/ClickableAssignees', () => ({
 }));
 
 vi.mock('../../../../components/LazySubtaskList', () => ({
-  default: ({ projectId, taskTreeId, parentTaskId }: any) => (
+  default: ({ projectId, taskTreeId, parentTaskId }: unknown) => (
     <div
       data-testid="subtask-list"
       data-project-id={projectId}

@@ -56,6 +56,7 @@ class MockWebSocket {
 
   send(_data: string | ArrayBufferLike | Blob | ArrayBufferView): void {
     // Mock send implementation
+    void _data;
   }
 }
 
@@ -185,8 +186,8 @@ describe('WebSocketClient', () => {
   });
 
   describe('handleMessage', () => {
-    let updateSpy: any;
-    let userActionSpy: any;
+    let updateSpy: unknown;
+    let userActionSpy: unknown;
 
     beforeEach(() => {
       updateSpy = vi.fn();
@@ -446,7 +447,7 @@ describe('WebSocketClient', () => {
 
       client.send(message);
 
-      const sentMessage = JSON.parse((mockWs.send as any).mock.calls[0][0]);
+      const sentMessage = JSON.parse((mockWs.send as unknown).mock.calls[0][0]);
 
       expect(sentMessage).toMatchObject({
         version: '2.0',
@@ -588,7 +589,7 @@ describe('WebSocketClient', () => {
       // Fast forward 30 seconds
       vi.advanceTimersByTime(30000);
 
-      const sentMessage = JSON.parse((mockWs.send as any).mock.calls[0][0]);
+      const sentMessage = JSON.parse((mockWs.send as unknown).mock.calls[0][0]);
 
       expect(sentMessage).toMatchObject({
         type: 'heartbeat',

@@ -41,9 +41,9 @@ export class BranchService {
       logger.info(`✅ Loaded ${branches.length} branches across ${projects.length} projects in ${queryTime}ms ${fromCache ? '(cached)' : '(fresh)'}`);
 
       return { branches, projects };
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.error('❌ Failed to load user summaries:', error);
-      throw new Error(`Failed to load branch summaries: ${error.message}`);
+      throw new Error(`Failed to load branch summaries: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -71,9 +71,9 @@ export class BranchService {
       logger.info(`✅ Loaded ${branches.length} branches for ${projectIds.length} projects in ${queryTime}ms`);
 
       return branches;
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.error('❌ Failed to load project summaries:', error);
-      throw new Error(`Failed to load project summaries: ${error.message}`);
+      throw new Error(`Failed to load project summaries: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 

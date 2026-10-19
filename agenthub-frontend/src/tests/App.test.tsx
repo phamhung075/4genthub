@@ -87,19 +87,19 @@ vi.mock('../pages/RegistrationSuccess', () => ({
 
 // Mock dialog components
 vi.mock('../components/GlobalContextDialog', () => ({
-  default: ({ open, onOpenChange, onClose }: any) => open ? <div data-testid="global-context-dialog">Global Context Dialog</div> : null
+  default: ({ open }: unknown) => open ? <div data-testid="global-context-dialog">Global Context Dialog</div> : null
 }));
 
 vi.mock('../components/ProjectDetailsDialog', () => ({
-  default: ({ open, onOpenChange, project, onClose }: any) => open ? <div data-testid="project-details-dialog">Project Details Dialog for {project?.name}</div> : null
+  default: ({ open, project }: unknown) => open ? <div data-testid="project-details-dialog">Project Details Dialog for {project?.name}</div> : null
 }));
 
 vi.mock('../components/BranchDetailsDialog', () => ({
-  default: ({ open, onOpenChange, project, branch, onClose }: any) => open ? <div data-testid="branch-details-dialog">Branch Details Dialog for {project?.name} - {branch?.name}</div> : null
+  default: ({ open, project, branch }: unknown) => open ? <div data-testid="branch-details-dialog">Branch Details Dialog for {project?.name} - {branch?.name}</div> : null
 }));
 
 vi.mock('../components/ProjectList', () => ({
-  default: ({ onSelect, onShowGlobalContext, onShowProjectDetails, onShowBranchDetails }: any) => (
+  default: ({ onSelect, onShowGlobalContext, onShowProjectDetails, onShowBranchDetails }: unknown) => (
     <div data-testid="project-list">
       <button onClick={() => onSelect('project1', 'branch1')}>Select Project</button>
       <button onClick={() => onShowGlobalContext()}>Show Global Context</button>
@@ -110,7 +110,7 @@ vi.mock('../components/ProjectList', () => ({
 }));
 
 vi.mock('../components/LazyTaskList', () => ({
-  default: ({ projectId, taskTreeId, onTasksChanged }: any) => (
+  default: ({ projectId, taskTreeId, onTasksChanged }: unknown) => (
     <div data-testid="task-list">
       Task List for {projectId} - {taskTreeId}
       <button onClick={() => onTasksChanged?.()}>Trigger Task Change</button>

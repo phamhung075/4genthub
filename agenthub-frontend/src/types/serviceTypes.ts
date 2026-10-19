@@ -33,8 +33,8 @@ export interface AnimationEvent {
   type: AnimationTriggerType;
   entity: string;
   entityId: string;
-  data?: any;
-  metadata?: any;
+  data?: unknown;
+  metadata?: unknown;
 }
 
 // =============================================================================
@@ -110,7 +110,7 @@ export interface ChangeNotification {
   entityId: string;
   eventType: EventType;
   userId: string;
-  data?: any;
+  data?: unknown;
   timestamp: number;
 }
 
