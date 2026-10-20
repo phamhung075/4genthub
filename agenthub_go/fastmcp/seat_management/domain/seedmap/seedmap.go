@@ -10,7 +10,11 @@ import (
 )
 
 // seedVersion is bumped whenever a seed's module set changes: a stored seat type version is
-// immutable, so a changed module set needs a new version. 1.4.20 says room where the text said rig: the
+// immutable, so a changed module set needs a new version. 1.4.21 drops every seat type's curated
+// `module_refs`: a skill-kind module has reached no file since the render became a record on
+// 2026-10-17, nothing in this repository publishes the catalog those refs name, and a fresh seed
+// could not resolve them at all - so the nine seeds now name only the modules they author, and the
+// yaml's strict decoder refuses a `module_refs` key outright. 1.4.20 says room where the text said rig: the
 // unit is the room, not the rig (owner, 2026-10-20), across the nine seat-type roles and the three
 // shared modules (comm-guard-skill, guide-common, mcp-usage); no CLI verb changed, so the placeholder
 // and the prose moved together and nothing downstream reads a different argument. 1.4.19 adds the reviewer's `decision check`
@@ -34,7 +38,7 @@ import (
 // for one. 1.4.5 is the retirement of the checker's send verb: the comm-guard allow list drops its
 // entry for it and the guard skill now names `4genteam send`. The deny list and
 // `Bash(4genteam whoami:*)` are unchanged.
-const seedVersion = "1.4.20"
+const seedVersion = "1.4.21"
 
 type SeedModule struct {
 	Slug    string
@@ -64,10 +68,6 @@ type Spec struct {
 	// Blocks are the MCP server blocks this seat type mounts, appended after the shared
 	// modules. A block is content of kind mcp; a seat with no block mounts no server.
 	Blocks []SeedModule
-	// ExtraRefs are module refs the seat type version carries but the seed does not author:
-	// the curated catalog skills the seat is composed from. They are appended to ModuleRefs
-	// after the refs of the modules above, so the seat arrives with its skills attached.
-	ExtraRefs []resolver.ModuleRef
 }
 
 type Seed struct {
@@ -146,6 +146,5 @@ func FromSpec(spec Spec) (Seed, error) {
 	for i, module := range seed.Modules {
 		seed.ModuleRefs[i] = resolver.ModuleRef{Slug: module.Slug, Version: module.Version}
 	}
-	seed.ModuleRefs = append(seed.ModuleRefs, spec.ExtraRefs...)
 	return seed, nil
 }

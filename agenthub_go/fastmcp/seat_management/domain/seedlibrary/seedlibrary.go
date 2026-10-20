@@ -16,7 +16,6 @@ import (
 	"strings"
 
 	"agenthub/fastmcp/seat_management/domain/mcpblock"
-	"agenthub/fastmcp/seat_management/domain/repositories"
 	"agenthub/fastmcp/seat_management/domain/resolver"
 	"agenthub/fastmcp/seat_management/domain/secretscan"
 	"agenthub/fastmcp/seat_management/domain/seedmap"
@@ -79,7 +78,6 @@ type seatTypeFile struct {
 	Description    string     `yaml:"description"`
 	DefaultRuntime string     `yaml:"default_runtime"`
 	MCPBlocks      []string   `yaml:"mcp_blocks"`
-	ModuleRefs     []string   `yaml:"module_refs"`
 	Role           string     `yaml:"role"`
 	Rules          []ruleFile `yaml:"rules"`
 	OutputFormat   string     `yaml:"output_format"`
@@ -272,17 +270,6 @@ func Parse(name string, data []byte, shared []seedmap.SeedModule, blocks map[str
 			return seedmap.Seed{}, fmt.Errorf("%s: field rules[%d].content is empty", name, i)
 		}
 		spec.Rules = append(spec.Rules, seedmap.Rule{Name: rule.Name, Content: rule.Content})
-	}
-
-	// module_refs are the curated catalog skills this seat type is composed from, carried as
-	// concrete slug@version refs; the seed authors their content elsewhere (the publish path
-	// pushes it), so here they only pin which versions the seat arrives with.
-	for i, ref := range file.ModuleRefs {
-		parsed, err := repositories.ParseModuleRef(ref)
-		if err != nil {
-			return seedmap.Seed{}, fmt.Errorf("%s: field module_refs[%d]: %w", name, i, err)
-		}
-		spec.ExtraRefs = append(spec.ExtraRefs, parsed)
 	}
 
 	// Each mcp_blocks entry mounts one whole server; a block is one of the files in blocks/.

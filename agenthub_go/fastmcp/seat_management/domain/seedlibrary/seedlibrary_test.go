@@ -67,8 +67,8 @@ func TestParseErrorsNameFileAndField(t *testing.T) {
 		"empty rule":    {replace("content: Write a failing test first.", "content: ''"), "field rules[0].content"},
 		"duplicate rule": {replace("output_format", "  - name: test-first\n    content: again\noutput_format"),
 			"duplicate rule name"},
-		"bad module ref": {validFile + "module_refs:\n  - no-version\n", "field module_refs[0]"},
-		"empty file":     {"", "file is empty"},
+		"module_refs refused": {validFile + "module_refs:\n  - queue-handoff@1.0.0\n", "field module_refs not found"},
+		"empty file":          {"", "file is empty"},
 	}
 	for name, c := range cases {
 		_, err := Parse("seat-types/x.yaml", []byte(c.data), nil, nil)
@@ -404,68 +404,45 @@ func loadSkillInventory(t *testing.T) skillInventory {
 	return inventory
 }
 
-// Every seeded seat type carries exactly its curated skill refs from the inventory, every ref
-// names a skill the inventory contains, and a skill in no default set stays unwired. The
-// curation is the same committed data the publish path consumes, so an edit that is not
-// mirrored into a seat YAML fails here.
-func TestLoadEmbeddedSeedsCarryCuratedSkillRefs(t *testing.T) {
+// A seat type's version names exactly the modules the seed authors - its role, one module per
+// rule, its output format, the shared modules and the MCP blocks - and nothing else. The curated
+// `module_refs` are gone (1.4.21): the yaml has no such key and the load refuses one, so the
+// inventory names below must appear in no seed's refs at all. The inventory stays as history of
+// where those names came from; it is not a wiring table any more.
+func TestLoadEmbeddedSeedsCarryOnlyAuthoredModules(t *testing.T) {
 	inventory := loadSkillInventory(t)
 	seeds, err := Load()
 	if err != nil {
 		t.Fatal(err)
 	}
-	bySlug := make(map[string]seedmap.Seed, len(seeds))
-	for _, seed := range seeds {
-		bySlug[seed.SeatTypeSlug] = seed
-	}
-	if len(bySlug) != len(inventory.SeatCuration) {
-		t.Fatalf("seeds = %d, curation seats = %d", len(bySlug), len(inventory.SeatCuration))
-	}
-	inInventory := make(map[string]bool, len(inventory.Skills))
+	curated := make(map[string]bool, len(inventory.Skills))
 	for _, row := range inventory.Skills {
-		inInventory[row.Name] = true
+		curated[row.Name] = true
 	}
-
-	for seat, entries := range inventory.SeatCuration {
-		seed, ok := bySlug[seat]
-		if !ok {
-			t.Fatalf("seat %q has a curation but no seed", seat)
-		}
-		// The refs a seed carries beyond the modules it authors are its curated skills.
+	for _, seed := range seeds {
 		authored := make(map[string]bool, len(seed.Modules))
 		for _, module := range seed.Modules {
 			authored[module.Slug] = true
 		}
-		refs := make(map[string]bool)
+		seen := make(map[string]bool, len(seed.ModuleRefs))
 		for _, ref := range seed.ModuleRefs {
 			if !authored[ref.Slug] {
-				refs[ref.Slug] = true
+				t.Errorf("%s: ref %s@%s is not a module the seed authors", seed.SeatTypeSlug, ref.Slug, ref.Version)
 			}
+			if curated[ref.Slug] {
+				t.Errorf("%s: ref %s is a retired curated skill and must not be wired", seed.SeatTypeSlug, ref.Slug)
+			}
+			if seen[ref.Slug] {
+				t.Errorf("%s: ref %s named twice", seed.SeatTypeSlug, ref.Slug)
+			}
+			seen[ref.Slug] = true
 		}
-		want := make(map[string]bool, len(entries))
-		for _, entry := range entries {
-			if !inInventory[entry.Skill] {
-				t.Errorf("%s: curated skill %q is not in the inventory", seat, entry.Skill)
-			}
-			want[entry.Skill] = true
-			if !refs[entry.Skill] {
-				t.Errorf("%s: curated skill %q is not referenced by the seed", seat, entry.Skill)
-			}
+		if len(seed.ModuleRefs) != len(seed.Modules) {
+			t.Errorf("%s: %d refs for %d authored modules", seed.SeatTypeSlug, len(seed.ModuleRefs), len(seed.Modules))
 		}
-		for slug := range refs {
-			if !want[slug] {
-				t.Errorf("%s: seed references skill %q that its curation does not assign", seat, slug)
-			}
-		}
-	}
-
-	// A skill in no default set is available in the catalog but wired nowhere.
-	for _, name := range inventory.UnusedByDefault {
-		for seat, seed := range bySlug {
-			for _, ref := range seed.ModuleRefs {
-				if ref.Slug == name {
-					t.Errorf("%s: unused-by-default skill %q is wired into the seed", seat, name)
-				}
+		for _, suffix := range []string{"-role", "-output-format"} {
+			if !authored[seed.SeatTypeSlug+suffix] {
+				t.Errorf("%s: the seed does not author %s%s", seed.SeatTypeSlug, seed.SeatTypeSlug, suffix)
 			}
 		}
 	}
