@@ -129,6 +129,15 @@ command the criterion names it for, so "`tsc` exits 0" is settled by a bundle wh
 wording: a screenshot, a rendered page, "reachable by tap" - either a command that produces the proof runs as
 the acceptance command, or the claim belongs in the task's details, not in its criteria.
 
+A THIRD HAZARD, measured the same way: a command that exits 0 without doing the work passes, so name one that
+cannot no-op - and the frontend had one that could. At the repository root `npx tsc` is NOT TypeScript: the
+root carries no compiler, so npx resolves a global package named `tsc`, which prints a notice and exits 0 in
+0.93 s without reading a file (measured 2026-10-21; the real compiler takes 11.8 s on the same tree, hub task
+`951d97e3`). The frontend's acceptance command from the root is `sh scripts/typecheck-frontend.sh`
+(equivalently `npm run typecheck`): it names `agenthub-frontend/node_modules/.bin/tsc` by path and exits 127
+when that binary is absent, so a missing install is a failure and not a green. From inside
+`agenthub-frontend`, `npx tsc --noEmit -p .` resolves that package's own compiler and is sound.
+
 The `--base` is evidence, not a formality: it is REQUIRED, it is resolved to a full 40-hex sha, and the numstat
 is a two-dot `git diff --numstat <base>..HEAD` between the resolved shas
 (`agenthub_client/internal/clientcomplete/complete.go:50,:118`;
