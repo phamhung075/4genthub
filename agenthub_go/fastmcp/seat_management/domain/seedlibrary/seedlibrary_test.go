@@ -197,7 +197,7 @@ func TestLoadEmbeddedSeedsCarryCommGuard(t *testing.T) {
 				t.Fatalf("%s: skill does not explain %q:\n%s", seed.SeatTypeSlug, code, skillContent.Content)
 			}
 		}
-		if !strings.Contains(skillContent.Content, "4genteam send <rig> <seat>") {
+		if !strings.Contains(skillContent.Content, "4genteam send <room> <seat>") {
 			t.Fatalf("%s: skill does not name the audited send route:\n%s", seed.SeatTypeSlug, skillContent.Content)
 		}
 		for _, ref := range seed.ModuleRefs {

@@ -5,9 +5,9 @@
     {
       "slug": "guide-common",
       "path": "agenthub_go/fastmcp/seat_management/domain/seedlibrary/shared-modules/guide-common.md",
-      "sha256": "5afbb1ab664b27e905635f5fe9af3d4c75dea7933da119450acde95caa5b74d1",
+      "sha256": "c8bca63a0e4711382eaf6ea0e8cac93ff463027d8230c682ad1827125e7cd8ad",
       "source_path": "ai_docs/operations/seat-guides/_common.md",
-      "source_sha256": "5afbb1ab664b27e905635f5fe9af3d4c75dea7933da119450acde95caa5b74d1"
+      "source_sha256": "c8bca63a0e4711382eaf6ea0e8cac93ff463027d8230c682ad1827125e7cd8ad"
     },
     {
       "slug": "guide-architect",

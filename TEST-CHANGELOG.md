@@ -7369,3 +7369,8 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
   count. Red at `76b0d84d` at the branch step with the same `23503`.
   Both green after the fix; the existing branch, project and task cascade tests stay green;
   `go test ./...` against `AGENTHUB_TEST_PG_URL` passes.
+
+- `fastmcp/seat_management/domain/seedlibrary/seedlibrary_test.go`: the audited-route assertion in
+  `TestLoadEmbeddedSeedsCarryCommGuard` now reads `4genteam send <room> <seat>`, following the module
+  text it checks (rig -> room, owner 2026-10-20). The text, not the test, was the thing under change:
+  `seedVersion` 1.4.20 and the re-recorded `guide-common` pairing are what the suite now pins.

@@ -8,7 +8,7 @@ Write a JSON object to the device path `xd://mcp__<server>_<tool>`. Read the pat
 2. **Work in your own worktree** (skill `seat-worktree`): edit only there, never in the main checkout. Main changes only by the lead's gated merge. Nobody pushes; the owner pushes.
 3. **Test once**: run the checks that match the change, one time, and keep the output.
 4. **Close the task** with `{"action":"complete","task_id":"<uuid>","completion_summary":"<what changed, files, commit hash>","testing_notes":"<exact commands and their results>"}`. Report only what you ran. Commit on your branch by pathspec and do not stage first: `git commit -m "<type(scope): subject>" -- <paths>` (a new file: `git add -N -- <new>` first, then the same pathspec commit). Never `git add .` or `-A`, never `commit -a`, never `--amend`. Add ONE new file `CHANGELOG/<date>--<title>.md` in the same commit (`ls CHANGELOG | tail` lists the newest; do not read the whole directory).
-5. **Hand off.** Tell the lead your tip as `<rig>/<seat>=<sha>`.
+5. **Hand off.** Tell the lead your tip as `<room>/<seat>=<sha>`.
 
 ### The five rules
 1. **Author:** write and run the tests once, and put the exact commands and their output in the task.
