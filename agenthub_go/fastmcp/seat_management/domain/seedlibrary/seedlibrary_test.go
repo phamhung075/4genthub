@@ -5,8 +5,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"io/fs"
-	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 	"testing/fstest"
@@ -372,52 +370,16 @@ func TestLoadFSRejectsBadBlockFileName(t *testing.T) {
 	}
 }
 
-// skillInventory is the slice of ai_docs/agent-system/skill-library.json this test consumes:
-// the skill rows, the per-seat curation and the skills no default set wires.
-type skillInventory struct {
-	Count  int `json:"count"`
-	Skills []struct {
-		Name string `json:"name"`
-	} `json:"skills"`
-	SeatCuration map[string][]struct {
-		Skill string `json:"skill"`
-	} `json:"seat_curation"`
-	UnusedByDefault []string `json:"unused_by_default"`
-}
-
-// loadSkillInventory reads the committed inventory the publish path consumes. The path is
-// relative to this package directory, which is the working directory `go test` uses.
-func loadSkillInventory(t *testing.T) skillInventory {
-	t.Helper()
-	path := filepath.Join("..", "..", "..", "..", "..", "ai_docs", "agent-system", "skill-library.json")
-	data, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatalf("read skill inventory: %v", err)
-	}
-	var inventory skillInventory
-	if err := json.Unmarshal(data, &inventory); err != nil {
-		t.Fatalf("parse skill inventory: %v", err)
-	}
-	if inventory.Count != len(inventory.Skills) {
-		t.Fatalf("inventory count %d != %d skill rows", inventory.Count, len(inventory.Skills))
-	}
-	return inventory
-}
-
 // A seat type's version names exactly the modules the seed authors - its role, one module per
 // rule, its output format, the shared modules and the MCP blocks - and nothing else. The curated
-// `module_refs` are gone (1.4.21): the yaml has no such key and the load refuses one, so the
-// inventory names below must appear in no seed's refs at all. The inventory stays as history of
-// where those names came from; it is not a wiring table any more.
+// `module_refs` are gone (1.4.21): the yaml has no such key and the load refuses one, so every
+// ref a seed carries is one of its own authored modules. The inventory that named the curated
+// skills is deleted with this change (the hub carries no skill library); the tree the runtime
+// installs, named by the client pin, is the one source for a seat's skills.
 func TestLoadEmbeddedSeedsCarryOnlyAuthoredModules(t *testing.T) {
-	inventory := loadSkillInventory(t)
 	seeds, err := Load()
 	if err != nil {
 		t.Fatal(err)
-	}
-	curated := make(map[string]bool, len(inventory.Skills))
-	for _, row := range inventory.Skills {
-		curated[row.Name] = true
 	}
 	for _, seed := range seeds {
 		authored := make(map[string]bool, len(seed.Modules))
@@ -428,9 +390,6 @@ func TestLoadEmbeddedSeedsCarryOnlyAuthoredModules(t *testing.T) {
 		for _, ref := range seed.ModuleRefs {
 			if !authored[ref.Slug] {
 				t.Errorf("%s: ref %s@%s is not a module the seed authors", seed.SeatTypeSlug, ref.Slug, ref.Version)
-			}
-			if curated[ref.Slug] {
-				t.Errorf("%s: ref %s is a retired curated skill and must not be wired", seed.SeatTypeSlug, ref.Slug)
 			}
 			if seen[ref.Slug] {
 				t.Errorf("%s: ref %s named twice", seed.SeatTypeSlug, ref.Slug)

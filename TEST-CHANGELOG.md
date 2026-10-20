@@ -1,3 +1,12 @@
+## 2026-10-20 - the skill inventory's two readers go with the inventory (go, branch 4genthub-min/int03-cascades)
+
+`seedlibrary_test.go` loses `skillInventory` / `loadSkillInventory` and the `curated` set: the JSON they
+read (`ai_docs/agent-system/skill-library.json`) is deleted, and no seed carries a curated ref for them to
+name. `TestLoadEmbeddedSeedsCarryOnlyAuthoredModules` keeps its ref-versus-authored-modules check.
+`scripts/tests/test_team_definition.py` loses `INVENTORY`, `_curation_gaps` and
+`test_the_inventory_curation_accounts_for_every_skill` (18 cases -> 19 passed with the file's remaining
+ones; pytest reported 19 passed).
+
 ## 2026-10-20 - the citation suite pins the unpopulated-checkout refusal (go, branch 4genthub-min/int03-cascades)
 
 `scripts/tests/test_doc_citations.py` gains a 16th case, `test_a_code_tree_that_holds_no_tracked_file_is_a_refusal_not_violations`,

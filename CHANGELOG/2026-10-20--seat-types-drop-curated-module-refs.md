@@ -20,18 +20,27 @@ Ruling of record: `seats/architect/RULING-2026-10-20-seat-type-module-refs.md` (
 - `fastmcp/seat_management/application/services/seat_seeder.go`: the ref-verification loop STAYS - it still
   guards the authored modules against a store that fails to round-trip, and against a hand-built `Seed` -
   with its comment corrected: it no longer describes curated refs to publish first.
-- `ai_docs/agent-system/skill-library.md`: a paragraph saying the seeds stopped naming these refs at 1.4.21
-  and that the file is history, not a wiring table. `ai_docs/core-architecture/seat-skills.md:149` keeps
-  its sentence and notes the seed files dropped the refs.
+- `ai_docs/core-architecture/seat-skills.md:149`: the sentence that pointed at the inventory now says the
+  two inventory files are deleted and that the seed library, this file and the client pin are all the hub
+  holds about a seat's skills.
 
 ### Removed
 
+- `ai_docs/agent-system/skill-library.md` and `ai_docs/agent-system/skill-library.json` (the 52-skill
+  inventory and its curated/unused split). Nothing wired a seat from it after the refs went, and the one
+  paragraph the change had put in the `.md` was the only remainder of its use as history.
 - `TestFromSpecExtraRefs` (`seedmap_test.go`) - the behaviour it pinned no longer exists.
 - `TestSeedSeatTypesSucceedsWhenTheCatalogHasTheRefs` (`seat_seeder_test.go`) - it asserted "authored plus
   the two curated", a shape a loaded seed can no longer produce.
 
 ### Changed (tests)
 
+- `seedlibrary_test.go`: the `skillInventory` struct and `loadSkillInventory` are deleted with the JSON they
+  read, and `TestLoadEmbeddedSeedsCarryOnlyAuthoredModules` drops the `curated` set and its "a curated name
+  must not be wired" check - the ref check against the seed's own modules is what remains.
+- `scripts/tests/test_team_definition.py`: the `INVENTORY` constant, `_curation_gaps` and
+  `test_the_inventory_curation_accounts_for_every_skill` are deleted; the case existed only to keep the
+  hand-maintained curation honest, and the file it read is gone.
 - `TestLoadEmbeddedSeedsCarryCuratedSkillRefs` -> `TestLoadEmbeddedSeedsCarryOnlyAuthoredModules`: every
   ref names a module the seed authors, no ref is a name from the retired inventory, no ref repeats, and the
   count equals the authored module count.
