@@ -1,3 +1,14 @@
+## 2026-10-20 - the citation suite pins the unpopulated-checkout refusal (go, branch 4genthub-min/int03-cascades)
+
+`scripts/tests/test_doc_citations.py` gains a 16th case, `test_a_code_tree_that_holds_no_tracked_file_is_a_refusal_not_violations`,
+and a module fixture that builds a DETACHED WORKTREE at HEAD whose submodule is not populated - the
+state `actions/checkout` produced before `submodules: recursive`. The case requires rc **2**, the tree
+named, and NO violation count on the output: an audit that blames the documents for a tree it never
+received is the failure the architect measured on 2026-10-20 (108 violations and 1 failed / 14 passed
+in a clean worktree, 0 violations and 15 passed after `git submodule update --init` on the same commit,
+with the doc/citation/test counts identical in both runs). The fixture reads HEAD through
+`git worktree add --detach`, so it exercises whatever is committed rather than this checkout's edits.
+
 ## 2026-10-20 - the ai_docs citations are pinned by an instrument (go, branch 4genthub-min/int03-cascades)
 
 `scripts/tests/test_doc_citations.py` (new, 15 cases) runs `scripts/DOC-CITATIONS.py` as a SUBPROCESS - how

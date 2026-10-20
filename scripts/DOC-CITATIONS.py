@@ -45,7 +45,9 @@ does not re-add it:
     a gate that fails a document for correctly recording a removal is worse than no gate.
 
 MODES. The default audits and writes nothing: exit 0 clean, 1 on any violation, 2 refused (an
-unknown argument, a doc scope that holds no markdown, a `--docs` directory that does not exist).
+unknown argument, a doc scope that holds no markdown, a `--docs` directory that does not exist,
+or a code tree that holds no tracked file - a checkout whose submodule is an empty gitlink
+reads as zero Go files, and every citation into it would be reported as the document's fault).
 `--self-test` perturbs one resolvable citation in a COPY of the documents and requires the audit to
 name that exact document line - a check that cannot be shown to fail is not a check.
 
@@ -323,10 +325,30 @@ def self_test(by_suffix, by_base, tests):
         shutil.rmtree(tmp, ignore_errors=True)
 
 
+def empty_code_trees(by_suffix):
+    """The code trees this checkout carries no tracked file of, in CODE_TREES order.
+
+    WHY A REFUSAL AND NOT A RUN OF VIOLATIONS. `agenthub_client` is a SUBMODULE: a checkout that did
+    not initialise it holds an empty gitlink directory, so `git ls-files` names the gitlink and no file
+    under it. Every citation into that tree then resolves to nothing, and the audit reports the
+    documents as wrong - 108 violations measured in a clean detached worktree on 2026-10-20, against 0
+    after `git submodule update --init` on the SAME commit, with the doc/citation/test counts identical
+    in both runs. The tree is the variable, so the tree is what the run refuses on."""
+    return [top for top in CODE_TREES
+            if not any(rel.startswith(top + "/") for rel in by_suffix)]
+
+
 def main():
     argv = sys.argv[1:]
     by_suffix, by_base = repo_index()
     tests = go_test_index()
+
+    empty = empty_code_trees(by_suffix)
+    if empty:
+        print(f"refusing: {', '.join(t + '/' for t in empty)} holds no tracked file - the tree is "
+              f"not checked out (an empty submodule gitlink reads as zero Go files), so a citation "
+              f"or a test name into it cannot be resolved and 'clean' would be a claim about nothing")
+        return 2
 
     if "--self-test" in argv:
         extra = [a for a in argv if a != "--self-test"]

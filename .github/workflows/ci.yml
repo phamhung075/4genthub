@@ -38,9 +38,13 @@ jobs:
     steps:
       # FULL HISTORY: S3-REDERIVE.py attributes a stale anchor by reading the same file at a base
       # revision, and the census cases export HEAD with git, so a shallow checkout cannot answer.
+      # AND THE SUBMODULE: `agenthub_client` is a gitlink, so a plain checkout gives the audit an
+      # empty tree and every citation into it reads as a violated document (108 of them, measured
+      # 2026-10-20). DOC-CITATIONS.py now refuses that state; this makes CI never enter it.
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          submodules: recursive
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"

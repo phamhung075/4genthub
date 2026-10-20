@@ -47,6 +47,25 @@ def run(*args, cwd=REPO_ROOT):
     )
 
 
+@pytest.fixture(scope="module")
+def submodule_less_checkout(tmp_path_factory):
+    """A DETACHED CHECKOUT WHOSE SUBMODULE IS NOT POPULATED - the state a bare `actions/checkout`
+    hands CI: `agenthub_client` is an empty gitlink, so the tree holds no Go file under it.
+
+    Measured 2026-10-20 in exactly this state (architect, clean detached worktree at 57300c49): the
+    audit reported 108 violations and the clean-tree case failed 1 of 15, while
+    `git submodule update --init` on the SAME commit gave 0 violations and 15 passed, with the
+    doc/citation/test counts identical in both runs. The tree was the only variable, so the tree is
+    what the run must name - the defect this fixture pins.
+    """
+    export = tmp_path_factory.mktemp("citation-no-submodule") / "repo"
+    gitfixture.git(REPO_ROOT, "worktree", "add", "--detach", str(export), "HEAD")
+    try:
+        yield export
+    finally:
+        gitfixture.git(REPO_ROOT, "worktree", "remove", "--force", str(export), check=False)
+
+
 @pytest.fixture
 def doc_tree(tmp_path):
     """A scope of its own: markdown written per test, audited against the REAL tree via `--docs`."""
@@ -214,3 +233,14 @@ def test_a_production_line_after_the_name_is_the_documents_own_claim(doc_tree):
              f"`{name}` pins the delete at `schema_matches_definitions_test.go:{line + 1}`.\n")
     r = run(INSTRUMENT, "--docs", doc_tree.scope)
     assert r.returncode == 0, f"the documented escape was refused:\n{r.stdout}{r.stderr}"
+
+
+def test_a_code_tree_that_holds_no_tracked_file_is_a_refusal_not_violations(submodule_less_checkout):
+    """A citation into a tree the checkout does not carry is a REFUSAL (rc 2) that names the tree,
+    never a run that blames the documents for files that are not there."""
+    export = submodule_less_checkout
+    r = run(export / "scripts" / "DOC-CITATIONS.py", cwd=export)
+    out = r.stdout + r.stderr
+    assert r.returncode == 2, f"an unpopulated code tree must be refused, got {r.returncode}:\n{out}"
+    assert "refusing" in out and "agenthub_client/" in out, out
+    assert "violations" not in out, f"a refusal must not report a violation count:\n{out}"

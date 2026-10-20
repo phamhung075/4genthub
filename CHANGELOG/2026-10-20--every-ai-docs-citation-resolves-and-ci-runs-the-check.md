@@ -63,3 +63,25 @@ violations 0`, exit 0; `--self-test` -> PASS; `python3 scripts/CITATION-AUDIT.py
 unresolved 0`, exit 0 (the inventory's route rows were re-pointed to unique paths and still re-derive);
 `python3 -m pytest --noconftest -p no:cacheprovider scripts/tests/test_doc_citations.py -q` -> 15 passed;
 `go -C agenthub_go test ./... -count=1` -> exit 0.
+
+## Amendment: the checkout decides, so the tool refuses a tree it cannot read
+
+The architect re-ran the instrument in a CLEAN DETACHED WORKTREE, which is what CI gets: with
+`agenthub_client` an empty submodule gitlink the audit reported **108 violations**, exit 1, and the
+suite was 1 failed / 14 passed; `git submodule update --init` on the SAME commit gave 0 violations and
+15 passed, with the doc/citation/test counts (50/726/23) identical in both runs. The tree was the only
+variable, so a document was being blamed for files the checkout did not carry.
+
+Two changes, per the ruling's amendment of 19:57Z:
+
+- `scripts/DOC-CITATIONS.py` REFUSES that state: if a tree in `CODE_TREES` holds no tracked file it
+  prints `refusing: agenthub_client/ holds no tracked file ...` and exits **2**, not 1. Its MODES line
+  says so. Every code tree with zero tracked files is a refusal, not a wall of violations.
+- `.github/workflows/ci.yml`: the `scripts` job checks out with `submodules: recursive`, so the gate
+  never enters that state. It also takes `fetch-depth: 0`, because `S3-REDERIVE.py` attributes a stale
+  anchor against a base revision.
+
+The refusal is pinned by a 16th case in `scripts/tests/test_doc_citations.py`: a module fixture makes a
+detached worktree at HEAD (no submodule population), runs that export's own instrument, and requires
+rc 2 with the tree named and no violation line. Proved in the real failing state before the fix: the
+same checkout printed `agenthub_client/ holds no tracked file`, exit 2.
