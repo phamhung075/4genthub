@@ -7374,3 +7374,12 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
   `TestLoadEmbeddedSeedsCarryCommGuard` now reads `4genteam send <room> <seat>`, following the module
   text it checks (rig -> room, owner 2026-10-20). The text, not the test, was the thing under change:
   `seedVersion` 1.4.20 and the re-recorded `guide-common` pairing are what the suite now pins.
+- `fastmcp/seat_management/domain/seedlibrary/seedlibrary_test.go`: `TestLoadEmbeddedSeedsCarryCuratedSkillRefs`
+  becomes `TestLoadEmbeddedSeedsCarryOnlyAuthoredModules` (every ref names an authored module, no ref is a
+  retired inventory name, no repeats, count equals authored count); the `bad module ref` parse case becomes
+  `module_refs refused`, pinning that the strict decoder rejects the removed key by name.
+- `fastmcp/seat_management/domain/seedmap/seedmap_test.go`, `application/services/seat_seeder_test.go`:
+  `TestFromSpecExtraRefs` and `TestSeedSeatTypesSucceedsWhenTheCatalogHasTheRefs` are removed with the
+  behaviour they pinned (un-authored curated refs); `TestSeedSeatTypesRefusesMissingRef` keeps its
+  assertion and names what it now guards - a hand-built Seed and the store round-trip.
+  `go test ./...` green (138 packages) after the drop.

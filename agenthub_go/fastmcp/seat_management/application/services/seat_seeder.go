@@ -42,9 +42,9 @@ func SeedSeatTypes(ctx context.Context, userID string, seeds []seedmap.Seed, mod
 		// path does (SeatAdminService.CreateSeatTypeVersion): a ref that is not in the catalog is
 		// refused by name rather than written, because a seat type whose refs do not resolve fails
 		// every resolve downstream — a 404 that surfaces on a different route from the seed that
-		// caused it. The loop above stored this seed's own modules, so this catches exactly the
-		// curated refs seedmap appends as ExtraRefs, which nothing here authors: publish them
-		// (the skill publish step) before seeding the seat types.
+		// caused it. Since 1.4.21 a seed authors every module its version names, and the loop
+		// above stored exactly those, so this guard now proves the store round-trips them: nothing
+		// outside the seed is left to publish first.
 		for _, ref := range seed.ModuleRefs {
 			found, err := modules.GetVersion(ctx, userID, ref.Slug, ref.Version)
 			if err != nil {

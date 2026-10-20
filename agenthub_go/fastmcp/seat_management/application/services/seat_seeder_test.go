@@ -91,8 +91,10 @@ func authoredSeed(extra ...resolver.ModuleRef) seedmap.Seed {
 	}
 }
 
-// A curated ref the catalog does not hold (the ExtraRefs case) refuses the seed, names the ref and
-// the type, and writes no seat type version.
+// A ref the catalog does not hold refuses the seed, names the ref and the type, and writes no seat
+// type version. Since 1.4.21 a loaded seed names only modules it authors, so this guard's job for
+// the nine seeds is the store round-trip; it still catches a hand-built Seed, which is what this
+// one is.
 func TestSeedSeatTypesRefusesMissingRef(t *testing.T) {
 	catalog, seatTypes := newFakeCatalog(), newFakeSeatTypes()
 	seed := authoredSeed(resolver.ModuleRef{Slug: "queue-handoff", Version: "1.0.0"})
@@ -109,27 +111,6 @@ func TestSeedSeatTypesRefusesMissingRef(t *testing.T) {
 	}
 	if len(seatTypes.saved) != 0 {
 		t.Errorf("a refused seed wrote a seat type: %+v", seatTypes.saved)
-	}
-}
-
-// After the catalog is published (the publish-skills step), the same seed succeeds.
-func TestSeedSeatTypesSucceedsWhenTheCatalogHasTheRefs(t *testing.T) {
-	catalog, seatTypes := newFakeCatalog(), newFakeSeatTypes()
-	catalog.put("queue-handoff", "1.0.0")
-	catalog.put("mission-slice-sop", "1.0.0")
-	seed := authoredSeed(
-		resolver.ModuleRef{Slug: "queue-handoff", Version: "1.0.0"},
-		resolver.ModuleRef{Slug: "mission-slice-sop", Version: "1.0.0"},
-	)
-
-	if err := SeedSeatTypes(context.Background(), "u", []seedmap.Seed{seed}, catalog, seatTypes); err != nil {
-		t.Fatalf("seed with a published catalog: %v", err)
-	}
-	if len(seatTypes.versions) != 1 {
-		t.Fatalf("versions = %+v, want 1", seatTypes.versions)
-	}
-	if got := len(seatTypes.versions[0].ModuleRefs); got != 3 {
-		t.Errorf("refs = %d, want 3 (authored + the two curated)", got)
 	}
 }
 

@@ -4,6 +4,15 @@
 > row (go-dev); this file and its machine-readable twin `skill-library.json` are the
 > inventory that row consumes. Nothing here publishes anything.
 
+**Since seedVersion 1.4.21 no seat-type seed names these refs.** The nine
+`seedlibrary/seat-types/*.yaml` files carried 52 `module_refs` (24 distinct names from this
+inventory, all `@1.0.0`) and the field is gone: a skill-kind module has reached no file since the
+render became a record on 2026-10-17, nothing in this repository publishes the catalog those refs
+name, and 0 of the 35 `skills/_canonical/` paths exist here. This file and its JSON stay as the
+history of where those names came from; they are no longer a wiring table, and the yaml decoder
+refuses the `module_refs` key by name. The ruling of record:
+`seats/architect/RULING-2026-10-20-seat-type-module-refs.md` in the room's state directory.
+
 The library is the **union of two committed edges** in the 4genteam repository
 (`~/__projects__/reference`):
 

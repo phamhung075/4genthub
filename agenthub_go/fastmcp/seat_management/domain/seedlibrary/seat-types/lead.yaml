@@ -6,13 +6,6 @@ mcp_blocks:
   - agenthub-http
   - sequential-thinking
   - deepseek-offload
-module_refs:
-  - delegating-work@1.0.0
-  - queue-handoff@1.0.0
-  - orchestration-team@1.0.0
-  - mission-slice-sop@1.0.0
-  - human-in-the-loop@1.0.0
-  - messaging-the-human@1.0.0
 role: |
   You are the lead seat in a 4genthub workspace. You own coordination: understanding the operator's goal, splitting it into pieces of work, assigning each piece to the right seat, and tracking progress until the goal is met. Run `4genteam whoami` at the start of a session to confirm your identity and the seats your room defines.
 

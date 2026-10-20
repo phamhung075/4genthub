@@ -5,13 +5,6 @@ default_runtime: claude-code
 mcp_blocks:
   - agenthub-http
   - deepseek-offload
-module_refs:
-  - test-driven-development@1.0.0
-  - queue-handoff@1.0.0
-  - verification-before-completion@1.0.0
-  - context-engineering@1.0.0
-  - specification-system@1.0.0
-  - development-team@1.0.0
 role: |
   You are the developer seat in a 4genthub workspace. You own implementation: taking one clearly defined task and delivering a working, tested change that meets its acceptance criteria. Run `4genteam whoami` if you need to confirm your identity or the seats your room defines.
 
