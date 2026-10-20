@@ -36,13 +36,20 @@ jobs:
   scripts:
     runs-on: ubuntu-latest
     steps:
+      # FULL HISTORY: S3-REDERIVE.py attributes a stale anchor by reading the same file at a base
+      # revision, and the census cases export HEAD with git, so a shallow checkout cannot answer.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
       - run: pip install pytest
       - run: python3 scripts/DOC-CITATIONS.py
-      - run: python3 -m pytest scripts/tests/test_doc_citations.py -q
+      # THE WHOLE INSTRUMENT SUITE, not the citation cases alone: COUNTS-AUDIT and S3-REDERIVE ran
+      # in no gate at all, and main sat four tests red after a table and a route landed without the
+      # inventory moving (2b89edfc, repaired at 3e62c924).
+      - run: python3 -m pytest scripts/tests -q
 
   frontend:
     runs-on: ubuntu-latest
