@@ -457,7 +457,7 @@ func sessionStateRowCount(t *testing.T, sessions *database.SessionManager, userI
 	return count
 }
 
-// TestSafeguardFrameRefusesAStateOrSafeguardOutsideTheRuledSets: 7.6's closed set - the six names
+// TestSafeguardFrameRefusesAStateOrSafeguardOutsideTheRuledSets: 7.6's closed set - the seven names
 // the client reports (7.2) - and the room rule each name's scope carries (D2) are stated to the
 // database as CHECKs and refused here first, so a bad row never reaches a constraint.
 func TestSafeguardFrameRefusesAStateOrSafeguardOutsideTheRuledSets(t *testing.T) {
@@ -495,6 +495,31 @@ func TestSafeguardFrameRefusesAStateOrSafeguardOutsideTheRuledSets(t *testing.T)
 	c.safeguardFrame(t, map[string]any{"room": "", "safeguard": "agent", "state": "running", "restarts": 0, "age_s": 1})
 	if got := sessionStateRowCount(t, env.sessions, "user-rigd", "c1", "", "agent"); got != 1 {
 		t.Fatalf("the machine-scoped agent row stored %d rows, want 1", got)
+	}
+}
+
+// TestSafeguardFrameAcceptsTheRoomScopedBudgetRow is the client's seventh row over the socket: the
+// client publishes `budget` after every ready (pin 6c25e316, `internal/clientservices/services.go:45,
+// 114-116, 166`), and until migration 0009 the hub answered it `bad_safeguard` on every connect. A
+// room-scoped budget frame stores exactly one row for its key, and the scope rule is unchanged: a
+// budget frame with an empty room is the `bad room` refusal.
+func TestSafeguardFrameAcceptsTheRoomScopedBudgetRow(t *testing.T) {
+	env := newPGStreamEnv(t)
+	const user = "user-safeguard-budget"
+	c := env.connector(t, user)
+	c.agentHello(t, "c1", connectorCapabilityIngest, connectorCapabilitySafeguards)
+
+	c.send(map[string]any{"type": "safeguard", "room": "", "safeguard": "budget", "state": "running", "restarts": 0, "age_s": 1})
+	if got := c.recv(); got["type"] != "error" || got["message"] != "bad room" {
+		t.Fatalf("budget with no room answered %v", got)
+	}
+	if got := sessionStateRowCount(t, env.sessions, user, "c1", "", "budget"); got != 0 {
+		t.Fatalf("stored rows for the refused budget frame = %d, want 0", got)
+	}
+
+	c.safeguardFrame(t, map[string]any{"room": "room-1", "safeguard": "budget", "state": "running", "restarts": 0, "age_s": 1})
+	if got := sessionStateRowCount(t, env.sessions, user, "c1", "room-1", "budget"); got != 1 {
+		t.Fatalf("the room-scoped budget row stored %d rows, want 1", got)
 	}
 }
 
