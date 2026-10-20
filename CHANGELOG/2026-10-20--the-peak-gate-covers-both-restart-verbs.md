@@ -4,8 +4,8 @@ A restart is a launch: it starts a DeepSeek seat on whatever rate the clock is o
 gate at all - `4genteam room reseat` (`clientroom/room.go`) stopped a seat and restarted it from a fresh
 runtime render, and `4genteam heal` restarted a seat that had died - so the gate `up`, `compact`, `continue`,
 `watchdog`, `sync respawn` and `seat reseat` all call was one command away from being skipped. Ruling:
-`RULING-peak-gate-restart-verbs-2026-10-20.md` (both refuse unless `--allow-peak`; neither warns and
-proceeds).
+`ai_docs/core-architecture/peak-gate-restart-verbs.md` (both refuse unless `--allow-peak`; neither warns
+and proceeds).
 
 **`room reseat`** reads `clientoffpeak.ModeFromFlags` before its own parser (which refuses a flag it does not
 own), and calls the exported `clientlifecycle.PeakGate(room, "room reseat", …)` BEFORE the stop, returning its
