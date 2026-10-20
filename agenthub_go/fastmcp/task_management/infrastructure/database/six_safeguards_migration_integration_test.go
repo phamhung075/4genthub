@@ -9,6 +9,10 @@ package database_test
 // the machine row is `agent` with the empty rig; the rig-scoped rows are untouched; applying the SQL a
 // second time is a no-op; and the two constraints refuse the retired name and a rig on a
 // machine-scoped row, which is the rule the ingest states in validate().
+//
+// THE NAMES HERE ARE THIS STEP'S OWN ERA - `rig_safeguards`, its `rig` column and its `ck_rig_`
+// constraints. That is not residue: the fixture must be the shape 0004 was written against, and the
+// rename to the room names is 0008's subject, pinned by room_safeguards_rename_integration_test.go.
 
 import (
 	"context"

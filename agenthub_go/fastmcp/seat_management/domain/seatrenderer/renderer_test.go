@@ -481,7 +481,7 @@ func TestRenderSeatSameModulesOnBothRuntimes(t *testing.T) {
 // the runtime was MEASURED to read (2026-10-06, MCP-OMP-STEP-A-MEASUREMENT.md): a `{"mcpServers": …}`
 // document installed as the seat's agent-dir `.mcp.json`, with the platform URL resolved and every
 // other ${VAR} LEFT for the runtime — which does expand it, in a header and in a stdio server's env.
-// It carries BOTH servers the owner used to hand-write into the rig-root file: agenthub_http (bearer
+// It carries BOTH servers the owner used to hand-write into the room-root file: agenthub_http (bearer
 // left as a ${VAR}) and the deepseek offload bridge, whose env transports DSH_ROOT — the value that
 // makes the bridge find its checkout when HOME is the seat directory.
 func TestRenderSeatOmpMCPFileIsTheMeasuredRuntimeShape(t *testing.T) {
@@ -755,7 +755,7 @@ func TestRenderSeatCodexRulesDenyTheDirectSendSurface(t *testing.T) {
 	// exists so a policy the seat believes it carries is visible in the artefact.
 	mixed := resolver.ResolvedModule{
 		Slug: "comm-guard", Version: "1.1.1", Kind: resolver.KindTool,
-		Content: `{"permissions":{"deny":["Bash(rig send:*)","Read(/etc/shadow)"]}}`,
+		Content: `{"permissions":{"deny":["Bash(tmux send-keys:*)","Read(/etc/shadow)"]}}`,
 	}
 	spec, err := RenderSeat(withModules(seatFixture("codex"), []resolver.ResolvedModule{mixed}), testMCPURL)
 	if err != nil {
@@ -860,7 +860,7 @@ func TestRenderSeatMCPBlockInvalidError(t *testing.T) {
 func TestRenderSeatPermissionNarrowsWithinMountedServerOnly(t *testing.T) {
 	guard := resolver.ResolvedModule{
 		Slug: "comm-guard", Version: "1.1.1", Kind: resolver.KindTool,
-		Content: `{"permissions":{"deny":["Bash(rig send:*)"],"allow":["Bash(4genteam whoami:*)"]},"mcpServers":{"filesystem":{"type":"stdio","command":"npx"}}}`,
+		Content: `{"permissions":{"deny":["Bash(tmux send-keys:*)"],"allow":["Bash(4genteam whoami:*)"]},"mcpServers":{"filesystem":{"type":"stdio","command":"npx"}}}`,
 	}
 
 	mounted := withMCP(seatFixture("claude-code"), mcpPlatformModule(), guard)
@@ -876,7 +876,7 @@ func TestRenderSeatPermissionNarrowsWithinMountedServerOnly(t *testing.T) {
 		t.Fatalf("a tool module mounted a server: %+v", servers)
 	}
 	settings := fileContent(t, spec, settingsFragmentPath)
-	if !strings.Contains(settings, "Bash(rig send:*)") || !strings.Contains(settings, "Bash(4genteam whoami:*)") {
+	if !strings.Contains(settings, "Bash(tmux send-keys:*)") || !strings.Contains(settings, "Bash(4genteam whoami:*)") {
 		t.Fatalf("permission narrowing missing from the settings fragment:\n%s", settings)
 	}
 

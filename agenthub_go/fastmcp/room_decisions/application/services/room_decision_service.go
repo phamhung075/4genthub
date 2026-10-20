@@ -2,7 +2,7 @@ package services
 
 // The room decision channel's single writer contract, the sibling of SeatFeedbackService.
 //
-// A rig's daemon mirrors an ask up and the human's click comes down; this service is the one place
+// A room's daemon mirrors an ask up and the human's click comes down; this service is the one place
 // either is validated, and the route owns only the transport (decode, status codes). Nothing else
 // builds a RoomDecision row.
 //
@@ -33,7 +33,7 @@ const (
 	// `humanDetail`, short enough for a panel.
 	RoomDecisionMaxSummary = 200
 	RoomDecisionMaxDetail  = 4000
-	// The names around the prose: the rig, the queue row, the asking seat, the human ref.
+	// The names around the prose: the room, the queue row, the asking seat, the human ref.
 	RoomDecisionMaxField = 128
 )
 
@@ -137,7 +137,7 @@ type RoomDecisionStore interface {
 	Get(ctx context.Context, userID, roomID, id string) (*repositories.RoomDecision, error)
 	GetByID(ctx context.Context, userID, id string) (*repositories.RoomDecision, error)
 	ListByRoom(ctx context.Context, userID, roomID string) ([]repositories.RoomDecision, error)
-	ListAnswers(ctx context.Context, userID, rigName string, after *repositories.AnswerCursor, limit int) ([]repositories.AnswerDelivery, error)
+	ListAnswers(ctx context.Context, userID string, after *repositories.AnswerCursor, limit int) ([]repositories.AnswerDelivery, error)
 	RecordAnswer(ctx context.Context, userID, roomID, id string, answers map[string]string, state decisions.State, answeredAt *time.Time) (*repositories.RoomDecision, error)
 	Acknowledge(ctx context.Context, userID, id string, applied bool, at time.Time) (*repositories.RoomDecision, bool, error)
 	SetState(ctx context.Context, userID, id string, state decisions.State, at time.Time) (*repositories.RoomDecision, error)
@@ -146,7 +146,7 @@ type RoomDecisionStore interface {
 // RoomDecisionAsk is one authored ask, before it is a row. RoomID is the resolved room UUID, and
 // Questions is the authored value as the daemon sent it - it is parsed here, not by the route.
 type RoomDecisionAsk struct {
-	RigName        string
+	RoomName        string
 	QitemID        string
 	AuthorSeatKey  string
 	Destination    string
@@ -223,7 +223,7 @@ func (s *RoomDecisionService) Create(ctx context.Context, userID, roomID string,
 		path  string
 		value string
 	}{
-		{"rig_name", ask.RigName},
+		{"room_name", ask.RoomName},
 		{"qitem_id", ask.QitemID},
 		{"author_seat_key", ask.AuthorSeatKey},
 		{"destination", ask.Destination},
@@ -281,7 +281,7 @@ func (s *RoomDecisionService) Create(ctx context.Context, userID, roomID string,
 	stored, created, err := s.store.Create(ctx, repositories.RoomDecision{
 		UserID:         userID,
 		RoomID:         roomID,
-		RigName:        ask.RigName,
+		RoomName:        ask.RoomName,
 		QitemID:        ask.QitemID,
 		AuthorSeatKey:  ask.AuthorSeatKey,
 		Destination:    ask.Destination,
@@ -454,23 +454,15 @@ func decodeAnswerCursor(raw string) (*repositories.AnswerCursor, error) {
 // apply is idempotent - which is why the ack, not the pull, is what ends the loop. The next cursor
 // is the last row handed over, so a resumed pull never repeats one it already delivered.
 //
-// rigName is the machine identity the answers belong to: answers to another rig's asks are not this
-// daemon's work, and an ack is destructive, so pulling them would close decisions nobody applied. The
-// room each delivery names is resolved on the way out - the daemon has no room model at all, so the
-// pull is the only place it can learn which room one of its own asks was filed in.
-func (s *RoomDecisionService) Pull(ctx context.Context, userID, rigName, cursor string, limit int) ([]repositories.AnswerDelivery, string, error) {
-	rigName = strings.TrimSpace(rigName)
-	if rigName == "" {
-		return nil, "", &RoomDecisionAnswerRejection{
-			Code:    CodeInvalidPull,
-			Message: "rig is required to pull answers",
-		}
-	}
+// The tenant is the whole filter: an answer is handed out until its ack lands, and the room each
+// delivery names is resolved on the way out - the daemon has no room model at all, so the pull is the
+// only place it can learn which room one of its asks was filed in.
+func (s *RoomDecisionService) Pull(ctx context.Context, userID, cursor string, limit int) ([]repositories.AnswerDelivery, string, error) {
 	after, err := decodeAnswerCursor(cursor)
 	if err != nil {
 		return nil, "", &RoomDecisionAnswerRejection{Code: CodeInvalidCursor, Message: err.Error()}
 	}
-	list, err := s.store.ListAnswers(ctx, userID, rigName, after, ClampDecisionAnswerLimit(limit))
+	list, err := s.store.ListAnswers(ctx, userID, after, ClampDecisionAnswerLimit(limit))
 	if err != nil {
 		return nil, "", err
 	}

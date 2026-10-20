@@ -1,7 +1,7 @@
 // ws_connector_ledger.go holds P4's nudge: the ONE server frame `/ws/connector` gains, `ledger_tip`,
 // and the per-user registry of the sockets entitled to receive it.
 //
-// IT IS A NUDGE AND NOTHING ELSE (NEXT_GEN P4; rigd-boundaries.md 2.2, 2.3). Correctness has ONE
+// IT IS A NUDGE AND NOTHING ELSE (NEXT_GEN P4; agent-boundaries.md 2.2, 2.3). Correctness has ONE
 // path - the client's own GET /api/v2/ledger from its cursor - and the socket only shortens the delay
 // between a commit and that pull. The frame carries a tip and no entries, so a client that treated it
 // as truth would still have to pull to learn anything; nothing on this side reads it either, and a

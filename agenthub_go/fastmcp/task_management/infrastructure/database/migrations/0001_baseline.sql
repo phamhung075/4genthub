@@ -544,23 +544,23 @@ CREATE TABLE user_token_balances (
 );
 CREATE INDEX ix_user_token_balances_user_id ON user_token_balances (user_id);
 
--- Table: rig_safeguards
-CREATE TABLE rig_safeguards (
+-- Table: room_safeguards
+CREATE TABLE room_safeguards (
 	user_id VARCHAR(64) NOT NULL,
 	connector_id VARCHAR(64) NOT NULL,
-	rig VARCHAR(255) NOT NULL,
+	room VARCHAR(255) NOT NULL,
 	safeguard VARCHAR(32) NOT NULL,
 	state VARCHAR(20) NOT NULL,
 	pid INTEGER,
 	restarts INTEGER NOT NULL,
 	age_s INTEGER NOT NULL,
 	last_beat_at TIMESTAMP WITHOUT TIME ZONE,
-	PRIMARY KEY (user_id, connector_id, rig, safeguard),
-	CONSTRAINT ck_rig_safeguards_state CHECK (state IN ('running', 'stopped', 'silent', 'failing')),
-	CONSTRAINT ck_rig_safeguards_safeguard CHECK (safeguard IN ('compact', 'watchdog', 'messages', 'roomguard', 'bridge', 'agent')),
-	CONSTRAINT ck_rig_safeguards_rig CHECK (CASE WHEN safeguard IN ('bridge', 'agent') THEN rig = '' ELSE length(rig) BETWEEN 1 AND 255 END)
+	PRIMARY KEY (user_id, connector_id, room, safeguard),
+	CONSTRAINT ck_room_safeguards_state CHECK (state IN ('running', 'stopped', 'silent', 'failing')),
+	CONSTRAINT ck_room_safeguards_safeguard CHECK (safeguard IN ('compact', 'watchdog', 'messages', 'roomguard', 'bridge', 'agent')),
+	CONSTRAINT ck_room_safeguards_room CHECK (CASE WHEN safeguard IN ('bridge', 'agent') THEN room = '' ELSE length(room) BETWEEN 1 AND 255 END)
 );
-CREATE INDEX ix_rig_safeguards_user_connector ON rig_safeguards (user_id, connector_id);
+CREATE INDEX ix_room_safeguards_user_connector ON room_safeguards (user_id, connector_id);
 
 -- Table: teams
 CREATE TABLE teams (
@@ -821,7 +821,7 @@ CREATE TABLE room_decisions (
 	id UUID NOT NULL,
 	user_id TEXT NOT NULL,
 	room_id UUID NOT NULL REFERENCES rooms (id),
-	rig_name TEXT NOT NULL,
+	room_name TEXT NOT NULL,
 	qitem_id TEXT NOT NULL,
 	author_seat_key TEXT NOT NULL,
 	destination TEXT NOT NULL,
@@ -840,7 +840,7 @@ CREATE TABLE room_decisions (
 	CONSTRAINT uq_room_decisions_user_qitem UNIQUE (user_id, qitem_id)
 );
 CREATE INDEX ix_room_decisions_user_room_state ON room_decisions (user_id, room_id, state);
-CREATE INDEX ix_room_decisions_user_rig_state_acked ON room_decisions (user_id, rig_name, state, acked_at);
+CREATE INDEX ix_room_decisions_user_rig_state_acked ON room_decisions (user_id, room_name, state, acked_at);
 
 -- Table: seat_messages
 CREATE TABLE seat_messages (

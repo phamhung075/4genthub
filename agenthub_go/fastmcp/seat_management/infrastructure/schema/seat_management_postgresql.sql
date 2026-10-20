@@ -309,7 +309,7 @@ CREATE TABLE IF NOT EXISTS seat_feedback (
 CREATE INDEX IF NOT EXISTS ix_seat_feedback_user_id ON seat_feedback (user_id);
 
 -- Table: room_decisions
--- One ask a rig's daemon mirrored up, plus the answers the human clicked. IT IS A PROJECTION, NOT
+-- One ask a room's daemon mirrored up, plus the answers the human clicked. IT IS A PROJECTION, NOT
 -- THE AUTHORITY: the local queue row is what a seat's work stops on and the daemon applies the
 -- answers there (recordHumanAnswer), which is why `answered` is a step rather than an end state and
 -- only the daemon's own resolution produces `resolved`/`superseded`.
@@ -330,7 +330,7 @@ CREATE TABLE IF NOT EXISTS room_decisions (
     id UUID PRIMARY KEY,
     user_id TEXT NOT NULL,
     room_id UUID NOT NULL REFERENCES rooms (id),
-    rig_name TEXT NOT NULL,
+    room_name TEXT NOT NULL,
     qitem_id TEXT NOT NULL,
     author_seat_key TEXT NOT NULL,
     destination TEXT NOT NULL,
@@ -349,9 +349,9 @@ CREATE TABLE IF NOT EXISTS room_decisions (
 );
 
 CREATE INDEX IF NOT EXISTS ix_room_decisions_user_room_state ON room_decisions (user_id, room_id, state);
--- The answer leg's own index: a daemon pulls the answered rows of one machine (rig_name) that carry no
+-- The answer leg's own index: a daemon pulls the answered rows of one machine (room_name) that carry no
 -- ack yet (acked_at), a filter the panel's index above cannot serve.
-CREATE INDEX IF NOT EXISTS ix_room_decisions_user_rig_state_acked ON room_decisions (user_id, rig_name, state, acked_at);
+CREATE INDEX IF NOT EXISTS ix_room_decisions_user_rig_state_acked ON room_decisions (user_id, room_name, state, acked_at);
 
 -- Table: seat_messages
 -- Text a window addressed to a seat, held until the client that holds that seat's terminal pulls it.

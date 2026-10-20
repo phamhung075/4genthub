@@ -92,7 +92,7 @@ const (
 
 // allowedKinds maps a message intent to the link kinds that authorize it.
 // spawned_by and can_observe never authorize a send; can_observe grants reading
-// output via rig capture/transcript, not sending.
+// output via room capture/transcript, not sending.
 var allowedKinds = map[Intent][]LinkKind{
 	IntentTask:       {KindDelegatesTo},
 	IntentEscalation: {KindEscalatesTo},
@@ -255,8 +255,10 @@ func BypassSuspected(known []string, observed string) bool {
 
 	sub := fields[i+1]
 	switch cmd {
-	case "rig":
-		return sub == "send" || sub == "queue" || sub == "broadcast"
+	// The direct-send channel a seat can actually reach: a deliberate tmux write into another
+	// seat's pane. The retired `rig` binary's send|queue|broadcast were the channel this case
+	// named until the binary was purged; the case is DELETED rather than renamed, because a
+	// `room` command with those subcommands does not exist and the switch would never fire.
 	case "tmux":
 		return sub == "send-keys" || sub == "paste-buffer"
 	default:

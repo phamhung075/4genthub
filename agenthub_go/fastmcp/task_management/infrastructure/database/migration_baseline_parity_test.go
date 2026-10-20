@@ -11,7 +11,7 @@ package database_test
 // init() (task_event_tables.go, models_auth.go, email_token_repository.go, seat_tables.go,
 // rig_safeguard_tables.go), and ProductionTables (models_prod.go) is deliberately outside it. This
 // file therefore carries the SAME blank imports the generator (tmp_foldgen) does - without them the
-// binary registers only the base package's tables, and the guard would report every seat, rig and auth
+// binary registers only the base package's tables, and the guard would report every seat, room and auth
 // table as "in the baseline but not registered", which is the guard failing to see the registry
 // rather than the registry being wrong. Importing them is legal here because this is the EXTERNAL test
 // package: those packages import taskdb, which an internal (package database) test file could not do.
@@ -36,7 +36,7 @@ import (
 	// The imports are the point: each package's init() appends its TableDefs to the one registry.
 	_ "agenthub/fastmcp/auth/infrastructure/database"
 	_ "agenthub/fastmcp/auth/infrastructure/repositories"
-	_ "agenthub/fastmcp/rig_safeguard/infrastructure/database"
+	_ "agenthub/fastmcp/room_safeguard/infrastructure/database"
 	_ "agenthub/fastmcp/seat_management/infrastructure/database"
 )
 

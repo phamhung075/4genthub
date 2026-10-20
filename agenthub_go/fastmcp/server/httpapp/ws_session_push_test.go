@@ -1,6 +1,6 @@
 package httpapp
 
-// The browser push half of rigd-boundaries.md 2.3a: every `session` frame that registers a NEW
+// The browser push half of agent-boundaries.md 2.3a: every `session` frame that registers a NEW
 // (user_id, connector_id, session_key) emits one `agent_session` frame with action `created`; a
 // later frame that changes the seat_state or the status emits `updated`; a frame that changes
 // neither emits nothing; and MarkOffline emits one `updated` frame per session it marks.

@@ -72,7 +72,7 @@ type seatStatusReport struct {
 	ReportedAt string                `json:"reported_at"`
 	Seats      []seatStatusReportRow `json:"seats"`
 	Agents     []seatStatusAgent     `json:"agents"`
-	// Edges is the machine's topology, flat rather than nested per rig: one entry per directed
+	// Edges is the machine's topology, flat rather than nested per room: one entry per directed
 	// link. It is optional in the wire sense - a bridge that sends no `edges` key reports no
 	// topology, and a report replaces the machine's edge set like its seats and agents.
 	Edges []seatStatusEdge `json:"edges"`

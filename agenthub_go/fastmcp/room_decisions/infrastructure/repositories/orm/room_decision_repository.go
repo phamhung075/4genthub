@@ -22,7 +22,7 @@ import (
 
 // roomDecisionReturning is the column list every read and write here shares, in DDL order, with the
 // UUID columns cast so they arrive as text.
-const roomDecisionReturning = `"id"::text, "user_id", "room_id"::text, "rig_name", "qitem_id", ` +
+const roomDecisionReturning = `"id"::text, "user_id", "room_id"::text, "room_name", "qitem_id", ` +
 	`"author_seat_key", "destination", "summary", "detail", "questions", "answers", "state", ` +
 	`"idempotency_key", "created_at", "answered_at", "resolved_at", "acked_at"`
 
@@ -86,12 +86,12 @@ func (r *ORMRoomDecisionRepository) Create(ctx context.Context, decision domainr
 	)
 	err = r.GetDBSession(ctx, func(ctx context.Context, s database.DBTX) error {
 		row, err := scanRoomDecision(s.QueryRowContext(ctx,
-			`INSERT INTO "room_decisions" ("id", "user_id", "room_id", "rig_name", "qitem_id", "author_seat_key", `+
+			`INSERT INTO "room_decisions" ("id", "user_id", "room_id", "room_name", "qitem_id", "author_seat_key", `+
 				`"destination", "summary", "detail", "questions", "answers", "state", "idempotency_key", `+
 				`"created_at", "answered_at", "resolved_at", "acked_at") `+
 				`VALUES ($1::uuid, $2, $3::uuid, $4, $5, $6, $7, $8, $9, $10::jsonb, $11::jsonb, $12, $13, $14, `+
 				`NULL, NULL, NULL) ON CONFLICT ("user_id", "qitem_id") DO NOTHING RETURNING `+roomDecisionReturning,
-			id, decision.UserID, decision.RoomID, decision.RigName, decision.QitemID, decision.AuthorSeatKey,
+			id, decision.UserID, decision.RoomID, decision.RoomName, decision.QitemID, decision.AuthorSeatKey,
 			decision.Destination, nullableText(decision.Summary), nullableText(decision.Detail),
 			questionsJSON, answersJSON, string(decision.State), decision.IdempotencyKey, decision.CreatedAt.UTC()))
 		if errors.Is(err, sql.ErrNoRows) {
@@ -261,7 +261,7 @@ func (r *ORMRoomDecisionRepository) RecordAnswer(ctx context.Context, userID, ro
 	return r.Get(ctx, userID, roomID, id)
 }
 
-// ListAnswers returns this tenant's answered-but-unacknowledged decisions for ONE RIG, oldest first,
+// ListAnswers returns this tenant's answered-but-unacknowledged decisions, oldest first,
 // starting after the cursor, each carrying the SLUG of the room it belongs to. It is the pull the
 // daemon drives.
 //
@@ -274,10 +274,10 @@ func (r *ORMRoomDecisionRepository) RecordAnswer(ctx context.Context, userID, ro
 //
 // acked_at IS NULL is the delivery half of the filter and `state = 'answered'` the work half: a row
 // the daemon has acked is never handed out again, and a pending ask is still being answered in the
-// panel. The rig is in the filter because the ack is destructive - a daemon that pulled another rig's
+// panel. The room is in the filter because the ack is destructive - a daemon that pulled another room's
 // answers could not apply them (its local queue has no such row) and its ack would close a decision
 // nobody applied.
-func (r *ORMRoomDecisionRepository) ListAnswers(ctx context.Context, userID, rigName string, after *domainrepo.AnswerCursor, limit int) ([]domainrepo.AnswerDelivery, error) {
+func (r *ORMRoomDecisionRepository) ListAnswers(ctx context.Context, userID string, after *domainrepo.AnswerCursor, limit int) ([]domainrepo.AnswerDelivery, error) {
 	var afterAt, afterID any
 	if after != nil && after.ID != "" {
 		idParam, err := database.UnifiedUUIDBindParam(after.ID, database.DialectPostgres)
@@ -294,10 +294,10 @@ func (r *ORMRoomDecisionRepository) ListAnswers(ctx context.Context, userID, rig
 	err := r.GetDBSession(ctx, func(ctx context.Context, s database.DBTX) error {
 		cursor, err := s.QueryContext(ctx,
 			`SELECT `+roomDecisionReturning+`, `+roomDecisionRoomSlug+` FROM "room_decisions" `+
-				`WHERE "user_id" = $1 AND "rig_name" = $2 AND "state" = 'answered' AND "acked_at" IS NULL `+
-				`AND ($3::timestamptz IS NULL OR ("answered_at", "id") > ($3::timestamptz, $4::uuid)) `+
-				`ORDER BY "answered_at" ASC, "id" ASC LIMIT $5`,
-			userID, rigName, afterAt, afterID, limit)
+				`WHERE "user_id" = $1 AND "state" = 'answered' AND "acked_at" IS NULL `+
+				`AND ($2::timestamptz IS NULL OR ("answered_at", "id") > ($2::timestamptz, $3::uuid)) `+
+				`ORDER BY "answered_at" ASC, "id" ASC LIMIT $4`,
+			userID, afterAt, afterID, limit)
 		if err != nil {
 			return err
 		}
@@ -458,7 +458,7 @@ func roomDecisionKeys(id, roomID string) (idParam, roomParam any, ok bool) {
 // list, here, because the DDL order is what makes it right and two lists would drift.
 func scanRoomDecisionInto(row interface{ Scan(...any) error }, out *seatdb.RoomDecisionORM, extra ...any) error {
 	var questionsRaw, answersRaw []byte
-	dest := []any{&out.ID, &out.UserID, &out.RoomID, &out.RigName, &out.QitemID, &out.AuthorSeatKey,
+	dest := []any{&out.ID, &out.UserID, &out.RoomID, &out.RoomName, &out.QitemID, &out.AuthorSeatKey,
 		&out.Destination, &out.Summary, &out.Detail, &questionsRaw, &answersRaw, &out.State,
 		&out.IdempotencyKey, &out.CreatedAt, &out.AnsweredAt, &out.ResolvedAt, &out.AckedAt}
 	if err := row.Scan(append(dest, extra...)...); err != nil {
@@ -514,7 +514,7 @@ func roomDecisionToDomain(row *seatdb.RoomDecisionORM) (*domainrepo.RoomDecision
 		ID:             row.ID,
 		UserID:         row.UserID,
 		RoomID:         row.RoomID,
-		RigName:        row.RigName,
+		RoomName:        row.RoomName,
 		QitemID:        row.QitemID,
 		AuthorSeatKey:  row.AuthorSeatKey,
 		Destination:    row.Destination,

@@ -12,12 +12,12 @@ import (
 	"sync"
 	"time"
 
-	rigdb "agenthub/fastmcp/rig_safeguard/infrastructure/database"
+	rigdb "agenthub/fastmcp/room_safeguard/infrastructure/database"
 	"agenthub/fastmcp/server/routes"
 	"agenthub/fastmcp/task_management/domain/entities"
 )
 
-// The connector socket's ruled vocabulary (rigd-boundaries.md 2.2, 2.3, 7.6).
+// The connector socket's ruled vocabulary (agent-boundaries.md 2.2, 2.3, 7.6).
 const (
 	// connectorProtocolVersion is the version this server speaks. ready.protocol is the smaller of
 	// hello.protocol and this one, and a missing hello.protocol means 1 (2.2).
@@ -35,11 +35,11 @@ const (
 	// a socket receives that frame only when its hello advertised this name AND the ready the server
 	// answered carried it back.
 	connectorCapabilityLedger = "ledger"
-	// safeguardAlertEventType and rigSafeguardEntity are 7.3's two ruled names: the notification the
-	// server raises is `safeguard_alert`, and it travels as the new entity `rig_safeguard` on the
+	// safeguardAlertEventType and roomSafeguardEntity are 7.3's two ruled names: the notification the
+	// server raises is `safeguard_alert`, and it travels as the entity `room_safeguard` on the
 	// existing data-change push.
 	safeguardAlertEventType = "safeguard_alert"
-	rigSafeguardEntity      = "rig_safeguard"
+	roomSafeguardEntity      = "room_safeguard"
 )
 
 // wsConnectorIdleTimeout is the server's own heartbeat close (2.2): a socket that has sent no frame
@@ -173,8 +173,8 @@ func wsArmConnectorDeadman(userID, connectorID string) {
 	wsConnectorLivenessMu.Unlock()
 }
 
-// raiseRigSafeguardAlert publishes the alert for one stored safeguard row. 7.3 rules the channel:
-// the existing routes.BroadcastDataChange with the NEW entity `rig_safeguard` under the NEW
+// raiseRoomSafeguardAlert publishes the alert for one stored safeguard row. 7.3 rules the channel:
+// the existing routes.BroadcastDataChange with the entity `room_safeguard` under the
 // event_type `safeguard_alert`, which is also the path that keeps the notification for an offline
 // user and replays it when they next connect.
 //
@@ -182,10 +182,10 @@ func wsArmConnectorDeadman(userID, connectorID string) {
 // is the machine the row came from. 7.3 fixes the event_type and the entity and does not fix the
 // payload's shape, so the fields are the ones the frame already carries rather than a second
 // vocabulary invented for the push.
-func raiseRigSafeguardAlert(ctx context.Context, userID, connectorID string, row rigdb.RigSafeguardORM) error {
+func raiseRoomSafeguardAlert(ctx context.Context, userID, connectorID string, row rigdb.RoomSafeguardORM) error {
 	data := entities.NewOrderedMap[any]()
 	data.Set("connector_id", connectorID)
-	data.Set("rig", row.Rig)
+	data.Set("room", row.Room)
 	data.Set("safeguard", row.Safeguard)
 	data.Set("state", row.State)
 	if row.PID != nil {
@@ -193,30 +193,30 @@ func raiseRigSafeguardAlert(ctx context.Context, userID, connectorID string, row
 	}
 	data.Set("restarts", row.Restarts)
 	data.Set("age_s", row.AgeS)
-	return routes.BroadcastDataChange(ctx, safeguardAlertEventType, rigSafeguardEntity,
-		wsRigSafeguardEntityID(connectorID, row.Rig, row.Safeguard), userID, data, nil)
+	return routes.BroadcastDataChange(ctx, safeguardAlertEventType, roomSafeguardEntity,
+		wsRoomSafeguardEntityID(connectorID, row.Room, row.Safeguard), userID, data, nil)
 }
 
 // raiseAgentDeadmanAlert is 7.3's dead-man for the machine-level supervisor itself - the safeguard
 // the client reports as `agent`, which it renamed from `rigd` on 2026-10-15 (`bc725e6`): a connector
 // that advertised safeguards stayed offline past its heartbeat close. On a machine with no OS
-// supervisor this is the only observer of a dead agent. It names the machine and no rig, which is the
+// supervisor this is the only observer of a dead agent. It names the machine and no room, which is the
 // machine scope `agent` carries (D2): the alert is about the connector's own socket - the one silence
 // the server judges (7.4).
 func raiseAgentDeadmanAlert(ctx context.Context, userID, connectorID string) error {
 	data := entities.NewOrderedMap[any]()
 	data.Set("connector_id", connectorID)
 	data.Set("safeguard", rigdb.SafeguardAgent)
-	return routes.BroadcastDataChange(ctx, safeguardAlertEventType, rigSafeguardEntity,
-		wsRigSafeguardEntityID(connectorID, "", rigdb.SafeguardAgent), userID, data, nil)
+	return routes.BroadcastDataChange(ctx, safeguardAlertEventType, roomSafeguardEntity,
+		wsRoomSafeguardEntityID(connectorID, "", rigdb.SafeguardAgent), userID, data, nil)
 }
 
-// wsRigSafeguardEntityID names one row as the push frame's entity_id: the parts of the key that are
-// known, in the key's order. The dead-man knows no rig, so it names the connector and its
+// wsRoomSafeguardEntityID names one row as the push frame's entity_id: the parts of the key that are
+// known, in the key's order. The dead-man knows no room, so it names the connector and its
 // machine-scoped safeguard.
-func wsRigSafeguardEntityID(connectorID, rig, safeguard string) string {
+func wsRoomSafeguardEntityID(connectorID, room, safeguard string) string {
 	parts := []string{}
-	for _, part := range []string{connectorID, rig, safeguard} {
+	for _, part := range []string{connectorID, room, safeguard} {
 		if part != "" {
 			parts = append(parts, part)
 		}

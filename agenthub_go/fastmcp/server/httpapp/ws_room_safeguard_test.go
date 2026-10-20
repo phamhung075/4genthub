@@ -2,7 +2,7 @@ package httpapp
 
 // The rigd phase-1 socket contract: the hello/ready handshake, ping/pong, the cursor that makes a
 // resume after a lost ack exact, the safeguard frame and its alert, and the dead-man for rigd
-// itself (ai_docs/core-architecture/rigd-boundaries.md 2.2, 2.3, 5 step 1, 7.3, 7.6).
+// itself (ai_docs/core-architecture/agent-boundaries.md 2.2, 2.3, 5 step 1, 7.3, 7.6).
 //
 // The cases that read the database run on the Postgres named by AGENTHUB_TEST_PG_URL (recipe in
 // session_stream/testdb) and skip without it; the frame cases that never reach the database run
@@ -237,7 +237,7 @@ func TestConnectorRefusesASafeguardFrameWithoutTheEchoedCapability(t *testing.T)
 	c.rigdHello(t, "c1", connectorCapabilityIngest)
 
 	c.send(map[string]any{
-		"type": "safeguard", "rig": "rig-1", "safeguard": "compact",
+		"type": "safeguard", "room": "room-1", "safeguard": "compact",
 		"state": "running", "restarts": 0, "age_s": 1,
 	})
 	refused := c.recv()
@@ -386,7 +386,7 @@ func TestSafeguardAlertRuleRaisesOnceAndAlertsAReconnect(t *testing.T) {
 
 	row := func(state string, restarts int) map[string]any {
 		return map[string]any{
-			"rig": "rig-1", "safeguard": "compact", "state": state,
+			"room": "room-1", "safeguard": "compact", "state": state,
 			"pid": 4242, "restarts": restarts, "age_s": 31, "at": time.Now().UnixMilli(),
 		}
 	}
@@ -411,9 +411,9 @@ func TestSafeguardAlertRuleRaisesOnceAndAlertsAReconnect(t *testing.T) {
 		t.Fatalf("alerts after running -> stopped = %d, want exactly 1", len(alerts))
 	}
 	alert := alerts[0]
-	if alert.EventType != safeguardAlertEventType || alert.Entity != rigSafeguardEntity {
+	if alert.EventType != safeguardAlertEventType || alert.Entity != roomSafeguardEntity {
 		t.Fatalf("alert names event_type %q entity %q, want %q and %q",
-			alert.EventType, alert.Entity, safeguardAlertEventType, rigSafeguardEntity)
+			alert.EventType, alert.Entity, safeguardAlertEventType, roomSafeguardEntity)
 	}
 	if got := storedString(t, alert.Primary, "state"); got != "stopped" {
 		t.Errorf("alert state = %q, want stopped", got)
@@ -438,19 +438,19 @@ func TestSafeguardAlertRuleRaisesOnceAndAlertsAReconnect(t *testing.T) {
 	}
 
 	// Latest state wins: one row per key, holding the newest report.
-	if got := sessionStateRowCount(t, env.sessions, user, "c1", "rig-1", "compact"); got != 1 {
-		t.Fatalf("stored rig_safeguards rows for one key = %d, want 1 (the frame is an upsert)", got)
+	if got := sessionStateRowCount(t, env.sessions, user, "c1", "room-1", "compact"); got != 1 {
+		t.Fatalf("stored room_safeguards rows for one key = %d, want 1 (the frame is an upsert)", got)
 	}
 }
 
-// sessionStateRowCount is how many rig_safeguards rows one key holds.
-func sessionStateRowCount(t *testing.T, sessions *database.SessionManager, userID, connectorID, rig, safeguard string) int {
+// sessionStateRowCount is how many room_safeguards rows one key holds.
+func sessionStateRowCount(t *testing.T, sessions *database.SessionManager, userID, connectorID, room, safeguard string) int {
 	t.Helper()
 	count := 0
 	if err := sessions.WithSession(context.Background(), func(ctx context.Context, s database.DBTX) error {
 		return s.QueryRowContext(ctx,
-			`SELECT count(*) FROM rig_safeguards WHERE user_id = $1 AND connector_id = $2 AND rig = $3 AND safeguard = $4`,
-			userID, connectorID, rig, safeguard).Scan(&count)
+			`SELECT count(*) FROM room_safeguards WHERE user_id = $1 AND connector_id = $2 AND room = $3 AND safeguard = $4`,
+			userID, connectorID, room, safeguard).Scan(&count)
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -458,41 +458,41 @@ func sessionStateRowCount(t *testing.T, sessions *database.SessionManager, userI
 }
 
 // TestSafeguardFrameRefusesAStateOrSafeguardOutsideTheRuledSets: 7.6's closed set - the six names
-// the client reports (7.2) - and the rig rule each name's scope carries (D2) are stated to the
+// the client reports (7.2) - and the room rule each name's scope carries (D2) are stated to the
 // database as CHECKs and refused here first, so a bad row never reaches a constraint.
 func TestSafeguardFrameRefusesAStateOrSafeguardOutsideTheRuledSets(t *testing.T) {
 	env := newPGStreamEnv(t)
 	c := env.connector(t, "user-rigd")
 	c.rigdHello(t, "c1", connectorCapabilityIngest, connectorCapabilitySafeguards)
 
-	c.send(map[string]any{"type": "safeguard", "rig": "rig-1", "safeguard": "compact", "state": "paused", "restarts": 0, "age_s": 1})
+	c.send(map[string]any{"type": "safeguard", "room": "room-1", "safeguard": "compact", "state": "paused", "restarts": 0, "age_s": 1})
 	if got := c.recv(); got["type"] != "error" || got["message"] != "bad state" || got["code"] != "bad_state" {
 		t.Fatalf("an unknown state answered %v", got)
 	}
-	c.send(map[string]any{"type": "safeguard", "rig": "rig-1", "safeguard": "keeper", "state": "running", "restarts": 0, "age_s": 1})
+	c.send(map[string]any{"type": "safeguard", "room": "room-1", "safeguard": "keeper", "state": "running", "restarts": 0, "age_s": 1})
 	if got := c.recv(); got["type"] != "error" || got["message"] != "bad safeguard" {
 		t.Fatalf("an unknown safeguard answered %v", got)
 	}
-	c.send(map[string]any{"type": "safeguard", "rig": "", "safeguard": "compact", "state": "running", "restarts": 0, "age_s": 1})
-	if got := c.recv(); got["type"] != "error" || got["message"] != "bad rig" {
-		t.Fatalf("a missing rig answered %v", got)
+	c.send(map[string]any{"type": "safeguard", "room": "", "safeguard": "compact", "state": "running", "restarts": 0, "age_s": 1})
+	if got := c.recv(); got["type"] != "error" || got["message"] != "bad room" {
+		t.Fatalf("a missing room answered %v", got)
 	}
-	if got := sessionStateRowCount(t, env.sessions, "user-rigd", "c1", "rig-1", "compact"); got != 0 {
+	if got := sessionStateRowCount(t, env.sessions, "user-rigd", "c1", "room-1", "compact"); got != 0 {
 		t.Fatalf("stored rows after three refused frames = %d, want 0", got)
 	}
-	// The other half of the scope rule: a machine-scoped name carrying a rig is refused too, so the
-	// key can hold one machine row per connector rather than one per spelling of the empty rig.
-	c.send(map[string]any{"type": "safeguard", "rig": "rig-1", "safeguard": "bridge", "state": "running", "restarts": 0, "age_s": 1})
-	if got := c.recv(); got["type"] != "error" || got["message"] != "bad rig" {
-		t.Fatalf("a machine-scoped safeguard carrying a rig answered %v", got)
+	// The other half of the scope rule: a machine-scoped name carrying a room is refused too, so the
+	// key can hold one machine row per connector rather than one per spelling of the empty room.
+	c.send(map[string]any{"type": "safeguard", "room": "room-1", "safeguard": "bridge", "state": "running", "restarts": 0, "age_s": 1})
+	if got := c.recv(); got["type"] != "error" || got["message"] != "bad room" {
+		t.Fatalf("a machine-scoped safeguard carrying a room answered %v", got)
 	}
-	if got := sessionStateRowCount(t, env.sessions, "user-rigd", "c1", "rig-1", "compact"); got != 0 {
+	if got := sessionStateRowCount(t, env.sessions, "user-rigd", "c1", "room-1", "compact"); got != 0 {
 		t.Fatalf("stored rows after four refused frames = %d, want 0", got)
 	}
-	// And the machine scope is accepted with NO rig: this is the row the client publishes for its
-	// machine-level supervisor, which the four-name set and its blanket rig rule refused "bad rig" at
+	// And the machine scope is accepted with NO room: this is the row the client publishes for its
+	// machine-level supervisor, which the four-name set and its blanket room rule refused "bad room" at
 	// every connect.
-	c.safeguardFrame(t, map[string]any{"rig": "", "safeguard": "agent", "state": "running", "restarts": 0, "age_s": 1})
+	c.safeguardFrame(t, map[string]any{"room": "", "safeguard": "agent", "state": "running", "restarts": 0, "age_s": 1})
 	if got := sessionStateRowCount(t, env.sessions, "user-rigd", "c1", "", "agent"); got != 1 {
 		t.Fatalf("the machine-scoped agent row stored %d rows, want 1", got)
 	}
@@ -554,7 +554,7 @@ func TestRigdDeadmanAlertsWhenASafeguardsConnectorStaysOffline(t *testing.T) {
 	if got := storedString(t, alerts[0].Primary, "connector_id"); got != "c1" {
 		t.Errorf("dead-man alert connector_id = %q, want c1", got)
 	}
-	if alerts[0].EventType != safeguardAlertEventType || alerts[0].Entity != rigSafeguardEntity {
+	if alerts[0].EventType != safeguardAlertEventType || alerts[0].Entity != roomSafeguardEntity {
 		t.Errorf("dead-man alert names event_type %q entity %q", alerts[0].EventType, alerts[0].Entity)
 	}
 

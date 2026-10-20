@@ -376,7 +376,7 @@ var seatDatabaseTables = []taskdb.TableDef{
 			")",
 		"CREATE INDEX ix_seat_feedback_user_id ON seat_feedback (user_id)",
 	}},
-	// The room decision channel, the two-way sibling of the friction channel above: a rig's daemon
+	// The room decision channel, the two-way sibling of the friction channel above: a room's daemon
 	// mirrors an ask up (durable-first, keyed by the daemon's decisionId) and the human's click comes
 	// down. IT IS A PROJECTION, not the authority - the local queue row is what a seat's work stops
 	// on, and the daemon applies the answers there, which is why `answered` is a step rather than an
@@ -391,7 +391,7 @@ var seatDatabaseTables = []taskdb.TableDef{
 		{Name: "id", Attr: "id", GoField: "ID", SQLType: "UUID", Nullable: false, PrimaryKey: true, Default: taskdb.DefaultUUIDv4},
 		{Name: "user_id", Attr: "user_id", GoField: "UserID", SQLType: "TEXT", Nullable: false},
 		{Name: "room_id", Attr: "room_id", GoField: "RoomID", SQLType: "UUID", Nullable: false},
-		{Name: "rig_name", Attr: "rig_name", GoField: "RigName", SQLType: "TEXT", Nullable: false},
+		{Name: "room_name", Attr: "room_name", GoField: "RoomName", SQLType: "TEXT", Nullable: false},
 		{Name: "qitem_id", Attr: "qitem_id", GoField: "QitemID", SQLType: "TEXT", Nullable: false},
 		{Name: "author_seat_key", Attr: "author_seat_key", GoField: "AuthorSeatKey", SQLType: "TEXT", Nullable: false},
 		{Name: "destination", Attr: "destination", GoField: "Destination", SQLType: "TEXT", Nullable: false},
@@ -420,7 +420,7 @@ var seatDatabaseTables = []taskdb.TableDef{
 			"\tid UUID NOT NULL,\n" +
 			"\tuser_id TEXT NOT NULL,\n" +
 			"\troom_id UUID NOT NULL REFERENCES rooms (id),\n" +
-			"\trig_name TEXT NOT NULL,\n" +
+			"\troom_name TEXT NOT NULL,\n" +
 			"\tqitem_id TEXT NOT NULL,\n" +
 			"\tauthor_seat_key TEXT NOT NULL,\n" +
 			"\tdestination TEXT NOT NULL,\n" +
@@ -440,10 +440,10 @@ var seatDatabaseTables = []taskdb.TableDef{
 			")",
 		// TWO indexes, one per read: the panel lists a room's rows by (user_id, room_id) and filters
 		// on the state its open/answered split uses; the daemon's pull takes the state-'answered' rows
-		// of ONE MACHINE (rig_name) that carry no ack yet (acked_at), which the panel's index cannot
+		// of ONE MACHINE (room_name) that carry no ack yet (acked_at), which the panel's index cannot
 		// serve - a pull is not a room's read.
 		"CREATE INDEX ix_room_decisions_user_room_state ON room_decisions (user_id, room_id, state)",
-		"CREATE INDEX ix_room_decisions_user_rig_state_acked ON room_decisions (user_id, rig_name, state, acked_at)",
+		"CREATE INDEX ix_room_decisions_user_rig_state_acked ON room_decisions (user_id, room_name, state, acked_at)",
 	}},
 	// Messages a window addressed to a seat, held until the client that holds that seat's terminal
 	// pulls them. IT IS THE FIRST SERVER-AUTHORED ROW A CLIENT CONSUMES on this axis: every other

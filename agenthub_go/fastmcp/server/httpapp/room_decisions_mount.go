@@ -1,13 +1,13 @@
 package httpapp
 
 // room_decisions_mount.go is the room decision channel over HTTP: a human answers, from the panel,
-// the structured questions a rig's daemon mirrored up for their room.
+// the structured questions a room's daemon mirrored up for their room.
 //
 //	GET  /api/v2/rooms/{room}/decisions             user token, tenant-scoped by the caller
 //	POST /api/v2/rooms/{room}/decisions/{id}/answer user token, one click per call
 //
 // The prefix is the room family's own (`/api/v2/rooms`, where `{room}` is the SLUG), the
-// same root rigspec and the seat routes serve: a second prefix for one entity would be a second way
+// same root room spec and the seat routes serve: a second prefix for one entity would be a second way
 // to name a room.
 //
 // This file owns the transport only. The writer contract - the ported question limits, the bounds,
@@ -91,8 +91,8 @@ func mountRoomDecisionRoutes(mux *http.ServeMux, sessions *database.SessionManag
 	mux.HandleFunc("POST /api/v2/rooms/{room}/decisions/{id}/answer", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleRoomDecisionAnswer(w, r, u, sessions)
 	}))
-	// The crossing: the four routes a rig's daemon drives. They are RIG-scoped rather than
-	// room-scoped because the daemon has no room model at all - it knows the rig it runs on and the
+	// The crossing: the four routes a room's daemon drives. They are ROOM-scoped rather than
+	// tenant-scoped because the daemon has no tenant model at all - it knows the room it runs on and the
 	// decision id the cloud handed it, and the cloud, not the daemon, holds the room.
 	mux.HandleFunc("POST /api/v2/decisions", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleIngestRoomDecision(w, r, u, sessions)
@@ -208,7 +208,7 @@ func handleRoomDecisionAnswer(w http.ResponseWriter, r *http.Request, u *authdom
 
 // roomDecisionRefusalStatus is the status the contract pairs with each refusal token. `state-<state>`
 // is the conflict: the decision is real, the click is too late. A malformed request - a cursor this
-// channel did not mint, a pull with no rig, an outcome or state the daemon may not write - is a 400,
+// channel did not mint, a pull with no room, an outcome or state the daemon may not write - is a 400,
 // because nothing about the decision is wrong. An unrecognised token is a conflict too, because every
 // refusal the service raises names a state or a vocabulary miss and a 500 would report a client's
 // wrong click as the server's fault.
@@ -326,7 +326,7 @@ func decodeRoomDecisionBody(w http.ResponseWriter, r *http.Request, out any, max
 // The crossing: the daemon's half of the channel, four routes, one per leg of an ask's round trip.
 //
 //	POST /api/v2/decisions           ingest one mirrored ask
-//	GET  /api/v2/decisions/answers   pull the answers this rig has not acked
+//	GET  /api/v2/decisions/answers   pull the answers this room has not acked
 //	POST /api/v2/decisions/{id}/ack  record what the daemon did with one answer
 //	POST /api/v2/decisions/{id}/state push a state it learned without an answer
 //
@@ -336,12 +336,13 @@ func decodeRoomDecisionBody(w http.ResponseWriter, r *http.Request, out any, max
 // because the freeze pins what several of them say and the code-prefixed form the room routes use
 // would change it.
 
-// roomDecisionIngestRequest is the ask body. room is optional and wins over the rig's name; questions
-// is carried raw because the daemon's own closed limits are enforced by the service, which owns one
-// implementation of them rather than this route owning a second - and the same holds for
-// idempotency_key, whose value the service requires to derive from this body's qitem_id.
+// roomDecisionIngestRequest is the ask body. room is required - it names the room the ask is filed
+// in - and questions is carried raw because the daemon's own closed limits are enforced by the
+// service, which owns one implementation of them rather than this route owning a second - and the
+// same holds for idempotency_key, whose value the service requires to derive from this body's
+// qitem_id. A body carrying the retired key is refused by the strict decoder, so the wire has
+// one name for the unit.
 type roomDecisionIngestRequest struct {
-	Rig            string          `json:"rig"`
 	Room           string          `json:"room"`
 	QitemID        string          `json:"qitem_id"`
 	AuthorSeatKey  string          `json:"author_seat_key"`
@@ -352,13 +353,12 @@ type roomDecisionIngestRequest struct {
 	IdempotencyKey string          `json:"idempotency_key"`
 }
 
-// handleIngestRoomDecision is route 1: one mirrored ask arriving from a rig.
+// handleIngestRoomDecision is route 1: one mirrored ask arriving from a room's daemon.
 //
 // THE ROOM IS RESOLVED HERE, ONCE, AND IT IS THE OWNER-SCOPED RESOLVE: the daemon writes as the
 // human's own account, so a slug that is not that account's room is the 404 the contract names rather
-// than somebody else's shared room. When the body carries no room, the rig's name is the slug - the
-// one naming convention this wire trusts, and a divergence is a named 404 rather than a silent wrong
-// room.
+// than somebody else's shared room. A body that names no room is refused by the service, because the
+// room is the only unit this wire carries: there is no fallback name to guess from.
 func handleIngestRoomDecision(w http.ResponseWriter, r *http.Request, u *authdomain.User, sessions *database.SessionManager) {
 	service, rooms, ok := roomDecisionDepsFor(w, sessions)
 	if !ok {
@@ -370,9 +370,6 @@ func handleIngestRoomDecision(w http.ResponseWriter, r *http.Request, u *authdom
 		return
 	}
 	slug := strings.TrimSpace(body.Room)
-	if slug == "" {
-		slug = strings.TrimSpace(body.Rig)
-	}
 	room, err := rooms.GetBySlug(r.Context(), callerID, slug)
 	if err != nil {
 		writeDetail(w, http.StatusInternalServerError, err.Error())
@@ -383,7 +380,7 @@ func handleIngestRoomDecision(w http.ResponseWriter, r *http.Request, u *authdom
 		return
 	}
 	stored, created, err := service.Create(r.Context(), callerID, room.ID, roomservices.RoomDecisionAsk{
-		RigName:        body.Rig,
+		RoomName:        body.Room,
 		QitemID:        body.QitemID,
 		AuthorSeatKey:  body.AuthorSeatKey,
 		Destination:    body.Destination,
@@ -414,7 +411,7 @@ func handleIngestRoomDecision(w http.ResponseWriter, r *http.Request, u *authdom
 	writeJSON(w, http.StatusOK, response)
 }
 
-// handlePullRoomDecisionAnswers is route 2: one daemon takes the answers its rig has not acked.
+// handlePullRoomDecisionAnswers is route 2: one daemon takes the answers its account has not acked.
 //
 // THE PAGE BOUNDS COME FROM THE SERVICE (ClampDecisionAnswerLimit) rather than from this route, so the
 // numbers a daemon pages by have one home and the route only reads query parameters. An empty `cursor`
@@ -430,7 +427,7 @@ func handlePullRoomDecisionAnswers(w http.ResponseWriter, r *http.Request, u *au
 			limit = n
 		}
 	}
-	answers, cursor, err := service.Pull(r.Context(), userID(u), r.URL.Query().Get("rig"), r.URL.Query().Get("after"), limit)
+	answers, cursor, err := service.Pull(r.Context(), userID(u), r.URL.Query().Get("after"), limit)
 	if err != nil {
 		if !writeRoomDecisionCrossingRefusal(w, err) {
 			writeDetail(w, http.StatusInternalServerError, err.Error())

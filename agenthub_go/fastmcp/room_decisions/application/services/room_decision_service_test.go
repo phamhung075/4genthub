@@ -114,15 +114,16 @@ func (f *fakeRoomDecisionStore) GetByID(_ context.Context, userID, id string) (*
 	return nil, nil
 }
 
-// ListAnswers is the pull over the slice: the answered, UNACKED rows of one rig, oldest first, after
+// ListAnswers is the pull over the slice: the answered, UNACKED rows of the tenant, oldest first,
+// after
 // the cursor, each carrying the slug its room is known by here. The order, the cursor rule and the
 // acked filter are the store's own - (answered_at, id) and acked_at IS NULL - so a case that resumes
 // from a cursor exercises the same rule the SQL's comparison does.
-func (f *fakeRoomDecisionStore) ListAnswers(_ context.Context, userID, rigName string, after *repositories.AnswerCursor, limit int) ([]repositories.AnswerDelivery, error) {
+func (f *fakeRoomDecisionStore) ListAnswers(_ context.Context, userID string, after *repositories.AnswerCursor, limit int) ([]repositories.AnswerDelivery, error) {
 	f.pulls++
 	out := []repositories.AnswerDelivery{}
 	for _, row := range f.rows {
-		if row.UserID != userID || row.RigName != rigName ||
+		if row.UserID != userID ||
 			row.State != decisions.StateAnswered || row.AnsweredAt == nil || row.AckedAt != nil {
 			continue
 		}
@@ -212,7 +213,7 @@ func storedDecision(state decisions.State, answers map[string]string) repositori
 		ID:            "rd-1",
 		UserID:        "owner",
 		RoomID:        "room-1",
-		RigName:       "4genthub-min",
+		RoomName:       "4genthub-min",
 		QitemID:       "qitem-1",
 		AuthorSeatKey: "go-dev",
 		Destination:   "human-operator@kernel",
@@ -387,54 +388,54 @@ func TestCreateRefusesAMalformedAskAtTheDoor(t *testing.T) {
 	}{
 		{
 			name: "no questions",
-			ask:  RoomDecisionAsk{RigName: "r", QitemID: "q", AuthorSeatKey: "s", Destination: "h", IdempotencyKey: "agenthub:decision:q", Questions: json.RawMessage(`[]`)},
+			ask:  RoomDecisionAsk{RoomName: "r", QitemID: "q", AuthorSeatKey: "s", Destination: "h", IdempotencyKey: "agenthub:decision:q", Questions: json.RawMessage(`[]`)},
 			miss: "Ask 1 to 4 questions",
 		},
 		{
 			name: "an option id outside the token rule",
-			ask: RoomDecisionAsk{RigName: "r", QitemID: "q", AuthorSeatKey: "s", Destination: "h", IdempotencyKey: "agenthub:decision:q",
+			ask: RoomDecisionAsk{RoomName: "r", QitemID: "q", AuthorSeatKey: "s", Destination: "h", IdempotencyKey: "agenthub:decision:q",
 				Questions: json.RawMessage(`[{"id":"q1","question":"a?","options":[{"id":"a b","label":"A"},{"id":"b","label":"B"}]}]`)},
 			miss: "id must be 1-40 letters",
 		},
 		{
 			name: "a question value that is not an array",
-			ask: RoomDecisionAsk{RigName: "r", QitemID: "q", AuthorSeatKey: "s", Destination: "h", IdempotencyKey: "agenthub:decision:q",
+			ask: RoomDecisionAsk{RoomName: "r", QitemID: "q", AuthorSeatKey: "s", Destination: "h", IdempotencyKey: "agenthub:decision:q",
 				Questions: json.RawMessage(`{"id":"q1"}`)},
 			miss: "must be an array",
 		},
 		{
 			name: "no idempotency key",
-			ask: RoomDecisionAsk{RigName: "r", QitemID: "q", AuthorSeatKey: "s", Destination: "h",
+			ask: RoomDecisionAsk{RoomName: "r", QitemID: "q", AuthorSeatKey: "s", Destination: "h",
 				Questions: askBody()},
 			miss: "idempotency_key is required",
 		},
 		{
 			name: "no destination",
-			ask: RoomDecisionAsk{RigName: "r", QitemID: "q", AuthorSeatKey: "s", IdempotencyKey: "agenthub:decision:q",
+			ask: RoomDecisionAsk{RoomName: "r", QitemID: "q", AuthorSeatKey: "s", IdempotencyKey: "agenthub:decision:q",
 				Questions: askBody()},
 			miss: "destination is required",
 		},
 		{
 			name: "a summary over the bound",
-			ask: RoomDecisionAsk{RigName: "r", QitemID: "q", AuthorSeatKey: "s", Destination: "h", IdempotencyKey: "agenthub:decision:q",
+			ask: RoomDecisionAsk{RoomName: "r", QitemID: "q", AuthorSeatKey: "s", Destination: "h", IdempotencyKey: "agenthub:decision:q",
 				Summary: longSummary, Questions: askBody()},
 			miss: "summary cannot exceed",
 		},
 		{
 			name: "a detail over the bound",
-			ask: RoomDecisionAsk{RigName: "r", QitemID: "q", AuthorSeatKey: "s", Destination: "h", IdempotencyKey: "agenthub:decision:q",
+			ask: RoomDecisionAsk{RoomName: "r", QitemID: "q", AuthorSeatKey: "s", Destination: "h", IdempotencyKey: "agenthub:decision:q",
 				Detail: longDetail, Questions: askBody()},
 			miss: "detail cannot exceed",
 		},
 		{
 			name: "a key that does not derive from the qitem",
-			ask: RoomDecisionAsk{RigName: "r", QitemID: "q", AuthorSeatKey: "s", Destination: "h",
+			ask: RoomDecisionAsk{RoomName: "r", QitemID: "q", AuthorSeatKey: "s", Destination: "h",
 				IdempotencyKey: "agenthub:decision:another-item", Questions: askBody()},
 			miss: "idempotency_key must be agenthub:decision:<qitem_id>",
 		},
 		{
 			name: "a credential in the detail",
-			ask: RoomDecisionAsk{RigName: "r", QitemID: "q", AuthorSeatKey: "s", Destination: "h", IdempotencyKey: "agenthub:decision:q",
+			ask: RoomDecisionAsk{RoomName: "r", QitemID: "q", AuthorSeatKey: "s", Destination: "h", IdempotencyKey: "agenthub:decision:q",
 				Detail: "use AKIAIOSFODNN7EXAMPLE to read the bucket", Questions: askBody()},
 			secret: "detail",
 		},
@@ -472,7 +473,7 @@ func TestCreateRefusesARowTheStoreNeitherWroteNorFound(t *testing.T) {
 	store := &fakeRoomDecisionStore{createReturnsNothing: true}
 	service := NewRoomDecisionService(store)
 	ask := RoomDecisionAsk{
-		RigName:        "4genthub-min",
+		RoomName:        "4genthub-min",
 		QitemID:        "qitem-1",
 		AuthorSeatKey:  "go-dev",
 		Destination:    "human-operator@kernel",
@@ -498,7 +499,7 @@ func TestCreateStoresAValidAskAndCollapsesARedrive(t *testing.T) {
 	store := &fakeRoomDecisionStore{}
 	service := NewRoomDecisionService(store)
 	ask := RoomDecisionAsk{
-		RigName:        "4genthub-min",
+		RoomName:        "4genthub-min",
 		QitemID:        "qitem-1",
 		AuthorSeatKey:  "go-dev",
 		Destination:    "human-operator@kernel",
@@ -575,8 +576,7 @@ func answeredAt(row repositories.RoomDecision, at time.Time) repositories.RoomDe
 
 // TestPullMintsTheShippedCursorAndRefusesOneItDidNot covers the answer leg's read: the page carries
 // each delivery's room slug, the cursor is the shipped `<RFC3339Nano>|<uuid>` STRING rather than a
-// second encoding of it, and the refusals are the contract's - a pull that names no machine, and a
-// cursor this channel did not mint.
+// second encoding of it, and the one refusal is the contract's - a cursor this channel did not mint.
 func TestPullMintsTheShippedCursorAndRefusesOneItDidNot(t *testing.T) {
 	at := serviceTestNow.UTC()
 	// The ids are UUIDs because the cursor's second half is validated as one: a row's id is the id the
@@ -596,7 +596,7 @@ func TestPullMintsTheShippedCursorAndRefusesOneItDidNot(t *testing.T) {
 	service := NewRoomDecisionService(store)
 	ctx := context.Background()
 
-	deliveries, cursor, err := service.Pull(ctx, "owner", "4genthub-min", "", 0)
+	deliveries, cursor, err := service.Pull(ctx, "owner", "", 0)
 	if err != nil {
 		t.Fatalf("Pull: %v", err)
 	}
@@ -612,7 +612,7 @@ func TestPullMintsTheShippedCursorAndRefusesOneItDidNot(t *testing.T) {
 
 	// Resuming from that cursor hands over what follows it - here, nothing - rather than the page
 	// again: the comparison is the store's own (answered_at, id).
-	page, next, err := service.Pull(ctx, "owner", "4genthub-min", cursor, 0)
+	page, next, err := service.Pull(ctx, "owner", cursor, 0)
 	if err != nil {
 		t.Fatalf("resumed Pull: %v", err)
 	}
@@ -621,13 +621,9 @@ func TestPullMintsTheShippedCursorAndRefusesOneItDidNot(t *testing.T) {
 	}
 
 	var rejection *RoomDecisionAnswerRejection
-	if _, _, err := service.Pull(ctx, "owner", "   ", "", 0); err == nil ||
-		!asAnswerRejection(err, &rejection) || rejection.Code != CodeInvalidPull {
-		t.Errorf("pull with no rig err = %v, want %s", err, CodeInvalidPull)
-	}
 	// A cursor this channel did not mint is refused in the contract's own words rather than treated
 	// as a first page: a daemon resuming from a token it made up would be handed answers twice.
-	if _, _, err := service.Pull(ctx, "owner", "4genthub-min", "not-a-cursor", 0); err == nil ||
+	if _, _, err := service.Pull(ctx, "owner", "not-a-cursor", 0); err == nil ||
 		!asAnswerRejection(err, &rejection) || rejection.Code != CodeInvalidCursor ||
 		rejection.Message != `after "not-a-cursor" must be a cursor this endpoint returned` {
 		t.Errorf("bad cursor err = %v, want the pinned sentence", err)

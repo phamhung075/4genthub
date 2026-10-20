@@ -1,10 +1,10 @@
-// Package database holds the rig_safeguards table definition and its row struct: the table the
-// safeguard frame (rigd-boundaries.md 7.3) is stored in.
+// Package database holds the room_safeguards table definition and its row struct: the table the
+// safeguard frame (agent-boundaries.md 7.3) is stored in.
 package database
 
 import "time"
 
-// The states a safeguard row reports. The list is rigd-boundaries.md 7.6's "Names a failing test may
+// The states a safeguard row reports. The list is agent-boundaries.md 7.6's "Names a failing test may
 // assert": the four values the client may send and the CHECK in rig_safeguard_postgresql.sql accepts.
 const (
 	StateRunning = "running"
@@ -13,18 +13,18 @@ const (
 	StateFailing = "failing"
 )
 
-// The safeguards the connector supervises (7.2), one row per safeguard per rig per connector. This
+// The safeguards the connector supervises (7.2), one row per safeguard per room per connector. This
 // is the CLIENT's wire vocabulary, adopted whole: the client is the side that produces these rows
 // (`Verify` and `publishRows`), so the closed set lives on the side that writes it and the server
 // refuses a name that is not one of the six.
 //
-// THE SCOPE IS PART OF THE NAME'S MEANING, and it decides the row's rig:
+// THE SCOPE IS PART OF THE NAME'S MEANING, and it decides the row's room:
 //
-//	rig-scoped     (rig 1..255): compact, watchdog, messages, roomguard   one row per rig
-//	machine-scoped (rig exactly ""): bridge, agent                        one row per connector
+//	room-scoped     (room 1..255): compact, watchdog, messages, roomguard   one row per room
+//	machine-scoped (room exactly ""): bridge, agent                        one row per connector
 //
-// EXACTLY empty for the machine-scoped two, not "anything": rig is part of the primary key
-// (user_id, connector_id, rig, safeguard), so an arbitrary rig on a machine row would let one
+// EXACTLY empty for the machine-scoped two, not "anything": room is part of the primary key
+// (user_id, connector_id, room, safeguard), so an arbitrary room on a machine row would let one
 // machine-level row exist under several spellings and the upsert would stop being idempotent.
 //
 // `agent` is the machine-level supervisor the client renamed from `rigd` (bc725e6, 2026-10-15); the
@@ -40,14 +40,14 @@ const (
 	SafeguardAgent     = "agent"
 )
 
-// RigSafeguardORM is a row of rig_safeguards.
+// RoomSafeguardORM is a row of room_safeguards.
 //
 // It is the SOURCE OF TRUTH for the table's columns, the same rule models.go carries for the
-// generated tables: TestRigSafeguardSchemaAgreesWithTheORMRow owns the comparison against the schema
+// generated tables: TestRoomSafeguardSchemaAgreesWithTheORMRow owns the comparison against the schema
 // file (infrastructure/schema/rig_safeguard_postgresql.sql) and the runtime TableDef
 // (rig_safeguard_tables.go), and either source drifting from this struct is that test's failure.
 //
-// THE KEY is (user_id, connector_id, rig, safeguard): one row per safeguard per rig per connector,
+// THE KEY is (user_id, connector_id, room, safeguard): one row per safeguard per room per connector,
 // with no id column, because the frame is an UPSERT and the latest state wins (7.3). There is no
 // foreign key: connector_id is a connector's own name, not a row of another table, and the project
 // keeps every cascade in the application layer.
@@ -60,10 +60,10 @@ const (
 //
 // 7.2's `started_at` is deliberately NOT here: the safeguard frame (7.3) carries no started_at, so
 // the server has no value for it, and a column no code can ever fill is a lie rather than a gap.
-type RigSafeguardORM struct {
+type RoomSafeguardORM struct {
 	UserID      string     `db:"user_id"`
 	ConnectorID string     `db:"connector_id"`
-	Rig         string     `db:"rig"`
+	Room         string     `db:"room"`
 	Safeguard   string     `db:"safeguard"`
 	State       string     `db:"state"`
 	PID         *int       `db:"pid"`
@@ -73,4 +73,4 @@ type RigSafeguardORM struct {
 }
 
 // GetUserID satisfies repositories.HasUserID (user isolation).
-func (r *RigSafeguardORM) GetUserID() string { return r.UserID }
+func (r *RoomSafeguardORM) GetUserID() string { return r.UserID }

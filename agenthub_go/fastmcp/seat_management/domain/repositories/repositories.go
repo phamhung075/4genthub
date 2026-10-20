@@ -295,7 +295,7 @@ type MachineAgent struct {
 }
 
 // MachineEdge is one directed link of the topology a machine reported, with the room (pod) it
-// belongs to: the bridge's `rig whoami` edge, flat rather than nested per rig. Kind is one of
+// belongs to: the bridge's `4genteam whoami` edge, flat rather than nested per room. Kind is one of
 // The five link kinds. Room, From and To are reported names, not foreign keys, exactly like
 // SeatStatus.Room and SeatStatus.Seat.
 type MachineEdge struct {
