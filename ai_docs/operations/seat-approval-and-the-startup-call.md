@@ -145,10 +145,13 @@ and code is not this seat's lane. Applying the rendered configs is runtime state
 **Operational warning — do not test this by hand.** omp resolves its config from the **real** home (the policy
 generator says so in `real_home()`: *"the REAL user's home directory — which `$HOME` is not, inside an omp
 seat"*), so `HOME=/tmp/scratch omp config set …` writes the **live** config. During this measurement exactly
-that replaced this seat's `bash.patterns` with a single test entry. It was repaired with the generator itself — `scripts/seat_policy.py` then, `4genteam policy` now:
-`apply --rig 4genthub-min` reported `writer: written` and nine `ok`, and the check that did that is
-`4genteam policy apply --rig 4genthub-min --check`. **Use `4genteam policy apply --room <room> --check` to inspect
-and `4genteam policy apply --room <room>` to repair; never `omp config set` on a live seat.** The
+that replaced this seat's `bash.patterns` with a single test entry. It was repaired with the generator itself —
+`scripts/seat_policy.py` then, whose write step reported `writer: written` and nine `ok`, with the same generator's
+check confirming the drift was gone. That write step is gone from today's client (measured 2026-10-20: `4genteam
+policy` runs `render` and nothing else, and `show`, `--rig` and every write verb are refused). **Use `4genteam policy render
+--room <room> --seat <seat> --check` to inspect the installed file and `4genteam seat reseat <room> --seat <name>`
+to repair - `render` only prints, the runtime installs the document it prints at seat start; never `omp config set`
+on a live seat.** The
 generator's check is what made the damage visible and scoped (`writer: DRIFT` against nine `ok`).
 
 ```bash
