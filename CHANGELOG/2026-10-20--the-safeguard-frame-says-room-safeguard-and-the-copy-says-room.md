@@ -34,6 +34,8 @@ Slice C of `DECISION-2026-10-20-rig-gone.md` (architect, 2026-10-20): the hub's 
   `sessionTypes.ts:50`, and the two comments and one test title in `useTopology.test.tsx` /
   `SessionsPage.test.tsx`. The `MachinesPanel.test.tsx` fixture machine id `'rig-box'` becomes
   `'machine-box'`; the fixture `'web-dev@other-rig'` becomes `'web-dev@demo-room'` (Q7's example).
+- `TopologyPage.test.tsx`'s machine-report fixture room is named `Min Room`, not `Rig Room`: the last
+  word-bounded `rig` in `src/` outside the citations slice D moves, and nothing asserts the name.
 
 ### Not changed, on purpose
 

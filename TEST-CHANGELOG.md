@@ -7433,3 +7433,10 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
   being a second row, a frame with no safeguard name being dropped with a warning, and the rendered
   `NotificationBell` - keep their assertions. `npx vitest run src/tests/hooks` green (19 files, 173
   tests) and `npx tsc --noEmit -p .` exit 0.
+
+## 2026-10-20 - the topology fixture's room is named for the room, not the retired unit (frontend, branch 4genthub-min/fe-rig-gone)
+
+`src/tests/pages/TopologyPage.test.tsx`'s machine-report case described its room as `name: 'Rig Room'`, the
+last word-bounded `rig` in `agenthub-frontend/src` outside a `rigd-boundaries.md` citation; it now reads
+`'Min Room'`, which neither the case nor the page asserts on. `npx vitest run src/tests/pages/TopologyPage.test.tsx`
+4 passed; `npx tsc --noEmit -p .` exit 0.
