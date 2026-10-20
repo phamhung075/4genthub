@@ -407,7 +407,7 @@ Both read the absence of a signal as the absence of work, which is the same fail
   - A seat is idle at the prompt only when its last entry ends the turn and no tool call is open.
   - A seat waiting on a delegated worker therefore reads `working` for as long as its tool call is open.
   - agent sends this in `session.state` as `running`. The ruled two values do not change, and idle is not a stopped seat.
-- **the client's own sweep and oracle are NOT this repository's code**, and no seat edits under `rig/`. The two false signals go to the 4genteam owner as a friction report carrying the rule above. Until it is fixed, a `stalled-after-claim` raised on a row whose owner shows an open tool call is a known false positive, and closing it is not evidence of a stall.
+- **the client's own sweep and oracle are NOT the server's code**: they live in `agenthub_client/`, and no seat edits them there. The two false signals go to the 4genteam owner as a friction report carrying the rule above. Until it is fixed, a `stalled-after-claim` raised on a row whose owner shows an open tool call is a known false positive, and closing it is not evidence of a stall.
 
 ### 7.8 Addendum: `4genteam up RIG` is the only room entry point (owner refinement 2026-10-11, folded in)
 
