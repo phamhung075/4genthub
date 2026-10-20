@@ -102,18 +102,20 @@ field) - and the request shape is pinned too (`clientjev/jev_test.go`,
 answered low: the wording is the instrument, not the evidence.
 
 The gate refuses before the judge is asked. A criterion is admitted only when it names one of the facts the
-local register carries - the acceptance command, the run's exit code, a path THIS run's numstat lists, a
-base/head sha prefix of at least 7 hex characters, or a count key (`files_changed`, `lines_changed`,
-`lines_added`, `lines_deleted`) stated with THIS bundle's value in the same clause; anything else makes the
-whole task `unjudgeable` with no judge call (`agenthub_client/internal/clientcomplete/gate.go`,
-`register.carries`). The count branch is literal: the first number after the key, before the next count key,
+local register carries - the acceptance command, the run's exit code, a base/head sha prefix of at least 7
+hex characters, or a count key (`files_changed`, `lines_changed`, `lines_added`, `lines_deleted`) stated with
+THIS bundle's value in the same clause; a criterion whose only fact is a path the numstat lists is refused as
+well, because the wire would show the judge `<path>` in place of the one fact it resolved. Anything else makes
+the whole task `unjudgeable` with no judge call (`agenthub_client/internal/clientcomplete/gate.go`,
+`register.names`). The count branch is literal: the first number after the key, before the next count key,
 must equal the bundle's value. "files_changed is 2" settles nothing on a bundle of 3, and "the numstat names 2
 files" names no key at all.
 
-The two rules meet, and that is the trap: a path the numstat LISTS is admitted by the register and then
-reaches the judge as `the numstat names <path>`, so it can only be answered on an opinion; a path it does not
-list is refused outright. What is both admitted and visible is the command, its exit code, a sha prefix and
-the counts. A well-formed criterion names the command it is settled by, NARROW enough that the command line
+The two rules meet, and that is the trap: a path the numstat lists RESOLVES, and a criterion that is about
+that path and nothing else is still refused before the judge, because the request would carry `the numstat
+names <path>` and the answer could only be an opinion; a path it does not list is refused as naming no fact at
+all. What is both admitted and visible is the command, its exit code, a sha prefix and the counts. A
+well-formed criterion names the command it is settled by, NARROW enough that the command line
 itself names what it proves, and settles the rest with a sha and the counts - the totals, and the split when
 added and deleted lines matter separately.
 
@@ -147,9 +149,9 @@ branch tip `216a89d1` against the same base reads 3 files / 21 lines (task `6e84
   head 0c53c313 is reached from base 99cdc0ef with files_changed 1"
 - GOOD: "between base 99cdc0ef and head 0c53c313, lines_added 18 and lines_deleted 3" - a count sentence
   settles without a command: the sha carries the admission, the keys carry the claim.
-- BAD: "the numstat names rust/agenthub-runtime/tests/seat_guard.rs" - a path the numstat lists is redacted, so
-  the judge reads `the numstat names <path>` and answers on an opinion; a path it does not list is refused as
-  `unjudgeable`.
+- BAD: "the numstat names rust/agenthub-runtime/tests/seat_guard.rs" - a path the numstat lists is the one fact
+  the wire takes away, so a criterion that is only that path is refused as `unjudgeable`; a path it does not
+  list is refused too, for naming no fact at all.
 - BAD: "the change is under 120 lines" / "the numstat names 2 files" - no count key, so the register refuses
   the task as `unjudgeable` before any judge call; name the key and the value, as in the GOOD examples.
 - BAD: "files_changed 3 and lines_changed 120" on a bundle of 3 files and 162 lines - the keys are right and
