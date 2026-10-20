@@ -18,7 +18,8 @@ new migration rather than an edit to an applied step.
 - **The three creation-path CHECKs.** `room_safeguard_postgresql.sql`, the runtime `TableDef` in
   `room_safeguard_tables.go`, and the generated `0001_baseline.sql` line all read
   `('compact', 'watchdog', 'messages', 'roomguard', 'budget', 'bridge', 'agent')`, with `budget` in
-  the client's own order. The two scope CHECKs are untouched: `budget` is not in
+  the client's own order. The other two CHECKs, `ck_room_safeguards_room` and
+  `ck_room_safeguards_state`, are untouched: `budget` is not in
   `('bridge', 'agent')`, so it needs a room.
 - **`0009_room_safeguards_accept_budget.sql` is new** and widens the constraint in place: a
   `to_regclass` guard, `DROP CONSTRAINT IF EXISTS` and an `ADD` with the seven values. It is not an
@@ -42,19 +43,18 @@ new migration rather than an edit to an applied step.
   type and its table, the daemon verbs, the nudge log/event, the autofix paths, argv and payloads,
   the dead-man entity `room_safeguard`, and `ps <room> --nodes`. The daemon row's Start and Check name
   what exists - `ensureDaemon`, the runtime's `daemon` subcommand, and its IPC socket - rather than a
-  `4genteam daemon` verb no client carries. Six `rig` tokens remain, all
-  history or artifact names: the preamble's file-name note, the 2026-10-11 legacy-client sentence, the
-  dated incident record (`:256`, `:260`), the owner's
+  `4genteam daemon` verb no client carries. Seven `rig` tokens remain on six
+  lines, all history or artifact names: the preamble's file-name note, the 2026-10-11 legacy-client
+  sentence, the dated incident record (`:256`, `:260`), the owner's
   `rig-continue.sh`/`rig-watchdog.sh` files (`:464`), and the dated 2026-10-11 ruling cell (`:517`).
-  A seventh, `:411`'s "no seat edits under `rig/`", named a directory the client tree no longer has;
+  One more, `:411`'s "no seat edits under `rig/`", named a directory the client tree no longer has;
   the ruling's correction 3 re-points it to `agenthub_client/`, and because that line is documentation
-  only a seat cannot carry it: the lead landed it as `9f5c9dcf`, and this changelog counts the six that
-  remain.
+  only a seat cannot carry it: the lead landed it as `9f5c9dcf`, so it is not among the seven here.
 
 ## Not this task
 
-The client's `at` is RFC3339 while `wsOptUnixMillis` reads unix millis, so `last_beat_at` stores NULL;
-`agent-boundaries.md` still lists `started_at` on the frame line. Both are reported separately.
+The client's `at` is RFC3339 while `wsOptUnixMillis` reads unix millis, so `last_beat_at` stores NULL.
+That drift is reported separately.
 
 ## Verification
 
@@ -78,8 +78,8 @@ The client's `at` is RFC3339 while `wsOptUnixMillis` reads unix millis, so `last
 - `TestSafeguardFrameAcceptsTheRoomScopedBudgetRow` (socket, real store) is the code-verifiable form
   of the live acceptance: a `budget` frame with an empty room is answered `bad room` and stores
   nothing, and a room-scoped `budget` frame stores exactly one row for its key.
-- `grep '\brig\b' ai_docs/core-architecture/agent-boundaries.md`: 40 before, 6 after, every one in
-  the keep-list the Doc of record bullet names.
+- `grep '\brig\b' ai_docs/core-architecture/agent-boundaries.md`: 43 lines and 49 tokens before,
+  6 lines and 7 tokens after, every one in the keep-list the Doc of record bullet names.
 - The pre-`0008` fixtures (`six_safeguards_migration_integration_test.go`,
   `room_safeguards_rename_integration_test.go`) are untouched, as ruled.
 - The live log stays red until the lead rebuilds and reboots the hub: the acceptance for the stored

@@ -17,8 +17,8 @@
 -- and no pre-check over existing rows is needed.
 --
 -- A MISSING TABLE IS A NO-OP, NOT A FAILURE, the way 0004 and 0008 guard: the runner skips 0001 on a
--- non-empty catalogue and the registry creates its tables last, so a boot can reach this step before
--- `room_safeguards` exists. SQLSTATE 42P01 there would take the whole boot down.
+-- non-empty catalogue, so a database that grew up before `room_safeguards` existed reaches this step
+-- without the table. SQLSTATE 42P01 there would take the whole boot down.
 
 DO $$
 BEGIN

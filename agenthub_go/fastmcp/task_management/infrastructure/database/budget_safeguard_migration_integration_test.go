@@ -126,9 +126,10 @@ func TestTheBudgetStepWidensTheSixNameCheck(t *testing.T) {
 	}
 }
 
-// A database whose catalogue does not hold the table is the ordinary state before the registry creates
-// its tables. An unguarded DROP/ADD there is SQLSTATE 42P01, which takes the whole boot down; the step
-// must find nothing and leave nothing behind.
+// A database whose catalogue does not hold the table is an ordinary state: 0001 is skipped on a
+// non-empty catalogue, so nothing guarantees `room_safeguards` exists when this step runs. An unguarded
+// DROP/ADD there is SQLSTATE 42P01, which takes the whole boot down; the step must find nothing and
+// leave nothing behind.
 func TestTheBudgetStepIsANoOpWithoutTheTable(t *testing.T) {
 	sessions, _ := newBareRunnerEnv(t)
 	ctx := context.Background()

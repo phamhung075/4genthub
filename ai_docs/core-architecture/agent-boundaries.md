@@ -565,7 +565,7 @@ The nudge is a loop inside agent. It reads the same per-seat activity that agent
 
 Add two more for the latch:
 - Idle from 02:00, a seat works at 03:58, then idle again from 03:58: at 04:00 it sends NOTHING (the old period is gone and the new one is 2 minutes old), and at 04:03 it sends ONE.
-- A room not in `agent.json` `rigs` never sends.
+- A room not in `agent.json` `rooms` never sends.
 
 The clock and `4genteam send` must be seams, so the tests never read wall time.
 
