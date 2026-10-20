@@ -351,7 +351,7 @@ CREATE TABLE IF NOT EXISTS room_decisions (
 CREATE INDEX IF NOT EXISTS ix_room_decisions_user_room_state ON room_decisions (user_id, room_id, state);
 -- The answer leg's own index: a daemon pulls the answered rows of one machine (room_name) that carry no
 -- ack yet (acked_at), a filter the panel's index above cannot serve.
-CREATE INDEX IF NOT EXISTS ix_room_decisions_user_rig_state_acked ON room_decisions (user_id, room_name, state, acked_at);
+CREATE INDEX IF NOT EXISTS ix_room_decisions_user_room_state_acked ON room_decisions (user_id, room_name, state, acked_at);
 
 -- Table: seat_messages
 -- Text a window addressed to a seat, held until the client that holds that seat's terminal pulls it.

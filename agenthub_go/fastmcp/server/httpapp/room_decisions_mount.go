@@ -326,7 +326,7 @@ func decodeRoomDecisionBody(w http.ResponseWriter, r *http.Request, out any, max
 // The crossing: the daemon's half of the channel, four routes, one per leg of an ask's round trip.
 //
 //	POST /api/v2/decisions           ingest one mirrored ask
-//	GET  /api/v2/decisions/answers   pull the answers this room has not acked
+//	GET  /api/v2/decisions/answers?room=<slug>   pull this room's answers it has not acked
 //	POST /api/v2/decisions/{id}/ack  record what the daemon did with one answer
 //	POST /api/v2/decisions/{id}/state push a state it learned without an answer
 //
@@ -427,7 +427,7 @@ func handlePullRoomDecisionAnswers(w http.ResponseWriter, r *http.Request, u *au
 			limit = n
 		}
 	}
-	answers, cursor, err := service.Pull(r.Context(), userID(u), r.URL.Query().Get("after"), limit)
+	answers, cursor, err := service.Pull(r.Context(), userID(u), r.URL.Query().Get("room"), r.URL.Query().Get("after"), limit)
 	if err != nil {
 		if !writeRoomDecisionCrossingRefusal(w, err) {
 			writeDetail(w, http.StatusInternalServerError, err.Error())

@@ -443,7 +443,7 @@ var seatDatabaseTables = []taskdb.TableDef{
 		// of ONE MACHINE (room_name) that carry no ack yet (acked_at), which the panel's index cannot
 		// serve - a pull is not a room's read.
 		"CREATE INDEX ix_room_decisions_user_room_state ON room_decisions (user_id, room_id, state)",
-		"CREATE INDEX ix_room_decisions_user_rig_state_acked ON room_decisions (user_id, room_name, state, acked_at)",
+		"CREATE INDEX ix_room_decisions_user_room_state_acked ON room_decisions (user_id, room_name, state, acked_at)",
 	}},
 	// Messages a window addressed to a seat, held until the client that holds that seat's terminal
 	// pulls them. IT IS THE FIRST SERVER-AUTHORED ROW A CLIENT CONSUMES on this axis: every other

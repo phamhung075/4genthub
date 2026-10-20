@@ -114,16 +114,16 @@ func (f *fakeRoomDecisionStore) GetByID(_ context.Context, userID, id string) (*
 	return nil, nil
 }
 
-// ListAnswers is the pull over the slice: the answered, UNACKED rows of the tenant, oldest first,
-// after
-// the cursor, each carrying the slug its room is known by here. The order, the cursor rule and the
-// acked filter are the store's own - (answered_at, id) and acked_at IS NULL - so a case that resumes
-// from a cursor exercises the same rule the SQL's comparison does.
-func (f *fakeRoomDecisionStore) ListAnswers(_ context.Context, userID string, after *repositories.AnswerCursor, limit int) ([]repositories.AnswerDelivery, error) {
+// ListAnswers is the pull over the slice: one room's answered, UNACKED rows, oldest first, after the
+// cursor, each carrying the slug its room is known by here. The order, the cursor rule, the acked
+// filter and the ROOM filter are the store's own - (answered_at, id), acked_at IS NULL and
+// room_name = $2 - so a case that resumes from a cursor exercises the same rule the SQL does, and a
+// row filed in another room is never handed to this daemon.
+func (f *fakeRoomDecisionStore) ListAnswers(_ context.Context, userID, room string, after *repositories.AnswerCursor, limit int) ([]repositories.AnswerDelivery, error) {
 	f.pulls++
 	out := []repositories.AnswerDelivery{}
 	for _, row := range f.rows {
-		if row.UserID != userID ||
+		if row.UserID != userID || row.RoomName != room ||
 			row.State != decisions.StateAnswered || row.AnsweredAt == nil || row.AckedAt != nil {
 			continue
 		}
@@ -596,7 +596,7 @@ func TestPullMintsTheShippedCursorAndRefusesOneItDidNot(t *testing.T) {
 	service := NewRoomDecisionService(store)
 	ctx := context.Background()
 
-	deliveries, cursor, err := service.Pull(ctx, "owner", "", 0)
+	deliveries, cursor, err := service.Pull(ctx, "owner", "4genthub-min", "", 0)
 	if err != nil {
 		t.Fatalf("Pull: %v", err)
 	}
@@ -612,7 +612,7 @@ func TestPullMintsTheShippedCursorAndRefusesOneItDidNot(t *testing.T) {
 
 	// Resuming from that cursor hands over what follows it - here, nothing - rather than the page
 	// again: the comparison is the store's own (answered_at, id).
-	page, next, err := service.Pull(ctx, "owner", cursor, 0)
+	page, next, err := service.Pull(ctx, "owner", "4genthub-min", cursor, 0)
 	if err != nil {
 		t.Fatalf("resumed Pull: %v", err)
 	}
@@ -623,10 +623,37 @@ func TestPullMintsTheShippedCursorAndRefusesOneItDidNot(t *testing.T) {
 	var rejection *RoomDecisionAnswerRejection
 	// A cursor this channel did not mint is refused in the contract's own words rather than treated
 	// as a first page: a daemon resuming from a token it made up would be handed answers twice.
-	if _, _, err := service.Pull(ctx, "owner", "not-a-cursor", 0); err == nil ||
+	if _, _, err := service.Pull(ctx, "owner", "4genthub-min", "not-a-cursor", 0); err == nil ||
 		!asAnswerRejection(err, &rejection) || rejection.Code != CodeInvalidCursor ||
 		rejection.Message != `after "not-a-cursor" must be a cursor this endpoint returned` {
 		t.Errorf("bad cursor err = %v, want the pinned sentence", err)
+	}
+
+	// THE ROOM IS THE FILTER, and a pull that names none is refused rather than widened: the ack is
+	// destructive, so handing a daemon another room's answers would close decisions nobody applied.
+	other := answeredAt(storedDecision(decisions.StatePending, map[string]string{"q1": "ship"}), at)
+	other.ID = "a1e0d3c2-3333-4333-8333-000000000003"
+	other.RoomID, other.RoomName = "room-2", "other-room"
+	store.rows = append(store.rows, other)
+	mine, _, err := service.Pull(ctx, "owner", "4genthub-min", "", 0)
+	if err != nil {
+		t.Fatalf("Pull: %v", err)
+	}
+	for _, d := range mine {
+		if d.RoomName != "4genthub-min" {
+			t.Errorf("the pull handed over a delivery filed in %q, want only the room it names", d.RoomName)
+		}
+	}
+	theirs, _, err := service.Pull(ctx, "owner", "other-room", "", 0)
+	if err != nil {
+		t.Fatalf("Pull of the other room: %v", err)
+	}
+	if len(theirs) != 1 || theirs[0].ID != other.ID {
+		t.Fatalf("the other room's page = %+v, want just its own row %s", theirs, other.ID)
+	}
+	if _, _, err := service.Pull(ctx, "owner", "   ", "", 0); err == nil ||
+		!asAnswerRejection(err, &rejection) || rejection.Code != CodeInvalidPull {
+		t.Errorf("an unnamed pull err = %v, want the invalid-pull refusal", err)
 	}
 
 	// The page bounds have one home, which is the function the route's own tests page by.

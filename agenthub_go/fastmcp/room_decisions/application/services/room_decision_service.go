@@ -137,7 +137,7 @@ type RoomDecisionStore interface {
 	Get(ctx context.Context, userID, roomID, id string) (*repositories.RoomDecision, error)
 	GetByID(ctx context.Context, userID, id string) (*repositories.RoomDecision, error)
 	ListByRoom(ctx context.Context, userID, roomID string) ([]repositories.RoomDecision, error)
-	ListAnswers(ctx context.Context, userID string, after *repositories.AnswerCursor, limit int) ([]repositories.AnswerDelivery, error)
+	ListAnswers(ctx context.Context, userID, room string, after *repositories.AnswerCursor, limit int) ([]repositories.AnswerDelivery, error)
 	RecordAnswer(ctx context.Context, userID, roomID, id string, answers map[string]string, state decisions.State, answeredAt *time.Time) (*repositories.RoomDecision, error)
 	Acknowledge(ctx context.Context, userID, id string, applied bool, at time.Time) (*repositories.RoomDecision, bool, error)
 	SetState(ctx context.Context, userID, id string, state decisions.State, at time.Time) (*repositories.RoomDecision, error)
@@ -454,15 +454,19 @@ func decodeAnswerCursor(raw string) (*repositories.AnswerCursor, error) {
 // apply is idempotent - which is why the ack, not the pull, is what ends the loop. The next cursor
 // is the last row handed over, so a resumed pull never repeats one it already delivered.
 //
-// The tenant is the whole filter: an answer is handed out until its ack lands, and the room each
-// delivery names is resolved on the way out - the daemon has no room model at all, so the pull is the
-// only place it can learn which room one of its asks was filed in.
-func (s *RoomDecisionService) Pull(ctx context.Context, userID, cursor string, limit int) ([]repositories.AnswerDelivery, string, error) {
+// THE FILTER IS (TENANT, ROOM), and the room is required: an answer is handed out until its ack
+// lands, and the ack is destructive - a daemon handed another room's answers could not apply them
+// and its ack would close a decision nobody applied. A pull that names no room is refused rather
+// than widened to the tenant.
+func (s *RoomDecisionService) Pull(ctx context.Context, userID, room, cursor string, limit int) ([]repositories.AnswerDelivery, string, error) {
+	if strings.TrimSpace(room) == "" {
+		return nil, "", &RoomDecisionAnswerRejection{Code: CodeInvalidPull, Message: "the pull names no room"}
+	}
 	after, err := decodeAnswerCursor(cursor)
 	if err != nil {
 		return nil, "", &RoomDecisionAnswerRejection{Code: CodeInvalidCursor, Message: err.Error()}
 	}
-	list, err := s.store.ListAnswers(ctx, userID, after, ClampDecisionAnswerLimit(limit))
+	list, err := s.store.ListAnswers(ctx, userID, room, after, ClampDecisionAnswerLimit(limit))
 	if err != nil {
 		return nil, "", err
 	}

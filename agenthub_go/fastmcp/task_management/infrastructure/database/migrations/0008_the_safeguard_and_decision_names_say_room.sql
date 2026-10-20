@@ -51,7 +51,8 @@ BEGIN
         ALTER INDEX ix_rig_safeguards_user_connector RENAME TO ix_room_safeguards_user_connector;
     END IF;
 
-    -- 4. room_decisions carries the room's name in a column of its own.
+    -- 4. room_decisions carries the room's name in a column of its own, and its answer-leg index is
+    --    named after that column.
     IF EXISTS (
         SELECT 1 FROM information_schema.columns
          WHERE table_schema = current_schema()
@@ -59,5 +60,9 @@ BEGIN
            AND column_name = 'rig_name'
     ) THEN
         ALTER TABLE room_decisions RENAME COLUMN rig_name TO room_name;
+    END IF;
+
+    IF to_regclass('ix_room_decisions_user_rig_state_acked') IS NOT NULL THEN
+        ALTER INDEX ix_room_decisions_user_rig_state_acked RENAME TO ix_room_decisions_user_room_state_acked;
     END IF;
 END $$;

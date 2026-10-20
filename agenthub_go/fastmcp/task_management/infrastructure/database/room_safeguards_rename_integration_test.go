@@ -128,6 +128,14 @@ func TestTheRoomNamesStepRenamesTheSafeguardTableAndTheDecisionColumn(t *testing
 	if got := scalar(`SELECT room_name FROM room_decisions WHERE user_id = 'u1'`); got != "room-1" {
 		t.Errorf("the stored decision reads %q, want the value it was written with", got)
 	}
+	if got := scalar(`SELECT coalesce(to_regclass('ix_room_decisions_user_rig_state_acked')::text, '')`); got != "" {
+		t.Errorf("the decision index kept %q, want the room-named index", got)
+	}
+	if got := scalar(`SELECT indexname FROM pg_indexes WHERE schemaname = current_schema()
+	                   AND tablename = 'room_decisions' AND indexname LIKE 'ix_room_decisions_user_%_acked'`); got !=
+		"ix_room_decisions_user_room_state_acked" {
+		t.Errorf("the answer-leg index is %q, want ix_room_decisions_user_room_state_acked", got)
+	}
 
 	// IDEMPOTENCE: the ledger stops a second boot, so the SQL itself must survive a second application
 	// for the case a ledger row is lost. Every branch is guarded on a name that no longer exists.

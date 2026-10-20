@@ -64,7 +64,7 @@ ALTER TABLE room_decisions ADD COLUMN IF NOT EXISTS acked_at TIMESTAMP WITH TIME
 -- EXISTS is the no-op; on a database that applied this step the step is skipped, so no run reads
 -- the old spelling. Only a database that stopped between 0004 and 0008 could miss the column, and
 -- that state does not survive a boot.
-CREATE INDEX IF NOT EXISTS ix_room_decisions_user_rig_state_acked ON room_decisions (user_id, room_name, state, acked_at);
+CREATE INDEX IF NOT EXISTS ix_room_decisions_user_room_state_acked ON room_decisions (user_id, room_name, state, acked_at);
 -- The superseded S1 idempotency key: a daemon's decisionId was globally unique, so a second tenant's
 -- ask for the same local row raised 23505. Nothing declares it any more; the ruled replacement is the
 -- tenant-scoped episode tuple.

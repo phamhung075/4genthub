@@ -277,7 +277,7 @@ func (r *ORMRoomDecisionRepository) RecordAnswer(ctx context.Context, userID, ro
 // panel. The room is in the filter because the ack is destructive - a daemon that pulled another room's
 // answers could not apply them (its local queue has no such row) and its ack would close a decision
 // nobody applied.
-func (r *ORMRoomDecisionRepository) ListAnswers(ctx context.Context, userID string, after *domainrepo.AnswerCursor, limit int) ([]domainrepo.AnswerDelivery, error) {
+func (r *ORMRoomDecisionRepository) ListAnswers(ctx context.Context, userID, room string, after *domainrepo.AnswerCursor, limit int) ([]domainrepo.AnswerDelivery, error) {
 	var afterAt, afterID any
 	if after != nil && after.ID != "" {
 		idParam, err := database.UnifiedUUIDBindParam(after.ID, database.DialectPostgres)
@@ -294,10 +294,10 @@ func (r *ORMRoomDecisionRepository) ListAnswers(ctx context.Context, userID stri
 	err := r.GetDBSession(ctx, func(ctx context.Context, s database.DBTX) error {
 		cursor, err := s.QueryContext(ctx,
 			`SELECT `+roomDecisionReturning+`, `+roomDecisionRoomSlug+` FROM "room_decisions" `+
-				`WHERE "user_id" = $1 AND "state" = 'answered' AND "acked_at" IS NULL `+
-				`AND ($2::timestamptz IS NULL OR ("answered_at", "id") > ($2::timestamptz, $3::uuid)) `+
-				`ORDER BY "answered_at" ASC, "id" ASC LIMIT $4`,
-			userID, afterAt, afterID, limit)
+				`WHERE "user_id" = $1 AND "room_name" = $2 AND "state" = 'answered' AND "acked_at" IS NULL `+
+				`AND ($3::timestamptz IS NULL OR ("answered_at", "id") > ($3::timestamptz, $4::uuid)) `+
+				`ORDER BY "answered_at" ASC, "id" ASC LIMIT $5`,
+			userID, room, afterAt, afterID, limit)
 		if err != nil {
 			return err
 		}

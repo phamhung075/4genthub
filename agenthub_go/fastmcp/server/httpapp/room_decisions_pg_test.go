@@ -522,7 +522,7 @@ func TestRoomDecisionPgCrossingRoundTrip(t *testing.T) {
 	}
 	pull := func(t *testing.T, token string) (int, answersPage) {
 		t.Helper()
-		code, res := env.getPath(t, token, "/api/v2/decisions/answers")
+		code, res := env.getPath(t, token, "/api/v2/decisions/answers?room=alpha")
 		var got answersPage
 		if err := json.Unmarshal([]byte(res), &got); err != nil {
 			t.Fatalf("decoding the pull response: %v (%s)", err, res)

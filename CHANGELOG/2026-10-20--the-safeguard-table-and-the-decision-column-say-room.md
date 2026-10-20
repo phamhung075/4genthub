@@ -12,12 +12,15 @@ Slice B of `DECISION-2026-10-20-rig-gone.md`: the server stops storing and namin
   column is `room`; `ck_rig_safeguards_{state,safeguard,rig}` are
   `ck_room_safeguards_{state,safeguard,room}`; the index is `ix_room_safeguards_user_connector` and
   the primary key `room_safeguards_pkey`.
-- **`room_decisions.rig_name` is `room_name`.** The DDL, the schema file, the Go `TableDef` and the
-  decision service's own column list all say the new name. The index keeps its old name
-  (`ix_room_decisions_user_rig_state_acked`): an index name is an opaque identifier, no reader or
-  writer resolves it by that spelling, and renaming it would churn three declarations and a live
-  database for a word nobody reads. That is the same judgement the decision applies to `rigd` in
-  index names.
+- **`room_decisions.rig_name` is `room_name`, and its answer-leg index follows it** to
+  `ix_room_decisions_user_room_state_acked`. The DDL, the schema file, the Go `TableDef`, the
+  migration set and the decision service's own column list all say the new name.
+- **The pull's room filter survives the rename.** `GET /api/v2/decisions/answers` takes `?room=<slug>`,
+  `Pull` and `ListAnswers` take the room and filter on `room_name`, and a pull that names no room is
+  refused with `invalid-pull` rather than widened to the tenant: the ack is destructive, so a daemon
+  handed another room's answers could not apply them and its ack would close a decision nobody
+  applied. `room_id` stays as the FK the joins read and `room_name` as the daemon's delivery key; the
+  ORM row says why both exist so a later cleanup does not unfilter the pull.
 - **`0001_baseline.sql` is regenerated** from the `TableDef` registry, which is the source of truth;
   `0008_the_safeguard_and_decision_names_say_room.sql` carries the rename to a database whose
   catalogue already exists, guarded so a boot that reaches it before the registry creates the tables
@@ -46,8 +49,11 @@ Slice B of `DECISION-2026-10-20-rig-gone.md`: the server stops storing and namin
   the runtime DDL: it is what caught `0005`'s stale column.
 - `TestTheRoomNamesStepRenamesTheSafeguardTableAndTheDecisionColumn` builds the pre-rename shape by
   hand, applies `0008`, and asserts the table, the column, the three CHECK names, the primary key, the
-  connector index and `room_decisions.room_name`, that the stored rows are carried, and that a second
-  application is a no-op. `TestTheRoomNamesStepIsANoOpWithoutItsTables` pins the guard.
+  connector index, `room_decisions.room_name` and its renamed answer-leg index, that the stored rows
+  are carried, and that a second application is a no-op.
+- `TestPullMintsTheShippedCursorAndRefusesOneItDidNot` proves the filter with two rooms: a pull of one
+  room's name hands over only that room's deliveries, and an unnamed pull is the `invalid-pull`
+  refusal. The PostgreSQL case pulls with `?room=alpha` against the real SQL predicate. `TestTheRoomNamesStepIsANoOpWithoutItsTables` pins the guard.
 - `TestTheSixSafeguardsStep*` still pass against the shapes `0004` was written for: that fixture keeps
   `rig_safeguards` and `rig` deliberately, because it reproduces history and `0008` is the rename.
 - `python3 scripts/DOC-CITATIONS.py`: 49 docs, 732 citations, 0 violations.

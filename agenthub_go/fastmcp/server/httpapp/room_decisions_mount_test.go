@@ -140,11 +140,11 @@ func (f *fakeRoomDecisionStore) GetByID(_ context.Context, userID, id string) (*
 // cursor, each carrying the slug its room is known by here. The order, the cursor rule and the acked
 // filter are the store's own - (answered_at, id) and acked_at IS NULL - so a route case that resumes
 // from a cursor exercises the rule the SQL's comparison applies.
-func (f *fakeRoomDecisionStore) ListAnswers(_ context.Context, userID string, after *roomrepo.AnswerCursor, limit int) ([]roomrepo.AnswerDelivery, error) {
+func (f *fakeRoomDecisionStore) ListAnswers(_ context.Context, userID, room string, after *roomrepo.AnswerCursor, limit int) ([]roomrepo.AnswerDelivery, error) {
 	f.pullCalls++
 	out := []roomrepo.AnswerDelivery{}
 	for _, row := range f.rows {
-		if row.UserID != userID ||
+		if row.UserID != userID || row.RoomName != room ||
 			row.State != decisions.StateAnswered || row.AnsweredAt == nil || row.AckedAt != nil {
 			continue
 		}
@@ -815,7 +815,7 @@ func TestRoomDecisionPullPagesByCursorAndNeverRepeatsAnAckedAnswer(t *testing.T)
 	f := newRoomDecisionFixture(t).withRows(first, second).mount()
 	f.store.roomSlugs = map[string]string{roomDecisionTestRoomID: "alpha"}
 
-	rec := f.do(http.MethodGet, "/api/v2/decisions/answers?limit=1", "user-jwt", "")
+	rec := f.do(http.MethodGet, "/api/v2/decisions/answers?room=4genthub-min&limit=1", "user-jwt", "")
 	if rec.Code != http.StatusOK {
 		t.Fatalf("pull = %d %s, want 200", rec.Code, rec.Body.String())
 	}
@@ -842,7 +842,7 @@ func TestRoomDecisionPullPagesByCursorAndNeverRepeatsAnAckedAnswer(t *testing.T)
 
 	// Resuming hands over what follows, and nothing before it. The cursor travels as a URL query
 	// value, which is how the daemon sends it back.
-	rec = f.do(http.MethodGet, "/api/v2/decisions/answers?after="+url.QueryEscape(cursor), "user-jwt", "")
+	rec = f.do(http.MethodGet, "/api/v2/decisions/answers?room=4genthub-min&after="+url.QueryEscape(cursor), "user-jwt", "")
 	resumed := decodeRoomDecisionPage(t, rec)
 	rows, _ = resumed["answers"].([]any)
 	if len(rows) != 1 {
@@ -858,7 +858,7 @@ func TestRoomDecisionPullPagesByCursorAndNeverRepeatsAnAckedAnswer(t *testing.T)
 	if ack.Code != http.StatusOK {
 		t.Fatalf("ack = %d %s, want 200", ack.Code, ack.Body.String())
 	}
-	fresh := decodeRoomDecisionPage(t, f.do(http.MethodGet, "/api/v2/decisions/answers", "user-jwt", ""))
+	fresh := decodeRoomDecisionPage(t, f.do(http.MethodGet, "/api/v2/decisions/answers?room=4genthub-min", "user-jwt", ""))
 	rows, _ = fresh["answers"].([]any)
 	if len(rows) != 1 {
 		t.Fatalf("page after the ack = %v, want the one un-acked answer", fresh["answers"])
@@ -868,13 +868,13 @@ func TestRoomDecisionPullPagesByCursorAndNeverRepeatsAnAckedAnswer(t *testing.T)
 	}
 
 	// A cursor this endpoint did not mint is the pinned sentence, and never a silent first page.
-	bad := f.do(http.MethodGet, "/api/v2/decisions/answers?after=not-a-cursor", "user-jwt", "")
+	bad := f.do(http.MethodGet, "/api/v2/decisions/answers?room=4genthub-min&after=not-a-cursor", "user-jwt", "")
 	if bad.Code != http.StatusBadRequest || !strings.Contains(bad.Body.String(), `after \"not-a-cursor\" must be a cursor this endpoint returned`) {
 		t.Fatalf("malformed cursor = %d %s, want the pinned 400", bad.Code, bad.Body.String())
 	}
 	// The pull names no machine and needs none: the tenant is the filter, and the page it returns is
 	// whatever that tenant still owes an ack for.
-	if rec := f.do(http.MethodGet, "/api/v2/decisions/answers", "user-jwt", ""); rec.Code != http.StatusOK {
+	if rec := f.do(http.MethodGet, "/api/v2/decisions/answers?room=4genthub-min", "user-jwt", ""); rec.Code != http.StatusOK {
 		t.Fatalf("pull naming no machine = %d %s, want 200", rec.Code, rec.Body.String())
 	}
 }

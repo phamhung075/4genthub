@@ -124,12 +124,13 @@ type RoomDecisionRepository interface {
 	// the scope and not the room's owner, so a room shared with a team never exposes the owner's
 	// decisions to a viewer.
 	ListByRoom(ctx context.Context, userID, roomID string) ([]RoomDecision, error)
-	// ListAnswers returns this tenant's answered-but-unacknowledged decisions, oldest first, starting
-	// after the cursor - the pull a daemon drives. The tenant is the whole filter: the room a
-	// delivery belongs to rides the row, so the pull hands out every answer this account still owes an
-	// ack for. acked_at IS NULL is the delivery filter, and `state = answered` is the work filter: a
-	// pending ask is still being answered in the panel, and a closed one is not work.
-	ListAnswers(ctx context.Context, userID string, after *AnswerCursor, limit int) ([]AnswerDelivery, error)
+	// ListAnswers returns one room's answered-but-unacknowledged decisions, oldest first, starting
+	// after the cursor - the pull a daemon drives. The FILTER IS (tenant, room), not the tenant alone:
+	// the ack is destructive, so a daemon handed another room's answers could not apply them (its
+	// local queue has no such row) and its ack would close a decision nobody applied. acked_at IS NULL
+	// is the delivery filter, and `state = answered` is the work filter: a pending ask is still being
+	// answered in the panel, and a closed one is not work.
+	ListAnswers(ctx context.Context, userID, room string, after *AnswerCursor, limit int) ([]AnswerDelivery, error)
 	// Acknowledge records what the daemon did with one answer - `applied` it, or decided it does not
 	// apply - and is the delivery record the pull reads. It is guarded on the row being `answered` and
 	// unacked, so a repeated ack changes nothing; `applied` is the only input that also closes the row

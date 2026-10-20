@@ -840,7 +840,7 @@ CREATE TABLE room_decisions (
 	CONSTRAINT uq_room_decisions_user_qitem UNIQUE (user_id, qitem_id)
 );
 CREATE INDEX ix_room_decisions_user_room_state ON room_decisions (user_id, room_id, state);
-CREATE INDEX ix_room_decisions_user_rig_state_acked ON room_decisions (user_id, room_name, state, acked_at);
+CREATE INDEX ix_room_decisions_user_room_state_acked ON room_decisions (user_id, room_name, state, acked_at);
 
 -- Table: seat_messages
 CREATE TABLE seat_messages (
