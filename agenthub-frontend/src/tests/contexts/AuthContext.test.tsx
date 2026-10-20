@@ -452,14 +452,16 @@ describe('AuthContext', () => {
       ).rejects.toThrow('Invalid credentials');
     });
 
-    it('should handle email verification required error', async () => {
+    // A 403 is not always an unverified address: the hub names a disabled account and a lockout
+    // in the same status, and each detail is the sentence the user has to read.
+    it('should surface a 403 detail as the server wrote it', async () => {
       (Cookies.get as unknown).mockReturnValue(null);
 
       (global.fetch as unknown).mockResolvedValueOnce({
         ok: false,
         status: 403,
         json: async () => ({
-          detail: 'Email not verified'
+          detail: 'Account is disabled. Contact an administrator.'
         })
       });
 
@@ -473,7 +475,7 @@ describe('AuthContext', () => {
         act(async () => {
           await authContext!.login('test@example.com', 'password');
         })
-      ).rejects.toThrow('Please verify your email before signing in. Check your inbox for the verification link.');
+      ).rejects.toThrow('Account is disabled. Contact an administrator.');
     });
 
     it('should handle email verification response', async () => {

@@ -78,10 +78,6 @@ cp -f Dockerfile* $CONFIG_BACKUP_DIR/ 2>/dev/null || true
 cp -f docker-compose*.yml $CONFIG_BACKUP_DIR/ 2>/dev/null || true
 cp -f captain-definition $CONFIG_BACKUP_DIR/ 2>/dev/null || true
 
-if [ -f "agenthub-frontend/captain-definition" ]; then
-    cp agenthub-frontend/captain-definition $CONFIG_BACKUP_DIR/frontend-captain-definition
-fi
-
 # Compress configuration backup
 tar -czf "${CONFIG_BACKUP_DIR}.tar.gz" -C "$BACKUP_DIR" "${BACKUP_NAME}_config"
 rm -rf $CONFIG_BACKUP_DIR

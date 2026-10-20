@@ -166,6 +166,11 @@ the model → yes: fix the test to match the model.
 
 The lead commits, pushes `main` (and `frontend`), rebuilds the client and respawns the team without
 asking (owner ruling 2026-10-18); the human is out of the loop for building, fixing and improving.
-A push to main deploys production, so the lead pushes only after the reviewer gate and a green test run.
+A push to `main` deploys nothing: the app ships from the `frontend` branch, whose push fires CapRover's
+build for app `4genthub-frontend`, and a webhook 200 is delivery, not a build. The lead therefore pushes
+`main` only after the reviewer gate and a green test run, and proves a build only by the served entry -
+`python3 scripts/check_served_frontend.py --base-url https://www.4genthub.com --expect-dist
+agenthub-frontend/build` exits 0, or the served `/assets/index-<hash>.js` and its `Last-Modified` move
+past the push.
 Other seats never push. Nobody touches another rig. Credentials and spend stay the owner's. A
 decision goes through `4genteam decide`; the owner is asked only for direction the team cannot settle.

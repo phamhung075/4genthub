@@ -174,6 +174,25 @@ def test_stale_page_is_found_behind_a_ref_inside_another_chunk(tmp_path, capsys)
     assert "LegacyPage-FRESH0009.js" in out  # the report names WHERE, not just that
 
 
+def test_a_dotted_stem_sibling_rides_the_closure_whole(tmp_path, capsys):
+    """A stem may contain dots. Production names `mermaid.core-CGIcD27U.js`; matching only its tail
+    (`core-CGIcD27U.js`) fetches a name the build never had, 404s, and reads INCOMPLETE on a fresh
+    surface (measured 2026-10-18, board b70278f2)."""
+    files = fresh_shape()
+    files["assets/index-riIYPcmm.js"] += 'const m="./mermaid.core-CGIcD27U.js";\n'
+    files["assets/mermaid.core-CGIcD27U.js"] = "export const core=1;\n"
+    with serve(write_tree(tmp_path, files)) as base:
+        assert run(base) == 0
+    assert "OK" in capsys.readouterr().out
+    assert census.discover_refs('"./mermaid.core-CGIcD27U.js"') == {"/assets/mermaid.core-CGIcD27U.js"}
+    assert census.discover_refs('"cytoscape.esm-CkK8FqzY.js"') == {"/assets/cytoscape.esm-CkK8FqzY.js"}
+
+
+def test_a_ref_inside_a_word_is_not_a_ref():
+    """`assets/` inside a longer word is not a path: the served root is `/assets/`."""
+    assert census.discover_refs('const a="myassets/x.css";const b="/assets/x.css"') == {"/assets/x.css"}
+
+
 def test_needle_boundary_is_the_discriminator(tmp_path):
     """Why the census keys on `4genteam` and `scripts/*.py`, and never on `sync pull`.
 

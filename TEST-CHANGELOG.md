@@ -98,6 +98,7 @@ credential is never named on the `env -u` wrapper.
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+
 ## 2026-10-19 - a task event merges its delta, details_changed re-reads (frontend, branch 4genthub-min/fe-deploy-walk)
 
 - `agenthub-frontend/src/tests/hooks/test_useRealtimeSync_task.test.tsx` (3 new tests): a status-only
@@ -177,6 +178,31 @@ Track test suite changes, fixes, and improvements for agenthub.
   `user_id_nullable.txt` line fails it; unlinking a registerer package fails the count (48 vs 49).
   Run: `cd agenthub_go && go test ./fastmcp/task_management/infrastructure/database/` (the whole
   module is green: `go test ./...`).
+## 2026-10-19 - the module content viewer reads sections, raw, and non-JSON (frontend, branch 4genthub-min/fe-deploy-walk)
+
+- `agenthub-frontend/src/tests/components/ModuleContentView.test.tsx` (new, 5 tests): a skill block
+  (`{"content": "<SKILL.md>", "source_path", "sha256"}`) renders its keys as sections with the markdown
+  line breaks intact and no escaped `\n` left in the text; the Raw toggle reproduces the stored string
+  byte for byte and Formatted returns to sections; nested objects and arrays render level by level;
+  non-JSON content stays a plain `<pre>` with no toggle; whitespace-only content says it carries none
+  instead of drawing an empty pane. Suite: 5 passed, plus `SeatDetailPage.test.tsx` 29 passed.
+
+## 2026-10-19 - the served census pins the whole dotted name (repo scripts, branch 4genthub-min/fe-deploy-walk)
+
+- `scripts/tests/test_check_served_frontend.py`: two tests added. One serves a fresh tree whose entry
+  names `./mermaid.core-CGIcD27U.js` and asserts the census closes OK - on the previous patterns the
+  closure fetched `core-CGIcD27U.js`, 404'd, and read INCOMPLETE (the production verdict of
+  2026-10-18); it also asserts `discover_refs` maps the two production names
+  (`mermaid.core-CGIcD27U.js`, `cytoscape.esm-CkK8FqzY.js`) to their whole served paths. The other
+  pins the left boundary: `assets/` inside a longer word is not a ref. Suite: 15 passed.
+
+## 2026-10-19 - the login 403 test pins the hub's own sentence (frontend, branch 4genthub-min/login-403-detail)
+
+- `agenthub-frontend/src/tests/contexts/AuthContext.test.tsx`: "should handle email verification
+  required error" became "should surface a 403 detail as the server wrote it" - a 403 carrying
+  "Account is disabled. Contact an administrator." must reject with that detail, not with the canned
+  verification sentence. It fails on the previous `AuthContext` (threw "Please verify your email
+  before signing in.") and passes after. `npx vitest run` on AuthContext + LoginForm: 53 pass.
 
 ## 2026-10-18 - the phone walk is a spec on the repo harness (frontend, branch 4genthub-min/fe-phone-walk-spec)
 
