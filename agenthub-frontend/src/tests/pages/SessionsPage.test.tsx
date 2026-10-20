@@ -111,7 +111,7 @@ describe('SessionsPage', () => {
     // itself: an absence assertion against a page that rendered nothing would pass vacuously.
     useSessionsMock.mockReturnValue({
       sessions: [
-        session('s1', 'web-dev@other-rig', { room_slug: '4genthub-min', seat_key: 'web-dev' }),
+        session('s1', 'web-dev@demo-room', { room_slug: '4genthub-min', seat_key: 'web-dev' }),
       ],
       isLoading: false,
       error: null,
@@ -160,10 +160,10 @@ describe('SessionsPage', () => {
   });
 
   it("shows each session's own seat, and invents none for a row the connector named none on", () => {
-    // The rig's sessions are only identifiable as seats if the list shows the pair the session row
+    // The room's sessions are only identifiable as seats if the list shows the pair the session row
     // carries. Two rows, one of each shape, in the SAME render - the empty half is the control: a
     // list that derived a seat from the name would print one for `s2` too, whose name carries the
-    // same `@rig` suffix and whose row is null.
+    // same `@<room>` suffix and whose row is null.
     useSessionsMock.mockReturnValue({
       sessions: [
         session('s1', 'lead@4genthub-min', { room_slug: '4genthub-min', seat_key: 'lead' }),

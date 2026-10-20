@@ -103,7 +103,7 @@ export const SeatLlmPanel: React.FC<SeatLlmPanelProps> = ({ room, seat, canWrite
             4genteam sync switch &lt;room&gt; &lt;seat&gt; --model &lt;id&gt;
           </code>
           ; a runtime change takes effect after the room is restarted with{' '}
-          <code className="rounded bg-muted px-1 font-mono">rig up</code>.
+          <code className="rounded bg-muted px-1 font-mono">4genteam up &lt;room&gt;</code>.
         </p>
       </CardContent>
     </Card>

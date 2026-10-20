@@ -7421,3 +7421,15 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
   behaviour they pinned (un-authored curated refs); `TestSeedSeatTypesRefusesMissingRef` keeps its
   assertion and names what it now guards - a hand-built Seed and the store round-trip.
   `go test ./...` green (138 packages) after the drop.
+
+## 2026-10-20 - the safeguard consumer's test follows the frame to room_safeguard (frontend, branch 4genthub-min/fe-rig-gone)
+
+- `agenthub-frontend/src/tests/hooks/test_useRealtimeSync_rigSafeguard.test.tsx` is renamed to
+  `test_useRealtimeSync_roomSafeguard.test.tsx` with its frame builder's `entity` and `entity_type`
+  literals, its seven frame ids (`broadcast-room_safeguard-*`), its row fixtures (`room: 'demo'`) and
+  its two expected inbox lines (`Safeguard compact (room demo, connector conn-1) ...`) following the
+  hub's rename. The six cases - the row landing with its counters and one toast, the dead-man frame
+  reading as unreachable, a replay staying one row and one toast, a second alert about the same row
+  being a second row, a frame with no safeguard name being dropped with a warning, and the rendered
+  `NotificationBell` - keep their assertions. `npx vitest run src/tests/hooks` green (19 files, 173
+  tests) and `npx tsc --noEmit -p .` exit 0.

@@ -9,7 +9,7 @@ import {
   type SeatEventPayload,
   type RoomEventPayload,
   type NotificationEventPayload,
-  type RigSafeguardAlertPayload,
+  type RoomSafeguardAlertPayload,
   type TaskUpdatePayload,
   isBranchDeletePayload,
   isSubtaskDeletePayload,
@@ -60,15 +60,15 @@ const mergeTaskEvent = (cached: Task | undefined, primary: Partial<Task>): Task 
 /**
  * The dashboard inbox line for one safeguard alert.
  *
- * 7.3's push carries the ROW - which safeguard, on which rig or machine, in what state - and no
+ * 7.3's push carries the ROW - which safeguard, on which room or machine, in what state - and no
  * message, so the sentence is composed here: the subject first, then the machine the row came from,
  * then the state and the counters that explain it. A frame with no state is 7.3's dead-man alert for
  * the machine-level supervisor, which is the connector's silence rather than a state a child
  * reported, so it says that instead of inventing one.
  */
-const describeSafeguardAlert = (row: RigSafeguardAlertPayload): string => {
+const describeSafeguardAlert = (row: RoomSafeguardAlertPayload): string => {
   const where = [
-    row.rig ? `rig ${row.rig}` : '',
+    row.room ? `room ${row.room}` : '',
     row.connector_id ? `connector ${row.connector_id}` : '',
   ].filter(Boolean).join(', ');
   const subject = `Safeguard ${row.safeguard}${where ? ` (${where})` : ''}`;
@@ -1051,14 +1051,14 @@ export const useRealtimeSync = (
       logger.debug('[useRealtimeSync] Notification stored:', id);
     };
 
-    // Handler for safeguard alerts: the server's 7.3 push (entity 'rig_safeguard'), live or replayed
+    // Handler for safeguard alerts: the server's 7.3 push (entity 'room_safeguard'), live or replayed
     // from the missed-notification store on reconnect. The frame carries the ROW, so the text is
     // composed from it (describeSafeguardAlert), and the dedupe key is the FRAME id rather than
     // metadata.entity_id: the row key repeats across the row's life, so keying on it would swallow a
     // second genuine alert - stopped again after a recovery - while a replay of one frame keeps its id
     // and stays one inbox row.
-    const handleRigSafeguardAlert = (message: WSMessage) => {
-      const primary = message.payload.data.primary as RigSafeguardAlertPayload;
+    const handleRoomSafeguardAlert = (message: WSMessage) => {
+      const primary = message.payload.data.primary as RoomSafeguardAlertPayload;
       const safeguard = typeof primary?.safeguard === 'string' ? primary.safeguard : '';
 
       if (!safeguard) {
@@ -1175,8 +1175,8 @@ export const useRealtimeSync = (
             case 'notification':
               handleNotification(message);
               break;
-            case 'rig_safeguard':
-              handleRigSafeguardAlert(message);
+            case 'room_safeguard':
+              handleRoomSafeguardAlert(message);
               break;
             default:
               logger.debug('[useRealtimeSync] Unknown entity type:', entity);

@@ -39,15 +39,15 @@ export interface SessionSummary {
   /**
    * The room this session's seat lives in, observed by the connector and stored at ingest. Null
    * when the connector could not name a seat, which is a fact about the session rather than an
-   * error - and never derived here: the name's `@rig` suffix is a convention for the pod's own
-   * seats, not the room.
+   * error - and never derived here: the name's `@<room>` suffix (the canonical address is
+   * `<room>-<seat>@<room>`) is a convention for the pod's own seats, not the room.
    */
   room_slug: string | null;
   /**
    * This session's OWN seat key, the `{seat}` in `/rooms/{room}/seats/{seat}/messages`. A seat is
    * unique per `(room_id, seat_key)`, so it is used together with `room_slug` and never alone.
    * Null when the connector named no seat. It is NOT the session name - the name composes the
-   * key with a rig and a pod.
+   * key with a room and a pod.
    */
   seat_key: string | null;
 }

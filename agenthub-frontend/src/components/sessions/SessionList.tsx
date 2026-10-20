@@ -74,7 +74,7 @@ export const SessionList: React.FC<SessionListProps> = ({ sessions, selectedId, 
               <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-base-secondary">
                 <span className="min-w-0 truncate">{session.project ?? session.connector_id}</span>
                 {/* The seat this session IS, from the row's own fields - the pair the message route
-                    needs, so a rig's sessions are identifiable at a glance. Both come from the
+                    needs, so a room's sessions are identifiable at a glance. Both come from the
                     connector at ingest; neither is derived from the name here, and a session whose
                     connector named no seat shows none rather than a guess. */}
                 {session.seat_key && (

@@ -1,7 +1,7 @@
 /**
  * Decision API - the owner's side of a room lead's ask.
  *
- * The cloud row is a projection of the local queue row: the rig's daemon mirrors the ask up, the
+ * The cloud row is a projection of the local queue row: the room's daemon mirrors the ask up, the
  * owner answers here, and the daemon pulls the answer down and applies it. Two consequences the
  * callers must respect, both from the room decision channel's own contract
  * (`agenthub_go/fastmcp/server/httpapp/room_decisions_mount.go`):

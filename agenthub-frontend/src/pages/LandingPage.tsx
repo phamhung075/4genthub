@@ -206,7 +206,7 @@ export const LandingPage: React.FC = () => {
     {
       step: '3',
       title: 'Launch the seats with 4genteam',
-      description: 'Pull the rig and start the seats on your machine with 4genteam, the client that runs them.',
+      description: 'Pull the room and start the seats on your machine with 4genteam, the client that runs them.',
       icon: <Server className="h-6 w-6" />
     },
     {

@@ -256,9 +256,9 @@ export interface NotificationEventPayload {
 // into one inbox row (that is the idempotency the reconnect replay relies on).
 
 /**
- * Safeguard alert payload: the stored `rig_safeguard` row a state change is about.
+ * Safeguard alert payload: the stored `room_safeguard` row a state change is about.
  *
- * The server raises this on the realtime socket as payload.entity 'rig_safeguard' with action and
+ * The server raises this on the realtime socket as payload.entity 'room_safeguard' with action and
  * event_type 'safeguard_alert', live to a connected socket or replayed from the missed-notification
  * store on reconnect (rigd-boundaries.md 7.3). The fields are the frame's own - the row's key parts
  * and its counters - so this payload names a ROW, not a message: the inbox line is composed from it
@@ -267,13 +267,13 @@ export interface NotificationEventPayload {
  * `state` is ABSENT on the dead-man alert (7.3): that one is about the connector's own silence, which
  * no child reported, so it carries the machine scope's safeguard name and no state.
  */
-export interface RigSafeguardAlertPayload {
+export interface RoomSafeguardAlertPayload {
   /** The client-reported safeguard name: compact | watchdog | messages | roomguard | bridge | agent. */
   safeguard: string;
   /** The state the row moved to: stopped | silent | failing. Absent on the dead-man alert. */
   state?: string;
-  /** The rig the row is about; empty on the two machine-scoped names (bridge, agent). */
-  rig?: string;
+  /** The room the row is about; empty on the two machine-scoped names (bridge, agent). */
+  room?: string;
   /** The connector - the machine - the row came from. */
   connector_id?: string;
   /** The row's restart counter. */
