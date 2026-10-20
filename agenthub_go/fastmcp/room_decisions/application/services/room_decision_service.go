@@ -462,6 +462,7 @@ func (s *RoomDecisionService) Pull(ctx context.Context, userID, room, cursor str
 	if strings.TrimSpace(room) == "" {
 		return nil, "", &RoomDecisionAnswerRejection{Code: CodeInvalidPull, Message: "the pull names no room"}
 	}
+	room = strings.TrimSpace(room)
 	after, err := decodeAnswerCursor(cursor)
 	if err != nil {
 		return nil, "", &RoomDecisionAnswerRejection{Code: CodeInvalidCursor, Message: err.Error()}

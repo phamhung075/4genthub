@@ -51,9 +51,12 @@ Slice B of `DECISION-2026-10-20-rig-gone.md`: the server stops storing and namin
   hand, applies `0008`, and asserts the table, the column, the three CHECK names, the primary key, the
   connector index, `room_decisions.room_name` and its renamed answer-leg index, that the stored rows
   are carried, and that a second application is a no-op.
-- `TestPullMintsTheShippedCursorAndRefusesOneItDidNot` proves the filter with two rooms: a pull of one
-  room's name hands over only that room's deliveries, and an unnamed pull is the `invalid-pull`
-  refusal. The PostgreSQL case pulls with `?room=alpha` against the real SQL predicate. `TestTheRoomNamesStepIsANoOpWithoutItsTables` pins the guard.
+- `TestPullMintsTheShippedCursorAndRefusesOneItDidNot` proves the argument the service passes, and
+  `TestRoomDecisionPgThePullHandsOverOnlyTheRoomItNames` proves the SQL: one tenant, two rooms, one
+  answered ask each, and a pull of one room's name carries that room's answer, never the other's,
+  while an unnamed pull is the `invalid-pull` refusal. The fixture that writes an ask straight into
+  the table now stores the room's own slug in `room_name` rather than the retired literal, because
+  the pull keys on it. `TestTheRoomNamesStepIsANoOpWithoutItsTables` pins the guard.
 - `TestTheSixSafeguardsStep*` still pass against the shapes `0004` was written for: that fixture keeps
   `rig_safeguards` and `rig` deliberately, because it reproduces history and `0008` is the rename.
 - `python3 scripts/DOC-CITATIONS.py`: 49 docs, 732 citations, 0 violations.
