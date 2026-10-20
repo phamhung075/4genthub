@@ -682,6 +682,21 @@ CREATE INDEX ix_seats_user_id ON seats (user_id);
 CREATE INDEX ix_seats_room_id ON seats (room_id);
 CREATE INDEX ix_seats_seat_type_id ON seats (seat_type_id);
 
+-- Table: seat_occupant_changes
+CREATE TABLE seat_occupant_changes (
+	id UUID NOT NULL,
+	user_id TEXT NOT NULL,
+	seat_id UUID NOT NULL REFERENCES seats (id) ON DELETE CASCADE,
+	actor TEXT NOT NULL,
+	at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+	from_runtime TEXT NOT NULL,
+	from_model TEXT NOT NULL,
+	to_runtime TEXT NOT NULL,
+	to_model TEXT NOT NULL,
+	PRIMARY KEY (id)
+);
+CREATE INDEX ix_seat_occupant_changes_seat ON seat_occupant_changes (user_id, seat_id, at DESC);
+
 -- Table: overlays
 CREATE TABLE overlays (
 	id UUID NOT NULL,

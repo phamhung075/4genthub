@@ -239,40 +239,51 @@ and the two auth `RegisterRoutes` methods.
 
 | Method | Path | Handler | Registration |
 |---|---|---|---|
-| POST | `/api/v2/rooms` | `handleCreateRoom` | `seat_admin_mount.go:317` |
-| GET | `/api/v2/rooms` | `handleListRooms` | `seat_admin_mount.go:320` |
-| DELETE | `/api/v2/rooms/{room}` | `handleDeleteRoom` | `seat_admin_mount.go:323` |
-| PUT | `/api/v2/rooms/{room}/team` | `handleSetRoomTeam` | `seat_admin_mount.go:326` |
-| GET | `/api/v2/seat-types` | `handleListSeatTypes` | `seat_admin_mount.go:329` |
-| POST | `/api/v2/seat-types` | `handleCreateSeatType` | `seat_admin_mount.go:332` |
-| POST | `/api/v2/seat-types/{slug}/versions` | `handleCreateSeatTypeVersion` | `seat_admin_mount.go:335` |
-| GET | `/api/v2/modules` | `handleListModules` | `seat_admin_mount.go:338` |
-| GET | `/api/v2/modules/{slug}/versions/{version}` | `handleGetModuleVersion` | `seat_admin_mount.go:341` |
-| PUT | `/api/v2/modules/{slug}/versions/{version}` | `handlePutModuleVersion` | `seat_admin_mount.go:344` |
-| POST | `/api/v2/rooms/{room}/seats` | `handleCreateSeat` | `seat_admin_mount.go:347` |
-| GET | `/api/v2/rooms/{room}/seats` | `handleListSeats` | `seat_admin_mount.go:350` |
-| DELETE | `/api/v2/rooms/{room}/seats/{seat}` | `handleRemoveSeat` | `seat_admin_mount.go:353` |
-| PUT | `/api/v2/rooms/{room}/seats/{seat}/occupant` | `handleSetSeatOccupant` | `seat_admin_mount.go:356` |
-| PUT | `/api/v2/rooms/{room}/seats/{seat}/permission-policy` | `handleSetSeatPermissionPolicy` | `seat_admin_mount.go:359` |
-| PUT | `/api/v2/rooms/{room}/seats/{seat}/pin` | `handleSetSeatPin` | `seat_admin_mount.go:362` |
-| PUT | `/api/v2/rooms/{room}/overlay` | `handleRoomOverlay` | `seat_admin_mount.go:365` |
-| GET | `/api/v2/overlay` | `handleGetCompanyOverlay` | `seat_admin_mount.go:368` |
-| PUT | `/api/v2/overlay` | `handleCompanyOverlay` | `seat_admin_mount.go:371` |
-| GET | `/api/v2/rooms/{room}/overlay` | `handleGetRoomOverlay` | `seat_admin_mount.go:374` |
-| PUT | `/api/v2/rooms/{room}/seats/{seat}/overlay` | `handleSeatOverlay` | `seat_admin_mount.go:377` |
-| GET | `/api/v2/rooms/{room}/seats/{seat}/overlay` | `handleGetSeatOverlay` | `seat_admin_mount.go:380` |
-| PUT | `/api/v2/rooms/{room}/seats/{seat}/links` | `handleUpsertSeatLink` | `seat_admin_mount.go:383` |
-| GET | `/api/v2/rooms/{room}/seats/{seat}/links` | `handleListSeatLinks` | `seat_admin_mount.go:386` |
-| DELETE | `/api/v2/rooms/{room}/seats/{seat}/links/{to}/{kind}` | `handleDeleteSeatLink` | `seat_admin_mount.go:389` |
-| GET | `/api/v2/settings` | `handleGetSettings` | `seat_admin_mount.go:392` |
-| PUT | `/api/v2/settings` | `handlePutSettings` | `seat_admin_mount.go:395` |
+| POST | `/api/v2/rooms` | `handleCreateRoom` | `seat_admin_mount.go:324` |
+| GET | `/api/v2/rooms` | `handleListRooms` | `seat_admin_mount.go:327` |
+| DELETE | `/api/v2/rooms/{room}` | `handleDeleteRoom` | `seat_admin_mount.go:330` |
+| PUT | `/api/v2/rooms/{room}/team` | `handleSetRoomTeam` | `seat_admin_mount.go:333` |
+| GET | `/api/v2/seat-types` | `handleListSeatTypes` | `seat_admin_mount.go:336` |
+| POST | `/api/v2/seat-types` | `handleCreateSeatType` | `seat_admin_mount.go:339` |
+| POST | `/api/v2/seat-types/{slug}/versions` | `handleCreateSeatTypeVersion` | `seat_admin_mount.go:342` |
+| GET | `/api/v2/modules` | `handleListModules` | `seat_admin_mount.go:345` |
+| GET | `/api/v2/modules/{slug}/versions/{version}` | `handleGetModuleVersion` | `seat_admin_mount.go:348` |
+| PUT | `/api/v2/modules/{slug}/versions/{version}` | `handlePutModuleVersion` | `seat_admin_mount.go:351` |
+| POST | `/api/v2/rooms/{room}/seats` | `handleCreateSeat` | `seat_admin_mount.go:354` |
+| GET | `/api/v2/rooms/{room}/seats` | `handleListSeats` | `seat_admin_mount.go:357` |
+| DELETE | `/api/v2/rooms/{room}/seats/{seat}` | `handleRemoveSeat` | `seat_admin_mount.go:360` |
+| PUT | `/api/v2/rooms/{room}/seats/{seat}/occupant` | `handleSetSeatOccupant` | `seat_admin_mount.go:363` |
+| PUT | `/api/v2/rooms/{room}/seats/{seat}/permission-policy` | `handleSetSeatPermissionPolicy` | `seat_admin_mount.go:366` |
+| PUT | `/api/v2/rooms/{room}/seats/{seat}/pin` | `handleSetSeatPin` | `seat_admin_mount.go:369` |
+| PUT | `/api/v2/rooms/{room}/overlay` | `handleRoomOverlay` | `seat_admin_mount.go:372` |
+| GET | `/api/v2/overlay` | `handleGetCompanyOverlay` | `seat_admin_mount.go:375` |
+| PUT | `/api/v2/overlay` | `handleCompanyOverlay` | `seat_admin_mount.go:378` |
+| GET | `/api/v2/rooms/{room}/overlay` | `handleGetRoomOverlay` | `seat_admin_mount.go:381` |
+| PUT | `/api/v2/rooms/{room}/seats/{seat}/overlay` | `handleSeatOverlay` | `seat_admin_mount.go:384` |
+| GET | `/api/v2/rooms/{room}/seats/{seat}/overlay` | `handleGetSeatOverlay` | `seat_admin_mount.go:387` |
+| PUT | `/api/v2/rooms/{room}/seats/{seat}/links` | `handleUpsertSeatLink` | `seat_admin_mount.go:390` |
+| GET | `/api/v2/rooms/{room}/seats/{seat}/links` | `handleListSeatLinks` | `seat_admin_mount.go:393` |
+| GET | `/api/v2/rooms/{room}/seats/{seat}/occupant-history` | `handleListSeatOccupantChanges` | `seat_admin_mount.go:396` |
+| DELETE | `/api/v2/rooms/{room}/seats/{seat}/links/{to}/{kind}` | `handleDeleteSeatLink` | `seat_admin_mount.go:399` |
+| GET | `/api/v2/settings` | `handleGetSettings` | `seat_admin_mount.go:402` |
+| PUT | `/api/v2/settings` | `handlePutSettings` | `seat_admin_mount.go:405` |
+
+**Occupant history (2026-10-20).** `GET …/occupant-history` is the read half of the occupant
+record: every stored runtime/model change of one seat, newest first, as `{success, changes[]}` with
+the seven record columns (`actor`, `at`, `seat`, `from_runtime`, `from_model`, `to_runtime`,
+`to_model`). The write half is the `seat_occupant_changes` row `SeatAdminService.SetOccupant` writes
+in the same transaction as the `seats` overwrite; the design of record is
+`ai_docs/core-architecture/seat-occupant-record.md`. It is a read, so it is registered without
+`seatMutation` and emits no frame.
 
 **Update 2026-10-06 (D5 sharing).** `PUT /api/v2/rooms/{room}/team` (`handleSetRoomTeam`) is new — it is the route that shares one room, read-only, with one team's members, or makes it private again — and **every Registration line in this section was refreshed from the source in the same pass**, because that insertion shifted them all; all 26 rows were then re-checked one by one against the registrations they cite.
 
 **Update 2026-10-05 (docs truth-audit).** The `POST /api/v2/seat-types` row was **missing** (the D3 create-a-seat-type route, `seat_admin_mount.go:307`) and every Registration line in this section was stale by the insertion; both are corrected here from the source at HEAD, which is why this section went from 24 to 25 rows.
 
-Note: the mutating rows are wrapped in `seatMutation(kind, action, fn)` (a broadcast +
-audit wrapper), except `handleCreateRoom`/`handleListRooms` and the GETs.
+Note: the mutating rows are wrapped in `seatMutation(kind, action, fn)` — a broadcast wrapper
+only, after a 2xx it emits `entity`/`action`/`{id, room, seat_key}` and the actor's id on the
+WebSocket and **audits nothing**; the durable trail is `seat_occupant_changes`, written by the
+occupant route alone. The GET rows carry no wrapper.
 
 ### 1.17 4genteam seat management — seat resolution / machine / status
 

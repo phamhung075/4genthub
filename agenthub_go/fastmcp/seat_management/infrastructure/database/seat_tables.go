@@ -155,6 +155,34 @@ var seatDatabaseTables = []taskdb.TableDef{
 		"CREATE INDEX ix_seats_room_id ON seats (room_id)",
 		"CREATE INDEX ix_seats_seat_type_id ON seats (seat_type_id)",
 	}},
+	// The append-only trail of a seat's stored occupant: one row per switch, written in the same
+	// transaction as the seats overwrite. seat_id cascades because the row has no delete path of
+	// its own; the row is the seat's history, so it goes when the seat does.
+	{Name: "seat_occupant_changes", Model: "SeatOccupantChangeORM", Columns: []taskdb.ColumnDef{
+		{Name: "id", Attr: "id", GoField: "ID", SQLType: "UUID", Nullable: false, PrimaryKey: true, Default: taskdb.DefaultUUIDv4},
+		{Name: "user_id", Attr: "user_id", GoField: "UserID", SQLType: "TEXT", Nullable: false},
+		{Name: "seat_id", Attr: "seat_id", GoField: "SeatID", SQLType: "UUID", Nullable: false},
+		{Name: "actor", Attr: "actor", GoField: "Actor", SQLType: "TEXT", Nullable: false},
+		{Name: "at", Attr: "at", GoField: "At", SQLType: "TIMESTAMP WITH TIME ZONE", Nullable: false, Default: taskdb.DefaultNowUTC},
+		{Name: "from_runtime", Attr: "from_runtime", GoField: "FromRuntime", SQLType: "TEXT", Nullable: false},
+		{Name: "from_model", Attr: "from_model", GoField: "FromModel", SQLType: "TEXT", Nullable: false},
+		{Name: "to_runtime", Attr: "to_runtime", GoField: "ToRuntime", SQLType: "TEXT", Nullable: false},
+		{Name: "to_model", Attr: "to_model", GoField: "ToModel", SQLType: "TEXT", Nullable: false},
+	}, DDL: []string{
+		"CREATE TABLE seat_occupant_changes (\n" +
+			"\tid UUID NOT NULL,\n" +
+			"\tuser_id TEXT NOT NULL,\n" +
+			"\tseat_id UUID NOT NULL REFERENCES seats (id) ON DELETE CASCADE,\n" +
+			"\tactor TEXT NOT NULL,\n" +
+			"\tat TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),\n" +
+			"\tfrom_runtime TEXT NOT NULL,\n" +
+			"\tfrom_model TEXT NOT NULL,\n" +
+			"\tto_runtime TEXT NOT NULL,\n" +
+			"\tto_model TEXT NOT NULL,\n" +
+			"\tPRIMARY KEY (id)\n" +
+			")",
+		"CREATE INDEX ix_seat_occupant_changes_seat ON seat_occupant_changes (user_id, seat_id, at DESC)",
+	}},
 	{Name: "overlays", Model: "OverlayORM", Columns: []taskdb.ColumnDef{
 		{Name: "id", Attr: "id", GoField: "ID", SQLType: "UUID", Nullable: false, PrimaryKey: true, Default: taskdb.DefaultUUIDv4},
 		{Name: "user_id", Attr: "user_id", GoField: "UserID", SQLType: "TEXT", Nullable: false},

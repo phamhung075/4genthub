@@ -1,3 +1,19 @@
+## 2026-10-20 - the occupant record's write, read and refusal are pinned
+
+`occupant_change_repository_test.go` (new): `TestUpdateOccupantRecordsTheChange` asserts the
+statement set - the locked `SELECT ... FOR UPDATE` of the stored pair, the `seats` update, and the
+`seat_occupant_changes` insert whose nine arguments carry the actor, the locked `from_*` and the
+call's `to_*`; `TestUpdateOccupantSkipsTheRecordForANoOp` asserts an identical pair writes neither
+statement; `TestListOccupantChangesIsTenantScoped` asserts both tenant filters and `at DESC`.
+`orm_repositories_test.go`'s fake driver now records `Exec` arguments (`recordExec`/`execRecords`),
+so a test can read what was written, not only that something was. `TestOccupantChangeIsRecordedIntegration`
+(new, needs `SEAT_TEST_DATABASE_URL`) proves the trail on PostgreSQL: two switches make two rows
+newest first, the repeat adds none, and deleting the seat takes its rows through the cascade.
+`seat_occupant_record_test.go` (new) refuses an `actor` request field at 400 and proves the record
+names the authenticated caller; `TestSeatAdminOccupantHistoryReturnsOneSeatsChanges` reads the
+route. `schemaInventoryTableCount` moves 49 -> 50 for the registry's new table, and
+`seat_occupant_change_orm_test.go` pins its columns.
+
 ## 2026-10-20 - the branch delete takes a cross-author child with it
 
 `TestGitBranchRepoDeleteBranchCascade` (branch `4genthub-min/next-work`): seeds `task_labels`,
