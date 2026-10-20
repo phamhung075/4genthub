@@ -36,7 +36,7 @@ export const SessionsPage: React.FC = () => {
   // agenthub_go/fastmcp/session_stream/repository.go). The list renders it, which is what phase 1
   // needs. NOTHING HERE DERIVES A ROOM FROM THE NAME: the `@<room>` suffix is a naming convention, and
   // a room guessed from it posts to the wrong room silently. The chat input that consumed the pair
-  // is PHASE 2 (rigd-boundaries.md section 3: commands carry their own scope, a human-only issuer
+  // is PHASE 2 (agent-boundaries.md section 3: commands carry their own scope, a human-only issuer
   // and a local opt-in), so `SeatInputBox` is not mounted on this page.
 
   return (

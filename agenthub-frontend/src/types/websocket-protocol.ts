@@ -260,7 +260,7 @@ export interface NotificationEventPayload {
  *
  * The server raises this on the realtime socket as payload.entity 'room_safeguard' with action and
  * event_type 'safeguard_alert', live to a connected socket or replayed from the missed-notification
- * store on reconnect (rigd-boundaries.md 7.3). The fields are the frame's own - the row's key parts
+ * store on reconnect (agent-boundaries.md 7.3). The fields are the frame's own - the row's key parts
  * and its counters - so this payload names a ROW, not a message: the inbox line is composed from it
  * at the consumer, and metadata.entity_id is the row key, which is NOT unique per alert.
  *

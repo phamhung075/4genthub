@@ -41,7 +41,7 @@ export const SessionList: React.FC<SessionListProps> = ({ sessions, selectedId, 
       {sessions.map((session) => {
         const isSelected = session.id === selectedId;
         const seatState = session.seat_state ?? null;
-        // Rendering precedence, RULED (rigd-boundaries.md 2.3a): `offline` wins and carries the last
+        // Rendering precedence, RULED (agent-boundaries.md 2.3a): `offline` wins and carries the last
         // reported seat_state as secondary text; otherwise seat_state decides - `stopped` shows as
         // stopped, and `running` or null shows as live.
         const displayState =

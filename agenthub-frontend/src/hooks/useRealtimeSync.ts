@@ -1008,7 +1008,7 @@ export const useRealtimeSync = (
       }
     };
 
-    // Handler for connector-session updates: the RULED browser surface (rigd-boundaries.md 2.3a).
+    // Handler for connector-session updates: the RULED browser surface (agent-boundaries.md 2.3a).
     // Every action - a seat_state change, a status change, or MarkOffline's one frame per session -
     // invalidates the same key, and NOTHING is read out of the frame: `GET /api/v2/sessions` stays
     // the single read path, so a row is never assembled from a push. An action the server adds later

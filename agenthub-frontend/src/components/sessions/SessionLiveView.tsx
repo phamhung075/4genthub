@@ -6,8 +6,8 @@
  * arguments and each tool result, in the order they happened. Long bodies and
  * arguments are collapsed, and older history loads on request.
  *
- * NO CHAT INPUT HERE, DELIBERATELY: phase 1 of the rigd slice ships none, and the ruled boundaries
- * (`ai_docs/core-architecture/rigd-boundaries.md`, section 3) make commands a phase-2 surface with
+ * NO CHAT INPUT HERE, DELIBERATELY: phase 1 of the agent slice ships none, and the ruled boundaries
+ * (`ai_docs/core-architecture/agent-boundaries.md`, section 3) make commands a phase-2 surface with
  * their own scope, a human-only issuer and a local opt-in - a browser session with `sessions:write`
  * does NOT authorize one. `SeatInputBox` stays in the tree for that phase; this view simply does not
  * mount it.

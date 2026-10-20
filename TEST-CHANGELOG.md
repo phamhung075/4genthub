@@ -7437,6 +7437,12 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
 ## 2026-10-20 - the topology fixture's room is named for the room, not the retired unit (frontend, branch 4genthub-min/fe-rig-gone)
 
 `src/tests/pages/TopologyPage.test.tsx`'s machine-report case described its room as `name: 'Rig Room'`, the
-last word-bounded `rig` in `agenthub-frontend/src` outside a `rigd-boundaries.md` citation; it now reads
+last word-bounded `rig` in `agenthub-frontend/src` outside the document citations that moved with it; it now reads
 `'Min Room'`, which neither the case nor the page asserts on. `npx vitest run src/tests/pages/TopologyPage.test.tsx`
 4 passed; `npx tsc --noEmit -p .` exit 0.
+
+## 2026-10-20 - the frontend comments name the agent and its boundaries document (frontend, branch 4genthub-min/fe-rig-gone)
+
+The session test's header comment moves with the document rename (`rigd-boundaries.md 2.3a` ->
+`agent-boundaries.md 2.3a`): a comment only, so `test_useRealtimeSync_session.test.tsx` was re-run to
+show the file still builds and passes (3 files / 13 tests with SessionsPage and SeatInputBox).
