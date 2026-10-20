@@ -20,8 +20,30 @@ runs on task `b7a2c44c` carried `d3_tests` true on a command that proved nothing
   section names the frontend's acceptance command from the root as `sh scripts/typecheck-frontend.sh`
   (or `npm run typecheck`), records why the bare form is refused, and says which form is still sound
   (`npx tsc --noEmit -p .` **inside** `agenthub-frontend`, where the local binary resolves first).
-  This is the sentence the item asked for, and it names what it replaced: the prescription of a
-  command that can exit 0 doing nothing.
+  This is the sentence the item asked for. It does NOT replace an existing prescription in that file,
+  and the difference is worth stating rather than smoothing over: the base doc carried no `npx tsc`
+  line at all (`git grep -n 'npx tsc' f0b3f3b9 -- ai_docs/agent-system/task-workflow-and-reporting.md`
+  is empty), so the paragraph is new. My first sweep for the prescription also missed the tree's own
+  copies of it by omitting `*.txt`; the section below records every one that the second sweep found,
+  which had a bare command without a cwd and now pins it.
+- `scripts/team/4genthub/mission.md:7` and `scripts/team/4genthub/project-4genthub.txt:14`: both listed
+  the frontend's typecheck as a bare `npx tsc --noEmit -p .` with no cwd, so a seat at the repository
+  root following either line got the placeholder; both now say `from agenthub-frontend`, the form the
+  reviewer measured at 14.82 s rc 0. The mission line also names the root form.
+- `agenthub-frontend/tsconfig.tests.json:11`: the comment said `Run it: npx tsc -p
+  tsconfig.tests.json` with no cwd; it now says "from this directory" and why.
+
+### Swept, and left alone
+
+`git grep -n 'npx tsc' HEAD` over the tracked tree, excluding the changelog history and the client
+submodule, returns 13 files. The prescriptions that already pin the cwd are correct and unchanged:
+`scripts/team/4genthub/area-quality.txt:6` ("Frontend: from agenthub-frontend ..."), `:9` (same file,
+cwd carried by the line above), `scripts/team/4genthub/area-web-frontend.txt:11` ("Commands, from
+agenthub-frontend:"), `agenthub_go/.../seedlibrary/blocks/guide-fe-dev.md:13` and `guide-reviewer.md:13`
+(both "from `agenthub-frontend`"). The rest are history - `agenthub-frontend/CHANGELOG.md` and
+`agenthub_go/NEXT_GEN.md` - and a historical record is not rewritten. The live `unused-code-cleanup`
+skill under `agenthub_client/skills/share/` spells the bare form five times and belongs to the client
+repository, not this commit.
 
 ### Measured, on one tree, the same session
 
@@ -33,7 +55,11 @@ runs on task `b7a2c44c` carried `d3_tests` true on a command that proved nothing
 | `sh scripts/typecheck-frontend.sh --noUnusedLocals --noUnusedParameters` | 12.15 s | 0 | the same compiler, widened |
 | the script in a tree with no `agenthub-frontend/node_modules` | 0.04 s | **127** | refused: "no compiler ..." |
 
-The negative is the point: the form that used to exit 0 silently now either compiles or fails.
+The negative is the point, and it is the SCRIPT'S invocation that carries it: `sh
+scripts/typecheck-frontend.sh` now either compiles the frontend or fails, where a no-op pass is no
+longer reachable through it. The bare `npx tsc` typed at the root is unchanged and still exits 0 doing
+nothing - see the section below, which is why the item's criterion 2 needed the amendment recorded on
+the board item rather than a claim here.
 
 ### What this does not close, and who owns it
 

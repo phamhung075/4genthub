@@ -4,7 +4,7 @@ Architecture you work inside: the brain is 4genthub in the cloud, the office is 
 
 What clean means here, as checks anyone can run:
 - Go: gofmt reports nothing for the files you touched, go vet passes, go test passes for the affected packages.
-- Frontend: `npx tsc --noEmit -p .` prints no `error TS` line, vitest passes, vite build passes.
+- Frontend, from `agenthub-frontend`: `npx tsc --noEmit -p .` prints no `error TS` line, vitest passes, vite build passes. From the repository root the same command is npm's placeholder package, which exits 0 without compiling; the root form is `sh scripts/typecheck-frontend.sh`.
 - Scripts: the script tests pass with --noconftest.
 - No compatibility code, no dead code, no duplicated definitions, one source of truth per concept.
 - Every change has a test and a changelog entry.

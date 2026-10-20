@@ -8,7 +8,8 @@
 // real rather than an untyped-dialect artifact. It is a MEASUREMENT and a ratchet, not
 // a passing gate yet: the population is pre-existing and is being retired by class.
 //
-// Run it:  npx tsc -p tsconfig.tests.json
+// Run it:  npx tsc -p tsconfig.tests.json   (from this directory - at the repository root npx
+// resolves npm's placeholder package named `tsc`, which exits 0 without compiling anything)
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
