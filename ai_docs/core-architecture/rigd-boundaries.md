@@ -653,3 +653,62 @@ Deleting data, pushing, editing code, changing credentials and every other unsup
 **Ruling: A.** In addition, `doctor` adds a row, `orphan_handoffs`, which names each pending qitem whose destination is not live. This is the same predicate as `up`'s room/team mismatch check, so both belong to the team-prune item `00f2e9cf`. Neither guard moves a seat.
 
 **DATED NOTE, 2026-10-15 (go-dev): the checker's send verb is GONE, so option A's row above is the record of which choice was made rather than a live description - the two option rows and the ruling itself are kept as they were written, and this sentence is what a reader takes as today's state.** The owner ruled the verb out (it refused every send, and the policy it checked was written by nothing), and `cmd/seatcheck` in the client now carries only the read-only `audit-scan`; **the audited send path is the client's own `4genteam send`**, which builds the room's declared links into a policy at send time, decides, writes the decision line, delivers and writes the outcome line in ONE process (`internal/clientseat`) - which is why the audit is no longer split across two processes' lifetimes. **What 7.11's rule requires of a closure does not change, and it is exactly what the rows closed today did:** the destination is read from `4genteam ps <rig> --nodes`, and the closure carries `--reason handed_off_to --target <session>` with the new row named in the note.
+
+### 7.12 Addendum: a probe that could not run is not an absence (architect ruling 2026-10-20, board row `6e1171ba`; rail `qitem-20261020163856-6c7deb64075f`)
+
+**The rule (one shape, every reader):** a reader that decides a state from a process or file probe answers
+`(value, error)`. An error means the probe **did not run**, so no row, seat, report or repair is produced from
+it. "The probe ran and found nothing" is the zero value with a nil error - `(nil, nil)` for a pid list, `("")`
+with nil for a seat no client has pinned. Every caller either refuses in words naming the probe, or (a pure
+reader) skips the row and names it; none of them prints a decided row.
+
+This is 7.7 applied to the process table: a missing signal is no evidence. The three sites the sweep found
+(`623d29a`, `2f89ea2` carried the earlier reads) all collapsed the two answers into one:
+
+| Site | Was | Is |
+|---|---|---|
+| `clientservices.livePIDs` (`Live`) | `LookPath` failure -> `nil` pids -> every row `stopped` | `([]int, error)`; pgrep exit **1** (the absence it observed) is `(nil, nil)`, anything else is an error |
+| `clientlifecycle.stopPattern` | `false` meant "nothing matched **or** pkill is not here" | `(bool, error)`; only pkill exit 1 is `false` |
+| `clientbridge.PinnedHash` | a read error answered `""`, the value sent for a seat no client has pinned | `(string, error)`; a `pinned.json` that exists and cannot be read is an error naming the file |
+
+**The shape change, per entry point.** `Verify`, `verifyRow`, `SafeguardRows`/`rowsFor`,
+`waitForSafeguardsImpl`, `heal.Run`/`checkSafeguards`, `BuildPayload`/`BuildSeats`, `agentRunning`,
+`SafeguardRows`, `agentManager.supervise`/`pass`/`reconcile`/`ensure` and `respawnDaemon` all answer the
+probe's error. `Verify` stops at the FIRST error and answers no rows, because a partial report is the failure
+being replaced.
+
+| Verb | On a probe error |
+|---|---|
+| `doctor` | prints `4genteam doctor: no safeguard row was decided: <probe>`, exits 3, prints **no** row, reason or note line |
+| `up` | `clientservices.Probe()` (`pgrep` + `pkill` on PATH) runs before the daemon, agent or seat; refusal prints `nothing was started or stopped`, exits 3, starts nothing. The start grace refuses the same way |
+| `up --respawn` | `respawnDaemon` refuses before signalling or starting: the empty-pids branch is unreachable on an error |
+| `stop` | `agent was NOT stopped: <probe>`, exits 3, and never prints `was not running`; `closeWatch` is not reached |
+| `agent` (the supervisor) | the pass returns the error, the daemon prints the refusal once and exits 3; nothing is adopted, started or stopped |
+| `heal` | `no safeguard row was decided: <probe>`, exits 3, prints no findings, applies no repair (a re-check that could not read is not a fix) |
+| `compact` | `no safeguard row was decided: <probe>`, exits 3 |
+| `status`, `agent status` | print no rows and name the probe on stderr, and keep their exit (they are readers) |
+| `bridge once --print` | exits 3, nothing on stdout, stderr names the file and says the report was NOT sent |
+| a bridge cycle | sends nothing and records the note naming the file |
+
+`bridge once --print` takes no pins flag: its store comes from `clientenv.RealHome`, so the operator-surface
+refusal was verified by hand (`PATH`-held binary, a corrupt `pinned.json` in the store: exit 3, empty stdout,
+`... pin could not be read: <path>: ...; the seats report was NOT sent`) rather than by a test that would write
+the operator's own store. The branch is four lines over `BuildPayload`, whose refusal is tested.
+
+**Unchanged.** 7.2's four states (`running`, `silent`, `failing`, `stopped`) and its field set, 7.4's
+thresholds, and every precedence rule: only the *answer for an unread probe* changed. `AllRunning`,
+`NotRunning` and `StateLine` keep their shape - they consume a report that was read.
+
+**Tests** (all in `agenthub_client`, `go test ./...` green 2026-10-20):
+
+| Test | Expected |
+|---|---|
+| `clientservices.TestVerifyRefusesWhenTheProcessProbeCannotRun` | no rows and the probe's error |
+| `clientlifecycle.TestDoctorRefusesWhenTheProcessProbeCannotRun` | exit 3, named line, no row on stdout |
+| `clientlifecycle.TestUpRefusesBeforeTheDaemonWhenTheProbeCannotRun` | exit 3 with `PATH` holding no pgrep, no step ran |
+| `clientlifecycle.TestStopRefusesWhenTheSignalProbeCannotRun` | exit 3, no `was not running`, no watch close |
+| `clientlifecycle.TestRespawnRefusesWhenTheProbeCannotRun` | `false`, nothing signalled or started |
+| `clientheal.TestAProbeErrorRefusesTheHeal` | error, no findings, no repair |
+| `clientbridge.TestAMalformedPinRefusesTheSeatsReport` | three unreadable pins each refuse, naming `pinned.json` |
+| `clientbridge.TestACycleSendsNothingWhenASeatPinCouldNotBeRead` | no body sent, note names the file |
+| `clientbridge.TestPinnedHashUsedWhenValid` | a valid pin is used; a missing one is `("", nil)`; a malformed one is an error |
