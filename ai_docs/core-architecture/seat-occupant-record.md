@@ -17,11 +17,11 @@ store method's signature grows one parameter and every caller is migrated in the
 
 ## 2. Context, measured
 
-- The write call site is `SetOccupant` at `agenthub_go/fastmcp/seat_management/application/services/seat_admin_service.go:103`
-  (the function's declaration is at `:105`, its store call at `:124`), reached by
-  `PUT /api/v2/rooms/{room}/seats/{seat}/occupant` (`seat_admin_mount.go:356` → `handleSetSeatOccupant`, `:1155`)
+- The write call site is `SetOccupant` at `agenthub_go/fastmcp/seat_management/application/services/seat_admin_service.go:104`
+  (the function's declaration is at `:106`, its store call at `:127`), reached by
+  `PUT /api/v2/rooms/{room}/seats/{seat}/occupant` (`seat_admin_mount.go:363` → `handleSetSeatOccupant`, `:1165`)
   and by the MCP action `manage_seat set_occupant` (`manage_seat_controller.go:67`).
-- It reaches `seat_repository.go:87-88`, one statement:
+- It reaches `seat_repository.go:100-101`, one statement:
   `UPDATE "seats" SET "runtime" = $1, "model" = $2, "updated_at" = $3 WHERE "user_id" = $4 AND "id" = $5`.
   The row is overwritten in place; the previous values are gone.
 - `GetDBSession` (`base_orm_repository.go:94`) is `SessionManager.WithSession`
@@ -29,18 +29,20 @@ store method's signature grows one parameter and every caller is migrated in the
   runs in its own transaction**, so the record needs no new seam — it is one more statement in the
   same closure.
 - Nothing durable records the event: no history table, no row, and no log line — unlike
-  `handleSetSeatPermissionPolicy` (`seat_admin_mount.go:1182`) and `handleSetSeatPin` (`:1206`), which
+  `handleSetSeatPermissionPolicy` (`seat_admin_mount.go:1199`) and `handleSetSeatPin` (`:1224`), which
   both `log.Printf("[SEAT] user %s …")`.
 - The only emission is transient: the route's `seatMutation("seat", "updated", …)` wrapper
-  (`seat_admin_mount.go:446-465`) calls `routes.BroadcastDataChange` (`websocket_routes.go:417-421`)
+  (`seat_admin_mount.go:456-475`) calls `routes.BroadcastDataChange` (`websocket_routes.go:417-421`)
   after a 2xx. The frame carries `entity=seat`, `action=updated`, `{id:"<room>/<seat_key>",room,seat_key}`
   and the actor's id — **never the runtime or model**, and nothing persists it for a connected client.
-  `TestSeatAdminSetOccupantEmitsOneFrame` (`seat_admin_mount_test.go:527`) pins that shape.
+  `TestSeatAdminMutationsBroadcastOneSeatFrame` (`seat_admin_mount_test.go:547`) pins that shape:
+  exactly one frame per seat mutation, carrying `entity`/`action`/`id` — the frame type has no
+  runtime or model field.
 - No resolve happens at switch time, so no `resolved_seats` row appears either, and the daemon-side pin
   holds a snapshot hash and path only.
 - After a change nobody can answer who switched the seat, when, or from what to what.
 - Rulings this design must not break: a blank field never clears a field (owner ruling 2026-10-05,
-  `seat_admin_service.go:112-123`); the type-default inheritance is CREATE-only; and a running seat
+  `seat_admin_service.go:113-124`); the type-default inheritance is CREATE-only; and a running seat
   never changes live (`ai_docs/operations/syncing-seats-with-the-cloud.md:87`) — the row records the
   stored occupant the **next** launch reads, not a switch of a live seat.
 
@@ -111,20 +113,20 @@ The cascade is deliberate and is the INT-03 ruling applied, not an exception to 
 (`CHANGELOG/2026-10-19--four-cascades-move-to-the-application.md`): **a child that cannot outlive its
 one parent keeps the database cascade.** An occupant row has exactly one parent, the seat, and cannot
 outlive it. The seat context's older children (`seat_links`, `resolved_seats`) are deleted explicitly by
-`SeatDeletionService.RemoveSeat` (`room_deletion_service.go:121`, `:127`) because they predate that
+`RoomDeletionService.deleteSeatRows` (`room_deletion_service.go:120`; the deletes at `:121`, `:127`) because they predate that
 ruling; they are not a precedent for a new table, and copying them would add a call, a fake method and a
 test for a delete the database already enforces.
 
 No CHECK: `runtime` and `model` are validated by `repositories.ValidateOccupant` before the write
-(`seat_admin_service.go:121`), and a CHECK duplicating a Go list is a second source of truth. No
+(`seat_admin_service.go:122`), and a CHECK duplicating a Go list is a second source of truth. No
 `updated_at`: a row is never updated.
 
 ## 6. The write path
 
 Actor identity is the authenticated caller. In `SetOccupant` it is the `userID` argument, which the
-handler fills from `userID(u)` (`seat_admin_mount.go:1164`) and the MCP controller from its
+handler fills from `userID(u)` (`seat_admin_mount.go:1174`) and the MCP controller from its
 authenticated `uid` (`manage_seat_controller.go:67`). It cannot come from the body:
-`decodeSeatAdminBody` uses `DisallowUnknownFields` (`seat_admin_mount.go:532-540`), so an `actor` key in
+`decodeSeatAdminBody` uses `DisallowUnknownFields` (`seat_admin_mount.go:542-550`), so an `actor` key in
 the PUT is a 400, not a field. The two ids are passed separately because they answer different
 questions — whose rows these are, and who acted — and a later team-writer changes only the second.
 
@@ -171,7 +173,8 @@ Rules this encodes, each of which a test below pins:
 2. **The record is what the seats row says.** `from_*` comes from the locked row, not from the
    service's `FindSeat` read, so the trail cannot disagree with the row it describes.
 3. **A no-op is not a change.** Both values equal the stored ones ⇒ no UPDATE (so `updated_at` does not
-   move), no row. An idempotent retry leaves one row, not two.
+   move), no row. An idempotent retry leaves one row, not two. The `[SEAT]` log line (§4) prints the
+   request, so a no-op repeats the same pair there — the row and `seats.updated_at` are the proof.
 4. **One clock.** `at` is the same instant as `seats.updated_at`.
 5. **The row vanishes under the write** (a concurrent `RemoveSeat`): `Scan` returns `sql.ErrNoRows`,
    the transaction rolls back, and the route answers 500 instead of reporting a successful switch of a
@@ -179,7 +182,7 @@ Rules this encodes, each of which a test below pins:
 6. **Blank-field inheritance already happened** in `SetOccupant` before this call, so `to_*` is the
    effective value, and a runtime-only PUT records `from_model == to_model`.
 
-`Create` (`seat_repository.go:32-41`) records nothing: creating a seat is not a change, and the service
+`Create` (`seat_repository.go:33-42`) records nothing: creating a seat is not a change, and the service
 already refuses to validate a created seat's occupant through this path. Permission-policy and pin
 changes are out of scope — the same table can grow a `kind` later if the owner asks, which is the
 change that would make this a general seat-change trail instead of an occupant trail.
@@ -189,21 +192,25 @@ change that would make this a general seat-change trail instead of an occupant t
 ```
 GET /api/v2/rooms/{room}/seats/{seat}/occupant-history
 → 200 {"success": true, "changes": [
-     {"actor":"user-1","at":"2026-10-20T19:01:34Z",
+     {"actor":"user-1","at":"2026-10-20T19:01:34Z","seat":"<seat_id>",
       "from_runtime":"claude-code","from_model":"sonnet",
       "to_runtime":"codex","to_model":"gpt-5.1"}
    ]}
 ```
 
+Seven fields, the record's own columns including `seat`: the id repeats the path segment so a row
+reads on its own, and the reader never needs a second payload to know which seat a change belongs
+to. `at` is RFC 3339 in UTC.
+
 - Newest first (`ORDER BY "at" DESC`), no paging and no limit: a seat's occupant changes are human
   actions, and a cap would hide exactly the oldest ones.
 - **Who may read:** the same caller who may read the seat today. The handler is
-  `handleListSeatLinks` (`seat_admin_mount.go:1573-1600`) with the collection swapped: visible room
-  (`seatAdminVisibleRoom`, `:561`), then `seatAdminScope` (`:578`) — the caller's own id, or the room
+  `handleListSeatLinks` (`seat_admin_mount.go:1583-1610`) with the collection swapped: visible room
+  (`seatAdminVisibleRoom`, `:571`), then `seatAdminScope` (`:588`) — the caller's own id, or the room
   owner's when the caller is a viewer on the room's team — then the seat, then the rows.
   `actor` is a user id the reader can already see in seat admin, and this route shows no seat data the
   seats list does not.
-- Registered beside the other seat GETs (`seat_admin_mount.go:350`, `:380`, `:386`) **without**
+- Registered beside the other seat GETs (`seat_admin_mount.go:357`, `:387`, `:393`) **without**
   `seatMutation`: a read emits no frame.
 - New port method on `SeatRepository` — no new repository, no new package:
   `ListOccupantChanges(ctx context.Context, userID, seatID string) ([]OccupantChange, error)`, and one
@@ -211,7 +218,7 @@ GET /api/v2/rooms/{room}/seats/{seat}/occupant-history
   in `domain/repositories/repositories.go`. The handler calls it through `seatAdminSource`, exactly as
   it calls `ListSeatLinks`, so no service method is added.
 - No MCP action. `manage_seat` stays as it is; a `tests`-free MCP reader can be added later as one
-  action with no schema change (`ai_docs/agent-system/seat-model-and-mcp-surface.md:52`).
+  action with no schema change (`ai_docs/agent-system/seat-model-and-mcp-surface.md:60`).
 
 ## 8. Retention
 
@@ -231,7 +238,7 @@ GET /api/v2/rooms/{room}/seats/{seat}/occupant-history
   running seat keeps the snapshot it launched with (`syncing-seats-with-the-cloud.md:87`). The handler's
   doc comment and the response field names say "changes", not "runtime now".
 - **A second writer of `seats.runtime/model` would silently bypass the trail.** Today there is one
-  UPDATE (`seat_repository.go:88`) and `Create`'s INSERT. A future writer must go through
+  UPDATE (`seat_repository.go:101`) and `Create`'s INSERT. A future writer must go through
   `UpdateOccupant`; the INSERT's presence in the same closure is the reason it cannot be forgotten here.
 - **The actor equals the tenant id for as long as only the owner may write** (writes resolve the room
   through `GetRoomBySlug`). If team viewers are ever given writes, the two ids diverge and the column is
@@ -249,13 +256,13 @@ TestUpdateOccupantRecordsTheChange
   agenthub_go/fastmcp/seat_management/infrastructure/repositories/orm/occupant_change_repository_test.go
 ```
 
-It uses the scripted `fakeDriver` (`orm_repositories_test.go:21-108`) whose `respond` answers the
+It uses the scripted `fakeDriver` (`orm_repositories_test.go:26-132`) whose `respond` answers the
 `SELECT … FOR UPDATE` with `("claude-code","sonnet")`, calls
 `UpdateOccupant(ctx, testUser, testSeatID, "codex", "gpt-5.1", testUser)`, and asserts, in order:
 the locked SELECT ran; the `UPDATE "seats"` ran; an `INSERT INTO "seat_occupant_changes"` ran carrying
 `user_id`, `seat_id`, `actor`, a non-zero `at`, `from_runtime`/`from_model` from the SELECT, and
 `to_runtime`/`to_model` from the call. The fake driver records SQL text only today (`fakeStmt.Exec`
-drops its args, `orm_repositories_test.go:80-87`); it gains an `execArgs` capture of a few lines so the
+drops its args, `orm_repositories_test.go:94-102`); it gains an `execArgs` capture of a few lines so the
 arguments are assertable. Extend the driver, not the production code, and do not change what the
 existing recordings return.
 
@@ -295,19 +302,19 @@ A `TEST-CHANGELOG.md` entry is mandatory for this change (`AGENTS.md:59`).
    `task_management/infrastructure/database/migrations/0001_baseline.sql`
    (`TestBaselineMatchesEveryRegisteredTableDef` requires every registered `TableDef` there);
    and `migrations/0007_seat_occupant_changes.sql`, idempotent, so a database that already applied
-   `0001` gets the table — the same reason `0005` exists (`migrations/README.md`; `0006` is the highest
-   number today).
+   `0001` gets the table — the same reason `0005` exists (`migrations/README.md`; `0006` was the highest
+   when this was ruled).
 2. Write path — `UpdateOccupant` and `UpdateSeatOccupant` take `actor`; migrate `SeatAdminStore`
-   (`seat_admin_service.go:25`), the adapter `seatAdminRepos.UpdateSeatOccupant`
-   (`seat_admin_mount.go:228`), the domain port (`domain/repositories/repositories.go`, `SeatRepository`),
-   and every fake that implements them: `fakeSeatAdmin` (`seat_admin_mount_test.go:243`),
+   (`seat_admin_service.go:29`), the adapter `seatAdminRepos.UpdateSeatOccupant`
+   (`seat_admin_mount.go:231`), the domain port (`domain/repositories/repositories.go`, `SeatRepository`),
+   and every fake that implements them: `fakeSeatAdmin` (`seat_admin_mount_test.go:245`),
    `fakeSeatAdminStore` (`seat_admin_service_test.go:92`), `fakeStore` (`manage_seat_controller_test.go:86`).
-3. Read path — the domain type, the port method, the adapter, the route (`seat_admin_mount.go:350`
+3. Read path — the domain type, the port method, the adapter, the route (`seat_admin_mount.go:357`
    beside it), the handler, and `fakeSeatAdmin.ListSeatOccupantChanges`.
 4. Tests per §10, then `go -C agenthub_go test ./... -count=1`.
-5. Doc of record corrections in the same task: `ai_docs/api-integration/surface-inventory.md:274-275`
+5. Doc of record corrections in the same task: `ai_docs/api-integration/surface-inventory.md:283-286`
    calls `seatMutation` "a broadcast + audit wrapper" — it audits nothing; correct it and add the route
-   to the route list at `:252-257`. One line in
+   to the route table at `:240-270`. One line in
    `ai_docs/agent-system/seat-model-and-mcp-surface.md` §"The seat model" (`:13-28`) naming the record.
 6. One `CHANGELOG/2026-10-20--<title>.md` for the build task, plus the `TEST-CHANGELOG.md` entry.
 
