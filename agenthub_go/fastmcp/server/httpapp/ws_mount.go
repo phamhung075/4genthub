@@ -30,7 +30,7 @@ import (
 	authdomain "agenthub/fastmcp/auth/domain/entities"
 	authinterface "agenthub/fastmcp/auth/interface"
 	roomdb "agenthub/fastmcp/room_safeguard/infrastructure/database"
-	rigsafeguard "agenthub/fastmcp/room_safeguard/infrastructure/repositories/orm"
+	safeguardorm "agenthub/fastmcp/room_safeguard/infrastructure/repositories/orm"
 	"agenthub/fastmcp/server/routes"
 	"agenthub/fastmcp/session_stream"
 	"agenthub/fastmcp/task_management/domain/entities"
@@ -522,7 +522,7 @@ func handleConnector(sessions *database.SessionManager) http.HandlerFunc {
 				// 7.3: the frame is an upsert, the latest state wins, and it carries no seq, no
 				// cursor and no ack - the ONE thing it produces is the alert, and only on a
 				// transition the server can see (running -> stopped/silent/failing, or restarts up).
-				alert, err := rigsafeguard.Upsert(ctx, sessions, row)
+				alert, err := safeguardorm.Upsert(ctx, sessions, row)
 				if err != nil {
 					_ = wsSend(ctx, conn, wsConnectorError(wsAppendError(err)))
 					continue

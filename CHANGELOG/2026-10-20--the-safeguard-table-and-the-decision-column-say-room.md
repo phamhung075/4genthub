@@ -87,6 +87,13 @@ the dead-man case is `TestAgentDeadman...`. The provenance sentences that record
 because they are data. `cursor_and_state_test.go` also stops citing `ws_rigd_test.go`, a file the room
 slice had already renamed - that pointer dangled.
 
+The last live spelling of the unit in the server's production Go was an import alias:
+`ws_mount.go` imported `fastmcp/room_safeguard/infrastructure/repositories/orm` as `rigsafeguard`,
+so the frame handler's upsert read `rigsafeguard.Upsert`. It is `safeguardorm`, beside the same
+file's `roomdb`. No statement, argument or wire key changed, and with it the count of
+`rig`-initial tokens in non-test hub Go outside comments is **0** - measured by parsing every
+tracked `.go` file with `go/parser`, blanking the comment ranges, and scanning what remains.
+
 ## Verification
 
 - `cd agenthub_go && go test ./...` - green, and green again with
