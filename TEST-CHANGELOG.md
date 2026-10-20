@@ -1,3 +1,32 @@
+## 2026-10-20 - the safeguard tests and the decision fixtures say room (go, branch 4genthub-min/int03-cascades)
+
+`ws_rigd_test.go` is `ws_room_safeguard_test.go`: its row counter reads `room_safeguards.room`, the
+refusals expect `bad room`, and the fixture room is `room-1`; the session fixture names it too.
+`rig_safeguards_migration_integration_test.go` is `six_safeguards_migration_integration_test.go` and
+KEEPS `rig_safeguards` / `rig` / `ck_rig_` throughout, because it reproduces the shape `0004` was
+written against and the rename is `0008`'s subject - its header now says so.
+`room_safeguards_rename_integration_test.go` is new: a hand-built pre-rename database
+(`rig_safeguards` with its `rig` column, its three CHECKs, its index and its primary key, plus
+`room_decisions.rig_name`) carried through `0008`, asserting the six renames, the carried rows, the
+second application, and the no-op on a database with neither table.
+`TestBypassSuspected` loses its `rig send|queue|broadcast` rows with the deleted case and carries the
+env/path/collapse variants on `tmux`; the renderer's deny fixtures use `Bash(tmux send-keys:*)`.
+`TestPullMintsTheShippedCursorAndRefusesOneItDidNot` gains the room fence: a second room's row is not
+handed over, the pull of that room's own name sees only it, and an unnamed pull is the `invalid-pull`
+refusal; the fixture store and the mount's fake both filter on `room_name`, and every pull URL in the
+mount, PostgreSQL and service cases names `?room=`. The migration case also asserts the answer-leg index
+renamed. `AGENTHUB_TEST_PG_URL=postgresql://agenthub_user@127.0.0.1:55433/postgres go test ./...` green,
+and `go test ./...` green without it (the database cases then skip).
+
+## 2026-10-20 - the skill inventory's two readers go with the inventory (go, branch 4genthub-min/int03-cascades)
+
+`seedlibrary_test.go` loses `skillInventory` / `loadSkillInventory` and the `curated` set: the JSON they
+read (`ai_docs/agent-system/skill-library.json`) is deleted, and no seed carries a curated ref for them to
+name. `TestLoadEmbeddedSeedsCarryOnlyAuthoredModules` keeps its ref-versus-authored-modules check.
+`scripts/tests/test_team_definition.py` loses `INVENTORY`, `_curation_gaps` and
+`test_the_inventory_curation_accounts_for_every_skill` (18 cases -> 19 passed with the file's remaining
+ones; pytest reported 19 passed).
+
 ## 2026-10-20 - the citation suite pins the unpopulated-checkout refusal (go, branch 4genthub-min/int03-cascades)
 
 `scripts/tests/test_doc_citations.py` gains a 16th case, `test_a_code_tree_that_holds_no_tracked_file_is_a_refusal_not_violations`,

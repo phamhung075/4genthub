@@ -287,27 +287,22 @@ func TestBypassSuspected(t *testing.T) {
 		observed string
 		want     bool
 	}{
-		{"rig send", "rig send bob hello", true},
-		{"rig queue", "rig queue bob", true},
-		{"rig broadcast", "rig broadcast hello", true},
 		{"tmux send-keys", "tmux send-keys -t s hello Enter", true},
 		{"tmux paste-buffer", "tmux paste-buffer -t s", true},
-		{"leading env", "FOO=1 rig send bob", true},
-		{"multiple leading env", "FOO=1 BAR=2 /usr/bin/rig queue bob", true},
-		{"env value with colon", "PATH=/usr/bin:/bin rig broadcast", true},
-		{"leading path", "/usr/bin/rig send bob", true},
-		{"collapsed spaces", "rig   send bob", true},
-		{"known wrapper", "agenthub-send rig send bob", false},
+		{"leading env", "FOO=1 tmux send-keys -t s hi Enter", true},
+		{"multiple leading env", "FOO=1 BAR=2 /usr/bin/tmux paste-buffer -t s", true},
+		{"env value with colon", "PATH=/usr/bin:/bin tmux send-keys -t s hi", true},
+		{"leading path", "/usr/bin/tmux send-keys -t s hi", true},
+		{"collapsed spaces", "tmux   send-keys -t s hi", true},
+		{"known wrapper", "agenthub-send tmux send-keys", false},
 		{"known wrapper with path", "/usr/local/bin/agenthub-send x", false},
 		{"known wrapper after env", "FOO=1 agenthub-send x", false},
-		{"rig status", "rig status", false},
-		{"rig alone", "rig", false},
 		{"tmux list-sessions", "tmux list-sessions", false},
 		{"tmux alone", "tmux", false},
-		{"prefix only", "echo rig send bob", false},
+		{"prefix only", "echo tmux send-keys", false},
 		{"empty", "", false},
-		{"case sensitive", "RIG send bob", false},
-		{"subcommand prefix", "rig sends bob", false},
+		{"case sensitive", "TMUX send-keys -t s", false},
+		{"subcommand prefix", "tmux send-keysTwo", false},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -319,7 +314,7 @@ func TestBypassSuspected(t *testing.T) {
 }
 
 func TestBypassSuspectedNilKnown(t *testing.T) {
-	if !BypassSuspected(nil, "rig send bob") {
-		t.Fatal("nil known list should still flag a direct rig send")
+	if !BypassSuspected(nil, "tmux send-keys -t s hi") {
+		t.Fatal("nil known list should still flag a direct tmux write")
 	}
 }

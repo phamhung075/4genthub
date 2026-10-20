@@ -75,7 +75,7 @@ func event(typ string, payload any) *entities.OrderedMap[any] {
 
 // The pair a connector reports: HALF of one is refused, because it is ambiguous and the table's own
 // CHECK could not store it - but a WHOLE pair that cannot be addressed loses the annotation and
-// keeps the session, so an unaddressable rig name never costs a connector its event stream. No
+// keeps the session, so an unaddressable room name never costs a connector its event stream. No
 // database is needed - the rule is checked before any statement is built.
 func TestSeatIdentityRefusesHalfAPairAndDropsAnUnaddressableOne(t *testing.T) {
 	if room, seat, dropped, err := seatIdentity(nil, nil); room != nil || seat != nil || dropped || err != nil {
@@ -99,14 +99,14 @@ func TestSeatIdentityRefusesHalfAPairAndDropsAnUnaddressableOne(t *testing.T) {
 	if err != nil || dropped || room == nil || key == nil || *room != "dev" || *key != "alice" {
 		t.Errorf("a whole pair must pass through: %v, %v, dropped=%v, %v", room, key, dropped, err)
 	}
-	// namePattern is the POD OR MEMBER ID rule, and room_slug carries a RIG name - a rig the
+	// namePattern is the POD OR MEMBER ID rule, and room_slug carries a ROOM name - a room the
 	// server did not render may be named anything, so the annotation goes and nothing else does.
 	for _, c := range []struct {
 		name       string
 		room, seat *string
 	}{
-		{"a rig name that carries a dot", new("4genthub.dev"), new("go-dev")},
-		{"a rig name that carries a space", new("not a room"), new("alice")},
+		{"a room name that carries a dot", new("4genthub.dev"), new("go-dev")},
+		{"a room name that carries a space", new("not a room"), new("alice")},
 		{"a member that cannot name one", new("dev"), new("-lead")},
 	} {
 		room, seat, dropped, err := seatIdentity(c.room, c.seat)
@@ -117,7 +117,7 @@ func TestSeatIdentityRefusesHalfAPairAndDropsAnUnaddressableOne(t *testing.T) {
 }
 
 // A dropped pair is not a shrug: the warning is the only trace of what was discarded, so it names
-// both halves exactly as the frame sent them - that is what tells an operator which rig could not
+// both halves exactly as the frame sent them - that is what tells an operator which room could not
 // be addressed. A two-value swap here would leave the log silent about the values it is about.
 func TestDroppedSeatPairWarnsWithBothValues(t *testing.T) {
 	rec := &recordingHandler{}
@@ -225,8 +225,8 @@ func TestRepositoryPostgres(t *testing.T) {
 
 	// A frame that names BOTH halves but cannot address them KEEPS THE SESSION and drops the pair:
 	// the session still exists, and the identity the connector carried is gone rather than stored
-	// raw. This is what a rig the server never rendered reaches - namePattern is the pod-or-member
-	// rule, while room_slug holds a rig name.
+	// raw. This is what a room the server never rendered reaches - namePattern is the pod-or-member
+	// rule, while room_slug holds a room name.
 	badRoom, badSeat := "4genthub.dev", "go-dev"
 	upDropped, err := UpsertSession(ctx, sessions, user, connector, key, "renamed", nil, &badRoom, &badSeat, nil)
 	if err != nil {

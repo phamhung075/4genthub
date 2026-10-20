@@ -60,7 +60,7 @@ func RenderSeat(seat resolver.ResolvedSeat, mcpURL string) (*SeatSpec, error) {
 	// `.mcp.json` at startup, expands ${VAR} in a header and in a stdio server's `env`, and reads
 	// `$PI_CODING_AGENT_DIR/.mcp.json` for the agent itself, which is where the client installs this
 	// file so each seat carries its own server set without a per-seat cwd and without touching the
-	// operator's rig-root file.
+	// operator's room-root file.
 	if len(mcpModules) > 0 && (receivesClaudeFragments(seat.Runtime) || seat.Runtime == resolver.RuntimeOmp) {
 		fragment, err := renderMCPFragment(seat, mcpURL)
 		if err != nil {
@@ -408,7 +408,7 @@ func renderMCPFragment(seat resolver.ResolvedSeat, mcpURL string) (string, error
 // THE DELIVERY: the rendered `runtime/omp-mcp.json` declares the server, and this setting is what
 // makes the seat WAIT for it.
 //
-// THE MEASURED ROOT CAUSE (2026-10-06, owner-found and verified on the live rig): `mcp.startupTimeoutMs`
+// THE MEASURED ROOT CAUSE (2026-10-06, owner-found and verified on the live room): `mcp.startupTimeoutMs`
 // defaults to 250 ms — "wait this many milliseconds for initial MCP tool discovery; 0 waits until
 // connections settle". A LOCAL stdio server (the deepseek bridge) connects inside that window; a
 // REMOTE HTTPS server does not, so a seat's first turn started with the local server only and its

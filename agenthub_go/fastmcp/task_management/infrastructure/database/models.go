@@ -84,7 +84,7 @@ type AgentSession struct {
 	RoomSlug *string `db:"room_slug"`
 	SeatKey  *string `db:"seat_key"`
 	// The connector's own position in the source it reads, opaque to the server and at most 512
-	// bytes (rigd-boundaries.md 2.2). It is written by append_events in the SAME transaction as the
+	// bytes (agent-boundaries.md 2.2). It is written by append_events in the SAME transaction as the
 	// events and read back in session_ack, which is what makes a resume after a lost ack exact
 	// (2.1, option A). Null means the session never reported one: resume from the source's start.
 	ClientCursor *string `db:"client_cursor"`

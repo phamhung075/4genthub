@@ -487,7 +487,7 @@ func TestSessionListIsNewestLastSeenFirst(t *testing.T) {
 
 // The dashboard's send path reads THIS response, so the seat pair has to arrive ON THE WIRE and not
 // merely sit in the table: the assertion is over the decoded body of GET /api/v2/sessions. The room
-// must be the one the connector REPORTED - a session name is a pod or a member, never a rig, so a
+// must be the one the connector REPORTED - a session name is a pod or a member, never a room, so a
 // value derived from it would be a different answer.
 func TestSessionListCarriesTheSeatPairTheConnectorReported(t *testing.T) {
 	env := newPGStreamEnv(t)

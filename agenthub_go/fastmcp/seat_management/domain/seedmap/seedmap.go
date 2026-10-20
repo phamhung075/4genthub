@@ -14,8 +14,8 @@ import (
 // `module_refs`: a skill-kind module has reached no file since the render became a record on
 // 2026-10-17, nothing in this repository publishes the catalog those refs name, and a fresh seed
 // could not resolve them at all - so the nine seeds now name only the modules they author, and the
-// yaml's strict decoder refuses a `module_refs` key outright. 1.4.20 says room where the text said rig: the
-// unit is the room, not the rig (owner, 2026-10-20), across the nine seat-type roles and the three
+// yaml's strict decoder refuses a `module_refs` key outright. 1.4.20 says room where the text said the
+// retired word: the unit is the room (owner, 2026-10-20), across the nine seat-type roles and the three
 // shared modules (comm-guard-skill, guide-common, mcp-usage); no CLI verb changed, so the placeholder
 // and the prose moved together and nothing downstream reads a different argument. 1.4.19 adds the reviewer's `decision check`
 // rule and the `Decision check:` output line: a change that picks among defensible options must point at

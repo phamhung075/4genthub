@@ -136,15 +136,15 @@ func (f *fakeRoomDecisionStore) GetByID(_ context.Context, userID, id string) (*
 	return &copied, nil
 }
 
-// ListAnswers is the pull over the map: one rig's answered, UNACKED rows, oldest first, after the
+// ListAnswers is the pull over the map: the tenant's answered, UNACKED rows, oldest first, after the
 // cursor, each carrying the slug its room is known by here. The order, the cursor rule and the acked
 // filter are the store's own - (answered_at, id) and acked_at IS NULL - so a route case that resumes
 // from a cursor exercises the rule the SQL's comparison applies.
-func (f *fakeRoomDecisionStore) ListAnswers(_ context.Context, userID, rigName string, after *roomrepo.AnswerCursor, limit int) ([]roomrepo.AnswerDelivery, error) {
+func (f *fakeRoomDecisionStore) ListAnswers(_ context.Context, userID, room string, after *roomrepo.AnswerCursor, limit int) ([]roomrepo.AnswerDelivery, error) {
 	f.pullCalls++
 	out := []roomrepo.AnswerDelivery{}
 	for _, row := range f.rows {
-		if row.UserID != userID || row.RigName != rigName ||
+		if row.UserID != userID || row.RoomName != room ||
 			row.State != decisions.StateAnswered || row.AnsweredAt == nil || row.AckedAt != nil {
 			continue
 		}
@@ -331,7 +331,7 @@ func pendingDecision() roomrepo.RoomDecision {
 		ID:             roomDecisionTestDecID,
 		UserID:         roomDecisionTestUserA,
 		RoomID:         roomDecisionTestRoomID,
-		RigName:        "4genthub-min",
+		RoomName:        "4genthub-min",
 		QitemID:        "qitem-20261012190405-abcdef0123456789",
 		AuthorSeatKey:  "go-dev",
 		Destination:    "human-operator@kernel",
@@ -631,7 +631,7 @@ func TestRoomDecisionAnswerIsOwnerOnly(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------------------------
-// The crossing: the four routes a rig's daemon drives.
+// The crossing: the four routes a room's daemon drives.
 // ---------------------------------------------------------------------------------------------
 
 // answeredDecision is one ask of user A in room alpha that the human has answered: the state the pull
@@ -646,9 +646,9 @@ func answeredDecision(id string, answeredAt time.Time) roomrepo.RoomDecision {
 	return row
 }
 
-// ingestBody is one valid ask for the room named by the rig, spelled with the wire's own field names.
-func ingestBody(rig string) string {
-	return `{"rig":"` + rig + `","qitem_id":"qitem-20261012190405-abcdef0123456789",` +
+// ingestBody is one valid ask for one room, spelled with the wire's own field names.
+func ingestBody(room string) string {
+	return `{"room":"` + room + `","qitem_id":"qitem-20261012190405-abcdef0123456789",` +
 		`"author_seat_key":"go-dev","destination":"human-operator@kernel",` +
 		`"summary":"ship the cloud half first?","detail":"the panel waits on it",` +
 		`"questions":[{"id":"q1","question":"Ship it?","options":[{"id":"ship","label":"Ship it"},{"id":"wait","label":"Wait"}]}],` +
@@ -656,8 +656,8 @@ func ingestBody(rig string) string {
 }
 
 // TestRoomDecisionIngestCreatesOnceAndNamesItsRoom is route 1's contract: the ask lands in the room
-// the rig's name resolves to (or the one the body names instead), a redrive collapses onto the row the
-// first attempt made and SAYS SO with created:false, and the response carries the stored row.
+// the body names, a redrive collapses onto the row the first attempt made and SAYS SO with
+// created:false, and the response carries the stored row.
 func TestRoomDecisionIngestCreatesOnceAndNamesItsRoom(t *testing.T) {
 	f := newRoomDecisionFixture(t).withRows().mount()
 
@@ -697,11 +697,12 @@ func TestRoomDecisionIngestCreatesOnceAndNamesItsRoom(t *testing.T) {
 		t.Errorf("the redrive made a second row: %d rows", len(f.store.rows))
 	}
 
-	// The body's own room wins over the rig's name: that is the door for a rig whose name is not its
-	// room's slug.
-	named := strings.Replace(ingestBody("not-a-room"), `"rig":"not-a-room"`, `"rig":"not-a-room","room":"alpha"`, 1)
-	if rec := f.do(http.MethodPost, "/api/v2/decisions", "user-jwt", named); rec.Code != http.StatusOK {
-		t.Fatalf("ingest naming its own room = %d %s, want 200", rec.Code, rec.Body.String())
+	// The retired key is refused by the strict decoder rather than ignored: there is one name for the
+	// unit on this wire, and a body that spells the old one hears which field is unknown.
+	retired := strings.Replace(ingestBody("alpha"), `"room":"alpha"`, `"rig":"alpha"`, 1)
+	if rec := f.do(http.MethodPost, "/api/v2/decisions", "user-jwt", retired); rec.Code != http.StatusBadRequest ||
+		!strings.Contains(rec.Body.String(), `unknown field \"rig\"`) {
+		t.Fatalf("ingest carrying the retired key = %d %s, want 400 naming it", rec.Code, rec.Body.String())
 	}
 
 	// A slug that resolves to nothing is the pinned 404 rather than a silent wrong room.
@@ -723,7 +724,7 @@ func fiveQuestionBody() string {
 	for i := range 5 {
 		questions = append(questions, fmt.Sprintf(`{"id":"q%d","question":"Ship it?","options":[{"id":"ship","label":"Ship it"},{"id":"wait","label":"Wait"}]}`, i))
 	}
-	return `{"rig":"alpha","qitem_id":"qitem-1","author_seat_key":"go-dev","destination":"human@kernel",` +
+	return `{"room":"alpha","qitem_id":"qitem-1","author_seat_key":"go-dev","destination":"human@kernel",` +
 		`"summary":"s","detail":"d","questions":[` + strings.Join(questions, ",") + `],` +
 		`"idempotency_key":"agenthub:decision:qitem-1"}`
 }
@@ -805,7 +806,7 @@ func TestRoomDecisionIngestRefusalsAreTheContracts(t *testing.T) {
 	}
 }
 
-// TestRoomDecisionPullPagesByCursorAndNeverRepeatsAnAckedAnswer is route 2: the page is the rig's
+// TestRoomDecisionPullPagesByCursorAndNeverRepeatsAnAckedAnswer is route 2: the page is the tenant's
 // answered, un-acked rows with the room's SLUG beside each, the cursor is a keyset the daemon echoes
 // back, and an acked row never comes out again.
 func TestRoomDecisionPullPagesByCursorAndNeverRepeatsAnAckedAnswer(t *testing.T) {
@@ -814,7 +815,7 @@ func TestRoomDecisionPullPagesByCursorAndNeverRepeatsAnAckedAnswer(t *testing.T)
 	f := newRoomDecisionFixture(t).withRows(first, second).mount()
 	f.store.roomSlugs = map[string]string{roomDecisionTestRoomID: "alpha"}
 
-	rec := f.do(http.MethodGet, "/api/v2/decisions/answers?rig=4genthub-min&limit=1", "user-jwt", "")
+	rec := f.do(http.MethodGet, "/api/v2/decisions/answers?room=4genthub-min&limit=1", "user-jwt", "")
 	if rec.Code != http.StatusOK {
 		t.Fatalf("pull = %d %s, want 200", rec.Code, rec.Body.String())
 	}
@@ -841,7 +842,7 @@ func TestRoomDecisionPullPagesByCursorAndNeverRepeatsAnAckedAnswer(t *testing.T)
 
 	// Resuming hands over what follows, and nothing before it. The cursor travels as a URL query
 	// value, which is how the daemon sends it back.
-	rec = f.do(http.MethodGet, "/api/v2/decisions/answers?rig=4genthub-min&after="+url.QueryEscape(cursor), "user-jwt", "")
+	rec = f.do(http.MethodGet, "/api/v2/decisions/answers?room=4genthub-min&after="+url.QueryEscape(cursor), "user-jwt", "")
 	resumed := decodeRoomDecisionPage(t, rec)
 	rows, _ = resumed["answers"].([]any)
 	if len(rows) != 1 {
@@ -857,7 +858,7 @@ func TestRoomDecisionPullPagesByCursorAndNeverRepeatsAnAckedAnswer(t *testing.T)
 	if ack.Code != http.StatusOK {
 		t.Fatalf("ack = %d %s, want 200", ack.Code, ack.Body.String())
 	}
-	fresh := decodeRoomDecisionPage(t, f.do(http.MethodGet, "/api/v2/decisions/answers?rig=4genthub-min", "user-jwt", ""))
+	fresh := decodeRoomDecisionPage(t, f.do(http.MethodGet, "/api/v2/decisions/answers?room=4genthub-min", "user-jwt", ""))
 	rows, _ = fresh["answers"].([]any)
 	if len(rows) != 1 {
 		t.Fatalf("page after the ack = %v, want the one un-acked answer", fresh["answers"])
@@ -867,13 +868,14 @@ func TestRoomDecisionPullPagesByCursorAndNeverRepeatsAnAckedAnswer(t *testing.T)
 	}
 
 	// A cursor this endpoint did not mint is the pinned sentence, and never a silent first page.
-	bad := f.do(http.MethodGet, "/api/v2/decisions/answers?rig=4genthub-min&after=not-a-cursor", "user-jwt", "")
+	bad := f.do(http.MethodGet, "/api/v2/decisions/answers?room=4genthub-min&after=not-a-cursor", "user-jwt", "")
 	if bad.Code != http.StatusBadRequest || !strings.Contains(bad.Body.String(), `after \"not-a-cursor\" must be a cursor this endpoint returned`) {
 		t.Fatalf("malformed cursor = %d %s, want the pinned 400", bad.Code, bad.Body.String())
 	}
-	// A pull that names no machine cannot be answered with a page: there is no filter to build.
-	if rec := f.do(http.MethodGet, "/api/v2/decisions/answers", "user-jwt", ""); rec.Code != http.StatusBadRequest {
-		t.Fatalf("pull with no rig = %d %s, want 400", rec.Code, rec.Body.String())
+	// The pull names no machine and needs none: the tenant is the filter, and the page it returns is
+	// whatever that tenant still owes an ack for.
+	if rec := f.do(http.MethodGet, "/api/v2/decisions/answers?room=4genthub-min", "user-jwt", ""); rec.Code != http.StatusOK {
+		t.Fatalf("pull naming no machine = %d %s, want 200", rec.Code, rec.Body.String())
 	}
 }
 

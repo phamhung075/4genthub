@@ -59,7 +59,12 @@ ALTER TABLE agent_sessions ADD CONSTRAINT ck_agent_sessions_seat_pair CHECK ((ro
 ALTER TABLE rooms ADD COLUMN IF NOT EXISTS team_id UUID REFERENCES teams (id);
 CREATE INDEX IF NOT EXISTS ix_rooms_team_id ON rooms (team_id);
 ALTER TABLE room_decisions ADD COLUMN IF NOT EXISTS acked_at TIMESTAMP WITH TIME ZONE;
-CREATE INDEX IF NOT EXISTS ix_room_decisions_user_rig_state_acked ON room_decisions (user_id, rig_name, state, acked_at);
+-- The decisions column was renamed to room_name; this statement names it, so it carries the new
+-- column. On a fresh database 0001 has already created the index under this name and the IF NOT
+-- EXISTS is the no-op; on a database that applied this step the step is skipped, so no run reads
+-- the old spelling. Only a database that stopped between 0004 and 0008 could miss the column, and
+-- that state does not survive a boot.
+CREATE INDEX IF NOT EXISTS ix_room_decisions_user_room_state_acked ON room_decisions (user_id, room_name, state, acked_at);
 -- The superseded S1 idempotency key: a daemon's decisionId was globally unique, so a second tenant's
 -- ask for the same local row raised 23505. Nothing declares it any more; the ruled replacement is the
 -- tenant-scoped episode tuple.

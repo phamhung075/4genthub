@@ -20,7 +20,7 @@ type RoomDecisionORM struct {
 	ID             string          `db:"id"`
 	UserID         string          `db:"user_id"`
 	RoomID         string          `db:"room_id"`
-	RigName        string          `db:"rig_name"`
+	RoomName        string          `db:"room_name"`
 	QitemID        string          `db:"qitem_id"`
 	AuthorSeatKey  string          `db:"author_seat_key"`
 	Destination    string          `db:"destination"`

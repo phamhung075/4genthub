@@ -299,7 +299,7 @@ func TestTaskRepoSearchSurfacesIdPrefixAndTitlePhrase(t *testing.T) {
 	branchID := taskRepoTestBranch(t, sessions, taskRepoTestUserA)
 	repo := taskRepoTestNewRepo(t, sessions, taskRepoTestUserA, branchID, false)
 
-	const title = "The rig's sanctioned seat channel delivers nothing"
+	const title = "The room's sanctioned seat channel delivers nothing"
 	target, err := repo.CreateTask(ctx, title, "target desc", "medium", nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)

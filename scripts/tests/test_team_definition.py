@@ -65,7 +65,6 @@ def _tracked_rooms():
 # the single directory above as the only room, so a room added beside it - which is how
 # 4genthub-client arrived - was gated by nothing at all.
 ROOMS = _tracked_rooms()
-INVENTORY = REPO_ROOT / "ai_docs" / "agent-system" / "skill-library.json"
 
 
 SEAT_TYPES = {
@@ -265,41 +264,4 @@ def test_project_brief_starts_with_the_safety_rule():
 # `generated_from` names and digested each recorded `sha256` against it. That rule is the live Go
 # `team publish-skills` verb's, so the case is port row 25 in
 # DISPOSITION-retired-python-client-tests-2026-10-10.md and belongs on that verb, driven through it,
-# rather than re-implemented here. The curation case below is a different invariant, and it needs no
-# checkout at all: it reads only the inventory.
-
-
-def _curation_gaps(inventory: dict) -> list:
-    """Every way the curation fails to account for the skills, as sentences. Empty means none.
-
-    The inventory is hand-maintained, so a row added without a home and a name typed into
-    ``unused_by_default`` are the two edits that are quiet everywhere else. The Go seed test
-    checks that curated refs resolve and that each unused name reaches no seed - and a MISSPELLED
-    unused name passes that second check by reaching no seed either. This is the check that
-    closes it, and the arithmetic that says all 52 are accounted for exactly once.
-    """
-    names = {row["name"] for row in inventory["skills"]}
-    curated = {
-        entry["skill"] for entries in inventory["seat_curation"].values() for entry in entries
-    }
-    unused = set(inventory["unused_by_default"])
-    gaps = [f"curated skill {name!r} is not a row" for name in sorted(curated - names)]
-    gaps += [f"unused_by_default name {name!r} is not a row" for name in sorted(unused - names)]
-    gaps += [
-        f"skill {name!r} is neither curated nor unused_by_default" for name in sorted(names - curated - unused)
-    ]
-    gaps += [f"skill {name!r} is both curated and unused_by_default" for name in sorted(curated & unused)]
-    return gaps
-
-
-def test_the_inventory_curation_accounts_for_every_skill():
-    """Every row has exactly one home, and every curated and unused name resolves to a row.
-
-    No checkout is needed - the inventory documents its own curation - so this case runs wherever
-    the suite runs, including on a machine that has never cloned 4genteam.
-    """
-    inventory = json.loads(INVENTORY.read_text(encoding="utf-8"))
-
-    gaps = _curation_gaps(inventory)
-
-    assert not gaps, "the curation does not account for the inventory:\n  " + "\n  ".join(gaps)
+# rather than re-implemented here.

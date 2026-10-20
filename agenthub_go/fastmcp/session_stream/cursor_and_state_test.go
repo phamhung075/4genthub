@@ -2,7 +2,7 @@ package session_stream
 
 // The two columns rigd's phase 1 adds to agent_sessions, measured on a real Postgres at the level
 // the store owns: client_cursor commits WITH the batch it describes, and seat_state moves only when
-// a frame reports one (rigd-boundaries.md 2.1 option A, 2.2, 2.3a).
+// a frame reports one (agent-boundaries.md 2.1 option A, 2.2, 2.3a).
 //
 // The socket-level cases - a lost ack, the resume, the row the browser reads - live in
 // fastmcp/server/httpapp/ws_rigd_test.go; these are the store's, so a change to the transaction can

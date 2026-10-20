@@ -23,7 +23,7 @@ package database_test
 // the tables a live database already has (migrations/README.md), and it is that step now: the file was
 // generated from the runtime registry, and this test is the guard that keeps the two equal from here
 // on. It was shown failing FIRST, on every registered table, by perturbing a Go definition - a schema
-// guard never seen to fail is what the rig spent a night finding. A later step may narrow the baseline
+// guard never seen to fail is what the room spent a night finding. A later step may narrow the baseline
 // again (0003 drops the two progress columns the carry empties); that narrowing is each step's own
 // subject, covered by its own test, not by this guard.
 //
@@ -37,7 +37,7 @@ package database_test
 //
 // The demonstration the acceptance requires is the other direction: perturb a Go definition - add a
 // column to a TableDef's DDL, or register a table without its baseline statement - and this test must
-// go red. A schema guard never seen to fail is what the rig spent a night finding.
+// go red. A schema guard never seen to fail is what the room spent a night finding.
 
 import (
 	"os"
@@ -54,7 +54,7 @@ import (
 	// the union the server creates equal to the set this test reads.
 	_ "agenthub/fastmcp/auth/infrastructure/database"
 	_ "agenthub/fastmcp/auth/infrastructure/repositories"
-	_ "agenthub/fastmcp/rig_safeguard/infrastructure/database"
+	_ "agenthub/fastmcp/room_safeguard/infrastructure/database"
 	_ "agenthub/fastmcp/seat_management/infrastructure/database"
 )
 

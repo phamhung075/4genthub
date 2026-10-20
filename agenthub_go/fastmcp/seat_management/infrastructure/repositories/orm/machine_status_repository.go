@@ -61,7 +61,7 @@ func (r *ORMMachineStatusRepository) ReplaceSnapshot(ctx context.Context, userID
 			}
 			// The edge set is replaced wholesale too, like the seats and the agent snapshot: a
 			// report that carries no edges leaves the machine with none, which is what the
-			// seats-and-agents precedent does and what keeps a stale link from outliving the rig
+			// seats-and-agents precedent does and what keeps a stale link from outliving the room
 			// it describes.
 			if _, err := s.ExecContext(ctx,
 				`DELETE FROM "machine_edges" WHERE "user_id" = $1 AND "machine_id" = $2`,

@@ -29,8 +29,8 @@ import (
 	"agenthub/fastmcp/auth"
 	authdomain "agenthub/fastmcp/auth/domain/entities"
 	authinterface "agenthub/fastmcp/auth/interface"
-	rigdb "agenthub/fastmcp/rig_safeguard/infrastructure/database"
-	rigsafeguard "agenthub/fastmcp/rig_safeguard/infrastructure/repositories/orm"
+	rigdb "agenthub/fastmcp/room_safeguard/infrastructure/database"
+	rigsafeguard "agenthub/fastmcp/room_safeguard/infrastructure/repositories/orm"
 	"agenthub/fastmcp/server/routes"
 	"agenthub/fastmcp/session_stream"
 	"agenthub/fastmcp/task_management/domain/entities"
@@ -508,10 +508,10 @@ func handleConnector(sessions *database.SessionManager) http.HandlerFunc {
 					_ = wsSend(ctx, conn, wsConnectorError("unknown type"))
 					continue
 				}
-				row := rigdb.RigSafeguardORM{
+				row := rigdb.RoomSafeguardORM{
 					UserID:      userID,
 					ConnectorID: connectorID,
-					Rig:         wsStrOrEmpty(wsGet(msg, "rig")),
+					Room:        wsStrOrEmpty(wsGet(msg, "room")),
 					Safeguard:   wsStrOrEmpty(wsGet(msg, "safeguard")),
 					State:       wsStrOrEmpty(wsGet(msg, "state")),
 					PID:         wsOptInt(wsGet(msg, "pid")),
@@ -532,7 +532,7 @@ func handleConnector(sessions *database.SessionManager) http.HandlerFunc {
 					// transition: the next re-sent row is no longer a transition at all (7.3), so the
 					// error is carried and dropped rather than turned into a frame the client does
 					// not expect - 7.3 gives this frame no ack of any kind.
-					_ = raiseRigSafeguardAlert(ctx, userID, connectorID, row)
+					_ = raiseRoomSafeguardAlert(ctx, userID, connectorID, row)
 				}
 			default:
 				_ = wsSend(ctx, conn, wsConnectorError("unknown type"))

@@ -20,7 +20,7 @@ import (
 const (
 	MaxEventsPerBatch = 200
 	MaxPayloadChars   = 64 * 1024
-	// MaxCursorBytes bounds the connector's opaque resume position (rigd-boundaries.md 2.2: "at
+	// MaxCursorBytes bounds the connector's opaque resume position (agent-boundaries.md 2.2: "at
 	// most 512 bytes"). It is the column's width too, so the two cannot drift apart.
 	MaxCursorBytes = 512
 )
@@ -174,7 +174,7 @@ func truncatedPayload() *entities.OrderedMap[any] {
 // ambiguous, and ck_agent_sessions_seat_pair could not store it - but a WHOLE PAIR THAT CANNOT BE
 // ADDRESSED LOSES THE ANNOTATION AND KEEPS THE SESSION, which the dropped result reports to the
 // caller. The two failures are not comparable: the pair is an annotation on the session, while
-// namePattern is the POD OR MEMBER ID rule and room_slug holds a RIG name the server may
+// namePattern is the POD OR MEMBER ID rule and room_slug holds a ROOM name the server may
 // never have rendered - so an unaddressable annotation must never cost the connector its whole
 // event stream. A dropped pair is not stored raw either: every non-null pair in the table stays a
 // name a reader can use without re-validating it, rather than a stale carrier that looks
@@ -201,7 +201,7 @@ func seatIdentity(roomSlug, seatKey *string) (room, seat *string, dropped bool, 
 
 // warnUnaddressableSeatPair reports a pair the frame named that cannot be addressed. The session is
 // kept and the pair is dropped, so this warning is the only trace of what was discarded: it names
-// both halves exactly as the connector sent them, which is what tells an operator which rig could
+// both halves exactly as the connector sent them, which is what tells an operator which room could
 // not be addressed.
 func warnUnaddressableSeatPair(sessionKey, connectorID, room, seat string) {
 	infrastructure.GetLogger("session_stream").Warn(
@@ -355,7 +355,7 @@ func UpsertSession(ctx context.Context, sessions *database.SessionManager, userI
 }
 
 // AppendEvents is append_events: append events, assigning seq on the server, and commit the
-// connector's cursor in the SAME transaction (rigd-boundaries.md 5 step 1). Committing both
+// connector's cursor in the SAME transaction (agent-boundaries.md 5 step 1). Committing both
 // together is the whole point of storing the cursor at all: "stored" and "resumable from" cannot
 // disagree, so a batch whose ack was lost is resumed from and never re-sent (2.1, option A).
 //

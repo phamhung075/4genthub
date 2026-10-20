@@ -1,12 +1,12 @@
 # agent boundaries: socket frames, command authorization, redaction
 
-> **Naming note, 2026-10-15.** The component this file is about was renamed: `rigd` → `agent`, the
-> always-on verb of the client binary (`4genteam agent`; client `bc725e6`, 2026-10-15). Everything below
-> reads `agent`. This file keeps its historical name `rigd-boundaries.md` deliberately: 40 tracked files
-> cite it by that path - 55 occurrences (`git grep -l` gives the file count and `git grep -o` the
-> occurrences, at main `04fcd5d7`), 24 of the occurrences in 19 code files - and no instrument reads a
-> prose path, which is board T14's class. Renaming the file is a file-by-file prose sweep, worth doing
-> only if this doc becomes consumer-facing. **The two clauses of the pre-rename text** still read `rigd` -
+> **Naming note, 2026-10-20.** This file was `rigd-boundaries.md` until today, and the component it is
+> about was renamed `rigd` → `agent` on 2026-10-15 (the always-on verb of the client binary,
+> `4genteam agent`; client `bc725e6`, 2026-10-15). The historical name was kept because renaming it is
+> a file-by-file prose sweep over every tracked citation, and the sweep has now run with the unit's own
+> rename (`DECISION-2026-10-20-rig-gone.md`). Everything below reads `agent`, and where a clause still
+> reads `rigd` the text says so and the token belongs to the date it names.
+> **The two clauses of the pre-rename text** still read `rigd` -
 > 7.2's sentence on the six names, and 7.9's ruled peak clause - because they are history, not instruction.
 > A THIRD occurrence is a quotation rather than a clause: 7.1's dated bullet records that the verb landed 37
 > minutes later as `rigd` (`9182f13`), so that token belongs to the date it names, not to this rule.

@@ -88,7 +88,7 @@ func (e *roomDecisionPgEnv) seed(t *testing.T, roomID, decisionID, userID, slug,
 	ledgerExec(t, e.sm, `INSERT INTO rooms (id, user_id, slug, name, created_at, updated_at)
 		VALUES ($1::uuid, $2, $3, $4, now(), now())`, roomID, userID, slug, slug)
 	ledgerExec(t, e.sm, `INSERT INTO room_decisions
-		(id, user_id, room_id, rig_name, qitem_id, author_seat_key, destination, summary, detail,
+		(id, user_id, room_id, room_name, qitem_id, author_seat_key, destination, summary, detail,
 		 questions, answers, state, idempotency_key, created_at)
 		VALUES ($1::uuid, $2, $3::uuid, '4genthub-min', $6, 'go-dev', 'human-operator@kernel',
 		 'ship the cloud half first?', 'the panel needs the answer', $4::jsonb, '{}'::jsonb, 'pending', $5, now())`,
@@ -187,7 +187,7 @@ func (e *roomDecisionPgEnv) getDecisions(t *testing.T, token, slug string) (int,
 // roomDecisionPgIngest is the ask a case sends: the routed item's own id, and the idempotency key
 // DERIVED from it, which is the shape the daemon mints.
 func roomDecisionPgIngest(roomID, qitem string) string {
-	return `{"rig":"4genthub-min","room":"` + roomID + `","qitem_id":"` + qitem + `","author_seat_key":"go-dev",` +
+	return `{"room":"` + roomID + `","qitem_id":"` + qitem + `","author_seat_key":"go-dev",` +
 		`"destination":"human-operator@kernel","summary":"ship the cloud half first?",` +
 		`"detail":"the panel needs the answer","questions":` + roomDecisionPgQuestions + `,` +
 		`"idempotency_key":"agenthub:decision:` + qitem + `"}`
@@ -522,7 +522,7 @@ func TestRoomDecisionPgCrossingRoundTrip(t *testing.T) {
 	}
 	pull := func(t *testing.T, token string) (int, answersPage) {
 		t.Helper()
-		code, res := env.getPath(t, token, "/api/v2/decisions/answers?rig=4genthub-min")
+		code, res := env.getPath(t, token, "/api/v2/decisions/answers?room=alpha")
 		var got answersPage
 		if err := json.Unmarshal([]byte(res), &got); err != nil {
 			t.Fatalf("decoding the pull response: %v (%s)", err, res)
@@ -590,7 +590,7 @@ func TestRoomDecisionPgCrossingRoundTrip(t *testing.T) {
 		`{"machine_id":"host-1","outcome":"applied"}`); code != http.StatusConflict {
 		t.Fatalf("second ack = %d %s, want 409", code, body)
 	}
-	// The tenant fence: another tenant pulling this rig's name gets its own empty page, not A's row.
+	// The tenant fence: another tenant pulling this room's name gets its own empty page, not A's row.
 	if code, page := pull(t, env.tokenB); code != http.StatusOK || len(page.Answers) != 0 {
 		t.Fatalf("pull as the other tenant = %d %+v, want nothing", code, page)
 	}

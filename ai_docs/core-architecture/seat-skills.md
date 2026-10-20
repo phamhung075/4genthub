@@ -147,7 +147,7 @@ Either one alone is enough. No Claude Code setting that turns off project skills
 **F2 already names this case:** a project skill is loaded un-prefixed. Run in the main checkout today, the check fails with `F1` and `F2` (13 skills).
 
 The architect's agent directory also still holds four skills that the client tree does not resolve (`agent-starters`, `client-architect`, `plan-review`, `topology-mutation-and-seat-management`). These are cloud-snapshot leftovers, and section 2's `sync rig` drops them. The seed files themselves stopped naming them: at seedVersion 1.4.21 the nine
-`seatlibrary/seat-types/*.yaml` carry no `module_refs` at all, so this list is now history rather than a wiring table.
+`seatlibrary/seat-types/*.yaml` carry no `module_refs` at all, so this list is now history rather than a wiring table. The hub's skill inventory (`ai_docs/agent-system/skill-library.md` and its `.json` twin) is deleted with that change: it was the record of the curation this section describes, and with no curated refs left nothing read it. This file, the seed library and the client pin named in section 1 are the whole of what the hub holds about a seat's skills.
 
 ## 6. The one check, run by `up` after every seat launch, exit 3 on failure
 

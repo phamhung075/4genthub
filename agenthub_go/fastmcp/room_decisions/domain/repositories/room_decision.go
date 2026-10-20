@@ -11,7 +11,7 @@ import (
 	"agenthub/fastmcp/room_decisions/domain/questions"
 )
 
-// RoomDecision is one ask mirrored from a rig, plus the answers the human clicked.
+// RoomDecision is one ask mirrored from a room, plus the answers the human clicked.
 //
 // It is a PROJECTION of the daemon's local queue row, never the authority: the local row is what a
 // seat's work stops on, and the daemon applies the answers there. That is why IdempotencyKey is
@@ -36,7 +36,7 @@ type RoomDecision struct {
 	ID             string
 	UserID         string
 	RoomID         string
-	RigName        string
+	RoomName        string
 	QitemID        string
 	AuthorSeatKey  string
 	Destination    string
@@ -106,7 +106,7 @@ type AnswerCursor struct {
 // Every method is tenant-scoped by the user id it is given - a read never returns another user's
 // rows, and a write never lands outside the caller's tenant - and every method that names a decision
 // also names its room, so a decision id from one room can never be answered through another. THE
-// ANSWER LEG'S METHODS NAME NO ROOM: the daemon pulls by machine identity (its rig) and the human it
+// ANSWER LEG'S METHODS NAME NO ROOM: the daemon pulls by machine identity (its connector) and the human it
 // asks, because a daemon does not know which rooms its own asks were filed in - the cloud resolved
 // that from a slug at ask time.
 type RoomDecisionRepository interface {
@@ -124,13 +124,13 @@ type RoomDecisionRepository interface {
 	// the scope and not the room's owner, so a room shared with a team never exposes the owner's
 	// decisions to a viewer.
 	ListByRoom(ctx context.Context, userID, roomID string) ([]RoomDecision, error)
-	// ListAnswers returns this tenant's answered-but-unacknowledged decisions for ONE RIG, oldest
-	// first, starting after the cursor - the pull a daemon drives. The rig is in the filter because
-	// the ack is destructive: a daemon that pulled another rig's answers could not apply them (its
+	// ListAnswers returns one room's answered-but-unacknowledged decisions, oldest first, starting
+	// after the cursor - the pull a daemon drives. The FILTER IS (tenant, room), not the tenant alone:
+	// the ack is destructive, so a daemon handed another room's answers could not apply them (its
 	// local queue has no such row) and its ack would close a decision nobody applied. acked_at IS NULL
 	// is the delivery filter, and `state = answered` is the work filter: a pending ask is still being
 	// answered in the panel, and a closed one is not work.
-	ListAnswers(ctx context.Context, userID, rigName string, after *AnswerCursor, limit int) ([]AnswerDelivery, error)
+	ListAnswers(ctx context.Context, userID, room string, after *AnswerCursor, limit int) ([]AnswerDelivery, error)
 	// Acknowledge records what the daemon did with one answer - `applied` it, or decided it does not
 	// apply - and is the delivery record the pull reads. It is guarded on the row being `answered` and
 	// unacked, so a repeated ack changes nothing; `applied` is the only input that also closes the row

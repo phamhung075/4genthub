@@ -30,7 +30,7 @@ func NewSeatLinkService(store SeatLinkStore) *SeatLinkService {
 	return &SeatLinkService{store: store}
 }
 
-// UpsertSeatLink stores a link between two seats of the room. A link that `rig up` would render
+// UpsertSeatLink stores a link between two seats of the room. A link that `4genteam up` would render
 // (allowed) must not close a delegates_to/spawned_by launch cycle with the room's other allowed
 // links: that is ErrLinkCycle naming the cycle. Links of the descriptive kinds and links with
 // Allow false never cycle.
