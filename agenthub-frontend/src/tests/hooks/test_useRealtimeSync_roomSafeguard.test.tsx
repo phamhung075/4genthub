@@ -1,10 +1,10 @@
 /**
- * Tests for the safeguard alert consumer (payload.entity 'rig_safeguard').
+ * Tests for the safeguard alert consumer (payload.entity 'room_safeguard').
  *
  * The frame shape is the one `routes.BroadcastDataChange` produces for 7.3's producers
- * (`raiseRigSafeguardAlert`, `raiseAgentDeadmanAlert` in
+ * (`raiseRoomSafeguardAlert`, `raiseAgentDeadmanAlert` in
  * agenthub_go/fastmcp/server/httpapp/ws_connector_safeguard.go): type 'update', entity
- * 'rig_safeguard', action 'safeguard_alert', data.primary carrying the row's own fields,
+ * 'room_safeguard', action 'safeguard_alert', data.primary carrying the row's own fields,
  * metadata.entity_id the row key and metadata.event_type 'safeguard_alert'.
  *
  * Before this consumer existed the frame fell to the dispatcher's default branch, so an owner was
@@ -51,14 +51,14 @@ const safeguardAlertFrame = (primary: Record<string, unknown>, frameId: string, 
     timestamp: new Date().toISOString(),
     sequence: 4242,
     payload: {
-      entity: 'rig_safeguard',
+      entity: 'room_safeguard',
       action: 'safeguard_alert',
       data: { primary },
     },
     metadata: {
       source: 'system',
       userId: 'dev-user-001',
-      entity_type: 'rig_safeguard',
+      entity_type: 'room_safeguard',
       entity_id: entityId,
       event_type: 'safeguard_alert',
     },
@@ -113,8 +113,8 @@ describe('useRealtimeSync - safeguard alerts', () => {
 
     send(
       safeguardAlertFrame(
-        { connector_id: 'conn-1', rig: 'demo', safeguard: 'compact', state: 'failing', restarts: 3, age_s: 41 },
-        'broadcast-rig_safeguard-100001',
+        { connector_id: 'conn-1', room: 'demo', safeguard: 'compact', state: 'failing', restarts: 3, age_s: 41 },
+        'broadcast-room_safeguard-100001',
         'conn-1/demo/compact'
       )
     );
@@ -122,22 +122,22 @@ describe('useRealtimeSync - safeguard alerts', () => {
     const state = useNotificationStore.getState();
     expect(state.notifications).toHaveLength(1);
     expect(state.notifications[0]).toMatchObject({
-      id: 'broadcast-rig_safeguard-100001',
-      message: 'Safeguard compact (rig demo, connector conn-1) is failing (3 restarts, last beat 41s ago)',
+      id: 'broadcast-room_safeguard-100001',
+      message: 'Safeguard compact (room demo, connector conn-1) is failing (3 restarts, last beat 41s ago)',
       kind: 'safeguard_alert',
       read: false,
     });
     expect(state.unreadCount).toBe(1);
     expect(showWarning).toHaveBeenCalledTimes(1);
     expect(showWarning).toHaveBeenCalledWith(
-      'Safeguard compact (rig demo, connector conn-1) is failing (3 restarts, last beat 41s ago)'
+      'Safeguard compact (room demo, connector conn-1) is failing (3 restarts, last beat 41s ago)'
     );
   });
 
   it('reads the dead-man frame as unreachable rather than inventing a state', () => {
     const send = renderAndCapture();
 
-    send(safeguardAlertFrame({ connector_id: 'conn-1', safeguard: 'agent' }, 'broadcast-rig_safeguard-100002', 'conn-1/agent'));
+    send(safeguardAlertFrame({ connector_id: 'conn-1', safeguard: 'agent' }, 'broadcast-room_safeguard-100002', 'conn-1/agent'));
 
     expect(useNotificationStore.getState().notifications[0].message).toBe(
       'Safeguard agent (connector conn-1) is unreachable: the connector stayed offline past its heartbeat close'
@@ -147,8 +147,8 @@ describe('useRealtimeSync - safeguard alerts', () => {
   it('keeps a replayed frame as one inbox row and does not toast it twice', () => {
     const send = renderAndCapture();
     const frame = safeguardAlertFrame(
-      { connector_id: 'conn-1', rig: 'demo', safeguard: 'watchdog', state: 'silent', age_s: 200 },
-      'broadcast-rig_safeguard-100003',
+      { connector_id: 'conn-1', room: 'demo', safeguard: 'watchdog', state: 'silent', age_s: 200 },
+      'broadcast-room_safeguard-100003',
       'conn-1/demo/watchdog'
     );
 
@@ -165,15 +165,15 @@ describe('useRealtimeSync - safeguard alerts', () => {
 
     send(
       safeguardAlertFrame(
-        { connector_id: 'conn-1', rig: 'demo', safeguard: 'compact', state: 'stopped', age_s: 12 },
-        'broadcast-rig_safeguard-100004',
+        { connector_id: 'conn-1', room: 'demo', safeguard: 'compact', state: 'stopped', age_s: 12 },
+        'broadcast-room_safeguard-100004',
         'conn-1/demo/compact'
       )
     );
     send(
       safeguardAlertFrame(
-        { connector_id: 'conn-1', rig: 'demo', safeguard: 'compact', state: 'stopped', age_s: 13 },
-        'broadcast-rig_safeguard-100005',
+        { connector_id: 'conn-1', room: 'demo', safeguard: 'compact', state: 'stopped', age_s: 13 },
+        'broadcast-room_safeguard-100005',
         'conn-1/demo/compact'
       )
     );
@@ -186,7 +186,7 @@ describe('useRealtimeSync - safeguard alerts', () => {
   it('drops a frame that names no safeguard, and says so', () => {
     const send = renderAndCapture();
 
-    send(safeguardAlertFrame({ connector_id: 'conn-1', state: 'stopped' }, 'broadcast-rig_safeguard-100006', 'conn-1'));
+    send(safeguardAlertFrame({ connector_id: 'conn-1', state: 'stopped' }, 'broadcast-room_safeguard-100006', 'conn-1'));
 
     expect(useNotificationStore.getState().notifications).toHaveLength(0);
     expect(logger.warn).toHaveBeenCalledWith('[useRealtimeSync] Safeguard alert frame without a safeguard name');
@@ -197,8 +197,8 @@ describe('useRealtimeSync - safeguard alerts', () => {
 
     send(
       safeguardAlertFrame(
-        { connector_id: 'conn-1', rig: 'demo', safeguard: 'roomguard', state: 'silent', restarts: 1, age_s: 95 },
-        'broadcast-rig_safeguard-100007',
+        { connector_id: 'conn-1', room: 'demo', safeguard: 'roomguard', state: 'silent', restarts: 1, age_s: 95 },
+        'broadcast-room_safeguard-100007',
         'conn-1/demo/roomguard'
       )
     );
@@ -210,7 +210,7 @@ describe('useRealtimeSync - safeguard alerts', () => {
     fireEvent.click(screen.getByLabelText('Notifications (1 unread)'));
 
     expect(screen.getByTestId('notification-inbox')).toHaveTextContent(
-      'Safeguard roomguard (rig demo, connector conn-1) is silent (1 restarts, last beat 95s ago)'
+      'Safeguard roomguard (room demo, connector conn-1) is silent (1 restarts, last beat 95s ago)'
     );
   });
 });

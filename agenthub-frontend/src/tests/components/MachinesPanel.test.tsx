@@ -55,7 +55,7 @@ vi.mock('../../hooks/useSeats', () => {
   };
 
   const machines = [
-    { machine_id: 'rig-box', last_seen: reportedAt, online: true, seats: [healthy, dropped], agents: [] },
+    { machine_id: 'machine-box', last_seen: reportedAt, online: true, seats: [healthy, dropped], agents: [] },
   ];
 
   return {

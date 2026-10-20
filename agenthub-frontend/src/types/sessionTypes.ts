@@ -22,8 +22,8 @@ export interface SessionSummary {
   /** 'active' while the connector is holding it, 'offline' after MarkOffline. */
   status: string;
   /**
-   * The SEAT's own running/stopped state as rigd last reported it on a `session` frame, stored by
-   * the server (`agent_sessions.seat_state`, rigd-boundaries.md 2.3a). Null means no rigd has
+   * The SEAT's own running/stopped state as the agent last reported it on a `session` frame, stored
+   * by the server (`agent_sessions.seat_state`, agent-boundaries.md 2.3a). Null means no agent has
    * reported one - an old one-shot `sync connector` upload, for instance - and renders as live.
    * This is a different fact from `status`, which is about the CONNECTOR holding the session.
    */
@@ -39,15 +39,15 @@ export interface SessionSummary {
   /**
    * The room this session's seat lives in, observed by the connector and stored at ingest. Null
    * when the connector could not name a seat, which is a fact about the session rather than an
-   * error - and never derived here: the name's `@rig` suffix is a convention for the pod's own
-   * seats, not the room.
+   * error - and never derived here: the name's `@<room>` suffix (the canonical address is
+   * `<room>-<seat>@<room>`) is a convention for the pod's own seats, not the room.
    */
   room_slug: string | null;
   /**
    * This session's OWN seat key, the `{seat}` in `/rooms/{room}/seats/{seat}/messages`. A seat is
    * unique per `(room_id, seat_key)`, so it is used together with `room_slug` and never alone.
    * Null when the connector named no seat. It is NOT the session name - the name composes the
-   * key with a rig and a pod.
+   * key with a room and a pod.
    */
   seat_key: string | null;
 }

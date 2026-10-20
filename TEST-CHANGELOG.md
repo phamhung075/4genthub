@@ -7450,3 +7450,36 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
   behaviour they pinned (un-authored curated refs); `TestSeedSeatTypesRefusesMissingRef` keeps its
   assertion and names what it now guards - a hand-built Seed and the store round-trip.
   `go test ./...` green (138 packages) after the drop.
+
+## 2026-10-20 - the safeguard consumer's test follows the frame to room_safeguard (frontend, branch 4genthub-min/fe-rig-gone)
+
+- `agenthub-frontend/src/tests/hooks/test_useRealtimeSync_rigSafeguard.test.tsx` is renamed to
+  `test_useRealtimeSync_roomSafeguard.test.tsx` with its frame builder's `entity` and `entity_type`
+  literals, its seven frame ids (`broadcast-room_safeguard-*`), its row fixtures (`room: 'demo'`) and
+  its two expected inbox lines (`Safeguard compact (room demo, connector conn-1) ...`) following the
+  hub's rename. The six cases - the row landing with its counters and one toast, the dead-man frame
+  reading as unreachable, a replay staying one row and one toast, a second alert about the same row
+  being a second row, a frame with no safeguard name being dropped with a warning, and the rendered
+  `NotificationBell` - keep their assertions. `npx vitest run src/tests/hooks` green (19 files, 173
+  tests) and `npx tsc --noEmit -p .` exit 0.
+
+## 2026-10-20 - the topology fixture's room is named for the room, not the retired unit (frontend, branch 4genthub-min/fe-rig-gone)
+
+`src/tests/pages/TopologyPage.test.tsx`'s machine-report case described its room as `name: 'Rig Room'`, the
+last word-bounded `rig` in `agenthub-frontend/src` outside the document citations that moved with it; it now reads
+`'Min Room'`, which neither the case nor the page asserts on. `npx vitest run src/tests/pages/TopologyPage.test.tsx`
+4 passed; `npx tsc --noEmit -p .` exit 0.
+
+## 2026-10-20 - the frontend comments name the agent and its boundaries document (frontend, branch 4genthub-min/fe-rig-gone)
+
+The session test's header comment moves with the document rename (`rigd-boundaries.md 2.3a` ->
+`agent-boundaries.md 2.3a`): a comment only, so `test_useRealtimeSync_session.test.tsx` was re-run to
+show the file still builds and passes (3 files / 13 tests with SessionsPage and SeatInputBox).
+
+## 2026-10-20 - two test headers name the file they read (frontend, branch 4genthub-min/fe-rig-gone)
+
+Two comments, no assertion touched. `SeatComposerPurposes.test.tsx:8` spelled the Go file it reads
+as `agenthub_go/.../resolver/resolver.go`; it now spells the path its own case reads at `:60`.
+`test_useRealtimeSync_branch_delete.test.tsx:4` named `ai_docs/core-architecture/websocket-protocol-migration-guide.md`
+as its source of truth, a file that exists in no commit of either tree; it now names
+`src/types/websocket-protocol.ts`. Both files re-run: 2 files / 10 tests passed; `npx tsc --noEmit -p .` exit 0.

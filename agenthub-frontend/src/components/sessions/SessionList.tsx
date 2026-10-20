@@ -41,7 +41,7 @@ export const SessionList: React.FC<SessionListProps> = ({ sessions, selectedId, 
       {sessions.map((session) => {
         const isSelected = session.id === selectedId;
         const seatState = session.seat_state ?? null;
-        // Rendering precedence, RULED (rigd-boundaries.md 2.3a): `offline` wins and carries the last
+        // Rendering precedence, RULED (agent-boundaries.md 2.3a): `offline` wins and carries the last
         // reported seat_state as secondary text; otherwise seat_state decides - `stopped` shows as
         // stopped, and `running` or null shows as live.
         const displayState =
@@ -74,7 +74,7 @@ export const SessionList: React.FC<SessionListProps> = ({ sessions, selectedId, 
               <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-base-secondary">
                 <span className="min-w-0 truncate">{session.project ?? session.connector_id}</span>
                 {/* The seat this session IS, from the row's own fields - the pair the message route
-                    needs, so a rig's sessions are identifiable at a glance. Both come from the
+                    needs, so a room's sessions are identifiable at a glance. Both come from the
                     connector at ingest; neither is derived from the name here, and a session whose
                     connector named no seat shows none rather than a guess. */}
                 {session.seat_key && (

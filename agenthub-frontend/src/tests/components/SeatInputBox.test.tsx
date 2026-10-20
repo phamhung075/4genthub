@@ -2,7 +2,7 @@
  * @fileoverview SeatInputBox - the sessions page's chat input, KEPT FOR PHASE 2.
  *
  * The component is NOT mounted in phase 1: the ruled boundaries
- * (`ai_docs/core-architecture/rigd-boundaries.md`, section 3) make commands a phase-2 surface with
+ * (`ai_docs/core-architecture/agent-boundaries.md`, section 3) make commands a phase-2 surface with
  * their own scope, a human-only issuer and a local opt-in, so the Sessions page ships no input and
  * `SessionLiveView` mounts none. These cases therefore exercise the component ON ITS OWN - the
  * cases that drove it through the window were removed with the mount, not re-pinned.

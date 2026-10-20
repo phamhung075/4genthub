@@ -34,9 +34,9 @@ export const SessionsPage: React.FC = () => {
   // THE SEAT'S IDENTITY IS THE SESSION'S OWN DATA - the (room_slug, seat_key) pair the connector
   // wrote at ingest, serialized by GET /api/v2/sessions (`sessionRow` in
   // agenthub_go/fastmcp/session_stream/repository.go). The list renders it, which is what phase 1
-  // needs. NOTHING HERE DERIVES A ROOM FROM THE NAME: the `@rig` suffix is a naming convention, and
+  // needs. NOTHING HERE DERIVES A ROOM FROM THE NAME: the `@<room>` suffix is a naming convention, and
   // a room guessed from it posts to the wrong room silently. The chat input that consumed the pair
-  // is PHASE 2 (rigd-boundaries.md section 3: commands carry their own scope, a human-only issuer
+  // is PHASE 2 (agent-boundaries.md section 3: commands carry their own scope, a human-only issuer
   // and a local opt-in), so `SeatInputBox` is not mounted on this page.
 
   return (

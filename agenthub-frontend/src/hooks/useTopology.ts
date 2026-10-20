@@ -12,7 +12,7 @@
  *   - the cloud's seat links, when the room has any; otherwise
  *   - the online machine report (`GET /api/v2/machines`, the `edges` array the
  *     per-PC bridge sends), because the cloud refuses allow=true links on omp seats, so a
- *     running rig's real edges only exist in that report.
+ *     running room's real edges only exist in that report.
  * `edgeSource` records which one was used, so the page can say it rather than imply it.
  * Cloud links WIN when both exist: the report is read but its edges are not added to them.
  *
@@ -56,7 +56,7 @@ export const topologyKeys = {
 };
 
 /**
- * Edges from ONLINE machines only: an offline machine's last report is its past, not the rig's
+ * Edges from ONLINE machines only: an offline machine's last report is its past, not the room's
  * running shape. `edges` is absent on a machine whose report predates the server half.
  */
 function reportedEdges(machines: MachineStatus[]): { edges: MachineEdge[]; anyOnline: boolean } {

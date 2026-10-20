@@ -98,7 +98,7 @@ describe('useTopology', () => {
   });
 
   // The selection rule, in the shapes that matter. The report is the only source for a room the cloud
-  // leaves edgeless (the cloud refuses allow=true links on omp seats, so a running rig's real edges
+  // leaves edgeless (the cloud refuses allow=true links on omp seats, so a running room's real edges
   // exist only there), the cloud WINS when it has links, and the two are never concatenated.
   const twoSeatOps = async (slug: string) =>
     slug === 'dev'
@@ -146,7 +146,7 @@ describe('useTopology', () => {
     ]);
   });
 
-  it('ignores an OFFLINE machine, whose last report is not the rig running now', async () => {
+  it('ignores an OFFLINE machine, whose last report is not the room running now', async () => {
     listSeats.mockImplementation(twoSeatOps);
     fetchMachines.mockResolvedValue(
       oneMachine(false, [{ room: 'ops', from: 'carol', to: 'dave', kind: 'delegates_to' }])

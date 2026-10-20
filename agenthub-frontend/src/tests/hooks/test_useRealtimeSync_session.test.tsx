@@ -1,6 +1,6 @@
 /**
  * Tests for useRealtimeSync `agent_session` handling: the RULED browser surface for a connector
- * session's state (rigd-boundaries.md 2.3a).
+ * session's state (agent-boundaries.md 2.3a).
  *
  * These fail if the dispatcher lacks the `agent_session` case, because an unmatched entity falls
  * through the switch and nothing is invalidated - the same failure mode the seat/room cases pin.

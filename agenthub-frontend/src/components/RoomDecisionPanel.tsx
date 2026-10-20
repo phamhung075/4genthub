@@ -9,7 +9,7 @@ import type { DecisionState, HumanAnswers, HumanQuestion, RoomDecision } from ".
 /**
  * Room decision requests - the sidebar's lower half.
  *
- * A room lead's ask is mirrored up to the cloud by that rig's daemon; the owner answers here, one
+ * A room lead's ask is mirrored up to the cloud by that room's daemon; the owner answers here, one
  * click per question, and the daemon applies the answer and closes the row. Three consequences,
  * from the room decision channel's contract:
  *

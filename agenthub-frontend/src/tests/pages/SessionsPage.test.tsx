@@ -105,13 +105,13 @@ describe('SessionsPage', () => {
   });
 
   it('renders no chat input at all: phase 1 ships none, and the live window is the control', () => {
-    // The ruled boundary (rigd-boundaries.md section 3): a browser session holding `sessions:write`
+    // The ruled boundary (agent-boundaries.md section 3): a browser session holding `sessions:write`
     // does NOT authorize a command - that needs `sessions:command`, a human-only issuer and a local
     // opt-in, which is phase 2. So this page mounts no input, and the POSITIVE CONTROL is the window
     // itself: an absence assertion against a page that rendered nothing would pass vacuously.
     useSessionsMock.mockReturnValue({
       sessions: [
-        session('s1', 'web-dev@other-rig', { room_slug: '4genthub-min', seat_key: 'web-dev' }),
+        session('s1', 'web-dev@demo-room', { room_slug: '4genthub-min', seat_key: 'web-dev' }),
       ],
       isLoading: false,
       error: null,
@@ -129,7 +129,7 @@ describe('SessionsPage', () => {
   });
 
   it('renders a withheld event as the gap it is, with a delivered event beside it as the control', () => {
-    // rigd fails CLOSED per event (rigd-boundaries.md 4.4): a withheld event is uploaded ONLY as
+    // the agent fails CLOSED per event (agent-boundaries.md 4.4): a withheld event is uploaded ONLY as
     // {type: "redaction_withheld", payload: {reason, bytes}} and carries no content and no hash of it.
     // The reason is rendered, because a reader has to be able to tell a gap from an empty event.
     useSessionStreamMock.mockImplementation((id) =>
@@ -160,10 +160,10 @@ describe('SessionsPage', () => {
   });
 
   it("shows each session's own seat, and invents none for a row the connector named none on", () => {
-    // The rig's sessions are only identifiable as seats if the list shows the pair the session row
+    // The room's sessions are only identifiable as seats if the list shows the pair the session row
     // carries. Two rows, one of each shape, in the SAME render - the empty half is the control: a
     // list that derived a seat from the name would print one for `s2` too, whose name carries the
-    // same `@rig` suffix and whose row is null.
+    // same `@<room>` suffix and whose row is null.
     useSessionsMock.mockReturnValue({
       sessions: [
         session('s1', 'lead@4genthub-min', { room_slug: '4genthub-min', seat_key: 'lead' }),
@@ -183,7 +183,7 @@ describe('SessionsPage', () => {
   });
 
   it("renders the seat's state by the RULED precedence: offline wins, then stopped, else live", () => {
-    // rigd-boundaries.md 2.3a: `status: offline` shows as offline WITH the last seat_state as
+    // agent-boundaries.md 2.3a: `status: offline` shows as offline WITH the last seat_state as
     // secondary text; otherwise seat_state decides - `stopped` is stopped, and `running` or null is
     // live. One row per branch, so a list that ignored seat_state entirely fails on the middle rows
     // and a list that ignored `status` fails on the third.

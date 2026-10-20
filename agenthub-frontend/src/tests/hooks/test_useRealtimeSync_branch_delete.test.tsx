@@ -1,7 +1,10 @@
 /**
  * TDD Test: Branch DELETE WebSocket Protocol Validation
  *
- * SOURCE OF TRUTH: ai_docs/core-architecture/websocket-protocol-migration-guide.md
+ * SOURCE OF TRUTH: `src/types/websocket-protocol.ts` - `BranchDeletePayload` and the
+ * `isBranchDeletePayload` guard this test exercises. The header used to cite
+ * `ai_docs/core-architecture/websocket-protocol-migration-guide.md`, which exists in no commit of
+ * either tree (corrected 2026-10-20); the payload module is the truth the guard is checked against.
  *
  * This test validates that branch DELETE operations follow the WebSocket Protocol v2.0:
  * 1. Backend sends BranchDeletePayload with id, name, project_id

@@ -85,7 +85,7 @@ describe('TopologyPage', () => {
     useTopologyMock.mockReturnValue({
       rooms: [
         {
-          room: { id: 'room-min', slug: '4genthub-min', name: 'Rig Room' },
+          room: { id: 'room-min', slug: '4genthub-min', name: 'Min Room' },
           seats: [seat('x', 'lead'), seat('y', 'go-dev')],
           edges: [
             {
