@@ -29,7 +29,7 @@ import (
 	"agenthub/fastmcp/auth"
 	authdomain "agenthub/fastmcp/auth/domain/entities"
 	authinterface "agenthub/fastmcp/auth/interface"
-	rigdb "agenthub/fastmcp/room_safeguard/infrastructure/database"
+	roomdb "agenthub/fastmcp/room_safeguard/infrastructure/database"
 	rigsafeguard "agenthub/fastmcp/room_safeguard/infrastructure/repositories/orm"
 	"agenthub/fastmcp/server/routes"
 	"agenthub/fastmcp/session_stream"
@@ -508,7 +508,7 @@ func handleConnector(sessions *database.SessionManager) http.HandlerFunc {
 					_ = wsSend(ctx, conn, wsConnectorError("unknown type"))
 					continue
 				}
-				row := rigdb.RoomSafeguardORM{
+				row := roomdb.RoomSafeguardORM{
 					UserID:      userID,
 					ConnectorID: connectorID,
 					Room:        wsStrOrEmpty(wsGet(msg, "room")),

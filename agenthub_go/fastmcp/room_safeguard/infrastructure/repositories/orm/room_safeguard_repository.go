@@ -11,7 +11,7 @@ import (
 	"context"
 	"database/sql"
 
-	rigdb "agenthub/fastmcp/room_safeguard/infrastructure/database"
+	roomdb "agenthub/fastmcp/room_safeguard/infrastructure/database"
 	tmvo "agenthub/fastmcp/task_management/domain/value_objects"
 	"agenthub/fastmcp/task_management/infrastructure/database"
 )
@@ -26,13 +26,13 @@ import (
 // safeguard needs a room of 1..255, and a machine-scoped one needs EXACTLY none. The three messages
 // are unchanged - `bad room`, `bad safeguard`, `bad state` - so the codes the socket answers with
 // (`bad_rig`, `bad_safeguard`, `bad_state`) are the ones the client already reads.
-func validate(row rigdb.RoomSafeguardORM) error {
+func validate(row roomdb.RoomSafeguardORM) error {
 	switch row.Safeguard {
-	case rigdb.SafeguardCompact, rigdb.SafeguardWatchdog, rigdb.SafeguardMessages, rigdb.SafeguardRoomGuard:
+	case roomdb.SafeguardCompact, roomdb.SafeguardWatchdog, roomdb.SafeguardMessages, roomdb.SafeguardRoomGuard:
 		if row.Room == "" || len(row.Room) > 255 {
 			return &tmvo.ValueError{Msg: "bad room"}
 		}
-	case rigdb.SafeguardBridge, rigdb.SafeguardAgent:
+	case roomdb.SafeguardBridge, roomdb.SafeguardAgent:
 		if row.Room != "" {
 			return &tmvo.ValueError{Msg: "bad room"}
 		}
@@ -40,7 +40,7 @@ func validate(row rigdb.RoomSafeguardORM) error {
 		return &tmvo.ValueError{Msg: "bad safeguard"}
 	}
 	switch row.State {
-	case rigdb.StateRunning, rigdb.StateStopped, rigdb.StateSilent, rigdb.StateFailing:
+	case roomdb.StateRunning, roomdb.StateStopped, roomdb.StateSilent, roomdb.StateFailing:
 	default:
 		return &tmvo.ValueError{Msg: "bad state"}
 	}
@@ -57,15 +57,15 @@ func validate(row rigdb.RoomSafeguardORM) error {
 // alerts nothing at all, because there is no stored state it could have changed FROM - a failure
 // that happened while the connector was offline is alerted by the re-send after the next ready,
 // which compares against the running row stored before the disconnect.
-func transitionAlerts(prevState string, prevRestarts int64, next rigdb.RoomSafeguardORM) bool {
+func transitionAlerts(prevState string, prevRestarts int64, next roomdb.RoomSafeguardORM) bool {
 	if next.Restarts > prevRestarts {
 		return true
 	}
-	if prevState != rigdb.StateRunning {
+	if prevState != roomdb.StateRunning {
 		return false
 	}
 	switch next.State {
-	case rigdb.StateStopped, rigdb.StateSilent, rigdb.StateFailing:
+	case roomdb.StateStopped, roomdb.StateSilent, roomdb.StateFailing:
 		return true
 	default:
 		return false
@@ -81,7 +81,7 @@ func transitionAlerts(prevState string, prevRestarts int64, next rigdb.RoomSafeg
 // reconnect whose two sockets both send the row's first frame. Whichever statement loses arrives
 // with no row to compare against and therefore alerts nothing, which is why the row is not lost and
 // no duplicate alert can be produced.
-func Upsert(ctx context.Context, sessions *database.SessionManager, row rigdb.RoomSafeguardORM) (bool, error) {
+func Upsert(ctx context.Context, sessions *database.SessionManager, row roomdb.RoomSafeguardORM) (bool, error) {
 	if sessions == nil {
 		return false, &tmvo.ValueError{Msg: "database configuration not available"}
 	}

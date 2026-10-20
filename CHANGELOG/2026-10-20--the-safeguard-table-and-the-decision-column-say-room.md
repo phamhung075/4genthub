@@ -76,6 +76,17 @@ the ~12 named mentions of the predecessor stay as the prohibitions they are. The
 symlink loop cannot be re-run from this seat - the seat guard refuses writes under `~/.claude` -
 so the dangling `~/.claude/skills/rig-runtime-switch` link is reported to the lead, not moved.
 
+## The component's own retired name: rigd -> agent
+
+The unit's rename does not touch `rigd`, which is a different word - the always-on component the
+client renamed `agent` on 2026-10-15 (`bc725e6`) - but the hub still used it for identifiers and live
+prose. The `rigdb` import alias (3 files, 24 references) is `roomdb`; the dead-man sentences in
+`ws_connector_safeguard.go` say the agent dead-man; the test helper `rigdHello` is `agentHello` and
+the dead-man case is `TestAgentDeadman...`. The provenance sentences that record the rename itself
+(`renamed from \`rigd\`, bc725e6`) stay, and so do the fixture ids (`user-rigd`, `rigd-capable`)
+because they are data. `cursor_and_state_test.go` also stops citing `ws_rigd_test.go`, a file the room
+slice had already renamed - that pointer dangled.
+
 ## Verification
 
 - `cd agenthub_go && go test ./...` - green, and green again with
@@ -100,3 +111,6 @@ so the dangling `~/.claude/skills/rig-runtime-switch` link is reported to the le
 - `python3 scripts/DOC-CITATIONS.py`: 49 docs, 732 citations, 0 violations after the prose pass.
 - The client skills commit (`0094402` on `4genthub-min/d-skills`) changes three `SKILL.md` files
   only; `grep '<rig>' agenthub_client/skills` is empty afterwards.
+- `scripts/gofmt-check.sh`: clean over 1247 tracked .go files (it was red on main: the rename had
+  misaligned nine files, all formatting-only and fixed here).
+- `grep -rn 'rigd' agenthub_go --include=*.go` outside tests: 0 except the three provenance sentences.

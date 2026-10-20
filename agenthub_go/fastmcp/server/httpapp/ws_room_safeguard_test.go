@@ -1,7 +1,7 @@
 package httpapp
 
-// The rigd phase-1 socket contract: the hello/ready handshake, ping/pong, the cursor that makes a
-// resume after a lost ack exact, the safeguard frame and its alert, and the dead-man for rigd
+// The agent phase-1 socket contract: the hello/ready handshake, ping/pong, the cursor that makes a
+// resume after a lost ack exact, the safeguard frame and its alert, and the dead-man for the agent
 // itself (ai_docs/core-architecture/agent-boundaries.md 2.2, 2.3, 5 step 1, 7.3, 7.6).
 //
 // The cases that read the database run on the Postgres named by AGENTHUB_TEST_PG_URL (recipe in
@@ -20,9 +20,9 @@ import (
 	missedorm "agenthub/fastmcp/task_management/infrastructure/repositories/orm"
 )
 
-// rigdHello is the hello/ready exchange of a rigd connector: it advertises the capabilities it has
+// agentHello is the hello/ready exchange of an agent connector: it advertises the capabilities it has
 // and reads back what the server enabled.
-func (c *streamConn) rigdHello(t *testing.T, connectorID string, capabilities ...string) {
+func (c *streamConn) agentHello(t *testing.T, connectorID string, capabilities ...string) {
 	t.Helper()
 	caps := make([]any, 0, len(capabilities))
 	for _, name := range capabilities {
@@ -234,7 +234,7 @@ func TestConnectorPingIsAnsweredWithPongAndAnUnknownTypeKeepsTheSocket(t *testin
 func TestConnectorRefusesASafeguardFrameWithoutTheEchoedCapability(t *testing.T) {
 	env := newStreamEnv(t, nil)
 	c := env.connector(t, "user-rigd")
-	c.rigdHello(t, "c1", connectorCapabilityIngest)
+	c.agentHello(t, "c1", connectorCapabilityIngest)
 
 	c.send(map[string]any{
 		"type": "safeguard", "room": "room-1", "safeguard": "compact",
@@ -392,7 +392,7 @@ func TestSafeguardAlertRuleRaisesOnceAndAlertsAReconnect(t *testing.T) {
 	}
 
 	first := env.connector(t, user)
-	first.rigdHello(t, "c1", connectorCapabilityIngest, connectorCapabilitySafeguards)
+	first.agentHello(t, "c1", connectorCapabilityIngest, connectorCapabilitySafeguards)
 
 	// The first row for a key alerts nothing: there is no stored state it could have changed FROM.
 	first.safeguardFrame(t, row("running", 0))
@@ -403,7 +403,7 @@ func TestSafeguardAlertRuleRaisesOnceAndAlertsAReconnect(t *testing.T) {
 	// The connector goes offline with running stored, and the next ready re-sends the rows.
 	_ = first.conn.Close()
 	second := env.connector(t, user)
-	second.rigdHello(t, "c1", connectorCapabilityIngest, connectorCapabilitySafeguards)
+	second.agentHello(t, "c1", connectorCapabilityIngest, connectorCapabilitySafeguards)
 	second.safeguardFrame(t, row("stopped", 0))
 
 	alerts := storedAlerts(t, user)
@@ -463,7 +463,7 @@ func sessionStateRowCount(t *testing.T, sessions *database.SessionManager, userI
 func TestSafeguardFrameRefusesAStateOrSafeguardOutsideTheRuledSets(t *testing.T) {
 	env := newPGStreamEnv(t)
 	c := env.connector(t, "user-rigd")
-	c.rigdHello(t, "c1", connectorCapabilityIngest, connectorCapabilitySafeguards)
+	c.agentHello(t, "c1", connectorCapabilityIngest, connectorCapabilitySafeguards)
 
 	c.send(map[string]any{"type": "safeguard", "room": "room-1", "safeguard": "compact", "state": "paused", "restarts": 0, "age_s": 1})
 	if got := c.recv(); got["type"] != "error" || got["message"] != "bad state" || got["code"] != "bad_state" {
@@ -498,18 +498,15 @@ func TestSafeguardFrameRefusesAStateOrSafeguardOutsideTheRuledSets(t *testing.T)
 	}
 }
 
-// TestRigdDeadmanAlertsWhenASafeguardsConnectorStaysOffline is 7.3's dead-man: a connector that
+// TestAgentDeadmanAlertsWhenASafeguardsConnectorStaysOffline is 7.3's dead-man: a connector that
 // advertised safeguards and stays offline past its heartbeat close is alerted for the machine-level
-// `agent` safeguard, and a reconnect inside that window cancels it.
-//
-// The case keeps the names it was written with - the file, `rigdHello` and this function's own name
-// still say `rigd`, the word the client retired on 2026-10-15 (`bc725e6`). Renaming them is a
-// separate decision, the one the ruling parked for the doc's own title and file name; what the
-// assertion below pins is the name the SERVER now raises the alert under.
+// `agent` safeguard, and a reconnect inside that window cancels it. The word is the component the
+// client has called `agent` since 2026-10-15 (`bc725e6`), which is the name the SERVER raises the
+// alert under; the fixture ids below keep the older spelling because they are data.
 //
 // The timer is the seam (wsConnectorDeadmanAfter), so the case drives the callback instead of
 // waiting 75 seconds: what it checks is which delay was armed, and what firing it does.
-func TestRigdDeadmanAlertsWhenASafeguardsConnectorStaysOffline(t *testing.T) {
+func TestAgentDeadmanAlertsWhenASafeguardsConnectorStaysOffline(t *testing.T) {
 	env := newPGStreamEnv(t)
 	const user = "user-rigd"
 	wireSafeguardAlertStore(t, env.sessions)
@@ -529,7 +526,7 @@ func TestRigdDeadmanAlertsWhenASafeguardsConnectorStaysOffline(t *testing.T) {
 	t.Cleanup(func() { wsConnectorDeadmanAfter = prevAfter })
 
 	first := env.connector(t, user)
-	first.rigdHello(t, "c1", connectorCapabilityIngest, connectorCapabilitySafeguards)
+	first.agentHello(t, "c1", connectorCapabilityIngest, connectorCapabilitySafeguards)
 	_ = first.conn.Close()
 
 	var pending arm
@@ -561,7 +558,7 @@ func TestRigdDeadmanAlertsWhenASafeguardsConnectorStaysOffline(t *testing.T) {
 	// A reconnect inside the heartbeat close cancels it, and the armed callback is inert: the
 	// connector is back, so the silence it was armed for did not happen.
 	second := env.connector(t, user)
-	second.rigdHello(t, "c1", connectorCapabilityIngest, connectorCapabilitySafeguards)
+	second.agentHello(t, "c1", connectorCapabilityIngest, connectorCapabilitySafeguards)
 	if pending.timer.Stop() {
 		t.Error("the reconnect did not stop the pending dead-man")
 	}
@@ -572,7 +569,7 @@ func TestRigdDeadmanAlertsWhenASafeguardsConnectorStaysOffline(t *testing.T) {
 }
 
 // TestConnectorWithoutTheCapabilityIsNeverWatchedByTheDeadman: the dead-man is only for a connector
-// that advertised safeguards, because it is the observer of rigd and rigd is the process that sends
+// that advertised safeguards, because it is the observer of the agent, and the agent is the process that sends
 // those rows. A one-shot ingest client must never be alerted for going away.
 func TestConnectorWithoutTheCapabilityIsNeverWatchedByTheDeadman(t *testing.T) {
 	prevAfter := wsConnectorDeadmanAfter
@@ -585,7 +582,7 @@ func TestConnectorWithoutTheCapabilityIsNeverWatchedByTheDeadman(t *testing.T) {
 
 	env := newStreamEnv(t, nil)
 	c := env.connector(t, "user-rigd")
-	c.rigdHello(t, "c1", connectorCapabilityIngest)
+	c.agentHello(t, "c1", connectorCapabilityIngest)
 	_ = c.conn.Close()
 
 	select {
@@ -695,16 +692,16 @@ func TestConnectorLedgerTipGoesOnlyToASocketThatAdvertisedAndWasEchoed(t *testin
 
 	// Advertised AND echoed: this socket is told.
 	capable := env.connector(t, "user-tip")
-	capable.rigdHello(t, "rigd-capable", connectorCapabilityIngest, connectorCapabilityLedger)
+	capable.agentHello(t, "rigd-capable", connectorCapabilityIngest, connectorCapabilityLedger)
 
 	// Advertised nothing, so nothing was echoed.
 	plain := env.connector(t, "user-tip")
-	plain.rigdHello(t, "rigd-plain", connectorCapabilityIngest)
+	plain.agentHello(t, "rigd-plain", connectorCapabilityIngest)
 
 	// Advertised a capability this server does NOT serve (`commands` is phase 2), so ready does not
 	// echo it: naming a capability in hello is not enough on its own, which is what the echo is for.
 	unserved := env.connector(t, "user-tip")
-	unserved.rigdHello(t, "rigd-unserved", "commands")
+	unserved.agentHello(t, "rigd-unserved", "commands")
 
 	wsNotifyLedgerTip("user-tip", 41)
 
@@ -739,7 +736,7 @@ func TestConnectorLedgerTipGoesOnlyToASocketThatAdvertisedAndWasEchoed(t *testin
 func TestConnectorLedgerTipFollowsTheLastHandshake(t *testing.T) {
 	env := newStreamEnv(t, nil)
 	c := env.connector(t, "user-tip")
-	c.rigdHello(t, "rigd-again", connectorCapabilityLedger)
+	c.agentHello(t, "rigd-again", connectorCapabilityLedger)
 
 	wsNotifyLedgerTip("user-tip", 1)
 	if got := c.recv(); got["type"] != connectorLedgerTipFrame || got["user_seq"] != float64(1) {
@@ -770,7 +767,7 @@ func TestConnectorLedgerTipFollowsTheLastHandshake(t *testing.T) {
 func TestLedgerTipIsAServerFrameAndNotAnInput(t *testing.T) {
 	env := newStreamEnv(t, nil)
 	c := env.connector(t, "user-tip")
-	c.rigdHello(t, "rigd-input", connectorCapabilityLedger)
+	c.agentHello(t, "rigd-input", connectorCapabilityLedger)
 
 	c.send(map[string]any{"type": connectorLedgerTipFrame, "user_seq": 99})
 	refused := c.recv()

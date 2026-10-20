@@ -840,7 +840,7 @@ func TestLedgerTipArrivesAfterADecisionCommitsAndTheNextPullAdvancesTheCursor(t 
 
 	env := newStreamEnv(t, sm)
 	c := env.connector(t, user)
-	c.rigdHello(t, "rigd-p4", connectorCapabilityIngest, connectorCapabilityLedger)
+	c.agentHello(t, "rigd-p4", connectorCapabilityIngest, connectorCapabilityLedger)
 
 	// The cursor the client holds, read the way a client reads it.
 	code, body := ledgerPgGet(t, app, token, "")
@@ -983,7 +983,7 @@ func TestALedgerBatchThatAcceptedNothingNudgesNobody(t *testing.T) {
 
 	env := newStreamEnv(t, sm)
 	c := env.connector(t, user)
-	c.rigdHello(t, "rigd-p4-noop", connectorCapabilityIngest, connectorCapabilityLedger)
+	c.agentHello(t, "rigd-p4-noop", connectorCapabilityIngest, connectorCapabilityLedger)
 
 	// The batch that accepts nothing: refused on its base_seq, and the request still answers 200.
 	code, body := ledgerPgPostOne(t, app, token, value_objects.NewUUIDv4(), task, "status_changed", new(seq-1))

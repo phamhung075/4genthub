@@ -1,11 +1,11 @@
 package session_stream
 
-// The two columns rigd's phase 1 adds to agent_sessions, measured on a real Postgres at the level
+// The two columns the agent's phase 1 adds to agent_sessions, measured on a real Postgres at the level
 // the store owns: client_cursor commits WITH the batch it describes, and seat_state moves only when
 // a frame reports one (agent-boundaries.md 2.1 option A, 2.2, 2.3a).
 //
 // The socket-level cases - a lost ack, the resume, the row the browser reads - live in
-// fastmcp/server/httpapp/ws_rigd_test.go; these are the store's, so a change to the transaction can
+// fastmcp/server/httpapp/ws_room_safeguard_test.go; these are the store's, so a change to the transaction can
 // fail here without a websocket in the way.
 
 import (
@@ -109,7 +109,7 @@ func TestAppendEventsRefusesACursorPastItsByteBound(t *testing.T) {
 
 // TestSeatStateIsReportedAndKeptWhenAbsent: 2.3a's column, at the store. A frame that reports a state
 // writes it; a frame that reports none keeps what an earlier one said, so an old client cannot erase
-// a state a rigd reported; and a value outside the ruled two is refused before any statement runs.
+// a state an agent reported; and a value outside the ruled two is refused before any statement runs.
 func TestSeatStateIsReportedAndKeptWhenAbsent(t *testing.T) {
 	sessions := testdb.NewSessions(t)
 	ctx := context.Background()

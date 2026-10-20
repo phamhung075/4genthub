@@ -1,3 +1,14 @@
+## 2026-10-20 - the socket cases name the component agent, not rigd (go, branch 4genthub-min/int03-cascades)
+
+`rigdHello` is `agentHello` (`ws_room_safeguard_test.go`, called from `ledger_pg_test.go` too), and
+`TestRigdDeadmanAlertsWhenASafeguardsConnectorStaysOffline` is
+`TestAgentDeadmanAlertsWhenASafeguardsConnectorStaysOffline` with its "the names still say rigd" note
+replaced by the fact it now records: the component is `agent` since client `bc725e6` (2026-10-15), and
+that is the name the server raises the machine-level alert under. `cursor_and_state_test.go` stops
+citing `ws_rigd_test.go` (renamed in the room slice, so the pointer dangled) and its two comments say
+`agent`. The fixture ids (`user-rigd`, `rigd-1`, `rigd-capable`) keep the old spelling: they are data
+an assertion compares, not prose. No assertion changed.
+
 ## 2026-10-20 - the safeguard tests and the decision fixtures say room (go, branch 4genthub-min/int03-cascades)
 
 `ws_rigd_test.go` is `ws_room_safeguard_test.go`: its row counter reads `room_safeguards.room`, the
