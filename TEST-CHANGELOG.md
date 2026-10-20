@@ -7446,3 +7446,11 @@ last word-bounded `rig` in `agenthub-frontend/src` outside the document citation
 The session test's header comment moves with the document rename (`rigd-boundaries.md 2.3a` ->
 `agent-boundaries.md 2.3a`): a comment only, so `test_useRealtimeSync_session.test.tsx` was re-run to
 show the file still builds and passes (3 files / 13 tests with SessionsPage and SeatInputBox).
+
+## 2026-10-20 - two test headers name the file they read (frontend, branch 4genthub-min/fe-rig-gone)
+
+Two comments, no assertion touched. `SeatComposerPurposes.test.tsx:8` spelled the Go file it reads
+as `agenthub_go/.../resolver/resolver.go`; it now spells the path its own case reads at `:60`.
+`test_useRealtimeSync_branch_delete.test.tsx:4` named `ai_docs/core-architecture/websocket-protocol-migration-guide.md`
+as its source of truth, a file that exists in no commit of either tree; it now names
+`src/types/websocket-protocol.ts`. Both files re-run: 2 files / 10 tests passed; `npx tsc --noEmit -p .` exit 0.

@@ -5,7 +5,8 @@
  * say its kind list "mirrors resolver.ModuleKind" while it had silently drifted by one kind
  * (`policy` existed in Go and in the seeded team files, and not in the list the publish form renders
  * from). A comment that mirrors is a claim; a test that reads BOTH sides is a check. This case
- * therefore opens `agenthub_go/.../resolver/resolver.go` and compares the literals there with
+ * therefore opens `agenthub_go/fastmcp/seat_management/domain/resolver/resolver.go` and compares
+ * the literals there with
  * `SEAT_MODULE_KINDS`, so it fails when EITHER side gains or loses a kind.
  *
  * IT REQUIRES THE GO TREE and fails rather than skips when the file cannot be read, because a mirror
