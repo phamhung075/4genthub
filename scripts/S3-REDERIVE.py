@@ -24,7 +24,7 @@ WHAT IT DOES NOT COVER, said here rather than left to be assumed clean:
     the pattern: `re.finditer(r"(?:[\\w./-]+\\.(go|py|sql|ts|tsx|md|json)|)\\:(\\d+)")` over
     `ai_docs/api-integration/surface-inventory.md`, counted as TOKENS at this commit.
       - WHAT THE TWO INSTRUMENTS RESOLVE are table rows, and only their own: §1's route rows (144
-        anchors, `scripts/CITATION-AUDIT.py`) and §3.1-§3.4's rows (46 rows, 66 anchors, this file's
+        anchors, `scripts/CITATION-AUDIT.py`) and §3.1-§3.4's rows (47 rows, 69 anchors, this file's
         instrument). That is NOT every table row: 11 further table ROWS carry 17 anchors neither
         reads, because CITATION-AUDIT's row shape needs a METHOD in the first cell and §2.3's
         published-tools table puts a tool NAME there (10 rows, lines 402-411, 15 anchors - some of
@@ -53,7 +53,7 @@ WHAT IT DOES NOT COVER, said here rather than left to be assumed clean:
   * ONE MATCH PER PATH, FIRST-FOUND. `find` takes the first line where the species pattern matches in
     the first candidate path (preferring an exact line match), so a file carrying SEVERAL
     `Tables = append(` lines would only ever have its first considered, and a citation to a later one
-    would read as stale. No §3.2 row cites a later one today - all 66 anchors are fresh - and the
+    would read as stale. No §3.2 row cites a later one today - all 69 anchors are fresh - and the
     `def` and `sql` species are table-named, so for those the first match IS the right one.
   * the worktree, in the other direction too: the two sibling instruments read the WORKTREE document
     while this reads the commit at `rev`, so an uncommitted edit to the inventory can make their
