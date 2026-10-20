@@ -85,7 +85,7 @@ func TestAddProgressTwiceReachesTheColumnTheRepositoryReads(t *testing.T) {
 		t.Fatalf("NewTaskContextRepository: %v", err)
 	}
 
-	svc := services.NewUnifiedContextService(global, project, branch, task, nil, nil, nil, nil, &user)
+	svc := services.NewUnifiedContextService(global, project, branch, task, nil, nil, nil, &user)
 	created, _ := svc.CreateContext(ctx, "task", taskID, ctxPgOM("branch_id", branchID), nil, nil, true)
 	if v, _ := created.Get("success"); v != true {
 		t.Fatalf("CreateContext failed: keys=%v", created.Keys())

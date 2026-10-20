@@ -20,25 +20,27 @@ type fakeEvidenceWriter struct {
 	headSHA string
 	payload map[string]any
 	event   *taskdomain.TaskEvent
-	err     error
+	// replay makes the fake answer as the writer does for an identical submission: created=false.
+	replay bool
+	err    error
 }
 
-func (f *fakeEvidenceWriter) RecordEvidence(ctx context.Context, taskID, headSHA string, payload map[string]any) (*taskdomain.TaskEvent, error) {
+func (f *fakeEvidenceWriter) RecordEvidence(ctx context.Context, taskID, headSHA string, payload map[string]any) (*taskdomain.TaskEvent, bool, error) {
 	f.called = true
 	f.taskID = taskID
 	f.headSHA = headSHA
 	f.payload = payload
 	if f.err != nil {
-		return nil, f.err
+		return nil, false, f.err
 	}
 	if f.event != nil {
-		return f.event, nil
+		return f.event, !f.replay, nil
 	}
 	return &taskdomain.TaskEvent{
 		ID: "event-1", TaskID: taskID, Seq: 1,
 		Kind:      taskdomain.TaskEventKindEvidenceSubmitted,
 		ActorKind: taskdomain.TaskEventActorHuman, ActorID: "user-1", Payload: payload,
-	}, nil
+	}, !f.replay, nil
 }
 
 func evidenceRequest() TaskEvidence {
@@ -59,7 +61,7 @@ func TestSubmitTaskEvidenceRefusesAnInvisibleTaskWithoutRecording(t *testing.T) 
 	tasks := &fakeTaskController{result: UserTaskResult{Success: false, Error: &notFound}}
 	writer := &fakeEvidenceWriter{}
 
-	body, err := SubmitTaskEvidence(context.Background(), "task-1", evidenceRequest(), &authdomain.User{}, tasks, writer)
+	body, _, err := SubmitTaskEvidence(context.Background(), "task-1", evidenceRequest(), &authdomain.User{}, tasks, writer)
 
 	if err == nil {
 		t.Fatal("a task the caller cannot see must return an error rather than a body")
@@ -93,7 +95,7 @@ func TestSubmitTaskEvidenceRefusesABlankSHA(t *testing.T) {
 			tasks := &fakeTaskController{result: UserTaskResult{Success: true}}
 			writer := &fakeEvidenceWriter{}
 
-			body, err := SubmitTaskEvidence(context.Background(), "task-1", breakIt(evidenceRequest()), &authdomain.User{}, tasks, writer)
+			body, _, err := SubmitTaskEvidence(context.Background(), "task-1", breakIt(evidenceRequest()), &authdomain.User{}, tasks, writer)
 
 			exc, ok := err.(*auth.HTTPException)
 			if !ok || exc.StatusCode != 422 {
@@ -117,7 +119,7 @@ func TestSubmitTaskEvidenceRefusesOnlyNumstatOverTheCap(t *testing.T) {
 	atCap.Numstat = strings.Repeat("x", EvidenceNumstatMaxBytes)
 	tasks := &fakeTaskController{result: UserTaskResult{Success: true}}
 	writer := &fakeEvidenceWriter{}
-	if _, err := SubmitTaskEvidence(context.Background(), "task-1", atCap, &authdomain.User{}, tasks, writer); err != nil {
+	if _, _, err := SubmitTaskEvidence(context.Background(), "task-1", atCap, &authdomain.User{}, tasks, writer); err != nil {
 		t.Fatalf("a numstat of exactly the cap must be accepted, got %v", err)
 	}
 	if !writer.called {
@@ -128,7 +130,7 @@ func TestSubmitTaskEvidenceRefusesOnlyNumstatOverTheCap(t *testing.T) {
 	overCap.Numstat = strings.Repeat("x", EvidenceNumstatMaxBytes+1)
 	tasks = &fakeTaskController{result: UserTaskResult{Success: true}}
 	writer = &fakeEvidenceWriter{}
-	body, err := SubmitTaskEvidence(context.Background(), "task-1", overCap, &authdomain.User{}, tasks, writer)
+	body, _, err := SubmitTaskEvidence(context.Background(), "task-1", overCap, &authdomain.User{}, tasks, writer)
 	exc, ok := err.(*auth.HTTPException)
 	if !ok || exc.StatusCode != 422 {
 		t.Fatalf("expected a 422 HTTPException, got %#v", err)
@@ -147,7 +149,7 @@ func TestSubmitTaskEvidenceMapsTheDuplicateToA409(t *testing.T) {
 	tasks := &fakeTaskController{result: UserTaskResult{Success: true}}
 	writer := &fakeEvidenceWriter{err: ErrEvidenceDuplicate}
 
-	body, err := SubmitTaskEvidence(context.Background(), "task-1", evidenceRequest(), &authdomain.User{}, tasks, writer)
+	body, _, err := SubmitTaskEvidence(context.Background(), "task-1", evidenceRequest(), &authdomain.User{}, tasks, writer)
 
 	exc, ok := err.(*auth.HTTPException)
 	if !ok || exc.StatusCode != 409 {
@@ -159,6 +161,9 @@ func TestSubmitTaskEvidenceMapsTheDuplicateToA409(t *testing.T) {
 	if !writer.called {
 		t.Fatal("the duplicate decision is the writer's, inside its transaction - the handler must reach it")
 	}
+	if !strings.Contains(exc.Detail, "different content") {
+		t.Fatalf("the 409 must say the stored account differs, got %q", exc.Detail)
+	}
 }
 
 // TestSubmitTaskEvidenceReturnsTheCreatedEventAndStoresTheRequestFields covers the positive
@@ -169,9 +174,12 @@ func TestSubmitTaskEvidenceReturnsTheCreatedEventAndStoresTheRequestFields(t *te
 	tasks := &fakeTaskController{result: UserTaskResult{Success: true}}
 	writer := &fakeEvidenceWriter{}
 
-	body, err := SubmitTaskEvidence(context.Background(), "task-1", evidenceRequest(), &authdomain.User{}, tasks, writer)
+	body, created, err := SubmitTaskEvidence(context.Background(), "task-1", evidenceRequest(), &authdomain.User{}, tasks, writer)
 	if err != nil {
 		t.Fatal(err)
+	}
+	if !created {
+		t.Fatal("a first submission must report created=true: the handler answers 201 only then")
 	}
 
 	if writer.taskID != "task-1" || writer.headSHA != "bbb222" {
@@ -223,7 +231,7 @@ func TestSubmitTaskEvidenceEmitsAnEmptyFailedListWhenTheClientSentNone(t *testin
 
 	tasks := &fakeTaskController{result: UserTaskResult{Success: true}}
 	writer := &fakeEvidenceWriter{}
-	if _, err := SubmitTaskEvidence(context.Background(), "task-1", evidence, &authdomain.User{}, tasks, writer); err != nil {
+	if _, _, err := SubmitTaskEvidence(context.Background(), "task-1", evidence, &authdomain.User{}, tasks, writer); err != nil {
 		t.Fatal(err)
 	}
 	test, ok := writer.payload["test"].(map[string]any)
@@ -236,5 +244,33 @@ func TestSubmitTaskEvidenceEmitsAnEmptyFailedListWhenTheClientSentNone(t *testin
 	}
 	if test["command"] != "" {
 		t.Fatalf("an empty command must stay empty, got %v", test["command"])
+	}
+}
+
+// TestSubmitTaskEvidenceAnswersAReplayWithoutCreating is the other half of the duplicate rule: the
+// writer's identical replay is NOT a refusal. It comes back with created=false and the STORED event,
+// so the handler can answer 200 instead of 201 and the client's retry needs no special case.
+func TestSubmitTaskEvidenceAnswersAReplayWithoutCreating(t *testing.T) {
+	tasks := &fakeTaskController{result: UserTaskResult{Success: true}}
+	stored := &taskdomain.TaskEvent{
+		ID: "event-7", TaskID: "task-1", Seq: 7,
+		Kind:      taskdomain.TaskEventKindEvidenceSubmitted,
+		ActorKind: taskdomain.TaskEventActorHuman, ActorID: "user-1",
+		Payload: map[string]any{"head_sha": "bbb222"},
+	}
+	writer := &fakeEvidenceWriter{event: stored, replay: true}
+
+	body, created, err := SubmitTaskEvidence(context.Background(), "task-1", evidenceRequest(), &authdomain.User{}, tasks, writer)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if created {
+		t.Fatal("a replay must report created=false: the handler answers 200 only then")
+	}
+	if got, _ := body.Get("id"); got != "event-7" {
+		t.Fatalf("the answer must be the STORED entry, got id %v", got)
+	}
+	if got, _ := body.Get("seq"); got != 7 {
+		t.Fatalf("the answer must carry the stored seq, got %v", got)
 	}
 }

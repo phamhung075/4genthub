@@ -290,7 +290,6 @@ manage_git_branch(action="get_statistics", git_branch_id="branch-uuid")
 | context_id | string | ID appropriate for level (REQUIRED except for list) |
 | data | string | Context data as JSON string |
 | include_inherited | string | Include parent data ("true"/"false"/"1"/"0") |
-| force_refresh | string | Bypass cache ("true"/"false") |
 | delegate_to | string | Target level for delegation (required for delegate action) |
 | content | string | Content for add_insight/add_progress |
 

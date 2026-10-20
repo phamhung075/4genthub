@@ -55,6 +55,21 @@ func gitBranchRepoTestAddTask(t *testing.T, sessions *database.SessionManager, b
 	return id
 }
 
+// taskEventsTestAppend writes one ledger row through the production write path, so the delete
+// tests exercise the same shape a real event has.
+func taskEventsTestAppend(t *testing.T, sessions *database.SessionManager, user, branchID, taskID string) {
+	t.Helper()
+	events := NewTaskEventRepository(sessions, user, branchID)
+	if _, err := events.Append(context.Background(), entities.AppendTaskEvent{
+		TaskID:    taskID,
+		Kind:      entities.TaskEventKindProgress,
+		ActorKind: entities.TaskEventActorHuman,
+		ActorID:   "test",
+	}); err != nil {
+		t.Fatalf("append task event: %v", err)
+	}
+}
+
 func gitBranchRepoTestSetColumns(t *testing.T, sessions *database.SessionManager, branchID, priority, status string, createdAt time.Time) {
 	t.Helper()
 	err := sessions.WithSession(context.Background(), func(ctx context.Context, s database.DBTX) error {
@@ -193,11 +208,22 @@ func TestGitBranchRepoUserIsolation(t *testing.T) {
 	if deleted, err := repoB.Delete(ctx, projectA, gb.ID.Value); err != nil || deleted {
 		t.Fatalf("user B delete: %v %v", deleted, err)
 	}
+	// The branch delete carries no per-child user filter, so its project-ownership gate is the one
+	// tenancy control: user B's call must answer false and leave the branch AND its children.
+	taskA := gitBranchRepoTestAddTask(t, sessions, gb.ID.Value, userA, "todo", "medium")
+	gitBranchRepoTestCreate[database.TaskContext](t, sessions, "task_contexts", NewKwargs(
+		"id", tmvo.NewUUIDv4(), "task_id", taskA, "user_id", userA))
 	if deleted, err := repoB.DeleteBranch(ctx, gb.ID.Value); err != nil || deleted {
 		t.Fatalf("user B cascade delete: %v %v", deleted, err)
 	}
 	if got, _ := repoA.FindByID(ctx, gb.ID.Value, nil); got == nil {
 		t.Fatal("branch should still exist for user A")
+	}
+	if !gitBranchRepoTestRowExists(t, sessions, `SELECT count(*) FROM tasks WHERE git_branch_id = $1`, gb.ID.Value) {
+		t.Fatal("user B's refused delete removed user A's task")
+	}
+	if !gitBranchRepoTestRowExists(t, sessions, `SELECT count(*) FROM task_contexts WHERE task_id = $1`, taskA) {
+		t.Fatal("user B's refused delete removed user A's task context")
 	}
 }
 
@@ -590,6 +616,33 @@ func TestGitBranchRepoDeleteBranchCascade(t *testing.T) {
 	// Indirect TaskContext (parent_branch_context_id).
 	gitBranchRepoTestCreate[database.TaskContext](t, sessions, "task_contexts", NewKwargs(
 		"id", tmvo.NewUUIDv4(), "task_id", otherTask, "parent_branch_context_id", branchContextID, "user_id", user))
+	// TaskContext owned only by its task (no parent ids): the task_id cascade is gone, so
+	// only the branch delete's task_id statement can remove it.
+	gitBranchRepoTestCreate[database.TaskContext](t, sessions, "task_contexts", NewKwargs(
+		"id", tmvo.NewUUIDv4(), "task_id", taskID, "user_id", user))
+	// Children another user WROTE. Their user_id records the author, not the owner of the
+	// branch, and none of these tables cascades from the branch or from a task: a delete that
+	// filters on that column would leave the row behind and the branch row would refuse to go
+	// with 23503. This is the cross-author case, on every table that can block.
+	foreign := "f1e2d3c4-b5a6-5978-8a9b-0c1d2e3f4a5b"
+	foreignLabelID := "label-foreign"
+	gitBranchRepoTestCreate[database.Label](t, sessions, "labels", NewKwargs(
+		"id", foreignLabelID, "name", foreignLabelID, "color", "#000", "description", "", "user_id", foreign, "created_at", now, "updated_at", now))
+	gitBranchRepoTestCreate[database.TaskLabel](t, sessions, "task_labels", NewKwargs(
+		"task_id", taskID, "label_id", foreignLabelID, "user_id", foreign, "applied_at", now))
+	foreignBranchContextID := tmvo.NewUUIDv4()
+	gitBranchRepoTestCreate[database.BranchContext](t, sessions, "branch_contexts", NewKwargs(
+		"id", foreignBranchContextID, "branch_id", gb.ID.Value, "user_id", foreign))
+	gitBranchRepoTestCreate[database.TaskContext](t, sessions, "task_contexts", NewKwargs(
+		"id", tmvo.NewUUIDv4(), "task_id", otherTask, "parent_branch_context_id", foreignBranchContextID, "user_id", foreign))
+	gitBranchRepoTestCreate[database.TaskContext](t, sessions, "task_contexts", NewKwargs(
+		"id", tmvo.NewUUIDv4(), "task_id", otherTask, "parent_branch_id", gb.ID.Value, "user_id", foreign))
+	// A cascading child written by another user: the database would take it with the task, and the
+	// delete takes it too, because no step in this method filters by author.
+	gitBranchRepoTestCreate[database.TaskAssignee](t, sessions, "task_assignees", NewKwargs(
+		"id", tmvo.NewUUIDv4(), "task_id", otherTask, "assignee_id", "agent-foreign",
+		"user_id", foreign, "assigned_at", now))
+
 	// ContextInheritanceCache.
 	gitBranchRepoTestCreate[database.ContextInheritanceCache](t, sessions, "context_inheritance_cache", NewKwargs(
 		"context_id", gb.ID.Value, "context_level", "branch", "context_type", "hierarchical",
@@ -623,9 +676,16 @@ func TestGitBranchRepoDeleteBranchCascade(t *testing.T) {
 		{`SELECT count(*) FROM task_dependencies WHERE task_id = $1`, taskID},
 		{`SELECT count(*) FROM task_contexts WHERE parent_branch_id = $1`, gb.ID.Value},
 		{`SELECT count(*) FROM task_contexts WHERE parent_branch_context_id = $1`, branchContextID},
+		{`SELECT count(*) FROM task_contexts WHERE task_id = $1`, taskID},
+		{`SELECT count(*) FROM task_contexts WHERE task_id = $1`, otherTask},
 		{`SELECT count(*) FROM branch_contexts WHERE branch_id = $1`, gb.ID.Value},
 		{`SELECT count(*) FROM context_inheritance_cache WHERE context_id = $1`, gb.ID.Value},
 		{`SELECT count(*) FROM context_delegations WHERE source_id = $1`, gb.ID.Value},
+		{`SELECT count(*) FROM task_labels WHERE task_id = $1`, taskID},
+		{`SELECT count(*) FROM branch_contexts WHERE id = $1`, foreignBranchContextID},
+		{`SELECT count(*) FROM task_contexts WHERE parent_branch_context_id = $1`, foreignBranchContextID},
+		{`SELECT count(*) FROM task_contexts WHERE user_id = $1`, foreign},
+		{`SELECT count(*) FROM task_assignees WHERE assignee_id = $1`, "agent-foreign"},
 	}
 	for _, c := range checks {
 		if gitBranchRepoTestRowExists(t, sessions, c.query, c.arg) {
@@ -634,6 +694,35 @@ func TestGitBranchRepoDeleteBranchCascade(t *testing.T) {
 	}
 	if deleted, err := repo.DeleteBranch(ctx, tmvo.NewUUIDv4()); err != nil || deleted {
 		t.Fatalf("DeleteBranch missing: %v %v", deleted, err)
+	}
+}
+
+func TestGitBranchRepoDeleteBranchRemovesTaskEvents(t *testing.T) {
+	// task_events.task_id is the one FK into tasks with no ON DELETE CASCADE, so the branch
+	// delete must take the ledger rows itself before Step 12 removes the tasks.
+	sessions := newTestRepoEnv(t)
+	ctx := context.Background()
+	user := "a3f0c25e-6a7b-5df0-9f21-2c1d3e4f5a6b"
+	projectID, repo := gitBranchRepoTestSetup(t, sessions, user)
+	gb, err := repo.CreateBranch(ctx, projectID, "evented", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	taskID := gitBranchRepoTestAddTask(t, sessions, gb.ID.Value, user, "todo", "high")
+	taskEventsTestAppend(t, sessions, user, gb.ID.Value, taskID)
+	// task_events.user_id is the event's AUTHOR, not the task's owner: an event another user
+	// wrote on this task must not survive the branch delete and block it.
+	taskEventsTestAppend(t, sessions, "c4a1b7e3-2d5f-5e8a-9b6c-7d0e1f2a3b4c", gb.ID.Value, taskID)
+
+	deleted, err := repo.DeleteBranch(ctx, gb.ID.Value)
+	if err != nil || !deleted {
+		t.Fatalf("DeleteBranch: %v %v", deleted, err)
+	}
+	if gitBranchRepoTestRowExists(t, sessions, `SELECT count(*) FROM task_events WHERE task_id = $1`, taskID) {
+		t.Fatal("task_events row still present after the branch delete")
+	}
+	if gitBranchRepoTestRowExists(t, sessions, `SELECT count(*) FROM tasks WHERE git_branch_id = $1`, gb.ID.Value) {
+		t.Fatal("task still present after the branch delete")
 	}
 }
 

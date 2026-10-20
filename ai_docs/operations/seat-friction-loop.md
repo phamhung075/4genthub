@@ -2,6 +2,8 @@
 
 **Status:** DESIGN ONLY. No skill text is written in this step. Nothing here takes effect until the lead
 ratifies the mechanics and the owner approves the autonomy charter (see §8).
+**Status 2026-10-18:** the design landed. All seven skills are in `agenthub_client/skills` (§10 counts the
+tree), the loop runs on this room, and §8 is history. This file is the design record, not a plan.
 **Owner request:** relayed 2026-10-11 09:44Z; board `4b0c5c51` (step 1). Plan; the relay is not production authorisation.
 **Goal:** an auto-improvement loop so the owner stays out of the loop and only watches and decides important
 things; the lead holds the context and is answerable that the team works correctly and matches the ecosystem.
@@ -48,8 +50,10 @@ Where each of the seven lands:
 | `lead/autonomy-charter` | `rooms/<room>/lead/` | exactly one seat (the lead) |
 | `reviewer/improvement-review` | `rooms/<room>/reviewer/` | exactly one seat (the reviewer) |
 
-Nothing here is single-seat *today* (`seat-skills.md` §1 records `rooms/<room>/<seat>/` as empty); this set would be
-its first occupants. If the owner wants the loop to generalize to other rooms, the two `share/` skills already do;
+`rooms/` holds 20 `SKILL.md` today: 16 under `rooms/4genthub-min/` (15 seat-level across the five seats -
+architect 3, fe-dev 4, go-dev 2, lead 3, reviewer 3 - plus the room-level `architect-ecosystem-review`) and 4
+under `rooms/pdf-awesome/fe-dev/` (§10), so this set joined occupants that already existed. If the owner wants
+the loop to generalize to other rooms, the two `share/` skills already do;
 the seat-level ones become a room-level copy per room, or are promoted to `share/` only if a second room needs them.
 
 ## 2. The dedupe — every proposed skill, ruled
@@ -218,7 +222,7 @@ No narrative, no status theatre. Anything the owner does not decide is not in th
   and `self-check-while-working` **merges** into the existing checks (i.e. no new channel, no restated rules).
 - The **triage rules** (§4), the **cadence** (§5), the **digest cap** (§6/§7), and the `friction` tag mechanics
   (queue row + board item, one report two views).
-- The **levels** in §1 (including the first-ever `rooms/<room>/<seat>/` occupants).
+- The **levels** in §1 (the seat tier they name already has occupants; §10 counts them).
 
 **Step 2 (lead, board `48281f6a`):** ratify the charter boundaries, create one board task per skill, assign —
 architect drafts the skill text, reviewer checks it, go-dev wires the delivery.
@@ -229,20 +233,22 @@ owner the digest.
 
 No skill text, no code, no new route, no board task. Design only — acceptance 3.
 
-## 10. Measured inventory (what "the 16 on disk" is)
+## 10. Measured inventory (what "the 20 on disk" is)
 
 - `share/` (client-owned source, `agenthub_client/skills/share/`), **11** when measured: agent-browser,
   changelog-updater, development-team, dogfood, safe-file-removal, seat-worktree, systematic-debugging,
   test-driven-development, token-economy, unused-code-cleanup, verification-before-completion. **21** on 2026-10-18:
   those plus deepseek-offload (a submodule linked into `share/`), flow-summary, friction-report, jev-decisions,
   queue-row-schema, responsible-engineer, room-decision-request, self-check-while-working, short-output, typesafe-ai -
-  43 `SKILL.md` in the client tree when counted.
+  49 `SKILL.md` in the client tree when counted on 2026-10-18.
 - `client/` (never delivered to a seat), **5** when measured: offpeak-gate, rig-runtime-switch, seat-runtime-switch,
-  spawn-team, watch-team — the seat-skills ruling §1 listed four and was one short. **6** on 2026-10-18: those plus
-  install.
+  spawn-team, watch-team — the seat-skills ruling §1 listed four and was one short. **8** on 2026-10-18: those plus
+  install, permanent-change (`122805b`) and team-benchmark (`9c2296b`).
 - `rooms/` (the room- and seat-level location): an **empty placeholder** when measured; `rooms/4genthub-min/` held
   **16** on 2026-10-18 - 15 seat-level across 5 seat dirs (architect 3, fe-dev 4, go-dev 2, lead 3, reviewer 3) plus
-  the room-level `architect-ecosystem-review` - so the set in §1 is no longer its first occupants. The layout is
+  the room-level `architect-ecosystem-review` - so the set in §1 is no longer its first occupants. A second room,
+  `rooms/pdf-awesome/fe-dev/`, adds 4 (`fe-dev-role`, `fe-dev-workflow`, `fe-pdf-awesome-driven`, `taste-skill`;
+  `c3b4d5b`, `3a6eacc`), so the level holds **20**. The layout is
   `resolve_for_seat` (`agenthub_client/rust/agenthub-runtime/src/skills/mod.rs`).
 - Delivered but not yet client-owned (cloud snapshot / 4genteam vendored), among the 18 skills in the architect's
   delivered tree: comm-guard-skill, queue-handoff, plan-review, refocusing, client-skills, plus four cloud leftovers

@@ -53,7 +53,6 @@ func (h *ContextOperationHandler) HandleContextOperation(ctx context.Context, fa
 	contextID := kwStringDefault(kwargs, "context_id", "")
 	data, _ := kwargs["data"].(*entities.OrderedMap[any])
 	gitBranchID := kwString(kwargs, "git_branch_id")
-	forceRefresh := kwBool(kwargs, "force_refresh", false)
 	includeInherited := kwBool(kwargs, "include_inherited", false)
 	propagateChanges := kwBool(kwargs, "propagate_changes", true)
 	delegateTo := kwStringDefault(kwargs, "delegate_to", "")
@@ -85,13 +84,13 @@ func (h *ContextOperationHandler) HandleContextOperation(ctx context.Context, fa
 		}
 		result, err = facade.CreateContext(ctx, level, contextID, data, userID)
 	case "get":
-		result, err = facade.GetContext(ctx, level, contextID, includeInherited, forceRefresh, userID)
+		result, err = facade.GetContext(ctx, level, contextID, includeInherited, userID)
 	case "update":
 		result, err = facade.UpdateContext(ctx, level, contextID, data, propagateChanges)
 	case "delete":
 		result, err = facade.DeleteContext(ctx, level, contextID)
 	case "resolve":
-		result, err = facade.ResolveContext(ctx, level, contextID, forceRefresh)
+		result, err = facade.ResolveContext(ctx, level, contextID)
 	case "delegate":
 		result, err = facade.DelegateContext(ctx, level, contextID, delegateTo, delegateData, delegationReason)
 	case "add_insight":

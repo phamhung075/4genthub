@@ -13,16 +13,19 @@ import (
 // OrderedMap in the same insertion order.
 type WebSocketPayloadBuilder struct{}
 
-// BuildTaskPayload mirrors WebSocketPayloadBuilder.build_task_payload.
+// WebSocketTaskPayloadCap is the per-event size ceiling on payload.data.primary, in bytes of the
+// compact JSON a client must hold. PERF-05's ruling: every task event's primary serialises to at
+// most 2048 bytes, and a delta that would exceed it becomes {"id", "refetch": true}.
+const WebSocketTaskPayloadCap = 2048
+
+// BuildTaskPayload builds the task seed payload a `created` event carries.
 //
-// task_response is the Python `task_response=None` optional TaskResponse DTO.
-// includeProgressHistory mirrors the Python default-True flag; with the history gone from the
-// payload it now gates the details string alone - and only on the response branch, because the task
-// entity has no progress source of its own any more (the ledger's notes live in the response).
+// task_response is the Python `task_response=None` optional TaskResponse DTO. details is never
+// carried: a note is unbounded (a hub task held 41k chars of its own history), so an update names
+// it with details_changed and the client refetches it.
 func (WebSocketPayloadBuilder) BuildTaskPayload(
 	task *entities.Task,
 	taskResponse *taskdtos.TaskResponse,
-	includeProgressHistory bool,
 ) *entities.OrderedMap[any] {
 	payload := entities.NewOrderedMap[any]()
 
@@ -39,12 +42,6 @@ func (WebSocketPayloadBuilder) BuildTaskPayload(
 		payload.Set("subtask_count", taskResponse.SubtaskCount())
 		payload.Set("completed_subtasks", taskResponse.CompletedSubtasks)
 		payload.Set("progress_percentage", taskResponse.ProgressPercentage)
-
-		if includeProgressHistory {
-			payload.Set("details", taskResponse.Details)
-		} else {
-			payload.Set("details", "")
-		}
 	} else {
 		payload.Set("project_id", nil)
 		payload.Set("git_branch_id", ptrStringOrNil(task.GitBranchID))
@@ -52,11 +49,6 @@ func (WebSocketPayloadBuilder) BuildTaskPayload(
 		payload.Set("completed_subtasks", 0)
 		// Python has no `progress_percentage` attribute on Task, so hasattr is False -> 0.
 		payload.Set("progress_percentage", 0)
-
-		// The entity has no progress notes any more: the progress_history column is gone, and the
-		// ledger's notes reach a payload only through the task_response branch above, which is built
-		// with the events. So there is nothing here for includeProgressHistory to gate.
-		payload.Set("details", "")
 	}
 
 	// Team & assignment (from task entity).
@@ -102,12 +94,33 @@ func (WebSocketPayloadBuilder) EstimatePayloadSize(payload *entities.OrderedMap[
 	return len([]byte(s))
 }
 
-// BuildLightweightPayload mirrors WebSocketPayloadBuilder.build_lightweight_payload.
-func (WebSocketPayloadBuilder) BuildLightweightPayload(
-	task *entities.Task,
-	taskResponse *taskdtos.TaskResponse,
-) *entities.OrderedMap[any] {
-	return WebSocketPayloadBuilder{}.BuildTaskPayload(task, taskResponse, false)
+// BuildTaskDelta builds the flat field delta an `updated` or `completed` event carries: id,
+// updated_at, and each changed field at the top level of the payload (never a `changed` wrapper).
+// A changed field the payload does not carry is omitted; details is never carried, only named by
+// details_changed so the client refetches the ledger note.
+func (WebSocketPayloadBuilder) BuildTaskDelta(full *entities.OrderedMap[any], changed []string) *entities.OrderedMap[any] {
+	delta := entities.NewOrderedMap[any]()
+	if full == nil {
+		return delta
+	}
+	id, _ := full.Get("id")
+	delta.Set("id", id)
+	if updatedAt, ok := full.Get("updated_at"); ok {
+		delta.Set("updated_at", updatedAt)
+	}
+	for _, name := range changed {
+		switch name {
+		case "id", "updated_at":
+			continue
+		case "details":
+			delta.Set("details_changed", true)
+		default:
+			if v, ok := full.Get(name); ok {
+				delta.Set(name, v)
+			}
+		}
+	}
+	return delta
 }
 
 // -- local helpers (unique names to avoid colliding with the services package) --

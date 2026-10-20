@@ -2,7 +2,12 @@ package factories
 
 import (
 	"context"
+	"errors"
+	"strings"
 	"testing"
+
+	"agenthub/fastmcp/task_management/application/services"
+	"agenthub/fastmcp/task_management/infrastructure/database"
 )
 
 // Expectations computed from Python uuid.uuid5 with
@@ -33,19 +38,37 @@ func TestZpUCFTryParseUUID(t *testing.T) {
 	}
 }
 
-func TestFactoryMockBranch(t *testing.T) {
+func TestFactoryRefusesWithoutARepositoryBuilder(t *testing.T) {
 	unifiedContextFacadeFactoryInstance = nil
 	unifiedContextFacadeFactoryInitialized = false
-	f := NewUnifiedContextFacadeFactory(context.Background(), nil)
-	if f.hasRepositories {
-		t.Fatal("nil SessionManager must take the mock branch")
+	UnifiedContextRepositoryBuilder = nil
+
+	f, err := NewUnifiedContextFacadeFactory(context.Background(), &database.SessionManager{})
+	if err == nil || f != nil {
+		t.Fatalf("nil repository builder: f=%v err=%v, want a refusal", f, err)
 	}
-	if _, err := f.CreateFacade(context.Background(), strPtr("u1"), nil, nil); err == nil {
-		t.Fatal("mock service must not satisfy the facade interface")
-	}
-	if f.AutoCreateGlobalContext(context.Background(), nil) {
-		t.Fatal("nil user_id must return false")
+
+	f, err = NewUnifiedContextFacadeFactory(context.Background(), nil)
+	if err == nil || f != nil {
+		t.Fatalf("nil session manager: f=%v err=%v, want a refusal", f, err)
 	}
 }
 
-func strPtr(s string) *string { return &s }
+func TestFactoryRefusesWhenTheBuilderFails(t *testing.T) {
+	unifiedContextFacadeFactoryInstance = nil
+	unifiedContextFacadeFactoryInitialized = false
+	UnifiedContextRepositoryBuilder = func(*database.SessionManager, *string) (
+		services.UnifiedContextRepository, services.UnifiedContextRepository,
+		services.UnifiedContextRepository, services.UnifiedContextRepository, error) {
+		return nil, nil, nil, nil, errors.New("database unreachable")
+	}
+	t.Cleanup(func() { UnifiedContextRepositoryBuilder = nil })
+
+	f, err := NewUnifiedContextFacadeFactory(context.Background(), &database.SessionManager{})
+	if err == nil || f != nil {
+		t.Fatalf("failing builder: f=%v err=%v, want a refusal", f, err)
+	}
+	if !strings.Contains(err.Error(), "database unreachable") {
+		t.Fatalf("the builder's cause is not carried: %v", err)
+	}
+}

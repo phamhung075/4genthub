@@ -76,7 +76,7 @@ func (c *ContextAPIController) GetContext(ctx context.Context, level, contextID 
 	if err != nil {
 		return ctxACError(err, "Failed to get context")
 	}
-	result, err := facade.GetContext(ctx, level, contextID, includeInherited, false, &userID)
+	result, err := facade.GetContext(ctx, level, contextID, includeInherited, &userID)
 	if err != nil {
 		return ctxACError(err, "Failed to get context")
 	}
@@ -173,9 +173,8 @@ func (c *ContextAPIController) DeleteContext(ctx context.Context, level, context
 	}
 }
 
-// ResolveContext mirrors resolve_context(level, context_id, user_id, session,
-// force_refresh=False).
-func (c *ContextAPIController) ResolveContext(ctx context.Context, level, contextID, userID string, session any, forceRefresh bool) (resp *types.ContextResponse) {
+// ResolveContext mirrors resolve_context(level, context_id, user_id, session).
+func (c *ContextAPIController) ResolveContext(ctx context.Context, level, contextID, userID string, session any) (resp *types.ContextResponse) {
 	resp = &types.ContextResponse{Success: false}
 	defer func() {
 		if r := recover(); r != nil {
@@ -189,7 +188,7 @@ func (c *ContextAPIController) ResolveContext(ctx context.Context, level, contex
 	if err != nil {
 		return ctxACError(err, "Failed to resolve context")
 	}
-	result, err := facade.ResolveContext(ctx, level, contextID, forceRefresh)
+	result, err := facade.ResolveContext(ctx, level, contextID)
 	if err != nil {
 		return ctxACError(err, "Failed to resolve context")
 	}

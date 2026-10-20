@@ -1,8 +1,37 @@
-# Test Suite Changelog
+## 2026-10-20 - the citation suite pins the unpopulated-checkout refusal (go, branch 4genthub-min/int03-cascades)
 
-Track test suite changes, fixes, and improvements for agenthub.
+`scripts/tests/test_doc_citations.py` gains a 16th case, `test_a_code_tree_that_holds_no_tracked_file_is_a_refusal_not_violations`,
+and a module fixture that builds a DETACHED WORKTREE at HEAD whose submodule is not populated - the
+state `actions/checkout` produced before `submodules: recursive`. The case requires rc **2**, the tree
+named, and NO violation count on the output: an audit that blames the documents for a tree it never
+received is the failure the architect measured on 2026-10-20 (108 violations and 1 failed / 14 passed
+in a clean worktree, 0 violations and 15 passed after `git submodule update --init` on the same commit,
+with the doc/citation/test counts identical in both runs). The fixture reads HEAD through
+`git worktree add --detach`, so it exercises whatever is committed rather than this checkout's edits.
 
-## 2026-10-20 - the seat History tab renders the occupant trail (frontend, branch 4genthub-min/fe-deploy-walk)
+## 2026-10-20 - the ai_docs citations are pinned by an instrument (go, branch 4genthub-min/int03-cascades)
+
+`scripts/tests/test_doc_citations.py` (new, 15 cases) runs `scripts/DOC-CITATIONS.py` as a SUBPROCESS - how
+the CI job runs it, and an import cannot catch a bad `__main__` - requiring rc 0 plus a non-zero quantity
+read, so an instrument that audited nothing cannot read as clean. Each red-first case writes its own markdown
+scope and passes it as `--docs`, so the resolution still runs against the real tracked tree: a drifted line
+(`scripts/CITATION-AUDIT.py:999999`), the same citation with no backticks, an inverted range (`:50-10`) and the
+invented `TestNoSuchNameInThisRepositoryAnywhere` are each NAMED; `models.go:1` is reported ambiguous with both
+candidates rather than resolved to one; a violating record under a `reports-status/` subdirectory is excluded and
+counted out of scope; an empty scope and an unknown argument exit 2; `--self-test` prints PASS and names the
+line it perturbed. Five more pin the architect's tight PAIRING rule (a citation in parentheses directly after a
+test name must be that test's definition line) against a real test read from the tree at run time, so a line
+move cannot make them vacuous: the wrong line is named WITH the true one, the definition's own line passes, a
+pair split across one line break is read, a same-line adjacency is not a pairing, and the documented escape (a
+production line stated after the name) is not mistaken for one. No existing case changed - the three census
+instruments and `test_census_audits.py` are untouched.
+
+Measured at this tree: `python3 scripts/DOC-CITATIONS.py` -> `docs 50  citations 726  test names 23
+violations 0`; `--self-test` -> PASS; `python3 -m pytest --noconftest -p no:cacheprovider
+scripts/tests/test_doc_citations.py -q` -> 15 passed; `python3 scripts/CITATION-AUDIT.py` -> `rows 149  stale 0
+unresolved 0`; `go -C agenthub_go test ./... -count=1` -> exit 0.
+
+## 2026-10-20 - the seat History tab renders the occupant trail (frontend, branch 4genthub-min/main-seat-history-tab)
 
 - `agenthub-frontend/src/tests/pages/SeatDetailPage.test.tsx` (2 new tests): the History tab renders
   the two changes the route returned in the server's own newest-first order, with each row's actor
@@ -11,8 +40,64 @@ Track test suite changes, fixes, and improvements for agenthub.
 - `agenthub-frontend/src/tests/services/seatApi.test.ts` (1 new register row): `listOccupantHistory`
   sends GET to `/api/v2/rooms/dev/seats/alice/occupant-history`; the entry-level guard still proves
   one row per exported `seatApi` entry.
-- `npx tsc --noEmit -p .` clean; full run 131 files / 1933 tests passed; the two touched files
-  together 58 passed.
+- `npx tsc --noEmit -p .` clean; full run 130 files / 1926 tests passed; the two touched files
+  together 58 passed. This is the port of the same tests onto `main`'s page, not a second suite.
+
+## 2026-10-20 - the occupant record's write, read and refusal are pinned
+
+`occupant_change_repository_test.go` (new): `TestUpdateOccupantRecordsTheChange` asserts the
+statement set - the locked `SELECT ... FOR UPDATE` of the stored pair, the `seats` update, and the
+`seat_occupant_changes` insert whose nine arguments carry the actor, the locked `from_*` and the
+call's `to_*`; `TestUpdateOccupantSkipsTheRecordForANoOp` asserts an identical pair writes neither
+statement; `TestListOccupantChangesIsTenantScoped` asserts both tenant filters and `at DESC`.
+`orm_repositories_test.go`'s fake driver now records `Exec` arguments (`recordExec`/`execRecords`),
+so a test can read what was written, not only that something was. `TestOccupantChangeIsRecordedIntegration`
+(new, needs `SEAT_TEST_DATABASE_URL`) proves the trail on PostgreSQL: two switches make two rows
+newest first, the repeat adds none, and deleting the seat takes its rows through the cascade.
+`seat_occupant_record_test.go` (new) refuses an `actor` request field at 400 and proves the record
+names the authenticated caller; `TestSeatAdminOccupantHistoryReturnsOneSeatsChanges` reads the
+route. `schemaInventoryTableCount` moves 49 -> 50 for the registry's new table, and
+`seat_occupant_change_orm_test.go` pins its columns.
+
+## 2026-10-20 - the branch delete takes a cross-author child with it
+
+`TestGitBranchRepoDeleteBranchCascade` (branch `4genthub-min/next-work`): seeds `task_labels`,
+`branch_contexts`, `task_contexts` (by both parent ids) and a cascading `task_assignees` row written
+by a user other than the branch owner, so a delete that filters a child by `user_id` aborts with
+23503 instead of deleting. RED before the `gitBranchRepoUserCond` removal in `DeleteBranch`, green
+after. `TestGitBranchRepoUserIsolation` gains the gate proof: a project owner's branch with a task
+and a context, deleted by another user, answers false and leaves all three rows.
+
+## 2026-10-20 - the tmux server carries only the allowlist (client `4genthub-min/sec02-tmux-env`, `3c2d92e`)
+
+`agenthub_client/rust/agenthub-runtime/src/pty/mod.rs` (`launch_env_tests`, 12 tests). Four of them are
+the SEC-02 proof, each driving a real tmux server on a scratch root:
+
+- `a_server_started_here_inherits_only_the_allowlist` - `ensure_server` on an empty root, then
+  `show-environment -g`: every key is on the allowlist, and a credential-shaped key of the caller's
+  environment never appears.
+- `a_launch_cleans_the_servers_environment_and_the_seats_session_copy` - seeds `HOST_LEGACY_TOKEN` on
+  an existing server, launches a seat through `TerminalManager::launch_session`, and asserts three
+  things: the global environment no longer holds it, the pane still prints its own `DEEPSEEK_API_KEY`
+  (the scrub removes a readable copy, never the seat's value), and `show-environment -t <session>`
+  names neither that key nor `AGENTHUB_TOKEN`. RED at `516a230`: the same launch shape, replayed as
+  shell against a scratch socket (`-L sec02old`), left both keys on `show-environment -g` and the `-e`
+  pair on the session. The test itself cannot compile at base - `clean_server_env`/`scrub_session_env`
+  do not exist there.
+- `the_server_is_not_the_process_that_carries_the_seats_environment` - the server's argv holds no
+  `KEY=` pair for a credential-shaped name.
+
+`only_the_set_form_of_show_environment_names_a_key_to_clean` pins that `set-environment -g -u` takes the
+NAME (the `NAME=value` form is refused by tmux as "variable name contains ="), and
+`the_cleanup_names_the_key_and_not_a_pair` covers `unset_global_args`. The `denied_name_keys` cases are
+gone with the function: the server boundary is an allowlist now, and `main.rs`'s
+`the_credential_is_removed_by_the_server_and_never_by_a_wrapper` keeps the surviving property - the
+credential is never named on the `env -u` wrapper.
+
+# Test Suite Changelog
+
+Track test suite changes, fixes, and improvements for agenthub.
+
 
 ## 2026-10-19 - a task event merges its delta, details_changed re-reads (frontend, branch 4genthub-min/fe-deploy-walk)
 
@@ -24,6 +109,75 @@ Track test suite changes, fixes, and improvements for agenthub.
   leaves the cached status alone and never merges `refetch`. All three fail on the previous handler.
   Suite: 20 passed in the file; full run 131 files / 1928 tests passed; `npx tsc --noEmit -p .` clean.
 
+## 2026-10-19 - the dead context cache takes its test with it (branch 4genthub-min/next-work)
+
+- `agenthub_go/fastmcp/task_management/application/services/context_cache_service_test.go` is
+  deleted with the service it pinned.
+- Every `GetContext`/`ResolveContext` call and fake in the hub's tests loses the dead
+  `forceRefresh` argument (bulk edit, then the whole module run green); the golden tool entry drops
+  the `force_refresh` property, so the wire test pins its absence.
+
+## 2026-10-19 - the realtime fan-out has a benchmark (branch 4genthub-min/next-work)
+
+- `agenthub_go/fastmcp/server/routes/websocket_fanout_bench_test.go` (new):
+  `BenchmarkRealtimeFanout` broadcasts one ~2 KB task event through the production
+  `RegisterConnection`/`BroadcastDataChange` path to 1, 10 and 100 sockets, all owned by the
+  triggering user, so the measured cost is the fan-out (authorization per socket, one marshal and
+  one `SendText` per socket) and not the ownership port. Each socket counts its frames and the
+  benchmark fails unless every one received exactly one per broadcast; the per-user queue is
+  cleared per iteration, as the event-frame benchmark clears its duplicate key. Measured
+  2026-10-19 on a 12th Gen i7-12700F: 15.0 us/op at N=1, 132.8 us at N=10, 1.29 ms at N=100
+  (12.9-15.0 us per socket), inside PERF-04's 500 ms ceiling for 100 sockets.
+
+## 2026-10-19 - the census reads a dotted chunk as one name (branch 4genthub-min/next-work)
+
+- `scripts/tests/test_check_served_frontend.py::test_a_dotted_chunk_name_is_one_ref_not_a_phantom`
+  (new): pins `discover_refs('./mermaid.core-PVSKwLbE.js')` to the one dotted ref and serves that
+  asset, asserting verdict OK with no fetch failure; RED before the `HASHED_REF` boundary fix.
+
+## 2026-10-19 - the two PERF targets carry benchmarks (branch 4genthub-min/next-work)
+
+- `agenthub_go/fastmcp/task_management/application/services/unified_context_bench_test.go` (new):
+  `BenchmarkResolveContext` measures the task-level read with inheritance (`ResolveContext` ->
+  `GetContext` -> `resolveInheritanceSync` over global/project/branch); the hierarchy is created once
+  in setup, and the loop is `b.Loop`. `BenchmarkTaskEventFrame` measures one `SyncBroadcastTask`
+  frame (metadata, context, completion enrichment, broker hand-off) against a discarding broker; the
+  five-second duplicate cache would short-circuit a repeat, so each iteration clears its own key
+  (one mutex + map delete, inside the timing).
+- Measured 2026-10-19 on a 12th Gen i7-12700F, `go test -run '^$' -bench . -benchmem`:
+  ResolveContext 25952 ns/op, 25882 B/op, 212 allocs/op; TaskEventFrame 1832 ns/op, 1328 B/op, 25
+  allocs/op. Benchmarks are not a CI gate; the register carries the date and commit of the run.
+## 2026-10-19 - CI gains the gofmt and frontend gates, and the client repo gains CI (branch 4genthub-min/next-work)
+
+- `.github/workflows/ci.yml`: the go job runs `../scripts/gofmt-check.sh` before vet and test; the
+  frontend job runs `pnpm typecheck` and `pnpm lint` between install and test. The gofmt gate is red
+  on the tree as it stood (one unformatted file, `context_change_test.go`, now formatted), so it went
+  green with the same commit: 1241 tracked .go files checked, two excluded non-Go paths named.
+  `pnpm typecheck`/`pnpm lint` need fe-dev's T4a scripts and eslint flat config to land first.
+- `agenthub_client/.github/workflows/ci.yml` (new, client branch `4genthub-min/client-ci` at
+  c17454f): a go job (`go vet ./...`, `go test ./...`) and a rust job (`cargo test --locked` in
+  `rust/agenthub-runtime`, `Swatinem/rust-cache`). `--locked`, not `--offline`: a cold runner has no
+  cargo cache, so `--offline` fails before compiling; the seat's local command stays
+  `cargo test --offline`. Measured locally: client `go vet` + `go test ./...` green, `cargo test
+  --offline` green.
+
+## 2026-10-19 - the schema registry's tenancy and cascade set are pinned (branch 4genthub-min/next-work)
+
+- `agenthub_go/fastmcp/task_management/infrastructure/database/schema_matches_definitions_test.go`:
+  `TestSchemaInventoryPinsTenancyAndCascades` (G2), two properties over all 49 registry tables, red
+  before this test and green after. Property 1: a nullable `user_id` needs a line with a reason in
+  `testdata/user_id_nullable.txt` (`table:reason`); today that is exactly `templates` and
+  `email_tokens`. Property 2: the cascade set is pinned by `testdata/schema_fks.txt`
+  (`table:column:on_delete:owner`, owner = referenced table), 11 lines today; `task_contexts`' FKs
+  carry no cascade and `task_events` has no FK column at all (application-layer cascade), so both are
+  recorded by absence. Each golden line is checked in both directions: every registry `OnDelete`
+  column needs its line, and every line must name a live column whose `OnDelete` and referenced
+  table still match. The registry size (49) is asserted so the properties cannot pass over a partial
+  registry: without the four blank imports it is 27 tables.
+- Verified red: removing `task_contexts.task_id`'s cascade alone fails the test; dropping one
+  `user_id_nullable.txt` line fails it; unlinking a registerer package fails the count (48 vs 49).
+  Run: `cd agenthub_go && go test ./fastmcp/task_management/infrastructure/database/` (the whole
+  module is green: `go test ./...`).
 ## 2026-10-19 - the module content viewer reads sections, raw, and non-JSON (frontend, branch 4genthub-min/fe-deploy-walk)
 
 - `agenthub-frontend/src/tests/components/ModuleContentView.test.tsx` (new, 5 tests): a skill block
@@ -7144,6 +7298,73 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
 - At this change: `go test ./fastmcp/server/... -count=1` -> ok; `go test ./internal/apiref/ -count=1`
   -> ok.
 
+## 2026-10-19 - complete names why the task stayed open (client 2ffd265)
+
+- `agenthub_client/internal/clientcomplete/complete_test.go`: five cases pin the post-gate surface -
+  a non-2xx evidence write other than 409 stops with the evidence line and leaves the task alone, a
+  409 continues the completion once, a failed completion reads the task state back once and names
+  it, and the gate verdict plus the evidence outcome both print.
+- `agenthub_client/internal/clientevidence/evidence.go`: the writer reports the HTTP status it
+  answered, so the verb can name it.
+- At this change: `go vet ./...` and `go test ./...` in `agenthub_client` -> rc 0.
+
+## 2026-10-19 - the evidence writer's replay rule (hub 4genthub-min/evidence-replay, client 4genthub-min/complete-failure-surface cb7e81f)
+
+- `agenthub_go/fastmcp/server/httpapp/task_evidence_pg_test.go`:
+  `TestEvidenceRouteAnswersAnIdenticalReplayWithTheStoredEntry` posts the same body twice - 201 then
+  **200 with the same id and seq**, one row - and then the same head with a different numstat -> 409
+  naming "different content", still one row. On the pre-change source the replay answered 409.
+- `TestEvidenceRouteSerializesConcurrentDuplicates` (same file) now pins one 201 and (n-1) x 200 for
+  two identical concurrent submissions, one row; it was red on the old writer ([409 201]).
+  `TestEvidenceRouteRefusesASecondSubmissionOfTheSameHeadSHA` keeps 409 for a DIFFERENT account and a
+  201 for a moved head.
+- `agenthub_go/fastmcp/server/routes/task_evidence_routes_test.go`: the fake writer carries the
+  `created` flag; `TestSubmitTaskEvidenceAnswersAReplayWithoutCreating` pins created=false and the
+  stored event as the body; the 409 test asserts the detail names "different content"; the positive
+  test asserts created=true.
+- `agenthub_client/internal/clientcomplete/complete_test.go`: `TestStoredEvidenceContinuesPast409` is
+  replaced by `TestEvidenceConflictStopsTheCompletion` - exit 1, the "not completed: the evidence was
+  not stored" line, zero `/complete` calls. It was red on the pre-change client (exit 0, one call).
+- At this change: `go test ./...` in `agenthub_go` with `AGENTHUB_TEST_PG_URL` set -> rc 0;
+
+## 2026-10-19 - the login names the token endpoint's refusal (hub, branch 4genthub-min/login-401-detail)
+
+- `agenthub_go/fastmcp/auth/interface/auth_endpoints_login_refusal_test.go`:
+  `TestLoginNamesTheTokenEndpointsRefusal` drives `Login` against a scripted token endpoint and pins
+  seven answers: the canonical 401 keeps "Invalid credentials"; "Account disabled" and "Account is
+  temporarily disabled" answer 403 with their own details; a 400 `invalid_grant` keeps its 401; "not
+  fully set up" keeps its 400 hint; an unknown description reaches the detail; an empty body stays
+  "Authentication failed". The two named states and the log assertion failed against the pre-change
+  handler ("401 Invalid credentials") and pass after.
+- `TestLoginSendsTheAccountAndLogsTheRefusal` pins the wire form the refusal is about
+  (`grant_type=password`, `username`, `password`) and the log line
+  `error="invalid_grant" description="Account disabled"` - and that the password is not in it.
+- `TestLoginResponseMappingIsUnchangedOnSuccess` pins the 200 path (token, refresh token, `sub`/`email`
+  claims, `expires_in`) so the refusal rewrite cannot have moved it.
+
+## 2026-10-19 - task search surfaces an id prefix and an exact title (go, branch 4genthub-min/next-work)
+
+- `agenthub_go/fastmcp/task_management/infrastructure/repositories/task_repository_test.go`:
+  `TestTaskRepoSearchSurfacesIdPrefixAndTitlePhrase` seeds a task whose title is the full phrase, then
+  five newer decoys whose descriptions quote its id and title words, and searches the 8-hex id prefix
+  and the full title with `limit 3`, no status filter. Against the pre-change repository both calls
+  returned only decoys (`Search id prefix ... did not surface the task first`); after the change each
+  returns the task first.
+
+## 2026-10-19 - the reviewer copy names seat-type-version 1.4.19 (client rust, branch 4genthub-min/next-work)
+
+- `agenthub_client/rust/agenthub-runtime/src/skills/mod.rs`:
+  `a_seat_resolves_its_own_role_skill_and_no_other_seats` pinned `seat-type-version: 1.4.12` on all five
+  seat-role copies. The reviewer copy moved to 1.4.19 with the decision check, so its case table carries
+  the expected version per seat: reviewer 1.4.19, the other four 1.4.12. Red on the un-updated copy
+  (`left: Some("1.4.19") right: Some("1.4.12")`), green after.
+
+- `agenthub_go/fastmcp/task_management/application/factories/unified_context_facade_factory_test.go`:
+  `TestFactoryMockBranch` (which asserted the mock branch was taken) is replaced by
+  `TestFactoryRefusesWithoutARepositoryBuilder` and `TestFactoryRefusesWhenTheBuilderFails`; both go
+  red against a constructor that returns a mock, green against the hard-fail one.
+- `agenthub_go/fastmcp/task_management/application/services/mock_unified_context_service_test.go`:
+  deleted with the mock itself — its ten cases pinned a type production can no longer reach.
 ## 2026-10-19 - the frontend test tree type-checks under the new lint gate (frontend, branch 4genthub-min/fe-deploy-walk)
 
 - The whole `agenthub-frontend/src/tests` tree lost its `any`s so the new `typecheck` and `lint`
@@ -7158,3 +7379,31 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
   unchanged.
 - At this change: `npx vitest run` -> 131 files, 1925 tests, 0 failures, 0 unhandled errors;
   `npx tsc --noEmit -p .` -> 0 errors; `npx eslint src --max-warnings=0` -> 0 problems.
+
+## 2026-10-19 - the payload tests assert the flat task-event delta (go, branch 4genthub-min/t7-event-delta)
+
+- T7 go (PERF-05): the payload tests assert the flat delta and the refetch shape. Each emitter that
+  can ship an `updated`/`completed` event is asserted to name its write: the update use case
+  (`[title]`, `[title details]`), completion (`[status]`), creation (no names), the facade's
+  `updated` and the dependency emitter (`[has_dependencies]`). `TestSyncBroadcastTaskCarriesAFlatDeltaAndCapsIt`
+  and `TestSyncBroadcastTaskDeduplicatesOneWriteNotTwo` replace the old shape assertions;
+  `BenchmarkTaskEventFrame` is replaced by `BenchmarkTaskEventDelta`: four sub-benchmarks (status,
+  completion, details, wide) that each report `primary-B` and `delta-B` beside ns/op, after
+  asserting the created seed, the deleted shape and both directions of the duplicate gate (one
+  write from both families collapses; two distinct writes ship two frames with two primaries).
+
+- 2026-10-19 - the four removed cascades: the branch test seeds a parentless task_context and counts by task_id, the task test counts its context, a new label test proves the join row goes and the task stays, the auth delete test seeds a token balance and counts it by user_id (branch 4genthub-min/int03-cascades).
+
+## 2026-10-20 - the branch and project deletes take the task-event ledger (go, branch 4genthub-min/int03-cascades)
+
+- `fastmcp/task_management/infrastructure/repositories/git_branch_repository_test.go`: new
+  `TestGitBranchRepoDeleteBranchRemovesTaskEvents` - a branch task with one event appended through
+  `TaskEventRepository.Append` and a second appended under another user (the ledger's `user_id` is
+  the author), then `DeleteBranch`, then `task_events` counted by `task_id`. Red at `76b0d84d` with
+  `23503` on `task_events_task_id_fkey`, and red on a user-filtered step 10 with the same error.
+- `fastmcp/task_management/infrastructure/repositories/project_repository_test.go`: new
+  `TestProjectRepoDeleteProjectRemovesTaskEvents` - a project with a branch, a task and one event,
+  deleted in the service's order (`DeleteBranch` per branch, then `DeleteProject`), then the same
+  count. Red at `76b0d84d` at the branch step with the same `23503`.
+  Both green after the fix; the existing branch, project and task cascade tests stay green;
+  `go test ./...` against `AGENTHUB_TEST_PG_URL` passes.

@@ -313,8 +313,9 @@ func TestCreateTaskUseCaseSaveValueErrorIsReRaised(t *testing.T) {
 }
 
 type createTaskFakeHooks struct {
-	contextOK bool
-	calls     []string
+	contextOK   bool
+	calls       []string
+	lastChanged []string
 }
 
 func (h *createTaskFakeHooks) CreateTaskContext(ctx context.Context, task *entities.Task, userID string, projectID *string, gitBranchID string) (bool, error) {
@@ -327,8 +328,9 @@ func (h *createTaskFakeHooks) SyncTaskMetadata(ctx context.Context, taskID strin
 	return nil
 }
 
-func (h *createTaskFakeHooks) NotifyTaskEvent(ctx context.Context, eventType string, task *entities.Task, response *dtotask.TaskResponse, userID *string, gitBranchID string) {
+func (h *createTaskFakeHooks) NotifyTaskEvent(ctx context.Context, eventType string, task *entities.Task, response *dtotask.TaskResponse, userID *string, gitBranchID string, changed []string) {
 	h.calls = append(h.calls, "notify")
+	h.lastChanged = changed
 }
 
 func TestCreateTaskUseCaseHooksSetContextIDAndNotify(t *testing.T) {
@@ -347,6 +349,9 @@ func TestCreateTaskUseCaseHooksSetContextIDAndNotify(t *testing.T) {
 	}
 	if got := fmt.Sprint(hooks.calls); got != "[context notify]" {
 		t.Fatalf("calls = %s", got)
+	}
+	if len(hooks.lastChanged) != 0 {
+		t.Fatalf("a created event names no changed fields, got %v", hooks.lastChanged)
 	}
 	if repo.saved.ContextID == nil || *repo.saved.ContextID != id.Value {
 		t.Fatalf("context_id not set: %v", repo.saved.ContextID)

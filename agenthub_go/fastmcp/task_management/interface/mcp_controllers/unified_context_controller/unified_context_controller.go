@@ -48,7 +48,7 @@ func NewUnifiedContextMCPController(facadeService *services.FacadeService, respo
 
 // ManageUnifiedContext ports manage_unified_context.
 func (c *UnifiedContextMCPController) ManageUnifiedContext(ctx context.Context, action string,
-	level, contextID, data, userID, projectID, gitBranchID, forceRefresh, includeInherited, propagateChanges,
+	level, contextID, data, userID, projectID, gitBranchID, includeInherited, propagateChanges,
 	delegateTo, delegateData, delegationReason, content, category, importance, agent, filters *string) (result *entities.OrderedMap[any]) {
 
 	defer func() {
@@ -59,7 +59,7 @@ func (c *UnifiedContextMCPController) ManageUnifiedContext(ctx context.Context, 
 
 	coerced := CoerceParameterTypesFunc(map[string]any{
 		"level": level, "context_id": contextID, "data": data, "user_id": userID,
-		"project_id": projectID, "git_branch_id": gitBranchID, "force_refresh": forceRefresh,
+		"project_id": projectID, "git_branch_id": gitBranchID,
 		"include_inherited": includeInherited, "propagate_changes": propagateChanges,
 		"delegate_to": delegateTo, "delegate_data": delegateData, "delegation_reason": delegationReason,
 		"content": content, "category": category, "importance": importance, "agent": agent, "filters": filters,
@@ -70,7 +70,6 @@ func (c *UnifiedContextMCPController) ManageUnifiedContext(ctx context.Context, 
 	userIDVal := coalescePtr(coerced["user_id"], userID)
 	projectIDVal := coalescePtr(coerced["project_id"], projectID)
 	gitBranchIDVal := coalescePtr(coerced["git_branch_id"], gitBranchID)
-	forceRefreshVal := coalesceBool(coerced["force_refresh"], forceRefresh, false)
 	includeInheritedVal := coalesceBool(coerced["include_inherited"], includeInherited, false)
 	propagateChangesVal := coalesceBool(coerced["propagate_changes"], propagateChanges, true)
 
@@ -115,7 +114,7 @@ func (c *UnifiedContextMCPController) ManageUnifiedContext(ctx context.Context, 
 	kwargs := map[string]any{
 		"level": levelVal, "context_id": ptrToString(contextIDVal), "data": dataMap,
 		"user_id": authenticatedUserID, "project_id": ptrToString(projectIDVal),
-		"git_branch_id": ptrToString(gitBranchIDVal), "force_refresh": forceRefreshVal,
+		"git_branch_id":     ptrToString(gitBranchIDVal),
 		"include_inherited": includeInheritedVal, "propagate_changes": propagateChangesVal,
 		"delegate_to": ptrToString(delegateTo), "delegate_data": delegateDataMap,
 		"delegation_reason": ptrToString(delegationReason), "content": ptrToString(content),
@@ -135,7 +134,7 @@ func (c *UnifiedContextMCPController) ManageContext(ctx context.Context, kwargs 
 	return c.ManageUnifiedContext(ctx,
 		action,
 		kwArg(kwargs, "level"), kwArg(kwargs, "context_id"), kwArg(kwargs, "data"), kwArg(kwargs, "user_id"),
-		kwArg(kwargs, "project_id"), kwArg(kwargs, "git_branch_id"), kwArg(kwargs, "force_refresh"),
+		kwArg(kwargs, "project_id"), kwArg(kwargs, "git_branch_id"),
 		kwArg(kwargs, "include_inherited"), kwArg(kwargs, "propagate_changes"), kwArg(kwargs, "delegate_to"),
 		kwArg(kwargs, "delegate_data"), kwArg(kwargs, "delegation_reason"), kwArg(kwargs, "content"),
 		kwArg(kwargs, "category"), kwArg(kwargs, "importance"), kwArg(kwargs, "agent"), kwArg(kwargs, "filters"),
@@ -226,7 +225,7 @@ func coalesceBool(coerced any, original *string, def bool) bool {
 }
 
 func coerceContextParameterTypes(params map[string]any) map[string]any {
-	for _, key := range []string{"force_refresh", "include_inherited", "propagate_changes"} {
+	for _, key := range []string{"include_inherited", "propagate_changes"} {
 		if s, ok := params[key].(string); ok && strings.TrimSpace(s) != "" {
 			if b, err := strconv.ParseBool(strings.ToLower(strings.TrimSpace(s))); err == nil {
 				params[key] = b

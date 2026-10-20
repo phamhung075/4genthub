@@ -53,7 +53,7 @@ DEFAULT_USER_EMAIL=dev@example.com AGENTHUB_PUBLIC_URL=http://localhost:8000 FAS
 `GET /health` must answer `healthy` with the version the binary carries
 (the release literal is `ReleaseVersion`, `agenthub_go/fastmcp/config/version.go:21`, read into
 `healthVersion` at `agenthub_go/fastmcp/server/httpapp/http.go:160`; **it read `0.0.21` in that run.
-Corrected 2026-10-06 by the writer seat: this citation said `http.go:159`, which is where the literal
+Corrected 2026-10-06 by the writer seat: this citation named line 159 of `http.go`, which is where the literal
 lived when the run was made and where `origin/main` still holds it — the value has since moved into
 `config/version.go`, and the old citation would send a reader to a reference rather than the value**).
 
@@ -217,7 +217,7 @@ session state.
    (`deepseek-flash`, `deepseek-v4-flash`, `deepseek-v4-flash-vision-exp`, `deepseek-v4-pro`).
    Nothing on the server path validates the model string: the only validator there is
    `resolver.CheckRuntime` (`agenthub_go/fastmcp/seat_management/domain/resolver/runtime.go:23`,
-   called from `rigspec/rigspec.go:124` and `repositories/names.go:26`), which checks the
+   called from `repositories/names.go:26` and `seatrenderer/renderer.go:45`), which checks the
    **runtime** only. *(The model→provider mapping is omp's, not this repository's.)*
 4. **`GET /api/v2/seats/{room}/{seat}` carries the seat's `runtime` and rendered
    `files` but no `model` field** (keys: `files hash policy room runtime seat`), so a check for

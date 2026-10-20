@@ -38,9 +38,13 @@ func NewTaskLifecycleSweeper(ctx context.Context, sessions *database.SessionMana
 	if err != nil {
 		return nil, fmt.Errorf("task lifecycle sweep schedule: %w", err)
 	}
+	ctxFactory, err := factories.NewUnifiedContextFacadeFactory(ctx, sessions)
+	if err != nil {
+		return nil, fmt.Errorf("task lifecycle sweep context factory: %w", err)
+	}
 	provider := taskFacadeProvider{
 		sessions:   sessions,
-		ctxFactory: factories.NewUnifiedContextFacadeFactory(ctx, sessions),
+		ctxFactory: ctxFactory,
 		notifier:   newTaskNotifier(sessions),
 	}
 	return services.NewTaskLifecycleSweeper(

@@ -206,13 +206,47 @@ func (u *UpdateTaskUseCase) Execute(ctx context.Context, request task.UpdateTask
 		if taskEntity.GitBranchID != nil {
 			gitBranchID = *taskEntity.GitBranchID
 		}
-		u.hooks.NotifyTaskEvent(ctx, "updated", taskEntity, taskResponse, nil, gitBranchID)
+		u.hooks.NotifyTaskEvent(ctx, "updated", taskEntity, taskResponse, nil, gitBranchID, ChangedTaskFields(request))
 	}
 
 	// Handle domain events (Python consumes them here even though it does nothing).
 	_ = taskEntity.GetEvents()
 
 	return task.NewUpdateTaskResponseSuccess(taskResponse, nil), nil
+}
+
+// changedFields names the payload keys the request wrote, in a fixed order. A name the payload does
+// not carry is dropped by the delta; details is carried as the details_changed flag.
+func ChangedTaskFields(request task.UpdateTaskRequest) []string {
+	changed := make([]string, 0, 9)
+	if request.Title != nil {
+		changed = append(changed, "title")
+	}
+	if request.Description != nil {
+		changed = append(changed, "description")
+	}
+	if request.Status != nil {
+		changed = append(changed, "status")
+	}
+	if request.Priority != nil {
+		changed = append(changed, "priority")
+	}
+	if request.Details != nil {
+		changed = append(changed, "details")
+	}
+	if request.Assignees != nil {
+		changed = append(changed, "assignees")
+	}
+	if request.Labels != nil {
+		changed = append(changed, "labels")
+	}
+	if request.ProgressPercentage != nil {
+		changed = append(changed, "progress_percentage")
+	}
+	if request.ContextID != nil {
+		changed = append(changed, "has_context")
+	}
+	return changed
 }
 
 // updateTaskConvertToTaskID mirrors _convert_to_task_id.

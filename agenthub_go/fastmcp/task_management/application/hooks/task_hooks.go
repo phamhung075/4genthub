@@ -94,11 +94,11 @@ func (h *TaskHooks) SyncTaskStatus(ctx context.Context, taskID string, newStatus
 }
 
 // NotifyTaskEvent builds the complete payload and broadcasts the task event.
-func (h *TaskHooks) NotifyTaskEvent(ctx context.Context, eventType string, t *entities.Task, resp *task.TaskResponse, userID *string, gitBranchID string) {
+func (h *TaskHooks) NotifyTaskEvent(ctx context.Context, eventType string, t *entities.Task, resp *task.TaskResponse, userID *string, gitBranchID string, changed []string) {
 	if h.Notifier == nil {
 		return
 	}
-	payload := services.WebSocketPayloadBuilder{}.BuildTaskPayload(t, resp, true)
+	payload := services.WebSocketPayloadBuilder{}.BuildTaskPayload(t, resp)
 	uid := "system"
 	if userID != nil && *userID != "" {
 		uid = *userID

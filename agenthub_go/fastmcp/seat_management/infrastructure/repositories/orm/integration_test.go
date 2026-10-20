@@ -162,13 +162,14 @@ func TestSeatRepositoriesIntegration(t *testing.T) {
 		t.Fatalf("FindByRoomAndKey = %+v, %v", found, err)
 	}
 
-	if err := seats.UpdateOccupant(ctx, userID, seat.ID, "codex", "gpt-5.1"); err != nil {
+	if err := seats.UpdateOccupant(ctx, userID, seat.ID, "codex", "gpt-5.1", userID); err != nil {
 		t.Fatalf("UpdateOccupant: %v", err)
 	}
 	if found, err := seats.GetByID(ctx, userID, seat.ID); err != nil || found == nil || found.Runtime != "codex" || found.Model != "gpt-5.1" {
 		t.Fatalf("seat after UpdateOccupant = %+v, %v", found, err)
 	}
-	if err := seats.UpdateOccupant(ctx, "other-user", seat.ID, "claude-code", ""); err != nil {
+	// The other tenant's seat lookup finds no locked row, so the switch writes nothing.
+	if err := seats.UpdateOccupant(ctx, "other-user", seat.ID, "claude-code", "", "other-user"); err != nil && !errors.Is(err, sql.ErrNoRows) {
 		t.Fatalf("UpdateOccupant other tenant: %v", err)
 	}
 	if found, _ := seats.GetByID(ctx, userID, seat.ID); found == nil || found.Runtime != "codex" {
@@ -575,5 +576,112 @@ func TestMachineExpectedHashIntegration(t *testing.T) {
 	report(other, "x")
 	if got := expected(other); got["dev/alice"] != "other-hash" {
 		t.Fatalf("other tenant expected hashes = %v, want its own snapshot", got)
+	}
+}
+
+// TestOccupantChangeIsRecordedIntegration checks the trail against a real PostgreSQL: two
+// switches make two rows newest first, repeating the last one adds none, and deleting the seat
+// removes its rows through the FK cascade.
+func TestOccupantChangeIsRecordedIntegration(t *testing.T) {
+	url := os.Getenv("SEAT_TEST_DATABASE_URL")
+	if url == "" {
+		t.Skip("SKIPPED, NOT PASSED: SEAT_TEST_DATABASE_URL is unset, so this case did NOT run - " +
+			"it applies the seat schema to a PostgreSQL it is given; bash tools/testpg/start.sh prints a URL")
+	}
+	db, err := sql.Open("pgx", url)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	ctx := context.Background()
+	if _, err := db.ExecContext(ctx, seatIntegrationSchema(t)); err != nil {
+		t.Fatalf("apply schema: %v", err)
+	}
+	sessions := database.NewSessionManager(&database.DatabaseConfig{Engine: &database.Engine{DB: db}})
+	userID := fmt.Sprintf("seat-occ-%d", time.Now().UnixNano())
+
+	seatTypes, _ := NewORMSeatTypeRepository(sessions)
+	rooms, _ := NewORMRoomRepository(sessions)
+	seats, _ := NewORMSeatRepository(sessions)
+
+	seatType, err := seatTypes.Save(ctx, userID, domainrepo.SeatType{Slug: "coder", Name: "Coder", Description: "d"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	room, err := rooms.Save(ctx, userID, domainrepo.Room{Slug: "dev", Name: "Dev"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	seat, err := seats.Create(ctx, userID, domainrepo.Seat{
+		RoomID: room.ID, SeatKey: "alice", SeatTypeID: seatType.ID,
+		Runtime: "claude-code", Model: "sonnet", PermissionPolicy: "standard",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	switches := []struct{ runtime, model string }{
+		{"codex", "gpt-5.1"},
+		{"claude-code", "opus"},
+	}
+	for i, sw := range switches {
+		if err := seats.UpdateOccupant(ctx, userID, seat.ID, sw.runtime, sw.model, userID); err != nil {
+			t.Fatalf("UpdateOccupant(%s, %s): %v", sw.runtime, sw.model, err)
+		}
+		if i < len(switches)-1 {
+			// Keep the two `at` instants distinct so newest-first is deterministic.
+			time.Sleep(2 * time.Millisecond)
+		}
+	}
+
+	changes, err := seats.ListOccupantChanges(ctx, userID, seat.ID)
+	if err != nil {
+		t.Fatalf("ListOccupantChanges: %v", err)
+	}
+	if len(changes) != 2 {
+		t.Fatalf("occupant changes = %d, want 2: %+v", len(changes), changes)
+	}
+	newest, oldest := changes[0], changes[1]
+	if newest.FromRuntime != "codex" || newest.FromModel != "gpt-5.1" ||
+		newest.ToRuntime != "claude-code" || newest.ToModel != "opus" {
+		t.Fatalf("newest change = %+v, want codex/gpt-5.1 -> claude-code/opus", newest)
+	}
+	if oldest.FromRuntime != "claude-code" || oldest.FromModel != "sonnet" ||
+		oldest.ToRuntime != "codex" || oldest.ToModel != "gpt-5.1" {
+		t.Fatalf("oldest change = %+v, want claude-code/sonnet -> codex/gpt-5.1", oldest)
+	}
+	if newest.UserID != userID || newest.SeatID != seat.ID || newest.Actor != userID ||
+		newest.ID == "" || newest.At.IsZero() || !newest.At.After(oldest.At) {
+		t.Fatalf("newest change metadata = %+v", newest)
+	}
+
+	// Repeating the last switch is a no-op: it adds no row.
+	if err := seats.UpdateOccupant(ctx, userID, seat.ID, "claude-code", "opus", userID); err != nil {
+		t.Fatalf("UpdateOccupant(repeat): %v", err)
+	}
+	again, err := seats.ListOccupantChanges(ctx, userID, seat.ID)
+	if err != nil || len(again) != 2 {
+		t.Fatalf("occupant changes after the repeated switch = %d, %v, want 2", len(again), err)
+	}
+
+	var before, after int
+	if err := db.QueryRowContext(ctx,
+		`SELECT count(*) FROM "seat_occupant_changes" WHERE "user_id" = $1 AND "seat_id" = $2`,
+		userID, seat.ID).Scan(&before); err != nil {
+		t.Fatal(err)
+	}
+	if before != 2 {
+		t.Fatalf("occupant change rows = %d, want 2", before)
+	}
+	if err := seats.Delete(ctx, userID, seat.ID); err != nil {
+		t.Fatalf("Delete seat: %v", err)
+	}
+	if err := db.QueryRowContext(ctx,
+		`SELECT count(*) FROM "seat_occupant_changes" WHERE "user_id" = $1 AND "seat_id" = $2`,
+		userID, seat.ID).Scan(&after); err != nil {
+		t.Fatal(err)
+	}
+	if after != 0 {
+		t.Fatalf("occupant change rows after deleting the seat = %d, want 0 (FK cascade)", after)
 	}
 }

@@ -21,11 +21,11 @@ global package: the running launcher is
 
 | step | what happens | evidence |
 |---|---|---|
-| **trigger** | the shipped startup file orders the call: "## Identity — run this first" → `4genteam whoami --json` | `packages/daemon/assets/guidance/client-start.md:9,12` (identical in the installed asset) |
-| **trigger (second home)** | the daemon **types the same order into every fresh conversation**: "derive your identity with `4genteam whoami --json` and read durable obligations with `the task queue list …`" | `packages/daemon/src/domain/startup-orchestrator.ts:602` (installed dist: `startup-orchestrator.js:472`) |
-| **posture** | any policy that is not `builtin:yolo` — `locked`, `standard`, `open`, a deliberate `none`, **or absent** — resolves to `floor`; only `yolo` is `full_bypass` | `packages/daemon/src/domain/permission-policy/policy-ref.ts:122`; `dist/…/policy-ref.js:99` ("yolo → full_bypass, else floor") and `:125-126`; the file header: "ABSENT (no value) = the floor (honest absence)" |
-| **gate** | the pi adapter turns the posture into the approval mode: `yoloEnabled(process.env, binding.launchPosture) ? "approve" : "no-approve"` → **`--approval-mode always-ask`** | `packages/daemon/src/adapters/pi-runtime-adapter.ts:241` (posture) and `:244` (the flag) |
-| **gate (other paths)** | the same mapping on resume and in the runner protocol, so it is not path-dependent | `pi-resume.ts:93`, `pi-runner-protocol.ts:248,279`; `pi-runner.ts:625` (only `yolo`/`always-ask` accepted) and `:638` (`OMP requires --approval-mode yolo or always-ask, not Pi trust flags`) |
+| **trigger** | the shipped startup file orders the call: "## Identity — run this first" → `4genteam whoami --json` | the TypeScript daemon's own `packages/daemon/assets/guidance/client-start.md`, lines 9 and 12 (identical in the installed asset) |
+| **trigger (second home)** | the daemon **types the same order into every fresh conversation**: "derive your identity with `4genteam whoami --json` and read durable obligations with `the task queue list …`" | the TypeScript daemon's own `packages/daemon/src/domain/startup-orchestrator.ts`, line 602 (installed dist `startup-orchestrator.js`, line 472) |
+| **posture** | any policy that is not `builtin:yolo` — `locked`, `standard`, `open`, a deliberate `none`, **or absent** — resolves to `floor`; only `yolo` is `full_bypass` | the TypeScript daemon's own `packages/daemon/src/domain/permission-policy/policy-ref.ts`, line 122; `dist/…/policy-ref.js:99` ("yolo → full_bypass, else floor") and `:125-126`; the file header: "ABSENT (no value) = the floor (honest absence)" |
+| **gate** | the pi adapter turns the posture into the approval mode: `yoloEnabled(process.env, binding.launchPosture) ? "approve" : "no-approve"` → **`--approval-mode always-ask`** | the TypeScript daemon's own `packages/daemon/src/adapters/pi-runtime-adapter.ts`, line 241 (posture) and line 244 (the flag) |
+| **gate (other paths)** | the same mapping on resume and in the runner protocol, so it is not path-dependent | the TypeScript daemon's own `pi-resume.ts`, line 93; `pi-runner-protocol.ts`, lines 248 and 279; `pi-runner.ts`, line 625 (only `yolo`/`always-ask` accepted) and line 638 (`OMP requires --approval-mode yolo or always-ask, not Pi trust flags`) |
 | **live proof** | every seat today runs `omp --mode rpc … --approval-mode yolo` | `ps -eo pid,args \| grep omp` — the child of `pi-runner.js`; measured for context-dev, fe-dev, feedback-dev, go-dev2 and the writer |
 
 **The `--approval-mode` flag is omp's own**, not the client's invention: `omp --help` documents
@@ -37,7 +37,7 @@ value the seat gets.
 `--permission-mode acceptEdits` and Codex `-s workspace-write` (`daemon/dist/adapters/yolo-mode.js`,
 `claudePostureFlag` / `codexPostureArg`), and the client's own manual states the Claude consequence plainly —
 *"It does not add a global `Bash(rig:*)` allowance"*, so other actions "follow native rules and prompts"
-(`daemon/docs/reference/getting-started.md:447-449`). The three packaged policy bodies say the same thing for
+(the TypeScript daemon's own `daemon/docs/reference/getting-started.md`, lines 447-449). The three packaged policy bodies say the same thing for
 Pi: *"Pi `--no-approve` is a resource-TRUST posture, not a permission floor (Pi has no permission surface)"*
 (`daemon/policies/builtin/{locked,standard,open}.policy.md`). **That sentence is the whole story for omp:** the
 policy has no command-level surface on this runtime, so the launch flag is the entire gate.
@@ -57,7 +57,7 @@ policy has no command-level surface on this runtime, so the launch flag is the e
 ## 3. The fix — two lines in a file this repo already generates
 
 The seat's approval rules live in its **own omp config**, `agent/config.yml`, and that file is rendered by
-**`agenthub_client/src/agenthub_client/seat_policy.py:152`** (`render_config` — the port of the deleted `scripts/seat_policy.py`, where the same function sat at `:145-161`), which today emits only **deny** rules: **CORRECTED 2026-10-10 (writer seat, at the pinned client commit `eaa6ba7`): the Python port is gone. `RenderConfig` is `agenthub_client/internal/clientpolicy/policy.go:174`, and it no longer emits only deny rules** — it writes the header (`:177`), `mcp.startupTimeoutMs: 0` (`:178`), `compaction.keepRecentTokens` (`:179`), an optional `defaultThinkingLevel` (`:180`-`:182`), then `bash.allowCompoundCommands` with the `4genteam whoami*` allow FIRST (`:183`-`:184`), the role's denials (`:185`-`:187`) and `tools.approval` (`:188`-`:193`). The YAML below is a subset of that document, not the whole of it.
+**the client's `render_config`** (the retired Python client's `agenthub_client/src/agenthub_client/seat_policy.py` — the port of the deleted `scripts/seat_policy.py`, where the same function sat at `:145-161`), which emitted only **deny** rules: **CORRECTED 2026-10-10 (writer seat, at the pinned client commit `eaa6ba7`): the Python port is gone. `RenderConfig` is `agenthub_client/internal/clientpolicy/policy.go:174`, and it no longer emits only deny rules** — it writes the header (`:177`), `mcp.startupTimeoutMs: 0` (`:178`), `compaction.keepRecentTokens` (`:179`), an optional `defaultThinkingLevel` (`:180`-`:182`), then `bash.allowCompoundCommands` with the `4genteam whoami*` allow FIRST (`:183`-`:184`), the role's denials (`:185`-`:187`) and `tools.approval` (`:188`-`:193`). The YAML below is a subset of that document, not the whole of it.
 
 ```yaml
 bash:

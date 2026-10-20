@@ -29,7 +29,7 @@ func (s *zpDraftFakeContextService) CreateContext(_ context.Context, level, cont
 	return out, nil
 }
 
-func (s *zpDraftFakeContextService) GetContext(_ context.Context, level, contextID string, _, _ bool, _ *string) (*entities.OrderedMap[any], error) {
+func (s *zpDraftFakeContextService) GetContext(_ context.Context, level, contextID string, _ bool, _ *string) (*entities.OrderedMap[any], error) {
 	s.lastLevel, s.lastContext = level, contextID
 	return s.getResponse, s.getError
 }
@@ -43,7 +43,7 @@ func (s *zpDraftFakeContextService) DeleteContext(_ context.Context, level, cont
 	return entities.NewOrderedMap[any](), nil
 }
 
-func (s *zpDraftFakeContextService) ResolveContext(_ context.Context, level, contextID string, _ bool, _ *string) (*entities.OrderedMap[any], error) {
+func (s *zpDraftFakeContextService) ResolveContext(_ context.Context, level, contextID string, _ *string) (*entities.OrderedMap[any], error) {
 	return entities.NewOrderedMap[any](), nil
 }
 
@@ -107,13 +107,13 @@ func TestDraftUnifiedFacadeCreatePassesScope(t *testing.T) {
 func TestDraftUnifiedFacadeErrorMapping(t *testing.T) {
 	svc := &zpDraftFakeContextService{getError: &exceptions.ValidationException{}}
 	facade := NewUnifiedContextFacade(svc, nil, nil, nil)
-	res, _ := facade.GetContext(context.Background(), "task", "t1", false, false, nil)
+	res, _ := facade.GetContext(context.Background(), "task", "t1", false, nil)
 	if v, _ := res.Get("error_type"); v != "validation" {
 		t.Fatalf("error_type = %v", v)
 	}
 
 	svc.getError = &exceptions.ResourceNotFoundException{}
-	res, _ = facade.GetContext(context.Background(), "task", "t1", false, false, nil)
+	res, _ = facade.GetContext(context.Background(), "task", "t1", false, nil)
 	if v, _ := res.Get("error_type"); v != "not_found" {
 		t.Fatalf("error_type = %v", v)
 	}

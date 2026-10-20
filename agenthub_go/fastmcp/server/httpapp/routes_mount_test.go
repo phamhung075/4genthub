@@ -31,7 +31,7 @@ func (fakeContextController) UpdateContext(context.Context, string, string, *ent
 func (fakeContextController) DeleteContext(context.Context, string, string, string) (routes.ControllerResult, error) {
 	return fakeContextController{}.ok()
 }
-func (fakeContextController) ResolveContext(context.Context, string, string, bool, string) (routes.ControllerResult, error) {
+func (fakeContextController) ResolveContext(context.Context, string, string, string) (routes.ControllerResult, error) {
 	return fakeContextController{}.ok()
 }
 

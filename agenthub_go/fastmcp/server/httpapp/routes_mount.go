@@ -50,8 +50,9 @@ func newRouteDeps(a *App) routeDeps {
 		deps.subtaskRoutes = subtaskRoutesAdapter{c: sa.c}
 		deps.userSubtasks = userSubtaskAdapter{c: sa.c}
 	}
-	ctxFactory := factories.NewUnifiedContextFacadeFactory(context.Background(), a.Sessions)
-	deps.contexts = contextRoutesAdapter{c: api_controllers.NewContextAPIController(contextFacadeProvider{factory: ctxFactory})}
+	if a.ctxFactory != nil {
+		deps.contexts = contextRoutesAdapter{c: api_controllers.NewContextAPIController(contextFacadeProvider{factory: a.ctxFactory})}
+	}
 	deps.tokens = tokenRoutesAdapter{c: api_controllers.NewTokenAPIController(facadeServiceTokenProvider{})}
 	deps.broadcast = broadcastAdapter
 	return deps
@@ -281,7 +282,7 @@ func mountContextRoutes(mux *http.ServeMux, deps routeDeps) {
 	}))
 	mux.HandleFunc("GET "+base+"/{level}/{context_id}", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		body, err := routes.GetContext(r.Context(), r.PathValue("level"), r.PathValue("context_id"),
-			queryBoolDefault(r, "include_inherited", false), queryBoolDefault(r, "force_refresh", false), u, c)
+			queryBoolDefault(r, "include_inherited", false), u, c)
 		writeResult(w, body, err)
 	}))
 	mux.HandleFunc("PUT "+base+"/{level}/{context_id}", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
@@ -302,7 +303,7 @@ func mountContextRoutes(mux *http.ServeMux, deps routeDeps) {
 		writeResult(w, body, err)
 	}))
 	mux.HandleFunc("GET "+base+"/{level}/{context_id}/resolve", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
-		body, err := routes.ResolveContext(r.Context(), r.PathValue("level"), r.PathValue("context_id"), queryBoolDefault(r, "force_refresh", false), u, c)
+		body, err := routes.ResolveContext(r.Context(), r.PathValue("level"), r.PathValue("context_id"), u, c)
 		writeResult(w, body, err)
 	}))
 	mux.HandleFunc("POST "+base+"/{level}/{context_id}/delegate", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
@@ -529,8 +530,8 @@ func (a contextRoutesAdapter) DeleteContext(ctx context.Context, level, contextI
 	return routes.ControllerResult{Success: r.Success, Error: r.Error, Message: r.Message, Body: r.ModelDump()}, nil
 }
 
-func (a contextRoutesAdapter) ResolveContext(ctx context.Context, level, contextID string, forceRefresh bool, userID string) (routes.ControllerResult, error) {
-	return contextResult(a.c.ResolveContext(ctx, level, contextID, userID, nil, forceRefresh)), nil
+func (a contextRoutesAdapter) ResolveContext(ctx context.Context, level, contextID string, userID string) (routes.ControllerResult, error) {
+	return contextResult(a.c.ResolveContext(ctx, level, contextID, userID, nil)), nil
 }
 
 // facadeServiceTokenProvider is api_controllers.TokenFacadeProvider over the

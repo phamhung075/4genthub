@@ -27,6 +27,14 @@ There is no per-agent template lookup: the 32-agent template library was removed
 Identity comes from `4genteam whoami --json`; a seat's resolved config comes from `manage_seat` /
 `call_seat`.
 
+An occupant change is **recorded durably**: `set_occupant` writes one append-only
+`seat_occupant_changes` row in the same transaction as the `seats` overwrite, naming the
+authenticated actor, the instant, the seat and the previous and next runtime/model — so who
+switched a seat, when and from what to what is answerable after the fact, through
+`GET /api/v2/rooms/{room}/seats/{seat}/occupant-history`. The row is the stored occupant the next
+launch reads; a running seat keeps the runtime it launched with
+(`ai_docs/core-architecture/seat-occupant-record.md`).
+
 ## Tool scope by seat
 
 A seat's tool scope comes from its seat type and its runtime. The source is the nine embedded seat

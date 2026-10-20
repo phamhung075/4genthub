@@ -558,7 +558,7 @@ curl http://localhost:8080
 # `description` optional. A JSON or multipart body is refused with a 422 naming body.name
 # as missing (the POST is registered at `app.go:179`; `_ = r.ParseForm()` at `:184`, the
 # `missingForm(r, "name")` refusal at `:185-186` which answers 422 through `writeMissing`
-# at `http.go:124`, and the value read by `r.PostForm.Get("name")` at `:189`).
+# at `httpapp/http.go:124`, and the value read by `r.PostForm.Get("name")` at `:189`).
 curl -X POST http://localhost:8000/api/v2/projects/ \
   -H "Authorization: Bearer ${TOKEN}" \
   -H "Content-Type: application/x-www-form-urlencoded" \

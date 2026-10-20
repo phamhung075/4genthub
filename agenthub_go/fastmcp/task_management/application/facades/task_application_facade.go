@@ -40,7 +40,7 @@ type FacadeTaskRepository interface {
 
 // TaskFacadeContextService is the hierarchical (unified) context service.
 type TaskFacadeContextService interface {
-	GetContext(ctx context.Context, level, contextID string, includeInherited, forceRefresh bool, userID *string) (*entities.OrderedMap[any], error)
+	GetContext(ctx context.Context, level, contextID string, includeInherited bool, userID *string) (*entities.OrderedMap[any], error)
 	CreateContext(ctx context.Context, level, contextID string, data *entities.OrderedMap[any], userID *string) (*entities.OrderedMap[any], error)
 }
 
@@ -390,7 +390,7 @@ func (f *TaskApplicationFacade) ensureBranchContextExists(ctx context.Context, g
 	}
 
 	uid := userID
-	got, err := f.deps.ContextService.GetContext(ctx, "branch", gitBranchID, false, false, &uid)
+	got, err := f.deps.ContextService.GetContext(ctx, "branch", gitBranchID, false, &uid)
 	if err != nil {
 		return result(false, "error", "Unexpected error ensuring branch context: "+err.Error(), "git_branch_created", false, "context_created", false)
 	}
@@ -744,6 +744,7 @@ func (f *TaskApplicationFacade) UpdateTask(ctx context.Context, request dtostask
 		}
 		_ = f.deps.Notifier.SyncBroadcastTask(ctx, services.SyncTaskEventParams{
 			EventType: "updated", TaskID: taskID, UserID: userID, TaskData: validated,
+			Changed: use_cases.ChangedTaskFields(request),
 		})
 		if request.ProgressPercentage != nil {
 			// task_dict is the minimal serialization, which carries no git_branch_id for
@@ -1453,12 +1454,16 @@ func (f *TaskApplicationFacade) broadcastCompletion(ctx context.Context, taskID 
 		title = "Task " + facadeShort(taskID)
 	}
 	if title != nil {
-		validated = domain.TaskCompletePayload{
+		completion := domain.TaskCompletePayload{
 			ID: facadeOr(facadeDictGet(taskData, "id"), taskID), Title: value_objects.PyStr(title),
 			CompletionSummary: facadeStrPtrOf(facadeDictGet(taskData, "completion_summary")),
 			TestingNotes:      facadeStrPtrOf(facadeDictGet(taskData, "testing_notes")),
 			CompletedAt:       facadeStrPtrOf(facadeDictGet(taskData, "completed_at")),
 		}.ModelDump()
+		// The row's updated_at is the delta's identity: it is what lets the client collapse this
+		// frame with the use-case hook's for the same write, so the completion delta carries it.
+		completion.Set("updated_at", facadeDictGet(taskData, "updated_at"))
+		validated = completion
 	}
 	user := "system"
 	if userID != nil && *userID != "" {
@@ -1466,6 +1471,7 @@ func (f *TaskApplicationFacade) broadcastCompletion(ctx context.Context, taskID 
 	}
 	_ = f.deps.Notifier.SyncBroadcastTask(ctx, services.SyncTaskEventParams{
 		EventType: "completed", TaskID: taskID, UserID: user, TaskData: validated, GitBranchID: gitBranchID, ProjectID: projectID,
+		Changed: []string{"status", "completion_summary", "testing_notes", "completed_at"},
 	})
 }
 
@@ -1892,8 +1898,13 @@ func (f *TaskApplicationFacade) dependencyUpdateBroadcast(ctx context.Context, t
 		Priority: facadeOr(facadeDictGet(taskDict, "priority"), priority), GitBranchID: facadeOr(facadeDictGet(taskDict, "git_branch_id"), branch),
 		Assignees: assignees, Labels: labels, UpdatedAt: facadeStrPtrOf(facadeDictGet(taskDict, "updated_at")),
 	}
+	// add/remove_dependency changes no column of the task row: the delta is the one flag the
+	// frontend reads, set on the dumped payload so the update shape itself stays the parity shape.
+	full := payload.ModelDump()
+	full.Set("has_dependencies", true)
 	_ = f.deps.Notifier.SyncBroadcastTask(ctx, services.SyncTaskEventParams{
-		EventType: "updated", TaskID: taskID, UserID: "system", TaskData: payload.ModelDump(),
+		EventType: "updated", TaskID: taskID, UserID: "system", TaskData: full,
+		Changed: []string{"has_dependencies"},
 	})
 }
 

@@ -22,8 +22,38 @@ jobs:
         with:
           go-version-file: agenthub_go/go.mod
           cache-dependency-path: agenthub_go/go.sum
+      # gofmt over every tracked .go file, from the repository root: the script resolves the toplevel
+      # itself and learns its two non-Go .go paths from .gofmt-excludes. It exits 2 when it cannot
+      # measure (stale exclusion, zero coverage, a parse error) so a broken instrument is not green.
+      - run: ../scripts/gofmt-check.sh
       - run: go vet ./...
       - run: go test ./...
+
+  # The documents claim the tree: every `file:line` and every backticked Test name in ai_docs is
+  # checked against what ships, and the check refuses rather than passing when it reads nothing.
+  # It ran nowhere before this job: CITATION-AUDIT.py covers only the surface inventory's route
+  # tables, and a citation naming a test that exists in no commit reached main on 2026-10-20.
+  scripts:
+    runs-on: ubuntu-latest
+    steps:
+      # FULL HISTORY: S3-REDERIVE.py attributes a stale anchor by reading the same file at a base
+      # revision, and the census cases export HEAD with git, so a shallow checkout cannot answer.
+      # AND THE SUBMODULE: `agenthub_client` is a gitlink, so a plain checkout gives the audit an
+      # empty tree and every citation into it reads as a violated document (108 of them, measured
+      # 2026-10-20). DOC-CITATIONS.py now refuses that state; this makes CI never enter it.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install pytest
+      - run: python3 scripts/DOC-CITATIONS.py
+      # THE WHOLE INSTRUMENT SUITE, not the citation cases alone: COUNTS-AUDIT and S3-REDERIVE ran
+      # in no gate at all, and main sat four tests red after a table and a route landed without the
+      # inventory moving (2b89edfc, repaired at 3e62c924).
+      - run: python3 -m pytest scripts/tests -q
 
   frontend:
     runs-on: ubuntu-latest
@@ -41,5 +71,7 @@ jobs:
           cache: pnpm
           cache-dependency-path: agenthub-frontend/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm lint
       - run: pnpm test
       - run: pnpm build

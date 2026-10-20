@@ -20,7 +20,7 @@ type zpCtxSyncFakeContext struct {
 	updateErr error
 }
 
-func (f *zpCtxSyncFakeContext) GetContext(ctx context.Context, level, contextID string, includeInherited, forceRefresh bool, userID *string) (*entities.OrderedMap[any], error) {
+func (f *zpCtxSyncFakeContext) GetContext(ctx context.Context, level, contextID string, includeInherited bool, userID *string) (*entities.OrderedMap[any], error) {
 	return f.getResult, f.getErr
 }
 

@@ -119,7 +119,7 @@ var authDatabaseTables = []taskdb.TableDef{
 	}},
 	{Name: "user_token_balances", Model: "UserTokenBalance", Columns: []taskdb.ColumnDef{
 		{Name: "id", Attr: "id", GoField: "ID", SQLType: "UUID", Nullable: false, PrimaryKey: true, Default: taskdb.DefaultUUIDv4},
-		{Name: "user_id", Attr: "user_id", GoField: "UserID", SQLType: "UUID", Nullable: false, ForeignKey: "users.id", OnDelete: "CASCADE"},
+		{Name: "user_id", Attr: "user_id", GoField: "UserID", SQLType: "UUID", Nullable: false, ForeignKey: "users.id"},
 		{Name: "available_tokens", Attr: "available_tokens", GoField: "AvailableTokens", SQLType: "INTEGER", Nullable: false, Default: taskdb.DefaultInt, DefaultValue: "0"},
 		{Name: "monthly_quota", Attr: "monthly_quota", GoField: "MonthlyQuota", SQLType: "INTEGER", Nullable: false, Default: taskdb.DefaultInt, DefaultValue: "10000"},
 		{Name: "last_reset_at", Attr: "last_reset_at", GoField: "LastResetAt", SQLType: "TIMESTAMP WITHOUT TIME ZONE", Nullable: true},
@@ -146,7 +146,7 @@ var authDatabaseTables = []taskdb.TableDef{
 			"\tUNIQUE (user_id),\n" +
 			"\tCONSTRAINT check_available_tokens_non_negative CHECK (available_tokens >= 0),\n" +
 			"\tCONSTRAINT check_monthly_quota_non_negative CHECK (monthly_quota >= 0),\n" +
-			"\tFOREIGN KEY(user_id) REFERENCES users (id) ON DELETE CASCADE\n" +
+			"\tFOREIGN KEY(user_id) REFERENCES users (id)\n" +
 			")",
 		"CREATE INDEX ix_user_token_balances_user_id ON user_token_balances (user_id)",
 	}},

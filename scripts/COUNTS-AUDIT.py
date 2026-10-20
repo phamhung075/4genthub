@@ -46,7 +46,15 @@ GO = f"{ROOT}/agenthub_go"
 # The numbers as the surface inventory states them. Each entry names the instrument that
 # re-derives it, because a number without its instrument is the failure this file exists for.
 EXPECTED = {
-    "httpapp route registrations": 136,     # grep -rn 'mux.HandleFunc(' fastmcp/server/httpapp, minus _test.go
+    "httpapp route registrations": 137,     # grep -rn 'mux.HandleFunc(' fastmcp/server/httpapp, minus _test.go
+                                            #   136 -> 137 (2026-10-20, go-dev, at 57300c49): ONE registration
+                                            #     landed - GET /api/v2/rooms/{room}/seats/{seat}/occupant-history
+                                            #     (handleListSeatOccupantChanges, seat_admin_mount.go:396), the read
+                                            #     half of the occupant record built at f7744ae5. Re-derived, not
+                                            #     adjusted: the same pattern returns 136 at 8ce64b67^ (its merge)
+                                            #     and 137 at HEAD. The document moved with it in the same pass:
+                                            #     the Reproduce line heads with 157 (httpapp 137, auth 20), the
+                                            #     generator writes 157 routes, §1.18 carries the row.
                                             #   135 -> 136 (2026-10-19, go-dev, at 30fa9bd9): ONE registration
                                             #     landed - GET /api/v2/rooms/{room}/sync (handleRoomSync,
                                             #     seat_status_mount.go:118), the record-vs-live route the owner's
@@ -127,7 +135,11 @@ EXPECTED = {
                                             #     from the registry literal. The document's §3.1 row was struck
                                             #     rather than re-pointed: there is no line left to cite.
     "auth tables": 3,                       # two in models_auth.go, one in email_token_repository.go
-    "seat tables": 16,                      # depth-1 entries of seatDatabaseTables
+    "seat tables": 17,                      # depth-1 entries of seatDatabaseTables
+                                            #   16 -> 17 (2026-10-20, go-dev, at 57300c49): f7744ae5 registered
+                                            #     seat_occupant_changes (seat_tables.go:161) with its DDL
+                                            #     (seat_management_postgresql.sql:246). Re-derived: the depth-1
+                                            #     count is 16 at 8ce64b67^ and 17 at HEAD.
                                             #   14 -> 16: 7c81981b registered seat_messages and 02bfd416 registered
                                             #     machine_edges; the audit was red from 02bfd416 until this retune.
                                             #     Re-derived, not adjusted: the depth-1 {Name: ...} count is 14 at
@@ -137,13 +149,17 @@ EXPECTED = {
                                             #     went with the credential change. Re-derived, not adjusted: 16 at
                                             #     6cfd56ab, 15 at a7990665.
     "team tables": 2,                       # depth-1 entries of teamManagementDatabaseTables
-    "registered tables total": 40,          # 19 + 3 + 16 + 2 - follows "core tables"/"seat tables" above, not a count of its own
+    "registered tables total": 41,          # 19 + 3 + 17 + 2 - follows "core tables"/"seat tables" above, not a count of its own
                                             #   39 -> 40 (2026-10-13, docs duty pass 10): follows the seat row above, whose
                                             #     movement is 2634db82's room_decisions. Re-derived, not adjusted: core 19,
                                             #     auth 3 and team 2 were each re-read at HEAD rather than carried.
                                             #   40 -> 39: the same 76b800b9 removal, counted once and not twice.
     "ProductionTables": 6,                  # declared, never appended
-    "SQL CREATE TABLE statements": 18,      # ^CREATE TABLE IF NOT EXISTS in seat_management_postgresql.sql
+    "SQL CREATE TABLE statements": 19,      # ^CREATE TABLE IF NOT EXISTS in seat_management_postgresql.sql
+                                            #   18 -> 19 (2026-10-20, go-dev, at 57300c49): the seat_occupant_changes
+                                            #     DDL is the one added statement; the unanchored grep -c reads 20
+                                            #     because the file's header comment carries the phrase.
+
                                             #   16 -> 18: the same two commits added one statement each - seat_messages
                                             #     in 7c81981b and machine_edges in 02bfd416 - which is why this row and
                                             #     "seat tables" move together and neither can be retuned alone.

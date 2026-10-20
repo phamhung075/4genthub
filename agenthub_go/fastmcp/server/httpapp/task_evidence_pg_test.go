@@ -277,8 +277,10 @@ func TestEvidenceRouteStoresOneEventTheLedgerReadReturns(t *testing.T) {
 }
 
 // TestEvidenceRouteRefusesASecondSubmissionOfTheSameHeadSHA is acceptance check 2: 409 when head_sha
-// equals the previous evidence's - and a DIFFERENT head_sha is still accepted, so the refusal is
-// about the same evidence rather than about a task's second submission.
+// equals the previous evidence's and the ACCOUNT differs - and a DIFFERENT head_sha is still
+// accepted, so the refusal is about the same evidence rather than about a task's second submission.
+// An identical replay of the same head is NOT this error; TestEvidenceRouteAnswersAnIdenticalReplay
+// pins that direction.
 func TestEvidenceRouteRefusesASecondSubmissionOfTheSameHeadSHA(t *testing.T) {
 	app, sm := evidenceApp(t)
 	token, scoped := evidenceUser(t, "a3f1c2d4-1111-4111-8111-000000000002")
@@ -312,7 +314,7 @@ func TestEvidenceRouteRefusesASecondSubmissionOfTheSameHeadSHA(t *testing.T) {
 }
 
 // TestEvidenceRouteSerializesConcurrentDuplicates drives the decision the contract makes hardest:
-// two submissions of the SAME head_sha, at the same time. The decision is taken inside the
+// two IDENTICAL submissions of the SAME head_sha, at the same time. The decision is taken inside the
 // transaction that appends it and under the ledger's per-user append lock, so exactly one must land
 // and the other must be refused - without that, both would read "no previous evidence" and both
 // would append.
@@ -341,20 +343,73 @@ func TestEvidenceRouteSerializesConcurrentDuplicates(t *testing.T) {
 	wg.Wait()
 	t.Logf("OBSERVED %d concurrent submissions of one head_sha -> statuses %v", writers, codes)
 
-	created, conflicts := 0, 0
+	created, replays := 0, 0
 	for _, code := range codes {
 		switch code {
 		case http.StatusCreated:
 			created++
-		case http.StatusConflict:
-			conflicts++
+		case http.StatusOK:
+			// The same submission arriving twice is a replay, not a second account: it answers 200
+			// with the stored entry and appends nothing.
+			replays++
 		}
 	}
-	if created != 1 || conflicts != writers-1 {
-		t.Fatalf("concurrent duplicates = %v, want exactly one 201 and %d x 409", codes, writers-1)
+	if created != 1 || replays != writers-1 {
+		t.Fatalf("concurrent identical submissions = %v, want exactly one 201 and %d x 200", codes, writers-1)
 	}
 	if rows := evidenceSubmissionRows(t, sm, taskID); rows != 1 {
 		t.Fatalf("evidence_submitted rows = %d, want exactly the one that won", rows)
+	}
+}
+
+// TestEvidenceRouteAnswersAnIdenticalReplayWithTheStoredEntry is the idempotence the 409's new
+// meaning rests on: the same submission twice answers 201 then 200, both bodies are the SAME stored
+// entry, and the ledger holds one row. A changed account of the same head is still a 409.
+func TestEvidenceRouteAnswersAnIdenticalReplayWithTheStoredEntry(t *testing.T) {
+	app, sm := evidenceApp(t)
+	token, scoped := evidenceUser(t, "a3f1c2d4-1111-4111-8111-000000000006")
+	evidenceSeedBranch(t, sm, scoped)
+	taskID := evidenceTaskCreate(t, app, token, "the task whose evidence is replayed")
+
+	const baseSHA = "0000000000000000000000000000000000000000"
+	const headSHA = "5555555555555555555555555555555555555555"
+	const numstat = "4\t1\ta.go\n"
+
+	body := evidenceBody(baseSHA, headSHA, numstat)
+	firstCode, firstBody := evidencePost(t, app, token, taskID, body)
+	replayCode, replayBody := evidencePost(t, app, token, taskID, body)
+	t.Logf("OBSERVED the submission -> %d; the identical replay -> %d %s", firstCode, replayCode, replayBody)
+	if firstCode != http.StatusCreated {
+		t.Fatalf("the first submission = %d, want 201: %s", firstCode, firstBody)
+	}
+	if replayCode != http.StatusOK {
+		t.Fatalf("an identical replay = %d, want 200: %s", replayCode, replayBody)
+	}
+	first, replay := map[string]any{}, map[string]any{}
+	if err := json.Unmarshal([]byte(firstBody), &first); err != nil {
+		t.Fatalf("decoding the first answer: %v", err)
+	}
+	if err := json.Unmarshal([]byte(replayBody), &replay); err != nil {
+		t.Fatalf("decoding the replay answer: %v", err)
+	}
+	if first["id"] != replay["id"] || first["seq"] != replay["seq"] {
+		t.Fatalf("the replay answered %v/%v, want the stored entry %v/%v",
+			replay["id"], replay["seq"], first["id"], first["seq"])
+	}
+	if rows := evidenceSubmissionRows(t, sm, taskID); rows != 1 {
+		t.Fatalf("evidence_submitted rows = %d after a replay, want 1", rows)
+	}
+
+	conflictCode, conflictBody := evidencePost(t, app, token, taskID, evidenceBody(baseSHA, headSHA, "9\t9\ta.go\n"))
+	t.Logf("OBSERVED the same head with a different numstat -> %d %s", conflictCode, conflictBody)
+	if conflictCode != http.StatusConflict {
+		t.Fatalf("a different account of the same head = %d, want 409: %s", conflictCode, conflictBody)
+	}
+	if !strings.Contains(conflictBody, "different content") {
+		t.Fatalf("the 409 must say the stored account differs: %s", conflictBody)
+	}
+	if rows := evidenceSubmissionRows(t, sm, taskID); rows != 1 {
+		t.Fatalf("evidence_submitted rows = %d after a refusal, want the one stored", rows)
 	}
 }
 

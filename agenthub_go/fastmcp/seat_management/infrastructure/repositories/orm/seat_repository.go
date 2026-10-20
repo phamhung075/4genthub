@@ -7,6 +7,7 @@ import (
 
 	domainrepo "agenthub/fastmcp/seat_management/domain/repositories"
 	seatdb "agenthub/fastmcp/seat_management/infrastructure/database"
+	"agenthub/fastmcp/task_management/domain/value_objects"
 	"agenthub/fastmcp/task_management/infrastructure/database"
 	baserepo "agenthub/fastmcp/task_management/infrastructure/repositories"
 )
@@ -77,18 +78,69 @@ func (r *ORMSeatRepository) ListByRoom(ctx context.Context, userID, roomID strin
 	return out, nil
 }
 
-// UpdateOccupant sets the runtime and model of the seat.
-func (r *ORMSeatRepository) UpdateOccupant(ctx context.Context, userID, seatID, runtime, model string) error {
+// UpdateOccupant sets the runtime and model of the seat and records the change, both in one
+// transaction. The previous values are read under the row lock, so the record names exactly the
+// pair the overwrite replaced; a no-op writes neither the seat nor a record.
+func (r *ORMSeatRepository) UpdateOccupant(ctx context.Context, userID, seatID, runtime, model, actor string) error {
 	id, err := database.UnifiedUUIDBindParam(seatID, database.DialectPostgres)
 	if err != nil {
 		return err
 	}
 	return r.GetDBSession(ctx, func(ctx context.Context, s database.DBTX) error {
-		_, err := s.ExecContext(ctx,
+		var fromRuntime, fromModel string
+		if err := s.QueryRowContext(ctx,
+			`SELECT "runtime", "model" FROM "seats" WHERE "user_id" = $1 AND "id" = $2 FOR UPDATE`,
+			userID, id).Scan(&fromRuntime, &fromModel); err != nil {
+			return err
+		}
+		if fromRuntime == runtime && fromModel == model {
+			return nil // nothing changed: no UPDATE, no record
+		}
+		at := time.Now().UTC()
+		if _, err := s.ExecContext(ctx,
 			`UPDATE "seats" SET "runtime" = $1, "model" = $2, "updated_at" = $3 WHERE "user_id" = $4 AND "id" = $5`,
-			runtime, model, time.Now().UTC(), userID, id)
+			runtime, model, at, userID, id); err != nil {
+			return err
+		}
+		_, err := s.ExecContext(ctx,
+			`INSERT INTO "seat_occupant_changes" ("id", "user_id", "seat_id", "actor", "at", "from_runtime", "from_model", "to_runtime", "to_model") `+
+				`VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+			value_objects.NewUUIDv4(), userID, id, actor, at, fromRuntime, fromModel, runtime, model)
 		return err
 	})
+}
+
+// ListOccupantChanges returns the seat's recorded occupant changes, newest first. It is
+// tenant-scoped and returns an empty slice, never nil, when there are none.
+func (r *ORMSeatRepository) ListOccupantChanges(ctx context.Context, userID, seatID string) ([]domainrepo.OccupantChange, error) {
+	id, err := database.UnifiedUUIDBindParam(seatID, database.DialectPostgres)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]domainrepo.OccupantChange, 0)
+	err = r.GetDBSession(ctx, func(ctx context.Context, s database.DBTX) error {
+		rows, err := s.QueryContext(ctx,
+			`SELECT "id"::text, "user_id", "seat_id"::text, "actor", "at", "from_runtime", "from_model", "to_runtime", "to_model" `+
+				`FROM "seat_occupant_changes" WHERE "user_id" = $1 AND "seat_id" = $2 ORDER BY "at" DESC`,
+			userID, id)
+		if err != nil {
+			return err
+		}
+		defer func() { _ = rows.Close() }()
+		for rows.Next() {
+			var change domainrepo.OccupantChange
+			if err := rows.Scan(&change.ID, &change.UserID, &change.SeatID, &change.Actor, &change.At,
+				&change.FromRuntime, &change.FromModel, &change.ToRuntime, &change.ToModel); err != nil {
+				return err
+			}
+			out = append(out, change)
+		}
+		return rows.Err()
+	})
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 // UpdatePermissionPolicy sets the permission policy of the seat.

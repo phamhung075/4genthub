@@ -31,6 +31,9 @@ type App struct {
 	subtasks     routes.SubtaskController
 	mcpTools     *interfacelayer.DDDCompliantMCPTools
 	taskProvider taskFacadeProvider
+	// ctxFactory is the ONE unified context factory this app built; mountRoutes
+	// reuses it rather than constructing a second one.
+	ctxFactory *factories.UnifiedContextFacadeFactory
 
 	// tokenOperations counts one MCP tool call on the API token that made it (usage_stats).
 	tokenOperations func(ctx context.Context, tokenID, operation string)
@@ -68,7 +71,11 @@ func NewApp(ctx context.Context, sessions *database.SessionManager) (*App, error
 			_ = tokenRepo.RecordOperation(ctx, tokenID, operation)
 		}
 	}
-	ctxFactory := factories.NewUnifiedContextFacadeFactory(ctx, sessions)
+	ctxFactory, err := factories.NewUnifiedContextFacadeFactory(ctx, sessions)
+	if err != nil {
+		return nil, err
+	}
+	a.ctxFactory = ctxFactory
 	a.projects = projectControllerAdapter{c: api_controllers.NewProjectAPIController(projectFacadeProvider{sessions: sessions, ctxFactory: ctxFactory})}
 	a.branches = branchControllerAdapter{c: api_controllers.NewBranchAPIController(branchFacadeProvider{sessions}, branchRepoProvider{sessions}), sessions: sessions}
 	taskProvider := taskFacadeProvider{sessions: sessions, ctxFactory: ctxFactory, notifier: newTaskNotifier(sessions)}

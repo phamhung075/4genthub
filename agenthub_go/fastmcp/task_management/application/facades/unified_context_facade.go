@@ -20,10 +20,10 @@ import (
 type UnifiedContextService interface {
 	CreateContext(ctx context.Context, level, contextID string, data *entities.OrderedMap[any],
 		userID, projectID *string, autoCreateParents bool) (*entities.OrderedMap[any], error)
-	GetContext(ctx context.Context, level, contextID string, includeInherited, forceRefresh bool, userID *string) (*entities.OrderedMap[any], error)
+	GetContext(ctx context.Context, level, contextID string, includeInherited bool, userID *string) (*entities.OrderedMap[any], error)
 	UpdateContext(ctx context.Context, level, contextID string, data *entities.OrderedMap[any], propagateChanges bool, userID *string) (*entities.OrderedMap[any], error)
 	DeleteContext(ctx context.Context, level, contextID string, userID *string) (*entities.OrderedMap[any], error)
-	ResolveContext(ctx context.Context, level, contextID string, forceRefresh bool, userID *string) (*entities.OrderedMap[any], error)
+	ResolveContext(ctx context.Context, level, contextID string, userID *string) (*entities.OrderedMap[any], error)
 	DelegateContext(ctx context.Context, level, contextID, delegateTo string, data *entities.OrderedMap[any], delegationReason *string) (*entities.OrderedMap[any], error)
 	AddInsight(ctx context.Context, level, contextID, content string, category, importance, agent *string) (*entities.OrderedMap[any], error)
 	AddProgress(ctx context.Context, level, contextID, content string, agent *string) (*entities.OrderedMap[any], error)
@@ -130,8 +130,8 @@ func (f *UnifiedContextFacade) CreateContext(ctx context.Context, level, context
 }
 
 // GetContext mirrors UnifiedContextFacade.get_context.
-func (f *UnifiedContextFacade) GetContext(ctx context.Context, level, contextID string, includeInherited, forceRefresh bool, userID *string) (*entities.OrderedMap[any], error) {
-	res, err := f.service.GetContext(ctx, level, contextID, includeInherited, forceRefresh, userID)
+func (f *UnifiedContextFacade) GetContext(ctx context.Context, level, contextID string, includeInherited bool, userID *string) (*entities.OrderedMap[any], error) {
+	res, err := f.service.GetContext(ctx, level, contextID, includeInherited, userID)
 	if err != nil {
 		return zpUCFServiceError(err), nil
 	}
@@ -140,7 +140,7 @@ func (f *UnifiedContextFacade) GetContext(ctx context.Context, level, contextID 
 
 // GetContextSummary mirrors UnifiedContextFacade.get_context_summary.
 func (f *UnifiedContextFacade) GetContextSummary(ctx context.Context, contextID string) (*entities.OrderedMap[any], error) {
-	response, err := f.service.GetContext(ctx, "task", contextID, false, false, nil)
+	response, err := f.service.GetContext(ctx, "task", contextID, false, nil)
 	if err != nil {
 		var validation *exceptions.ValidationException
 		var notFound *exceptions.ResourceNotFoundException
@@ -218,8 +218,8 @@ func (f *UnifiedContextFacade) DeleteContext(ctx context.Context, level, context
 }
 
 // ResolveContext mirrors UnifiedContextFacade.resolve_context.
-func (f *UnifiedContextFacade) ResolveContext(ctx context.Context, level, contextID string, forceRefresh bool) (*entities.OrderedMap[any], error) {
-	res, err := f.service.ResolveContext(ctx, level, contextID, forceRefresh, nil)
+func (f *UnifiedContextFacade) ResolveContext(ctx context.Context, level, contextID string) (*entities.OrderedMap[any], error) {
+	res, err := f.service.ResolveContext(ctx, level, contextID, nil)
 	if err != nil {
 		return zpUCFServiceError(err), nil
 	}

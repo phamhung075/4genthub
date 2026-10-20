@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -122,11 +123,13 @@ func TestDBWebSocketContextProvider(t *testing.T) {
 type wsCapture struct {
 	events []string
 	meta   []*entities.OrderedMap[any]
+	data   []any
 }
 
 func (c *wsCapture) BroadcastDataChange(_ context.Context, eventType, entityType, entityID, userID string, data any, metadata *entities.OrderedMap[any]) error {
 	c.events = append(c.events, eventType+"/"+entityType+"/"+entityID)
 	c.meta = append(c.meta, metadata)
+	c.data = append(c.data, data)
 	return nil
 }
 
@@ -179,6 +182,89 @@ func TestSyncBroadcastTaskCompletionAndCascade(t *testing.T) {
 	c, ok := cap.meta[1].Get("cascade")
 	if !ok || c.(*entities.OrderedMap[any]) == nil {
 		t.Fatalf("cascade missing")
+	}
+}
+
+func TestSyncBroadcastTaskCarriesAFlatDeltaAndCapsIt(t *testing.T) {
+	wsNotificationCacheMu.Lock()
+	wsNotificationCache = map[string]float64{}
+	wsNotificationCacheMu.Unlock()
+	cap := &wsCapture{}
+	s := &WebSocketNotificationService{Broker: cap}
+	full := entities.NewOrderedMap[any]()
+	full.Set("id", "t-delta")
+	full.Set("title", "a task")
+	full.Set("status", "in_progress")
+	full.Set("description", "bench")
+	full.Set("updated_at", "2026-10-19T12:00:00Z")
+	if err := s.SyncBroadcastTask(context.Background(), SyncTaskEventParams{
+		EventType: "updated", TaskID: "t-delta", UserID: "u", TaskData: full,
+		Changed: []string{"status", "details"},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	delta, ok := cap.data[0].(*entities.OrderedMap[any])
+	if !ok {
+		t.Fatalf("primary type = %T, want an OrderedMap delta", cap.data[0])
+	}
+	if keys := delta.Keys(); fmt.Sprint(keys) != fmt.Sprint([]string{"id", "updated_at", "status", "details_changed"}) {
+		t.Fatalf("delta keys = %v", keys)
+	}
+	if v, _ := delta.Get("title"); v != nil {
+		t.Fatalf("unchanged title reached the delta: %#v", v)
+	}
+
+	// An over-cap delta is replaced by the refetch shape, never sent truncated.
+	big := entities.NewOrderedMap[any]()
+	big.Set("id", "t-big")
+	big.Set("description", strings.Repeat("x", WebSocketTaskPayloadCap))
+	big.Set("updated_at", "2026-10-19T12:00:01Z")
+	if err := s.SyncBroadcastTask(context.Background(), SyncTaskEventParams{
+		EventType: "updated", TaskID: "t-big", UserID: "u", TaskData: big, Changed: []string{"description"},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	refetch, _ := cap.data[1].(*entities.OrderedMap[any])
+	if refetch == nil {
+		t.Fatalf("primary type = %T, want the refetch map", cap.data[1])
+	}
+	if keys := refetch.Keys(); fmt.Sprint(keys) != fmt.Sprint([]string{"id", "refetch"}) {
+		t.Fatalf("refetch keys = %v", keys)
+	}
+	if v, _ := refetch.Get("refetch"); v != true {
+		t.Fatalf("refetch = %#v", v)
+	}
+}
+
+func TestSyncBroadcastTaskDeduplicatesOneWriteNotTwo(t *testing.T) {
+	wsNotificationCacheMu.Lock()
+	wsNotificationCache = map[string]float64{}
+	wsNotificationCacheMu.Unlock()
+	cap := &wsCapture{}
+	s := &WebSocketNotificationService{Broker: cap}
+	event := func(stamp, user string) SyncTaskEventParams {
+		full := entities.NewOrderedMap[any]()
+		full.Set("id", "t-dedup")
+		full.Set("updated_at", stamp)
+		return SyncTaskEventParams{EventType: "updated", TaskID: "t-dedup", UserID: user, TaskData: full, Changed: []string{"updated_at"}}
+	}
+	// The two emitter families stamp one write differently ("system" and the acting user); the
+	// updated_at they share is what makes it one write.
+	if err := s.SyncBroadcastTask(context.Background(), event("stamp-1", "system")); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.SyncBroadcastTask(context.Background(), event("stamp-1", "u-actor")); err != nil {
+		t.Fatal(err)
+	}
+	if len(cap.events) != 1 {
+		t.Fatalf("one write emitted %d frames, want 1", len(cap.events))
+	}
+	// A second write inside the TTL carries a new stamp and must reach the client.
+	if err := s.SyncBroadcastTask(context.Background(), event("stamp-2", "system")); err != nil {
+		t.Fatal(err)
+	}
+	if len(cap.events) != 2 {
+		t.Fatalf("two writes emitted %d frames, want 2", len(cap.events))
 	}
 }
 

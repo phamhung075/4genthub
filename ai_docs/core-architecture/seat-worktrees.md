@@ -25,7 +25,7 @@ Architect ruling, 2026-10-11. Requested by the owner through the lead (`qitem-20
 
   In the same function, a room that has a `lead` also gets `<roomDir>/wt/integration` on `<rig>/integration`.
 
-**What moves.** Each member's `cwd` in `rig.yaml` becomes output of this rule. `rigLaunchSpec` (`clientsync/rigverb.go:589`) stops setting it to the room directory. The hand-made variants `rig/rig-claude.yaml` and `rig/rig-omp.yaml`, whose members carry `cwd: .`, are not sources and are retired by re-materializing, never by hand.
+**What moves.** Each member's `cwd` in `rig.yaml` becomes output of this rule. `rigLaunchSpec` left with the deleted `sync room` verb (client `ba96fee`); `up` now derives and creates the worktrees before it starts the seats, so each seat's cwd is its worktree rather than the room (`clientlifecycle/lifecycle.go:372`). The hand-made variants `rig/rig-claude.yaml` and `rig/rig-omp.yaml`, whose members carry `cwd: .`, are not sources and are retired by re-materializing, never by hand.
 
 **Why `<roomDir>/wt/`.** It is the client's own directory: `rigLaunchSpec` already treats `roomDir` as the one directory no build replaces. The rejected location is a sibling of the repository, which no client code owns.
 

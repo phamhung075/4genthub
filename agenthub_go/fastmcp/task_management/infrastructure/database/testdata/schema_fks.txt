@@ -1,0 +1,11 @@
+# The cascade set, pinned: table:column:on_delete:owner
+# owner is the referenced table; every line must name a live OnDelete column and
+# every OnDelete column must have its line. task_events has none by comment
+# (task_event_tables.go), so its absence is asserted here, not left to silence.
+agent_session_events:session_id:CASCADE:agent_sessions
+project_git_branchs:project_id:CASCADE:projects
+tasks:git_branch_id:CASCADE:project_git_branchs
+subtasks:task_id:CASCADE:tasks
+task_assignees:task_id:CASCADE:tasks
+task_dependencies:task_id:CASCADE:tasks
+task_dependencies:depends_on_task_id:CASCADE:tasks

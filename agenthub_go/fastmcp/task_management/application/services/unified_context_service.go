@@ -47,7 +47,6 @@ type ContextEventAppender interface {
 type UnifiedContextService struct {
 	UserID             *string
 	repositories       map[value_objects.ContextLevel]UnifiedContextRepository
-	CacheService       *ContextCacheService
 	InheritanceService *ContextInheritanceService
 	DelegationService  *ContextDelegationService
 	ValidationService  *ContextValidationService
@@ -102,7 +101,6 @@ func (s *UnifiedContextService) autoDetectCreateIDs(ctx context.Context, level v
 // no-argument Python defaults.
 func NewUnifiedContextService(
 	globalContextRepository, projectContextRepository, branchContextRepository, taskContextRepository UnifiedContextRepository,
-	cacheService *ContextCacheService,
 	inheritanceService *ContextInheritanceService,
 	delegationService *ContextDelegationService,
 	validationService *ContextValidationService,
@@ -117,10 +115,6 @@ func NewUnifiedContextService(
 			value_objects.ContextLevelTask:    taskContextRepository,
 		},
 	}
-	if cacheService == nil {
-		cacheService = NewContextCacheService(nil, 1, userID)
-	}
-	s.CacheService = cacheService
 	if inheritanceService == nil {
 		inheritanceService = NewContextInheritanceService(s.repositories, userID)
 	}
@@ -144,7 +138,7 @@ func (s *UnifiedContextService) WithUser(userID string) *UnifiedContextService {
 		s.repositories[value_objects.ContextLevelProject],
 		s.repositories[value_objects.ContextLevelBranch],
 		s.repositories[value_objects.ContextLevelTask],
-		s.CacheService, s.InheritanceService, s.DelegationService, s.ValidationService, &userID,
+		s.InheritanceService, s.DelegationService, s.ValidationService, &userID,
 	).WithEntityLookup(s.EntityLookup).WithEventAppender(s.EventAppender)
 }
 
@@ -318,7 +312,7 @@ func (s *UnifiedContextService) CreateContext(ctx context.Context, level, contex
 }
 
 // GetContext mirrors get_context.
-func (s *UnifiedContextService) GetContext(ctx context.Context, level, contextID string, includeInherited, forceRefresh bool, userID *string) (*entities.OrderedMap[any], error) {
+func (s *UnifiedContextService) GetContext(ctx context.Context, level, contextID string, includeInherited bool, userID *string) (*entities.OrderedMap[any], error) {
 	if contextID == "" {
 		return zpUCSError("Context ID is required"), nil
 	}
@@ -533,7 +527,7 @@ func (s *UnifiedContextService) DeleteContext(ctx context.Context, level, contex
 }
 
 // ResolveContext mirrors resolve_context.
-func (s *UnifiedContextService) ResolveContext(ctx context.Context, level, contextID string, forceRefresh bool, userID *string) (*entities.OrderedMap[any], error) {
+func (s *UnifiedContextService) ResolveContext(ctx context.Context, level, contextID string, userID *string) (*entities.OrderedMap[any], error) {
 	contextLevel, err := value_objects.ContextLevelFromEnumValue(level)
 	if err != nil {
 		return zpUCSError(err.Error()), nil
@@ -546,7 +540,7 @@ func (s *UnifiedContextService) ResolveContext(ctx context.Context, level, conte
 		}
 		contextID = normalized
 	}
-	result, _ := s.GetContext(ctx, level, contextID, true, forceRefresh, nil)
+	result, _ := s.GetContext(ctx, level, contextID, true, nil)
 	if success, _ := result.Get("success"); success == true {
 		result.Set("resolved", true)
 		result.Set("inheritance_applied", true)
@@ -603,7 +597,7 @@ func (s *UnifiedContextService) ListContexts(ctx context.Context, level string, 
 
 // AddInsight mirrors add_insight.
 func (s *UnifiedContextService) AddInsight(ctx context.Context, level, contextID, content string, category, importance, agent *string) (*entities.OrderedMap[any], error) {
-	contextResult, _ := s.GetContext(ctx, level, contextID, false, false, nil)
+	contextResult, _ := s.GetContext(ctx, level, contextID, false, nil)
 	if success, _ := contextResult.Get("success"); success != true {
 		return contextResult, nil
 	}
@@ -636,7 +630,7 @@ func (s *UnifiedContextService) AddInsight(ctx context.Context, level, contextID
 
 // AddProgress mirrors add_progress.
 func (s *UnifiedContextService) AddProgress(ctx context.Context, level, contextID, content string, agent *string) (*entities.OrderedMap[any], error) {
-	contextResult, _ := s.GetContext(ctx, level, contextID, false, false, nil)
+	contextResult, _ := s.GetContext(ctx, level, contextID, false, nil)
 	if success, _ := contextResult.Get("success"); success != true {
 		return contextResult, nil
 	}
@@ -1581,13 +1575,6 @@ func (s *UnifiedContextService) propagateChanges(level value_objects.ContextLeve
 
 // cleanupDependentContexts mirrors _cleanup_dependent_contexts.
 func (s *UnifiedContextService) cleanupDependentContexts(level value_objects.ContextLevel, contextID string) {
-}
-
-// invalidateChildCaches mirrors _invalidate_child_caches.
-func (s *UnifiedContextService) invalidateChildCaches(level value_objects.ContextLevel, contextID, userID string, cache *ContextCacheService) {
-	if cache == nil {
-		return
-	}
 }
 
 // ensureGlobalContextExists mirrors _ensure_global_context_exists.

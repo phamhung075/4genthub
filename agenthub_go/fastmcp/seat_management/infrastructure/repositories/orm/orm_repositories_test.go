@@ -24,10 +24,17 @@ import (
 // fakeDriver is a scripted database/sql driver: it records every prepared statement and
 // answers queries through respond. SELECT 1 (the connection check) is answered by Exec.
 type fakeDriver struct {
-	mu      sync.Mutex
-	queries []string
-	respond func(q string, args []driver.Value) (cols []string, rows [][]driver.Value, err error)
-	execErr func(q string) error
+	mu       sync.Mutex
+	queries  []string
+	execArgs []fakeExec
+	respond  func(q string, args []driver.Value) (cols []string, rows [][]driver.Value, err error)
+	execErr  func(q string) error
+}
+
+// fakeExec is one recorded Exec: the statement and the arguments bound to it.
+type fakeExec struct {
+	query string
+	args  []driver.Value
 }
 
 func (f *fakeDriver) record(q string) {
@@ -36,10 +43,26 @@ func (f *fakeDriver) record(q string) {
 	f.mu.Unlock()
 }
 
+func (f *fakeDriver) recordExec(q string, args []driver.Value) {
+	f.mu.Lock()
+	f.execArgs = append(f.execArgs, fakeExec{query: q, args: append([]driver.Value(nil), args...)})
+	f.mu.Unlock()
+}
+
 func (f *fakeDriver) recorded() []string {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	return append([]string(nil), f.queries...)
+}
+
+func (f *fakeDriver) execRecords() []fakeExec {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	out := make([]fakeExec, len(f.execArgs))
+	for i, rec := range f.execArgs {
+		out[i] = fakeExec{query: rec.query, args: append([]driver.Value(nil), rec.args...)}
+	}
+	return out
 }
 
 func (f *fakeDriver) open() *sql.DB { return sql.OpenDB(fakeConnector{f}) }
@@ -68,8 +91,9 @@ type fakeStmt struct {
 func (s *fakeStmt) Close() error  { return nil }
 func (s *fakeStmt) NumInput() int { return -1 }
 
-func (s *fakeStmt) Exec([]driver.Value) (driver.Result, error) {
+func (s *fakeStmt) Exec(args []driver.Value) (driver.Result, error) {
 	s.f.record(s.q)
+	s.f.recordExec(s.q, args)
 	if s.f.execErr != nil {
 		if err := s.f.execErr(s.q); err != nil {
 			return nil, err
@@ -723,11 +747,17 @@ func TestSeatSettingsSetInsertsThenUpdates(t *testing.T) {
 
 func TestSeatUpdateOccupantTenantScoped(t *testing.T) {
 	f := &fakeDriver{}
+	f.respond = func(q string, args []driver.Value) ([]string, [][]driver.Value, error) {
+		if strings.Contains(q, `FROM "seats"`) && strings.Contains(q, `FOR UPDATE`) {
+			return []string{"runtime", "model"}, [][]driver.Value{fakeRow("claude-code", "sonnet")}, nil
+		}
+		return nil, nil, nil
+	}
 	repo, err := NewORMSeatRepository(newFakeManager(t, f))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := repo.UpdateOccupant(context.Background(), testUser, testSeatID, "codex", "gpt-5.1"); err != nil {
+	if err := repo.UpdateOccupant(context.Background(), testUser, testSeatID, "codex", "gpt-5.1", testUser); err != nil {
 		t.Fatalf("UpdateOccupant: %v", err)
 	}
 	updated := false

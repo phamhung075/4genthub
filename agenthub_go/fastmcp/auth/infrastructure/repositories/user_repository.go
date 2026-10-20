@@ -465,8 +465,22 @@ func (r *UserRepository) ListAll(ctx context.Context, limit, offset int, status 
 }
 
 // Delete is delete; a missing row returns false (Python raises on driver errors).
+// Delete removes the user and its token balance in one transaction. The
+// user_token_balances.user_id foreign key no longer cascades, so the application owns the delete.
 func (r *UserRepository) Delete(ctx context.Context, userID string) (bool, error) {
-	return r.ORMRepository.Delete(ctx, userID)
+	deleted := false
+	err := r.Transaction(ctx, func(ctx context.Context) error {
+		if err := r.GetDBSession(ctx, func(ctx context.Context, s database.DBTX) error {
+			_, err := s.ExecContext(ctx, `DELETE FROM "user_token_balances" WHERE "user_id" = $1`, userID)
+			return err
+		}); err != nil {
+			return err
+		}
+		d, err := r.ORMRepository.Delete(ctx, userID)
+		deleted = d
+		return err
+	})
+	return deleted, err
 }
 
 // ExistsByEmail is exists_by_email (email lowercased); errors return false.

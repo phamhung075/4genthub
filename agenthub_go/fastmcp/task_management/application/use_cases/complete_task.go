@@ -582,7 +582,7 @@ func (uc *CompleteTaskUseCase) executeCore(
 			if task.GitBranchID != nil {
 				branchID = *task.GitBranchID
 			}
-			uc.hooks.NotifyTaskEvent(ctx, "completed", task, nil, nil, branchID)
+			uc.hooks.NotifyTaskEvent(ctx, "completed", task, nil, nil, branchID, []string{"status"})
 		}
 	}
 

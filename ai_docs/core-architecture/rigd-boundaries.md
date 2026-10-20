@@ -19,7 +19,7 @@ agent is the always-on local client. It holds one outbound WebSocket to `/ws/con
 
 - Server: `agenthub_go/fastmcp/server/httpapp/ws_mount.go` (`handleConnector`) requires the `sessions:write` scope and serves these frames: `hello` → `ready`, `session` → `session_ack {session_id, last_seq}`, `events` → `events_ack {session_id, last_seq}`, and `error {message}`. An unknown `type` is answered with `error "unknown type"` and the socket stays open. On disconnect the server marks the connector's sessions offline (`session_stream.MarkOffline`).
 - The server assigns `seq` (`session_stream/repository.go`, `AppendEvents`; at most 200 events per batch, `MaxEventsPerBatch`). An event carries no client key, so a batch resent after a lost ack is stored twice. The client comment `internal/clientsync/connector.go:321` makes deduplication the client's job, and nothing does it today.
-- Client: `internal/clientsync/connector.go` and `connectorverb.go` send ONE session ONE time (`sync connector`). Redaction is a fixed regex list (`Redact`, `redactionPatterns`) with no failure path. The same files exist in BOTH `agenthub_client` (pin `80cc766d`) and `agenthub_go/internal/clientsync`. The duplication is the seatcheck case again.
+- Client: `internal/clientsync/connector.go` and `connectorverb.go` send ONE session ONE time (`sync connector`). Redaction is a fixed regex list (`Redact`, `redactionPatterns`) with no failure path. The same files exist only in `agenthub_client` (pin `80cc766d`); the server's copy was purged in `cbc51bae` with the legacy rig client, and the client routes moved to `/api/v2`.
 - `agent_sessions` has `status`, `last_seq`, `last_seen` and the seat pair, and no client cursor column.
 
 ## 1. Where agent lives
@@ -168,6 +168,32 @@ The cloud must never receive an unredacted byte, so redaction is a **preconditio
    - Generic assignments whose name ends in `TOKEN`, `SECRET`, `PASSWORD`, `PASSWD`, `API_KEY` or `PRIVATE_KEY` (any case, `=` or `:`).
    - Command-line flags `--token`, `--password`, `--secret` and `--api-key`, in both the `=` and the space form.
 3. **`.env` content is WITHHELD, not pattern-redacted.** An event whose tool input names a path matching `(^|/)\.env(\..*)?$` (Read, cat, or similar), and the tool result paired with it, is replaced by the withheld placeholder in 4.4. Patterns cannot be trusted to recognise every value in an env file.
+
+### 4.3.1 The `sk-` detector: a left boundary, never a narrower alphabet
+
+The `sk-` pattern ships in two copies, `internal/secretscan` on both sides (`internal/secretscan/secretscan.go:11`, `seat_management/domain/secretscan/redact.go:42`
+in `agenthub_client/internal/secretscan` and `agenthub_go/fastmcp/seat_management/domain/secretscan`). Both
+carried `sk-[A-Za-z0-9_-]{20,}` with no left boundary, which redacts a mid-word name such as
+`task-workflow-and-reporting.md`. The ruled shape is `\bsk-[A-Za-z0-9_-]{20,}`: the `\b` is the whole of the
+fix for that false positive, and the tail keeps the full base64url alphabet.
+
+Measured 2026-10-18 (Go `regexp`, three shapes against six strings; `orig` is `sk-[A-Za-z0-9_-]{20,}` with no
+boundary, `narrow` is `\bsk-(?:[A-Za-z0-9]+-)*[A-Za-z0-9]{20,}`):
+
+| string | orig | narrow | `\bsk-[A-Za-z0-9_-]{20,}` |
+|---|---|---|---|
+| `sk-ant-api03-AbCd_EfGhIjKlMn_OpQrStUvWxYz_0123456789AbCd` | true | **false - a real key would pass unredacted** | true |
+| `ai_docs/agent-system/task-workflow-and-reporting.md` | true | false | **false** |
+| `sk-workflow-and-reporting.md is the doc` (line start) | true | false | true - accepted over-redaction |
+| `DEEPSEEK_API_KEY=sk-abcdefghijklmnop` (17-char tail) | false | false | false |
+
+- **The left boundary decides, not the alphabet.** Narrowing the tail trades a false positive (a redacted
+  file name) for a false negative (a stored secret), and the second cost is unbounded. Over-redaction is the
+  safe direction: a document named at line start `sk-...` is redacted, and that is accepted.
+- **A fixture exercises the real alphabet.** A test string of alphanumerics alone proves nothing about a key
+  whose tail carries `_` and `-`; the base64url-shaped key above is the one to test with. The acceptance for
+  both copies: the pattern above, and a test that asserts that key redacts and the `task-workflow-...` path
+  does not.
 
 ### 4.4 When redaction fails or is unsure: FAIL CLOSED, per event
 
@@ -476,10 +502,10 @@ The nudge is a loop inside agent. It reads the same per-seat activity that agent
 **2. The gate: it already lives in ONE place, and every automatic wake reads it.**
 
 - `internal/clientoffpeak` holds:
-  - the setting `OFFPEAK_ONLY` (`gate.go:31`);
-  - the override `--allow-peak` (`gate.go:43`);
+  - the setting `OFFPEAK_ONLY` (`clientoffpeak/gate.go:31`);
+  - the override `--allow-peak` (`clientoffpeak/gate.go:43`);
   - the schedule, evaluated in UTC (`schedule.go:111`, `At` takes `now.UTC()`; peak is 01:00-04:00 and 06:00-10:00 Monday-Friday, plus the holiday file);
-  - the room decision `Check(allowPeak, nodes, getenv)` (`gate.go:109`), which gates only a room whose seats run a `deepseek/` model.
+  - the room decision `Check(allowPeak, nodes, getenv)` (`clientoffpeak/gate.go:109`), which gates only a room whose seats run a `deepseek/` model.
 - `clientlifecycle.PeakGate` (`lifecycle.go:251`) is the one call site that wraps it. Nothing new is built for the gate. The rule is that every automatic wake calls `PeakGate` and nothing else.
 
 | Wake | Gated today? | Ruling |
@@ -627,3 +653,62 @@ Deleting data, pushing, editing code, changing credentials and every other unsup
 **Ruling: A.** In addition, `doctor` adds a row, `orphan_handoffs`, which names each pending qitem whose destination is not live. This is the same predicate as `up`'s room/team mismatch check, so both belong to the team-prune item `00f2e9cf`. Neither guard moves a seat.
 
 **DATED NOTE, 2026-10-15 (go-dev): the checker's send verb is GONE, so option A's row above is the record of which choice was made rather than a live description - the two option rows and the ruling itself are kept as they were written, and this sentence is what a reader takes as today's state.** The owner ruled the verb out (it refused every send, and the policy it checked was written by nothing), and `cmd/seatcheck` in the client now carries only the read-only `audit-scan`; **the audited send path is the client's own `4genteam send`**, which builds the room's declared links into a policy at send time, decides, writes the decision line, delivers and writes the outcome line in ONE process (`internal/clientseat`) - which is why the audit is no longer split across two processes' lifetimes. **What 7.11's rule requires of a closure does not change, and it is exactly what the rows closed today did:** the destination is read from `4genteam ps <rig> --nodes`, and the closure carries `--reason handed_off_to --target <session>` with the new row named in the note.
+
+### 7.12 Addendum: a probe that could not run is not an absence (architect ruling 2026-10-20, board row `6e1171ba`; rail `qitem-20261020163856-6c7deb64075f`)
+
+**The rule (one shape, every reader):** a reader that decides a state from a process or file probe answers
+`(value, error)`. An error means the probe **did not run**, so no row, seat, report or repair is produced from
+it. "The probe ran and found nothing" is the zero value with a nil error - `(nil, nil)` for a pid list, `("")`
+with nil for a seat no client has pinned. Every caller either refuses in words naming the probe, or (a pure
+reader) skips the row and names it; none of them prints a decided row.
+
+This is 7.7 applied to the process table: a missing signal is no evidence. The three sites the sweep found
+(`623d29a`, `2f89ea2` carried the earlier reads) all collapsed the two answers into one:
+
+| Site | Was | Is |
+|---|---|---|
+| `clientservices.livePIDs` (`Live`) | `LookPath` failure -> `nil` pids -> every row `stopped` | `([]int, error)`; pgrep exit **1** (the absence it observed) is `(nil, nil)`, anything else is an error |
+| `clientlifecycle.stopPattern` | `false` meant "nothing matched **or** pkill is not here" | `(bool, error)`; only pkill exit 1 is `false` |
+| `clientbridge.PinnedHash` | a read error answered `""`, the value sent for a seat no client has pinned | `(string, error)`; a `pinned.json` that exists and cannot be read is an error naming the file |
+
+**The shape change, per entry point.** `Verify`, `verifyRow`, `SafeguardRows`/`rowsFor`,
+`waitForSafeguardsImpl`, `heal.Run`/`checkSafeguards`, `BuildPayload`/`BuildSeats`, `agentRunning`,
+`SafeguardRows`, `agentManager.supervise`/`pass`/`reconcile`/`ensure` and `respawnDaemon` all answer the
+probe's error. `Verify` stops at the FIRST error and answers no rows, because a partial report is the failure
+being replaced.
+
+| Verb | On a probe error |
+|---|---|
+| `doctor` | prints `4genteam doctor: no safeguard row was decided: <probe>`, exits 3, prints **no** row, reason or note line |
+| `up` | `clientservices.Probe()` (`pgrep` + `pkill` on PATH) runs before the daemon, agent or seat; refusal prints `nothing was started or stopped`, exits 3, starts nothing. The start grace refuses the same way |
+| `up --respawn` | `respawnDaemon` refuses before signalling or starting: the empty-pids branch is unreachable on an error |
+| `stop` | `agent was NOT stopped: <probe>`, exits 3, and never prints `was not running`; `closeWatch` is not reached |
+| `agent` (the supervisor) | the pass returns the error, the daemon prints the refusal once and exits 3; nothing is adopted, started or stopped |
+| `heal` | `no safeguard row was decided: <probe>`, exits 3, prints no findings, applies no repair (a re-check that could not read is not a fix) |
+| `compact` | `no safeguard row was decided: <probe>`, exits 3 |
+| `status`, `agent status` | print no rows and name the probe on stderr, and keep their exit (they are readers) |
+| `bridge once --print` | exits 3, nothing on stdout, stderr names the file and says the report was NOT sent |
+| a bridge cycle | sends nothing and records the note naming the file |
+
+`bridge once --print` takes no pins flag: its store comes from `clientenv.RealHome`, so the operator-surface
+refusal was verified by hand (`PATH`-held binary, a corrupt `pinned.json` in the store: exit 3, empty stdout,
+`... pin could not be read: <path>: ...; the seats report was NOT sent`) rather than by a test that would write
+the operator's own store. The branch is four lines over `BuildPayload`, whose refusal is tested.
+
+**Unchanged.** 7.2's four states (`running`, `silent`, `failing`, `stopped`) and its field set, 7.4's
+thresholds, and every precedence rule: only the *answer for an unread probe* changed. `AllRunning`,
+`NotRunning` and `StateLine` keep their shape - they consume a report that was read.
+
+**Tests** (all in `agenthub_client`, `go test ./...` green 2026-10-20):
+
+| Test | Expected |
+|---|---|
+| `clientservices.TestVerifyRefusesWhenTheProcessProbeCannotRun` | no rows and the probe's error |
+| `clientlifecycle.TestDoctorRefusesWhenTheProcessProbeCannotRun` | exit 3, named line, no row on stdout |
+| `clientlifecycle.TestUpRefusesBeforeTheDaemonWhenTheProbeCannotRun` | exit 3 with `PATH` holding no pgrep, no step ran |
+| `clientlifecycle.TestStopRefusesWhenTheSignalProbeCannotRun` | exit 3, no `was not running`, no watch close |
+| `clientlifecycle.TestRespawnRefusesWhenTheProbeCannotRun` | `false`, nothing signalled or started |
+| `clientheal.TestAProbeErrorRefusesTheHeal` | error, no findings, no repair |
+| `clientbridge.TestAMalformedPinRefusesTheSeatsReport` | three unreadable pins each refuse, naming `pinned.json` |
+| `clientbridge.TestACycleSendsNothingWhenASeatPinCouldNotBeRead` | no body sent, note names the file |
+| `clientbridge.TestPinnedHashUsedWhenValid` | a valid pin is used; a missing one is `("", nil)`; a malformed one is an error |

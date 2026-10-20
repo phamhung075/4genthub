@@ -117,6 +117,50 @@ func TestProjectRepoSaveFindDelete(t *testing.T) {
 	}
 }
 
+func TestProjectRepoDeleteProjectRemovesTaskEvents(t *testing.T) {
+	// The project delete is not a second delete body: the service deletes each of the project's
+	// branches through DeleteBranch and only then the project row
+	// (project_management_service.go). This test walks that same order end to end, so the branch
+	// delete is what must take the ledger and the project row survives nothing.
+	sessions := newTestRepoEnv(t)
+	ctx := context.Background()
+	user := "b7d1c0a2-3f4e-5d6c-8b9a-0f1e2d3c4b5a"
+	repo := projectRepoTestNewRepo(t, sessions, user)
+
+	project, err := entities.CreateProject("Evented", "has a ledger row")
+	if err != nil {
+		t.Fatal(err)
+	}
+	branch, err := project.CreateGitBranch("git-main", "Main branch", "desc")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := repo.Save(ctx, project); err != nil {
+		t.Fatalf("Save: %v", err)
+	}
+	taskID := projectRepoTestCreateTask(t, sessions, branch.ID.Value, user, "todo")
+	taskEventsTestAppend(t, sessions, user, branch.ID.Value, taskID)
+
+	branchRepo, err := NewORMGitBranchRepository(sessions, &user, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if deleted, err := branchRepo.DeleteBranch(ctx, branch.ID.Value); err != nil || !deleted {
+		t.Fatalf("DeleteBranch: %v %v", deleted, err)
+	}
+
+	deleted, err := repo.DeleteProject(ctx, project.ID.Value)
+	if err != nil || !deleted {
+		t.Fatalf("DeleteProject = %v, %v", deleted, err)
+	}
+	if gitBranchRepoTestRowExists(t, sessions, `SELECT count(*) FROM task_events WHERE task_id = $1`, taskID) {
+		t.Fatal("task_events row still present after the project delete")
+	}
+	if row, _ := repo.FindByID(ctx, project.ID.Value); row != nil {
+		t.Fatal("project still present")
+	}
+}
+
 func TestProjectRepoUserIsolation(t *testing.T) {
 	sessions := newTestRepoEnv(t)
 	ctx := context.Background()

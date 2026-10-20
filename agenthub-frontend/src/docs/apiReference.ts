@@ -693,6 +693,16 @@ export const apiReference: ApiReference = {
     },
     {
       "method": "GET",
+      "path": "/api/v2/rooms/{room}/seats/{seat}/occupant-history",
+      "pathParams": [
+        "room",
+        "seat"
+      ],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "GET",
       "path": "/api/v2/rooms/{room}/seats/{seat}/overlay",
       "pathParams": [
         "room",
@@ -1672,7 +1682,7 @@ export const apiReference: ApiReference = {
     },
     {
       "name": "manage_context",
-      "description": "\nCONTEXT MANAGEMENT - 4-tier hierarchy (Global→Project→Branch→Task): CRUD | inheritance | caching | delegation | insights\n\nACTIONS: create | get | update | delete | resolve (full chain) | delegate (move between levels) | add_insight | add_progress | list\n\nLEVELS: global (user-scoped) | project | branch | task | Each inherits from parent\n\nKEY PARAMS: level (tier) | context_id (ID for level) | force_refresh (bypass cache) | include_inherited (full chain) | propagate_changes (cascade) | delegate_to ('delegate' action) | content ('add_insight'/'add_progress' actions)\n\nFEATURES: Unified API | Auto-inheritance | Smart caching | Change propagation | Delegation queue | Backward compatible\n\nERRORS: Missing fields→specific error | Unknown actions→valid list | Internal→logged+generic\n",
+      "description": "\nCONTEXT MANAGEMENT - 4-tier hierarchy (Global→Project→Branch→Task): CRUD | inheritance | delegation | insights\n\nACTIONS: create | get | update | delete | resolve (full chain) | delegate (move between levels) | add_insight | add_progress | list\n\nLEVELS: global (user-scoped) | project | branch | task | Each inherits from parent\n\nKEY PARAMS: level (tier) | context_id (ID for level) | include_inherited (full chain) | propagate_changes (cascade) | delegate_to ('delegate' action) | content ('add_insight'/'add_progress' actions)\n\nFEATURES: Unified API | Auto-inheritance | Change propagation | Delegation queue | Backward compatible\n\nERRORS: Missing fields→specific error | Unknown actions→valid list | Internal→logged+generic\n",
       "parameters": {
         "properties": {
           "action": {
@@ -1732,12 +1742,6 @@ export const apiReference: ApiReference = {
             "default": null,
             "description": "[OPTIONAL] Filter criteria for list operations as JSON string. Supports filtering by data fields, creation dates, agents, and other metadata",
             "title": "Filters",
-            "type": "string"
-          },
-          "force_refresh": {
-            "default": null,
-            "description": "[OPTIONAL] Bypass cache and force fresh data retrieval. Use when cache consistency is critical. Accepts: 'true', 'false', '1', '0'",
-            "title": "Force Refresh",
             "type": "string"
           },
           "git_branch_id": {

@@ -25,7 +25,7 @@ func TestZucsGetContextServesTheLiveTaskOwnedFields(t *testing.T) {
 			}})
 			task.store["t1"] = zucsTaskContext("t1", "todo")
 
-			res, err := s.ResolveContext(context.Background(), "task", "t1", false, nil)
+			res, err := s.ResolveContext(context.Background(), "task", "t1", nil)
 			if err != nil {
 				t.Fatalf("resolve: %v", err)
 			}
@@ -52,7 +52,7 @@ func TestZucsOverlayLeavesWhatTheContextOwns(t *testing.T) {
 	s, task := newZucsTaskService(&fakeEntityLookup{ownFields: map[string]any{"status": "done"}})
 	task.store["t1"] = zucsTaskContext("t1", "todo")
 
-	res, _ := s.ResolveContext(context.Background(), "task", "t1", false, nil)
+	res, _ := s.ResolveContext(context.Background(), "task", "t1", nil)
 	served := zucsServedTaskData(t, res)
 	if v, _ := served.Get("description"); v != "stored description" {
 		t.Fatalf("description = %v, want the stored one", v)
@@ -76,7 +76,7 @@ func TestZucsOverlayKeepsTheStoredCopyWhenTheTaskIsUnavailable(t *testing.T) {
 			s, task := newZucsTaskService(tc.lookup)
 			task.store["t1"] = zucsTaskContext("t1", "todo")
 
-			res, err := s.ResolveContext(context.Background(), "task", "t1", false, nil)
+			res, err := s.ResolveContext(context.Background(), "task", "t1", nil)
 			if err != nil {
 				t.Fatalf("resolve: %v", err)
 			}
@@ -96,7 +96,7 @@ func TestZucsOverlaySkipsNonTaskLevels(t *testing.T) {
 	global := s.repositories[value_objects.ContextLevelGlobal]
 	global.(*zucsFakeRepo).store["g"] = entities.NewGlobalContext("g", "Org", map[string]any{"status": "todo"}, map[string]any{"user_id": "user-1"})
 
-	res, _ := s.GetContext(context.Background(), "global", "g", false, false, nil)
+	res, _ := s.GetContext(context.Background(), "global", "g", false, nil)
 	servedAny, _ := res.Get("context")
 	served, ok := servedAny.(*entities.OrderedMap[any])
 	if !ok {
@@ -110,7 +110,7 @@ func TestZucsOverlaySkipsNonTaskLevels(t *testing.T) {
 func newZucsTaskService(lookup EntityIDLookup) (*UnifiedContextService, *zucsFakeRepo) {
 	task := newZucsFakeRepo()
 	user := "user-1"
-	s := NewUnifiedContextService(newZucsFakeRepo(), newZucsFakeRepo(), newZucsFakeRepo(), task, nil, nil, nil, nil, &user)
+	s := NewUnifiedContextService(newZucsFakeRepo(), newZucsFakeRepo(), newZucsFakeRepo(), task, nil, nil, nil, &user)
 	if lookup != nil {
 		s = s.WithEntityLookup(lookup)
 	}

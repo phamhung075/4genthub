@@ -3,6 +3,7 @@ package httpapp
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"log"
 
@@ -53,7 +54,7 @@ type taskEvidenceWriterAdapter struct {
 }
 
 func (a taskEvidenceWriterAdapter) RecordEvidence(ctx context.Context, taskID, headSHA string,
-	payload map[string]any) (*taskdomain.TaskEvent, error) {
+	payload map[string]any) (*taskdomain.TaskEvent, bool, error) {
 	// The user the row is scoped to is the id the COMPOSITION resolves - the token subject normalized
 	// to a UUID (task_adapter.go's taskFacadeFactory -> domain.ValidateUserID) - and not the raw
 	// subject currentUserID hands back. The ledger's other writer (the status path, task_wiring.go)
@@ -63,10 +64,11 @@ func (a taskEvidenceWriterAdapter) RecordEvidence(ctx context.Context, taskID, h
 	raw := a.userID
 	userID, err := domain.ValidateUserID(&raw, "evidence submission")
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	var out *taskdomain.TaskEvent
+	created := false
 	err = a.sessions.Transaction(ctx, func(ctx context.Context) error {
 		// THE DECISION AND THE APPEND MUST AGREE UNDER CONCURRENCY. The decision is taken inside the
 		// transaction that appends it, and BEFORE the read it takes the ledger's own per-user append
@@ -79,12 +81,24 @@ func (a taskEvidenceWriterAdapter) RecordEvidence(ctx context.Context, taskID, h
 			return err
 		}
 
-		previous, found, err := lastEvidenceHeadSHA(ctx, a.sessions, userID, taskID)
+		previous, found, err := lastEvidence(ctx, a.sessions, userID, taskID)
 		if err != nil {
 			return err
 		}
-		if found && previous == headSHA {
-			return routes.ErrEvidenceDuplicate
+		if found {
+			storedHead, _ := previous.Payload["head_sha"].(string)
+			if storedHead == headSHA {
+				// SAME SHA, TWO ANSWERS. An identical replay is not a second account of the head:
+				// it is the same submission arriving again, so the stored entry IS this submission's
+				// record and the answer is 200 with it - nothing appended. A different account of
+				// the same head is refused: the completion that follows would otherwise attach a
+				// local verdict to evidence the judge will never see.
+				if sameEvidence(previous.Payload, payload) {
+					out = previous
+					return nil
+				}
+				return routes.ErrEvidenceDuplicate
+			}
 		}
 
 		actor, err := evidenceActor(ctx, userID)
@@ -93,6 +107,7 @@ func (a taskEvidenceWriterAdapter) RecordEvidence(ctx context.Context, taskID, h
 		}
 		recorder := services.NewTaskEventRecorder(repositories.NewTaskEventRepository(a.sessions, userID, ""), userID)
 		out, err = recorder.Record(ctx, taskID, taskdomain.TaskEventKindEvidenceSubmitted, actor.Kind, actor.ID, payload)
+		created = err == nil
 		return err
 	})
 	if err != nil {
@@ -103,9 +118,139 @@ func (a taskEvidenceWriterAdapter) RecordEvidence(ctx context.Context, taskID, h
 		if !errors.Is(err, routes.ErrEvidenceDuplicate) {
 			log.Printf("evidence: task %s: RecordEvidence failed: %v", taskID, err)
 		}
-		return nil, err
+		return nil, false, err
 	}
-	return out, nil
+	return out, created, nil
+}
+
+// lastEvidence is the task's latest evidence_submitted entry, read inside the caller's transaction.
+// It reads the ledger directly rather than through the reader adapter because the question is
+// narrower than that interface - "the LATEST evidence entry, or none" - and the repository exposes no
+// method for it; the entry's other readers list whole windows instead. The whole entry comes back,
+// not only its head_sha, because a replay answers with the STORED event and the route renders it.
+func lastEvidence(ctx context.Context, sessions *database.SessionManager, userID, taskID string) (*taskdomain.TaskEvent, bool, error) {
+	var out *taskdomain.TaskEvent
+	found := false
+	err := sessions.WithSession(ctx, func(ctx context.Context, s database.DBTX) error {
+		ev := &taskdomain.TaskEvent{}
+		var kind, actorKind string
+		var payload *string
+		err := s.QueryRowContext(ctx, `
+			SELECT "id", "task_id", "user_id", "seq", "kind", "actor_kind", "actor_id", "payload", "created_at"
+			FROM task_events
+			WHERE "user_id" = $1 AND "task_id" = $2::uuid AND "kind" = 'evidence_submitted'
+			ORDER BY "seq" DESC LIMIT 1`, userID, taskID).
+			Scan(&ev.ID, &ev.TaskID, &ev.UserID, &ev.Seq, &kind, &actorKind, &ev.ActorID, &payload, &ev.CreatedAt)
+		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return nil
+			}
+			return err
+		}
+		ev.Kind = taskdomain.TaskEventKind(kind)
+		ev.ActorKind = taskdomain.TaskEventActorKind(actorKind)
+		if payload != nil {
+			_ = json.Unmarshal([]byte(*payload), &ev.Payload)
+		}
+		ev.CreatedAt = ev.CreatedAt.UTC()
+		out = ev
+		found = true
+		return nil
+	})
+	if err != nil {
+		return nil, false, err
+	}
+	return out, found, nil
+}
+
+// sameEvidence answers whether the stored entry and the submission are the SAME account of the head:
+// base_sha, head_sha, numstat, and the test block's command, exit code and failed list, compared in
+// order. The stored side arrives from JSONB (numbers are float64, `failed` is []any) and the submitted
+// side from the route (int, []string), so every comparison normalizes both. An order difference is a
+// different account: refusing there is the safe direction.
+func sameEvidence(stored, submitted map[string]any) bool {
+	if stored == nil {
+		return false
+	}
+	for _, key := range []string{"base_sha", "head_sha", "numstat"} {
+		if evidenceString(stored, key) != evidenceString(submitted, key) {
+			return false
+		}
+	}
+	storedTest, ok := stored["test"].(map[string]any)
+	if !ok {
+		return false
+	}
+	submittedTest, ok := submitted["test"].(map[string]any)
+	if !ok {
+		return false
+	}
+	if evidenceString(storedTest, "command") != evidenceString(submittedTest, "command") {
+		return false
+	}
+	storedExit, storedOK := evidenceInt(storedTest["exit_code"])
+	submittedExit, submittedOK := evidenceInt(submittedTest["exit_code"])
+	if !storedOK || !submittedOK || storedExit != submittedExit {
+		return false
+	}
+	storedFailed, storedOK := evidenceStrings(storedTest["failed"])
+	submittedFailed, submittedOK := evidenceStrings(submittedTest["failed"])
+	if !storedOK || !submittedOK || len(storedFailed) != len(submittedFailed) {
+		return false
+	}
+	for i := range storedFailed {
+		if storedFailed[i] != submittedFailed[i] {
+			return false
+		}
+	}
+	return true
+}
+
+// evidenceString is the map's string value, or "" for an absent or non-string one: the comparison
+// treats both as the same absence, which is what a submission that omitted an optional block means.
+func evidenceString(m map[string]any, key string) string {
+	s, _ := m[key].(string)
+	return s
+}
+
+// evidenceInt normalizes the two numeric shapes: int from the route's own payload and float64 from
+// JSONB. A non-integral value is not equal to any exit code and is reported as unusable.
+func evidenceInt(v any) (int, bool) {
+	switch n := v.(type) {
+	case int:
+		return n, true
+	case int64:
+		return int(n), true
+	case float64:
+		if n != float64(int(n)) {
+			return 0, false
+		}
+		return int(n), true
+	}
+	return 0, false
+}
+
+// evidenceStrings normalizes the two list shapes: []string from the route and []any from JSONB. A
+// nil list (absent) reads as empty, because the route already emits an empty array for a submission
+// that sent none.
+func evidenceStrings(v any) ([]string, bool) {
+	switch list := v.(type) {
+	case nil:
+		return nil, true
+	case []string:
+		return list, true
+	case []any:
+		out := make([]string, 0, len(list))
+		for _, item := range list {
+			s, ok := item.(string)
+			if !ok {
+				return nil, false
+			}
+			out = append(out, s)
+		}
+		return out, true
+	}
+	return nil, false
 }
 
 // lockTaskEventAppend takes the ledger's per-user append lock inside the caller's transaction. The
@@ -116,33 +261,6 @@ func lockTaskEventAppend(ctx context.Context, sessions *database.SessionManager,
 		_, err := s.ExecContext(ctx, `SELECT pg_advisory_xact_lock(hashtext($1))`, userID)
 		return err
 	})
-}
-
-// lastEvidenceHeadSHA is the head_sha of the task's latest evidence_submitted entry, read inside the
-// caller's transaction. It reads the ledger directly rather than through the reader adapter because
-// the question is narrower than that interface - "the LATEST evidence's head_sha, or none" - and the
-// repository exposes no method for it; the entry's other readers list whole windows instead.
-func lastEvidenceHeadSHA(ctx context.Context, sessions *database.SessionManager, userID, taskID string) (string, bool, error) {
-	head := ""
-	found := false
-	err := sessions.WithSession(ctx, func(ctx context.Context, s database.DBTX) error {
-		err := s.QueryRowContext(ctx, `
-			SELECT COALESCE(payload->>'head_sha', '') FROM task_events
-			WHERE user_id = $1 AND task_id = $2::uuid AND kind = 'evidence_submitted'
-			ORDER BY seq DESC LIMIT 1`, userID, taskID).Scan(&head)
-		if err != nil {
-			if errors.Is(err, sql.ErrNoRows) {
-				return nil
-			}
-			return err
-		}
-		found = true
-		return nil
-	})
-	if err != nil {
-		return "", false, err
-	}
-	return head, found, nil
 }
 
 // evidenceActor is the recorder's own attribution rule (services.actorFor), restated here because

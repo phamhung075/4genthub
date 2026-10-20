@@ -58,7 +58,7 @@ func newZucsService(t *testing.T) (*UnifiedContextService, *zucsFakeRepo, *zucsF
 	branch := newZucsFakeRepo()
 	task := newZucsFakeRepo()
 	user := "user-1"
-	s := NewUnifiedContextService(global, project, branch, task, nil, nil, nil, nil, &user)
+	s := NewUnifiedContextService(global, project, branch, task, nil, nil, nil, &user)
 	return s, global, project
 }
 
@@ -103,7 +103,7 @@ func TestZucsAddProgressLandsWhereTheEntityLoadsItsNotes(t *testing.T) {
 	ctx := context.Background()
 	global, project, branch, task := newZucsFakeRepo(), newZucsFakeRepo(), newZucsFakeRepo(), newZucsFakeRepo()
 	user := "user-1"
-	s := NewUnifiedContextService(global, project, branch, task, nil, nil, nil, nil, &user)
+	s := NewUnifiedContextService(global, project, branch, task, nil, nil, nil, &user)
 
 	data := zucsOM("branch_id", "branch-1")
 	created, _ := s.CreateContext(ctx, "task", "task-1", data, nil, nil, true)
@@ -142,7 +142,7 @@ func TestZucsGetContextAndNotFound(t *testing.T) {
 	ctx := context.Background()
 	global.store["abc"] = entities.NewGlobalContext("abc", "Org", map[string]any{}, map[string]any{"user_id": "user-1"})
 
-	res, _ := s.GetContext(ctx, "global", "abc", false, false, nil)
+	res, _ := s.GetContext(ctx, "global", "abc", false, nil)
 	if v, _ := res.Get("success"); v != true {
 		t.Fatalf("success=%v", v)
 	}
@@ -161,7 +161,7 @@ func TestZucsGetContextAndNotFound(t *testing.T) {
 		}
 	}
 
-	missing, _ := s.GetContext(ctx, "global", "nope", false, false, nil)
+	missing, _ := s.GetContext(ctx, "global", "nope", false, nil)
 	if v, _ := missing.Get("success"); v != false {
 		t.Fatalf("expected failure")
 	}

@@ -25,6 +25,7 @@ package httpapp
 //	PUT    /api/v2/rooms/{room}/seats/{seat}/overlay
 //	PUT    /api/v2/rooms/{room}/seats/{seat}/links
 //	GET    /api/v2/rooms/{room}/seats/{seat}/links
+//	GET    /api/v2/rooms/{room}/seats/{seat}/occupant-history
 //	DELETE /api/v2/rooms/{room}/seats/{seat}/links/{to}/{kind}
 //	GET    /api/v2/settings
 //	PUT    /api/v2/settings
@@ -38,6 +39,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"time"
 
 	authdomain "agenthub/fastmcp/auth/domain/entities"
 	seatservices "agenthub/fastmcp/seat_management/application/services"
@@ -72,7 +74,8 @@ type seatAdminSource interface {
 	FindSeat(ctx context.Context, userID, roomID, seatKey string) (*repositories.Seat, error)
 	CreateSeat(ctx context.Context, userID string, seat repositories.Seat) (*repositories.Seat, error)
 	ListSeats(ctx context.Context, userID, roomID string) ([]repositories.Seat, error)
-	UpdateSeatOccupant(ctx context.Context, userID, seatID, runtime, model string) error
+	UpdateSeatOccupant(ctx context.Context, userID, seatID, runtime, model, actor string) error
+	ListSeatOccupantChanges(ctx context.Context, userID, seatID string) ([]repositories.OccupantChange, error)
 	UpdateSeatPermissionPolicy(ctx context.Context, userID, seatID, permissionPolicy string) error
 	UpdateSeatPinnedVersion(ctx context.Context, userID, seatID, pinnedVersion string) error
 	UpsertOverlay(ctx context.Context, userID string, overlay repositories.Overlay) (*repositories.Overlay, error)
@@ -225,8 +228,12 @@ func (s *seatAdminRepos) ListSeats(ctx context.Context, userID, roomID string) (
 	return s.seats.ListByRoom(ctx, userID, roomID)
 }
 
-func (s *seatAdminRepos) UpdateSeatOccupant(ctx context.Context, userID, seatID, runtime, model string) error {
-	return s.seats.UpdateOccupant(ctx, userID, seatID, runtime, model)
+func (s *seatAdminRepos) UpdateSeatOccupant(ctx context.Context, userID, seatID, runtime, model, actor string) error {
+	return s.seats.UpdateOccupant(ctx, userID, seatID, runtime, model, actor)
+}
+
+func (s *seatAdminRepos) ListSeatOccupantChanges(ctx context.Context, userID, seatID string) ([]repositories.OccupantChange, error) {
+	return s.seats.ListOccupantChanges(ctx, userID, seatID)
 }
 
 func (s *seatAdminRepos) UpdateSeatPermissionPolicy(ctx context.Context, userID, seatID, permissionPolicy string) error {
@@ -385,6 +392,9 @@ func mountSeatAdminRoutes(mux *http.ServeMux, sessions *database.SessionManager)
 	})))
 	mux.HandleFunc("GET /api/v2/rooms/{room}/seats/{seat}/links", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleListSeatLinks(w, r, u, sessions)
+	}))
+	mux.HandleFunc("GET /api/v2/rooms/{room}/seats/{seat}/occupant-history", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+		handleListSeatOccupantChanges(w, r, u, sessions)
 	}))
 	mux.HandleFunc("DELETE /api/v2/rooms/{room}/seats/{seat}/links/{to}/{kind}", authed(seatMutation("seat", "updated", func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleDeleteSeatLink(w, r, u, sessions)
@@ -1597,6 +1607,52 @@ func handleListSeatLinks(w http.ResponseWriter, r *http.Request, u *authdomain.U
 	body.Set("success", true)
 	body.Set("links", out)
 	writeJSON(w, http.StatusOK, body)
+}
+
+// handleListSeatOccupantChanges returns one seat's occupant changes, newest first. It is a read:
+// no frame is emitted. A row says the STORED occupant changed; a running seat keeps the snapshot
+// it launched with, so the field names say "changes", not "runtime now".
+func handleListSeatOccupantChanges(w http.ResponseWriter, r *http.Request, u *authdomain.User, sessions *database.SessionManager) {
+	source, ok := seatAdminSourceFor(w, sessions)
+	if !ok {
+		return
+	}
+	room, ok := seatAdminVisibleRoom(w, r, source, u, r.PathValue("room"))
+	if !ok {
+		return
+	}
+	scope := seatAdminScope(u, room)
+	seat, ok := seatAdminSeat(w, r, source, scope, room.ID, r.PathValue("seat"))
+	if !ok {
+		return
+	}
+	changes, err := source.ListSeatOccupantChanges(r.Context(), scope, seat.ID)
+	if err != nil {
+		writeDetail(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	out := make([]any, 0, len(changes))
+	for i := range changes {
+		out = append(out, seatAdminOccupantChangeBody(&changes[i]))
+	}
+	body := entities.NewOrderedMap[any]()
+	body.Set("success", true)
+	body.Set("changes", out)
+	writeJSON(w, http.StatusOK, body)
+}
+
+// seatAdminOccupantChangeBody is one occupant record on the wire: the seven record columns, with
+// the instant in RFC 3339 UTC.
+func seatAdminOccupantChangeBody(change *repositories.OccupantChange) *entities.OrderedMap[any] {
+	body := entities.NewOrderedMap[any]()
+	body.Set("actor", change.Actor)
+	body.Set("at", change.At.UTC().Format(time.RFC3339))
+	body.Set("seat", change.SeatID)
+	body.Set("from_runtime", change.FromRuntime)
+	body.Set("from_model", change.FromModel)
+	body.Set("to_runtime", change.ToRuntime)
+	body.Set("to_model", change.ToModel)
+	return body
 }
 
 func handleGetSettings(w http.ResponseWriter, r *http.Request, u *authdomain.User, sessions *database.SessionManager) {

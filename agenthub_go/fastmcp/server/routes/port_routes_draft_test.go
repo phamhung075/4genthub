@@ -35,7 +35,7 @@ func (c *portCtxController) UpdateContext(ctx context.Context, level, contextID 
 func (c *portCtxController) DeleteContext(ctx context.Context, level, contextID string, userID string) (ControllerResult, error) {
 	return ControllerResult{Success: c.success, Error: c.errText}, nil
 }
-func (c *portCtxController) ResolveContext(ctx context.Context, level, contextID string, forceRefresh bool, userID string) (ControllerResult, error) {
+func (c *portCtxController) ResolveContext(ctx context.Context, level, contextID string, userID string) (ControllerResult, error) {
 	return ControllerResult{Success: c.success, Error: c.errText}, nil
 }
 
@@ -54,7 +54,7 @@ func TestPortCreateContextGlobalMeUsesUserID(t *testing.T) {
 func TestPortGetContextGlobalIgnoresParam(t *testing.T) {
 	c := &portCtxController{success: true}
 	u := newPortUser("user-9")
-	_, err := GetContext(context.Background(), "global", "someone-else", false, true, u, c)
+	_, err := GetContext(context.Background(), "global", "someone-else", false, u, c)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

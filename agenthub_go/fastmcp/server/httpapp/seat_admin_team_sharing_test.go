@@ -145,6 +145,11 @@ func (f *sharingSeatAdmin) ListSeatLinks(ctx context.Context, userID, seatID str
 	return f.fakeSeatAdmin.ListSeatLinks(ctx, userID, seatID)
 }
 
+func (f *sharingSeatAdmin) ListSeatOccupantChanges(ctx context.Context, userID, seatID string) ([]repositories.OccupantChange, error) {
+	f.scopes = append(f.scopes, userID)
+	return f.fakeSeatAdmin.ListSeatOccupantChanges(ctx, userID, seatID)
+}
+
 // fakeSeatAdminTeams models the teams domain for the share route.
 type fakeSeatAdminTeams struct {
 	fake *sharingSeatAdmin

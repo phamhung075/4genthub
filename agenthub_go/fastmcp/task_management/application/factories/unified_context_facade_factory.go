@@ -5,20 +5,22 @@
 // SQLAlchemy session factory and passes them (duck-typed) to UnifiedContextService.
 // The Go concrete context repositories expose typed methods that do not implement
 // services.UnifiedContextRepository, so the repository construction is injected via
-// UnifiedContextRepositoryBuilder (mirroring ProjectFacadeBuilder). When it is nil
-// the DB-unavailable branch is taken: a MockUnifiedContextService is used.
+// UnifiedContextRepositoryBuilder (mirroring ProjectFacadeBuilder). A missing
+// builder or session manager is a wiring error: construction fails instead of
+// installing a service that cannot reach the database.
 package factories
 
 import (
 	"context"
 	"crypto/sha1"
 	"encoding/hex"
+	"errors"
+	"fmt"
 	"strings"
 
 	"agenthub/fastmcp/task_management/application/facades"
 	"agenthub/fastmcp/task_management/application/services"
 	"agenthub/fastmcp/task_management/domain/entities"
-	"agenthub/fastmcp/task_management/domain/value_objects"
 	"agenthub/fastmcp/task_management/infrastructure/database"
 )
 
@@ -46,75 +48,56 @@ var UnifiedContextRepositoryBuilder func(sessions *database.SessionManager, user
 // UnifiedContextFacadeFactory mirrors UnifiedContextFacadeFactory.
 type UnifiedContextFacadeFactory struct {
 	SessionManager *database.SessionManager
-	// UnifiedService is either *services.UnifiedContextService or
-	// *services.MockUnifiedContextService (Python unified_service).
-	UnifiedService any
+	// UnifiedService is the service built over the four repositories (Python
+	// unified_service). Construction fails rather than substituting a stand-in.
+	UnifiedService *services.UnifiedContextService
 
-	hasRepositories    bool
-	cacheService       *services.ContextCacheService
 	inheritanceService *services.ContextInheritanceService
 	validationService  *services.ContextValidationService
 }
 
-// GetUnifiedContextFacadeFactory mirrors get_instance(session_factory): the first
-// call creates the singleton, later calls ignore the argument.
-func GetUnifiedContextFacadeFactory(ctx context.Context, sessions *database.SessionManager) *UnifiedContextFacadeFactory {
-	return NewUnifiedContextFacadeFactory(ctx, sessions)
-}
-
 // NewUnifiedContextFacadeFactory mirrors __init__ (skips work when already
 // initialized). Python obtains SessionLocal from get_db_config(); in Go the
-// SessionManager is supplied by the caller.
-func NewUnifiedContextFacadeFactory(ctx context.Context, sessions *database.SessionManager) *UnifiedContextFacadeFactory {
+// SessionManager is supplied by the caller. Every failure to obtain the four
+// repositories is returned: there is no in-memory substitute.
+func NewUnifiedContextFacadeFactory(ctx context.Context, sessions *database.SessionManager) (*UnifiedContextFacadeFactory, error) {
 	factoriesMu.Lock()
 	defer factoriesMu.Unlock()
 	if unifiedContextFacadeFactoryInitialized {
-		return unifiedContextFacadeFactoryInstance
+		return unifiedContextFacadeFactoryInstance, nil
 	}
-	f := &UnifiedContextFacadeFactory{SessionManager: sessions}
-
-	if sessions == nil || UnifiedContextRepositoryBuilder == nil {
-		// Python: get_db_config() raised, or repository/service construction failed.
-		f.zpUCFCreateMockService()
-		unifiedContextFacadeFactoryInitialized = true
-		unifiedContextFacadeFactoryInstance = f
-		return f
+	if sessions == nil {
+		return nil, errors.New("unified context factory: no session manager")
+	}
+	if UnifiedContextRepositoryBuilder == nil {
+		return nil, errors.New("unified context factory: no repository builder")
 	}
 
 	global, project, branch, task, err := UnifiedContextRepositoryBuilder(sessions, nil)
 	if err != nil {
-		f.zpUCFCreateMockService()
-		unifiedContextFacadeFactoryInitialized = true
-		unifiedContextFacadeFactoryInstance = f
-		return f
+		return nil, fmt.Errorf("unified context factory: build repositories: %w", err)
 	}
 
 	repoMap := map[string]any{"global": global, "project": project, "branch": branch, "task": task}
-	f.cacheService = services.NewContextCacheService(nil, 1, nil)
+	f := &UnifiedContextFacadeFactory{SessionManager: sessions}
 	// Python also builds ContextDelegationService(repo_map); that service has no
 	// exported Go constructor, so nil is passed (the service tolerates nil).
 	f.inheritanceService = services.NewContextInheritanceService(repoMap, nil)
 	f.validationService = services.NewContextValidationService(nil, nil)
 	f.UnifiedService = services.NewUnifiedContextService(
 		global, project, branch, task,
-		f.cacheService, f.inheritanceService, nil, f.validationService, nil,
+		f.inheritanceService, nil, f.validationService, nil,
 	).WithEntityLookup(UnifiedContextEntityLookup).WithEventAppender(UnifiedContextEventAppender)
-	f.hasRepositories = true
 	unifiedContextFacadeFactoryInitialized = true
 	unifiedContextFacadeFactoryInstance = f
-	return f
-}
-
-// zpUCFCreateMockService mirrors _create_mock_service.
-func (f *UnifiedContextFacadeFactory) zpUCFCreateMockService() {
-	f.UnifiedService = services.NewMockUnifiedContextService()
+	return f, nil
 }
 
 // CreateFacade mirrors create_facade.
 func (f *UnifiedContextFacadeFactory) CreateFacade(ctx context.Context, userID, projectID, gitBranchID *string) (*facades.UnifiedContextFacade, error) {
 	scoped := f.UnifiedService
 
-	if userID != nil && *userID != "" && f.hasRepositories && UnifiedContextRepositoryBuilder != nil {
+	if userID != nil && *userID != "" && UnifiedContextRepositoryBuilder != nil {
 		global, project, branch, task, err := UnifiedContextRepositoryBuilder(f.SessionManager, userID)
 		if err != nil {
 			return nil, err
@@ -123,21 +106,15 @@ func (f *UnifiedContextFacadeFactory) CreateFacade(ctx context.Context, userID, 
 		userInheritance := services.NewContextInheritanceService(userRepoMap, userID)
 		scoped = services.NewUnifiedContextService(
 			global, project, branch, task,
-			f.cacheService, userInheritance, nil, f.validationService, nil,
+			userInheritance, nil, f.validationService, nil,
 		).WithEntityLookup(UnifiedContextEntityLookup).WithEventAppender(UnifiedContextEventAppender).WithUser(*userID)
 	}
 
-	svc, ok := scoped.(facades.UnifiedContextService)
-	if !ok {
-		// The Python mock has incompatible (sync, narrower) method signatures; the
-		// facade would raise TypeError on first use. Represent that as an error.
-		return nil, &value_objects.ValueError{Msg: "UnifiedService does not implement the UnifiedContextFacade service interface"}
-	}
-	return facades.NewUnifiedContextFacade(svc, userID, projectID, gitBranchID), nil
+	return facades.NewUnifiedContextFacade(scoped, userID, projectID, gitBranchID), nil
 }
 
 // CreateUnifiedService mirrors create_unified_service.
-func (f *UnifiedContextFacadeFactory) CreateUnifiedService() any {
+func (f *UnifiedContextFacadeFactory) CreateUnifiedService() *services.UnifiedContextService {
 	return f.UnifiedService
 }
 
@@ -164,7 +141,7 @@ func (f *UnifiedContextFacadeFactory) AutoCreateGlobalContext(ctx context.Contex
 	}
 	globalContextID := zpUCFUUID5(zpUCFNamespaceUUID, userUUID)
 
-	if existing, err := facade.GetContext(ctx, "global", globalContextID, false, false, nil); err == nil {
+	if existing, err := facade.GetContext(ctx, "global", globalContextID, false, nil); err == nil {
 		if zpUCFResultSuccess(existing) {
 			return true
 		}

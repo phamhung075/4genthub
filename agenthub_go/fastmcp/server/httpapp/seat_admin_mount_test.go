@@ -13,6 +13,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	seatservices "agenthub/fastmcp/seat_management/application/services"
 	"agenthub/fastmcp/seat_management/domain/repositories"
@@ -21,16 +22,17 @@ import (
 )
 
 type fakeSeatAdmin struct {
-	rooms          []*repositories.Room
-	seatTypes      map[string]*repositories.SeatTypeVersion
-	seatVersions   map[string]map[string]*repositories.SeatTypeVersion
-	seatTypeList   []*repositories.SeatType
-	moduleVersions map[string]*repositories.ModuleVersion
-	moduleKinds    map[string]resolver.ModuleKind
-	seats          []*repositories.Seat
-	overlays       map[string]*repositories.Overlay
-	links          []*repositories.SeatLink
-	settings       map[string]*repositories.SeatSettings
+	rooms           []*repositories.Room
+	seatTypes       map[string]*repositories.SeatTypeVersion
+	seatVersions    map[string]map[string]*repositories.SeatTypeVersion
+	seatTypeList    []*repositories.SeatType
+	moduleVersions  map[string]*repositories.ModuleVersion
+	moduleKinds     map[string]resolver.ModuleKind
+	seats           []*repositories.Seat
+	overlays        map[string]*repositories.Overlay
+	links           []*repositories.SeatLink
+	occupantChanges []*repositories.OccupantChange
+	settings        map[string]*repositories.SeatSettings
 
 	deletedResolved []string
 	addVersionErr   error
@@ -240,13 +242,31 @@ func (f *fakeSeatAdmin) UpdateSeatPinnedVersion(_ context.Context, _, seatID, pi
 	return nil
 }
 
-func (f *fakeSeatAdmin) UpdateSeatOccupant(_ context.Context, _, seatID, runtime, model string) error {
+func (f *fakeSeatAdmin) UpdateSeatOccupant(_ context.Context, userID, seatID, runtime, model, actor string) error {
 	for _, s := range f.seats {
 		if s.ID == seatID {
+			if s.Runtime == runtime && s.Model == model {
+				return nil
+			}
+			change := &repositories.OccupantChange{
+				UserID: userID, SeatID: seatID, Actor: actor, At: time.Now().UTC(),
+				FromRuntime: s.Runtime, FromModel: s.Model, ToRuntime: runtime, ToModel: model,
+			}
 			s.Runtime, s.Model = runtime, model
+			f.occupantChanges = append([]*repositories.OccupantChange{change}, f.occupantChanges...)
 		}
 	}
 	return nil
+}
+
+func (f *fakeSeatAdmin) ListSeatOccupantChanges(_ context.Context, _, seatID string) ([]repositories.OccupantChange, error) {
+	out := make([]repositories.OccupantChange, 0)
+	for _, c := range f.occupantChanges {
+		if c.SeatID == seatID {
+			out = append(out, *c)
+		}
+	}
+	return out, nil
 }
 
 func (f *fakeSeatAdmin) UpsertOverlay(_ context.Context, userID string, overlay repositories.Overlay) (*repositories.Overlay, error) {

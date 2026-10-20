@@ -43,8 +43,9 @@ type CreateTaskHooks interface {
 	// reports whether the response was successful.
 	CreateTaskContext(ctx context.Context, task *entities.Task, userID string, projectID *string, gitBranchID string) (bool, error)
 	// NotifyTaskEvent builds the complete payload and calls sync_broadcast_task_event
-	// (user falls back to "system" when userID is nil or empty).
-	NotifyTaskEvent(ctx context.Context, eventType string, task *entities.Task, response *task.TaskResponse, userID *string, gitBranchID string)
+	// (user falls back to "system" when userID is nil or empty). changed names the payload fields
+	// the write changed; an update or completion event delivers them as a flat delta.
+	NotifyTaskEvent(ctx context.Context, eventType string, task *entities.Task, response *task.TaskResponse, userID *string, gitBranchID string, changed []string)
 }
 
 // WithHooks sets the side-effect hooks (nil disables them, as in a DB-less test).
@@ -208,7 +209,7 @@ func (u *CreateTaskUseCase) Execute(ctx context.Context, request task.CreateTask
 
 	// WebSocket notification for frontend real-time updates (after task_response creation).
 	if u.hooks != nil {
-		u.hooks.NotifyTaskEvent(ctx, "created", taskEntity, taskResponse, request.UserID, gitBranchID)
+		u.hooks.NotifyTaskEvent(ctx, "created", taskEntity, taskResponse, request.UserID, gitBranchID, nil)
 	}
 
 	return task.NewCreateTaskResponseSuccess(taskResponse, nil), nil

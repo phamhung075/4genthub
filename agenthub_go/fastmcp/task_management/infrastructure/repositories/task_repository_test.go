@@ -6,6 +6,7 @@ package repositories
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
@@ -287,6 +288,46 @@ func TestTaskRepoSearch(t *testing.T) {
 	}
 }
 
+// TestTaskRepoSearchSurfacesIdPrefixAndTitlePhrase pins the lookup a seat actually makes on the
+// board: a query that is a task's own id prefix, or its exact title, returns THAT task even with no
+// status filter and a limit too small for a created_at-only ordering to reach it. The decoys are
+// newer and mention the target's id and title words in their description, which is exactly the
+// false negative measured on the live hub (row ea443b29).
+func TestTaskRepoSearchSurfacesIdPrefixAndTitlePhrase(t *testing.T) {
+	sessions := newTestRepoEnv(t)
+	ctx := context.Background()
+	branchID := taskRepoTestBranch(t, sessions, taskRepoTestUserA)
+	repo := taskRepoTestNewRepo(t, sessions, taskRepoTestUserA, branchID, false)
+
+	const title = "The rig's sanctioned seat channel delivers nothing"
+	target, err := repo.CreateTask(ctx, title, "target desc", "medium", nil, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i := range 5 {
+		desc := fmt.Sprintf("channel delivers nothing; quoted row %s", target.ID.Value)
+		if _, err := repo.CreateTask(ctx, fmt.Sprintf("mention %d", i), desc, "medium", nil, nil, nil); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	byID, err := repo.Search(ctx, target.ID.Value[:8], nil, 3, 0)
+	if err != nil {
+		t.Fatalf("Search id prefix: %v", err)
+	}
+	if len(byID) == 0 || byID[0].ID.Value != target.ID.Value {
+		t.Fatalf("Search id prefix %s did not surface the task first: %#v", target.ID.Value[:8], byID)
+	}
+
+	byTitle, err := repo.Search(ctx, title, nil, 3, 0)
+	if err != nil {
+		t.Fatalf("Search title: %v", err)
+	}
+	if len(byTitle) == 0 || byTitle[0].ID.Value != target.ID.Value {
+		t.Fatalf("Search title %q did not surface the task first: %#v", title, byTitle)
+	}
+}
+
 // TestTaskRepoListPagingHasNoOverlap is the enumeration contract: two consecutive pages share NO
 // row, a known-old row is reachable by paging, and the total the caller is told is the count of the
 // rows the filters select, not the length of the page. Before the fix offset was never bound into
@@ -470,6 +511,9 @@ func TestTaskRepoDeleteCascade(t *testing.T) {
 	got, _ := repo.GetTask(ctx, task.ID.Value)
 	if got != nil {
 		t.Fatalf("task still present")
+	}
+	if gitBranchRepoTestRowExists(t, sessions, `SELECT count(*) FROM task_contexts WHERE task_id = $1`, task.ID.Value) {
+		t.Fatal("task_contexts row still present")
 	}
 	tc, cc := taskRepoTestBranchCounts(t, sessions, branchID)
 	if tc != 0 || cc != 0 {

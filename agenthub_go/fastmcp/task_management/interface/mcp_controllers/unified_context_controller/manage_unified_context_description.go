@@ -7,15 +7,15 @@ import "agenthub/fastmcp/task_management/domain/entities"
 
 // ManageUnifiedContextDescription ports MANAGE_UNIFIED_CONTEXT_DESCRIPTION.
 const ManageUnifiedContextDescription = `
-CONTEXT MANAGEMENT - 4-tier hierarchy (Global→Project→Branch→Task): CRUD | inheritance | caching | delegation | insights
+CONTEXT MANAGEMENT - 4-tier hierarchy (Global→Project→Branch→Task): CRUD | inheritance | delegation | insights
 
 ACTIONS: create | get | update | delete | resolve (full chain) | delegate (move between levels) | add_insight | add_progress | list
 
 LEVELS: global (user-scoped) | project | branch | task | Each inherits from parent
 
-KEY PARAMS: level (tier) | context_id (ID for level) | force_refresh (bypass cache) | include_inherited (full chain) | propagate_changes (cascade) | delegate_to ('delegate' action) | content ('add_insight'/'add_progress' actions)
+KEY PARAMS: level (tier) | context_id (ID for level) | include_inherited (full chain) | propagate_changes (cascade) | delegate_to ('delegate' action) | content ('add_insight'/'add_progress' actions)
 
-FEATURES: Unified API | Auto-inheritance | Smart caching | Change propagation | Delegation queue | Backward compatible
+FEATURES: Unified API | Auto-inheritance | Change propagation | Delegation queue | Backward compatible
 
 ERRORS: Missing fields→specific error | Unknown actions→valid list | Internal→logged+generic
 `
@@ -30,7 +30,6 @@ var ManageUnifiedContextParametersDescription = newStringOrderedMap([][2]string{
 	{"user_id", "User identifier for authentication and audit trails. Used for user-scoped global contexts and access control"},
 	{"project_id", "Project identifier for project-level context operations. Required for project, branch, and task level operations when not inferrable"},
 	{"git_branch_id", "Git branch identifier for branch-level context operations. Required for branch and task level operations"},
-	{"force_refresh", "Bypass cache and force fresh data retrieval. Use when cache consistency is critical. Accepts: 'true', 'false', '1', '0'"},
 	{"include_inherited", "Include inherited data from parent levels in response. Enables complete context resolution with inheritance chain. Accepts: 'true', 'false', '1', '0'"},
 	{"propagate_changes", "Automatically cascade changes to child levels in hierarchy. Maintains consistency across hierarchy. Accepts: 'true', 'false', '1', '0'"},
 	{"delegate_to", "Target level for context delegation operations. Valid: 'global', 'project', 'branch', 'task'. Used with delegate action"},
@@ -48,7 +47,7 @@ var ManageUnifiedContextParams = newAnyOrderedMap()
 
 func init() {
 	properties := entities.NewOrderedMap[any]()
-	for _, key := range []string{"action", "level", "context_id", "data", "content", "user_id", "project_id", "git_branch_id", "force_refresh", "include_inherited", "propagate_changes", "delegate_to", "delegate_data", "delegation_reason", "category", "importance", "agent", "filters"} {
+	for _, key := range []string{"action", "level", "context_id", "data", "content", "user_id", "project_id", "git_branch_id", "include_inherited", "propagate_changes", "delegate_to", "delegate_data", "delegation_reason", "category", "importance", "agent", "filters"} {
 		field := entities.NewOrderedMap[any]()
 		field.Set("type", "string")
 		if desc, ok := ManageUnifiedContextParametersDescription.Get(key); ok {
@@ -82,7 +81,6 @@ var ManageUnifiedContextParameters = newStringOrderedMap([][2]string{
 	{"user_id", "User identifier for authentication and audit trails. Used for user-scoped global contexts and access control across all hierarchy levels"},
 	{"project_id", "Project identifier for project-level context operations. Required for project, branch, and task level operations when not inferrable from context"},
 	{"git_branch_id", "Git branch identifier for branch-level context operations. Required for branch and task level operations when creating branch-specific contexts"},
-	{"force_refresh", "Bypass cache and force fresh data retrieval. Boolean, default: false. Use when cache consistency is critical or after external data changes"},
 	{"include_inherited", "Include inherited data from parent levels in response. Boolean, default: false. Enables complete context resolution with inheritance chain"},
 	{"propagate_changes", "Automatically cascade changes to child levels in hierarchy. Boolean, default: true. Maintains consistency across hierarchy when updating parent contexts"},
 	{"delegate_to", "Target level for context delegation operations. Valid: 'global', 'project', 'branch', 'task'. Used with delegate action to move context data between levels"},

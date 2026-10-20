@@ -67,12 +67,13 @@ DELETED_NAME = re.compile(r"scripts/[a-z0-9_]+\.py", re.IGNORECASE)
 
 # Refs to other assets: the queued form the HTML uses, and the bare hashed file name a chunk uses
 # to name its lazy siblings (`./SeatDetailPage-BpUArPYK.js`).
-# Both start on a boundary and carry the WHOLE name. A stem may contain dots - the production build
-# names `mermaid.core-CGIcD27U.js` and `cytoscape.esm-CkK8FqzY.js` - and a tail match (`core-CGIcD27U.js`)
-# is a name the build never had: the closure then fetches it, 404s, and reads INCOMPLETE on a fresh
-# surface (measured 2026-10-18, board b70278f2).
-ASSET_REF = re.compile(r"""(?<![\w.-])(?:\.?/)?assets/[A-Za-z0-9_.-]+\.(?:js|css)""")
-HASHED_REF = re.compile(r"""(?<![\w.-])[A-Za-z0-9_-][A-Za-z0-9_.-]*-[A-Za-z0-9_-]{8,}\.(?:js|css)""")
+ASSET_REF = re.compile(r"""(?:\.?/)?assets/[A-Za-z0-9_.-]+\.(?:js|css)""")
+# A bare hashed name inside a chunk (`./SeatDetailPage-BpUArPYK.js`) - optional dotted segments
+# included, because vite keeps a plugin prefix (`mermaid.core-PVSKwLbE.js`), and a left boundary,
+# because without it the match starts after the dot (`core-PVSKwLbE.js`) and fetches a phantom 404.
+HASHED_REF = re.compile(
+    r"""(?<![A-Za-z0-9_.-])(?:[A-Za-z0-9_-]+\.)*[A-Za-z0-9_-]+-[A-Za-z0-9_-]{8,}\.(?:js|css)"""
+)
 ENTRY_REF = re.compile(r"""/assets/(index-[A-Za-z0-9_-]+\.js)""")
 # The entry is the one the page LOADS, not merely the first /assets/index-*.js mentioned: vite emits
 # modulepreload links for the entry's siblings, so a bare first-match can name a lazy chunk and the
