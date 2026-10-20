@@ -154,3 +154,63 @@ def test_its_own_self_test_names_the_citation_it_perturbs():
     assert r.returncode == 0, f"the self-test failed:\n{out}"
     assert "PASS" in out, f"no verdict printed:\n{out}"
     assert "perturbed" in out and "named" in out, f"the perturbed citation was not named:\n{out}"
+
+
+def go_test_site():
+    """A REAL test name and its definition line, read from the tree the suite runs against, so this
+    case does not break when an unrelated line moves."""
+    src = REPO_ROOT / "agenthub_go" / "fastmcp" / "task_management" / "infrastructure" / \
+        "database" / "schema_matches_definitions_test.go"
+    for n, line in enumerate(src.read_text(encoding="utf-8").splitlines(), 1):
+        m = re.match(r"func (Test\w+)\(", line)
+        if m:
+            return m.group(1), n
+    pytest.fail(f"no Go test definition found in {src}")
+
+
+def test_a_test_name_cited_at_the_wrong_line_is_named(doc_tree):
+    """THE MOTIVATING DEFECT, after its name was corrected: the name was real, the line had moved.
+    Only the pairing can answer it - and the tight rule must refuse to pass it."""
+    name, line = go_test_site()
+    cited = f"schema_matches_definitions_test.go:{line + 1}"
+    doc_tree("pair.md", f"`{name}` (`{cited}`) fails in both directions.\n")
+    r = run(INSTRUMENT, "--docs", doc_tree.scope)
+    out = r.stdout + r.stderr
+    assert r.returncode == 1, f"a test cited at the wrong line passed:\n{out}"
+    assert name in out and "defined at" in out, f"the pairing was not named as such:\n{out}"
+    assert f"schema_matches_definitions_test.go:{line}" in out, f"the true line was not given:\n{out}"
+
+
+def test_the_definitions_own_line_is_not_a_violation(doc_tree):
+    """The other direction: the rule must not fail the correct citation."""
+    name, line = go_test_site()
+    doc_tree("pair.md", f"`{name}` (`schema_matches_definitions_test.go:{line}`) proves it.\n")
+    r = run(INSTRUMENT, "--docs", doc_tree.scope)
+    assert r.returncode == 0, f"the correct pairing was refused:\n{r.stdout}{r.stderr}"
+
+
+def test_the_pairing_is_read_across_one_line_break(doc_tree):
+    name, line = go_test_site()
+    doc_tree("pair.md", f"Proved by `{name}`\n(`schema_matches_definitions_test.go:{line + 1}`).\n")
+    r = run(INSTRUMENT, "--docs", doc_tree.scope)
+    assert r.returncode == 1, f"a pair split across one line break was not read:\n{r.stdout}{r.stderr}"
+    assert "defined at" in (r.stdout + r.stderr)
+
+
+def test_a_citation_beside_the_name_is_not_a_pairing(doc_tree):
+    """LOOSE adjacency is rejected on measurement: a run-on list or a table row puts a test name
+    near another citation, and that is not a claim about the test. Only the parenthetical is."""
+    name, line = go_test_site()
+    doc_tree("loose.md",
+             f"`{name}` seeds a row and counts it; the label delete is `label_repository_test.go:10`.\n")
+    r = run(INSTRUMENT, "--docs", doc_tree.scope)
+    assert r.returncode == 0, f"a non-pairing adjacency was reported:\n{r.stdout}{r.stderr}"
+
+
+def test_a_production_line_after_the_name_is_the_documents_own_claim(doc_tree):
+    """R4: the escape is explicit. Name the test, then cite a production line as its own claim."""
+    name, line = go_test_site()
+    doc_tree("escape.md",
+             f"`{name}` pins the delete at `schema_matches_definitions_test.go:{line + 1}`.\n")
+    r = run(INSTRUMENT, "--docs", doc_tree.scope)
+    assert r.returncode == 0, f"the documented escape was refused:\n{r.stdout}{r.stderr}"

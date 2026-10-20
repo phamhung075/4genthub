@@ -11,7 +11,16 @@ a later tree cannot make wrong) against the tracked tree:
 1. every `path/to/file:NNN` and `:NNN-MMM` resolves inside the repository - root-relative, as a unique path
    suffix (`httpapp/task_routes.go` for `agenthub_go/.../httpapp/task_routes.go`), or by an unambiguous
    basename - and the file has at least that many lines, with the range's ends in order;
-2. every backticked `TestXxx` is defined as `func TestXxx(` under `agenthub_go/` or `agenthub_client/`.
+2. every backticked `TestXxx` is defined as `func TestXxx(` under `agenthub_go/` or `agenthub_client/`;
+3. a citation in PARENTHESES DIRECTLY after a test name claims that test's own definition line -
+   `TestFoo` (`x_test.go:196`) must find `func TestFoo(` at 196 of that file. Nothing but whitespace may stand between
+   the name and the parenthesis; a pair may break across one line. This is the ruling of
+   `seats/architect/DECISION-2026-10-20-doc-citation-instrument.md` (A + B tight): it is the only rule that
+   answers the defect that started this work AFTER the name is corrected, because the name was real and the
+   line had moved twenty lines. The document's escape is to state a production line as its own claim rather
+   than in a parenthetical there. The tight form was measured before it was built: 7 pairs on this tree, 7
+   correct, 0 false positives - and a perturbed copy of `seat-occupant-record.md:38` is named with the true
+   line 547.
 
 A basename matching more than one file is REPORTED with both candidates, never guessed. Default mode writes
 nothing and exits 0 clean / 1 violation / 2 refused (an unknown argument, a scope holding no markdown, a
@@ -35,13 +44,22 @@ then `python3 -m pytest scripts/tests/test_doc_citations.py -q`. The same check 
 PREPARED for `scripts/git-hooks/pre-commit-config.yaml` and NOT applied: that file is owner-protected and the
 seat guard refused the write. It is the owner's call to add the `doc-citations` local hook there.
 
-**Tests** (`scripts/tests/test_doc_citations.py`, new, 10 cases): the instrument is clean and reports a non-zero
+**Tests** (`scripts/tests/test_doc_citations.py`, new, 15 cases): the instrument is clean and reports a non-zero
 quantity read; a drifted line, an unbackticked citation, an inverted range and an invented test name are each
 NAMED; an ambiguous basename is reported with both candidates; `reports-status` is outside the scope; an empty
-scope and an unknown argument are refusals, not passes; `--self-test` names what it perturbs.
+scope and an unknown argument are refusals, not passes; `--self-test` names what it perturbs. Five pin the tight
+pairing against a real test read from the tree at run time: the wrong line is named with the true one, the
+definition's own line passes, a pair split across one line break is read, a same-line adjacency is NOT a
+pairing, and the documented escape (a production line after the name) is not mistaken for one.
+
+**Three checks the ruling measured and REJECTED** are recorded in the tool's docstring with their counts, so the
+next reader does not re-add them: loose same-line pairing (8 co-citation lines, 5 agreeing, the 3 others pairings
+no document made), a bare `:NNN` parsed against the nearest preceding file (76 lines carry both forms, 32 bare
+references attributable, ZERO out of range), and every backticked `Type.Method` resolved to a member (35 of 38
+resolve; the three exceptions are two struct fields and a method named BECAUSE IT WAS REMOVED).
 
 **Verified at this tree**: `python3 scripts/DOC-CITATIONS.py` -> `docs 50  citations 726  test names 23
 violations 0`, exit 0; `--self-test` -> PASS; `python3 scripts/CITATION-AUDIT.py` -> `rows 149  stale 0
 unresolved 0`, exit 0 (the inventory's route rows were re-pointed to unique paths and still re-derive);
-`python3 -m pytest --noconftest -p no:cacheprovider scripts/tests/test_doc_citations.py -q` -> 10 passed;
+`python3 -m pytest --noconftest -p no:cacheprovider scripts/tests/test_doc_citations.py -q` -> 15 passed;
 `go -C agenthub_go test ./... -count=1` -> exit 0.

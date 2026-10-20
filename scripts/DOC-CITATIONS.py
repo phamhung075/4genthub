@@ -17,9 +17,32 @@ WHAT IT CHECKS, and nothing else.
      `agenthub_client/`. The rule is exact on purpose: the failure that started this tool was a
      name that LOOKED right.
 
+  3. A citation in PARENTHESES DIRECTLY after a test name claims that test's own definition line:
+     `TestFoo` (`x_test.go:196`) must find `func TestFoo(` at line 196 of that file. Nothing but
+     whitespace may stand between the name and the parenthesis, and the pair may break across one
+     line. This is the rule that would have caught the defect that started the instrument even
+     after its NAME was corrected: the name was real and the line had moved 20 lines, so only the
+     pairing can answer it. The escape belongs to the document: name the test, then state a
+     production line as its own claim - not in a parenthetical directly after the name.
+
 SCOPE. `ai_docs/**/*.md`, except `ai_docs/reports-status/**`: those are dated records of what was
 measured on a day, and a later tree cannot make them wrong - so they are outside every rewrite and
 outside this check too.
+
+WHAT THIS DOES NOT CHECK, AND WHY - EACH ONE MEASURED ON THIS TREE (2026-10-20), so the next reader
+does not re-add it:
+  * LOOSE PAIRING (a test name and any citation sharing a line): 8 co-citation lines, 5 agreeing;
+    the 3 that did not were pairings no document made - a table row carrying seven route citations
+    under one name, and a run-on list whose line break put a test name beside another test's file.
+    Adjacency is not a pairing.
+  * A BARE `:NNN` parsed against the nearest preceding file on its line: 76 lines carry both forms,
+    only 32 bare references are attributable to a resolvable same-line file, and ZERO of those 32
+    were out of range. A new pairing rule for 10% of the volume, on a premise the loose form had
+    already falsified. A second line reference on one line repeats the file or writes a range
+    (`:120-127`); a bare `:121` is prose, and this tool does not read it.
+  * EVERY backticked `Type.Method` resolved to a declared member: 35 of 38 resolve already, and the
+    three exceptions are a struct field, a DTO field, and a method named BECAUSE IT WAS REMOVED -
+    a gate that fails a document for correctly recording a removal is worse than no gate.
 
 MODES. The default audits and writes nothing: exit 0 clean, 1 on any violation, 2 refused (an
 unknown argument, a doc scope that holds no markdown, a `--docs` directory that does not exist).
@@ -50,6 +73,8 @@ CODE_TREES = ("agenthub_go", "agenthub_client")
 EXTS = "go|py|sql|ts|tsx|js|md|json|yaml|yml|sh|rs|toml|css|html"
 CITE = re.compile(rf"(?<![\w/.-])([A-Za-z0-9_][\w./-]*\.(?:{EXTS})):(\d+)(?:-(\d+))?(?![\w-])")
 TEST_NAME = re.compile(r"`(Test[A-Za-z0-9_]+)`")
+# A citation in parentheses, which is what the tight pairing rule reads.
+PAIR = re.compile(rf"\(\s*`?([A-Za-z0-9_][\w./-]*\.(?:{EXTS})):(\d+)(?:-\d+)?`?\s*\)")
 GO_TEST_DEF = re.compile(r"^func (Test[A-Za-z0-9_]+)\(", re.M)
 
 SKIP_DIRS = {".git", "node_modules", "__pycache__", "target", ".venv", "dist", "build", ".next"}
@@ -133,18 +158,27 @@ def resolve(cited, by_suffix, by_base):
     return None, "ambiguous: " + ", ".join(sorted(hits)[:4]) + ("..." if len(hits) > 4 else "")
 
 
-def go_test_names():
-    """Every Go test function defined under the two code trees."""
-    names = set()
+def go_test_index():
+    """Every Go test function under the two code trees, as name -> [(file, definition line)].
+
+    The LINE is here for the tight pairing rule (see audit): the defect this instrument exists for
+    had a real name cited at a line that had already moved, and only the definition line can answer
+    that claim. A name defined in two packages keeps both sites."""
+    index = {}
     for top in CODE_TREES:
         base = os.path.join(ROOT, top)
         if not os.path.isdir(base):
             continue
         for p in walk_files([base]):
-            if p.endswith(".go"):
-                with open(p, encoding="utf-8", errors="replace") as fh:
-                    names.update(GO_TEST_DEF.findall(fh.read()))
-    return names
+            if not p.endswith(".go"):
+                continue
+            rel = os.path.relpath(p, ROOT).replace(os.sep, "/")
+            with open(p, encoding="utf-8", errors="replace") as fh:
+                for n, line in enumerate(fh.read().splitlines(), 1):
+                    m = GO_TEST_DEF.match(line)
+                    if m:
+                        index.setdefault(m.group(1), []).append((rel, n))
+    return index
 
 
 def docs_in(scope):
@@ -192,11 +226,33 @@ def audit(docs, by_suffix, by_base, tests, base=ROOT):
                 if last > have:
                     violations.append((rel, n, f"{cited}:{m.group(2)} - {have} lines in "
                                               f"{os.path.relpath(path, ROOT)}"))
-            for name in TEST_NAME.findall(text):
+            for m in TEST_NAME.finditer(text):
+                name = m.group(1)
                 seen_tests.add(name)
                 if name not in tests:
                     violations.append((rel, n, f"`{name}` - no `func {name}(` under "
                                               f"{' or '.join(t + '/' for t in CODE_TREES)}"))
+                    continue
+                # THE TIGHT PAIRING RULE: a citation in parentheses DIRECTLY after the test name
+                # claims that test's own definition line. Nothing but whitespace may stand between
+                # the two (a same-line adjacency that only LOOKS like a pair is what made the loose
+                # form unusable - it read a run-on list as a claim), and the pair may break across
+                # one newline. The escape is the doc's: name the test, then state a production line
+                # as its own claim instead of putting it in a parenthetical here.
+                seg = text[m.end():]
+                if n < len(lines):
+                    seg += "\n" + lines[n]
+                mp = PAIR.search(seg)
+                if not mp or seg[:mp.start()].strip() or seg[:mp.start()].count("\n") > 1:
+                    continue
+                cited, cnum = mp.group(1), int(mp.group(2))
+                path, _why = resolve(cited, by_suffix, by_base)
+                if path is None:            # the path rule already reports this citation
+                    continue
+                site = (os.path.relpath(path, ROOT).replace(os.sep, "/"), cnum)
+                if site not in tests[name]:
+                    where = " or ".join(f"{f}:{ln}" for f, ln in tests[name][:2])
+                    violations.append((rel, n, f"`{name}` ({cited}:{cnum}) - defined at {where}"))
     return violations, cites, seen_tests
 
 
@@ -270,7 +326,7 @@ def self_test(by_suffix, by_base, tests):
 def main():
     argv = sys.argv[1:]
     by_suffix, by_base = repo_index()
-    tests = go_test_names()
+    tests = go_test_index()
 
     if "--self-test" in argv:
         extra = [a for a in argv if a != "--self-test"]
