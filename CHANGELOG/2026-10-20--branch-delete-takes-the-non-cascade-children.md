@@ -57,7 +57,7 @@ the future tense.
   (steps 9 and 7, `git_branch_repository.go:514`, `:499`), `task_labels.label_id` at
   `label_repository.go:231`, `user_token_balances.user_id` at `user_repository.go:474`, the ledger
   with the task (`task_repository.go:703`) and in the branch delete (step 10, `:523`) - and states
-  the aggregate-scope rule, the project check at `:432` being the tenancy boundary.
+  the aggregate-scope rule, the project check at `:440` being the tenancy boundary.
 - The residual the row names is the one path that relies on order rather than on its own delete:
   `ORMProjectRepository.DeleteProject` (`project_repository.go:616`) carries no ledger delete and is
   safe because `ProjectManagementService.DeleteProject` deletes each branch first
