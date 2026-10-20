@@ -7,6 +7,32 @@ by a user other than the branch owner, so a delete that filters a child by `user
 after. `TestGitBranchRepoUserIsolation` gains the gate proof: a project owner's branch with a task
 and a context, deleted by another user, answers false and leaves all three rows.
 
+## 2026-10-20 - the tmux server carries only the allowlist (client `4genthub-min/sec02-tmux-env`, `3c2d92e`)
+
+`agenthub_client/rust/agenthub-runtime/src/pty/mod.rs` (`launch_env_tests`, 12 tests). Four of them are
+the SEC-02 proof, each driving a real tmux server on a scratch root:
+
+- `a_server_started_here_inherits_only_the_allowlist` - `ensure_server` on an empty root, then
+  `show-environment -g`: every key is on the allowlist, and a credential-shaped key of the caller's
+  environment never appears.
+- `a_launch_cleans_the_servers_environment_and_the_seats_session_copy` - seeds `HOST_LEGACY_TOKEN` on
+  an existing server, launches a seat through `TerminalManager::launch_session`, and asserts three
+  things: the global environment no longer holds it, the pane still prints its own `DEEPSEEK_API_KEY`
+  (the scrub removes a readable copy, never the seat's value), and `show-environment -t <session>`
+  names neither that key nor `AGENTHUB_TOKEN`. RED at `516a230`: the same launch shape, replayed as
+  shell against a scratch socket (`-L sec02old`), left both keys on `show-environment -g` and the `-e`
+  pair on the session. The test itself cannot compile at base - `clean_server_env`/`scrub_session_env`
+  do not exist there.
+- `the_server_is_not_the_process_that_carries_the_seats_environment` - the server's argv holds no
+  `KEY=` pair for a credential-shaped name.
+
+`only_the_set_form_of_show_environment_names_a_key_to_clean` pins that `set-environment -g -u` takes the
+NAME (the `NAME=value` form is refused by tmux as "variable name contains ="), and
+`the_cleanup_names_the_key_and_not_a_pair` covers `unset_global_args`. The `denied_name_keys` cases are
+gone with the function: the server boundary is an allowlist now, and `main.rs`'s
+`the_credential_is_removed_by_the_server_and_never_by_a_wrapper` keeps the surviving property - the
+credential is never named on the `env -u` wrapper.
+
 # Test Suite Changelog
 
 Track test suite changes, fixes, and improvements for agenthub.
