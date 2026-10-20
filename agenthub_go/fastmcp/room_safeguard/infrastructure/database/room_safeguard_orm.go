@@ -16,11 +16,11 @@ const (
 // The safeguards the connector supervises (7.2), one row per safeguard per room per connector. This
 // is the CLIENT's wire vocabulary, adopted whole: the client is the side that produces these rows
 // (`Verify` and `publishRows`), so the closed set lives on the side that writes it and the server
-// refuses a name that is not one of the six.
+// refuses a name that is not one of the seven.
 //
 // THE SCOPE IS PART OF THE NAME'S MEANING, and it decides the row's room:
 //
-//	room-scoped     (room 1..255): compact, watchdog, messages, roomguard   one row per room
+//	room-scoped     (room 1..255): compact, watchdog, messages, roomguard, budget   one row per room
 //	machine-scoped (room exactly ""): bridge, agent                        one row per connector
 //
 // EXACTLY empty for the machine-scoped two, not "anything": room is part of the primary key
@@ -36,6 +36,7 @@ const (
 	SafeguardWatchdog  = "watchdog"
 	SafeguardMessages  = "messages"
 	SafeguardRoomGuard = "roomguard"
+	SafeguardBudget    = "budget"
 	SafeguardBridge    = "bridge"
 	SafeguardAgent     = "agent"
 )

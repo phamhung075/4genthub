@@ -38,7 +38,7 @@ var roomSafeguardTables = []taskdb.TableDef{
 			"\tlast_beat_at TIMESTAMP WITHOUT TIME ZONE,\n" +
 			"\tPRIMARY KEY (user_id, connector_id, room, safeguard),\n" +
 			"\tCONSTRAINT ck_room_safeguards_state CHECK (state IN ('running', 'stopped', 'silent', 'failing')),\n" +
-			"\tCONSTRAINT ck_room_safeguards_safeguard CHECK (safeguard IN ('compact', 'watchdog', 'messages', 'roomguard', 'bridge', 'agent')),\n" +
+			"\tCONSTRAINT ck_room_safeguards_safeguard CHECK (safeguard IN ('compact', 'watchdog', 'messages', 'roomguard', 'budget', 'bridge', 'agent')),\n" +
 			"\tCONSTRAINT ck_room_safeguards_room CHECK (CASE WHEN safeguard IN ('bridge', 'agent') THEN room = '' ELSE length(room) BETWEEN 1 AND 255 END)\n" +
 			")",
 		"CREATE INDEX ix_room_safeguards_user_connector ON room_safeguards (user_id, connector_id)",

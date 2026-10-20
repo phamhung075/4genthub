@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS room_safeguards (
     -- bound; it is stated here so the constraint reads as the rule the code states. The ingest refuses
     -- a bad row first, with a frame error rather than a constraint violation.
     CONSTRAINT ck_room_safeguards_state CHECK (state IN ('running', 'stopped', 'silent', 'failing')),
-    CONSTRAINT ck_room_safeguards_safeguard CHECK (safeguard IN ('compact', 'watchdog', 'messages', 'roomguard', 'bridge', 'agent')),
+    CONSTRAINT ck_room_safeguards_safeguard CHECK (safeguard IN ('compact', 'watchdog', 'messages', 'roomguard', 'budget', 'bridge', 'agent')),
     CONSTRAINT ck_room_safeguards_room CHECK (CASE WHEN safeguard IN ('bridge', 'agent') THEN room = '' ELSE length(room) BETWEEN 1 AND 255 END)
 );
 

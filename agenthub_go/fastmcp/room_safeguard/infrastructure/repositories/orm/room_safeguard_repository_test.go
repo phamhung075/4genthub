@@ -152,7 +152,7 @@ func TestUpsertKeepsOneRowPerKeyAndTheLatestState(t *testing.T) {
 	}
 }
 
-// TestUpsertRefusesTheClosedSetsBeforeAnyStatement: 7.6's four states and the six safeguards (7.2),
+// TestUpsertRefusesTheClosedSetsBeforeAnyStatement: 7.6's four states and the seven safeguards (7.2),
 // with the room rule each name's scope carries (D2), are checked in the store, so an unknown value is
 // the frame's error rather than a constraint violation surfacing as an internal one, and nothing is
 // stored.
@@ -168,6 +168,7 @@ func TestUpsertRefusesTheClosedSetsBeforeAnyStatement(t *testing.T) {
 		{"an unknown state", func(r *rigdb.RoomSafeguardORM) { r.State = "paused" }, "bad state"},
 		{"an unknown safeguard", func(r *rigdb.RoomSafeguardORM) { r.Safeguard = "keeper" }, "bad safeguard"},
 		{"a room-scoped safeguard with no room", func(r *rigdb.RoomSafeguardORM) { r.Room = "" }, "bad room"},
+		{"budget with no room", func(r *rigdb.RoomSafeguardORM) { r.Safeguard = rigdb.SafeguardBudget; r.Room = "" }, "bad room"},
 		{"a room-scoped safeguard past the column", func(r *rigdb.RoomSafeguardORM) { r.Room = strings.Repeat("r", 256) }, "bad room"},
 		{"a machine-scoped safeguard carrying a room", func(r *rigdb.RoomSafeguardORM) { r.Safeguard = rigdb.SafeguardBridge }, "bad room"},
 		{"the machine-scoped agent carrying a room", func(r *rigdb.RoomSafeguardORM) { r.Safeguard = rigdb.SafeguardAgent }, "bad room"},
@@ -187,19 +188,20 @@ func TestUpsertRefusesTheClosedSetsBeforeAnyStatement(t *testing.T) {
 		})
 	}
 	if got := safeguardRowCount(t, sessions, safeguardRow("room-1", rigdb.StateRunning, 0)); got != 0 {
-		t.Fatalf("rows after six refused frames = %d, want 0", got)
+		t.Fatalf("rows after %d refused frames = %d, want 0", len(cases), got)
 	}
 }
 
-// TestUpsertAcceptsEachOfTheSixNamesInItsScope: D1 and D2, half by half - each of the six names
-// stores with the room its scope demands: a room for the four room-scoped ones, EXACTLY an empty room for
+// TestUpsertAcceptsEachOfTheSevenNamesInItsScope: D1 and D2, half by half - each of the seven names
+// stores with the room its scope demands: a room for the five room-scoped ones, EXACTLY an empty room for
 // bridge and agent. This is the shape the client publishes on every ready
-// (agenthub_client/internal/clientservices/services.go:79-83), and the three names the old set did
-// not hold were refused at every connect.
+// (agenthub_client/internal/clientservices/services.go:114-116), and the three names the old set did
+// not hold were refused at every connect; `budget` was the fourth, refused until migration 0009
+// widened the CHECK.
 //
 // It is a store case rather than a validate() case on purpose: what it proves is that the accepted
 // halves reach the table, which is where the scope rule also exists as a CHECK.
-func TestUpsertAcceptsEachOfTheSixNamesInItsScope(t *testing.T) {
+func TestUpsertAcceptsEachOfTheSevenNamesInItsScope(t *testing.T) {
 	sessions := testdb.NewSessions(t)
 	ctx := context.Background()
 
@@ -208,6 +210,7 @@ func TestUpsertAcceptsEachOfTheSixNamesInItsScope(t *testing.T) {
 		{rigdb.SafeguardWatchdog, "room-1"},
 		{rigdb.SafeguardMessages, "room-1"},
 		{rigdb.SafeguardRoomGuard, "room-1"},
+		{rigdb.SafeguardBudget, "room-1"},
 		{rigdb.SafeguardBridge, ""},
 		{rigdb.SafeguardAgent, ""},
 	}
@@ -225,11 +228,11 @@ func TestUpsertAcceptsEachOfTheSixNamesInItsScope(t *testing.T) {
 	}
 }
 
-// TestValidateStatesTheSixNamesAndTheirScopes is the rule itself, with no database in the way: every
-// one of the six names is read with the room shape its scope allows, and the only other name and the
+// TestValidateStatesTheSevenNamesAndTheirScopes is the rule itself, with no database in the way: every
+// one of the seven names is read with the room shape its scope allows, and the only other name and the
 // only other state are refused. The three messages are the ones the socket turns into
 // `bad_rig` / `bad_safeguard` / `bad_state`, which is what the client reads.
-func TestValidateStatesTheSixNamesAndTheirScopes(t *testing.T) {
+func TestValidateStatesTheSevenNamesAndTheirScopes(t *testing.T) {
 	row := func(safeguard, room, state string) rigdb.RoomSafeguardORM {
 		return rigdb.RoomSafeguardORM{UserID: "user1", ConnectorID: "conn1", Room: room, Safeguard: safeguard, State: state}
 	}
@@ -243,10 +246,12 @@ func TestValidateStatesTheSixNamesAndTheirScopes(t *testing.T) {
 		{"watchdog with a room", row(rigdb.SafeguardWatchdog, "room-1", rigdb.StateStopped), ""},
 		{"messages with a room", row(rigdb.SafeguardMessages, "room-1", rigdb.StateSilent), ""},
 		{"roomguard with a room", row(rigdb.SafeguardRoomGuard, "room-1", rigdb.StateFailing), ""},
+		{"budget with a room", row(rigdb.SafeguardBudget, "room-1", rigdb.StateRunning), ""},
 		{"bridge with no room", row(rigdb.SafeguardBridge, "", rigdb.StateRunning), ""},
 		{"agent with no room", row(rigdb.SafeguardAgent, "", rigdb.StateRunning), ""},
 		{"compact with no room", row(rigdb.SafeguardCompact, "", rigdb.StateRunning), "bad room"},
 		{"messages with no room", row(rigdb.SafeguardMessages, "", rigdb.StateRunning), "bad room"},
+		{"budget with no room", row(rigdb.SafeguardBudget, "", rigdb.StateRunning), "bad room"},
 		{"a room past the column", row(rigdb.SafeguardWatchdog, longRig, rigdb.StateRunning), "bad room"},
 		{"bridge carrying a room", row(rigdb.SafeguardBridge, "room-1", rigdb.StateRunning), "bad room"},
 		{"agent carrying a room", row(rigdb.SafeguardAgent, "room-1", rigdb.StateRunning), "bad room"},

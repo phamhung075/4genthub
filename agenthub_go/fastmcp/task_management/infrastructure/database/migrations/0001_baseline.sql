@@ -557,7 +557,7 @@ CREATE TABLE room_safeguards (
 	last_beat_at TIMESTAMP WITHOUT TIME ZONE,
 	PRIMARY KEY (user_id, connector_id, room, safeguard),
 	CONSTRAINT ck_room_safeguards_state CHECK (state IN ('running', 'stopped', 'silent', 'failing')),
-	CONSTRAINT ck_room_safeguards_safeguard CHECK (safeguard IN ('compact', 'watchdog', 'messages', 'roomguard', 'bridge', 'agent')),
+	CONSTRAINT ck_room_safeguards_safeguard CHECK (safeguard IN ('compact', 'watchdog', 'messages', 'roomguard', 'budget', 'bridge', 'agent')),
 	CONSTRAINT ck_room_safeguards_room CHECK (CASE WHEN safeguard IN ('bridge', 'agent') THEN room = '' ELSE length(room) BETWEEN 1 AND 255 END)
 );
 CREATE INDEX ix_room_safeguards_user_connector ON room_safeguards (user_id, connector_id);
