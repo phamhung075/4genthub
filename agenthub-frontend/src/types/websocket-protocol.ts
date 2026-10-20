@@ -266,6 +266,11 @@ export interface NotificationEventPayload {
  *
  * `state` is ABSENT on the dead-man alert (7.3): that one is about the connector's own silence, which
  * no child reported, so it carries the machine scope's safeguard name and no state.
+ *
+ * The entity's `room_safeguard` names the ROW kind and `safeguard` names the client axis, so the two
+ * are different things and are allowed to look alike: this row may report the safeguard NAMED
+ * `roomguard`, and that name is one of the six the client has always sent - neither is derived from
+ * the other, and a rename of one is not a rename of the other.
  */
 export interface RoomSafeguardAlertPayload {
   /** The client-reported safeguard name: compact | watchdog | messages | roomguard | bridge | agent. */

@@ -7,8 +7,11 @@ Slice C of `DECISION-2026-10-20-rig-gone.md` (architect, 2026-10-20): the hub's 
 
 - `agenthub-frontend/src/types/websocket-protocol.ts`: `RigSafeguardAlertPayload` ->
   `RoomSafeguardAlertPayload`, its wire key `rig?: string` -> `room?: string` (the hub's own rename:
-  `rig_safeguard` -> `room_safeguard` for the entity, `rig` -> `room` for the payload key), and the
-  interface's doc block names the entity the server now emits.
+  `rig_safeguard` -> `room_safeguard` for the entity, `rig` -> `room` for the payload key). The
+  interface's doc block names the entity the server now emits, and says why the row kind
+  `room_safeguard` may sit beside a safeguard NAMED `roomguard`: the entity names the row, `safeguard`
+  names the client axis, and neither is derived from the other (the six names, `roomguard` included,
+  are unchanged).
 - `agenthub-frontend/src/hooks/useRealtimeSync.ts`: the dispatcher's `case 'rig_safeguard'` ->
   `case 'room_safeguard'`, `handleRigSafeguardAlert` -> `handleRoomSafeguardAlert`, the cast to the
   renamed payload, and the inbox sentence's `rig <name>` part -> `room <name>`. The consumer reads
