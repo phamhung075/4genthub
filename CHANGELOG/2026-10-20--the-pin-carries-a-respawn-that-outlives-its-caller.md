@@ -28,7 +28,26 @@ Measured at this pin before landing (lead, 2026-10-20, detached worktree at `f0c
 `TestRespawnDaemonReplacesARealProcessForTheRoot`, all PASS; `go vet` and `gofmt -l` clean on the
 package. Reviewer PASSed `f0c898b` independently (session isolation verified).
 
-Until the installed client is rebuilt, the running binary is the old one and the operator's rule still
-holds: never run `--respawn` inline from a seat; use `build.sh --no-test` then `setsid nohup 4genteam up
-RIG --respawn`. After the rebuild the detached form is the verb's own behaviour and the wrapper is
-unnecessary.
+The inline-respawn ban is lifted. The installed client was rebuilt from `f0c898b`:
+`go version -m ~/.local/bin/4genteam` names `vcs.revision=f0c898b`, `vcs.modified=false`, and the binary
+carries `FOURGENTEAM_UP_RESPAWN_DETACHED` and `up-respawn.log`; the hub gitlink names the same commit and
+`agenthub_client` `origin/main` is `f0c898b`.
+
+Two runs were measured after the rebuild, and only the second proves the inline case:
+
+- 18:27Z, `setsid -f bash -c '4genteam up 4genthub-min --respawn'`: the detached child went through the
+  agent stop and the daemon replacement (pids 26326 26523 26715 26978 30399) and started all five seats
+  (new daemon and agent 25119, 26045). This proves the child completes; it does NOT prove an inline call is
+  safe, because `setsid` already put the caller outside the tree that was stopped.
+- 18:30:48Z, bare `4genteam up 4genthub-min --respawn` from the lead seat, with no `setsid`, no `nohup`
+  and no wrapper: `/tmp/inline-respawn-bare.txt` records the caller's ancestor chain (its `omp` process,
+  then `agenthub-runtime runner 4genthub-min/lead`, then the tmux server), the printed detach line, and
+  `EXIT=0 AT=2026-10-20T18:30:48Z`. `up-respawn.log` kept writing to 18:31:15Z - 27 s after the caller
+  returned - recording `agent: stopped with its children`, the daemon replacement (`daemon: stopping
+  [965 1211 1369 1676 1928]`, the caller's own runner 1211 among them), the five worktrees kept, all five
+  seats running, and `agent: pid 6311` (daemon 5316). The caller pid is gone afterwards, and the lead's
+  next session starts at 18:30:51Z, after the caller's exit.
+
+So `up --respawn` may be run inline from a seat: the detach is the verb's own behaviour, the caller returns
+the log path and exits 0 before the stop, and the wrapper the previous rule required is unnecessary. The ban
+held only while the installed binary predated this pin.
