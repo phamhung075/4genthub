@@ -10,7 +10,7 @@ When the platform's own server (`agenthub_http`) is mounted, two of its tools ar
 - **`manage_context`** — read and write the shared context for this workspace. Put a decision, a
   finding, or the state of your work here when another seat will need it after your turn ends; read it
   before you assume what came before you.
-- **`call_seat`** — send work or a question to another seat of your rig, by seat name.
+- **`call_seat`** — send work or a question to another seat of your room, by seat name.
 
 Two rules that keep these useful:
 

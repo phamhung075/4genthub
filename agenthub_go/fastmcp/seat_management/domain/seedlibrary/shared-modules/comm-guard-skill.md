@@ -8,7 +8,7 @@ description: How a seat messages another seat. Use before sending any message to
 The only way to message another seat is:
 
 ```bash
-4genteam send <rig> <seat> "<message>" [--intent <task|escalation|report|question|notice>]
+4genteam send <room> <seat> "<message>" [--intent <task|escalation|report|question|notice>]
 ```
 
 `4genteam send` is the audited path: it builds your room's communication policy at send time, records the decision in your audit log, delivers the message, and records the outcome. `--intent` defaults to `notice`.
