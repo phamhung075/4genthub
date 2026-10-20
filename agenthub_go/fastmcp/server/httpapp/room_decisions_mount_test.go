@@ -331,7 +331,7 @@ func pendingDecision() roomrepo.RoomDecision {
 		ID:             roomDecisionTestDecID,
 		UserID:         roomDecisionTestUserA,
 		RoomID:         roomDecisionTestRoomID,
-		RoomName:        "4genthub-min",
+		RoomName:       "4genthub-min",
 		QitemID:        "qitem-20261012190405-abcdef0123456789",
 		AuthorSeatKey:  "go-dev",
 		Destination:    "human-operator@kernel",

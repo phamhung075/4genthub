@@ -43,12 +43,12 @@ Send a mission to the developer seat:
 To watch your team work in real time with live streaming tool calls and token meters:
 
 ```bash
-4genteam feed --rig dev-team --detail
+4genteam feed --room dev-team --detail
 ```
 
 Or open the interactive multi-seat terminal grid:
 ```bash
-4genteam watch --rig dev-team
+4genteam watch --room dev-team
 ```
 
 ## Step 5: Check the Work Queue

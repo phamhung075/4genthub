@@ -6,7 +6,7 @@ Architect ruling, 2026-10-11. Requested by the owner through the lead (`qitem-20
 
 ## 0. The single home
 
-| | A: the room's seat file, `scripts/team/<room>/team.json`, plus one derivation rule in the client | B: the materialized rig, `~/.config/4genthub/agenthub-seats/<room>/rig/{rig.yaml, agents/}` |
+| | A: the room's seat file, `scripts/team/<room>/team.json`, plus one derivation rule in the client | B: the materialized room, `~/.config/4genthub/agenthub-seats/<room>/rig/{rig.yaml, agents/}` |
 |---|---|---|
 | Tracked and reviewable | yes | no: `sync rig` generates it, and no seat may edit it by hand |
 | Already true today | it defines the five live seats, including the architect | it lists ten members and no architect: stale, finding `072996ad` |
@@ -16,14 +16,14 @@ Architect ruling, 2026-10-11. Requested by the owner through the lead (`qitem-20
 - **The data** is the `seats` array of `team.json`, through `seat_type`, which it already carries.
 - **The rule** is one function beside `Obligatory` in `internal/clientservices/services.go`. That keeps it in one place with the obligatory list, compiled for 7.8's reason: an operator cannot remove a seat's isolation.
 
-  `SeatWorktree(roomDir, rig, seat, seatType) (path, branch string)`
+  `SeatWorktree(roomDir, room, seat, seatType) (path, branch string)`
 
   | `seat_type` | Path | Branch |
   |---|---|---|
-  | `lead`, `developer`, `architect` (a writing seat) | `<roomDir>/wt/<seat>` | `<rig>/<seat>` |
+  | `lead`, `developer`, `architect` (a writing seat) | `<roomDir>/wt/<seat>` | `<room>/<seat>` |
   | `reviewer` | `<roomDir>/wt/<seat>` | none: detached, it never commits |
 
-  In the same function, a room that has a `lead` also gets `<roomDir>/wt/integration` on `<rig>/integration`.
+  In the same function, a room that has a `lead` also gets `<roomDir>/wt/integration` on `<room>/integration`.
 
 **What moves.** Each member's `cwd` in `rig.yaml` becomes output of this rule. `rigLaunchSpec` left with the deleted `sync room` verb (client `ba96fee`); `up` now derives and creates the worktrees before it starts the seats, so each seat's cwd is its worktree rather than the room (`clientlifecycle/lifecycle.go:372`). The hand-made variants `rig/rig-claude.yaml` and `rig/rig-omp.yaml`, whose members carry `cwd: .`, are not sources and are retired by re-materializing, never by hand.
 
@@ -33,7 +33,7 @@ Architect ruling, 2026-10-11. Requested by the owner through the lead (`qitem-20
 
 ## (a) Branch naming
 
-| | A: one long-lived branch per seat, `<rig>/<seat>` | B: one branch per work item, `<rig>/<seat>/<item>` |
+| | A: one long-lived branch per seat, `<room>/<seat>` | B: one branch per work item, `<room>/<seat>/<item>` |
 |---|---|---|
 | `up` can create or reuse it without asking anyone | yes, the name is derived | no, the item is not known at launch |
 | Shows which item a commit belongs to | the commit message and the board row do | the branch name does |
@@ -48,17 +48,17 @@ The reason is measured. The architect ran it on scratch repositories on 2026-10-
 
 | Submodule | In a writing seat's worktree |
 |---|---|
-| `agenthub_client` | on branch `<rig>/<seat>` of the client repository: attached to when that branch already exists with no worktree holding it, else created at the parent's gitlink; detached at the pin in the reviewer's worktree |
+| `agenthub_client` | on branch `<room>/<seat>` of the client repository: attached to when that branch already exists with no worktree holding it, else created at the parent's gitlink; detached at the pin in the reviewer's worktree |
 
 ## Where a seat's client code lives
 
-Ruling, 2026-10-18 (`qitem-20261018121114-9209ad06b981`): **one location**, `<roomDir>/wt/<seat>/agenthub_client`. A seat commits client code there, on its client branch: `<rig>/<seat>` for a seat that has none, and the branch its legacy worktree held for a seat the migration moves. `<roomDir>/wt/<seat>-client` is the pre-derivation layout; the migration (`clearStaleClientWorktrees`) removes it, clean only, and the branch survives.
+Ruling, 2026-10-18 (`qitem-20261018121114-9209ad06b981`): **one location**, `<roomDir>/wt/<seat>/agenthub_client`. A seat commits client code there, on its client branch: `<room>/<seat>` for a seat that has none, and the branch its legacy worktree held for a seat the migration moves. `<roomDir>/wt/<seat>-client` is the pre-derivation layout; the migration (`clearStaleClientWorktrees`) removes it, clean only, and the branch survives.
 
 The subject list is **every derived seat, the reviewer included**. A writing seat's legacy holds a branch its link needs, and git checks a branch out in one worktree per repository, so the legacy is exactly what makes the link impossible; a reviewer's legacy holds no branch, but it is still a second checkout of the client repository, and two checkouts at different commits are the ambiguity this ruling exists to remove - measured 2026-10-18, `wt/reviewer-client` sat detached at `287f7bc` while the derived link was detached at the pin `7034a80`. The one thing a removal must not take is the only reference to a commit: a detached legacy whose `HEAD` is on no branch and not in `main` is **refused and named**, the same rule `worktree prune` applies (`verbs.go:283`). Client `287f7bc` still skips a seat with no branch (`worktree.go:377`), so a reviewer's legacy is left today; hub `ade5e701` records the case in `TEST-CHANGELOG.md` ahead of the client, and the skip and that test are the implementation's remainder.
 
 There is no per-seat location to name, because a second location means a second check: `Check` tests the derived path, and it exists so a seat that cannot build the client is named before the build fails. Naming `<seat>-client` as a location for some seats would make the check's answer depend on a table that must be kept true, and the seat launched in `<seat>` would still not find the client where the derivation puts it.
 
-Measured 2026-10-18, the reason for this ruling: go-dev's link holds `4genthub-min/go-dev` (52 commits ahead of `main`) and works; the architect's and fe-dev's links were never placed, and their client work sat in `architect-client` (`4genthub-min/architect-client`, 3 ahead) and `fe-dev-client` (`4genthub-min/fe-dev-edit-yield`, one untracked `captures/` directory) - so `Check` called two working seats wrong. The migration's first form matched a legacy worktree only when it held exactly `<rig>/<seat>`, so no lane branch ever matched it: the legacy path is identified by PATH, and the branch it holds is what the link then carries.
+Measured 2026-10-18, the reason for this ruling: go-dev's link holds `4genthub-min/go-dev` (52 commits ahead of `main`) and works; the architect's and fe-dev's links were never placed, and their client work sat in `architect-client` (`4genthub-min/architect-client`, 3 ahead) and `fe-dev-client` (`4genthub-min/fe-dev-edit-yield`, one untracked `captures/` directory) - so `Check` called two working seats wrong. The migration's first form matched a legacy worktree only when it held exactly `<room>/<seat>`, so no lane branch ever matched it: the legacy path is identified by PATH, and the branch it holds is what the link then carries.
 
 A legacy worktree holding uncommitted or untracked work is not removed: `git worktree remove` without `--force` refuses it, the path is named, and the seat keeps working there until it commits - no link is placed beside it, because a second client location is the thing this ruling forbids. `Check` names the seat until the link exists; that is the truthful state, not a defect of the seat.
 
@@ -72,23 +72,23 @@ A legacy worktree holding uncommitted or untracked work is not removed: `git wor
 
 **Ruling: B.** The routine, run by the lead:
 
-1. **Collect.** The lead merges each ready seat's tip into `<rig>/integration`, in `<roomDir>/wt/integration`, using `git merge --no-ff <sha>` with the SHA the seat named. On a conflict the lead runs `git merge --abort` and returns the item to the author. The author runs `git merge <rig>/integration` on its own branch, resolves the conflict there (requirement 3), and names its new tip. The lead never resolves another seat's conflict.
+1. **Collect.** The lead merges each ready seat's tip into `<room>/integration`, in `<roomDir>/wt/integration`, using `git merge --no-ff <sha>` with the SHA the seat named. On a conflict the lead runs `git merge --abort` and returns the item to the author. The author runs `git merge <room>/integration` on its own branch, resolves the conflict there (requirement 3), and names its new tip. The lead never resolves another seat's conflict.
 2. **Gate.** The reviewer checks out the integration tip `C`, detached, in its own worktree and tests a clean export of it (rule 82). **The verdict must NAME:**
    - `C`;
    - the `main` tip `M`, with `git merge-base --is-ancestor M C` true;
    - every seat tip it contains, as `branch=sha`, which equals `git log --first-parent --format=%s M..C`;
    - the commands run and each result;
    - PASS or FAIL.
-3. **Land.** The lead re-measures `git rev-parse <rig>/integration` = `C` and `git rev-parse main` = `M`. If either differs, the verdict is stale and the lead goes back to step 2. Then, in the main checkout, the lead runs `git merge --ff-only C`, giving the SHA and not the branch name, so a moved branch cannot slip in.
+3. **Land.** The lead re-measures `git rev-parse <room>/integration` = `C` and `git rev-parse main` = `M`. If either differs, the verdict is stale and the lead goes back to step 2. Then, in the main checkout, the lead runs `git merge --ff-only C`, giving the SHA and not the branch name, so a moved branch cannot slip in.
 4. **Re-measure.** `git rev-parse main` = `C`, and `git status --porcelain --untracked-files=no` prints nothing.
 5. **Record.** The lead writes `landed C (verdict <qitem>)` into each contained item's board row, then tells each contained seat to fast-forward.
-6. **A failed gate.** The lead resets `<rig>/integration` to `main` (`git reset --hard M` in the integration worktree, which is the lead's own unpublished branch) and re-collects without the failing tip.
+6. **A failed gate.** The lead resets `<room>/integration` to `main` (`git reset --hard M` in the integration worktree, which is the lead's own unpublished branch) and re-collects without the failing tip.
 
-**Where the merged candidate set lives:** in git, as `git log --first-parent M..C` on `<rig>/integration`. One merge commit per seat tip, so nothing is listed by hand. Once landed, the same log on `main` is the history.
+**Where the merged candidate set lives:** in git, as `git log --first-parent M..C` on `<room>/integration`. One merge commit per seat tip, so nothing is listed by hand. Once landed, the same log on `main` is the history.
 
 **The main checkout** (`~/__projects__/4genthub`) receives only step 3. No seat edits it, and the lead does not edit it either. Its tracked tree must be clean before the first land. That cleanup belongs to `e66a3e63`: each uncommitted path goes to its author's branch, and nothing is discarded unread.
 
-**Client changes** land the same way one level down. A seat's client commits are on `<rig>/<seat>` in the shared client repository. The parent commit that moves the `agenthub_client` gitlink is an ordinary commit on the same seat branch, gated with it.
+**Client changes** land the same way one level down. A seat's client commits are on `<room>/<seat>` in the shared client repository. The parent commit that moves the `agenthub_client` gitlink is an ordinary commit on the same seat branch, gated with it.
 
 ## (c) The commit form is pathspec, fleet-wide
 
@@ -111,7 +111,7 @@ commit. The commit therefore names its paths and nothing is staged first.
 ## Composition with 7.8 and the CLI
 
 - **Which repository it derives in.** The step reads the room's own repository from the definition's seat `cwds` (git's common directory behind them, `SeatProjectRoot`), not the working directory's toplevel, so `up` from a seat's client worktree derives the same paths as `up` from the project root; when the readable seat directories name more than one repository, the disagreement is printed and the working directory's answer stands. Measured 2026-10-18: the same `up --room-only` refused 6 of 6 paths from a client worktree and printed six kept lines from the project root (`4fd6c67`); `doctor`'s worktrees row reads the same root (`68c7ae9`). The root is read, never guessed from the seat path: `<roomDir>/wt/<seat>` is still where the paths sit.
-- **A new `Obligatory` row, `worktrees`.** Scope `rig`; RestartBy `none`; start order `daemon`, `gate`, **`worktrees`**, `seats`, and so on, because a seat's `cwd` must exist before it launches.
+- **A new `Obligatory` row, `worktrees`.** Scope `room`; RestartBy `none`; start order `daemon`, `gate`, **`worktrees`**, `seats`, and so on, because a seat's `cwd` must exist before it launches.
   - **`Start`**, for each seat from `team.json`:
     - create the path from `SeatWorktree` if it is missing: `git worktree add <path> <branch>` when that branch already exists with no worktree holding it (it carries the seat's own commits; attaching re-points nothing), `git worktree add -b <branch> <path> main` when it does not, `--detach` for the reviewer;
     - link the `agenthub_client` worktree into it (on the branch above, or detached at the pin for the reviewer), and nothing else;
@@ -121,8 +121,8 @@ commit. The commit therefore names its paths and nothing is staged first.
   - **`Check`**: every derived path is registered in `git worktree list` **whatever branch it holds**, with the `agenthub_client` link present (a `.git` under it). Wrong is "present but not a worktree, or the client link missing", never "on another branch": measured 2026-10-18, fe-dev sat on `fe-dashboard-update-depth` and the architect on `g3-drop-classification` while the reviewer was detached, and a check that called all three wrong made a room that `up` keeps read as broken.
 - **`sync rig`**: sets each member's `cwd` to `SeatWorktree(...)`. The path is deterministic, so sync can write it before the worktree exists.
 - **New verbs:**
-  - `4genteam worktree list RIG` prints the derived worktrees and every other entry of `git worktree list`, labelled `foreign`.
-  - `4genteam worktree prune RIG` removes only `/tmp/wt-*`, `/tmp/gate-*` and entries git marks `prunable`, then runs `git worktree prune`. Removal is `git worktree remove` without `--force`, so a dirty worktree is named and left in place. A worktree whose detached `HEAD` is on no branch and not in `main` is **refused and named**: removing it deletes its reflog, which is the only reference to that commit. The case is real: `06410692` is on no branch today.
+  - `4genteam worktree list ROOM` prints the derived worktrees and every other entry of `git worktree list`, labelled `foreign`.
+  - `4genteam worktree prune ROOM` removes only `/tmp/wt-*`, `/tmp/gate-*` and entries git marks `prunable`, then runs `git worktree prune`. Removal is `git worktree remove` without `--force`, so a dirty worktree is named and left in place. A worktree whose detached `HEAD` is on no branch and not in `main` is **refused and named**: removing it deletes its reflog, which is the only reference to that commit. The case is real: `06410692` is on no branch today.
   - Anything else foreign, for example `~/__projects__/4genthub-urgent-subtask-details`, is listed and never removed.
 - **`doctor`**: the `worktrees` row. A foreign count above zero is a detail on that row, not a failure.
 - **7.10**: no repair verb touches a worktree.
@@ -131,7 +131,7 @@ commit. The commit therefore names its paths and nothing is staged first.
 
 - `.claude` is not a submodule of this hub and no derived worktree carries one (`f8989ba`). The earlier fact here - recorded at `b376accb`, checked out at `6e8bf881`, a new worktree getting the recorded hooks - described a link the derivation never places. go-dev's worktree holds an empty `.claude` directory with no `.git` under it (2026-10-18 13:52); it is a directory, not a link, and nothing links or removes it.
 - The client skill `skills/share/seat-worktree/SKILL.md` still says `.claude` is detached inside the seat worktree and does not mention the client-location migration; both sentences go with the implementation of this ruling (client lane, go-dev).
-- The architect seat is `claude-code` and is missing from the materialized rig (`072996ad`). Its worktree follows the same rule, and how it is launched belongs to that item.
+- The architect seat is `claude-code` and is missing from the materialized room (`072996ad`). Its worktree follows the same rule, and how it is launched belongs to that item.
 - An ignored file is not in a new worktree. The frontend seat installs `node_modules` in its own worktree, and the client does not.
 
 ## Tests the implementation must pass (`622e9faf`)

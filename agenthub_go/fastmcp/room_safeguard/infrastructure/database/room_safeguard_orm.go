@@ -63,7 +63,7 @@ const (
 type RoomSafeguardORM struct {
 	UserID      string     `db:"user_id"`
 	ConnectorID string     `db:"connector_id"`
-	Room         string     `db:"room"`
+	Room        string     `db:"room"`
 	Safeguard   string     `db:"safeguard"`
 	State       string     `db:"state"`
 	PID         *int       `db:"pid"`

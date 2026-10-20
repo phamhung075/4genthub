@@ -146,7 +146,7 @@ type RoomDecisionStore interface {
 // RoomDecisionAsk is one authored ask, before it is a row. RoomID is the resolved room UUID, and
 // Questions is the authored value as the daemon sent it - it is parsed here, not by the route.
 type RoomDecisionAsk struct {
-	RoomName        string
+	RoomName       string
 	QitemID        string
 	AuthorSeatKey  string
 	Destination    string
@@ -281,7 +281,7 @@ func (s *RoomDecisionService) Create(ctx context.Context, userID, roomID string,
 	stored, created, err := s.store.Create(ctx, repositories.RoomDecision{
 		UserID:         userID,
 		RoomID:         roomID,
-		RoomName:        ask.RoomName,
+		RoomName:       ask.RoomName,
 		QitemID:        ask.QitemID,
 		AuthorSeatKey:  ask.AuthorSeatKey,
 		Destination:    ask.Destination,

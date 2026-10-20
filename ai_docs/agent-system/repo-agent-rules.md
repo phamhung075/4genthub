@@ -157,7 +157,7 @@ the model → yes: fix the test to match the model.
   keeps only `README`, `TEST-CHANGELOG`, `AGENTS` and `CLAUDE.local` (plus the `CHANGELOG/` directory),
   and the same applies to every seat worktree root.
   Reports about the client submodule live in that submodule's own `ai_docs/reports-status/` — the same
-  rule read in that tree. **The u3 lab tree (`wt/<rig>/u3-run/`) is the instrument's directory, not a
+  rule read in that tree. **The u3 lab tree (`wt/<room>/u3-run/`) is the instrument's directory, not a
   seat worktree:** its install, calibration, smoke and gate records stay next to the harness they
   document, and moving them is a post-run sweep, never something done in the window before a run.
   Owner instruction, 2026-10-15.
@@ -172,5 +172,5 @@ build for app `4genthub-frontend`, and a webhook 200 is delivery, not a build. T
 `python3 scripts/check_served_frontend.py --base-url https://www.4genthub.com --expect-dist
 agenthub-frontend/build` exits 0, or the served `/assets/index-<hash>.js` and its `Last-Modified` move
 past the push.
-Other seats never push. Nobody touches another rig. Credentials and spend stay the owner's. A
+Other seats never push. Nobody touches another room. Credentials and spend stay the owner's. A
 decision goes through `4genteam decide`; the owner is asked only for direction the team cannot settle.

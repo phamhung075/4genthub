@@ -13,7 +13,7 @@ mode** — the seat's own omp config, which **this repo already generates** — 
 
 ## 1. Where it happens, with file and line
 
-The live daemon for this rig is the **source tree at `/home/daihu/__projects__/reference`**, not the installed
+The live daemon for this room is the **source tree at `/home/daihu/__projects__/reference`**, not the installed
 global package: the running launcher is
 `/home/daihu/__projects__/reference/packages/daemon/dist/adapters/pi-runner.js`, and the installed
 `@reference/cli` 0.6.3 contains **no `approval-mode` string at all** (`grep -rn "approval-mode"
@@ -147,8 +147,8 @@ generator says so in `real_home()`: *"the REAL user's home directory — which `
 seat"*), so `HOME=/tmp/scratch omp config set …` writes the **live** config. During this measurement exactly
 that replaced this seat's `bash.patterns` with a single test entry. It was repaired with the generator itself — `scripts/seat_policy.py` then, `4genteam policy` now:
 `apply --rig 4genthub-min` reported `writer: written` and nine `ok`, and the check that did that is
-`4genteam policy apply --rig 4genthub-min --check`. **Use `4genteam policy apply --rig <rig> --check` to inspect
-and `4genteam policy apply --rig <rig>` to repair; never `omp config set` on a live seat.** The
+`4genteam policy apply --rig 4genthub-min --check`. **Use `4genteam policy apply --room <room> --check` to inspect
+and `4genteam policy apply --room <room>` to repair; never `omp config set` on a live seat.** The
 generator's check is what made the damage visible and scoped (`writer: DRIFT` against nine `ok`).
 
 ```bash
@@ -168,7 +168,7 @@ omp config get tools.approval --json
 # the generator, and the check that the rendered file is the live config
 # the generator was deleted in 1c7b6631, so read it from its parent commit
 git -C /home/daihu/__projects__/4genthub show 1c7b6631^:scripts/seat_policy.py | sed -n '145,161p'
-cat /home/daihu/.config/4genthub/state/omp/<rig>-<seat>@<rig>/agent/config.yml
+cat /home/daihu/.config/4genthub/state/omp/<room>-<seat>@<room>/agent/config.yml
 ```
 
 ## 5. Boundaries observed

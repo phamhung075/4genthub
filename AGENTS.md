@@ -11,7 +11,7 @@ where context lives, the hard rules every seat shares, and pointers; the rest li
 
 ## 1. Identity first
 
-Run `4genteam whoami --json`. It returns your rig, seat, peers, edges and transcript path, and it
+Run `4genteam whoami --json`. It returns your room, seat, peers, edges and transcript path, and it
 is ground truth — a startup overlay can be stale. Re-run it after any compaction, restart or
 restore, before concluding anything about where you are.
 
@@ -85,11 +85,11 @@ These are pointers; never copy their content into this file.
    **credentials and spend, which stay the owner's**. **The remote carries only `main` and `frontend`.**
    A seat works in a local branch or worktree; pushing any other remote branch or tag is refused by the
    `pre-push` hook (`scripts/git-hooks/pre-push-branches`). Order: test the client, push the client,
-   commit the hub pin, push hub `main`. Never touch another rig.
-6. **Launch and resume teams with `4genteam`, NEVER legacy 4genteam.** Always run `4genteam up <rig> [--allow-peak]`
-   or `4genteam continue <rig>`. 4genteam daemon and runtime orchestration are retired; `4genteam` runs the full client
+   commit the hub pin, push hub `main`. Never touch another room.
+6. **Launch and resume teams with `4genteam`, NEVER legacy 4genteam.** Always run `4genteam up <room> [--allow-peak]`
+   or `4genteam continue <room>`. 4genteam daemon and runtime orchestration are retired; `4genteam` runs the full client
    supervisor stack (`agent`, the auto-compaction supervisor `compact-run`, `watchdog`, status `bridge`, and the styled
-   `watch` grid). When asked to show the live team, always run `4genteam watch --room <rig>`.
+   `watch` grid). When asked to show the live team, always run `4genteam watch --room <room>`.
 
 ## 4. Pointers
 
@@ -136,25 +136,25 @@ These are pointers; never copy their content into this file.
   `~/.config/4genthub/.env` in its environment (the seat spec's `env` wins over the file; the runtime's
   `AGENTHUB_*` keys win over both) and writes `<seat dir>/mcp.json` naming `${AGENTHUB_URL}/mcp` and
   `Bearer ${AGENTHUB_TOKEN}`. A running seat never re-reads either: after a change run
-  `4genteam room reseat <rig> <seat>`. Verified: a reseated `go-dev` listed the nine tools and `manage_project`
+  `4genteam room reseat <room> <seat>`. Verified: a reseated `go-dev` listed the nine tools and `manage_project`
   `list` returned the projects. Never read or print the token; check presence only.
 
 ## 6. The principal session (the LLM in the owner's own terminal)
 
 The model the owner talks to in this repository is **not a seat**. `4genteam whoami` names it
-`principal@<rig>`. The seats (lead, architect, go-dev, fe-dev, reviewer) do the work; the principal does
+`principal@<room>`. The seats (lead, architect, go-dev, fe-dev, reviewer) do the work; the principal does
 four things and nothing else:
 
-1. **Survey the team.** `4genteam heal --check <rig>`, `4genteam room status <rig>`, the queue, CI
+1. **Survey the team.** `4genteam heal --check <room>`, `4genteam room status <room>`, the queue, CI
    (`gh run list --branch main`), local against `origin` for the hub and `agenthub_client`, and each seat's
-   last tool call and errors (`<state-root>/rooms/<rig>/seats/<seat>/tool-calls.jsonl`).
+   last tool call and errors (`<state-root>/rooms/<room>/seats/<seat>/tool-calls.jsonl`).
 2. **Report anomalies**, result first and short: what is wrong, since when, and what was done or is needed.
 3. **Help the owner and the seats communicate.** Relay the owner's words to the lead or the seat, and a
    seat's block to the owner. A message goes through the queue to the session name
-   `AGENTHUB_SESSION_NAME=principal@<rig> 4genteam room queue create <rig> --to agenthub--<rig>--<seat> ...`
+   `AGENTHUB_SESSION_NAME=principal@<room> 4genteam room queue create <room> --to agenthub--<room>--<seat> ...`
    (`seat@room` nudges nobody). When a seat is misaddressed or stuck, send it a `guide` row.
-4. **Init the seats and the grid for work.** `4genteam up <rig> --team <dir>`, then `4genteam watch --room <rig>`
-   (the grid is lead tall on the left, one pane per seat, none empty), and `4genteam room reseat <rig> <seat>`
+4. **Init the seats and the grid for work.** `4genteam up <room> --team <dir>`, then `4genteam watch --room <room>`
+   (the grid is lead tall on the left, one pane per seat, none empty), and `4genteam room reseat <room> <seat>`
    after a change a running seat never re-reads (`.env`, `mcp.json`, skills). `COMPACT_*` edits need the
    `4genteam agent` killed by PID first.
 

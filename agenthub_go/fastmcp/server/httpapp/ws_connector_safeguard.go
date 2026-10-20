@@ -1,6 +1,6 @@
 // ws_connector_safeguard.go holds the connector socket's phase-1 vocabulary that is not the frame
 // loop itself: the protocol version, the heartbeat, the capabilities the server enables, the
-// per-connector liveness the rigd dead-man needs, and the alerts 7.3 raises.
+// per-connector liveness the agent dead-man needs, and the alerts 7.3 raises.
 //
 // It is a file of its own so the frame loop in ws_mount.go stays a frame loop: everything here is
 // either a constant the doc names or the machinery behind one of its two alerts.
@@ -12,7 +12,7 @@ import (
 	"sync"
 	"time"
 
-	rigdb "agenthub/fastmcp/room_safeguard/infrastructure/database"
+	roomdb "agenthub/fastmcp/room_safeguard/infrastructure/database"
 	"agenthub/fastmcp/server/routes"
 	"agenthub/fastmcp/task_management/domain/entities"
 )
@@ -23,7 +23,7 @@ const (
 	// hello.protocol and this one, and a missing hello.protocol means 1 (2.2).
 	connectorProtocolVersion = 1
 	// connectorHeartbeatSeconds is ready.heartbeat_s: how often the client pings. Three of them are
-	// both the server's idle close below and the rigd dead-man (2.2, 7.3).
+	// both the server's idle close below and the agent dead-man (2.2, 7.3).
 	connectorHeartbeatSeconds = 25
 	// connectorCapabilityIngest, connectorCapabilitySafeguards and connectorCapabilityLedger are the
 	// capabilities this server enables (2.3.4, 7.6, P4). `commands` is phase 2 and is NOT served, and
@@ -39,18 +39,18 @@ const (
 	// server raises is `safeguard_alert`, and it travels as the entity `room_safeguard` on the
 	// existing data-change push.
 	safeguardAlertEventType = "safeguard_alert"
-	roomSafeguardEntity      = "room_safeguard"
+	roomSafeguardEntity     = "room_safeguard"
 )
 
 // wsConnectorIdleTimeout is the server's own heartbeat close (2.2): a socket that has sent no frame
 // for 3 x heartbeat_s is closed. It keeps both sides under the production proxy's read timeout, and
-// it is what lets the rigd dead-man below notice a machine that vanished without closing its
+// it is what lets the agent dead-man below notice a machine that vanished without closing its
 // sockets. It is a variable so a test can drive the close without waiting 75 seconds.
 var wsConnectorIdleTimeout = func() time.Duration {
 	return 3 * connectorHeartbeatSeconds * time.Second
 }
 
-// wsConnectorDeadmanAfter arms the rigd dead-man. It is a seam, so the alert is tested by driving
+// wsConnectorDeadmanAfter arms the agent dead-man. It is a seam, so the alert is tested by driving
 // the callback rather than by reading wall time.
 var wsConnectorDeadmanAfter = time.AfterFunc
 
@@ -89,7 +89,7 @@ type wsConnectorLiveness struct {
 	// safeguards is true when the server echoed `safeguards`, which is the gate on the safeguard
 	// frame (2.3.1, 7.6).
 	safeguards bool
-	// deadman is the armed rigd dead-man for this connector, nil when none is pending.
+	// deadman is the armed agent dead-man for this connector, nil when none is pending.
 	deadman *time.Timer
 }
 
@@ -182,7 +182,7 @@ func wsArmConnectorDeadman(userID, connectorID string) {
 // is the machine the row came from. 7.3 fixes the event_type and the entity and does not fix the
 // payload's shape, so the fields are the ones the frame already carries rather than a second
 // vocabulary invented for the push.
-func raiseRoomSafeguardAlert(ctx context.Context, userID, connectorID string, row rigdb.RoomSafeguardORM) error {
+func raiseRoomSafeguardAlert(ctx context.Context, userID, connectorID string, row roomdb.RoomSafeguardORM) error {
 	data := entities.NewOrderedMap[any]()
 	data.Set("connector_id", connectorID)
 	data.Set("room", row.Room)
@@ -206,9 +206,9 @@ func raiseRoomSafeguardAlert(ctx context.Context, userID, connectorID string, ro
 func raiseAgentDeadmanAlert(ctx context.Context, userID, connectorID string) error {
 	data := entities.NewOrderedMap[any]()
 	data.Set("connector_id", connectorID)
-	data.Set("safeguard", rigdb.SafeguardAgent)
+	data.Set("safeguard", roomdb.SafeguardAgent)
 	return routes.BroadcastDataChange(ctx, safeguardAlertEventType, roomSafeguardEntity,
-		wsRoomSafeguardEntityID(connectorID, "", rigdb.SafeguardAgent), userID, data, nil)
+		wsRoomSafeguardEntityID(connectorID, "", roomdb.SafeguardAgent), userID, data, nil)
 }
 
 // wsRoomSafeguardEntityID names one row as the push frame's entity_id: the parts of the key that are

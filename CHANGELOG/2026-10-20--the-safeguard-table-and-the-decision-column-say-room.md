@@ -40,6 +40,42 @@ Slice B of `DECISION-2026-10-20-rig-gone.md`: the server stops storing and namin
   frontend's nine citations are fe-dev's, already updated on their branch; they resolve when that
   branch lands.
 
+## Slice D - the hub's live text says room, and its records keep rig
+
+`ai_docs/**` and `AGENTS.md` no longer call the unit a "rig" in text a reader acts on: 251
+word-bounded occurrences across 26 files and `AGENTS.md` before, 142 after, and every one of the 142
+is a keep-list case rather than a leftover. The substitution is word-bounded and follows grammar
+(`rigs` -> `rooms`, `the rig's` -> `the room's`), and it carries the live CLI spellings the client
+actually has after slice A: `--room`, `<room>-<seat>@<room>`, `4genteam compact <room>`,
+`4genteam up <room> --team <dir>`, `watch --room`, `feed --room`, `policy apply --room`.
+
+What is deliberately still "rig", and why:
+- **The retired binary and its verbs** - `rig up`, `rig whoami`, `rig ps`, `rig send`, `rig usage`,
+  `rig parked`, `rig terminal open`, "the predecessor CLI's `rig`". A prohibition must name what it
+  forbids (`AGENTS.md`'s "never legacy 4genteam" paragraph, the operator skill traps).
+- **Dated measurements and snapshot records** - the 2026-10-06 OF4 local-stack account, the
+  2026-10-09 policy-repair narration, the 2026-10-11 ecosystem review, the 2026-10-14 measurements in
+  `watching-client-seats.md`. Renaming a record of what ran would falsify it.
+- **Retired artifact names kept on disk** - `rig.yaml`/`rig-*.yaml`, the `rig/` materialized
+  directory, `<store>/<room>/rig/agents/<seat>/skills`, `rig-runtime-switch`, `RIG_CONTINUE_WATCH`,
+  `rig-continue.sh`, and the `sync rig` verb (retired, so it is named as retired rather than renamed
+  to another verb that does not exist either).
+- **`rigd`** is a different word - the component, renamed to `agent` on 2026-10-15 - and is not part
+  of this count; it is the named follow-up.
+
+Three commands the docs still taught do not exist - `4genteam sync rig`, whose only successor was
+itself removed (`ai_docs/core-architecture/seat-skills.md`), and the recipe's provisioning step that
+called it. Those rows are corrected rather than renamed: provisioning is `4genteam up`, which runs
+`worktreeEnsure` before launching a seat (`internal/clientlifecycle/worktreesrow.go:176-178`), so
+the new-project recipe and the troubleshooting catalog point at `up`, and the daily-operations
+cheat-sheet row that only taught the retired verb is dropped.
+
+The client's operator skills move with the same vocabulary: the seven live `<rig>` placeholders on
+seven lines in `room-runtime-switch`, `seat-runtime-switch` and `spawn-team` read `<room>`, while
+the ~12 named mentions of the predecessor stay as the prohibitions they are. The install skill's
+symlink loop cannot be re-run from this seat - the seat guard refuses writes under `~/.claude` -
+so the dangling `~/.claude/skills/rig-runtime-switch` link is reported to the lead, not moved.
+
 ## Verification
 
 - `cd agenthub_go && go test ./...` - green, and green again with
@@ -59,4 +95,8 @@ Slice B of `DECISION-2026-10-20-rig-gone.md`: the server stops storing and namin
   the pull keys on it. `TestTheRoomNamesStepIsANoOpWithoutItsTables` pins the guard.
 - `TestTheSixSafeguardsStep*` still pass against the shapes `0004` was written for: that fixture keeps
   `rig_safeguards` and `rig` deliberately, because it reproduces history and `0008` is the rename.
-- `python3 scripts/DOC-CITATIONS.py`: 49 docs, 732 citations, 0 violations.
+- `grep -rIniE '\brig\b' ai_docs AGENTS.md | grep -v reports-status`: 251 before, 142 after, every
+  remaining hit a keep-list case listed in the review.
+- `python3 scripts/DOC-CITATIONS.py`: 49 docs, 732 citations, 0 violations after the prose pass.
+- The client skills commit (`0094402` on `4genthub-min/d-skills`) changes three `SKILL.md` files
+  only; `grep '<rig>' agenthub_client/skills` is empty afterwards.

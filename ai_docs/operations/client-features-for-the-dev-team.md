@@ -5,7 +5,7 @@ Written 2026-10-11 for the owner to review. Status of each item: "Exists" means 
 **Updated later the same day, after the client work landed.** Four of section 4.7's six items now ship in
 `4genteam`, so the lines below that still read "Missing" for them were corrected in place, each naming the
 commit that landed it (the first touch of that item's own file on the client line). Section 4.8 is the status
-table, and the check is the binary itself: `4genteam --help` lists the verbs and `4genteam doctor <rig>`
+table, and the check is the binary itself: `4genteam --help` lists the verbs and `4genteam doctor <room>`
 lists the doctor's rows.
 
 ## 1. Options
@@ -32,7 +32,7 @@ lists the doctor's rows.
 
 ### 1.4 Environment and onboarding
 - `up` for the whole room, `seat reseat`, skills delivery. Exists. (`seat sync`, listed here until 2026-10-15, went with the deleted rigspec route.)
-- Seat doctor: cwd, branch, skills, guide version, tool access. Exists (`4genteam doctor <rig>`, `9182f13`): one line per safeguard row (compact, watchdog, bridge, rigd, seats, identity, worktrees, clone, hooks, orphan_handoffs), then the per-seat findings - F1 a seat whose cwd is not its worktree, F2 a skill delivered but not declared by the client's tree, F3 a skill in the seat's set that its runtime did not load. Read-only; it exits 3 and names every row that is not running. The repair verb is `up`.
+- Seat doctor: cwd, branch, skills, guide version, tool access. Exists (`4genteam doctor <room>`, `9182f13`): one line per safeguard row (compact, watchdog, bridge, rigd, seats, identity, worktrees, clone, hooks, orphan_handoffs), then the per-seat findings - F1 a seat whose cwd is not its worktree, F2 a skill delivered but not declared by the client's tree, F3 a skill in the seat's set that its runtime did not load. Read-only; it exits 3 and names every row that is not running. The repair verb is `up`.
 - Fresh-seat orientation pack: repo map, rules, current board. Partly in skills.
 
 ### 1.5 Quality and safety
@@ -60,21 +60,21 @@ lists the doctor's rows.
 
 ## 2. How the client could detect two seats editing the same file
 
-1. Compare branches in git. With one worktree per seat, run `git diff --name-only <base>...<rig>/<seat>` plus `git status --short` per worktree and intersect the file lists. Reliable, needs no seat cooperation, runs from the watchdog. It sees only saved files, and only after the fact.
+1. Compare branches in git. With one worktree per seat, run `git diff --name-only <base>...<room>/<seat>` plus `git status --short` per worktree and intersect the file lists. Reliable, needs no seat cooperation, runs from the watchdog. It sees only saved files, and only after the fact.
 2. Read the seat session logs (`seatlog`). Edit and write calls show the file path as they happen, so the warning comes earlier. Works for omp and claude-code seats only. Codex and agy have no log reader.
 3. A check in each seat's pre-edit hook. Earliest warning, but a hook is needed in every runtime and a false positive blocks work.
 
 On a hit the client sends a message to both seats and the lead naming the file and the two branches. The author resolves the conflict on its own branch, as the architect ruled.
 
-This works only when each seat edits inside its own worktree. Today the seats run in the shared `rig` directory, so the client cannot tell which seat changed which file.
+This works only when each seat edits inside its own worktree. Today the seats run in the shared `room` directory, so the client cannot tell which seat changed which file.
 
 ## 3. Sender identity for `4genteam send` (open problem)
 
 `4genteam send` takes the sender from the session the daemon stamps (`X-4genteam-Session`) and ignores any name passed by the caller. The owner session is not a managed seat, so its messages arrive unsigned and the architect refuses to treat them as the owner.
 
-Proposal: `4genteam up` adds one `owner` node to the room (a plain shell seat, no model). `4genteam send` runs `4genteam send` inside that node's session, so the daemon stamps `owner@<rig>` and seats can verify it. The client must not set `AGENTHUB_SESSION_NAME` to another name, because that is forging.
+Proposal: `4genteam up` adds one `owner` node to the room (a plain shell seat, no model). `4genteam send` runs `4genteam send` inside that node's session, so the daemon stamps `owner@<room>` and seats can verify it. The client must not set `AGENTHUB_SESSION_NAME` to another name, because that is forging.
 
-Not yet verified: that rig accepts a node with no agent runtime, that the stamp survives `tmux send-keys` into that pane, and how seat policies rank owner against lead. Anything running as the owner's Linux user could send as `owner`, which is already true today with `4genteam send` and `tmux`.
+Not yet verified: that the room accepts a node with no agent runtime, that the stamp survives `tmux send-keys` into that pane, and how seat policies rank owner against lead. Anything running as the owner's Linux user could send as `owner`, which is already true today with `4genteam send` and `tmux`.
 
 ## 4. Architect analysis
 
@@ -363,7 +363,7 @@ verb is the one the binary prints. **All six items of 4.7 land** - the plan outr
 | 6 | Done report, with the doc-drift line | printed by `4genteam evidence` before it submits | `63fd184` (`internal/clientevidence/evidence.go`, its first touch); the item landed in `a98e78b` |
 
 Read a verb before trusting a row: `4genteam <verb> --help` prints what it does and what it refuses, and
-`4genteam doctor <rig>` prints the rows the doctor actually has.
+`4genteam doctor <room>` prints the rows the doctor actually has.
 
 ## 5. Which product each item lands in
 

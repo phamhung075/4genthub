@@ -43,7 +43,7 @@ token is passed on in the environment and never printed or written. The store is
 
 ```bash
 4genteam sync pull 4genthub-dev go-dev                 # pull one seat's snapshot, and move its pin to it
-4genteam sync bundle 4genthub-dev go-dev --rig-yaml P --rig-root DIR   # build the seat's .rigbundle
+4genteam sync bundle 4genthub-dev go-dev --room-yaml P --room-root DIR   # build the seat's .rigbundle
 4genteam sync offline-install TARGET                   # a bundle's pinned policy into the store
 4genteam seat reseat 4genthub-min --seat go-dev --seat lead   # restart live seats at their quiet point
 4genteam send [--from NAME] 4genthub-min lead "text"          # one signed message to one seat
@@ -62,12 +62,12 @@ what was pulled (`--help` lists its eight verbs).
 | `--relaunch none` (default) | adopt only; a running seat keeps what it loaded and changes at its next launch |
 | `--relaunch quiet` | restart each changed seat after it has been idle 30 s; a seat that is not quiet within 25 min is reported and left running |
 
-`seat reseat RIG --seat NAME...` restarts each named seat once it is quiet, one after the other, whatever its
+`seat reseat ROOM --seat NAME...` restarts each named seat once it is quiet, one after the other, whatever its
 pin says. Use it when a seat has to load something that is not part of its snapshot: a new skill, a new cwd, a
 changed guide in the repo. The removed `seat sync --relaunch quiet` could not do that: a seat whose pin was
 already current was reported "in sync" and was never restarted. The DeepSeek peak gate applies (`--allow-peak` skips it).
 `--force` skips the quiet wait. Before each restart the client also replaces the omp seat's own skill directory
-(`~/.config/4genthub/state/omp/<session>/agent/skills`) with the skills the rig root holds for that seat
+(`~/.config/4genthub/state/omp/<session>/agent/skills`) with the skills the room root holds for that seat
 (`<store>/<room>/rig/agents/<seat>/skills`, which the removed `sync room` built), because nothing else copies
 them there. A `rig launch` whose reply times out counts as done when the seat's tmux session comes up within 3 minutes.
 
@@ -79,8 +79,8 @@ failed. (4 belonged to the removed `seat status`, which reported a seat behind o
 
 ## Know before you use it
 
-- **Only cloud rooms sync.** The cloud has the rooms `4genthub-dev` and `smoke`. A rig that exists
-  only locally (the `4genthub-min` team) has no room, so the removed `status 4genthub-min` answered
+- **Only cloud rooms sync.** The cloud has the rooms `4genthub-dev` and `smoke`. A room that exists
+  only locally (the `4genthub-min` team) has no cloud room, so the removed `status 4genthub-min` answered
   `room not found`.
   It becomes syncable once the cloud has a room for it, which is part of
   `SEAT-CONTEXT-AS-BLOCKS.md`.

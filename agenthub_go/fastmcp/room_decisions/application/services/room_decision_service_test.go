@@ -213,7 +213,7 @@ func storedDecision(state decisions.State, answers map[string]string) repositori
 		ID:            "rd-1",
 		UserID:        "owner",
 		RoomID:        "room-1",
-		RoomName:       "4genthub-min",
+		RoomName:      "4genthub-min",
 		QitemID:       "qitem-1",
 		AuthorSeatKey: "go-dev",
 		Destination:   "human-operator@kernel",
@@ -473,7 +473,7 @@ func TestCreateRefusesARowTheStoreNeitherWroteNorFound(t *testing.T) {
 	store := &fakeRoomDecisionStore{createReturnsNothing: true}
 	service := NewRoomDecisionService(store)
 	ask := RoomDecisionAsk{
-		RoomName:        "4genthub-min",
+		RoomName:       "4genthub-min",
 		QitemID:        "qitem-1",
 		AuthorSeatKey:  "go-dev",
 		Destination:    "human-operator@kernel",
@@ -499,7 +499,7 @@ func TestCreateStoresAValidAskAndCollapsesARedrive(t *testing.T) {
 	store := &fakeRoomDecisionStore{}
 	service := NewRoomDecisionService(store)
 	ask := RoomDecisionAsk{
-		RoomName:        "4genthub-min",
+		RoomName:       "4genthub-min",
 		QitemID:        "qitem-1",
 		AuthorSeatKey:  "go-dev",
 		Destination:    "human-operator@kernel",

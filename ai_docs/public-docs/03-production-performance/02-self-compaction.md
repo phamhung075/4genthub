@@ -25,7 +25,7 @@ Set the variables in `~/.config/4genthub/.env`. A variable that is unset or blan
 Start the supervisor alongside your team:
 
 ```bash
-4genteam compact <rig-name>
+4genteam compact <room-name>
 ```
 
 ### The Compaction Protocol

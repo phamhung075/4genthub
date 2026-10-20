@@ -17,13 +17,13 @@ import (
 // an ask may carry no summary and no humanDetail, and the row is what says so - the domain entity
 // renders nil as an empty string, which is what a panel shows.
 type RoomDecisionORM struct {
-	ID             string          `db:"id"`
-	UserID         string          `db:"user_id"`
-	RoomID         string          `db:"room_id"`
+	ID     string `db:"id"`
+	UserID string `db:"user_id"`
+	RoomID string `db:"room_id"`
 	// RoomName is the room's slug, the key the daemon's pull filters on: the ack is destructive, so a
 	// pull may only be handed its own room's answers (repository ListAnswers). RoomID stays for the
 	// joins and is the identity; the name is what the wire carries.
-	RoomName string `db:"room_name"`
+	RoomName       string          `db:"room_name"`
 	QitemID        string          `db:"qitem_id"`
 	AuthorSeatKey  string          `db:"author_seat_key"`
 	Destination    string          `db:"destination"`

@@ -514,7 +514,7 @@ func roomDecisionToDomain(row *seatdb.RoomDecisionORM) (*domainrepo.RoomDecision
 		ID:             row.ID,
 		UserID:         row.UserID,
 		RoomID:         row.RoomID,
-		RoomName:        row.RoomName,
+		RoomName:       row.RoomName,
 		QitemID:        row.QitemID,
 		AuthorSeatKey:  row.AuthorSeatKey,
 		Destination:    row.Destination,

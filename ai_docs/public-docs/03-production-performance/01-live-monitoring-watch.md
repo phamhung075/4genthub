@@ -11,7 +11,7 @@ The `watch` suite in `4genteam` provides real-time, read-only visibility into th
 ### A. The Merged Live Feed (`4genteam feed`)
 Stream tool calls, agent reasoning, and outputs across all seats into a single terminal window:
 ```bash
-4genteam feed --rig <rig-name> --detail
+4genteam feed --room <room-name> --detail
 ```
 * **A glyph and colour per kind of tool**, so the feed reads by shape:
 
@@ -35,7 +35,7 @@ Stream tool calls, agent reasoning, and outputs across all seats into a single t
 ### B. Single-Seat Observation
 Follow only one seat (e.g. the lead):
 ```bash
-4genteam feed --rig <rig-name> --seat lead --detail
+4genteam feed --room <room-name> --seat lead --detail
 ```
 
 ### C. The Multi-Pane Interactive Grid (`4genteam watch`)
@@ -47,7 +47,7 @@ Opens a tiled workspace using `herdr` showing:
 - Direct input panels underneath each seat for operator intervention
 
 ```bash
-4genteam watch --rig <rig-name>
+4genteam watch --room <room-name>
 ```
 
 ---
@@ -63,4 +63,4 @@ Opens a tiled workspace using `herdr` showing:
 
 ---
 
-A running pane keeps the binary it started with: after updating `4genteam`, run `4genteam watch --rig <rig-name>` again to rebuild the panes.
+A running pane keeps the binary it started with: after updating `4genteam`, run `4genteam watch --room <room-name>` again to rebuild the panes.

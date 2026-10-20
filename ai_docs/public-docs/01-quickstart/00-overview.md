@@ -34,7 +34,7 @@ In a directory of your choice (for example `~/teams/dev-team/`):
 4genteam send --from owner dev-team dev 'Write a factorial utility with tests. Record a queue item when done.'
 
 # Stream live tool execution with word-wrapped output & token meters
-4genteam feed --rig dev-team --detail
+4genteam feed --room dev-team --detail
 ```
 
 The full walkthrough is in [Prerequisites](01-prerequisites.md) and [Five-Minute Quickstart](02-five-minute-team.md).

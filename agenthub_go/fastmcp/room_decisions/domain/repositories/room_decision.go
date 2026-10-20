@@ -36,7 +36,7 @@ type RoomDecision struct {
 	ID             string
 	UserID         string
 	RoomID         string
-	RoomName        string
+	RoomName       string
 	QitemID        string
 	AuthorSeatKey  string
 	Destination    string

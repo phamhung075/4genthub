@@ -6,7 +6,7 @@
 
 ## Identity first
 
-Run `4genteam whoami --json`. It returns your rig, seat, peers, edges and transcript path, and it
+Run `4genteam whoami --json`. It returns your room, seat, peers, edges and transcript path, and it
 is the ground truth for where you are. A startup overlay can be stale; re-run it after any
 compaction, restart or restore.
 

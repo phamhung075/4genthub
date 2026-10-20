@@ -1,11 +1,11 @@
 # Seat compaction supervisor
 
-Keeps every seat of a rig under a per-session context limit without cutting a job short, and forces
+Keeps every seat of a room under a per-session context limit without cutting a job short, and forces
 compaction when a seat does not compact on its own. The harness itself only compacts near 850k, far past
 what a seat can work with.
 
-Code: `agenthub_client/internal/clientlifecycle/supervisor.go` (the loop, one pass, and its start/stop/status), the limits at `agenthub_client/internal/seatlog/seatlog.go:35` (`ApplyLimits`), and the delivery path through the runtime daemon's `ForceCompact` IPC (below). The retired Python names (`compact.py`, `watch.py`) and the retired `agenthub_client/rust/forcecompact/` binary are gone - `agenthub_client/rust/` holds only `agenthub-runtime` (measured 2026-10-19 at client `872ae41`). Run it with `4genteam compact [RIG]` (detached, log
-`logs/compact-supervisor-<rig>.log`); `4genteam up` starts it as part of the full lifecycle, and
+Code: `agenthub_client/internal/clientlifecycle/supervisor.go` (the loop, one pass, and its start/stop/status), the limits at `agenthub_client/internal/seatlog/seatlog.go:35` (`ApplyLimits`), and the delivery path through the runtime daemon's `ForceCompact` IPC (below). The retired Python names (`compact.py`, `watch.py`) and the retired `agenthub_client/rust/forcecompact/` binary are gone - `agenthub_client/rust/` holds only `agenthub-runtime` (measured 2026-10-19 at client `872ae41`). Run it with `4genteam compact [ROOM]` (detached, log
+`logs/compact-supervisor-<room>.log`); `4genteam up` starts it as part of the full lifecycle, and
 `4genteam compact-run` is the foreground loop. Run it from the host, never inside a seat pane: a loop in a
 seat dies with the seats it watches.
 
@@ -50,6 +50,6 @@ retired `forcecompact` binary stole the runner's socket end with `pidfd_getfd(2)
 - An RPC compact sent mid-turn is applied at the turn boundary, so a very long turn can stay over the limit
   for a while (`go-dev` went from 534k to 100k only when its turn ended). The 300k abort exists for that case.
 - The 300k abort path has not fired in production yet; the 250k RPC path has (`reviewer`, 279k).
-- The supervisor is a Go command (`4genteam compact <rig>`): restart it after a change to the loop or a
+- The supervisor is a Go command (`4genteam compact <room>`): restart it after a change to the loop or a
   limit, and no reinstall is needed because the client install is editable.
 - Seats are discovered from 4genteam at run time; a seat whose session log cannot be found is skipped.

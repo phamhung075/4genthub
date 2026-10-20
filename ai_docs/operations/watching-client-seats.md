@@ -3,7 +3,7 @@
 > [!NOTE]
 > **4genteam Decommissioning Notice:** 4genteam daemon and runtime orchestration have been retired in favor of native `4genteam` orchestration (`4genteam watch`, `4genteam grid`, `4genteam feed`). 4genteam legacy code is retained in its folder for review only.
 
-How to see what each seat of a rig is doing: every tool call and its result, per seat, live.
+How to see what each seat of a room is doing: every tool call and its result, per seat, live.
 Read-only. It reads the seats' session logs and never talks to a seat.
 
 Tool: the watch view in the `agenthub_client` Go module (`agenthub_client/internal/clientwatch/`, `watch.go` holds `Commands` at `:40`) — **CORRECTED 2026-10-10 (writer seat, at the pinned client commit `eaa6ba7`): this named `agenthub_client/src/agenthub_client/watch.py`, which the client's Go port retired** — run through the console script as `4genteam watch`. Needs `herdr` for the grid view.
@@ -17,7 +17,7 @@ Tool: the watch view in the `agenthub_client` Go module (`agenthub_client/intern
 4genteam grid
 ```
 
-Creates a herdr workspace named `<rig> grid` and focuses it. Seats are sorted by name and fill the
+Creates a herdr workspace named `<room> grid` and focuses it. Seats are sorted by name and fill the
 columns top to bottom, left to right. With the default 2 columns for `4genthub-min`:
 
 | Left | Right |
@@ -30,10 +30,10 @@ columns top to bottom, left to right. With the default 2 columns for `4genthub-m
 
 Each pane is named after its seat (herdr pane title) and starts with a `== seat ==` header; its lines carry no seat name, to save width. The merged `feed` (several seats in one stream) still puts the seat name on every line.
 
-Options: `--rig <name>` (default `4genthub-min`), `--cols N`, `--back N` (events replayed per seat
+Options: `--room <name>` (default `4genthub-min`), `--cols N`, `--back N` (events replayed per seat
 at start, default 40; a pane holds only what was printed since it started, so raise this to see older work), `--width N` (characters kept of each line, default 200), `--lines N` (lines shown of each call, result or message, default 25).
 
-Run it again for a fresh grid: it closes the rig's earlier `<rig> grid` workspace first, then rebuilds it.
+Run it again for a fresh grid: it closes the room's earlier `<room> grid` workspace first, then rebuilds it.
 
 ## Input panes: type to a seat from the grid (optional)
 
@@ -45,7 +45,7 @@ The grid panes are read-only. To talk to a seat from the grid, open a small inpu
 4genteam inputs hide    # close them again; the grid is back to watch-only
 ```
 
-A line typed in an input pane is sent to that seat with `4genteam send <rig>-<seat>@<rig>`; `/hide` or Ctrl-D leaves the loop.
+A line typed in an input pane is sent to that seat with `4genteam send <room>-<seat>@<room>`; `/hide` or Ctrl-D leaves the loop.
 Opening twice adds nothing. Keep backticks, apostrophes and `$` out of a message: `4genteam send` mangles them.
 The inputs are off by default; the grid itself never writes to a seat.
 
@@ -101,28 +101,28 @@ the replayed lines at start all share one time.
 
 ## Notes
 
-- The viewer follows each seat's newest file in `~/.config/4genthub/state/omp/<rig>-<seat>@<rig>/sessions/`.
+- The viewer follows each seat's newest file in `~/.config/4genthub/state/omp/<room>-<seat>@<room>/sessions/`.
   A seat that restarts starts a new file and the viewer switches to it.
-- A seat's own screen (not its tool calls) is a different tool: `rig terminal open <rig>` opens one
+- A seat's own screen (not its tool calls) is a different tool: `rig terminal open <room>` opens one
   tile per seat in herdr.
 - Seats other than omp seats have no such log, so they do not appear.
 
 ## One command: grid plus lead window
 
 ```bash
-4genteam watch --rig 4genthub-min
+4genteam watch --room 4genthub-min
 ```
 
-Opens the seat grid and a `<rig> lead` workspace: the lead's detailed feed on top, a `lead > input` pane below
+Opens the seat grid and a `<room> lead` workspace: the lead's detailed feed on top, a `lead > input` pane below
 (a line typed there goes to the lead with `4genteam send`). Never type or press Ctrl-C in a raw `tmux attach` pane of a seat.
 
 ## Same style on every relaunch, resume or runtime switch
 
-`watch` is the one entry point and it is idempotent: it closes the rig's earlier `<rig> grid` and `<rig> lead` workspaces, then rebuilds both with the same layout (2 columns, `--back 40 --width 200 --lines 60 --detail`, seat name + model + token bar in each pane, the lead window with its input pane). The layout lives in the module, not in a saved herdr state, so it cannot drift.
+`watch` is the one entry point and it is idempotent: it closes the room's earlier `<room> grid` and `<room> lead` workspaces, then rebuilds both with the same layout (2 columns, `--back 40 --width 200 --lines 60 --detail`, seat name + model + token bar in each pane, the lead window with its input pane). The layout lives in the module, not in a saved herdr state, so it cannot drift.
 
-- `~/.config/4genthub/bin/rig-continue.sh <rig>` opens it at the end of every restore, as `4genteam watch watch --rig <rig>` (skip the wall with `RIG_CONTINUE_WATCH=0`).
-- After `rig up` or a runtime switch (`rig-runtime-switch` skill, step 10) run it by hand: `4genteam watch --rig <rig>`.
-- **A running pane never picks up a code change.** Each pane is a Python process that read `agenthub_client/src/agenthub_client/watch.py` when it started, so an edited constant (for example `COMPACT_LIMIT`, the `/150k` in each token bar) shows only after the panes are rebuilt: run `4genteam watch --rig <rig>` again. The compaction supervisor (`agenthub_client/src/agenthub_client/compact.py`, run as `4genteam compact-run`) has the same property: restart it after editing the limit or its `--quiet` default. **CORRECTED 2026-10-10 (writer seat, at the pinned client commit `eaa6ba7`): the PROPERTY still holds, but the processes and the names changed.** A pane is now the client's Go binary (`agenthub_client/internal/clientwatch/`), so a rebuild is still what carries a code change; the bar's limit is read at `grid.go:31` through `clientenv.Limit("COMPACT_WARN_TOKENS", defaultWarnLimit)`, so `COMPACT_LIMIT` and the literal `/150k` are the retired Python's names; and the supervisor is `agenthub_client/internal/clientlifecycle/supervisor.go` (`4genteam compact-run`), whose limits come from `internal/seatlog/seatlog.go:35`. How the supervisor works: `seat-compaction-supervisor.md`.
-- Panes are matched to seats by tmux session name (`<rig>-<seat>@<rig>`), so a seat that changes LLM keeps its pane; the model in the header follows the seat's newest log. A runtime with no log reader (Codex, agy) keeps the pane and header but shows no events.
+- `~/.config/4genthub/bin/rig-continue.sh <room>` opens it at the end of every restore, as `4genteam watch watch --room <room>` (skip the wall with `RIG_CONTINUE_WATCH=0`).
+- After `rig up` or a runtime switch (`rig-runtime-switch` skill, step 10) run it by hand: `4genteam watch --room <room>`.
+- **A running pane never picks up a code change.** Each pane is a Python process that read `agenthub_client/src/agenthub_client/watch.py` when it started, so an edited constant (for example `COMPACT_LIMIT`, the `/150k` in each token bar) shows only after the panes are rebuilt: run `4genteam watch --room <room>` again. The compaction supervisor (`agenthub_client/src/agenthub_client/compact.py`, run as `4genteam compact-run`) has the same property: restart it after editing the limit or its `--quiet` default. **CORRECTED 2026-10-10 (writer seat, at the pinned client commit `eaa6ba7`): the PROPERTY still holds, but the processes and the names changed.** A pane is now the client's Go binary (`agenthub_client/internal/clientwatch/`), so a rebuild is still what carries a code change; the bar's limit is read at `grid.go:31` through `clientenv.Limit("COMPACT_WARN_TOKENS", defaultWarnLimit)`, so `COMPACT_LIMIT` and the literal `/150k` are the retired Python's names; and the supervisor is `agenthub_client/internal/clientlifecycle/supervisor.go` (`4genteam compact-run`), whose limits come from `internal/seatlog/seatlog.go:35`. How the supervisor works: `seat-compaction-supervisor.md`.
+- Panes are matched to seats by tmux session name (`<room>-<seat>@<room>`), so a seat that changes LLM keeps its pane; the model in the header follows the seat's newest log. A runtime with no log reader (Codex, agy) keeps the pane and header but shows no events.
 
 **2026-10-09: every command above was rewritten from the `scripts/*.py` form.** Those eight scripts were relocated into the `agenthub_client` package and no longer exist on disk; the invocation is the console script `4genteam` (a symlink at `~/.local/bin/4genteam` to the installed client), whose verbs this document now uses (`4genteam grid`, `feed`, `inputs …`, `watch`). The old `WATCH_TOOL` override the previous version of this bullet named was removed from `rig-continue.sh` at the same time, so the bullet now states what that launcher does instead of naming a variable it no longer has.

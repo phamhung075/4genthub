@@ -1,7 +1,7 @@
 # Task workflow and reporting
 
 > This is guidance for the agenthub
-> **MCP task surface** (`manage_task` / `manage_subtask`). A seat in a rig moves its own work
+> **MCP task surface** (`manage_task` / `manage_subtask`). A seat in a room moves its own work
 > through the queue (`4genteam room queue`), not through MCP tasks; the MCP surface is the product the user
 > drives.
 

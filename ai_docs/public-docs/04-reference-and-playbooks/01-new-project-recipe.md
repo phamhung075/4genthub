@@ -37,13 +37,7 @@ Create a directory (for example `~/teams/my-team/`) with a `team.json`:
 
 ## Phase 3: Worktrees & Safety Rails
 
-Run `4genteam` to provision isolated git worktrees for each seat:
-
-```bash
-4genteam sync rig my-team
-```
-
-This ensures:
+There is no separate provisioning step: `4genteam up` (Phase 4) derives an isolated git worktree for each seat and creates it before that seat launches. This ensures:
 - Seat `dev` operates in `~/.config/4genthub/rooms/my-team/wt/dev` on branch `my-team/dev`.
 - Seat `reviewer` operates in its own isolated worktree.
 - The shared repository checkout on `main` remains pristine.
@@ -80,10 +74,10 @@ Dispatch the first objective to the lead seat:
 
 Open the live feed:
 ```bash
-4genteam feed --rig my-team --detail
+4genteam feed --room my-team --detail
 ```
 
 Or open the full interactive grid view:
 ```bash
-4genteam watch --rig my-team
+4genteam watch --room my-team
 ```
