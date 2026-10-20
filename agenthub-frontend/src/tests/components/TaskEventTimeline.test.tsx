@@ -130,7 +130,14 @@ describe('TaskEventTimeline', () => {
       row(3, 'status_changed', { old: 'todo', new: 'in_progress' }),
       row(4, 'gate_verdict', { verdict: 'ACCEPT' }, 'human'),
       row(5, 'handover', null, 'client'),
-      row(6, 'context_updated', null),
+      row(6, 'context_updated', {
+        level: 'task',
+        id: 'uuid-1',
+        version: 3,
+        origin: 'update_context',
+        changes: [{ path: 'status', op: 'set', old: 'todo', new: 'in_progress' }],
+        changes_truncated: 0,
+      }),
     ]);
 
     await waitFor(() => expect(screen.getByText('Evidence submitted')).toBeInTheDocument());
@@ -138,7 +145,7 @@ describe('TaskEventTimeline', () => {
     expect(screen.getByText('Status: Todo to In progress')).toBeInTheDocument();
     expect(screen.getByText('Gate verdict')).toBeInTheDocument();
     expect(screen.getByText('Handover')).toBeInTheDocument();
-    expect(screen.getByText('Context updated')).toBeInTheDocument();
+    expect(screen.getByText('Context updated: set status')).toBeInTheDocument();
 
     // THE PHASE DOES NOT MOVE ON ANY OF THEM: only `status_changed` carries a status, so the badge is the
     // one the status change named rather than the last row's kind.
@@ -152,6 +159,38 @@ describe('TaskEventTimeline', () => {
     expect(screen.queryByText(/· gate /)).not.toBeInTheDocument();
     expect(screen.queryByText('gate_verdict')).not.toBeInTheDocument();
     expect(screen.queryByText('handover')).not.toBeInTheDocument();
+  });
+
+  it('lists a context write by what it changed, and drops a write that changed nothing', async () => {
+    // OWNER RULING 2026-10-20: a ledger row must say what happened or not be listed. The first write
+    // carries the payload the server sends since `4cf7e9b8`; the other two carry no usable change set
+    // (an empty one, and one from before the server sent `changes` at all), so neither is a row.
+    renderTimeline([
+      row(1, 'context_updated', {
+        level: 'task',
+        id: 'uuid-1',
+        version: 4,
+        origin: 'update_context',
+        changes: [{ path: 'implementation_notes', op: 'set', old: 'a', new: 'b' }],
+        changes_truncated: 0,
+      }),
+      row(2, 'context_updated', { level: 'task', id: 'uuid-1', version: 5, changes: [], changes_truncated: 0 }),
+      row(3, 'context_updated', { level: 'task', id: 'uuid-1', version: 6 }),
+    ]);
+
+    await waitFor(() =>
+      expect(screen.getByText('Context updated: set implementation_notes')).toBeInTheDocument(),
+    );
+    // The detail names the values on each side, and where the write landed.
+    expect(screen.getByText('implementation_notes: a to b')).toBeInTheDocument();
+    expect(screen.getByText('at task context, version 4')).toBeInTheDocument();
+
+    // The two silent writes are neither rows nor counted in the badge: seq 2 and 3 are absent, and both
+    // the count badge and the surviving row's seq read 1.
+    expect(screen.queryByText('2')).not.toBeInTheDocument();
+    expect(screen.queryByText('3')).not.toBeInTheDocument();
+    expect(screen.getAllByText('1')).toHaveLength(2);
+    expect(screen.queryByText('Context updated')).not.toBeInTheDocument();
   });
 
   it("shows a progress note's own text in its row, not the kind label", async () => {

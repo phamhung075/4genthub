@@ -77,6 +77,20 @@ export interface TaskEvent {
   created_at: string;
 }
 
+/**
+ * ONE leaf a `context_updated` event's write changed - the mirror of `ContextChange` in
+ * `agenthub_go/fastmcp/task_management/domain/entities/context_change.go`. `path` is dot-joined
+ * (`status`, `implementation_notes.progress_updates`), `op` is one of `add | set | remove` (absent
+ * keys on the wire mean `omitempty`, so a `set` carries both and an `add`/`remove` one side), and a
+ * value over the server's 512-byte cap arrives as `{ truncated: true, bytes, sha256 }`.
+ */
+export interface ContextChange {
+  path: string;
+  op: string;
+  old?: unknown;
+  new?: unknown;
+}
+
 /** The body of `GET /api/v2/tasks/{id}/events` - a bare 200, no `data` wrapper. */
 export interface TaskEventsResponse {
   success: boolean;
