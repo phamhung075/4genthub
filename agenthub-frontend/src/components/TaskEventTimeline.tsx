@@ -6,8 +6,10 @@ import {
   ACTOR_LABELS,
   LEDGER_NOT_RECORDED,
   PHASE_LABELS,
+  contextChangeDetails,
   deriveLedgerPhase,
   describeEvent,
+  readContextChanges,
 } from '../lib/taskTimeline';
 import { getStatusEmoji } from '../utils/statusEmojis';
 import { cleanProgressText, parseProgressHistory } from '../utils/progressHistoryUtils';
@@ -87,7 +89,12 @@ const ledgerProgressNumber = (event: TaskEvent): number | null => {
  */
 export const TaskEventTimeline: React.FC<TaskEventTimelineProps> = ({ taskId, progressHistory, className = '' }) => {
   const { data, isLoading, error } = useTaskEvents(taskId);
-  const events: TaskEvent[] = data?.events ?? [];
+  // A ROW MUST SAY WHAT HAPPENED OR NOT BE LISTED (owner ruling 2026-10-20): a `context_updated`
+  // whose payload carries no usable change set - the writes recorded before the server sent
+  // `changes` - has nothing to say, so it is dropped here rather than rendered as "Context updated".
+  const events: TaskEvent[] = (data?.events ?? []).filter(
+    (event) => event.kind !== 'context_updated' || readContextChanges(event).length > 0,
+  );
 
   if (isLoading) {
     return (
@@ -173,32 +180,47 @@ export const TaskEventTimeline: React.FC<TaskEventTimelineProps> = ({ taskId, pr
       ) : (
         <>
           <ol className="space-y-2">
-            {ordered.map((row, index) => row.kind === 'event' ? (
-              <li key={row.event.id} className="flex items-start gap-2 text-sm">
-                <Badge variant="outline" className="text-xs shrink-0 font-mono">
-                  {row.event.seq}
-                </Badge>
-                <div className="min-w-0">
-                  <div className="font-medium">{describeEvent(row.event)}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {formatWhen(row.event.created_at)} · {ACTOR_LABELS[row.event.actor_kind] ?? row.event.actor_kind}
-                    {row.event.actor_id ? ` (${row.event.actor_id})` : ''}
+            {ordered.map((row, index) => {
+              if (row.kind === 'history') {
+                return (
+                  <li key={`history-${row.entry.number}-${index}`} className="flex items-start gap-2 text-sm">
+                    <Badge variant="outline" className="text-xs shrink-0 font-mono">
+                      {row.entry.number}
+                    </Badge>
+                    <div className="min-w-0">
+                      <div className="font-medium">{cleanProgressText(row.entry.content)}</div>
+                      <div className="text-xs text-muted-foreground">
+                        From the task's progress history
+                      </div>
+                    </div>
+                  </li>
+                );
+              }
+              const details = contextChangeDetails(row.event);
+              return (
+                <li key={row.event.id} className="flex items-start gap-2 text-sm">
+                  <Badge variant="outline" className="text-xs shrink-0 font-mono">
+                    {row.event.seq}
+                  </Badge>
+                  <div className="min-w-0">
+                    <div className="font-medium">{describeEvent(row.event)}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {formatWhen(row.event.created_at)} · {ACTOR_LABELS[row.event.actor_kind] ?? row.event.actor_kind}
+                      {row.event.actor_id ? ` (${row.event.actor_id})` : ''}
+                    </div>
+                    {details.length > 0 && (
+                      <ul className="mt-1 space-y-0.5 text-xs text-muted-foreground">
+                        {details.map((line, lineIndex) => (
+                          <li key={lineIndex} className="font-mono break-words">
+                            {line}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
-                </div>
-              </li>
-            ) : (
-              <li key={`history-${row.entry.number}-${index}`} className="flex items-start gap-2 text-sm">
-                <Badge variant="outline" className="text-xs shrink-0 font-mono">
-                  {row.entry.number}
-                </Badge>
-                <div className="min-w-0">
-                  <div className="font-medium">{cleanProgressText(row.entry.content)}</div>
-                  <div className="text-xs text-muted-foreground">
-                    From the task's progress history
-                  </div>
-                </div>
-              </li>
-            ))}
+                </li>
+              );
+            })}
           </ol>
           {events.length > 0 && <p className="text-xs text-muted-foreground mt-3">{LEDGER_NOT_RECORDED}</p>}
         </>

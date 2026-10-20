@@ -17,7 +17,13 @@
 // that the task moved. `LEDGER_NOT_RECORDED` below is what the timeline says so the two are not read as
 // one.
 
-import type { TaskEvent, TaskEventActorKind, TaskEventKind, TaskStatus } from '../types/taskTypes';
+import type {
+  ContextChange,
+  TaskEvent,
+  TaskEventActorKind,
+  TaskEventKind,
+  TaskStatus,
+} from '../types/taskTypes';
 import { cleanProgressText } from '../utils/progressHistoryUtils';
 
 /** The phases a viewer can see, all derived. `unopened` is not `todo`: an empty ledger is silent. */
@@ -114,6 +120,67 @@ export function deriveLedgerPhase(events: readonly TaskEvent[]): LedgerPhase {
   return phase;
 }
 
+/**
+ * A `context_updated` event's change set, as the server wrote it (`ContextUpdatePayload`, one change
+ * per changed leaf, `add | set | remove`). An entry that names no `path` or no `op` is dropped: a
+ * change the row cannot name is not a change the row can show, and the server's own builder never
+ * emits one.
+ */
+export function readContextChanges(event: TaskEvent): ContextChange[] {
+  if (event.kind !== 'context_updated') return [];
+  const raw = event.payload?.['changes'];
+  if (!Array.isArray(raw)) return [];
+  const changes: ContextChange[] = [];
+  for (const entry of raw) {
+    if (typeof entry !== 'object' || entry === null) continue;
+    const record = entry as Record<string, unknown>;
+    const path = record['path'];
+    const op = record['op'];
+    if (typeof path !== 'string' || path === '') continue;
+    if (typeof op !== 'string' || op === '') continue;
+    changes.push({ path, op, old: record['old'], new: record['new'] });
+  }
+  return changes;
+}
+
+/**
+ * ONE ROW'S SECOND LINE, for a `context_updated` row: where the write landed, then one line per
+ * changed leaf with the value on each side, so the row's headline names WHAT changed and this names
+ * the values. Empty for every other kind, and for a row whose change set cannot be read - which the
+ * timeline does not list at all (see the component's filter).
+ */
+export function contextChangeDetails(event: TaskEvent): string[] {
+  const changes = readContextChanges(event);
+  if (changes.length === 0) return [];
+  const lines: string[] = [];
+  const level = event.payload?.['level'];
+  const version = event.payload?.['version'];
+  if (typeof level === 'string' && level !== '') {
+    lines.push(`at ${level} context${typeof version === 'number' ? `, version ${version}` : ''}`);
+  }
+  for (const change of changes) {
+    if (change.op === 'add') lines.push(`${change.path}: ${showValue(change.new)} added`);
+    else if (change.op === 'remove') lines.push(`${change.path}: ${showValue(change.old)} removed`);
+    else lines.push(`${change.path}: ${showValue(change.old)} to ${showValue(change.new)}`);
+  }
+  return lines;
+}
+
+/** The display form of one changed value: one line, bounded, and honest about what the cap dropped. */
+function showValue(value: unknown): string {
+  if (value === undefined) return '(no value)';
+  if (typeof value === 'object' && value !== null && (value as Record<string, unknown>)['truncated'] === true) {
+    const bytes = (value as Record<string, unknown>)['bytes'];
+    const sha = (value as Record<string, unknown>)['sha256'];
+    if (typeof bytes === 'number' && typeof sha === 'string') {
+      return `${bytes} bytes (sha256 ${sha.slice(0, 12)}...)`;
+    }
+    return 'a value too large to store';
+  }
+  const text = typeof value === 'string' ? value.replace(/\s+/g, ' ').trim() : JSON.stringify(value) ?? '';
+  return text.length > 160 ? `${text.slice(0, 160)}...` : text;
+}
+
 /** One row's headline. Names the transition when the payload defines one, the kind's label otherwise. */
 export function describeEvent(event: TaskEvent): string {
   if (event.kind === 'status_changed') {
@@ -133,17 +200,18 @@ export function describeEvent(event: TaskEvent): string {
     const content = event.payload?.['content'];
     if (typeof content === 'string' && content.trim() !== '') return cleanProgressText(content);
   }
-  // A context update's payload carries WHERE it landed and the version it reached, and nothing else:
-  // both writers send `{level, id, version}` (`update_context.go:83`,
-  // `unified_context_service.go:474`), so no field-by-field diff exists to show. The row names the
-  // level and version it does hold rather than saying only "Context updated" - a reader can at least
-  // tell a task-level write from a room-level one, and the version says a write happened at all.
+  // A context update's payload carries the changed leaves since `4cf7e9b8`
+  // (`ContextUpdatePayload`: `{level, id, version, origin, changes, changes_truncated}`), so the row
+  // names every changed path with its op rather than only saying that a context moved. A change set
+  // the cap cut short is reported as what it left out: the row never claims to be the whole diff.
   if (event.kind === 'context_updated') {
-    const level = event.payload?.['level'];
-    const version = event.payload?.['version'];
-    if (typeof level === 'string' && level !== '') {
-      const at = typeof version === 'number' ? `, version ${version}` : '';
-      return `Context updated: ${level} context${at}`;
+    const changes = readContextChanges(event);
+    if (changes.length > 0) {
+      const named = changes.map((change) => `${change.op} ${change.path}`).join(', ');
+      const truncated = event.payload?.['changes_truncated'];
+      const rest =
+        typeof truncated === 'number' && truncated > 0 ? `, and ${truncated} more` : '';
+      return `Context updated: ${named}${rest}`;
     }
   }
   return labelForKind(event.kind);

@@ -13,6 +13,7 @@ import {
   ACTOR_LABELS,
   KIND_LABELS,
   PHASE_LABELS,
+  contextChangeDetails,
   deriveLedgerPhase,
   describeEvent,
   labelForKind,
@@ -132,22 +133,68 @@ describe('describeEvent', () => {
     expect(describeEvent(ev(1, 'context_updated'))).toBe('Context updated');
   });
 
-  it("names the level and version a context update recorded, and invents neither", () => {
-    // The payload both writers send (`update_context.go:83`, `unified_context_service.go:474`): the
-    // level it landed at, the row's id and the version reached. There is no changed-field list to show,
-    // so the row must not imply one.
+  it('names every changed path and op a context write recorded, and reports what the cap left out', () => {
+    // The payload since `4cf7e9b8` (`ContextUpdatePayload`): the level and version, and the bounded
+    // change set. A row that read only the level said nothing about what changed, which is the defect
+    // this case exists against.
+    const write = (changes: unknown, changes_truncated = 0) => ({
+      level: 'task',
+      id: 'uuid-1',
+      version: 7,
+      origin: 'update_context',
+      changes,
+      changes_truncated,
+    });
     expect(
-      describeEvent(ev(1, 'context_updated', { level: 'task', id: 'uuid-1', version: 7 })),
-    ).toBe('Context updated: task context, version 7');
+      describeEvent(ev(1, 'context_updated', write([{ path: 'status', op: 'set', old: 'todo', new: 'in_progress' }]))),
+    ).toBe('Context updated: set status');
     expect(
-      describeEvent(ev(2, 'context_updated', { level: 'branch', id: 'uuid-2', version: 0 })),
-    ).toBe('Context updated: branch context, version 0');
-    // A payload with a level but no readable version still names the level.
-    expect(describeEvent(ev(3, 'context_updated', { level: 'project' }))).toBe(
-      'Context updated: project context',
+      describeEvent(
+        ev(2, 'context_updated', write([
+          { path: 'implementation_notes.progress_updates', op: 'set', old: 'a', new: 'b' },
+          { path: 'insights', op: 'add', new: 'x' },
+          { path: 'settings.obsolete', op: 'remove', old: 'y' },
+        ])),
+      ),
+    ).toBe('Context updated: set implementation_notes.progress_updates, add insights, remove settings.obsolete');
+    // The cap: the row says how many changes it is NOT showing rather than reading as the whole diff.
+    expect(
+      describeEvent(ev(3, 'context_updated', write([{ path: 'status', op: 'set', old: 'a', new: 'b' }], 2))),
+    ).toBe('Context updated: set status, and 2 more');
+    // A payload with no usable change set names no change: the row has nothing to say, and the
+    // timeline does not list it (asserted in `TaskEventTimeline.test.tsx`).
+    expect(describeEvent(ev(4, 'context_updated', write([])))).toBe('Context updated');
+    expect(describeEvent(ev(5, 'context_updated', write([{ path: '', op: 'set' }, { path: 'status' }, 7])))).toBe(
+      'Context updated',
     );
-    // An empty or unreadable payload keeps the kind's own label rather than rendering a blank level.
-    expect(describeEvent(ev(4, 'context_updated', { level: '', version: 3 }))).toBe('Context updated');
+    expect(describeEvent(ev(6, 'context_updated', { level: 'task', version: 3 }))).toBe('Context updated');
+    expect(describeEvent(ev(7, 'context_updated'))).toBe('Context updated');
+  });
+
+  it('shows each changed value on each side, one line per change', () => {
+    expect(
+      contextChangeDetails(
+        ev(1, 'context_updated', {
+          level: 'task',
+          version: 7,
+          changes: [
+            { path: 'status', op: 'set', old: 'todo', new: 'in_progress' },
+            { path: 'insights', op: 'add', new: 'a\nb' },
+            { path: 'settings.obsolete', op: 'remove', old: { keep: false } },
+            { path: 'notes', op: 'set', old: 'short', new: { truncated: true, bytes: 900, sha256: 'abcdef0123456789' } },
+          ],
+        }),
+      ),
+    ).toEqual([
+      'at task context, version 7',
+      'status: todo to in_progress',
+      'insights: a b added',
+      'settings.obsolete: {"keep":false} removed',
+      'notes: short to 900 bytes (sha256 abcdef012345...)',
+    ]);
+    // A write with no readable change set has no detail lines, and neither has any other kind.
+    expect(contextChangeDetails(ev(2, 'context_updated', { level: 'task', changes: [] }))).toEqual([]);
+    expect(contextChangeDetails(ev(3, 'progress', { content: 'a note' }))).toEqual([]);
   });
 
   it('prints a status this build does not know as itself rather than hiding it', () => {
