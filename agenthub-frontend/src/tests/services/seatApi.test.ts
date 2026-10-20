@@ -135,6 +135,16 @@ const rows: Row[] = [
     body: JSON.stringify({ runtime: 'omp', model: 'deepseek-flash' }),
   },
 
+  // The occupant trail: a GET the History tab reads. It exists on the branch that records an
+  // occupant change (`GET .../occupant-history`), and it carries no body - the read has no verb
+  // ambiguity with the PUT above only because this row states its method.
+  {
+    entry: 'listOccupantHistory',
+    method: 'GET',
+    paths: [`${API_V2}/rooms/dev/seats/alice/occupant-history`],
+    call: () => seatApi.listOccupantHistory('dev', 'alice'),
+  },
+
   // Overlays - ONE function over THREE paths, so the row carries three and the call makes all three.
   {
     entry: 'getOverlay',

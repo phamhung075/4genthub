@@ -2,6 +2,18 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-20 - the seat History tab renders the occupant trail (frontend, branch 4genthub-min/fe-deploy-walk)
+
+- `agenthub-frontend/src/tests/pages/SeatDetailPage.test.tsx` (2 new tests): the History tab renders
+  the two changes the route returned in the server's own newest-first order, with each row's actor
+  and the `from`/`to` runtime+model pair (the client does not re-sort); an empty trail reads "No
+  occupant change has been recorded for this seat." and draws no row.
+- `agenthub-frontend/src/tests/services/seatApi.test.ts` (1 new register row): `listOccupantHistory`
+  sends GET to `/api/v2/rooms/dev/seats/alice/occupant-history`; the entry-level guard still proves
+  one row per exported `seatApi` entry.
+- `npx tsc --noEmit -p .` clean; full run 131 files / 1933 tests passed; the two touched files
+  together 58 passed.
+
 ## 2026-10-19 - a task event merges its delta, details_changed re-reads (frontend, branch 4genthub-min/fe-deploy-walk)
 
 - `agenthub-frontend/src/tests/hooks/test_useRealtimeSync_task.test.tsx` (3 new tests): a status-only
