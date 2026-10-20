@@ -269,11 +269,11 @@ export interface NotificationEventPayload {
  *
  * The entity's `room_safeguard` names the ROW kind and `safeguard` names the client axis, so the two
  * are different things and are allowed to look alike: this row may report the safeguard NAMED
- * `roomguard`, and that name is one of the six the client has always sent - neither is derived from
- * the other, and a rename of one is not a rename of the other.
+ * `roomguard`, and that name is one of the seven the client sends - neither is derived from the
+ * other, and a rename of one is not a rename of the other.
  */
 export interface RoomSafeguardAlertPayload {
-  /** The client-reported safeguard name: compact | watchdog | messages | roomguard | bridge | agent. */
+  /** The client-reported safeguard name: compact | watchdog | messages | roomguard | budget | bridge | agent. */
   safeguard: string;
   /** The state the row moved to: stopped | silent | failing. Absent on the dead-man alert. */
   state?: string;
