@@ -2,6 +2,15 @@
 
 ## [Unreleased]
 
+### Added
+- **A seat's History tab shows every recorded occupant change** - 2026-10-20
+  - `src/components/seats/SeatOccupantHistoryPanel.tsx` (new): renders `GET /api/v2/rooms/{room}/seats/{seat}/occupant-history` in the order the route returned it (newest first, no cap) - each row the actor, the instant, and `from_runtime`/`from_model` → `to_runtime`/`to_model`. An empty trail says no occupant change has been recorded rather than drawing an empty list; a failed read shows the server's message with Retry. A running seat keeps the snapshot it launched with, so the panel says "changes", never "runtime now".
+  - `src/pages/SeatDetailPage.tsx`: a `History` tab beside `LLM`. It carries no write gate: the route resolves a shared room's read through the room owner, so a viewer reads the trail too. Ported onto main's own page - the `Modules` tab here keeps its `<pre>` dump, because `ModuleContentView` is a frontend-line change this port does not carry.
+  - `src/services/seatApi.ts`, `src/types/seatTypes.ts`: `listOccupantHistory`, `SeatOccupantChange` and `SeatOccupantHistoryResponse`; the seven wire fields (`actor`, `at`, `seat`, `from_runtime`, `from_model`, `to_runtime`, `to_model`) have one definition.
+  - `src/hooks/useSeats.ts`: `useSeatOccupantHistory` under `seatKeys.occupantHistory`; saving the LLM invalidates it because the save wrote one record.
+  - `src/hooks/useRealtimeSync.ts`: a seat `updated` frame re-reads the trail - the frame carries neither the runtime nor the model, so a second client's switch is never patched from the frame.
+  - `npx tsc --noEmit -p .` clean; `npx vitest run` 130 files / 1926 tests passed. The browser check ran on the deployed frontend bundle that carries this same panel: `/seats/4genthub-min/fe-dev` drew both the empty trail and, with its GET answered by two server-shaped changes, the populated rows in server order.
+
 ### Changed
 - **Client routes move to `/api/v2/*` and the feedback layer is `client`** - 2026-10-15
   - Every API call, the generated `src/` route reference and the tests use `/api/v2/...` without the old client sub-prefix; the server and client change in the same release, so deploy the frontend with the backend.

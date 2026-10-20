@@ -367,6 +367,24 @@ export interface OccupantUpdate {
   model: string;
 }
 
+/**
+ * One recorded change of a seat's STORED occupant, as `GET .../occupant-history` returns it.
+ *
+ * The seven fields are the record's own names (`seatAdminOccupantChangeBody`): `actor` is the
+ * authenticated caller, `at` is RFC 3339 UTC, and `seat` is the seat's id, not its key. A row says
+ * the stored occupant changed; a running seat keeps the snapshot it launched with, so the panel
+ * says "changes", never "runtime now".
+ */
+export interface SeatOccupantChange {
+  actor: string;
+  at: string;
+  seat: string;
+  from_runtime: string;
+  from_model: string;
+  to_runtime: string;
+  to_model: string;
+}
+
 /** Publishes one immutable module version; the slug and version are in the path. */
 export interface PutModuleVersionRequest {
   kind: SeatModuleKind;
@@ -423,6 +441,12 @@ export interface SeatLinksTabProps {
   roomSeats: Seat[];
   /** See `SeatModulesTabProps.canWrite`. */
   canWrite: boolean;
+}
+
+/** The occupant trail is readable by whoever may read the seat, so it carries no write gate. */
+export interface SeatOccupantHistoryPanelProps {
+  room: string;
+  seatKey: string;
 }
 
 // =============================================================================
@@ -513,6 +537,12 @@ export interface SeatsResponse {
 export interface SeatResponse {
   success: boolean;
   seat: Seat;
+}
+
+/** `GET /api/v2/rooms/{room}/seats/{seat}/occupant-history` - newest first, no paging. */
+export interface SeatOccupantHistoryResponse {
+  success: boolean;
+  changes: SeatOccupantChange[];
 }
 
 export interface DeletedResponse {

@@ -31,6 +31,18 @@ violations 0`; `--self-test` -> PASS; `python3 -m pytest --noconftest -p no:cach
 scripts/tests/test_doc_citations.py -q` -> 15 passed; `python3 scripts/CITATION-AUDIT.py` -> `rows 149  stale 0
 unresolved 0`; `go -C agenthub_go test ./... -count=1` -> exit 0.
 
+## 2026-10-20 - the seat History tab renders the occupant trail (frontend, branch 4genthub-min/main-seat-history-tab)
+
+- `agenthub-frontend/src/tests/pages/SeatDetailPage.test.tsx` (2 new tests): the History tab renders
+  the two changes the route returned in the server's own newest-first order, with each row's actor
+  and the `from`/`to` runtime+model pair (the client does not re-sort); an empty trail reads "No
+  occupant change has been recorded for this seat." and draws no row.
+- `agenthub-frontend/src/tests/services/seatApi.test.ts` (1 new register row): `listOccupantHistory`
+  sends GET to `/api/v2/rooms/dev/seats/alice/occupant-history`; the entry-level guard still proves
+  one row per exported `seatApi` entry.
+- `npx tsc --noEmit -p .` clean; full run 130 files / 1926 tests passed; the two touched files
+  together 58 passed. This is the port of the same tests onto `main`'s page, not a second suite.
+
 ## 2026-10-20 - the occupant record's write, read and refusal are pinned
 
 `occupant_change_repository_test.go` (new): `TestUpdateOccupantRecordsTheChange` asserts the

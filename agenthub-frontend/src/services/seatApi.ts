@@ -32,6 +32,7 @@ import type {
   SeatLinkResponse,
   SeatMessageRequest,
   SeatMessageResponse,
+  SeatOccupantHistoryResponse,
   SeatOverlayResponse,
   SeatOverlayScope,
   SeatResponse,
@@ -133,6 +134,12 @@ export const seatApi = {
     apiRequest<SeatResponse>(
       `${API_V2}/rooms/${segment(room)}/seats/${segment(seat)}/occupant`,
       jsonPut(data)
+    ),
+
+  // The trail behind the stored occupant, newest first. A read: no frame, no write.
+  listOccupantHistory: (room: string, seat: string) =>
+    apiRequest<SeatOccupantHistoryResponse>(
+      `${API_V2}/rooms/${segment(room)}/seats/${segment(seat)}/occupant-history`
     ),
 
   // Overlays
