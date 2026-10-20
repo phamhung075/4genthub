@@ -7487,3 +7487,18 @@ as `agenthub_go/.../resolver/resolver.go`; it now spells the path its own case r
 `test_useRealtimeSync_branch_delete.test.tsx:4` named `ai_docs/core-architecture/websocket-protocol-migration-guide.md`
 as its source of truth, a file that exists in no commit of either tree; it now names
 `src/types/websocket-protocol.ts`. Both files re-run: 2 files / 10 tests passed; `npx tsc --noEmit -p .` exit 0.
+
+## 2026-10-20 - a frontend citation that resolves nowhere fails the suite (frontend, branch 4genthub-min/fe-citation-instrument)
+
+New `src/tests/docs/repositoryCitations.test.ts`, 2 tests. It extracts every `ai_docs/`, `CHANGELOG/`,
+`agenthub_go/`, `agenthub_client/` path written under `src/` and `e2e/` and resolves it against this
+checkout or `origin/main` (the tree a branch lands in); one absent path is exempt BY NAME with its
+reason (`websocket-protocol-migration-guide.md`, cited as the source that was replaced). The second
+test pins the extractor itself - prose, inline-code and comment forms, and the lookalikes
+(`my_agenthub_go/x.go`, `agenthub_client.obsolete/`, a root with no file) that must not match, with
+the sample assembled from `CITED_ROOTS` so the test's own text carries no path the sweep must resolve.
+
+Fails on the defect it was built for: a scratch file citing
+`agenthub_go/.../infrastructure/repositories/resolver/resolver.go` (the pre-fix header) turned the
+sweep red and named it; with the scratch removed the same file is 2/2 green. `npx vitest run
+src/tests/docs/repositoryCitations.test.ts` 2 tests passed; `npx tsc --noEmit -p .` exit 0.

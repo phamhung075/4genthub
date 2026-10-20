@@ -24,3 +24,17 @@ The sweep that found them (`ai_docs/`, `CHANGELOG/`, `agenthub_go/`, `agenthub_c
 from `agenthub-frontend/src` and `e2e`) left one deliberate miss: `ai_docs/core-architecture/agent-boundaries.md`,
 which slice D-frontend cites and slice B renames. Verified present at B's tip `ad08932a` and absent
 on `origin/main` at `606a770f`, which is exactly the hold.
+
+### Instrument
+
+The sweep that found them is now a check: `agenthub-frontend/src/tests/docs/repositoryCitations.test.ts`
+extracts every `ai_docs/`, `CHANGELOG/`, `agenthub_go/` and `agenthub_client/` path written under
+`src/` and `e2e/` and requires it to resolve - in this checkout or in `origin/main`, since that is the
+tree a branch lands in. It fails on exactly the defect above: a scratch file citing the deleted
+`infrastructure/repositories/resolver/resolver.go` path turned it red and named the file (measured,
+then removed). The one path named for being absent - the migration guide - is exempt by name, with its
+reason, so a new absence cannot pass by accident. Extractor pinned separately: prose, inline code and
+comment forms match; `my_agenthub_go/x.go`, `agenthub_client.obsolete/` and a bare root do not.
+
+This closes the gap the first sweep left: it was a one-off command, and a citation that rots after it
+runs is unwatched again.
