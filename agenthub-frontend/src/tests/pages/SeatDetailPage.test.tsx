@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { vi } from 'vitest';
@@ -23,6 +23,7 @@ vi.mock('../../services/seatApi', () => ({
     getOverlay: vi.fn(),
     putOverlay: vi.fn(),
     listLinks: vi.fn(),
+    listOccupantHistory: vi.fn(),
     putLink: vi.fn(),
     deleteLink: vi.fn(),
     getSettings: vi.fn(),
@@ -129,6 +130,7 @@ describe('SeatDetailPage', () => {
         { id: 'l1', from_seat_id: 'seat-1', to_seat_id: 'seat-2', kind: 'delegates_to', allow: true },
       ],
     });
+    mockApi.listOccupantHistory.mockResolvedValue({ success: true, changes: [] });
     mockApi.putLink.mockResolvedValue({
       success: true,
       link: { id: 'l1', from_seat_id: 'seat-1', to_seat_id: 'seat-2', kind: 'delegates_to', allow: false },
@@ -633,6 +635,61 @@ describe('SeatDetailPage', () => {
         });
       });
       expect(await screen.findByText('seat is removed')).toBeInTheDocument();
+    });
+  });
+
+  describe('History tab', () => {
+    const openHistory = async () => {
+      renderDetail();
+      await screen.findByText('rules');
+      fireEvent.mouseDown(screen.getByRole('tab', { name: /history/i }), { button: 0 });
+    };
+
+    it('lists the recorded changes in the order the route returned them, with the actor', async () => {
+      mockApi.listOccupantHistory.mockResolvedValue({
+        success: true,
+        changes: [
+          {
+            actor: 'owner-user',
+            at: '2026-10-20T19:01:34Z',
+            seat: 'seat-1',
+            from_runtime: 'codex',
+            from_model: 'gpt-5.1',
+            to_runtime: 'omp',
+            to_model: 'deepseek-flash',
+          },
+          {
+            actor: 'owner-user',
+            at: '2026-10-19T08:00:00Z',
+            seat: 'seat-1',
+            from_runtime: 'claude-code',
+            from_model: 'sonnet',
+            to_runtime: 'codex',
+            to_model: 'gpt-5.1',
+          },
+        ],
+      });
+      await openHistory();
+
+      await screen.findAllByText('owner-user');
+      expect(mockApi.listOccupantHistory).toHaveBeenCalledWith('dev', 'alice');
+      const rows = screen.getAllByRole('listitem');
+      expect(rows).toHaveLength(2);
+      // Newest first, as the server ordered it: the client must not re-sort the trail.
+      expect(within(rows[0]).getByText('deepseek-flash')).toBeInTheDocument();
+      expect(within(rows[0]).getByText('omp')).toBeInTheDocument();
+      expect(within(rows[1]).getByText('sonnet')).toBeInTheDocument();
+      expect(within(rows[1]).getByText('gpt-5.1')).toBeInTheDocument();
+    });
+
+    it('says no change has been recorded rather than drawing an empty list', async () => {
+      mockApi.listOccupantHistory.mockResolvedValue({ success: true, changes: [] });
+      await openHistory();
+
+      expect(
+        await screen.findByText('No occupant change has been recorded for this seat.')
+      ).toBeInTheDocument();
+      expect(screen.queryAllByRole('listitem')).toHaveLength(0);
     });
   });
 

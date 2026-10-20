@@ -979,6 +979,9 @@ export const useRealtimeSync = (
           queryClient.invalidateQueries({ queryKey: seatKeys.overlays(room, seatKey) });
           queryClient.invalidateQueries({ queryKey: seatKeys.links(room, seatKey) });
           queryClient.invalidateQueries({ queryKey: seatKeys.resolved(room, seatKey) });
+          // The frame never carries the runtime or model, so the trail is re-read rather than patched:
+          // another client's occupant switch reaches this History tab through its own GET.
+          queryClient.invalidateQueries({ queryKey: seatKeys.occupantHistory(room, seatKey) });
           queryClient.invalidateQueries({ queryKey: topologyKeys.all });
           animationFactory.animate(seatId, 'update', 'websocket');
           showToastOnce(`seat-updated-${seatId}`, () => {

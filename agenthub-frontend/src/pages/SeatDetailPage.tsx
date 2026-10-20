@@ -18,6 +18,7 @@ import {
   ArrowLeft,
   Brain,
   FileCode,
+  History,
   Link2,
   Loader2,
   Package,
@@ -56,6 +57,7 @@ import {
   useUpsertSeatLink,
 } from '../hooks/useSeats';
 import { SeatLlmPanel } from '../components/seats/SeatLlmPanel';
+import { SeatOccupantHistoryPanel } from '../components/seats/SeatOccupantHistoryPanel';
 import { SeatPermissionPolicyPanel } from '../components/seats/SeatPermissionPolicyPanel';
 import { SeatPreview } from '../components/seats/SeatPreview';
 import { computeEffectiveModules } from '../lib/seatModules';
@@ -765,6 +767,9 @@ export const SeatDetailPage: React.FC = () => {
             <TabsTrigger value="llm">
               <Brain className="mr-1 h-4 w-4" /> LLM
             </TabsTrigger>
+            <TabsTrigger value="history">
+              <History className="mr-1 h-4 w-4" /> History
+            </TabsTrigger>
             <TabsTrigger value="permissions">
               <ShieldCheck className="mr-1 h-4 w-4" /> Permissions
             </TabsTrigger>
@@ -781,6 +786,9 @@ export const SeatDetailPage: React.FC = () => {
           </TabsContent>
           <TabsContent value="llm">
             <SeatLlmPanel room={room} seat={currentSeat} canWrite={canWrite} />
+          </TabsContent>
+          <TabsContent value="history">
+            <SeatOccupantHistoryPanel room={room} seatKey={currentSeat.seat_key} />
           </TabsContent>
           <TabsContent value="permissions">
             <SeatPermissionPolicyPanel room={room} seat={currentSeat} canWrite={canWrite} />

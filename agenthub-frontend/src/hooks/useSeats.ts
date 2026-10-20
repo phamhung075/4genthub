@@ -23,6 +23,7 @@ import type {
   OccupantUpdate,
   PutModuleVersionRequest,
   SeatLinkKind,
+  SeatOccupantChange,
   SeatPermissionPolicy,
   SeatLinkRequest,
   SeatMessageRequest,
@@ -47,6 +48,7 @@ export const seatKeys = {
   seats: (room: string) => ['seatSeats', room] as const,
   overlays: (room: string, seat: string) => ['seatOverlays', room, seat] as const,
   links: (room: string, seat: string) => ['seatLinks', room, seat] as const,
+  occupantHistory: (room: string, seat: string) => ['seatOccupantHistory', room, seat] as const,
   resolved: (room: string, seat: string) => ['seatResolved', room, seat] as const,
   modules: ['seatModules'] as const,
   module: (slug: string, version: string) => ['seatModule', slug, version] as const,
@@ -319,6 +321,8 @@ export function useUpdateSeatOccupant(room: string, seat: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: seatKeys.seats(room) });
       queryClient.invalidateQueries({ queryKey: seatKeys.resolved(room, seat) });
+      // The save wrote one record of its own: the trail the History tab renders must not stay stale.
+      queryClient.invalidateQueries({ queryKey: seatKeys.occupantHistory(room, seat) });
       showSuccess(`Seat "${seat}" LLM saved`);
     },
   });
@@ -447,6 +451,27 @@ export function useSeatLinks(room: string, seat: string) {
     enabled: !!room && !!seat,
   });
   return { links: query.data ?? [], isLoading: query.isLoading, error: query.error, refetch: query.refetch };
+}
+
+/**
+ * One seat's occupant trail, newest first, as the route returns it. No paging and no cap: the
+ * server returns every row it holds, so the oldest change is never hidden behind a limit.
+ */
+export function useSeatOccupantHistory(room: string, seat: string) {
+  const query = useQuery({
+    queryKey: seatKeys.occupantHistory(room, seat),
+    queryFn: async (): Promise<SeatOccupantChange[]> => {
+      const response = await seatApi.listOccupantHistory(room, seat);
+      return response.changes ?? [];
+    },
+    enabled: !!room && !!seat,
+  });
+  return {
+    changes: query.data ?? [],
+    isLoading: query.isLoading,
+    error: query.error,
+    refetch: query.refetch,
+  };
 }
 
 export function useUpsertSeatLink(room: string, seat: string) {
