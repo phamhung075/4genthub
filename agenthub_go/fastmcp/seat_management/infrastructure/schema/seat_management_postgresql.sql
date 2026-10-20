@@ -10,8 +10,9 @@
 -- project convention for user-scoped rows (see agents.user_id in init_schema_postgresql.sql).
 -- There are no foreign keys to a users table.
 --
--- NO foreign key CASCADE anywhere: the project deliberately keeps cascading deletes in
--- the application layer (DDD), so every reference below is a plain REFERENCES.
+-- NO foreign key CASCADE anywhere EXCEPT seat_occupant_changes.seat_id, an append-only record
+-- that has no delete path of its own: the project deliberately keeps cascading deletes in the
+-- application layer (DDD), so every other reference below is a plain REFERENCES.
 --
 -- IMMUTABLE TABLES: module_versions, seat_type_versions and resolved_seats are append-only.
 -- The application never issues an UPDATE against them (there is no UPDATE path).
@@ -238,6 +239,23 @@ CREATE TABLE IF NOT EXISTS seat_links (
 CREATE INDEX IF NOT EXISTS ix_seat_links_user_id ON seat_links (user_id);
 CREATE INDEX IF NOT EXISTS ix_seat_links_from_seat_id ON seat_links (from_seat_id);
 CREATE INDEX IF NOT EXISTS ix_seat_links_to_seat_id ON seat_links (to_seat_id);
+
+-- Table: seat_occupant_changes
+-- Append-only: one row per change of a seat's stored runtime/model, written in the same
+-- transaction as the seats overwrite. There is no UPDATE path.
+CREATE TABLE IF NOT EXISTS seat_occupant_changes (
+    id UUID PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    seat_id UUID NOT NULL REFERENCES seats (id) ON DELETE CASCADE,
+    actor TEXT NOT NULL,
+    at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    from_runtime TEXT NOT NULL,
+    from_model TEXT NOT NULL,
+    to_runtime TEXT NOT NULL,
+    to_model TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS ix_seat_occupant_changes_seat ON seat_occupant_changes (user_id, seat_id, at DESC);
 
 -- Table: resolved_seats
 -- Immutable: append-only. The application never issues an UPDATE against this table.

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 
 	"agenthub/fastmcp/seat_management/domain/repositories"
@@ -32,7 +33,7 @@ type SeatAdminStore interface {
 	SaveSeatType(ctx context.Context, userID string, seatType repositories.SeatType) (*repositories.SeatType, error)
 	FindSeat(ctx context.Context, userID, roomID, seatKey string) (*repositories.Seat, error)
 	ListSeats(ctx context.Context, userID, roomID string) ([]repositories.Seat, error)
-	UpdateSeatOccupant(ctx context.Context, userID, seatID, runtime, model string) error
+	UpdateSeatOccupant(ctx context.Context, userID, seatID, runtime, model, actor string) error
 	UpdateSeatPermissionPolicy(ctx context.Context, userID, seatID, permissionPolicy string) error
 	UpdateSeatPinnedVersion(ctx context.Context, userID, seatID, pinnedVersion string) error
 	GetModuleVersion(ctx context.Context, userID, slug, version string) (*repositories.ModuleVersion, error)
@@ -121,9 +122,13 @@ func (s *SeatAdminService) SetOccupant(ctx context.Context, userID, roomSlug, se
 	if err := repositories.ValidateOccupant(runtime, model); err != nil {
 		return nil, fmt.Errorf("%w: %v", ErrInvalidOccupant, err)
 	}
-	if err := s.store.UpdateSeatOccupant(ctx, userID, seat.ID, runtime, model); err != nil {
+	// The actor is the authenticated caller (the userID argument), never a request field: it is
+	// what the occupant record names as the one who made the change.
+	if err := s.store.UpdateSeatOccupant(ctx, userID, seat.ID, runtime, model, userID); err != nil {
 		return nil, err
 	}
+	log.Printf("[SEAT] user %s switched %s/%s from %s/%s to %s/%s",
+		userID, roomSlug, seatKey, seat.Runtime, seat.Model, runtime, model)
 	seat.Runtime, seat.Model = runtime, model
 	return s.view(ctx, userID, room, seat)
 }

@@ -89,7 +89,7 @@ func (f *fakeSeatAdminStore) UpdateSeatPinnedVersion(_ context.Context, _, seatI
 	return nil
 }
 
-func (f *fakeSeatAdminStore) UpdateSeatOccupant(_ context.Context, _, seatID, runtime, model string) error {
+func (f *fakeSeatAdminStore) UpdateSeatOccupant(_ context.Context, _, seatID, runtime, model, _ string) error {
 	if f.updateErr != nil {
 		return f.updateErr
 	}

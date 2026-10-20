@@ -693,6 +693,16 @@ export const apiReference: ApiReference = {
     },
     {
       "method": "GET",
+      "path": "/api/v2/rooms/{room}/seats/{seat}/occupant-history",
+      "pathParams": [
+        "room",
+        "seat"
+      ],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "GET",
       "path": "/api/v2/rooms/{room}/seats/{seat}/overlay",
       "pathParams": [
         "room",

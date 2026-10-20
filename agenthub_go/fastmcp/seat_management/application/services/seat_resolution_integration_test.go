@@ -136,7 +136,7 @@ func TestSeatResolutionEndToEnd(t *testing.T) {
 	must(t, err)
 	beforeSwitch, err := svc.ResolveSeat(ctx, user, "dev", "pinned")
 	must(t, err)
-	must(t, seats.UpdateOccupant(ctx, user, pinned.ID, "codex", "gpt-5.1"))
+	must(t, seats.UpdateOccupant(ctx, user, pinned.ID, "codex", "gpt-5.1", user))
 	afterSwitch, err := svc.ResolveSeat(ctx, user, "dev", "pinned")
 	must(t, err)
 	if afterSwitch.Runtime != "codex" || afterSwitch.Hash == beforeSwitch.Hash {

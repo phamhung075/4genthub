@@ -173,8 +173,8 @@ func TestSchemaMatchesGoDefinitions(t *testing.T) {
 // schemaInventoryTableCount is today's registry size: taskdb.Tables (the aggregate union) plus
 // taskdb.ProductionTables (deliberately outside it). It is asserted because every property below is
 // vacuous over a partial registry - without the four blank imports above the registry is 27 of these
-// 49 tables (Tables 21, ProductionTables 6) and both properties pass while 22 tables go unchecked.
-const schemaInventoryTableCount = 49
+// 50 tables (Tables 21, ProductionTables 6) and both properties pass while 23 tables go unchecked.
+const schemaInventoryTableCount = 50
 
 // TestSchemaInventoryPinsTenancyAndCascades is gate G2: two properties of the registry that nothing
 // else checks, each pinned by a golden file that names live columns in both directions.
@@ -213,7 +213,7 @@ func TestSchemaInventoryPinsTenancyAndCascades(t *testing.T) {
 		}
 		def, ok := goDefTableByName(table)
 		if !ok {
-			t.Errorf("%s:%d: table %s is not registered in the 49-table union", nullable.path, line.number, table)
+			t.Errorf("%s:%d: table %s is not registered in the 50-table union", nullable.path, line.number, table)
 			continue
 		}
 		column, ok := goDefColumn(def, "user_id")
@@ -262,7 +262,7 @@ func TestSchemaInventoryPinsTenancyAndCascades(t *testing.T) {
 	for _, line := range fks.lines {
 		def, ok := goDefTableByName(line.fields[0])
 		if !ok {
-			t.Errorf("%s:%d: table %s is not registered in the 49-table union", fks.path, line.number, line.fields[0])
+			t.Errorf("%s:%d: table %s is not registered in the 50-table union", fks.path, line.number, line.fields[0])
 			continue
 		}
 		column, ok := goDefColumn(def, line.fields[1])

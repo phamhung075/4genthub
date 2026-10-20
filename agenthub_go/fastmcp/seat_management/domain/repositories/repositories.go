@@ -151,13 +151,29 @@ type Seat struct {
 	UpdatedAt        time.Time
 }
 
+// OccupantChange is one recorded switch of a seat's stored occupant. Append-only: a row exists
+// exactly when a change was made, and nothing rewrites it. Actor is the authenticated caller
+// whose action made the change; UserID is the tenant whose seats row was changed.
+type OccupantChange struct {
+	ID          string
+	UserID      string
+	SeatID      string
+	Actor       string
+	At          time.Time
+	FromRuntime string
+	FromModel   string
+	ToRuntime   string
+	ToModel     string
+}
+
 // SeatRepository stores seats.
 type SeatRepository interface {
 	Create(ctx context.Context, userID string, seat Seat) (*Seat, error)
 	GetByID(ctx context.Context, userID, seatID string) (*Seat, error)
 	FindByRoomAndKey(ctx context.Context, userID, roomID, seatKey string) (*Seat, error)
 	ListByRoom(ctx context.Context, userID, roomID string) ([]Seat, error)
-	UpdateOccupant(ctx context.Context, userID, seatID, runtime, model string) error
+	UpdateOccupant(ctx context.Context, userID, seatID, runtime, model, actor string) error
+	ListOccupantChanges(ctx context.Context, userID, seatID string) ([]OccupantChange, error)
 	UpdatePermissionPolicy(ctx context.Context, userID, seatID, permissionPolicy string) error
 	UpdatePinnedVersion(ctx context.Context, userID, seatID, pinnedVersion string) error
 	Delete(ctx context.Context, userID, seatID string) error

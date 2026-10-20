@@ -83,7 +83,7 @@ func (f *fakeStore) UpdateSeatPermissionPolicy(_ context.Context, _, seatID, per
 	return nil
 }
 
-func (f *fakeStore) UpdateSeatOccupant(_ context.Context, _, seatID, runtime, model string) error {
+func (f *fakeStore) UpdateSeatOccupant(_ context.Context, _, seatID, runtime, model, _ string) error {
 	for _, s := range f.seats {
 		if s.ID == seatID {
 			s.Runtime, s.Model = runtime, model
