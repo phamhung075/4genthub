@@ -29,6 +29,21 @@ jobs:
       - run: go vet ./...
       - run: go test ./...
 
+  # The documents claim the tree: every `file:line` and every backticked Test name in ai_docs is
+  # checked against what ships, and the check refuses rather than passing when it reads nothing.
+  # It ran nowhere before this job: CITATION-AUDIT.py covers only the surface inventory's route
+  # tables, and a citation naming a test that exists in no commit reached main on 2026-10-20.
+  scripts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install pytest
+      - run: python3 scripts/DOC-CITATIONS.py
+      - run: python3 -m pytest scripts/tests/test_doc_citations.py -q
+
   frontend:
     runs-on: ubuntu-latest
     defaults:

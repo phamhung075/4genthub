@@ -25,11 +25,9 @@ loaded, so a change needs a relaunch of that seat (or a `4genteam send` for the 
 
 ## Commands
 
-**`scripts/seat_policy.py` was deleted on 2026-10-09 in `1c7b6631`; its ported home is the client**, at
-`agenthub_client/src/agenthub_client/seat_policy.py` (277 lines, the same tables), reached as `4genteam policy`
-(`agenthub_client/src/agenthub_client/cli.py:265`). The verb names are unchanged; only the file moved:
+**`scripts/seat_policy.py` was deleted on 2026-10-09 in `1c7b6631`; its ported home is the client**, reached as `4genteam policy` (`agenthub_client/internal/clientpolicy/policy.go:63`, the Go port's command registration), which carries the same tables: the retired Python client's `seat_policy.py` held them in 277 lines until that port replaced it. The verb names are unchanged; only the file moved:
 
-**CORRECTED 2026-10-10 (writer seat, at the pinned client commit `eaa6ba7`): the client's own Python is gone too — the Go port retired it, so the home named above no longer resolves.** The live home of the same tables is **`agenthub_client/internal/clientpolicy/policy.go`**, one file: `commonBashDeny` (`:48`), `nonLeadBashDeny` (`:76`), `nonLeadToolDeny` (`:86`), `reviewerToolDeny` (`:93`), `policyFor` (`:154`) and `RenderConfig` (`:174`). It is reached as `4genteam policy` — and **the seat/role table is no longer compiled into the client at all**: it comes from the rig's own team file, passed with `--team` (`policy.go:9`-`:11`).
+**CORRECTED 2026-10-10 (writer seat, at the pinned client commit `eaa6ba7`): the client's own Python is gone too — the Go port retired it, so the home named above no longer resolves.** The live home of the same tables is **`agenthub_client/internal/clientpolicy/policy.go`**, one file: `commonBashDeny` (`:48`), `nonLeadBashDeny` (`:76`), `nonLeadToolDeny` (`:86`), `reviewerToolDeny` (`:93`), `policyFor` (`:154`) and `RenderConfig` (`:174`). It is reached as `4genteam policy` — and **the seat/role table is no longer compiled into the client at all**: it comes from the rig's own team file, passed with `--team` (`agenthub_client/internal/clientpolicy/policy.go:9`-`:11`).
 
 ```bash
 4genteam policy show <seat> --rig 4genthub-min     # one seat's config.yml — run 2026-10-09: prints the document, exit 0
@@ -51,7 +49,7 @@ does not touch that file.
 |---|---|---|
 | Change what a seat may run — the words it reads | edit `scripts/team/4genthub-min/policy-<seat>.json` (kind `policy`), publish it, then the seat's next render | next render + launch |
 | Change what a seat may run — the rule that ENFORCES it | edit the deny lists (`commonBashDeny` `:48`, `nonLeadBashDeny` `:76`, `nonLeadToolDeny` `:86`, `reviewerToolDeny` `:93`) or the role table in the rig's own `scripts/team/<rig>/team.json` in `agenthub_client/internal/clientpolicy/policy.go`'s terms, then `4genteam policy apply --rig <rig> --team <team.json>` | next launch of that seat |
-| Add a seat or a role | add it to the rig's `team.json` seats (`internal/clientpolicy` has no compiled role table — `policy.go:9`-`:11`), and give it a policy module; an unlisted seat has no policy and is an error | after `apply`, a publish and a launch |
+| Add a seat or a role | add it to the rig's `team.json` seats (`internal/clientpolicy` has no compiled role table — `agenthub_client/internal/clientpolicy/policy.go:9`-`:11`), and give it a policy module; an unlisted seat has no policy and is an error | after `apply`, a publish and a launch |
 | Change how one seat works | edit its guide block `agenthub_go/fastmcp/seat_management/domain/seedlibrary/blocks/guide-<seat>.md` and publish; the shared procedure is `agenthub_go/fastmcp/seat_management/domain/seedlibrary/shared-modules/guide-common.md`. Text added by hand to a seat's `AGENTS.md` is overwritten by the next render | next render + launch |
 | Instructions for every seat of the rig | the rig directory's `AGENTS.md` (the seats' working directory) | next launch |
 | A one-off instruction now | `4genteam send <rig>-<seat>@<rig> "..."` | immediately |

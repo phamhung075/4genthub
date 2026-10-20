@@ -171,7 +171,7 @@ The cloud must never receive an unredacted byte, so redaction is a **preconditio
 
 ### 4.3.1 The `sk-` detector: a left boundary, never a narrower alphabet
 
-The `sk-` pattern ships in two copies, `internal/secretscan` on both sides (`secretscan.go:11`, `redact.go:42`
+The `sk-` pattern ships in two copies, `internal/secretscan` on both sides (`internal/secretscan/secretscan.go:11`, `seat_management/domain/secretscan/redact.go:42`
 in `agenthub_client/internal/secretscan` and `agenthub_go/fastmcp/seat_management/domain/secretscan`). Both
 carried `sk-[A-Za-z0-9_-]{20,}` with no left boundary, which redacts a mid-word name such as
 `task-workflow-and-reporting.md`. The ruled shape is `\bsk-[A-Za-z0-9_-]{20,}`: the `\b` is the whole of the
@@ -502,10 +502,10 @@ The nudge is a loop inside agent. It reads the same per-seat activity that agent
 **2. The gate: it already lives in ONE place, and every automatic wake reads it.**
 
 - `internal/clientoffpeak` holds:
-  - the setting `OFFPEAK_ONLY` (`gate.go:31`);
-  - the override `--allow-peak` (`gate.go:43`);
+  - the setting `OFFPEAK_ONLY` (`clientoffpeak/gate.go:31`);
+  - the override `--allow-peak` (`clientoffpeak/gate.go:43`);
   - the schedule, evaluated in UTC (`schedule.go:111`, `At` takes `now.UTC()`; peak is 01:00-04:00 and 06:00-10:00 Monday-Friday, plus the holiday file);
-  - the room decision `Check(allowPeak, nodes, getenv)` (`gate.go:109`), which gates only a room whose seats run a `deepseek/` model.
+  - the room decision `Check(allowPeak, nodes, getenv)` (`clientoffpeak/gate.go:109`), which gates only a room whose seats run a `deepseek/` model.
 - `clientlifecycle.PeakGate` (`lifecycle.go:251`) is the one call site that wraps it. Nothing new is built for the gate. The rule is that every automatic wake calls `PeakGate` and nothing else.
 
 | Wake | Gated today? | Ruling |

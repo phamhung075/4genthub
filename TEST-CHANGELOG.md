@@ -1,3 +1,21 @@
+## 2026-10-20 - the ai_docs citations are pinned by an instrument (go, branch 4genthub-min/int03-cascades)
+
+`scripts/tests/test_doc_citations.py` (new, 10 cases) runs `scripts/DOC-CITATIONS.py` as a SUBPROCESS - how
+the CI job runs it, and an import cannot catch a bad `__main__` - requiring rc 0 plus a non-zero quantity
+read, so an instrument that audited nothing cannot read as clean. Each red-first case writes its own markdown
+scope and passes it as `--docs`, so the resolution still runs against the real tracked tree: a drifted line
+(`scripts/CITATION-AUDIT.py:999999`), the same citation with no backticks, an inverted range (`:50-10`) and the
+invented `TestNoSuchNameInThisRepositoryAnywhere` are each NAMED; `models.go:1` is reported ambiguous with both
+candidates rather than resolved to one; a violating record under a `reports-status/` subdirectory is excluded and
+counted out of scope; an empty scope and an unknown argument exit 2; `--self-test` prints PASS and names the
+line it perturbed. No existing case changed - the three census instruments and `test_census_audits.py` are
+untouched.
+
+Measured at this tree: `python3 scripts/DOC-CITATIONS.py` -> `docs 50  citations 726  test names 23
+violations 0`; `--self-test` -> PASS; `python3 -m pytest --noconftest -p no:cacheprovider
+scripts/tests/test_doc_citations.py -q` -> 10 passed; `python3 scripts/CITATION-AUDIT.py` -> `rows 149  stale 0
+unresolved 0`; `go -C agenthub_go test ./... -count=1` -> exit 0.
+
 ## 2026-10-20 - the occupant record's write, read and refusal are pinned
 
 `occupant_change_repository_test.go` (new): `TestUpdateOccupantRecordsTheChange` asserts the

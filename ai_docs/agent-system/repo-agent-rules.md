@@ -104,7 +104,7 @@ the model → yes: fix the test to match the model.
 - **If the pre-commit framework refuses a pathspec commit with "Your pre-commit configuration is
   unstaged,"** the config file differs from **the index that commit builds** — not from the shared index —
   and the guard's predicate is `git diff --quiet --no-ext-diff scripts/git-hooks/pre-commit-config.yaml`
-  (pre-commit 4.4.0, `pre_commit/commands/run.py:339-345`). **The remedy, in order, and the order is the
+  (pre-commit 4.4.0's own `run.py`, lines 339-345). **The remedy, in order, and the order is the
   point:**
   1. **If the config is yours to commit, commit it by itself, by explicit pathspec.** Naming it puts that
      file's worktree content into the commit's temporary index, so the predicate is clean, the guard passes
@@ -114,9 +114,9 @@ the model → yes: fix the test to match the model.
   2. **If it is not yours, ask its owner to commit it alone first** — that is what unblocked this queue.
   3. **`--no-verify` is the last resort**, for a config that cannot be the committed path: run the config's
      own hooks over **your own** paths (`pre-commit run --config <config> --files <your paths>`; passing
-     `--files` or `--all-files` is also what skips the guard, `run.py:347`), report the exit code, and name
+     `--files` or `--all-files` is also what skips the guard, per pre-commit's own `run.py`, line 347), report the exit code, and name
      in the body exactly what the flag then skipped. The same flag with no hooks run is a defect.
-  **Expect the run to stash what is not being committed:** on the same condition (`run.py:347`), a commit
+  **Expect the run to stash what is not being committed:** on the same condition (pre-commit's own `run.py`, line 347), a commit
   that is not given `--files` or `--all-files` makes the framework stash **every** unstaged file to a patch
   and restore it afterwards — so a sibling seat's uncommitted work exists as a patch file in the working tree
   for the length of your commit, and a crash between the stash and the restore leaves it there, in a file its

@@ -56,7 +56,7 @@ task = mcp__agenthub_http__manage_task(
     assignees="@<seat-or-role>",
     details="""
     Requirements: full auth with refresh tokens
-    Files: src/auth/login.js:23-45 (handleLogin), src/models/User.py:15-30 (validate)
+    Files: <path>:<line>-<end> (functionName), <path>:<line>-<end> (functionName)
     Acceptance: login/logout works, tokens refresh correctly
     """
 )
@@ -206,14 +206,14 @@ details="Update the user validation logic"
 # RIGHT (precise):
 details="""
 Update user validation logic in:
-- src/models/User.js:23-35 (validateEmail)
-- src/controllers/auth.js:67-89 (registerUser)
-- tests/auth.test.js:12-25 (email-validation test)
+- <path>:<line>-<end> (validateEmail)
+- <path>:<line>-<end> (registerUser)
+- <path>:<line>-<end> (email-validation test)
 Focus on lines 28-30 where the email regex changes.
 """
 ```
 
-Format: `file.js:23` | `file.js:23-35` | `file.js:23-35 (functionName)`.
+Format: `<path>:<line>` | `<path>:<line>-<end>` | `<path>:<line>-<end> (functionName)`.
 
 ## Receiving results
 

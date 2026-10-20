@@ -235,15 +235,15 @@ lead orders the merges.
 
 **What was measured in the client's code** (the files under `/home/daihu/__projects__/reference/packages`):
 - The `From:` name on a message comes from a setting in the sending program's environment
-  (`AGENTHUB_SESSION_NAME`). The `rig` command copies it into the request (`cli/src/sender-identity.ts:11`),
+  (`AGENTHUB_SESSION_NAME`). The `rig` command copies it into the request (the reference client's own `cli/src/sender-identity.ts`, line 11),
   and the daemon writes it down as the sender, labelled `transport:v1`, without checking which program sent
   it (`daemon/src/routes/require-sender-identity.ts`).
 - When the daemon starts any node, it sets that environment setting on the node's terminal session
-  (`daemon/src/domain/node-launcher.ts:141-151`). That is why a command typed in a seat's terminal is
+  (the reference daemon's own `daemon/src/domain/node-launcher.ts`, lines 141-151). That is why a command typed in a seat's terminal is
   signed with that seat's name.
 - 4genteam already supports a node with no agent: `runtime: terminal`, `agent_ref: builtin:terminal`,
   `profile: none`, and such a node may not carry a role or a permission policy
-  (`daemon/src/domain/rigspec-schema.ts:505-550`).
+  (the reference daemon's own `daemon/src/domain/rigspec-schema.ts`, lines 505-550).
 
 **1. The trust rule.** "Anything running as the owner's Linux user may send as the owner" is acceptable,
 because it is already true: that user can type into any seat's terminal, and the terminal is the wire.
