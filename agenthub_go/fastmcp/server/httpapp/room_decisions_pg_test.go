@@ -90,9 +90,9 @@ func (e *roomDecisionPgEnv) seed(t *testing.T, roomID, decisionID, userID, slug,
 	ledgerExec(t, e.sm, `INSERT INTO room_decisions
 		(id, user_id, room_id, room_name, qitem_id, author_seat_key, destination, summary, detail,
 		 questions, answers, state, idempotency_key, created_at)
-		VALUES ($1::uuid, $2, $3::uuid, '4genthub-min', $6, 'go-dev', 'human-operator@kernel',
+		VALUES ($1::uuid, $2, $3::uuid, $7, $6, 'go-dev', 'human-operator@kernel',
 		 'ship the cloud half first?', 'the panel needs the answer', $4::jsonb, '{}'::jsonb, 'pending', $5, now())`,
-		decisionID, userID, roomID, roomDecisionPgQuestions, idempotencyKey, qitemID)
+		decisionID, userID, roomID, roomDecisionPgQuestions, idempotencyKey, qitemID, slug)
 }
 
 // row reads one decision's state and answers straight from the table: the "no write" and "first
@@ -628,5 +628,63 @@ func TestRoomDecisionPgCrossingRoundTrip(t *testing.T) {
 	}
 	if state, _ := env.row(t, droppedID); state != "superseded" {
 		t.Fatalf("state = %q, want superseded", state)
+	}
+}
+
+// TestRoomDecisionPgThePullHandsOverOnlyTheRoomItNames is the filter claim as SQL: the store's fake
+// checks the argument a service passes, and only the real predicate decides which rows a page holds.
+// Two rooms of ONE tenant hold one answered ask each; a pull that names a room carries that room's
+// answer and not the other's, so the destructive ack can only close a decision the daemon applied.
+func TestRoomDecisionPgThePullHandsOverOnlyTheRoomItNames(t *testing.T) {
+	env := newRoomDecisionPgEnv(t)
+	env.seed(t, roomDecisionPgRoomAlphaID, roomDecisionPgDecAlphaID, env.userA, "alpha", "qitem-pg-pull-alpha", "agenthub:decision:qitem-pg-pull-alpha")
+	env.seed(t, roomDecisionPgRoomBetaID, roomDecisionPgDecBetaID, env.userA, "beta", "qitem-pg-pull-beta", "agenthub:decision:qitem-pg-pull-beta")
+	for _, ask := range []struct{ slug, id string }{{"alpha", roomDecisionPgDecAlphaID}, {"beta", roomDecisionPgDecBetaID}} {
+		for _, click := range []string{`{"question_id":"q1","option_id":"ship"}`, `{"question_id":"q2","option_id":"lead"}`} {
+			if code, body := env.postAnswer(t, env.tokenA, ask.slug, ask.id, click); code != http.StatusOK {
+				t.Fatalf("answer %s in %s = %d %s, want 200", click, ask.slug, code, body)
+			}
+		}
+	}
+
+	type answersPage struct {
+		Success bool `json:"success"`
+		Answers []struct {
+			DecisionID string `json:"decision_id"`
+			Room       string `json:"room"`
+		} `json:"answers"`
+	}
+	pull := func(t *testing.T, room string) (int, string, answersPage) {
+		t.Helper()
+		code, res := env.getPath(t, env.tokenA, "/api/v2/decisions/answers?room="+room)
+		var got answersPage
+		if code == http.StatusOK {
+			if err := json.Unmarshal([]byte(res), &got); err != nil {
+				t.Fatalf("decoding the pull response: %v (%s)", err, res)
+			}
+		}
+		return code, res, got
+	}
+
+	for _, want := range []struct{ slug, id, other string }{
+		{"alpha", roomDecisionPgDecAlphaID, roomDecisionPgDecBetaID},
+		{"beta", roomDecisionPgDecBetaID, roomDecisionPgDecAlphaID},
+	} {
+		code, raw, page := pull(t, want.slug)
+		if code != http.StatusOK || !page.Success || len(page.Answers) != 1 {
+			t.Fatalf("pull %s = %d %+v, want the one answer that room holds", want.slug, code, page)
+		}
+		if got := page.Answers[0]; got.DecisionID != want.id || got.Room != want.slug {
+			t.Fatalf("pull %s handed %+v, want %s/%s", want.slug, got, want.id, want.slug)
+		}
+		if strings.Contains(raw, want.other) {
+			t.Errorf("pull %s carried the other room's row: %s", want.slug, raw)
+		}
+	}
+
+	// A pull that names no room is refused rather than widened to the tenant's two answers.
+	code, res, _ := pull(t, "")
+	if code != http.StatusBadRequest || !strings.Contains(res, "room") {
+		t.Fatalf("pull with no room = %d %s, want a 400 naming the missing room", code, res)
 	}
 }

@@ -11,6 +11,10 @@ written against and the rename is `0008`'s subject - its header now says so.
 second application, and the no-op on a database with neither table.
 `TestBypassSuspected` loses its `rig send|queue|broadcast` rows with the deleted case and carries the
 env/path/collapse variants on `tmux`; the renderer's deny fixtures use `Bash(tmux send-keys:*)`.
+`TestRoomDecisionPgThePullHandsOverOnlyTheRoomItNames` is new: one tenant, two rooms holding one
+answered ask each, and a pull of one room's name carries only that room's answer - the fake store
+checks the argument, and only the real predicate decides which rows a page holds. `roomDecisionPgEnv.seed`
+writes the room's own slug into `room_name`.
 `TestPullMintsTheShippedCursorAndRefusesOneItDidNot` gains the room fence: a second room's row is not
 handed over, the pull of that room's own name sees only it, and an unnamed pull is the `invalid-pull`
 refusal; the fixture store and the mount's fake both filter on `room_name`, and every pull URL in the

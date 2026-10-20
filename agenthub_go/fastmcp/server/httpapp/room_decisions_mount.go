@@ -380,7 +380,7 @@ func handleIngestRoomDecision(w http.ResponseWriter, r *http.Request, u *authdom
 		return
 	}
 	stored, created, err := service.Create(r.Context(), callerID, room.ID, roomservices.RoomDecisionAsk{
-		RoomName:        body.Room,
+		RoomName:        slug,
 		QitemID:        body.QitemID,
 		AuthorSeatKey:  body.AuthorSeatKey,
 		Destination:    body.Destination,
