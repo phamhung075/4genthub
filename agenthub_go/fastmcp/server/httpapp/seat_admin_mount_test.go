@@ -22,17 +22,17 @@ import (
 )
 
 type fakeSeatAdmin struct {
-	rooms          []*repositories.Room
-	seatTypes      map[string]*repositories.SeatTypeVersion
-	seatVersions   map[string]map[string]*repositories.SeatTypeVersion
-	seatTypeList   []*repositories.SeatType
-	moduleVersions map[string]*repositories.ModuleVersion
-	moduleKinds    map[string]resolver.ModuleKind
-	seats          []*repositories.Seat
-	overlays       map[string]*repositories.Overlay
-	links          []*repositories.SeatLink
+	rooms           []*repositories.Room
+	seatTypes       map[string]*repositories.SeatTypeVersion
+	seatVersions    map[string]map[string]*repositories.SeatTypeVersion
+	seatTypeList    []*repositories.SeatType
+	moduleVersions  map[string]*repositories.ModuleVersion
+	moduleKinds     map[string]resolver.ModuleKind
+	seats           []*repositories.Seat
+	overlays        map[string]*repositories.Overlay
+	links           []*repositories.SeatLink
 	occupantChanges []*repositories.OccupantChange
-	settings       map[string]*repositories.SeatSettings
+	settings        map[string]*repositories.SeatSettings
 
 	deletedResolved []string
 	addVersionErr   error
