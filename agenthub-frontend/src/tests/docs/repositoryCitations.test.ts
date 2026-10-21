@@ -109,17 +109,21 @@ describe('repository citations in the frontend', () => {
   it('reads a path out of prose, inline code and a comment alike, and ignores lookalikes', () => {
     // The sample is assembled from CITED_ROOTS so this file's own text carries no citation the sweep
     // would have to resolve: the extractor is exercised on strings, not on paths that must exist.
-    const [docRoot, logRoot, goRoot, clientRoot] = CITED_ROOTS;
+    const [docRoot, goRoot, clientRoot] = CITED_ROOTS;
+    // `CHANGELOG/` is gone and is no longer a cited root, so a dated log path is a LOOKALIKE now: the sample
+    // spells the directory from a bare literal, because the path in this file's text would be a citation the
+    // sweep has to resolve, and that is the one thing this sample must not create.
+    const goneRoot = 'CHANGELOG';
     const boundaries = `${docRoot}/core-architecture/agent-boundaries.md`;
     const goSample = `${goRoot}/x/y.go`;
-    const logSample = `${logRoot}/2026-10-20--a-title.md`;
+    const logLookalike = `${goneRoot}/2026-10-20--a-title.md`;
 
     expect(
       citations(
         `the file \`${boundaries}\` say so; see ${goSample}.\n` +
-          `// ${logSample} records it\n` +
-          `not a citation: my_${goSample}, ${clientRoot}.obsolete/, ${logRoot}/`
+          `// ${logLookalike} records it\n` +
+          `not a citation: my_${goSample}, ${clientRoot}.obsolete/, ${logLookalike}`
       )
-    ).toEqual([boundaries, goSample, logSample]);
+    ).toEqual([boundaries, goSample]);
   });
 });
