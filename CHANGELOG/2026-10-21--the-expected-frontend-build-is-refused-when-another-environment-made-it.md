@@ -30,7 +30,10 @@ may refuse: when the served entry did not arrive, comparability is left alone an
 as incomplete rather than naming a foreign environment.
 
 Measured. `python3 -m pytest scripts/tests/test_check_served_frontend.py -q` 24 passed (19 existing, 5
-new); the whole `scripts/tests` tree 140 passed. Against the live origin with an undated copy of this worktree's dist: exit 2, `FOREIGN-ENV`,
+new); the whole `scripts/tests` tree 140 passed in a full checkout - a worktree without the nested
+`agenthub_client` checkout, as the reviewer's gate worktree was, reports 14 unrelated
+`test_doc_citations.py` failures there on any base, and the delta from 460b715a to this commit is exactly
+the +5 new rows. Against the live origin with an undated copy of this worktree's dist: exit 2, `FOREIGN-ENV`,
 `build inlined 6 key(s), served 30`, 24 keys listed as served-only, and no `BUILD-MISMATCH`; the JSON
 report has `environment.comparable false` and no `identity` key. Against
 `--expect-dist agenthub-frontend/build` from this worktree the earlier staleness rule still answers first

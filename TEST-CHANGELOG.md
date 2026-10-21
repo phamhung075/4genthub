@@ -27,7 +27,9 @@ keeps both sides on one env with different entries and asserts exit 1, `BUILD-MI
 The fifth, `test_a_served_entry_that_did_not_arrive_is_not_a_foreign_environment`, serves an index naming a
 chunk that 404s and asserts neither `FOREIGN-ENV` nor the `environment:` line - only an env object that was
 READ may refuse, so an incomplete closure keeps reporting itself.
-Measured: the file at 24 passed, the whole scripts suite at 140 passed, and the live origin under an undated copy
+Measured: the file at 24 passed, the whole scripts suite at 140 passed in a full checkout (a worktree
+without the nested `agenthub_client` checkout, as the reviewer's gate worktree was, reports 14 unrelated
+`test_doc_citations.py` failures there on any base - the delta from 460b715a is the +5 rows), and the live origin under an undated copy
 of this worktree's dist exits 2 `FOREIGN-ENV` (6 keys against 30) with no `identity` in the JSON.
 
 ## 2026-10-21 - the census refuses a dist older than the last frontend commit (python, branch 4genthub-min/events-read-log)
