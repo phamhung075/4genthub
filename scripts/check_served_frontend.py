@@ -245,9 +245,12 @@ def dist_staleness(dist_dir: str) -> dict | None:
     refused (exit 2, CannotMeasure) instead of being compared: a refusal names the age, a MISMATCH sends
     someone looking at production.
 
-    A dist outside a git work tree is returned undated - it cannot be aged, and the caller passed a path
-    deliberately. Everything inside a work tree IS dated, so the real call
-    (`--expect-dist agenthub-frontend/build`) cannot slip through the gap.
+    None means undated, and there are three ways to be undated: the path is not a directory, it is not
+    inside a git work tree the command can query, or `git log` returns no commit for the frontend
+    sources beside it (an untracked build directory, a work tree whose history does not reach them, a
+    git that fails). An undated dist is compared exactly as before this rule existed - the check does
+    not guess an age. The real call (`--expect-dist agenthub-frontend/build` from the repo) is dated
+    because `agenthub-frontend/` has commits; a build directory whose sources are uncommitted is not.
     """
     from pathlib import Path
 

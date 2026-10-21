@@ -14,10 +14,14 @@ file in the dist. A dist older than that commit is refused before any comparison
 `--expect-entry <hash>`). The dated pair also rides in the JSON report as `expected_build`, and the human
 report prints `expected build: built … | last frontend commit … | STALE|current`.
 
-Two boundaries, both deliberate. A dist outside a git work tree is returned undated and compared as
-before - it cannot be aged, and a caller passed that path on purpose; the real invocation
-(`--expect-dist agenthub-frontend/build`) is inside the work tree, so the hole this closes is the one that
-was open. And the refusal is `CANNOT-MEASURE` rather than a new verdict, because the census's existing
+Two boundaries, both deliberate. A dist that cannot be dated is compared as before - and "cannot be
+dated" is exactly three cases, which the reviewer's minor made the code say instead of the earlier claim
+that everything inside a work tree is dated: the path is not a directory, it is not inside a git work tree
+the command can query, or `git log` returns no commit for the frontend sources beside it (untracked
+sources, a history that does not reach them, a git that fails). An undated build is compared, and is not
+reported as `expected_build` - the check does not guess an age, in either direction. The real invocation
+(`--expect-dist agenthub-frontend/build` from the repo) IS dated, because `agenthub-frontend/` has
+commits; a build directory whose sources are uncommitted is not, and the new case below pins that. And the refusal is `CANNOT-MEASURE` rather than a new verdict, because the census's existing
 rule is that it may not pass on input it could not read.
 
 Measured on the defect's own shape, one fixture, one served tree: the old script exits 1 `BUILD-MISMATCH`;
@@ -25,3 +29,9 @@ the new one exits 2 naming `built 2026-10-11T… , 10.0 day(s) before the last f
 the repository itself the run still cannot read a `build/` that is absent in this worktree, and says so.
 
 Docs: `ai_docs/operations/complete-operations-guide.md` now states the refusal next to the command.
+
+Follow-up after the gate (2026-10-21, the reviewer's second minor). The docstring claimed "everything
+inside a work tree IS dated", which the code does not do: three inputs return undated. The docstring now
+names the three, and `test_an_undated_expected_build_is_compared_not_refused` builds a work tree that
+commits only `build/` (sources untracked), asserts exit 0, `MATCH`, no `expected build is stale`, and no
+`expected_build` in the JSON - the residual the reviewer would not let the record overstate.

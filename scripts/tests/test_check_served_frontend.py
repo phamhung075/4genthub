@@ -309,6 +309,29 @@ def test_a_current_expected_build_is_compared(tmp_path, capsys):
     assert "MATCH" in out
 
 
+def test_an_undated_expected_build_is_compared_not_refused(tmp_path, capsys):
+    """The other side of the staleness rule, and the limit the reviewer named: a build inside a git work tree
+    whose frontend sources are NOT committed has no commit to be aged against, so it is undated - reported as
+    absent, compared exactly as before the rule, never refused as stale."""
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    build = write_tree(repo / "agenthub-frontend" / "build", fresh_shape())
+    # Sources exist and are untracked, so `git log -- . :(exclude)build` from the frontend finds no commit.
+    write_tree(repo / "agenthub-frontend" / "src", {"App.tsx": "export const x = 1\n"})
+    gitfixture.git(repo, "init", "-q", ".")
+    gitfixture.git(repo, "config", "user.email", "fixture@test.invalid")
+    gitfixture.git(repo, "config", "user.name", "fixture test")
+    gitfixture.git(repo, "add", "--", "agenthub-frontend/build")
+    gitfixture.git(repo, "commit", "-qm", "build only")
+    with serve(build) as base:
+        assert run(base, "--expect-dist", str(build)) == 0
+        assert run(base, "--expect-dist", str(build), "--json") == 0
+    out = capsys.readouterr().out
+    assert "the expected build is stale" not in out
+    assert "expected_build" not in out, "an undated build must not be reported as dated"
+    assert "MATCH" in out
+
+
 # --- fail-closed -----------------------------------------------------------------------------
 
 def test_unreachable_origin_is_cannot_measure_not_a_pass(tmp_path, capsys):
