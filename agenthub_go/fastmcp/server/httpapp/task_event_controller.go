@@ -41,7 +41,17 @@ func (a taskEventReaderAdapter) ListTaskEvents(ctx context.Context, taskID strin
 		return nil, err
 	}
 	repo := repositories.NewTaskEventRepository(a.sessions, scoped, "")
-	return repo.ListAfter(ctx, taskID, afterSeq, 0)
+	found, err := repo.ListAfter(ctx, taskID, afterSeq, 0)
+	if err != nil {
+		// routes.GetTaskEvents answers a flat 500 and drops the cause, exactly as its write sibling
+		// SubmitTaskEvidence does, and the writer below logs for that reason. This read did not, and
+		// the gap was measured: on 2026-10-21 every task's events answered 500 on the deployed server
+		// while the same ledger's writes and its progress-number read succeeded, and the ONLY record
+		// anywhere of why was this absent line. A read failure is otherwise undiagnosable from
+		// outside, which is the one thing a ledger exists to prevent.
+		log.Printf("events: task %s: ListTaskEvents failed: %v", taskID, err)
+	}
+	return found, err
 }
 
 // taskEvidenceWriterAdapter satisfies routes.TaskEvidenceWriter: O3's write half. It decides whether

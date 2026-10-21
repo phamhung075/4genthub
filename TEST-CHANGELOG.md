@@ -38,6 +38,15 @@ with an empty room is answered `bad room` and stores no row, and a room-scoped `
 exactly one row for `(user, connector, room-1, budget)`. The closed-set comment beside
 `TestSafeguardFrameRefusesAStateOrSafeguardOutsideTheRuledSets` says seven names.
 
+## 2026-10-21 - the ledger read's failure is logged, and a test pins the line (go, branch 4genthub-min/events-read-log)
+
+`TestTheEventsReadLogsWhyItFailed` (`fastmcp/server/httpapp/task_event_controller_test.go`) forces the
+ledger read to fail the one way available without a database - a `SessionManager` built over an empty
+`DatabaseConfig` cannot hand out a session - and asserts the log line carries both the task id and the
+returned error. The line it pins is new: `taskEventReaderAdapter.ListTaskEvents` logged nothing, so on
+2026-10-21 every task's events answered a flat 500 on the deployed hub and no record anywhere named the
+statement (the write sibling's line at the same file is why its half was diagnosable).
+
 ## 2026-10-20 - the socket cases name the component agent, not rigd (go, branch 4genthub-min/int03-cascades)
 
 `rigdHello` is `agentHello` (`ws_room_safeguard_test.go`, called from `ledger_pg_test.go` too), and
