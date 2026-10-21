@@ -38,7 +38,7 @@ with an empty room is answered `bad room` and stores no row, and a room-scoped `
 exactly one row for `(user, connector, room-1, budget)`. The closed-set comment beside
 `TestSafeguardFrameRefusesAStateOrSafeguardOutsideTheRuledSets` says seven names.
 
-## 2026-10-21 - the census's undated case is pinned after the gate (python, branch 4genthub-min/int03-cascades)
+## 2026-10-21 - the census's undated case is pinned after the gate (python, branch 4genthub-min/events-read-log)
 
 `scripts/tests/test_check_served_frontend.py` gains `test_an_undated_expected_build_is_compared_not_refused`:
 a real work tree that commits only `agenthub-frontend/build` with the sources left untracked, so the

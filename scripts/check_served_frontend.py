@@ -247,7 +247,7 @@ def dist_staleness(dist_dir: str) -> dict | None:
 
     None means undated, and there are three ways to be undated: the path is not a directory, it is not
     inside a git work tree the command can query, or `git log` returns no commit for the frontend
-    sources beside it (an untracked build directory, a work tree whose history does not reach them, a
+    sources beside it (untracked sources, a work tree whose history does not reach them, a
     git that fails). An undated dist is compared exactly as before this rule existed - the check does
     not guess an age. The real call (`--expect-dist agenthub-frontend/build` from the repo) is dated
     because `agenthub-frontend/` has commits; a build directory whose sources are uncommitted is not.
