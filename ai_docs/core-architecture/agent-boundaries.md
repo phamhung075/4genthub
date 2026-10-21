@@ -13,7 +13,7 @@
 
 Decision note by the architect, 2026-10-11. It answers the lead's request `qitem-20261010222721-557596c2630798bc` (owner priority: build NEXT_GEN F4 in two phases). It binds go-dev and fe-dev for phase 1. Phase 2 is designed here and NOT implemented.
 
-agent is the always-on local client. It holds one outbound WebSocket to `/ws/connector` under the user's token, registers every local rig session, uploads redacted events (phase 1), and later receives commands that it runs locally as `4genteam send` (phase 2). The cloud never connects to the user's machine.
+agent is the always-on local client. It holds one outbound WebSocket to `/ws/connector` under the user's token, registers every local room session, uploads redacted events (phase 1), and later receives commands that it runs locally as `4genteam send` (phase 2). The cloud never connects to the user's machine.
 
 ## 0. What exists today (measured at HEAD, 2026-10-11)
 
@@ -90,7 +90,7 @@ The frames above run between agent and the server. The browser never sees them. 
   - `updated`: a `seat_state` change, or a `status` change, including `MarkOffline`, which emits one frame per session it marks.
 - **No push per `events` batch:** live events stay on `/ws/sessions/{id}`.
 - **The browser** handles `agent_session` by invalidating `['sessions']` (`sessionKeys.list`) in each branch, the same placing as `handleSeatUpdate`. It does not parse the row out of the frame: the GET stays the single read path.
-- **The browser** handles the safeguard alert of 7.3 (entity `rig_safeguard`, action/event_type `safeguard_alert`) by putting it in the dashboard inbox (`useNotificationStore`) with a warning toast, live and replayed alike. The frame carries the ROW rather than a message, so the line is composed from the row's own fields (`safeguard`, `rig`, `connector_id`, `state`, `restarts`, `age_s`), and a frame with no `state` is the dead-man alert and says the connector stayed offline past its heartbeat close. **The dedupe key is the FRAME id, not `metadata.entity_id`**: `entity_id` here is the row key, which repeats across the row's life, so keying on it would collapse a genuine second alert into the first while a replay of one frame keeps its id. Recorded 2026-10-15, when the consumer landed (`agenthub-frontend/src/hooks/useRealtimeSync.ts`); before it, this entity fell to the dispatcher's default branch and the alert reached no surface at all.
+- **The browser** handles the safeguard alert of 7.3 (entity `room_safeguard`, action/event_type `safeguard_alert`) by putting it in the dashboard inbox (`useNotificationStore`) with a warning toast, live and replayed alike. The frame carries the ROW rather than a message, so the line is composed from the row's own fields (`safeguard`, `room`, `connector_id`, `state`, `restarts`, `age_s`), and a frame with no `state` is the dead-man alert and says the connector stayed offline past its heartbeat close. **The dedupe key is the FRAME id, not `metadata.entity_id`**: `entity_id` here is the row key, which repeats across the row's life, so keying on it would collapse a genuine second alert into the first while a replay of one frame keeps its id. Recorded 2026-10-15, when the consumer landed (`agenthub-frontend/src/hooks/useRealtimeSync.ts`); before it, this entity fell to the dispatcher's default branch and the alert reached no surface at all.
 
 ### 2.4 Phase-2 frames (designed now, NOT implemented)
 
@@ -128,7 +128,7 @@ This is remote execution by design. The question is who may cause a `4genteam se
 1. **Issuer:** `POST /api/v2/sessions/{id}/commands` accepts only a Keycloak user token (a human in a browser). API and MCP tokens are refused with 403 `human_session_required`. The command's `user_id` must own the target session.
 2. **Delivery scope:** the server offers commands only on a socket whose token grants the NEW scope `sessions:command`, and only when that socket's `hello` advertised `commands`. `sessions:write` alone gets ingest only.
 3. **Local consent, which the cloud cannot widen:** agent delivers commands only when its LOCAL config (`<seat store>/agent-consent.json`, mode 0600, written by the user on that machine) has `commands.enabled: true` and lists the target `session_key`s, or `room/seat` pairs, in `commands.allow`. The default is off. The server never writes this file, so cloud-side compromise cannot enable a machine that the user did not enable.
-4. **Execution shape:** the only action is `send_to_seat`, executed as `exec("rig", "send", <target>, <text>)` with an argv list and NO shell, so the text is data and never a command line. The `<text>` is sent as-is. agent does not interpret it.
+4. **Execution shape:** the only action is `send_to_seat`, executed as `exec("4genteam", "send", <target>, <text>)` with an argv list and NO shell, so the text is data and never a command line. The `<text>` is sent as-is. agent does not interpret it.
 5. **What the user sees first:**
    - On the machine, enabling commands is a deliberate local edit, and `4genteam agent status` lists the allowed targets.
    - On the Sessions page, the chat input is shown only for a session whose connector is online with `commands` enabled for that target. It names the machine (`connector_id`) that will deliver.
@@ -236,14 +236,14 @@ In order, each step with its own check:
    - redaction per 4.3 and 4.4, with withheld placeholders;
    - `agent status`.
 
-   Check: on a throwaway rig with 2 seats, kill the network for 60 s mid-stream; after recovery the cloud holds each event exactly once. A seeded `.env` read and a seeded 40-character high-entropy string each arrive as `redaction_withheld`, and the raw file exists locally.
+   Check: on a throwaway room with 2 seats, kill the network for 60 s mid-stream; after recovery the cloud holds each event exactly once. A seeded `.env` read and a seeded 40-character high-entropy string each arrive as `redaction_withheld`, and the raw file exists locally.
 3. **Frontend, fe-dev:**
    - render `redaction_withheld` as a visible gap ("withheld locally: <reason>");
    - render sessions with `seat_state: "stopped"` as stopped, and invalidate `['sessions']` on the `agent_session` realtime frame (2.3a).
 
    NO chat input: that is phase 2.
 
-   Check: vitest on the event renderer plus one browser look at the Sessions page against a stack that ingested step 2's rig.
+   Check: vitest on the event renderer plus one browser look at the Sessions page against a stack that ingested step 2's room.
 
 Phase 1 ships when steps 1–3 pass. Phase 2 (the `sessions:command` scope, `session_commands`, the human-only issuer, `agent.json` consent, and the command frames in 2.4) starts only after that.
 
@@ -273,23 +273,23 @@ The incident: the compaction supervisor and the rig watchdog were not running, a
 **Ruling: A.** agent is the single restart authority.
 
 - **Reuses:**
-  - `spawnChild` and `awaitStart` start each child. The children are the existing verbs, `compact-run --rig R`, `watchdog R --watch` and `bridge run`, as separate processes.
+  - `spawnChild` and `awaitStart` start each child. The children are the existing verbs, `compact-run --room R`, `watchdog R --watch` and `bridge run`, as separate processes.
   - The bridge's backoff stays inside the bridge. It is I/O retry, not supervision.
 - **New:** a restart loop with backoff from 1 s, doubling to 120 s. A child that dies 3 times inside 10 minutes is `failing`; agent keeps retrying at 120 s.
-- **Changed:** `up` starts agent (one detached child, checked with `awaitStart`) instead of the bridge and the supervisor. It records the rig in the local `agent.json` `rigs` list, and agent supervises a supervisor and a watchdog per listed rig and one bridge per machine.
+- **Changed:** `up` starts agent (one detached child, checked with `awaitStart`) instead of the bridge and the supervisor. It records the room in the local `agent.json` `rooms` list, and agent supervises a supervisor and a watchdog per listed room and one bridge per machine.
 - **Removed:** `compact` and `stop` no longer spawn or kill safeguards directly. Two restart paths would be two mechanisms. `stop` stops agent, which stops its children.
 
 ### 7.2 (b) The health report and the authoritative source
 
-**New:** every child writes a heartbeat file on every pass, `<LogDir>/heartbeat/<safeguard>-<rig>.json` holding `{pid, at}`. The supervisor writes it per `Step`, the watchdog per poll, the bridge per `Cycle`. agent writes its own, `agent.json` in the same directory.
+**New:** every child writes a heartbeat file on every pass, `<LogDir>/heartbeat/<safeguard>-<room>.json` holding `{pid, at}`. The supervisor writes it per `Step`, the watchdog per poll, the bridge per `Cycle`. agent writes its own, `agent.json` in the same directory.
 
 **One row per safeguard, in the scope the safeguard runs in:**
 
-`{rig, safeguard: compact|watchdog|messages|roomguard|bridge|agent, state: running|stopped|silent|failing, pid, started_at, restarts, last_beat_at, age_s}`
+`{room, safeguard: compact|watchdog|messages|roomguard|budget|bridge|agent, state: running|stopped|silent|failing, pid, started_at, restarts, last_beat_at, age_s}`
 
-The four rig-scoped names carry the rig the row is about; `bridge` and `agent` run once per machine and
-carry an EMPTY rig, which is the pair the server's `validate()` and the table's CHECK state. These six
-are the vocabulary the client reports (`internal/clientservices/services.go:79-83`), and the server
+The five room-scoped names carry the room the row is about; `bridge` and `agent` run once per machine and
+carry an EMPTY room, which is the pair the server's `validate()` and the table's CHECK state. These seven
+are the vocabulary the client reports (`internal/clientservices/services.go:114-116`), and the server
 accepts exactly them: `rigd` is deleted rather than aliased, because `bc725e6` (2026-10-15) renamed the
 machine-level supervisor to `agent`.
 
@@ -319,13 +319,13 @@ The precedence is `stopped` (dead and not failing), then `failing`, then `silent
 
 **Ruling: 3.**
 
-- **New client frame:** `safeguard {rig, safeguard, state, pid?, restarts, age_s, at}`.
+- **New client frame:** `safeguard {room, safeguard, state, pid?, restarts, age_s, at}`.
   - It is sent on every state change, and every row is sent again after each `ready`.
   - Latest state wins (an upsert), so there is no `seq`, no `cursor` and no ack.
-- **New server storage:** a table `rig_safeguards`, keyed by (`user_id`, connector, `rig`, `safeguard`).
+- **New server storage:** a table `room_safeguards`, keyed by (`user_id`, connector, `room`, `safeguard`).
 - **The server decides the alert.** It raises a notification when the stored state changes from `running` to `stopped`, `silent` or `failing`, or when `restarts` goes up. Re-sent rows produce no duplicate alerts, and a failure that happened while offline is alerted on reconnect.
 - **Reuses:**
-  - the browser push `routes.BroadcastDataChange` with **new** entity `rig_safeguard`, the 2.3a pattern;
+  - the browser push `routes.BroadcastDataChange` with **new** entity `room_safeguard`, the 2.3a pattern;
   - the server's notification store behind `/api/v2/broadcast/notify` (the D3 consumer), with **new** `event_type: safeguard_alert`. That store keeps a notification for an offline user and replays it on their next connect (`websocket_routes.go:580-616`, `ws_mount.go:220-240`).
 - **New dead-man alert for agent itself.** When a connector that advertised `safeguards` stays offline past its heartbeat close (3 × `heartbeat_s`, 2.2), the server raises `safeguard_alert` for `agent`. This is the only observer of a dead agent on a machine with no systemd.
 
@@ -346,6 +346,7 @@ The precedence is `stopped` (dead and not failing), then `failing`, then `silent
 | watchdog | the watch interval, 60 s | 180 s |
 | messages | the pass interval, 10 s | 30 s |
 | roomguard | the pass interval, 30 s | 90 s |
+| budget | the pass interval, 15 s | 45 s |
 | bridge | the 120 s backoff cap | 360 s |
 | agent | the 25 s heartbeat | 75 s |
 
@@ -355,9 +356,9 @@ The precedence is `stopped` (dead and not failing), then `failing`, then `silent
 
 ### 7.5 (e) `doctor` and `up`
 
-- **`4genteam doctor [rig]` is new and read-only.** It never starts, restarts or signals anything; the lead's lean is ruled. Its output is one line per row of 7.2, then the tail of `alerts.log`.
+- **`4genteam doctor [room]` is new and read-only.** It never starts, restarts or signals anything; the lead's lean is ruled. Its output is one line per row of 7.2, then the tail of `alerts.log`.
   - Exit `ExitOK` (0) only when every row is `running`.
-  - Exit `ExitUnavailable` (3) otherwise. Every safeguard that is not `running` is named on stderr as `<rig> <safeguard>: <state>, age <n>s`.
+  - Exit `ExitUnavailable` (3) otherwise. Every safeguard that is not `running` is named on stderr as `<room> <safeguard>: <state>, age <n>s`.
   - `--json` prints the rows.
 - **`up` fails loudly.** After agent's own start grace, it runs the same check as `doctor`. If any row is not `running`, it exits `ExitUnavailable` with the same stderr lines, BEFORE the watch view, the UI and herdr.
   - The "continuing without" line (`lifecycle.go:183`) is deleted. This is clean code with no fallback.
@@ -378,11 +379,11 @@ The precedence is `stopped` (dead and not failing), then `failing`, then `silent
 |---|---|
 | Frame | `safeguard` |
 | Capability | `safeguards` |
-| Entity | `rig_safeguard` |
-| Table | `rig_safeguards` |
+| Entity | `room_safeguard` |
+| Table | `room_safeguards` |
 | `event_type` | `safeguard_alert` |
 | States | `running`, `stopped`, `silent`, `failing` |
-| Safeguards | `compact`, `watchdog`, `messages`, `roomguard`, `bridge`, `agent` |
+| Safeguards | `compact`, `watchdog`, `messages`, `roomguard`, `budget`, `bridge`, `agent` |
 | Exit | `doctor` → 3 |
 
 The suggested first test is client-only and needs no server: a live child whose heartbeat is 31 s old reads `silent`, not `running`, for `compact`.
@@ -398,7 +399,7 @@ Both read the absence of a signal as the absence of work, which is the same fail
 
 **Ruling: last activity is a heartbeat OR a declared in-flight call with a deadline. A missing signal means stopped only when nothing was declared in flight.**
 
-- **Safeguards (new, extends 7.2).** Before any call that can block longer than its threshold (7.4), the child writes `in_flight {op, since, deadline}` into its heartbeat file, and clears it when the call returns. Examples are the watchdog's `rig up --existing` restore and the supervisor's `rpcCompact`.
+- **Safeguards (new, extends 7.2).** Before any call that can block longer than its threshold (7.4), the child writes `in_flight {op, since, deadline}` into its heartbeat file, and clears it when the call returns. Examples are the watchdog's `4genteam up --existing` restore and the supervisor's `rpcCompact`.
   - Every such call runs under a context deadline. A declared call extends liveness to its deadline and never past it.
   - The state is `running` with detail `busy <op> since <t>` while `now < deadline`.
   - It is `silent` when the heartbeat is past the threshold and either nothing is in flight or the deadline has passed.
@@ -428,26 +429,26 @@ happened.
 **Ruling: A.**
 
 - **New:** package `internal/clientservices`, file `services.go`, `var Obligatory = []Service{...}` in start order.
-- **The type:** `Service {Name; Scope machine|rig; Start func(ctx, Env) error; Check func(ctx, Env) Health; RestartBy agent|watchdog|none}`.
+- **The type:** `Service {Name; Scope machine|room; Start func(ctx, Env) error; Check func(ctx, Env) Health; RestartBy agent|watchdog|none}`.
 - Each row declares its own `Check`, which returns the 7.2 row. `up`, `doctor`, `status --json` and agent iterate this ONE list, so a new service is one new row.
 - The duplicate daemon start - `ensureDaemon` in `internal/clientlifecycle` and the restorer's `daemonUp` in `internal/clientrestore` - becomes the `daemon` row's `Start`.
 - The two restore paths, `up`'s `ensureRig` and `clientrestore`'s restorer, become the `seats` row's `Start`. The kept path is the restorer, which runs the peak gate.
 
 | Row | Scope | Start | Check (alive means) | RestartBy |
 |---|---|---|---|---|
-| `daemon` | machine | `rig daemon start` | `rig daemon status` succeeds | agent |
-| `gate` | rig | none | the schedule and the room's models are readable. A peak refusal is the gate WORKING; see 3. | none |
-| `worktrees` | rig | `SeatWorktree` for each seat from `team.json` (seat-worktrees.md) | every derived path is in `git worktree list`, on its branch, with both submodules present; a foreign count above zero is a detail, not a failure | none |
-| `seats` | rig | the restorer (gate first) | every node is `running` AND the tmux live count equals the expected count (the watchdog's `verdict`) | watchdog |
+| `daemon` | machine | `ensureDaemon` (the runtime's `daemon` subcommand, detached) | the IPC socket answers | agent |
+| `gate` | room | none | the schedule and the room's models are readable. A peak refusal is the gate WORKING; see 3. | none |
+| `worktrees` | room | `SeatWorktree` for each seat from `team.json` (seat-worktrees.md) | every derived path is in `git worktree list`, on its branch, with both submodules present; a foreign count above zero is a detail, not a failure | none |
+| `seats` | room | the restorer (gate first) | every node is `running` AND the tmux live count equals the expected count (the watchdog's `verdict`) | watchdog |
 | `agent` | machine | spawn plus `awaitStart` | heartbeat 7.2 | none locally; the server's dead-man (7.3) |
 | `bridge` | machine | agent child | heartbeat | agent |
-| `compact` | rig | agent child | heartbeat | agent |
-| `watchdog` | rig | agent child | heartbeat | agent |
+| `compact` | room | agent child | heartbeat | agent |
+| `watchdog` | room | agent child | heartbeat | agent |
 
 **2. No start cycle.**
 
 - `up` is a short-lived foreground root. It starts the daemon, evaluates the gate, ensures the worktrees, starts the seats, then agent, in that order. Then it verifies (5).
-- agent starts its three children. It restarts the daemon when the daemon's check fails, because `rig daemon start` detaches on its own and is not a child.
+- agent starts its three children. It restarts the daemon when the daemon's check fails, because the runtime's `daemon` detaches on its own and is not a child.
 - **Nothing starts `up`, and nothing but `up` starts agent.** Seats are restored only by the watchdog (plus `up`). agent restarts the watchdog and never restores a seat itself, so there is one mechanism per thing.
 
 **3. A gate is not a process.**
@@ -459,7 +460,7 @@ happened.
 **4. Clean cutover.**
 
 - **Deleted:** the `continue` verb (`clientrestore/continue.go`). `up` is the entry point, and its seat restore is the same restorer, so its brief step moves into the `seats` row's `Start`.
-- **Not deletable here:** `rig up` is the 4genteam CLI. It is not this repository's code, and the client keeps calling it internally. A room started by hand with `rig up` has no agent row, and `doctor` names it.
+- **Not deletable here:** `4genteam up` is the CLI, and it is not this repository's code; the client keeps calling it internally. A room started by hand with `up` has no agent row, and `doctor` names it.
 - **Owner action, not done by a seat:** `~/.config/4genthub/bin/rig-continue.sh` and `rig-watchdog.sh` are the owner's own copies outside this repository (the `clientrestore` package's own comment names the pair it was ported from). The ruling is that they go, and the owner deletes them; no seat touches the owner's home.
 
 **5. Verify-before-success composes with `doctor`.**
@@ -535,10 +536,10 @@ The nudge is a loop inside agent. It reads the same per-seat activity that agent
 
 **4. "Stopped on purpose" is decidable: a room's membership in agent's room list.**
 
-- `up RIG` adds the room to the `rigs` list in the local `agent.json` (7.1).
-- **New** verb `4genteam down RIG` removes it, then stops the room's seats through `rig down`.
+- `up ROOM` adds the room to the `rooms` list in the local `agent.json` (7.1).
+- **New** verb `4genteam down ROOM` removes it, then stops the room's seats through `4genteam down`.
 - A room NOT in the list is stopped on purpose: no nudge, no watchdog restore and no supervisor for it. A room in the list is meant to run.
-- `rig down` run by hand leaves the room listed. The watchdog then restores it, which is the existing behaviour and matches "up is the only entry" (7.8). The decidable intent is `4genteam down`, and nothing else.
+- `4genteam down` run by hand leaves the room listed. The watchdog then restores it, which is the existing behaviour and matches "up is the only entry" (7.8). The decidable intent is `4genteam down`, and nothing else.
 - The existing `stop` verb (agent and its children, machine-wide) is not room intent and does not change the list.
 
 **5. The message and the event.**
@@ -547,10 +548,10 @@ The nudge is a loop inside agent. It reads the same per-seat activity that agent
 
   > "Every seat in this room has been idle for N minutes. Re-scan the board, take the unblocked items, and if nothing is runnable say so."
 
-- **Log:** one line in `alerts.log`'s sibling, `<LogDir>/nudge-<rig>.log`: `<UTC> <rig> nudged lead, idle since <T>`.
+- **Log:** one line in `alerts.log`'s sibling, `<LogDir>/nudge-<room>.log`: `<UTC> <room> nudged lead, idle since <T>`.
 - **New upstream event** on the socket. It is an `events` item on the lead's session, so it gets the session's `seq` and `cursor`; there is no new frame kind:
 
-  `{kind: "idle_nudge", rig, idle_since: T, idle_minutes, at}`
+  `{kind: "idle_nudge", room, idle_since: T, idle_minutes, at}`
 
   It is redaction-exempt because it carries no seat content. A held nudge sends nothing upstream: no event is emitted for "nothing happened".
 
@@ -564,7 +565,7 @@ The nudge is a loop inside agent. It reads the same per-seat activity that agent
 
 Add two more for the latch:
 - Idle from 02:00, a seat works at 03:58, then idle again from 03:58: at 04:00 it sends NOTHING (the old period is gone and the new one is 2 minutes old), and at 04:03 it sends ONE.
-- A room not in `agent.json` `rigs` never sends.
+- A room not in `agent.json` `rooms` never sends.
 
 The clock and `4genteam send` must be seams, so the tests never read wall time.
 
@@ -586,11 +587,11 @@ The clock and `4genteam send` must be seams, so the tests never read wall time.
 
 **The command line under C.** The client builds it from constants only:
 
-`claude -p --permission-mode bypassPermissions --tools "" --strict-mcp-config --mcp-config <LogDir>/autofix/<rig>/mcp.json --output-format stream-json --system-prompt <embedded prompt> <evidence>`
+`claude -p --permission-mode bypassPermissions --tools "" --strict-mcp-config --mcp-config <LogDir>/autofix/<room>/mcp.json --output-format stream-json --system-prompt <embedded prompt> <evidence>`
 
-It runs from the empty directory `<LogDir>/autofix/<rig>/work`, so no repository settings or instructions load.
+It runs from the empty directory `<LogDir>/autofix/<room>/work`, so no repository settings or instructions load.
 - `--tools ""` removes every built-in tool: no shell, no edit, no write, no fetch.
-- `--strict-mcp-config` leaves exactly one server: the client's own stdio subcommand, `agenthub-client autofix-mcp --rig R`.
+- `--strict-mcp-config` leaves exactly one server: the client's own stdio subcommand, `agenthub-client autofix-mcp --room R`.
 
 **That server's tools are the only power the session has:**
 
@@ -604,7 +605,7 @@ It runs from the empty directory `<LogDir>/autofix/<rig>/work`, so no repository
 Deleting data, pushing, editing code, changing credentials and every other unsupported state change are impossible because **no tool performs them**. The prompt still names them, but the prompt is no longer the control. **Asserted, not assumed:** the client reads the `system`/`init` event from stream-json. If that event lists any tool other than these four, or any other MCP server, the client kills the run and logs it as `refused_tools`.
 
 **The guardrails and the open points, each ruled:**
-1. **The setting:** `AUTO_FIX`, off by default; only `on` enables it. The per-run override is `4genteam up RIG --auto-fix`, which lasts for that agent's lifetime and is never persisted.
+1. **The setting:** `AUTO_FIX`, off by default; only `on` enables it. The per-run override is `4genteam up ROOM --auto-fix`, which lasts for that agent's lifetime and is never persisted.
 2. **The anomaly list is closed, and every item comes from a source that is already ruled.** There is no second source.
    - An obligatory row is `failing` (7.1: agent gave up) or `silent` past its 7.4 threshold. `stopped` is not on the list, because agent restarts that itself.
    - Seats are gone: `Verify()`'s seats row still fails after the watchdog's own restore pass.
@@ -612,8 +613,8 @@ Deleting data, pushing, editing code, changing credentials and every other unsup
    - The room is stuck: 7.9 nudged for `T`, and `T` has not moved for a further `IDLE_NUDGE_MINUTES`.
 
    **The deterministic repair always runs first.** The auto-fix sees only what it left.
-3. **The circuit breaker:** N = **2** per (room, anomaly) per rolling hour, a constant with no setting. That allows the first run plus one retry on fresh evidence; a third run would be a loop. After that the breaker opens and the client alerts through 7.3's path: entity `rig_safeguard`, `safeguard_alert`, detail `autofix_breaker_open`. That is the owner channel that exists. The breaker closes when the anomaly clears by itself, or on `4genteam autofix reset RIG`.
-4. **One run at a time per room:** a `flock` on `<LogDir>/autofix/<rig>.lock`. A second anomaly waits for the next tick.
+3. **The circuit breaker:** N = **2** per (room, anomaly) per rolling hour, a constant with no setting. That allows the first run plus one retry on fresh evidence; a third run would be a loop. After that the breaker opens and the client alerts through 7.3's path: entity `room_safeguard`, `safeguard_alert`, detail `autofix_breaker_open`. That is the owner channel that exists. The breaker closes when the anomaly clears by itself, or on `4genteam autofix reset ROOM`.
+4. **One run at a time per room:** a `flock` on `<LogDir>/autofix/<room>.lock`. A second anomaly waits for the next tick.
 5. **A run that hangs or dies:**
    - The deadline is 10 minutes of wall-clock time. The run is declared as `in_flight {op: "autofix", since, deadline}` per 7.7, so the room reads as busy, not stopped.
    - At the deadline the client kills the process group.
@@ -622,8 +623,8 @@ Deleting data, pushing, editing code, changing credentials and every other unsup
 7. **The off-peak gate:** a repair is an automatic wake, so it goes through `PeakGate` (7.9). At peak, the anomaly is logged as held and nothing runs.
 8. **Where things live:**
    - The prompt is embedded in the client (`go:embed`), like the redaction rules. No environment variable and nothing in the cloud can replace it.
-   - The log is `<LogDir>/autofix/<rig>/<UTC>.log`. It holds the anomaly and its evidence, the argv, the full stream-json output, every tool call with its result, and the re-check result.
-   - Upstream, an `events` item on the lead's session, like `idle_nudge`: `{kind: "auto_fix", rig, anomaly, attempt, result, at}`. It is sent at the start (`result: "started"`) and at the end. This is the visible notice. Whether the owner is present is NOT detected, because detecting it would need a second source.
+   - The log is `<LogDir>/autofix/<room>/<UTC>.log`. It holds the anomaly and its evidence, the argv, the full stream-json output, every tool call with its result, and the re-check result.
+   - Upstream, an `events` item on the lead's session, like `idle_nudge`: `{kind: "auto_fix", room, anomaly, attempt, result, at}`. It is sent at the start (`result: "started"`) and at the end. This is the visible notice. Whether the owner is present is NOT detected, because detecting it would need a second source.
 9. **"No secrets on the command line" is asserted, not promised.** The argv holds only constants and paths. The credential reaches `claude` through the inherited environment, which is never logged. The argv and the output both go through the section 3 redaction, which fails closed.
 10. **The evidence is structured rows only:** `Verify()` rows, safeguard rows, activity times, and the anomaly name. No transcript text, seat output or log tails go into the prompt.
 11. **A missing `claude` binary** is a `doctor` row that fails, and an auto-fix that refuses loudly through the same alert. The lead measured that the binary is present here: 2.1.296.
@@ -641,7 +642,7 @@ Deleting data, pushing, editing code, changing credentials and every other unsup
 
 ### 7.11 Addendum: a handoff target must be live at closure time (the reviewer's GATE `f541f2f5`; the lead's `qitem-20261010233502-641a56880b826f98`)
 
-**The rule (every seat):** a `handed_off_to` closure takes its destination only from the **live set at closure time**: `4genteam ps <rig> --nodes` (its `--json` rows carry `sessionStatus: running`) or `4genteam whoami --json`. A commit trailer (`Seat: ...`), the startup identity hint and memory are not evidence that a seat can accept. They can name seats that `team.json` no longer has, such as `@writer` and `@web-dev`. If the destination is not live, re-route the work by creating a row for a live seat (`4genteam room queue create <room> --to <live-seat> --summary <text> --reply-to <orphan-qitem>`), then close the orphan `handed_off_to` with that seat as `--target` and the new row named in the note.
+**The rule (every seat):** a `handed_off_to` closure takes its destination only from the **live set at closure time**: `4genteam ps <room> --nodes` (its `--json` rows carry `sessionStatus: running`) or `4genteam whoami --json`. A commit trailer (`Seat: ...`), the startup identity hint and memory are not evidence that a seat can accept. They can name seats that `team.json` no longer has, such as `@writer` and `@web-dev`. If the destination is not live, re-route the work by creating a row for a live seat (`4genteam room queue create <room> --to <live-seat> --summary <text> --reply-to <orphan-qitem>`), then close the orphan `handed_off_to` with that seat as `--target` and the new row named in the note.
 
 **The guard.** There are two options:
 
@@ -652,7 +653,7 @@ Deleting data, pushing, editing code, changing credentials and every other unsup
 
 **Ruling: A.** In addition, `doctor` adds a row, `orphan_handoffs`, which names each pending qitem whose destination is not live. This is the same predicate as `up`'s room/team mismatch check, so both belong to the team-prune item `00f2e9cf`. Neither guard moves a seat.
 
-**DATED NOTE, 2026-10-15 (go-dev): the checker's send verb is GONE, so option A's row above is the record of which choice was made rather than a live description - the two option rows and the ruling itself are kept as they were written, and this sentence is what a reader takes as today's state.** The owner ruled the verb out (it refused every send, and the policy it checked was written by nothing), and `cmd/seatcheck` in the client now carries only the read-only `audit-scan`; **the audited send path is the client's own `4genteam send`**, which builds the room's declared links into a policy at send time, decides, writes the decision line, delivers and writes the outcome line in ONE process (`internal/clientseat`) - which is why the audit is no longer split across two processes' lifetimes. **What 7.11's rule requires of a closure does not change, and it is exactly what the rows closed today did:** the destination is read from `4genteam ps <rig> --nodes`, and the closure carries `--reason handed_off_to --target <session>` with the new row named in the note.
+**DATED NOTE, 2026-10-15 (go-dev): the checker's send verb is GONE, so option A's row above is the record of which choice was made rather than a live description - the two option rows and the ruling itself are kept as they were written, and this sentence is what a reader takes as today's state.** The owner ruled the verb out (it refused every send, and the policy it checked was written by nothing), and `cmd/seatcheck` in the client now carries only the read-only `audit-scan`; **the audited send path is the client's own `4genteam send`**, which builds the room's declared links into a policy at send time, decides, writes the decision line, delivers and writes the outcome line in ONE process (`internal/clientseat`) - which is why the audit is no longer split across two processes' lifetimes. **What 7.11's rule requires of a closure does not change, and it is exactly what the rows closed today did:** the destination is read from `4genteam ps <room> --nodes`, and the closure carries `--reason handed_off_to --target <session>` with the new row named in the note.
 
 ### 7.12 Addendum: a probe that could not run is not an absence (architect ruling 2026-10-20, board row `6e1171ba`; rail `qitem-20261020163856-6c7deb64075f`)
 

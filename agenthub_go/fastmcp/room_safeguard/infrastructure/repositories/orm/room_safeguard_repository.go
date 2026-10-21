@@ -28,7 +28,8 @@ import (
 // (`bad_rig`, `bad_safeguard`, `bad_state`) are the ones the client already reads.
 func validate(row roomdb.RoomSafeguardORM) error {
 	switch row.Safeguard {
-	case roomdb.SafeguardCompact, roomdb.SafeguardWatchdog, roomdb.SafeguardMessages, roomdb.SafeguardRoomGuard:
+	case roomdb.SafeguardCompact, roomdb.SafeguardWatchdog, roomdb.SafeguardMessages, roomdb.SafeguardRoomGuard,
+		roomdb.SafeguardBudget:
 		if row.Room == "" || len(row.Room) > 255 {
 			return &tmvo.ValueError{Msg: "bad room"}
 		}

@@ -135,7 +135,7 @@ func TestRoomSafeguardSchemaAgreesWithTheORMRow(t *testing.T) {
 	// composed the same way, from the machine-scoped names, so a name moving between the two scopes
 	// cannot leave the CHECK behind.
 	states := []string{StateRunning, StateStopped, StateSilent, StateFailing}
-	safeguards := []string{SafeguardCompact, SafeguardWatchdog, SafeguardMessages, SafeguardRoomGuard, SafeguardBridge, SafeguardAgent}
+	safeguards := []string{SafeguardCompact, SafeguardWatchdog, SafeguardMessages, SafeguardRoomGuard, SafeguardBudget, SafeguardBridge, SafeguardAgent}
 	machineScoped := []string{SafeguardBridge, SafeguardAgent}
 	wantChecks := roomSafeguardSorted([]string{
 		"state IN ('" + strings.Join(states, "', '") + "')",

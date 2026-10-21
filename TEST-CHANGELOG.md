@@ -1,3 +1,29 @@
+## 2026-10-21 - the safeguard suites hold seven names and 0009 widens the CHECK (go, branch 4genthub-min/int03-cascades)
+
+`room_safeguard_repository_test.go`: `TestUpsertAcceptsEachOfTheSixNamesInItsScope` is
+`...SevenNames...` and stores `SafeguardBudget` with `room-1`; `TestValidateStatesTheSixNamesAndTheirScopes`
+is `...SevenNames...` and gains `budget with a room` (accepted) and `budget with no room`
+(`bad room`); `TestUpsertRefusesTheClosedSetsBeforeAnyStatement` gains the same empty-room refusal,
+and its row-count message now counts `len(cases)` rather than saying "six". `SafeguardBudget` also
+joined `room_safeguard_schema_test.go`'s composed CHECK, so the schema file and the runtime TableDef
+are held to the constant rather than to a literal list.
+
+`budget_safeguard_migration_integration_test.go` is new, in the shape of the `0004` cases: it builds
+the post-`0008` six-name `room_safeguards` table by hand, proves `budget` is refused before the step,
+applies `0009` through the runner, and asserts the two stored rows are carried, a room-scoped `budget`
+row stores, `keeper` is a 23514 violation on `ck_room_safeguards_safeguard`, `budget` with an empty
+room is a 23514 violation on `ck_room_safeguards_room`, and a second application is a no-op. Its
+no-op case proves the `to_regclass` guard leaves a database without the table without one.
+
+`TestBaselineMatchesEveryRegisteredTableDef` is unchanged; it now compares the baseline's widened
+`ck_room_safeguards_safeguard` against the registry's by construction. The pre-`0008` fixtures are
+untouched.
+
+`ws_room_safeguard_test.go` gains `TestSafeguardFrameAcceptsTheRoomScopedBudgetRow`: a `budget` frame
+with an empty room is answered `bad room` and stores no row, and a room-scoped `budget` frame stores
+exactly one row for `(user, connector, room-1, budget)`. The closed-set comment beside
+`TestSafeguardFrameRefusesAStateOrSafeguardOutsideTheRuledSets` says seven names.
+
 ## 2026-10-20 - the socket cases name the component agent, not rigd (go, branch 4genthub-min/int03-cascades)
 
 `rigdHello` is `agentHello` (`ws_room_safeguard_test.go`, called from `ledger_pg_test.go` too), and
