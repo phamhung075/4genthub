@@ -7600,3 +7600,22 @@ What it pins, and what was run: no `SyncTaskStatus` reference remains in the mod
 the compiler rather than by a test; the record test's `metadata["status"]` absence check is what a restored write
 would trip, and it passes with the writer gone. `go test ./fastmcp/task_management/application/...` and
 `go test ./...` in `agenthub_go`: 138 packages ok, 0 failed.
+
+## 2026-10-21 - the skill census has a record type, a signals parser and one case per verdict (client, branch 4genthub-min/step3-pin)
+
+- `internal/clientskills/record_test.go`: `TestAnAbsentRecordIsProvisionalAndAWrittenOneRoundTrips` pins
+  the absent-file meaning (provisional, no `since`) and the write/read round trip;
+  `TestAMalformedOrInvalidRecordIsRefused` covers five shapes a record must not take (unknown state,
+  unknown change, a `since` that is not hex, an unknown field, a blank evidence id);
+  `TestWriteRecordRefusesADirectoryThatIsNotASkill` pins that a record cannot be written where no
+  `SKILL.md` is. `TestSignalsAreParsedFromTheFrontMatter` pins the five kinds and the sorted order;
+  `TestSignalParsingAcceptsSilenceAndRefusesUnknownKinds` pins silence as nil and an unknown kind or a
+  blank value as an error.
+- `internal/clientskills/census_test.go`: `TestCensusDecidesTheThreeVerdicts` is one case per S1 verdict
+  over a real fixture tree and a fake resolver (hold / no-signal / broken-record, with the broken id
+  named); `TestAnUncheckedEvidenceIDIsNotBroken` pins that an id the resolver could not look at leaves the
+  verdict `hold`; `TestAnUnreadableRecordIsBrokenWithItsFault` pins the fault line;
+  `TestRoomSkillsListsShareRoomAndEverySeat` pins the room-wide listing (share first, then the room's own,
+  then each seat folder, with a name delivered twice reported as two rows).
+- At this change: `go test ./... -count=1` green in `agenthub_client`; `4genteam skills evidence
+  4genthub-min` prints 38 skills and exits 0.
