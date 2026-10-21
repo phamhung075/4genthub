@@ -26,6 +26,13 @@ branch `4genthub-min/fe-tw-alpha`.
   heuristic, so the first commit of this change carried a "this change looks like it carries a
   credential" warning and readers redacted the definition line on display. Nothing in the diff is a
   secret; the rename removes the false positive at its source.
+- **`bg-surface-raised`, `bg-surface-border`, `bg-surface-border-hover` and `bg-surface-border-strong`
+  register again** - `agenthub-frontend/tailwind.config.js`: `extend.backgroundColor` carried `surface`
+  and `surface-hover` aliases that duplicate `colors.surface.DEFAULT`/`.hover` and, being the ROOT name
+  of a nested colour tree, replaced that whole subtree in the resolved `backgroundColor` map - so the
+  four nested entries above emitted no rule at all, with or without an opacity modifier. The aliases are
+  removed; the nested entries serve `bg-surface` and `bg-surface-hover` unchanged. Found by the census
+  test added here, which is why it judges emission from the compiler rather than reading the config.
 - **The room picker is 40px high with 14px text again** - `agenthub-frontend/src/components/RoomDecisionPanel.tsx`:
   the panel's size overrides (`text-xs py-1.5 h-auto min-h-[2.25rem]`) are gone, so the control keeps
   the `ui/select-simple` primitive's `min-h-[2.5rem] py-2 px-3 text-sm` as acceptance item 1 states.
@@ -34,6 +41,20 @@ branch `4genthub-min/fe-tw-alpha`.
 
 ### Changed
 
+- **A colour that no longer compiles now fails a test instead of vanishing** - new
+  `agenthub-frontend/src/tests/theme/tailwindColourCensus.test.ts`: it requires `tailwind.config.js`,
+  walks `colors`/`backgroundColor`/`textColor`/`borderColor` for every path backed by a
+  `var(--color-*)` property, and requires the Tailwind CLI to emit a declaration for each solid class
+  and each `/50` form. Emission is the instrument because the config object reads correctly for a
+  colour v3 still drops. `TW_CENSUS_CONFIG` lets it run against another config: a copy with
+  `primary.DEFAULT` reverted to a bare `var(--color-x)` fails it, naming `bg-primary/50`.
+- **The panel's accent paint is asserted, not recorded** - new `agenthub-frontend/e2e/colour.ts`
+  (`parsePaintedColour`, `parseHexColour`, `sameHue`, `formatChannels`) and
+  `agenthub-frontend/e2e/room-decision-panel.spec.ts`: the pending row's `border-accent/40` must paint
+  at alpha 0.4 in the accent hue, its `bg-accent/[0.03]` tint at 0.03, and the state chip's
+  `bg-accent/15` at 0.15 - through both computed-colour spellings, so a dead class fails the test
+  rather than a serialization. The reduced-motion test asserts the border still paints at 0.4 with
+  every animation off.
 - **A computed colour read by the shell audit accepts both spellings** - `agenthub-frontend/e2e/shell.spec.ts`:
   a colour resolved through `color-mix()` is serialized by Chromium as `color(srgb r g b / a)`, not
   `rgb(r, g, b)`, so the navigation's hue collector reads both and normalizes to the legacy triple
@@ -42,8 +63,10 @@ branch `4genthub-min/fe-tw-alpha`.
 
 ### Testing
 
-`npx tsc --noEmit -p .` exit 0 (`agenthub-frontend`). The changed e2e spec typechecks on its own
-(`tsc --noEmit --module node16 --moduleResolution node16 --strict --skipLibCheck e2e/shell.spec.ts`).
-CSS emission and the picker measurement are the checks above; `npx vitest run` was not run, per the
-owner ruling's "tsc only, no local build/test". The browser check on a deployed origin is pending the
-lead's frontend deploy.
+`npx tsc --noEmit -p .` exit 0 (`agenthub-frontend`); the new census test and the two e2e files
+typecheck (the e2e pair on its own with `--module node16 --moduleResolution node16`; the census inside
+`tsc -p tsconfig.tests.json`). `npx vitest run` was **not** run per the owner ruling's "tsc only, no
+local build/test", so the census's green run is reported from `npx vitest run src/tests/theme/tailwindColourCensus.test.ts`
+alone (2 passed), plus its mutation run against `TW_CENSUS_CONFIG`. The panel spec's new assertions are
+typed and reviewed but NOT observed: they need a deployed origin, which is pending the lead's frontend
+deploy.

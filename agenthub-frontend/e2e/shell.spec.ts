@@ -171,6 +171,9 @@ async function readShell(page: Page, width: number): Promise<ShellReading> {
     // serializes for a colour it resolved through color-mix() or relative syntax,
     // which is how Tailwind's alpha channel reaches a theme class. Reading only the
     // legacy spelling would drop `text-accent` from the set and look like a lost hue.
+    // Same rule as `e2e/colour.ts`, which is the Node-side definition and the one to
+    // copy from: this copy lives inside the page evaluation, which cannot close over
+    // an import.
     const parsePainted = (token: string): [number, number, number, number] | null => {
       if (token.startsWith('color(')) {
         const [channels, alphaPart] = token

@@ -136,8 +136,10 @@ module.exports = {
         'base': withAlpha('background'),
         'base-secondary': withAlpha('background-secondary'),
         'base-tertiary': withAlpha('background-tertiary'),
-        'surface': withAlpha('surface'),
-        'surface-hover': withAlpha('surface-hover'),
+        // No 'surface'/'surface-hover' aliases here: an alias whose name is the
+        // ROOT of a nested tree in `colors` replaces that subtree as a whole, so
+        // `bg-surface-raised` and `bg-surface-border*` registered nothing. The
+        // nested entries already name surface.DEFAULT and surface.hover.
       },
       textColor: {
         'base': withAlpha('text'),

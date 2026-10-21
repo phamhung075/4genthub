@@ -1,3 +1,26 @@
+## 2026-10-21 - the theme colour census judges emission, and the panel row's accent paint is asserted (frontend, branch 4genthub-min/fe-tw-alpha)
+
+`src/tests/theme/tailwindColourCensus.test.ts` is new. It requires `tailwind.config.js`, walks
+`theme.extend.colors`, `backgroundColor`, `textColor` and `borderColor` for every path backed by a
+`var(--color-*)` property (64 roots today, `DEFAULT` mapping to its parent path), writes the resulting
+`bg|text|border-<path>` and `…/<path>/50` classes into a probe file and runs the Tailwind CLI once over
+it, then requires a matching selector with a colour declaration for every class. It judges EMISSION,
+not the config object: a bare `var(--color-x)` reads correctly in the config and still compiles to no
+rule, which is how finding F1 shipped. `TW_CENSUS_CONFIG` points it at another config so the mutation
+check is demonstrable without editing the tracked file - a copy with `primary.DEFAULT` reverted to a
+bare `var(--color-x)` fails it naming `bg-primary/50`; the branch config passes 128 classes.
+
+`e2e/colour.ts` is new: `parsePaintedColour` reads `rgb()`/`rgba()` and `color(srgb … / a)` into
+channels and alpha, `parseHexColour` reads a theme token, `sameHue` compares two painted colours, and
+`formatChannels` prints the triple. `e2e/room-decision-panel.spec.ts` imports it and asserts what F1's
+end-to-end acceptance needs: the pending row's `border-accent/40` paints at alpha 0.4 in the accent
+hue, its `bg-accent/[0.03]` tint at 0.03, and the state chip's `bg-accent/15` at 0.15. The reduced-motion
+test asserts the border still paints at 0.4 with every animation off - the cue that does not depend on
+motion. The two places that said the accent border "emit no rule" are gone: they were true before the
+registration fix and are now false.
+
+Not run as a suite here: the e2e specs need a deployed origin (the lead's frontend deploy), so those
+assertions are typed and reviewed, not yet observed in a browser. The census runs in `npx vitest run`.
 ## 2026-10-21 - the shell audit reads a computed colour in both spellings (frontend, branch 4genthub-min/fe-tw-alpha)
 
 `e2e/shell.spec.ts` gains `parsePainted` inside the navigation's hue collector: it reads the legacy

@@ -4,6 +4,7 @@ import path from 'node:path'
 import { test, expect, type Page } from '@playwright/test'
 
 import { readTestAccount } from './account'
+import { formatChannels, parseHexColour, parsePaintedColour, sameHue } from './colour'
 
 // Read once, inside the test process. Never logged, never titled, never attached.
 const account = readTestAccount()
@@ -726,7 +727,14 @@ function readPendingRowInPage() {
     pingDots: section ? section.querySelectorAll('span.animate-ping').length : 0,
     pingDotMotion: motion(section?.querySelector('span.animate-ping') ?? null),
     badgeText,
-    /** Recorded, never asserted: F1, the accent border and tint emit no rule (task 6f461321). */
+    /**
+     * The accent token as theme.css declares it (hex) plus the row's own painted
+     * colours. The colours are asserted, not just recorded: F1 was that the accent
+     * border and tint emitted no rule at all, so a row that paints the default
+     * grey is the defect (task 470c7439). The spec parses both spellings - see
+     * `e2e/colour.ts`.
+     */
+    accentToken: getComputedStyle(document.documentElement).getPropertyValue('--color-accent').trim(),
     rowBorderTopColor: rowStyle?.borderTopColor ?? null,
     rowBackgroundColor: rowStyle?.backgroundColor ?? null,
     chipColor: chipStyle?.color ?? null,
@@ -762,6 +770,33 @@ test.describe('Decision Requests panel: the pending row, rendered by an injected
     expect(reading.badgeText, 'the pending count badge is rendered').toEqual(['1'])
     expect(reading.stateLabel, 'the state chip names the pending state').toBe('waiting for you')
 
+    // F1's end-to-end acceptance. Before the registration fix these two colours were
+    // Tailwind's default grey with no alpha at all, because `border-accent/40` and
+    // `bg-accent/[0.03]` compiled to no rule; the parse accepts `rgb()` and
+    // `color(srgb ... / a)`, so a failure here means a dead class, not a spelling.
+    const accent = parseHexColour(reading.accentToken)
+    expect(accent, `the accent token is a hex colour; read ${reading.accentToken}`).not.toBeNull()
+
+    const border = parsePaintedColour(reading.rowBorderTopColor ?? '')
+    expect(border, `the pending row's border parses; read ${reading.rowBorderTopColor}`).not.toBeNull()
+    expect(border!.a, `border-accent/40 paints at 0.4; read ${reading.rowBorderTopColor}`).toBeCloseTo(0.4, 2)
+    expect(
+      sameHue(border!, accent!),
+      `the border is the accent ${formatChannels(accent!)}; read ${formatChannels(border!)}`
+    ).toBe(true)
+
+    const tint = parsePaintedColour(reading.rowBackgroundColor ?? '')
+    expect(tint, `the pending row's tint parses; read ${reading.rowBackgroundColor}`).not.toBeNull()
+    expect(tint!.a, `bg-accent/[0.03] paints at 0.03; read ${reading.rowBackgroundColor}`).toBeCloseTo(0.03, 3)
+    expect(
+      sameHue(tint!, accent!),
+      `the tint is the accent ${formatChannels(accent!)}; read ${formatChannels(tint!)}`
+    ).toBe(true)
+
+    const chipTint = parsePaintedColour(reading.chipBackground ?? '')
+    expect(chipTint, `the state chip's tint parses; read ${reading.chipBackground}`).not.toBeNull()
+    expect(chipTint!.a, `bg-accent/15 paints at 0.15; read ${reading.chipBackground}`).toBeCloseTo(0.15, 2)
+
     const clipped = reading.rowElements.filter((el) => el.clipped).map((el) => `${el.tag} ${el.text}`)
     expect(clipped, 'no element of the pending row clips its own content box').toHaveLength(0)
 
@@ -785,8 +820,10 @@ test.describe('Decision Requests panel: the pending row, rendered by an injected
       const evidenceFile = writeEvidence('pending-row-reduced-motion', { reading, attentionProbe: probe })
       console.log('EVIDENCE ' + evidenceFile)
       console.log('PENDING-ROW-REDUCE ' + JSON.stringify({ ...reading, rowElements: reading.rowElements.length }, null, 2))
-      // The still cue, recorded rather than asserted: with every animation off, what still marks the
-      // row (the chip, the dots, the badge) - and that the intended accent border is NOT part of it (F1).
+      // The still cue, recorded: with every animation off, what still marks the row
+      // (the chip, the dots, the badge). The accent border and tint are part of it now
+      // that they paint (F1 landed), which is why they are asserted below rather than
+      // logged as absent.
       console.log(
         'PENDING-ROW-STILL-CUE ' +
           JSON.stringify({
@@ -809,6 +846,15 @@ test.describe('Decision Requests panel: the pending row, rendered by an injected
         if (typeof probeReading === 'string' || typeof probeReading === 'boolean') continue
         expect(probeReading.animationName, `${label} is switched off under reduce`).toBe('none')
       }
+
+      // The border is paint, not motion: it must survive reduce, and it is the cue that
+      // does not depend on an animation the reader may have switched off.
+      const borderUnderReduce = parsePaintedColour(reading.rowBorderTopColor ?? '')
+      expect(borderUnderReduce, `the row border parses; read ${reading.rowBorderTopColor}`).not.toBeNull()
+      expect(
+        borderUnderReduce!.a,
+        `border-accent/40 still paints at 0.4 under reduce; read ${reading.rowBorderTopColor}`
+      ).toBeCloseTo(0.4, 2)
 
       expect(answerCalls, 'no answer write was attempted').toHaveLength(0)
     } finally {
