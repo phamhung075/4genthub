@@ -51,3 +51,13 @@ agenthub-frontend/ai_docs/core-architecture/state-management-rewrite-plan.md
 agenthub-frontend/docs/performance-analysis-report.md
 docker-system/DOCKER_SYSTEM_UPGRADE_SUMMARY.md
 scripts/team/4genthub-min/NOTES.md
+ai_docs/operations/seat-approval-and-the-startup-call.md
+ai_docs/operations/client-features-for-the-dev-team.md
+ai_docs/development-guides/seat-runtime-switch-agy.md
+ai_docs/setup-guides/complete-setup-guide.md
+ai_docs/authentication/complete-authentication-guide.md
+ai_docs/troubleshooting-guides/complete-troubleshooting-guide.md
+ai_docs/operations/complete-operations-guide.md
+ai_docs/api-integration/mcp-tools-api-complete.md
+ai_docs/operations/syncing-seats-with-the-cloud.md
+ai_docs/operations/watching-client-seats.md

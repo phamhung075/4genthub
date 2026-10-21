@@ -358,9 +358,8 @@ mcp__agenthub_http__manage_context(
 | Resource | Description | Link |
 |----------|-------------|------|
 | 🏗️ **Architecture Guide** | Deep dive into system design | `ai_docs/core-architecture/agenthub-system-architecture.md` |
-| 🔧 **Development Guide** | Setup and contribution guide | `ai_docs/development-guides/` |
-| 🛠️ **Operations Manual** | Deployment and maintenance | `ai_docs/operations/` |
-| 🔍 **Troubleshooting** | Common issues and solutions | `ai_docs/troubleshooting-guides/` |
+| 🔧 **Local setup** | Server, dashboard and client on one machine | `ai_docs/setup-guides/local-setup.md` |
+| 🛠️ **Operations** | Deploy, CI, schema changes, health, troubleshooting | `ai_docs/operations/operations-guide.md` |
 | 🧭 **API & MCP reference** | The mounted route and tool surface | `ai_docs/api-integration/surface-inventory.md` |
 
 ---

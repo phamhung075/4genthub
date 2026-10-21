@@ -147,4 +147,4 @@ docker-compose up
 
 ---
 
-**Need Help?** Check `ai_docs/troubleshooting-guides/frontend-development-environment-fix.md` for detailed troubleshooting.
+**Need Help?** See `ai_docs/operations/operations-guide.md` (Troubleshooting).
