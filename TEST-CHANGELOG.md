@@ -7635,3 +7635,20 @@ would trip, and it passes with the writer gone. `go test ./fastmcp/task_manageme
   create with the legacy copy, read back without it, `Metadata` without status/priority/labels/assignees.
   PG-gated like its siblings: it SKIPS (not passes) without `AGENTHUB_TEST_PG_URL`, which was unset here.
 - At this change: `go test ./...` green in `agenthub_go`; the PG-gated case above skipped.
+
+## 2026-10-21 - RoomDir stops resolving a root, so the verbs pass theirs (client, branch 4genthub-min/room-dir-root)
+
+- `internal/clientservices/worktrees_test.go` (new): `TestRoomDirJoinsTheGivenRootAndRefusesAnEmptyOne`
+  pins the join and both refusals; the old RoomDir called `clientenv.DefaultStateRoot()` and had no test
+  for the resolution it performed.
+- `internal/clientlifecycle/worktreesstep_test.go`: `TestTheWorktreeStepsAreHandedTheResolvedRoot` pins
+  that BOTH `up` steps (`seatCwdsByDerivation`, `ensureWorktreesImpl`) are handed the root the verb
+  resolved - the defect was that neither was - and the file's direct calls carry the root now.
+- `internal/clientlifecycle/overlap_test.go`: `TestTheOverlapScanReadsTheRoomUnderTheResolvedRoot` pins
+  the scan's wiring to the resolved root.
+- `internal/clientworktree/prune_test.go` / `fixture_test.go`: the fixture stops stubbing `RoomDir` (it
+  can no longer fake the root) and passes `--state-root fixture.store` to the two verbs, which is the
+  operator's own path; `worktreesrow_test.go`'s seam mirrors the production join so a case reads the room
+  it wrote.
+- At this change: `go test ./...` green in `agenthub_client`; live `worktree list --state-root /tmp/x`
+  derives under `/tmp/x`, `--state-dir` exits 2 naming `--state-root`.
