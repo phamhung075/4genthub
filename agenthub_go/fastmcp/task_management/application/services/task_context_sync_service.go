@@ -160,12 +160,15 @@ func (s *TaskContextSyncService) SyncContextAndGetTask(ctx context.Context, task
 	taskData.Set("task_data", inner)
 	taskData.Set("parent_branch_id", domainTask.GitBranchID)
 	taskData.Set("parent_branch_context_id", domainTask.GitBranchID)
-	// THIS IS THE CREATE PATH'S ONLY TaskContext WRITE, so it carries the WHOLE creation-time
-	// picture, not just task_data: the metadata map (status, priority, labels, assignees and the two
-	// timestamps) and the objective's estimated_effort are the fields the create use case used to
-	// mirror in a SECOND UpdateContext, which is what made one create append two context_updated
-	// events (hub task 26e857b0). SyncTaskMetadata below in this file writes the same metadata shape,
-	// so an update and a create disagree about nothing.
+	// THIS IS THE CREATE PATH'S ONLY TaskContext WRITE, and it carries the WHOLE creation-time picture
+	// rather than task_data alone: one create used to append two context_updated events because the
+	// use case mirrored the objective's estimated_effort in a SECOND UpdateContext (hub task 26e857b0).
+	// SyncTaskMetadata below carries that same objective and nothing besides - it does NOT touch the
+	// metadata map set here. Those six keys are the TASK row's, and a context read serves them from it
+	// (TaskOwnedFieldsFromTask, applied by the http app's lookup); this map has no column of its own, so
+	// it travels inside task_data and comes back as TaskData["metadata"] rather than as Metadata. That
+	// is a second copy of fields the task row already holds, recorded on the architect's row 4b79d151
+	// rather than settled here.
 	taskData.Set("metadata", TaskOwnedFieldsFromTask(domainTask))
 	if domainTask.EstimatedEffort != "" {
 		taskData.Set("objective", map[string]any{"estimated_effort": domainTask.EstimatedEffort})
