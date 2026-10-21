@@ -10,8 +10,8 @@
 ### Workflow
 1. Task first. When the backend changed a route or a payload, diff it against `apiV2.ts` and `src/types`, then update both.
 2. Build against the seat model (rooms, seats, links, occupant, policies). The old agent-management UI is gone: **do not reintroduce agent-template language**.
-3. Checks, from `agenthub-frontend`: `npx tsc --noEmit -p .` (**the command is the baseline, never a number written down here**: run it on the untouched tree, count the `error TS` lines it prints, and compare your run against that — the retired 23-error exception list is history in `agenthub-frontend/CHANGELOG.md`, cited by its text rather than a line number, because three different line numbers circulate for that entry as the file grows; a count in a guide goes stale, and this one did), `npx vite build`, `npx vitest run <file>` (compare per file when a suite is flaky; never start watch mode).
-4. Frontend-only changes go in `agenthub-frontend/CHANGELOG.md`; cross-cutting ones as a new root `CHANGELOG/<date>--<title>.md` file.
+3. Checks, from `agenthub-frontend`: `npx tsc --noEmit -p .` (**the command is the baseline, never a number written down here**: run it on the untouched tree, count the `error TS` lines it prints, and compare your run against that; a count in a guide goes stale), `npx vite build`, `npx vitest run <file>` (compare per file when a suite is flaky; never start watch mode).
+4. No changelog file: the commit body says what was wrong, what changed and how it was tested.
 5. Complete the task with the hash and the counts you measured; tell the lead.
 
 ### Do not

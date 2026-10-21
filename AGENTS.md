@@ -26,9 +26,9 @@ restore, before concluding anything about where you are.
 - **The work queue** — `4genteam room queue` (`list` / `show` / `create` / `update` / `claim` / `close`;
   owned work, handoffs, block/wake state).
 - **The board and decisions** — the hub board's five Outcome tasks (Outcome 1-5) through
-  `manage_task`: the queue row is the handoff, the Outcome task is the record.
-  `NEXT-GEN2.md` was parked on 2026-10-16 and pruned on 2026-10-18; no file at the repo
-  root is the board.
+  `manage_task`: the queue row is the handoff, the Outcome task is the record. **Plans, backlogs,
+  decisions, findings and status live in 4genthub tasks and context, never in a repository file**
+  (owner ruling 2026-10-21): 4genthub keeps the context, so nothing is rewritten locally.
 - **Project skills** — one source: `agenthub_client/skills/`. The runtime installs it: every seat start
   resolves the tree (share → room → seat, never `client/`) and writes it under the seat's own
   `<state-root>/rooms/<room>/seats/<seat>/skills`, replacing what was there, so a change reaches a seat
@@ -54,9 +54,9 @@ These are pointers; never copy their content into this file.
 2. **The entity/ORM is the source of truth, over the tests.** Order: prompt input → ORM/entity
    model → database → tests → code. A failing test means fix the code (or the test) to match the
    model; never add compatibility code to make tests pass. Rules and locations: same file.
-3. **Changelog duties.** One changelog file per merged task - not per commit
-   (`CHANGELOG/<date>--<title>.md`), carrying every commit the task lands - and
-   `TEST-CHANGELOG.md` for test-suite changes. Detail: same file.
+3. **The commit message is the change record (owner ruling 2026-10-21).** There is no changelog file
+   of any kind: `git log` is the history. The commit body says what was wrong, what changed and how it
+   was tested (the exact commands and their result). Detail: same file.
 4. **Keep-out files and staging.** `.claude/` and `agenthub_go/seatcheck` never enter a commit.
    **Stage by explicit path; never `git add -A`** is **RETIRED** — the index is shared with every other
    seat working in this worktree, so a staged line can be taken by another seat's commit. **Commit by
@@ -68,15 +68,12 @@ These are pointers; never copy their content into this file.
    all documentation is refused, and `OWNER_DOCS_COMMIT=1` is the owner's one-commit exemption. A seat that
    runs `git commit` directly skips that check. Never `git add .`, `-A` or `--amend`. **A removal is attributed by
    the COMMIT that carries it, never by the staging area** (`git show --numstat --format= <sha> -- <path>`);
-   **a changelog entry is ONE new file `CHANGELOG/<date>--<title>.md`**, so no changelog commit can carry another seat's
-   entry; any other shared file takes the WHOLE file, so check it is clear of other seats' lines, or sequence
+   a shared file takes the WHOLE file, so check it is clear of other seats' lines, or sequence
    with that seat, or name what you carry. **If the pre-commit framework refuses a pathspec commit because
    the config is unstaged:** if the config is yours, commit it by itself by pathspec and the guard clears
    itself; if it is not, ask its owner; `--no-verify` only as a last resort, with the hooks run over your
    own paths and the skipped ones named. **The hooks also rewrite a path you named**, so read
    `git show --numstat` after committing. (`b059b863`; the full text and the checks: the file below.)
-   (The old "`CLAUDE.md` stays out of every commit" rule is superseded — that file was renamed to
-   `AGENTS.md`, which is tracked; see `agenthub_go/NEXT_GEN.md`.)
 5. **The lead commits, pushes and rebuilds without asking (owner ruling 2026-10-18).** The lead seat owns
    the commit, the push of `main` (and `frontend` for the frontend line), the client rebuild and the team
    respawn; no human approval is needed to continue building, fixing or improving. The other seats hand
@@ -89,12 +86,20 @@ These are pointers; never copy their content into this file.
 6. **Launch and resume teams with `4genteam`, NEVER legacy 4genteam.** Always run `4genteam up <room> [--allow-peak]`
    or `4genteam continue <room>`. 4genteam daemon and runtime orchestration are retired; `4genteam` runs the full client
    supervisor stack (`agent`, the auto-compaction supervisor `compact-run`, `watchdog`, status `bridge`, and the styled
-   `watch` grid). When asked to show the live team, always run `4genteam watch --room <room>`.
+   `watch` grid). When asked to show the live team, always run `4genteam watch --room <room>`. `up` opens
+   no browser (2026-10-21); `4genteam ui` opens the web UI on demand. To rebuild and restart a room on
+   fresh seat processes from the owner's shell (after a client change or a key rotation), run
+   `agenthub_client/scripts/respawn.sh <room>` (skill `room-respawn`); never from a seat.
+7. **Docs are minimal (owner ruling 2026-10-21).** A document holds only durable information a reader
+   needs and cannot get from the code or `git log`: rules, architecture, setup, operations, gate
+   procedures, public docs. No reports, plans, reviews, measurement logs, status notes or "CORRECTED"
+   history paragraphs: those go to 4genthub tasks and context, or into the commit message. Keep no local
+   log files either; a tool that needs a log writes it outside the repository.
 
 ## 4. Pointers
 
 - `ai_docs/agent-system/repo-agent-rules.md` — the hard rules in full: clean-code policy,
-  test-fixing priority and the source-of-truth hierarchy, changelog and keep-out detail, docs
+  test-fixing priority and the source-of-truth hierarchy, the commit record and keep-out detail, docs
   conventions.
 - `ai_docs/agent-system/seat-model-and-mcp-surface.md` — the seat model, tool scope by seat, and
   the nine published MCP tools.

@@ -32,8 +32,7 @@ An occupant change is **recorded durably**: `set_occupant` writes one append-onl
 authenticated actor, the instant, the seat and the previous and next runtime/model — so who
 switched a seat, when and from what to what is answerable after the fact, through
 `GET /api/v2/rooms/{room}/seats/{seat}/occupant-history`. The row is the stored occupant the next
-launch reads; a running seat keeps the runtime it launched with
-(`ai_docs/core-architecture/seat-occupant-record.md`).
+launch reads; a running seat keeps the runtime it launched with.
 
 ## Tool scope by seat
 
@@ -75,13 +74,8 @@ controllers own their schemas: `manage_seat` (`:303`), `call_seat` (`:312`), `su
 only when the context controller is wired, which a database-backed server does. **Measured 2026-10-14 with
 the generator rather than by hand:** `cd agenthub_go && go run ./cmd/apirefgen -out /tmp/apiref.ts` ->
 `156 routes, 9 tools`, and the nine names in its output are exactly the block above. `tools/list` is not
-gated by any `TOOL_*` environment variable. See `ai_docs/api-integration/mcp-tools-api-complete.md` for the
-per-tool arguments.
-
-> **Superseded.** The earlier AGENTS.md section "MCP TOOL PERMISSIONS" stated that only the
-> principal session has MCP access and that team agents have none, and described a "Proxy Pattern"
-> that injected config into sub-agent teams. That model is retired: each seat receives its own role
-> file at launch and reaches the agenthub MCP tools itself. There is no config-injection proxy.
+gated by any `TOOL_*` environment variable. Each tool's arguments are its own schema: `tools/list` on
+`/mcp` returns them, and so does reading the tool's device path in a seat.
 
 ## Knowledge management
 

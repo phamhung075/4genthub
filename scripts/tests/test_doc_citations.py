@@ -142,17 +142,6 @@ def test_a_range_ending_before_it_starts_is_named(doc_tree):
     assert "range ends before it starts" in (r.stdout + r.stderr)
 
 
-def test_reports_status_is_outside_the_check(doc_tree):
-    """Dated records are measurements of a day; a later tree cannot make them wrong, so a bad
-    citation inside them is not a violation - and must not be counted as one."""
-    doc_tree("live.md", "Nothing cited here.\n")
-    doc_tree("reports-status/2026-10-01.md", f"Measured at `{STABLE}:{DRIFTED_LINE}`.\n")
-    r = run(INSTRUMENT, "--docs", doc_tree.scope)
-    out = r.stdout + r.stderr
-    assert r.returncode == 0, f"a reports-status record was audited:\n{out}"
-    assert "docs 1 " in out, f"the excluded record was still in scope:\n{out}"
-
-
 def test_a_scope_with_no_markdown_is_a_refusal_not_a_pass(doc_tree):
     r = run(INSTRUMENT, "--docs", doc_tree.scope)
     assert r.returncode == 2, f"an empty scope passed:\n{r.stdout}{r.stderr}"

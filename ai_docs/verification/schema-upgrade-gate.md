@@ -72,8 +72,6 @@ passed" without those three is not a measurement.
 
 - **The OF4 local verification stack** (`of4-local-stack.md`) — the ordinary boot gates and the stack
   this gate's scratch server can come from.
-- **`agenthub_go/NEXT_GEN.md`** — the schema/DDL rules (the parity guard, the defaults rule) and the
-  deploy-packet DDL gate for the `mcp` kind's sixth value.
 - **`DO NOT` copy this procedure into the product's documentation** (README, guides): the owner asked
   for it on the **gate list**, and a public page describing how we verify a schema upgrade is not part
   of what a user needs.

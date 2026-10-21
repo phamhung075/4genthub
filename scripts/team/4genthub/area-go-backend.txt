@@ -15,4 +15,4 @@ Commands, from agenthub_go with GOCACHE and TMPDIR inside .gocache and .gotmp:
 - go vet ./fastmcp/<package>/...
 - go test ./fastmcp/<package>/... (run by package, not one large ./...)
 
-Check NEXT_GEN.md for current state before starting. The release version in agenthub_go/fastmcp/config/version.go must be bumped in the same commit set so the deploy can be confirmed: healthVersion in fastmcp/server/httpapp/http.go derives from it and is what /health reports. Never deploy.
+Read the task and its context in 4genthub for current state before starting. The release version in agenthub_go/fastmcp/config/version.go must be bumped in the same commit set so the deploy can be confirmed: healthVersion in fastmcp/server/httpapp/http.go derives from it and is what /health reports. Never deploy.

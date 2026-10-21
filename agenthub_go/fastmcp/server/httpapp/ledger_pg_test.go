@@ -1,6 +1,6 @@
 package httpapp
 
-// P2 and P3 of the sync protocol (NEXT_GEN.md :441, :442), driven through app.Handler() so the path
+// P2 and P3 of the sync protocol, driven through app.Handler() so the path
 // under test is the production one:
 //
 //	GET  /api/v2/ledger?after=<user_seq>&limit=   -> authed -> routes.GetLedger -> the ledger read

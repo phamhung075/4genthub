@@ -32,13 +32,13 @@ commit is its own cost. Untracked work is therefore out of scope, not covered.
 
 AND THE MIRROR LIMIT, which no wrapper can close: `git commit -- <path>` takes the WORKTREE content of
 the path it names, so an UNCOMMITTED edit by another seat to that path rides the committer's commit, with the
-committer's message as its only attribution (measured: `f344a64f`, CHANGELOG.md numstat 15/1 - the committer's
-14-line entry plus a peer's 1 line). This file preserves the BYTES of such an edit; it cannot stop the
+committer's message as its only attribution (measured: `f344a64f`, numstat 15/1 on a shared file - the committer's
+14 lines plus a peer's 1 line). This file preserves the BYTES of such an edit; it cannot stop the
 attribution moving and it cannot tell the victim. A seat whose `git diff HEAD -- <path>` goes EMPTY while it
 still expects an edit has had that edit taken; `git log -1 --numstat -S'<the line>' -- <path>` names the commit.
 
-DOCS-ONLY CHECK (owner's rule: seats build, fix and improve; docs, CHANGELOG and TEST-CHANGELOG change
-ONCE, in the code commit of a finished task). It lives HERE and nowhere else, because this is the one
+DOCS-ONLY CHECK (owner's rule: seats build, fix and improve; docs change ONCE, in the code commit of a
+finished task, and the commit message is the record - no changelog file). It lives HERE and nowhere else, because this is the one
 place that sees the PATH SET the commit will carry. A seat commits by pathspec (AGENTS.md rule 4), and
 `git commit -- <paths>` takes those files' worktree content without touching the index, so a hook reading
 `git diff --cached` answers "not docs" on exactly the commits the rule is about - measured 2026-10-17: the
@@ -89,8 +89,8 @@ OPENRIG_SESSION_ENV = "OPENRIG_SESSION_NAME"
 DOCS_ONLY_REFUSAL = """\
 docs-only commit refused: every path this commit carries is documentation.
 The owner's rule: seats build, fix and improve. A plan, finding, ruling, status or recount goes through the
-queue (one short row), not into a commit. Docs, CHANGELOG and TEST-CHANGELOG change ONCE, in the code commit
-of the finished task. Put these files in that commit, or drop them.
+queue (one short row), not into a commit. Docs change ONCE, in the code commit of the finished task.
+Put these files in that commit, or drop them.
 Only if the owner asked for this document: OWNER_DOCS_COMMIT=1 python3 scripts/git-hooks/git_commit_capture.py -- ...
 """
 
@@ -103,18 +103,9 @@ def git(*args: str, repo: Path | None = None) -> subprocess.CompletedProcess:
 
 
 def is_document(path: str) -> bool:
-    """The doc globs in one statement: a `.md` anywhere, `ai_docs/`, any `CHANGELOG/`, the plan files.
-
-    `TEST-CHANGELOG.md` needs no clause of its own: it is a `.md`.
-    """
+    """The doc globs in one statement: a `.md` anywhere, and anything under `ai_docs/`."""
     p = path.replace(os.sep, "/")
-    return (
-        p.endswith(".md")
-        or p.startswith("ai_docs/")
-        or p.startswith("CHANGELOG/")
-        or "/CHANGELOG/" in p
-        or p.startswith("NEXT-GEN")
-    )
+    return p.endswith(".md") or p.startswith("ai_docs/")
 
 
 def commit_paths(repo: Path, commit_args: list[str]) -> list[str]:

@@ -1,3 +1,0 @@
-# The docs-only guard runs on every commit, so a seat's pin commit is judged on the whole staged set
-
-`docs-only-guard` had pre-commit's default file filter, which drops a client gitlink from the file list: a pin commit with a CHANGELOG file reached the guard as markdown only and was refused. `scripts/git-hooks/pre-commit-config.yaml` now sets `always_run: true` and `pass_filenames: false`; the guard already reads `git diff --cached` itself. Measured: `pre-commit run docs-only-guard --files agenthub_client` ran and passed (it was skipped before); `go test ./internal/repoguards/...` as shown in the commit.

@@ -1,6 +1,6 @@
 ## Guide: skills-dev (skill library)
 
-**You own NEXT_GEN F1:** bringing the previous client's skill library into the cloud as published blocks. This is content work with a digest guard, not a code port.
+**You own backlog item F1:** bringing the previous client's skill library into the cloud as published blocks. This is content work with a digest guard, not a code port.
 
 ### Tools you use, and for what
 - `read`/`find`/`grep` over the two source edges in the reference copy: `skills/_canonical/` (35 skills) and `packages/daemon/assets/plugins/core/skills/` (19 skills; the only edge with `delegating-work` and `queue-handoff`). The two overlap by two names, so the union is **52**.

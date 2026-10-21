@@ -65,20 +65,20 @@ the model → yes: fix the test to match the model.
 - **Root-cause fixes** — debug the cause, not the symptom.
 - **Clean codebase** — remove legacy code immediately.
 
-## Changelog duties
+## The change record (owner ruling 2026-10-21)
 
-- `CHANGELOG/<date>--<title>.md` — one new file per **merged task**, not per commit (Keep a Changelog
-  subsections; see `CHANGELOG/README.md`). Measured 2026-10-18: 56 of 71 commits carried a changelog file, so
-  a task's fix, its test and its follow-up correction each restated the same change under three titles. The
-  one entry is written with the task's first commit, carries every commit the task lands, and is finished
-  before the merge; a change after the merge is a new task and gets its own file.
-- `TEST-CHANGELOG.md` — test-suite changes.
-- A documentation change that ships gets a changelog entry too.
+- **The commit message is the record; there is no changelog file of any kind.** The subject follows
+  Conventional Commits; the body says what was wrong, what changed and how it was tested (the exact
+  commands and their result). `git log` is the history, and release notes, when needed, are generated
+  from it. Why: 712 of 1440 commits in the 14 days before the ruling touched `CHANGELOG/`, restating the
+  commit message.
+- **Plans, backlogs, decisions, findings and status live in 4genthub** (`manage_task`, `manage_context`),
+  never in a repository file. 4genthub keeps the context, so nothing is rewritten locally.
 - **A prune edits its own guard.** There is no prune tool; a prune is a commit. When it deletes files,
   every removed path goes into `agenthub_go/internal/repoguards/testdata/pruned_paths.txt`, which two
   tests read: each entry must have a deletion commit in history, and no tracked file outside an
-  exact-file allowlist may name it. The changelog entry still records the removal as history — but the
-  sentence "no live reference survived" is what the guard runs, never what the entry claims. Measured
+  exact-file allowlist may name it. The commit message records the removal — but the sentence
+  "no live reference survived" is what the guard runs, never what the message claims. Measured
   2026-10-18: `53b95dee` wrote that sentence and four live references survived it.
 
 ## Keep-out files and staging
@@ -99,8 +99,8 @@ the model → yes: fix the test to match the model.
   find, because `git log -S` and `git blame` see nothing until it is committed — and the index records no
   seat. Read the author per path with `git show --numstat --format= <sha> -- <path>`. So a commit that
   names a path takes **every** line in it under its own message, and a sibling's line can ride a commit it
-  is not part of: `0565da9f` is titled as a frontend fix and carried a staged `TEST-CHANGELOG.md` entry,
-  17/0, taken from the shared tree (`agenthub_go/NEXT_GEN.md:703`).
+  is not part of: `0565da9f` is titled as a frontend fix and carried a sibling's staged
+  17-line entry, taken from the shared tree.
 - **If the pre-commit framework refuses a pathspec commit with "Your pre-commit configuration is
   unstaged,"** the config file differs from **the index that commit builds** — not from the shared index —
   and the guard's predicate is `git diff --quiet --no-ext-diff scripts/git-hooks/pre-commit-config.yaml`
@@ -123,20 +123,14 @@ the model → yes: fix the test to match the model.
   author never made (measured on `da07c9db`, whose output read `Stashing unstaged files` … `Restored changes`;
   it restored cleanly, and this tree has already lost a fleet to a tmux death once). The hazard is the window,
   not the mechanism: prefer `--files <your paths>` when the tree is crowded.
-- **A changelog entry is one new file, so it cannot carry a peer's entry.** The changelog is the `CHANGELOG/`
-  directory: one file `CHANGELOG/<date>--<title>.md` per merged task, added with `git add -N` and committed by
-  pathspec with the task it describes. Do not read the whole directory; `ls CHANGELOG | tail` lists the newest.
-  The old single `CHANGELOG.md` took the WHOLE file under `git commit -- CHANGELOG.md` and carried every peer's
-  uncommitted entry (measured 2026-10-08, `0ea06c77`); that hazard now applies only to the other shared files
-  (the backlog, the guides): before naming one, check it is clear of other seats' lines, sequence with that
+- **A shared file is committed whole.** `git commit -- <file>` takes the WHOLE file and carries every
+  peer's uncommitted line in it (measured 2026-10-08, `0ea06c77`): before naming one, check it is clear of other seats' lines, sequence with that
   seat, or **name what you carry** in the message, and check the commit with `git show <sha> -- <path>`
   for removals, the entries you carry and the headings added.
 - **The earlier rule here — "stage by explicit path; never `git add -A`" — is RETIRED rather than restated:**
   the pre-stage form is the one that puts a line into the shared index, which is the window the fleet's
   commit form was changed to close. See `ai_docs/core-architecture/agenthub-system-architecture.md D8`
   (`b059b863`, 2026-10-08).
-- The old "`CLAUDE.md` stays out of every commit" rule is **superseded**: `CLAUDE.md` was renamed
-  to `AGENTS.md` (`f7a809dc`), and `AGENTS.md` is tracked. See `agenthub_go/NEXT_GEN.md`.
 - **A submodule pointer is committed only from a clone every checkout can resolve.** A worktree that
   initialised `agenthub_client` gets its OWN object store, so a client commit made there exists nowhere
   else; committing that sha as the gitlink leaves every other checkout unable to `cat-file` it, and a
@@ -152,15 +146,14 @@ the model → yes: fix the test to match the model.
 - Project documentation lives in `ai_docs/` (kebab-case folders, one topic per folder).
 - `git ls-files 'ai_docs/**/*.md'` lists every document — there is no index to hand-edit.
 - Search existing docs before creating new ones.
-- **Seat reports live in `ai_docs/reports-status/`.** Findings, gate docs, verdicts and status reports
-  go there, one file per report (`<KIND>-<subject>-<date>.md`) — not in a repo root. The 4genthub root
-  keeps only `README`, `TEST-CHANGELOG`, `AGENTS` and `CLAUDE.local` (plus the `CHANGELOG/` directory),
-  and the same applies to every seat worktree root.
-  Reports about the client submodule live in that submodule's own `ai_docs/reports-status/` — the same
-  rule read in that tree. **The u3 lab tree (`wt/<room>/u3-run/`) is the instrument's directory, not a
-  seat worktree:** its install, calibration, smoke and gate records stay next to the harness they
-  document, and moving them is a post-run sweep, never something done in the window before a run.
-  Owner instruction, 2026-10-15.
+- **Docs are minimal (owner ruling 2026-10-21).** A document holds only durable information a reader
+  needs and cannot get from the code or `git log`: rules, architecture, setup, operations, gate
+  procedures, public docs. **No report files**: findings, verdicts, reviews, measurements and status go to
+  4genthub tasks and context (`manage_task` details, `manage_context`), never to `ai_docs/` or a repo root.
+  No dated "CORRECTED" or "re-verified" history paragraphs either: fix the sentence, and let the commit
+  message say what changed. The 4genthub root keeps only `README`, `AGENTS` and `CLAUDE.local`.
+- **No local log files in the repository.** A tool that needs a log writes it under its state directory
+  (`~/.config/4genthub`) or the scratch area, never as a tracked or root-level file.
 
 ## Push approval
 

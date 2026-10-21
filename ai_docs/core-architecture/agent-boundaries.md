@@ -11,7 +11,7 @@
 > A THIRD occurrence is a quotation rather than a clause: 7.1's dated bullet records that the verb landed 37
 > minutes later as `rigd` (`9182f13`), so that token belongs to the date it names, not to this rule.
 
-Decision note by the architect, 2026-10-11. It answers the lead's request `qitem-20261010222721-557596c2630798bc` (owner priority: build NEXT_GEN F4 in two phases). It binds go-dev and fe-dev for phase 1. Phase 2 is designed here and NOT implemented.
+Decision note by the architect, 2026-10-11. It answers the lead's request `qitem-20261010222721-557596c2630798bc` (owner priority: build backlog item F4 in two phases). It binds go-dev and fe-dev for phase 1. Phase 2 is designed here and NOT implemented.
 
 agent is the always-on local client. It holds one outbound WebSocket to `/ws/connector` under the user's token, registers every local room session, uploads redacted events (phase 1), and later receives commands that it runs locally as `4genteam send` (phase 2). The cloud never connects to the user's machine.
 
@@ -26,7 +26,7 @@ agent is the always-on local client. It holds one outbound WebSocket to `/ws/con
 
 **Ruling: agent is built in `agenthub_client`, as a long-running verb of the client binary (`4genteam agent`).** It extends `internal/clientsync/connector.go`; it is not a new program.
 
-- Reason: the client module is the one that ships to operators and the one the seat is pulled from. That is the same rule that made the client's `cmd/seatcheck` canonical (CHANGELOG `2026-10-10--the-second-seatcheck-copy-leaves-the-tree-the-client-module-is-canonical.md`).
+- Reason: the client module is the one that ships to operators and the one the seat is pulled from. That is the same rule that made the client's `cmd/seatcheck` canonical.
 - Follow-on, not phase-1 work: retire `agenthub_go/internal/clientsync/connector*.go` the way the server's seatcheck copy was retired. Until then, NO agent change goes into the `agenthub_go` copy.
 
 ## 2. Boundary 1: the socket frames
@@ -74,7 +74,7 @@ Reconnect: exponential backoff from 1 s, doubling, capped at 60 s, with ±20 % j
 1. **Capabilities gate which kinds are sent.** A peer never sends a frame kind that belongs to a capability the other side did not advertise and the server did not echo in `ready`. Phase-2 command frames are therefore impossible on a phase-1 client.
 2. **The client ignores an unknown server `type`.** It logs it once per type and does nothing else: it does not close, retry or act. An unknown kind can never cause an action.
 3. **The server answers an unknown client `type` with `error {code: "unknown_type", fatal: false}`** and keeps the socket (current behaviour, kept).
-4. **Capabilities named so far:** `ingest` (phase 1), `commands` (phase 2), `ledger` (P4's `ledger_tip` nudge, NEXT_GEN P4). A new server frame kind always comes with a new capability name.
+4. **Capabilities named so far:** `ingest` (phase 1), `commands` (phase 2), `ledger` (P4's `ledger_tip` nudge). A new server frame kind always comes with a new capability name.
 5. **Unknown FIELDS are ignored on both sides.** A field can be added without bumping `protocol`. Changing a field's meaning or removing one bumps `protocol`.
 
 ### 2.3a The browser surface (ruled 2026-10-11, answering fe-dev's question on section 5 step 3)
@@ -653,7 +653,7 @@ Deleting data, pushing, editing code, changing credentials and every other unsup
 
 **Ruling: A.** In addition, `doctor` adds a row, `orphan_handoffs`, which names each pending qitem whose destination is not live. This is the same predicate as `up`'s room/team mismatch check, so both belong to the team-prune item `00f2e9cf`. Neither guard moves a seat.
 
-**DATED NOTE, 2026-10-15 (go-dev): the checker's send verb is GONE, so option A's row above is the record of which choice was made rather than a live description - the two option rows and the ruling itself are kept as they were written, and this sentence is what a reader takes as today's state.** The owner ruled the verb out (it refused every send, and the policy it checked was written by nothing), and `cmd/seatcheck` in the client now carries only the read-only `audit-scan`; **the audited send path is the client's own `4genteam send`**, which builds the room's declared links into a policy at send time, decides, writes the decision line, delivers and writes the outcome line in ONE process (`internal/clientseat`) - which is why the audit is no longer split across two processes' lifetimes. **What 7.11's rule requires of a closure does not change, and it is exactly what the rows closed today did:** the destination is read from `4genteam ps <room> --nodes`, and the closure carries `--reason handed_off_to --target <session>` with the new row named in the note.
+**Current state.** The checker's send verb is gone: `cmd/seatcheck` carries only the read-only `audit-scan`, and the audited send path is `4genteam send` (`internal/clientseat`), which builds the room's declared links into a policy at send time, decides, writes the decision line, delivers and writes the outcome line in one process. A closure reads the destination from `4genteam ps <room> --nodes` and carries `--reason handed_off_to --target <session>` with the new row named in the note.
 
 ### 7.12 Addendum: a probe that could not run is not an absence (architect ruling 2026-10-20, board row `6e1171ba`; rail `qitem-20261020163856-6c7deb64075f`)
 

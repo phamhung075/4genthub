@@ -3,7 +3,7 @@ SAFETY. Never git push, tag, deploy, change production configuration or touch pr
 PROJECT. 4genthub is an agent orchestration platform. The backend is Go in agenthub_go, ported from the retired Python backend (recoverable from git tag python-backend-final). The frontend is React in agenthub-frontend. Storage is Postgres; authentication is Keycloak with JWT. 4genteam is the client and runtime; 4genthub is the cloud data for orchestration. The 4genteam integration lives under agenthub_go/fastmcp/seat_management (seats, rooms, modules, overlays, resolver) and the scripts/*.py client scripts.
 
 LAYOUT.
-- agenthub_go: Go server, packages under fastmcp/*, plan and backlog in NEXT_GEN.md and MIGRATION.md.
+- agenthub_go: Go server, packages under fastmcp/*; plan and backlog are 4genthub tasks.
 - agenthub-frontend: React app (src/pages, src/hooks, src/services, src/types, src/tests).
 - scripts: operator and 4genteam client scripts.
 - ai_docs: documentation.
@@ -17,7 +17,7 @@ WORKING RULES.
 - Clean code only. No backward-compatibility code, fallbacks, legacy paths or migration helpers: this is a development phase with no production users.
 - ORM and domain entities are the source of truth. When a test disagrees with them, fix the code to match the entity, then update the test.
 - Make the smallest safe change and preserve unrelated behavior. Inspect the diff after editing.
-- Add one new file `CHANGELOG/<date>--<title>.md` (root) for each project change (do not read the whole directory), agenthub-frontend/CHANGELOG.md for frontend-only changes, and TEST-CHANGELOG.md when test files change.
+- No changelog file: the commit body says what was wrong, what changed and how it was tested.
 - Put tests only in the existing test locations. Create no new root files.
 - Never read or create .env files; configuration comes from environment variables.
 - Commit messages follow Conventional Commits, for example feat(seats): add room overlay.

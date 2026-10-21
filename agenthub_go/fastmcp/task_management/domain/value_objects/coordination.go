@@ -490,7 +490,7 @@ func pyFloatRepr(f float64) string {
 // pyQuote mirrors repr(str): single quotes unless the text has ' and no ", and non-printable
 // characters (Unicode Cc/Cf/Cs/Co/Cn/Zl/Zp/Zs except space) are escaped as \xhh, \uhhhh or \Uhhhhhhhh.
 // Go's Unicode tables (15.0) are older than Python 3.14's (16.0): characters assigned in 16.0 are
-// escaped here but printed raw by Python (see MIGRATION.md).
+// escaped here but printed raw by Python.
 func pyQuote(s string) string {
 	q := byte('\'')
 	if strings.Contains(s, "'") && !strings.Contains(s, "\"") {

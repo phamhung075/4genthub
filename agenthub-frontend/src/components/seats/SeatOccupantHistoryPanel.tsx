@@ -5,8 +5,8 @@
  * server returned them: the route orders by `at DESC` and holds no cap, so re-sorting or truncating
  * here would be a second, weaker copy of that rule.
  *
- * A row says the stored occupant changed. A running seat keeps the snapshot it launched with
- * (`ai_docs/operations/syncing-seats-with-the-cloud.md`), so the panel never reads a row as
+ * A row says the stored occupant changed. A running seat keeps the snapshot it launched with,
+ * so the panel never reads a row as
  * "this seat is running X now"; the current pair is the LLM panel's job.
  *
  * @module components/seats/SeatOccupantHistoryPanel

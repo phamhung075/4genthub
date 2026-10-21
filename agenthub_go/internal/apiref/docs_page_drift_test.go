@@ -1,6 +1,6 @@
 // Package apiref_test is the WITNESS for the generated reference.
 //
-// THE RULE THIS TEST ENFORCES (NEXT_GEN rule 61): a route or tool that exists in code with no entry
+// THE RULE THIS TEST ENFORCES (owner rule 61): a route or tool that exists in code with no entry
 // FAILS, and an entry with no route or tool FAILS - and it is only a check once each direction has
 // been seen failing.
 //

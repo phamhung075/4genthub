@@ -1,8 +1,0 @@
-## The session-start idle cleanup matched any argv element, and a tmux server's PATH entry got it killed
-
-### Fixed
-- `.claude/hooks/session_start.py` — `ClaudeSessionCleanup.find_claude_processes` collected any process with `"claude"` in **any** argv element. On 2026-10-11 ~22:40 the `SessionStart` cleanup killed tmux server PID 12768 (reported: idle for 2.3 h, CPU < 0.5 %): all five `4genthub-min` seat panes died and fe-dev's in-flight turn was lost; the rig watchdog restored the seats at 22:42. A tmux server's argv is its full `tmux new-session ... -e PATH=...` command line, and the exported PATH embeds `/home/daihu/__projects__/4genthub/.claude/bin`, so the `-e PATH=...` argument carried the substring. The matcher now tests `os.path.basename(argv[0])` only, so real Claude CLI sessions (`claude`, `claude-deepseek` wrappers) stay in scope while tmux servers, `snapshot-bash` shells and omp seats no longer match.
-
-**Impact**: idle Claude CLI sessions older than `CLAUDE_IDLE_THRESHOLD_HOURS` (2 h) with CPU below `CLAUDE_CPU_THRESHOLD` (< 0.5 %) are still cleaned up; no other process on the machine is killable by argument substring.
-**Testing**: the old and the new predicate replayed side by side over the live process table — the tmux server (PID 92069), the `snapshot-bash` shells (`/bin/bash -c source .../.claude/shell-snapshots/...`) and the omp seat lines matched only under the old predicate; `claude --dangerously-skip-permissions` matched under both. Edited file passes `ast.parse`.
-**Files**: `.claude/hooks/session_start.py`, `CHANGELOG/2026-10-11--session-start-cleanup-narrow-matcher.md`
