@@ -7585,3 +7585,18 @@ Fails on the defect it was built for: a scratch file citing
 `agenthub_go/.../infrastructure/repositories/resolver/resolver.go` (the pre-fix header) turned the
 sweep red and named it; with the scratch removed the same file is 2/2 green. `npx vitest run
 src/tests/docs/repositoryCitations.test.ts` 2 tests passed; `npx tsc --noEmit -p .` exit 0.
+
+## The completion's status sync, removed with its three tests
+
+`TaskContextSyncService.SyncTaskStatus` is gone, so `TestTaskContextSyncService_SyncTaskStatus` (which pinned
+`metadata.status` into the context write), `TestTaskContextSyncService_SyncTaskStatus_NoContext` (renamed to
+`TestTaskContextSyncService_SyncTaskMetadata_NoContext` and driven through the surviving sync) and the fake hook
+method in `complete_task_test.go` went with it. `TestTaskContextSyncService_SyncKeepsTheExistingRecord` and the
+"refused update" row of `TestTaskContextSyncService_SyncFailuresAreReported` used the deleted writer as their
+vehicle and now drive `SyncTaskMetadata`; the first asserts `status` is ABSENT from the metadata that passes
+through while the record's `version` and `implementation_notes` survive.
+
+What it pins, and what was run: no `SyncTaskStatus` reference remains in the module, so the deletion is held by
+the compiler rather than by a test; the record test's `metadata["status"]` absence check is what a restored write
+would trip, and it passes with the writer gone. `go test ./fastmcp/task_management/application/...` and
+`go test ./...` in `agenthub_go`: 138 packages ok, 0 failed.

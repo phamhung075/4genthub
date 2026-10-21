@@ -373,10 +373,6 @@ type completeTaskFakeHooks struct {
 	changed  []string
 }
 
-func (h *completeTaskFakeHooks) SyncTaskStatus(_ context.Context, _ string, _ string) error {
-	return nil
-}
-
 func (h *completeTaskFakeHooks) SyncTaskMetadata(_ context.Context, _ string, _ *entities.Task, _ string) error {
 	return nil
 }
@@ -387,7 +383,7 @@ func (h *completeTaskFakeHooks) NotifyTaskEvent(_ context.Context, eventType str
 }
 
 // TestCompleteTaskSuccessBroadcasts is the regression this whole change exists for, and it FAILED TO
-// COMPILE before it: CompleteTaskHooks declared only SyncTaskStatus and SyncTaskMetadata, so the call
+// COMPILE before it: CompleteTaskHooks did not declare the broadcast hook, so the call
 // it asserts could not be written at that site - the object the wiring hands to this use case
 // implements the capability and the interface the use case holds did not declare it. A completion
 // therefore reached the client only through React Query's own refetch, with no frame and no animation,

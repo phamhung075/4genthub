@@ -17,6 +17,15 @@ reported `add metadata.status`, `add metadata.assignees`, ... on every update, f
 written; the context owns exactly one of the task's values, the objective's `estimated_effort`, and when that
 value is unchanged the write is skipped entirely instead of bumping the version with an empty change set.
 
+**The completion carried the same phantom under another name.** `SyncTaskStatus` - the other half of the pair
+`complete_task` runs after it records the result - set `metadata.status` on the context and updated it, so every
+completion still recorded `add metadata.status` after the sync above was fixed. The field is the task row's, and a
+context read already serves it from there through the http app's context lookup, so the writer is deleted rather
+than made harmless: the service method, the hook that built the facade for it, the `CompleteTaskHooks` method and
+its one call site. `TestTaskContextSyncService_SyncKeepsTheExistingRecord` drives `SyncTaskMetadata` now and
+asserts `status` is absent from the metadata it passes through while the record's own keys survive - the shape the
+deleted `TestTaskContextSyncService_SyncTaskStatus` used to pin, inverted.
+
 Verified: `go test ./...` in `agenthub_go`, 138 packages ok, 0 failed. New rows:
 `TestTheLedgerRecordsTheContextRowVersion` drives the writer through the real recorder with the repository's own
 `*int64` shape and asserts the entry's version (7); before the fix it recorded 0 by construction.

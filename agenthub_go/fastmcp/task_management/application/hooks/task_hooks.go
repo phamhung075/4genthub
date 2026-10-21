@@ -77,22 +77,6 @@ func (h *TaskHooks) SyncTaskMetadata(ctx context.Context, taskID string, t *enti
 	return svc.SyncTaskMetadata(ctx, taskID, t)
 }
 
-// SyncTaskStatus is TaskContextSyncService(repo).sync_task_status.
-func (h *TaskHooks) SyncTaskStatus(ctx context.Context, taskID string, newStatus string) error {
-	if h.ContextFactory == nil {
-		return nil
-	}
-	facade, err := h.ContextFactory.CreateFacade(ctx, nil, nil, nil)
-	if err != nil {
-		return err
-	}
-	svc, err := services.NewTaskContextSyncService(h.TaskRepository, nil, nil, facade)
-	if err != nil {
-		return err
-	}
-	return svc.SyncTaskStatus(ctx, taskID, newStatus)
-}
-
 // NotifyTaskEvent builds the complete payload and broadcasts the task event.
 func (h *TaskHooks) NotifyTaskEvent(ctx context.Context, eventType string, t *entities.Task, resp *task.TaskResponse, userID *string, gitBranchID string, changed []string) {
 	if h.Notifier == nil {

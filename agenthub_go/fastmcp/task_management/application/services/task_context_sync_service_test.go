@@ -68,34 +68,10 @@ func TestTaskContextSyncService_AuthRequired(t *testing.T) {
 	}
 }
 
-func TestTaskContextSyncService_SyncTaskStatus(t *testing.T) {
-	data := entities.NewOrderedMap[any]()
-	data.Set("foo", "bar")
-	fake := &zpCtxSyncFakeContext{getResult: zpCtxSyncContextWithContextData(data)}
-	svc := zpTaskCtxSyncNew(nil, nil, nil, fake, nil)
-
-	if err := svc.SyncTaskStatus(context.Background(), "t1", "in_progress"); err != nil {
-		t.Fatal(err)
-	}
-	metadata, ok := fake.updated.Get("metadata")
-	if !ok {
-		t.Fatal("metadata missing")
-	}
-	md := metadata.(*entities.OrderedMap[any])
-	if v, _ := md.Get("status"); v != "in_progress" {
-		t.Fatalf("status=%v", v)
-	}
-	if fake.propagate {
-		t.Fatal("propagate_changes should be false")
-	}
-}
-
-// A read that answers with no context at all is reported now, not swallowed: silence is what let
-// a done task keep resolving as todo.
-func TestTaskContextSyncService_SyncTaskStatus_NoContext(t *testing.T) {
+func TestTaskContextSyncService_SyncTaskMetadata_NoContext(t *testing.T) {
 	fake := &zpCtxSyncFakeContext{getResult: nil}
 	svc := zpTaskCtxSyncNew(nil, nil, nil, fake, nil)
-	if err := svc.SyncTaskStatus(context.Background(), "t1", "done"); err == nil {
+	if err := svc.SyncTaskMetadata(context.Background(), "t1", &entities.Task{}); err == nil {
 		t.Fatal("a read that returns no context must be reported")
 	}
 	if fake.updated != nil {
@@ -132,7 +108,7 @@ func TestTaskContextSyncService_SyncFailuresAreReported(t *testing.T) {
 			updateErr: errors.New("the write was refused"),
 		}
 		svc := zpTaskCtxSyncNew(nil, nil, nil, fake, nil)
-		err := svc.SyncTaskStatus(context.Background(), "t1", "done")
+		err := svc.SyncTaskMetadata(context.Background(), "t1", &entities.Task{EstimatedEffort: "2d"})
 		if err == nil || !strings.Contains(err.Error(), "the write was refused") {
 			t.Fatalf("err=%v", err)
 		}
@@ -149,23 +125,45 @@ func TestTaskContextSyncService_SyncKeepsTheExistingRecord(t *testing.T) {
 	fake := &zpCtxSyncFakeContext{getResult: zpCtxSyncContextWithContextData(data)}
 	svc := zpTaskCtxSyncNew(nil, nil, nil, fake, nil)
 
-	if err := svc.SyncTaskStatus(context.Background(), "t1", "in_progress"); err != nil {
+	if err := svc.SyncTaskMetadata(context.Background(), "t1", &entities.Task{EstimatedEffort: "2d"}); err != nil {
 		t.Fatal(err)
 	}
 	if v, _ := fake.updated.Get("implementation_notes"); v != "keep me" {
 		t.Fatalf("implementation_notes=%v: the sync dropped the record it read", v)
 	}
 	metadataAny, _ := fake.updated.Get("metadata")
-	metadata, ok := metadataAny.(*entities.OrderedMap[any])
-	if !ok {
-		t.Fatalf("metadata is %T", metadataAny)
+	// The map travels untouched now - the sync reads the record and writes only the objective - so it is
+	// whatever shape the record carried, not the OrderedMap the old status write re-Set it into.
+	metadata := zpCtxSyncMetadataMap(t, metadataAny)
+	// The completion used to write the task's status into this map through SyncTaskStatus; no column
+	// keeps it, so the write was dropped by the repository and every completion reported
+	// `add metadata.status`. The status is the task row's, and a context read serves it from there.
+	if v, ok := metadata["status"]; ok {
+		t.Fatalf("status=%v: the context metadata carried a task-owned field", v)
 	}
-	if v, _ := metadata.Get("status"); v != "in_progress" {
-		t.Fatalf("status=%v", v)
-	}
-	if v, _ := metadata.Get("version"); v != float64(3) {
+	if v, _ := metadata["version"]; v != float64(3) {
 		t.Fatalf("version=%v: the existing metadata did not survive", v)
 	}
+}
+
+// zpCtxSyncMetadataMap flattens either shape a record's metadata can arrive in.
+func zpCtxSyncMetadataMap(t *testing.T, v any) map[string]any {
+	t.Helper()
+	switch m := v.(type) {
+	case nil:
+		return map[string]any{}
+	case map[string]any:
+		return m
+	case *entities.OrderedMap[any]:
+		out := map[string]any{}
+		for _, k := range m.Keys() {
+			val, _ := m.Get(k)
+			out[k] = val
+		}
+		return out
+	}
+	t.Fatalf("metadata is %T", v)
+	return nil
 }
 
 func TestTaskContextSyncService_SyncSubtaskCountsNilRepo(t *testing.T) {

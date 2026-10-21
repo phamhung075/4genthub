@@ -43,7 +43,6 @@ type completeTaskContextFacadeFactory interface {
 // MIGRATION.md records the hooks pattern as "Done: create_task" with complete_task among the TODOs.
 type CompleteTaskHooks interface {
 	TaskEventHooks
-	SyncTaskStatus(ctx context.Context, taskID string, newStatus string) error
 	SyncTaskMetadata(ctx context.Context, taskID string, task *entities.Task, userID string) error
 }
 
@@ -554,13 +553,12 @@ func (uc *CompleteTaskUseCase) executeCore(
 			fac.UpdateContext("task", taskIDStr,
 				completeTaskCompletionContextUpdate(*completionSummary, nextRecommendations, testingNotes, nil),
 				true)
-			// Synchronize task status and metadata after completion. The completion itself does not
-			// fail on them, but they are logged: this is the pair whose silence left a done task
-			// resolving as todo.
+			// Synchronize the task's context-owned fields after completion. The completion itself does
+			// not fail on it, but it is logged: a silent sync is how a done task kept resolving as
+			// todo. The STATUS the completion sets lives on the task row, which a context read serves
+			// from that row; writing it into the context's metadata stored nothing and recorded
+			// `add metadata.status` on every completion (reviewer row 87b7d8fb).
 			if uc.hooks != nil {
-				if err := uc.hooks.SyncTaskStatus(ctx, taskIDStr, "done"); err != nil {
-					log.Printf("[complete_task] the status did not land in the context of %s: %v", taskIDStr, err)
-				}
 				if err := uc.hooks.SyncTaskMetadata(ctx, taskIDStr, task, ""); err != nil {
 					log.Printf("[complete_task] the metadata did not land in the context of %s: %v", taskIDStr, err)
 				}
@@ -569,7 +567,7 @@ func (uc *CompleteTaskUseCase) executeCore(
 		// THE BROADCAST IS NOT GATED ON THE CONTEXT FACADE, and my first attempt had it inside that
 		// guard - which the test caught: a completion this process cannot touch the facade for still
 		// HAPPENED, and a completed task nobody is told about is exactly the defect being repaired.
-		// The two syncs above stay where they are because they synchronise the CONTEXT they follow.
+		// The sync above stays where it is because it synchronises the CONTEXT the update above follows.
 		//
 		// create_task.go:172 and update_task.go:160 both call this on the same object the wiring hands
 		// to this use case; CompleteTaskHooks simply did not declare it, so the compiler made the call

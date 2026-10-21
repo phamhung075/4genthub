@@ -289,25 +289,6 @@ func (s *TaskContextSyncService) SyncSubtaskCounts(ctx context.Context, taskID s
 	return nil
 }
 
-// SyncTaskStatus mirrors sync_task_status.
-func (s *TaskContextSyncService) SyncTaskStatus(ctx context.Context, taskID string, newStatus string) error {
-	contextResult, err := s.hierarchicalContextService.GetContext(ctx, "task", taskID, false, nil)
-	if err != nil {
-		return fmt.Errorf("the task context could not be read: %w", err)
-	}
-	if contextResult == nil || !value_objects.PyTruthy(zpTaskCtxSyncGet(contextResult, "success")) {
-		return fmt.Errorf("the task context could not be read: %v", zpTaskCtxSyncGet(contextResult, "error"))
-	}
-	contextData := zpUCSAsOrdered(zpTaskCtxSyncGet(contextResult, "context"))
-	metadata := zpUCSAsOrdered(zpTaskCtxSyncGet(contextData, "metadata"))
-	metadata.Set("status", newStatus)
-	contextData.Set("metadata", metadata)
-	if _, err := s.hierarchicalContextService.UpdateContext(ctx, "task", taskID, contextData, false); err != nil {
-		return fmt.Errorf("the status did not land in the task context: %w", err)
-	}
-	return nil
-}
-
 // SyncTaskMetadata mirrors sync_task_metadata. The context owns exactly ONE of the task's fields: the
 // objective's estimated_effort. status, priority, labels, assignees and the two timestamps are the TASK row's,
 // served to a context read by its overlay (TaskOwnedFieldsFromTask, same package) and never stored on the
@@ -315,7 +296,11 @@ func (s *TaskContextSyncService) SyncTaskStatus(ctx context.Context, taskID stri
 // no column to keep them, so the next read composed the metadata without them and every update reported
 // `add metadata.status`, `add metadata.assignees`, ... to the ledger, forever (hub row f6328d5a). A write with
 // nothing of the context's own to change is not made at all: it would bump the version and append an empty
-// change set, which is the same phantom in a quieter shape.
+// change set, which is the same phantom in a quieter shape. SyncTaskStatus wrote the same phantom under its
+// own name from the completion path - `metadata.Set("status", ...)`, a key no column keeps - so each
+// completion still reported `add metadata.status` after the sync above was fixed; the writer is deleted
+// rather than made harmless, because the field it wrote was never the context's. A context read serves the
+// status from the task row (TaskOwnedFieldsFromTask, applied by the http app's context lookup).
 func (s *TaskContextSyncService) SyncTaskMetadata(ctx context.Context, taskID string, task *entities.Task) error {
 	contextResult, err := s.hierarchicalContextService.GetContext(ctx, "task", taskID, false, nil)
 	if err != nil {
