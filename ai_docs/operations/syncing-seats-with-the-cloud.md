@@ -66,10 +66,12 @@ what was pulled (`--help` lists its eight verbs).
 pin says. Use it when a seat has to load something that is not part of its snapshot: a new skill, a new cwd, a
 changed guide in the repo. The removed `seat sync --relaunch quiet` could not do that: a seat whose pin was
 already current was reported "in sync" and was never restarted. The DeepSeek peak gate applies (`--allow-peak` skips it).
-`--force` skips the quiet wait. Before each restart the client also replaces the omp seat's own skill directory
-(`~/.config/4genthub/state/omp/<session>/agent/skills`) with the skills the room root holds for that seat
-(`<store>/<room>/rig/agents/<seat>/skills`, which the removed `sync room` built), because nothing else copies
-them there. A `rig launch` whose reply times out counts as done when the seat's tmux session comes up within 3 minutes.
+`--force` skips the quiet wait. **THE SKILL COPY IS GONE (2026-10-15).** Before each restart the client
+replaced the omp seat's own skill directory
+(`~/.config/4genthub/state/omp/<session>/agent/skills`) with the skills the room root held for that seat
+(`<store>/<room>/rig/agents/<seat>/skills`, which the removed `sync room` built). The runtime installs a seat's
+skills at every start instead, so nothing has to copy them there and the client's step went with the store it
+read. A `rig launch` whose reply times out counts as done when the seat's tmux session comes up within 3 minutes.
 
 `send` puts `From NAME:` in front of the text (default `owner session`) because `4genteam send` does not carry the
 sender outside a seat shell, and it passes the text to `rig` as one argument, so a shell expands nothing in it.
