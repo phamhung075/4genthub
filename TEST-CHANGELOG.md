@@ -7619,3 +7619,19 @@ would trip, and it passes with the writer gone. `go test ./fastmcp/task_manageme
   then each seat folder, with a name delivered twice reported as two rows).
 - At this change: `go test ./... -count=1` green in `agenthub_client`; `4genteam skills evidence
   4genthub-min` prints 38 skills and exits 0.
+
+## 2026-10-21 - the create stops copying task-owned fields into task_data.metadata (hub, branch 4genthub-min/step3-pin)
+
+- `fastmcp/task_management/application/services/create_context_single_write_test.go`:
+  `TestOneCreatePathWriteAppendsOneTaskContextEvent` gains the second half of hub task 3c2901c6 - the one
+  create-path write carries NO `metadata` key under `task_data`, so the "one event" count cannot be
+  satisfied by dropping a field instead.
+- `fastmcp/task_management/infrastructure/repositories/task_context_metadata_passthrough_test.go` (new):
+  `TestTaskDataMetadataCopyIsNotServedBack` drives `taskContextRepoToEntity` with a row whose `task_data`
+  still holds the legacy copy and pins that the copy is not served back, `task_data`'s own keys survive,
+  and `Metadata` keeps its column-derived `version` while gaining no `status`.
+- `fastmcp/task_management/infrastructure/repositories/task_context_repository_test.go`:
+  `TestTaskContextRepoDropsTheLegacyTaskDataMetadataCopy` is the same pair through the REAL repository -
+  create with the legacy copy, read back without it, `Metadata` without status/priority/labels/assignees.
+  PG-gated like its siblings: it SKIPS (not passes) without `AGENTHUB_TEST_PG_URL`, which was unset here.
+- At this change: `go test ./...` green in `agenthub_go`; the PG-gated case above skipped.

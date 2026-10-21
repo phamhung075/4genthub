@@ -257,7 +257,12 @@ func taskContextRepoToEntity(row *database.TaskContext) *entities.TaskContextUni
 	}
 	clean := map[string]any{}
 	for k, v := range taskData {
-		if k == "progress" || k == "insights" || k == "next_steps" {
+		// `metadata` under task_data was a create-time copy of the task's own fields (status, priority,
+		// labels, assignees, the two timestamps). It has no writer left and no reader: those fields are
+		// served from the task's columns, which is where the entity's Metadata comes from below. A row
+		// written before the copy was removed is not migrated - the key is dropped on read, exactly as
+		// an absent one would be.
+		if k == "progress" || k == "insights" || k == "next_steps" || k == "metadata" {
 			continue
 		}
 		clean[k] = v

@@ -237,3 +237,47 @@ func TestTaskContextRepoUserIsolationAndErrors(t *testing.T) {
 		t.Fatal("Create without user_id must fail")
 	}
 }
+
+// The create-and-read pair of hub task 3c2901c6 through the REAL repository: a create whose task_data
+// still carries the legacy `metadata` copy - what every create wrote before the copy was removed - is read
+// back WITHOUT that copy in TaskData, and with Metadata built from the columns only, so no status,
+// priority, labels or assignees key reaches it. No migration runs: the inert JSONB key is dropped where it
+// is read.
+func TestTaskContextRepoDropsTheLegacyTaskDataMetadataCopy(t *testing.T) {
+	sessions := newTestRepoEnv(t)
+	user := "11111111-1111-1111-1111-111111111111"
+	taskID, branchID := taskCtxRepoTestSetup(t, sessions, user)
+	repo := taskCtxRepoTestNew(t, sessions, &user)
+	ctx := context.Background()
+
+	legacy := taskCtxRepoTestEntity(taskID, branchID)
+	legacy.TaskData["metadata"] = map[string]any{
+		"status":     "todo",
+		"priority":   "medium",
+		"labels":     []any{"defect"},
+		"assignees":  []any{"@go-dev"},
+		"created_at": "2026-10-21T00:00:00",
+	}
+	if _, err := repo.Create(ctx, legacy); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	got, err := repo.Get(ctx, taskID)
+	if err != nil {
+		t.Fatalf("Get: %v", err)
+	}
+	if got == nil {
+		t.Fatal("Get returned nil for the row it just created")
+	}
+	if copied, present := got.TaskData["metadata"]; present {
+		t.Fatalf("the read served the task_data.metadata copy back: %v", copied)
+	}
+	if _, present := got.TaskData["title"]; !present {
+		t.Fatalf("the read dropped task_data's own keys: %v", got.TaskData)
+	}
+	for _, key := range []string{"status", "priority", "labels", "assignees"} {
+		if value, present := got.Metadata[key]; present {
+			t.Fatalf("Metadata gained %q=%v from the task_data copy; those fields live on the task row", key, value)
+		}
+	}
+}

@@ -80,6 +80,12 @@ func TestOneCreatePathWriteAppendsOneTaskContextEvent(t *testing.T) {
 			t.Fatalf("the one write left %q out of task_data: %v", key, stored.TaskData)
 		}
 	}
+	// The task's own fields have ONE home - the task's columns, which the read overlay serves as Metadata.
+	// The create must not also copy them into a `metadata` map under task_data (hub task 3c2901c6): no
+	// write path reads that copy, and a second home is a place two writers can disagree.
+	if copied, present := stored.TaskData["metadata"]; present {
+		t.Fatalf("the create still writes a metadata copy of the task's own fields into task_data: %v", copied)
+	}
 }
 
 // ctxServiceAdapter is the two-argument CreateContext the sync service's interface declares.

@@ -160,16 +160,16 @@ func (s *TaskContextSyncService) SyncContextAndGetTask(ctx context.Context, task
 	taskData.Set("task_data", inner)
 	taskData.Set("parent_branch_id", domainTask.GitBranchID)
 	taskData.Set("parent_branch_context_id", domainTask.GitBranchID)
-	// THIS IS THE CREATE PATH'S ONLY TaskContext WRITE, and it carries the WHOLE creation-time picture
-	// rather than task_data alone: one create used to append two context_updated events because the
-	// use case mirrored the objective's estimated_effort in a SECOND UpdateContext (hub task 26e857b0).
-	// SyncTaskMetadata below carries that same objective and nothing besides - it does NOT touch the
-	// metadata map set here. Those six keys are the TASK row's, and a context read serves them from it
-	// (TaskOwnedFieldsFromTask, applied by the http app's lookup); this map has no column of its own, so
-	// it travels inside task_data and comes back as TaskData["metadata"] rather than as Metadata. That
-	// is a second copy of fields the task row already holds, recorded on the architect's row 4b79d151
-	// rather than settled here.
-	taskData.Set("metadata", TaskOwnedFieldsFromTask(domainTask))
+	// THIS IS THE CREATE PATH'S ONLY TaskContext WRITE, so it carries the WHOLE creation-time
+	// picture, not just task_data: the objective's estimated_effort is what the create use case used to
+	// mirror in a SECOND UpdateContext, and that second write is what made one create append two
+	// context_updated events (hub task 26e857b0).
+	//
+	// It does NOT mirror the task's own fields (status, priority, labels, assignees, the two timestamps)
+	// into a `metadata` map under task_data. Those fields have ONE home: the task's columns, which the
+	// context read overlay serves as Metadata. A copy under task_data was written here and read back by
+	// nobody - the write path reads none of those keys, and it is a second home a later write could
+	// disagree with (hub task 3c2901c6).
 	if domainTask.EstimatedEffort != "" {
 		taskData.Set("objective", map[string]any{"estimated_effort": domainTask.EstimatedEffort})
 	}
