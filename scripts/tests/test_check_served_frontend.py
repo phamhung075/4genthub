@@ -104,11 +104,13 @@ def production_shape() -> dict[str, str]:
     }
 
 
-def fresh_shape(entry: str = "index-riIYPcmm.js") -> dict[str, str]:
-    """A HEAD build, reduced: three panels, three verbs, no fossil."""
+def fresh_shape(entry: str = "index-riIYPcmm.js", env: str | None = None) -> dict[str, str]:
+    """A HEAD build, reduced: three panels, three verbs, no fossil. `env` is the object vite inlines
+    when the tree reads `import.meta.env[key]` dynamically - the build's environment fingerprint."""
     return {
         "index.html": f'<!doctype html><script type="module" crossorigin src="/assets/{entry}"></script>\n',
-        "assets/" + entry: (
+        "assets/" + entry: (f"const __env={env};\n" if env else "")
+        + (
             'const pages={"a":"/assets/SeatDetailPage-FRESH0001.js",'
             '"/assets/SeatsPage-FRESH0002.js":1,"/assets/MachinesPanel-FRESH0003.js":1};\n'
         ),
@@ -254,6 +256,82 @@ def test_identity_by_entry_hash_alone(tmp_path, capsys):
     with serve(write_tree(tmp_path, fresh_shape())) as base:
         assert run(base, "--expect-entry", "index-riIYPcmm.js") == 0
         assert run(base, "--expect-entry", "index-SOMETHINGELSE.js") == 1
+
+
+# --- the expectation is only comparable from the same environment -------------------------------
+
+# What vite inlines for a tree reading `import.meta.env[key]` dynamically: the box build carried six
+# keys, the deployed build eighteen. Same tree, different hash - measured 2026-10-21.
+BOX_ENV = ('{BASE_URL:"/",DEV:!1,MODE:"production",PROD:!0,SSR:!1,'
+           'VITE_API_URL:"https://api.4genthub.com"}')
+DEPLOY_ENV = ('{BASE_URL:"/",DEV:!1,MODE:"production",PROD:!0,SSR:!1,'
+              'VITE_API_URL:"https://api.4genthub.com",VITE_BACKEND_URL:"https://api.4genthub.com",'
+              'VITE_BUILD_SHA:"",VITE_ENV:"production",VITE_KEYCLOAK_URL:"https://keycloak.4genthub.com",'
+              'VITE_LOG_LEVEL:"error",VITE_LOG_ENABLED:"true",VITE_LOG_COLORIZE:"false"}')
+
+
+def test_env_signature_reads_the_inlined_object():
+    """The fingerprint is the object, not a guess: keys and values, booleans included."""
+    signature = census.env_signature(f"const x={BOX_ENV};console.log('VITE_WS_URL')")
+    assert signature == {
+        "BASE_URL": "/", "DEV": "!1", "MODE": "production", "PROD": "!0", "SSR": "!1",
+        "VITE_API_URL": "https://api.4genthub.com",
+    }
+    assert census.env_signature("4genteam sync pull") is None
+    assert census.env_signature('const s="https://api.4genthub.com";') is None
+
+
+def test_a_foreign_env_build_is_refused_not_called_a_mismatch(tmp_path, capsys):
+    """The defect this closes: a box-built dist compared to a deploy made by the deploy image reported
+    BUILD-MISMATCH about a correct production. The environments are in both artifacts, so the check
+    must read them and refuse - naming the keys - instead of accusing the site."""
+    build = write_tree(tmp_path / "build", fresh_shape(entry="index-BUILT0001.js", env=BOX_ENV))
+    served = write_tree(tmp_path / "served", fresh_shape(entry="index-LIVE00001.js", env=DEPLOY_ENV))
+    with serve(served) as base:
+        assert run(base, "--expect-dist", str(build)) == 2
+    out = capsys.readouterr().out
+    assert "FOREIGN-ENV" in out
+    assert "NOT comparable" in out
+    assert "VITE_KEYCLOAK_URL" in out  # only the served build inlined it
+    assert "BUILD-MISMATCH" not in out
+
+
+def test_a_differing_value_is_a_foreign_environment_too(tmp_path, capsys):
+    """Same keys is not the same environment: an API URL the deploy does not use re-hashes the chunks
+    that carry it, so the value is compared, not just the key set."""
+    served_env = DEPLOY_ENV
+    build_env = DEPLOY_ENV.replace('VITE_API_URL:"https://api.4genthub.com"',
+                                   'VITE_API_URL:"http://localhost:8000"')
+    build = write_tree(tmp_path / "build", fresh_shape(entry="index-BUILT0002.js", env=build_env))
+    with serve(write_tree(tmp_path / "served", fresh_shape(entry="index-LIVE00002.js", env=served_env))) as base:
+        assert run(base, "--expect-dist", str(build)) == 2
+    out = capsys.readouterr().out
+    assert "FOREIGN-ENV" in out
+    assert "differing values (1): VITE_API_URL" in out
+
+
+def test_a_same_env_build_is_still_compared_and_can_mismatch(tmp_path, capsys):
+    """And the direction that keeps identity honest: two builds of the same environment ARE comparable,
+    so a served bundle that is not the build is still a mismatch - the gate must not swallow it."""
+    build = write_tree(tmp_path / "build", fresh_shape(entry="index-BUILT0003.js", env=BOX_ENV))
+    served = write_tree(tmp_path / "served", fresh_shape(entry="index-LIVE00003.js", env=BOX_ENV))
+    with serve(served) as base:
+        assert run(base, "--expect-dist", str(build)) == 1
+    out = capsys.readouterr().out
+    assert "comparable" in out and "FOREIGN-ENV" not in out
+    assert "BUILD-MISMATCH" in out
+
+
+def test_a_served_entry_that_did_not_arrive_is_not_a_foreign_environment(tmp_path, capsys):
+    """Only an env object that was READ may refuse: when the served entry 404s the closure is incomplete,
+    and calling that a foreign environment would name the wrong defect."""
+    build = write_tree(tmp_path / "build", fresh_shape(entry="index-BUILT0004.js", env=BOX_ENV))
+    served = {"index.html": '<!doctype html><script type="module" src="/assets/index-GONE000001.js"></script>\n'}
+    with serve(write_tree(tmp_path / "served", served)) as base:
+        assert run(base, "--expect-dist", str(build)) == 1
+    out = capsys.readouterr().out
+    assert "FOREIGN-ENV" not in out
+    assert "environment:" not in out
 
 
 # --- the expected side is dated ---------------------------------------------------------------
