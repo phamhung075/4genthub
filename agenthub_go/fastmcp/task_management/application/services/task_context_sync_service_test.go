@@ -185,16 +185,39 @@ func TestTaskContextSyncService_SyncTaskMetadata(t *testing.T) {
 	if err := svc.SyncTaskMetadata(context.Background(), "t1", task); err != nil {
 		t.Fatal(err)
 	}
-	metadataAny, _ := fake.updated.Get("metadata")
-	metadata := metadataAny.(*entities.OrderedMap[any])
-	assigneesAny, _ := metadata.Get("assignees")
-	assignees := assigneesAny.([]string)
-	if len(assignees) != 2 || assignees[0] != "@alice" || assignees[1] != "@bob" {
-		t.Fatalf("assignees=%v", assignees)
-	}
 	objectiveAny, _ := fake.updated.Get("objective")
 	objective := objectiveAny.(*entities.OrderedMap[any])
 	if v, _ := objective.Get("estimated_effort"); v != "2d" {
 		t.Fatalf("estimated_effort=%v", v)
+	}
+	// The context row stores no column for the task's own fields, and it does not have to: a context read
+	// serves them from the task row. Writing them into this metadata was the phantom add the ledger repeated
+	// on every task update (hub row f6328d5a), so the write is asserted ABSENT, field by field.
+	metadataAny, hasMetadata := fake.updated.Get("metadata")
+	if hasMetadata {
+		metadata, _ := metadataAny.(*entities.OrderedMap[any])
+		for _, key := range []string{"status", "priority", "labels", "assignees", "created_at", "updated_at"} {
+			if v, ok := metadata.Get(key); ok {
+				t.Fatalf("metadata.%s written to a context that cannot store it: %v", key, v)
+			}
+		}
+	}
+}
+
+func TestTaskContextSyncService_SyncTaskMetadataSkipsAnUnchangedObjective(t *testing.T) {
+	data := entities.NewOrderedMap[any]()
+	objective := entities.NewOrderedMap[any]()
+	objective.Set("estimated_effort", "2d")
+	data.Set("objective", objective)
+	fake := &zpCtxSyncFakeContext{getResult: zpCtxSyncContextWithContextData(data)}
+	svc := zpTaskCtxSyncNew(nil, nil, nil, fake, nil)
+
+	if err := svc.SyncTaskMetadata(context.Background(), "t1", &entities.Task{EstimatedEffort: "2d"}); err != nil {
+		t.Fatal(err)
+	}
+	// The context owns nothing that changed, so nothing is written: an update here bumps the version and
+	// appends an empty change set, which is the same phantom history in a quieter shape.
+	if fake.updated != nil {
+		t.Fatal("an unchanged objective must not write the context")
 	}
 }

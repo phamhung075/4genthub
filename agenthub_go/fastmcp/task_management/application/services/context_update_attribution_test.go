@@ -100,3 +100,32 @@ func onlyContextUpdate(t *testing.T, ledger *captureLedger) entities.AppendTaskE
 	}
 	return event
 }
+
+// Every context_updated entry of every task recorded version 0, so a task's history could not be read as a
+// sequence. The repository carries the row's column as `Metadata["version"]` in the ROW's type (*int64) and the
+// port asserted int, which never matched (hub row f6328d5a). This drives the writer through the real recorder
+// with the repository's own shape, so the assertion is on what the ledger stores, not on the helper.
+func TestTheLedgerRecordsTheContextRowVersion(t *testing.T) {
+	const taskID = "44444444-4444-4444-4444-444444444444"
+	user := "user-1"
+
+	repo := newZucsFakeRepo()
+	stored := zucsTaskContext(taskID, "todo")
+	version := int64(7)
+	stored.Metadata["version"] = &version
+	repo.store[taskID] = stored
+
+	ledger := &captureLedger{}
+	svc := NewUnifiedContextService(repo, repo, repo, repo, nil, nil, nil, &user).
+		WithEventAppender(ledgerAppender{recorder: NewTaskEventRecorder(ledger, user)})
+
+	data := entities.NewOrderedMap[any]()
+	data.Set("implementation_notes", map[string]any{"progress_updates": []any{"one new note"}})
+	if _, err := svc.UpdateContext(context.Background(), "task", taskID, data, false, nil); err != nil {
+		t.Fatalf("update_context: %v", err)
+	}
+
+	if got := onlyContextUpdate(t, ledger).Payload["version"]; got != 7 {
+		t.Fatalf("version = %v (%T), want 7", got, got)
+	}
+}

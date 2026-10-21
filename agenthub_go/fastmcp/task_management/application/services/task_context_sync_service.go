@@ -308,7 +308,14 @@ func (s *TaskContextSyncService) SyncTaskStatus(ctx context.Context, taskID stri
 	return nil
 }
 
-// SyncTaskMetadata mirrors sync_task_metadata.
+// SyncTaskMetadata mirrors sync_task_metadata. The context owns exactly ONE of the task's fields: the
+// objective's estimated_effort. status, priority, labels, assignees and the two timestamps are the TASK row's,
+// served to a context read by its overlay (TaskOwnedFieldsFromTask, same package) and never stored on the
+// context row - CopyTaskFieldsIntoMetadata used to put them in the context's metadata, where the repository has
+// no column to keep them, so the next read composed the metadata without them and every update reported
+// `add metadata.status`, `add metadata.assignees`, ... to the ledger, forever (hub row f6328d5a). A write with
+// nothing of the context's own to change is not made at all: it would bump the version and append an empty
+// change set, which is the same phantom in a quieter shape.
 func (s *TaskContextSyncService) SyncTaskMetadata(ctx context.Context, taskID string, task *entities.Task) error {
 	contextResult, err := s.hierarchicalContextService.GetContext(ctx, "task", taskID, false, nil)
 	if err != nil {
@@ -318,24 +325,15 @@ func (s *TaskContextSyncService) SyncTaskMetadata(ctx context.Context, taskID st
 		return fmt.Errorf("the task context could not be read: %v", zpTaskCtxSyncGet(contextResult, "error"))
 	}
 	contextData := zpUCSAsOrdered(zpTaskCtxSyncGet(contextResult, "context"))
-	metadata := zpUCSAsOrdered(zpTaskCtxSyncGet(contextData, "metadata"))
 	objective := zpUCSAsOrdered(zpTaskCtxSyncGet(contextData, "objective"))
 
-	// The task's own fields are shared with the context read overlay, so both serve the same
-	// values from the same place.
-	live := TaskOwnedFieldsFromTask(task)
-	for _, key := range []string{"status", "priority", "labels", "assignees", "created_at", "updated_at"} {
-		v, ok := live[key]
-		if !ok {
-			continue
-		}
-		metadata.Set(key, v)
+	if task.EstimatedEffort == "" {
+		return nil
 	}
-	contextData.Set("metadata", metadata)
-
-	if task.EstimatedEffort != "" {
-		objective.Set("estimated_effort", task.EstimatedEffort)
+	if current, _ := objective.Get("estimated_effort"); current == task.EstimatedEffort {
+		return nil
 	}
+	objective.Set("estimated_effort", task.EstimatedEffort)
 	contextData.Set("objective", objective)
 
 	if _, err := s.hierarchicalContextService.UpdateContext(ctx, "task", taskID, contextData, false); err != nil {

@@ -1,3 +1,17 @@
+## 2026-10-21 - the ledger's version is the row's, and the metadata sync writes nothing the row cannot store (go, branch 4genthub-min/events-read-log)
+
+`application/services` gains `TestTheLedgerRecordsTheContextRowVersion`: a stored context whose
+`Metadata["version"]` is `*int64(7)` - the shape `task_context_repository.go` writes and its own test pins -
+driven through `UpdateContext` and the real `TaskEventRecorder`, asserting the `context_updated` entry carries
+version 7. The port asserted `int`, so the entry carried 0 by construction. `TestTaskContextSyncService_SyncTaskMetadata`
+is rewritten: it asserts the objective's `estimated_effort` lands and that none of `status`, `priority`, `labels`,
+`assignees`, `created_at`, `updated_at` appears in the write, because the context row has no column for them and
+the task row serves them; the old assertion pinned the write that made every update report a phantom `add`.
+`TestTaskContextSyncService_SyncTaskMetadataSkipsAnUnchangedObjective` pins that an unchanged objective performs
+no update at all, rather than a version bump with an empty change set.
+
+`go test ./...` in `agenthub_go`: 138 packages ok, 0 failed.
+
 ## 2026-10-21 - the census refuses a dist older than the last frontend commit (python, branch 4genthub-min/events-read-log)
 
 `scripts/tests/test_check_served_frontend.py` gains `dated_frontend`, a fixture that builds a real work

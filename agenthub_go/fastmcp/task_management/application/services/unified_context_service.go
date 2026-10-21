@@ -454,12 +454,7 @@ func (s *UnifiedContextService) UpdateContext(ctx context.Context, level, contex
 	}
 
 	if s.EventAppender != nil && contextLevel == value_objects.ContextLevelTask {
-		var ver int
-		if ent, ok := savedContext.(*entities.TaskContextUnified); ok && ent.Metadata != nil {
-			if v, ok := ent.Metadata["version"].(int); ok {
-				ver = v
-			}
-		}
+		ver := contextVersionOf(savedContext)
 		changes, dropped := entities.ContextChanges(existingDict, updatedData)
 		// A FAILED APPEND IS LOGGED, NOT DROPPED, and it is not returned: the context row write above
 		// has already landed, so failing here would report a saved context as a refusal, and the
@@ -486,6 +481,28 @@ func (s *UnifiedContextService) UpdateContext(ctx context.Context, level, contex
 	resp.Set("context_id", contextID)
 	resp.Set("propagated", propagateChanges)
 	return resp, nil
+}
+
+// contextVersionOf reads the version the ledger records off the saved context. The repository carries the
+// row's column as `Metadata["version"]` in the type the row holds (*int64, task_context_repository.go), and the
+// port asserted `int`, which never matched: every context_updated event of every task was recorded with
+// version 0, so the history could not be read as a sequence (hub row f6328d5a, measured 2026-10-21).
+func contextVersionOf(savedContext any) int {
+	ent, ok := savedContext.(*entities.TaskContextUnified)
+	if !ok || ent.Metadata == nil {
+		return 0
+	}
+	switch v := ent.Metadata["version"].(type) {
+	case *int64:
+		if v != nil {
+			return int(*v)
+		}
+	case int64:
+		return int(v)
+	case int:
+		return v
+	}
+	return 0
 }
 
 // DeleteContext mirrors delete_context.
