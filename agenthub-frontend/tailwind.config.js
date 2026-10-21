@@ -8,7 +8,7 @@
 // entry serves both and `border-accent/40` paints instead of vanishing.
 // `--color-*` stays plain hex on purpose: a channel-triple token would break the 100-odd
 // rules and inline styles that read the property as a complete colour.
-const token = (name) =>
+const withAlpha = (name) =>
   `color-mix(in srgb, var(--color-${name}) calc(<alpha-value> * 100%), transparent)`;
 
 module.exports = {
@@ -21,102 +21,102 @@ module.exports = {
       colors: {
         // Primary Colors
         primary: {
-          DEFAULT: token('primary'),
-          hover: token('primary-hover'),
-          light: token('primary-light'),
-          dark: token('primary-dark'),
+          DEFAULT: withAlpha('primary'),
+          hover: withAlpha('primary-hover'),
+          light: withAlpha('primary-light'),
+          dark: withAlpha('primary-dark'),
         },
         // Secondary Colors
         secondary: {
-          DEFAULT: token('secondary'),
-          hover: token('secondary-hover'),
-          light: token('secondary-light'),
-          dark: token('secondary-dark'),
+          DEFAULT: withAlpha('secondary'),
+          hover: withAlpha('secondary-hover'),
+          light: withAlpha('secondary-light'),
+          dark: withAlpha('secondary-dark'),
         },
         // Background Colors
         background: {
-          DEFAULT: token('background'),
-          secondary: token('background-secondary'),
-          tertiary: token('background-tertiary'),
-          hover: token('background-hover'),
-          active: token('background-active'),
+          DEFAULT: withAlpha('background'),
+          secondary: withAlpha('background-secondary'),
+          tertiary: withAlpha('background-tertiary'),
+          hover: withAlpha('background-hover'),
+          active: withAlpha('background-active'),
         },
         // Surface Colors
         surface: {
-          DEFAULT: token('surface'),
-          hover: token('surface-hover'),
-          raised: token('surface-raised'),
-          border: token('surface-border'),
-          'border-hover': token('surface-border-hover'),
-          'border-strong': token('surface-border-strong'),
+          DEFAULT: withAlpha('surface'),
+          hover: withAlpha('surface-hover'),
+          raised: withAlpha('surface-raised'),
+          border: withAlpha('surface-border'),
+          'border-hover': withAlpha('surface-border-hover'),
+          'border-strong': withAlpha('surface-border-strong'),
         },
         // Text Colors
         text: {
-          DEFAULT: token('text'),
-          secondary: token('text-secondary'),
-          tertiary: token('text-tertiary'),
-          disabled: token('text-disabled'),
-          inverse: token('text-inverse'),
+          DEFAULT: withAlpha('text'),
+          secondary: withAlpha('text-secondary'),
+          tertiary: withAlpha('text-tertiary'),
+          disabled: withAlpha('text-disabled'),
+          inverse: withAlpha('text-inverse'),
         },
         // Input Colors
         input: {
-          background: token('input-background'),
-          border: token('input-border'),
-          'border-focus': token('input-border-focus'),
-          'border-error': token('input-border-error'),
-          text: token('input-text'),
-          placeholder: token('input-placeholder'),
+          background: withAlpha('input-background'),
+          border: withAlpha('input-border'),
+          'border-focus': withAlpha('input-border-focus'),
+          'border-error': withAlpha('input-border-error'),
+          text: withAlpha('input-text'),
+          placeholder: withAlpha('input-placeholder'),
         },
         // Button Colors
         button: {
-          'primary-bg': token('button-primary-bg'),
-          'primary-hover': token('button-primary-hover'),
-          'primary-text': token('button-primary-text'),
-          'secondary-bg': token('button-secondary-bg'),
-          'secondary-hover': token('button-secondary-hover'),
-          'secondary-text': token('button-secondary-text'),
-          'outline-border': token('button-outline-border'),
-          'outline-hover': token('button-outline-hover'),
-          'danger-bg': token('button-danger-bg'),
-          'danger-hover': token('button-danger-hover'),
+          'primary-bg': withAlpha('button-primary-bg'),
+          'primary-hover': withAlpha('button-primary-hover'),
+          'primary-text': withAlpha('button-primary-text'),
+          'secondary-bg': withAlpha('button-secondary-bg'),
+          'secondary-hover': withAlpha('button-secondary-hover'),
+          'secondary-text': withAlpha('button-secondary-text'),
+          'outline-border': withAlpha('button-outline-border'),
+          'outline-hover': withAlpha('button-outline-hover'),
+          'danger-bg': withAlpha('button-danger-bg'),
+          'danger-hover': withAlpha('button-danger-hover'),
         },
         // Status Colors
         success: {
-          DEFAULT: token('success'),
-          light: token('success-light'),
-          dark: token('success-dark'),
+          DEFAULT: withAlpha('success'),
+          light: withAlpha('success-light'),
+          dark: withAlpha('success-dark'),
         },
         warning: {
-          DEFAULT: token('warning'),
-          light: token('warning-light'),
-          dark: token('warning-dark'),
+          DEFAULT: withAlpha('warning'),
+          light: withAlpha('warning-light'),
+          dark: withAlpha('warning-dark'),
         },
         error: {
-          DEFAULT: token('error'),
-          light: token('error-light'),
-          dark: token('error-dark'),
+          DEFAULT: withAlpha('error'),
+          light: withAlpha('error-light'),
+          dark: withAlpha('error-dark'),
         },
         info: {
-          DEFAULT: token('info'),
-          light: token('info-light'),
-          dark: token('info-dark'),
+          DEFAULT: withAlpha('info'),
+          light: withAlpha('info-light'),
+          dark: withAlpha('info-dark'),
         },
         // The one accent, and the source a chrome surface should paint from: the CSS
         // token layer declares it, Tailwind names it here, and MUI's palette names the
         // same value (R1), bound to the CSS by the token-parity test. A second hue in
         // the shell is therefore a defect rather than a style choice.
         accent: {
-          DEFAULT: token('accent'),
-          hover: token('accent-hover'),
-          contrast: token('accent-contrast'),
+          DEFAULT: withAlpha('accent'),
+          hover: withAlpha('accent-hover'),
+          contrast: withAlpha('accent-contrast'),
         },
         // Navigation Colors
         nav: {
-          background: token('nav-background'),
-          text: token('nav-text'),
-          'text-hover': token('nav-text-hover'),
-          'text-active': token('nav-text-active'),
-          border: token('nav-border'),
+          background: withAlpha('nav-background'),
+          text: withAlpha('nav-text'),
+          'text-hover': withAlpha('nav-text-hover'),
+          'text-active': withAlpha('nav-text-active'),
+          border: withAlpha('nav-border'),
         },
       },
       // The type scale: eight steps, each a size over its own line height. The
@@ -133,27 +133,27 @@ module.exports = {
         'hero': ['24px', '32px'],
       },
       backgroundColor: {
-        'base': token('background'),
-        'base-secondary': token('background-secondary'),
-        'base-tertiary': token('background-tertiary'),
-        'surface': token('surface'),
-        'surface-hover': token('surface-hover'),
+        'base': withAlpha('background'),
+        'base-secondary': withAlpha('background-secondary'),
+        'base-tertiary': withAlpha('background-tertiary'),
+        'surface': withAlpha('surface'),
+        'surface-hover': withAlpha('surface-hover'),
       },
       textColor: {
-        'base': token('text'),
-        'base-secondary': token('text-secondary'),
-        'base-tertiary': token('text-tertiary'),
+        'base': withAlpha('text'),
+        'base-secondary': withAlpha('text-secondary'),
+        'base-tertiary': withAlpha('text-tertiary'),
       },
       borderColor: {
-        'base': token('surface-border'),
-        'base-hover': token('surface-border-hover'),
-        'surface-border': token('surface-border'),
-        'surface-border-hover': token('surface-border-hover'),
-        'nav-border': token('nav-border'),
-        'button-outline-border': token('button-outline-border'),
-        'input-border': token('input-border'),
-        'input-border-focus': token('input-border-focus'),
-        'input-border-error': token('input-border-error'),
+        'base': withAlpha('surface-border'),
+        'base-hover': withAlpha('surface-border-hover'),
+        'surface-border': withAlpha('surface-border'),
+        'surface-border-hover': withAlpha('surface-border-hover'),
+        'nav-border': withAlpha('nav-border'),
+        'button-outline-border': withAlpha('button-outline-border'),
+        'input-border': withAlpha('input-border'),
+        'input-border-focus': withAlpha('input-border-focus'),
+        'input-border-error': withAlpha('input-border-error'),
       },
       boxShadow: {
         'sm': '0 1px 2px 0 var(--color-shadow)',
