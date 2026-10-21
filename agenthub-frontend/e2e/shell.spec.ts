@@ -166,11 +166,40 @@ async function readShell(page: Page, width: number): Promise<ShellReading> {
     // failing run names its own source instead of only its value.
     const hues = new Set<string>()
     const hueSource: Record<string, string> = {}
+    // A computed colour arrives in one of two spellings: the legacy `rgb(r, g, b)`
+    // a plain custom property paints, and `color(srgb r g b / a)` - the form Chrome
+    // serializes for a colour it resolved through color-mix() or relative syntax,
+    // which is how Tailwind's alpha channel reaches a theme class. Reading only the
+    // legacy spelling would drop `text-accent` from the set and look like a lost hue.
+    const parsePainted = (token: string): [number, number, number, number] | null => {
+      if (token.startsWith('color(')) {
+        const [channels, alphaPart] = token
+          .slice(token.indexOf('(') + 1, -1)
+          .replace(/^\s*srgb\s*/, '')
+          .split('/')
+        const nums = (channels.match(/-?[\d.]+%?/g) ?? []).map((n) =>
+          n.endsWith('%') ? Number(n.slice(0, -1)) / 100 : Number(n),
+        )
+        if (nums.length < 3) return null
+        const alphaRaw = alphaPart?.trim()
+        const alpha =
+          alphaRaw === undefined
+            ? 1
+            : alphaRaw.endsWith('%')
+              ? Number(alphaRaw.slice(0, -1)) / 100
+              : Number(alphaRaw)
+        return [nums[0] * 255, nums[1] * 255, nums[2] * 255, alpha]
+      }
+      const parts = token.match(/[\d.]+/g)?.map(Number) ?? []
+      if (parts.length < 3) return null
+      return [parts[0], parts[1], parts[2], parts.length > 3 ? parts[3] : 1]
+    }
     const collect = (raw: string, el: Element): void => {
-      for (const token of raw.match(/rgba?\([^)]+\)/g) ?? []) {
-        const parts = token.match(/[\d.]+/g)?.map(Number) ?? []
-        const [r, g, b] = parts
-        const alpha = parts.length > 3 ? parts[3] : 1
+      for (const token of raw.match(/rgba?\([^)]+\)|color\(\s*srgb[^)]+\)/g) ?? []) {
+        const painted = parsePainted(token)
+        if (!painted) continue
+        const [r, g, b] = painted.slice(0, 3).map((channel) => Math.round(channel))
+        const alpha = painted[3]
         if (alpha <= 0.1) continue
         // Near-greys are the text, border and surface tokens (slate-400, the
         // tightest of them, spans 36 across its channels); every accent this design

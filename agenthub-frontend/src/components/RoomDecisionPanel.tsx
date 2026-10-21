@@ -165,7 +165,7 @@ export const RoomDecisionPanel: React.FC = () => {
         <Select
           value={room}
           aria-label="Room"
-          className="text-xs py-1.5 h-auto min-h-[2.25rem] rounded-lg bg-surface/80 border-surface-border-hover focus:border-accent"
+          className="rounded-lg bg-surface/80 border-surface-border-hover focus:border-accent"
           onChange={(event) => setPickedRoom(event.target.value)}
         >
           {rooms.map((option) => (

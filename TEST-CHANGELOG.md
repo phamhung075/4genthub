@@ -1,3 +1,14 @@
+## 2026-10-21 - the shell audit reads a computed colour in both spellings (frontend, branch 4genthub-min/fe-tw-alpha)
+
+`e2e/shell.spec.ts` gains `parsePainted` inside the navigation's hue collector: it reads the legacy
+`rgb(r, g, b)`/`rgba(...)` form and the `color(srgb r g b / a)` form Chromium serializes for a colour
+resolved through `color-mix()` - which is now how every opacity-modified theme class paints, after the
+Tailwind registration fix in this task. The `color(srgb …)` channels are floats in 0..1 and are scaled
+to 0..255 and rounded, so `color(srgb 0.309804 0.27451 0.898039)` normalizes to `rgb(79, 70, 229)` and the
+one-accent assertion compares hues, not serializations. Probed by extracting the shipped function and
+feeding it both spellings: they produce the identical triple. Not run as a suite - the e2e specs need a
+deployed origin, and the owner ruling for this task is `tsc` only.
+
 ## 2026-10-21 - the ledger's version is the row's, and the metadata sync writes nothing the row cannot store (go, branch 4genthub-min/events-read-log)
 
 `application/services` gains `TestTheLedgerRecordsTheContextRowVersion`: a stored context whose

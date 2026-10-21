@@ -1,4 +1,16 @@
 /** @type {import('tailwindcss').Config} */
+
+// Every theme colour below is a CSS custom property (src/styles/theme.css holds them as
+// hex), so the property must be given an alpha channel at use time: Tailwind v3 drops an
+// opacity-modified utility whose colour it cannot resolve, and a bare `var(--color-x)`
+// has no channel to put one on. Mixing the property with transparent states the alpha -
+// `<alpha-value>` is 1 for the solid form and the modifier for `bg-accent/15` - so one
+// entry serves both and `border-accent/40` paints instead of vanishing.
+// `--color-*` stays plain hex on purpose: a channel-triple token would break the 100-odd
+// rules and inline styles that read the property as a complete colour.
+const token = (name) =>
+  `color-mix(in srgb, var(--color-${name}) calc(<alpha-value> * 100%), transparent)`;
+
 module.exports = {
   darkMode: 'class',
   content: [
@@ -9,102 +21,102 @@ module.exports = {
       colors: {
         // Primary Colors
         primary: {
-          DEFAULT: 'var(--color-primary)',
-          hover: 'var(--color-primary-hover)',
-          light: 'var(--color-primary-light)',
-          dark: 'var(--color-primary-dark)',
+          DEFAULT: token('primary'),
+          hover: token('primary-hover'),
+          light: token('primary-light'),
+          dark: token('primary-dark'),
         },
         // Secondary Colors
         secondary: {
-          DEFAULT: 'var(--color-secondary)',
-          hover: 'var(--color-secondary-hover)',
-          light: 'var(--color-secondary-light)',
-          dark: 'var(--color-secondary-dark)',
+          DEFAULT: token('secondary'),
+          hover: token('secondary-hover'),
+          light: token('secondary-light'),
+          dark: token('secondary-dark'),
         },
         // Background Colors
         background: {
-          DEFAULT: 'var(--color-background)',
-          secondary: 'var(--color-background-secondary)',
-          tertiary: 'var(--color-background-tertiary)',
-          hover: 'var(--color-background-hover)',
-          active: 'var(--color-background-active)',
+          DEFAULT: token('background'),
+          secondary: token('background-secondary'),
+          tertiary: token('background-tertiary'),
+          hover: token('background-hover'),
+          active: token('background-active'),
         },
         // Surface Colors
         surface: {
-          DEFAULT: 'var(--color-surface)',
-          hover: 'var(--color-surface-hover)',
-          raised: 'var(--color-surface-raised)',
-          border: 'var(--color-surface-border)',
-          'border-hover': 'var(--color-surface-border-hover)',
-          'border-strong': 'var(--color-surface-border-strong)',
+          DEFAULT: token('surface'),
+          hover: token('surface-hover'),
+          raised: token('surface-raised'),
+          border: token('surface-border'),
+          'border-hover': token('surface-border-hover'),
+          'border-strong': token('surface-border-strong'),
         },
         // Text Colors
         text: {
-          DEFAULT: 'var(--color-text)',
-          secondary: 'var(--color-text-secondary)',
-          tertiary: 'var(--color-text-tertiary)',
-          disabled: 'var(--color-text-disabled)',
-          inverse: 'var(--color-text-inverse)',
+          DEFAULT: token('text'),
+          secondary: token('text-secondary'),
+          tertiary: token('text-tertiary'),
+          disabled: token('text-disabled'),
+          inverse: token('text-inverse'),
         },
         // Input Colors
         input: {
-          background: 'var(--color-input-background)',
-          border: 'var(--color-input-border)',
-          'border-focus': 'var(--color-input-border-focus)',
-          'border-error': 'var(--color-input-border-error)',
-          text: 'var(--color-input-text)',
-          placeholder: 'var(--color-input-placeholder)',
+          background: token('input-background'),
+          border: token('input-border'),
+          'border-focus': token('input-border-focus'),
+          'border-error': token('input-border-error'),
+          text: token('input-text'),
+          placeholder: token('input-placeholder'),
         },
         // Button Colors
         button: {
-          'primary-bg': 'var(--color-button-primary-bg)',
-          'primary-hover': 'var(--color-button-primary-hover)',
-          'primary-text': 'var(--color-button-primary-text)',
-          'secondary-bg': 'var(--color-button-secondary-bg)',
-          'secondary-hover': 'var(--color-button-secondary-hover)',
-          'secondary-text': 'var(--color-button-secondary-text)',
-          'outline-border': 'var(--color-button-outline-border)',
-          'outline-hover': 'var(--color-button-outline-hover)',
-          'danger-bg': 'var(--color-button-danger-bg)',
-          'danger-hover': 'var(--color-button-danger-hover)',
+          'primary-bg': token('button-primary-bg'),
+          'primary-hover': token('button-primary-hover'),
+          'primary-text': token('button-primary-text'),
+          'secondary-bg': token('button-secondary-bg'),
+          'secondary-hover': token('button-secondary-hover'),
+          'secondary-text': token('button-secondary-text'),
+          'outline-border': token('button-outline-border'),
+          'outline-hover': token('button-outline-hover'),
+          'danger-bg': token('button-danger-bg'),
+          'danger-hover': token('button-danger-hover'),
         },
         // Status Colors
         success: {
-          DEFAULT: 'var(--color-success)',
-          light: 'var(--color-success-light)',
-          dark: 'var(--color-success-dark)',
+          DEFAULT: token('success'),
+          light: token('success-light'),
+          dark: token('success-dark'),
         },
         warning: {
-          DEFAULT: 'var(--color-warning)',
-          light: 'var(--color-warning-light)',
-          dark: 'var(--color-warning-dark)',
+          DEFAULT: token('warning'),
+          light: token('warning-light'),
+          dark: token('warning-dark'),
         },
         error: {
-          DEFAULT: 'var(--color-error)',
-          light: 'var(--color-error-light)',
-          dark: 'var(--color-error-dark)',
+          DEFAULT: token('error'),
+          light: token('error-light'),
+          dark: token('error-dark'),
         },
         info: {
-          DEFAULT: 'var(--color-info)',
-          light: 'var(--color-info-light)',
-          dark: 'var(--color-info-dark)',
+          DEFAULT: token('info'),
+          light: token('info-light'),
+          dark: token('info-dark'),
         },
         // The one accent, and the source a chrome surface should paint from: the CSS
         // token layer declares it, Tailwind names it here, and MUI's palette names the
         // same value (R1), bound to the CSS by the token-parity test. A second hue in
         // the shell is therefore a defect rather than a style choice.
         accent: {
-          DEFAULT: 'var(--color-accent)',
-          hover: 'var(--color-accent-hover)',
-          contrast: 'var(--color-accent-contrast)',
+          DEFAULT: token('accent'),
+          hover: token('accent-hover'),
+          contrast: token('accent-contrast'),
         },
         // Navigation Colors
         nav: {
-          background: 'var(--color-nav-background)',
-          text: 'var(--color-nav-text)',
-          'text-hover': 'var(--color-nav-text-hover)',
-          'text-active': 'var(--color-nav-text-active)',
-          border: 'var(--color-nav-border)',
+          background: token('nav-background'),
+          text: token('nav-text'),
+          'text-hover': token('nav-text-hover'),
+          'text-active': token('nav-text-active'),
+          border: token('nav-border'),
         },
       },
       // The type scale: eight steps, each a size over its own line height. The
@@ -121,27 +133,27 @@ module.exports = {
         'hero': ['24px', '32px'],
       },
       backgroundColor: {
-        'base': 'var(--color-background)',
-        'base-secondary': 'var(--color-background-secondary)',
-        'base-tertiary': 'var(--color-background-tertiary)',
-        'surface': 'var(--color-surface)',
-        'surface-hover': 'var(--color-surface-hover)',
+        'base': token('background'),
+        'base-secondary': token('background-secondary'),
+        'base-tertiary': token('background-tertiary'),
+        'surface': token('surface'),
+        'surface-hover': token('surface-hover'),
       },
       textColor: {
-        'base': 'var(--color-text)',
-        'base-secondary': 'var(--color-text-secondary)',
-        'base-tertiary': 'var(--color-text-tertiary)',
+        'base': token('text'),
+        'base-secondary': token('text-secondary'),
+        'base-tertiary': token('text-tertiary'),
       },
       borderColor: {
-        'base': 'var(--color-surface-border)',
-        'base-hover': 'var(--color-surface-border-hover)',
-        'surface-border': 'var(--color-surface-border)',
-        'surface-border-hover': 'var(--color-surface-border-hover)',
-        'nav-border': 'var(--color-nav-border)',
-        'button-outline-border': 'var(--color-button-outline-border)',
-        'input-border': 'var(--color-input-border)',
-        'input-border-focus': 'var(--color-input-border-focus)',
-        'input-border-error': 'var(--color-input-border-error)',
+        'base': token('surface-border'),
+        'base-hover': token('surface-border-hover'),
+        'surface-border': token('surface-border'),
+        'surface-border-hover': token('surface-border-hover'),
+        'nav-border': token('nav-border'),
+        'button-outline-border': token('button-outline-border'),
+        'input-border': token('input-border'),
+        'input-border-focus': token('input-border-focus'),
+        'input-border-error': token('input-border-error'),
       },
       boxShadow: {
         'sm': '0 1px 2px 0 var(--color-shadow)',
