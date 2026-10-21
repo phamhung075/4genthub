@@ -302,7 +302,12 @@ ENV_PAIR = re.compile(
 
 
 def env_object(text: str) -> str | None:
-    """The `{BASE_URL:...}` literal, brace-matched, or None when the build inlines no environment."""
+    """The `{BASE_URL:...}` literal, brace-matched, or None when the build inlines no environment.
+
+    The anchor is vite's own first key, `BASE_URL`, unquoted - which is how vite emits it. A build whose
+    object began with another key, or with a quoted key, would read as "no environment" and then as
+    "different build shapes": a refusal, never a false OK, so the assumption fails safe.
+    """
     start = text.find('{BASE_URL:"')
     if start < 0:
         return None
@@ -435,6 +440,9 @@ def main(argv: list[str] | None = None) -> int:
             # Comparability is decided BEFORE identity: if the expectation was built in another
             # environment, its hash says nothing about the served one and a MISMATCH would be a lie
             # about production. The served side's own entry carries its environment too.
+            # The closure names one entry, so the first match is that entry. A same-named file at the
+            # root as well as under assets/ would resolve to whichever the closure saw first; none
+            # exists today, and the served tree is walked from the index outward.
             served_text = next(
                 (t for path, t in texts.items() if served_entry and path.endswith("/" + served_entry)), ""
             )
