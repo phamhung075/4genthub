@@ -977,12 +977,6 @@ const completedTasks = useMemo(
 - See this guide - Recommended patterns (after)
 - See `src/tests/` - Testing patterns
 
-### Documentation
-
-- `state-management-analysis.md` - Current architecture audit
-- `state-management-strategy.md` - Decision framework
-- `state-management-comparison.md` - Technology comparison
-
 ### External Resources
 
 - [React Query Docs](https://tanstack.com/query/latest/docs/react/overview)

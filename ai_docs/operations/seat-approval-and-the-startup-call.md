@@ -176,6 +176,5 @@ cat /home/daihu/.config/4genthub/state/omp/<room>-<seat>@<room>/agent/config.yml
 
 ## 5. Boundaries observed
 
-`NEXT_GEN.md` was not edited (the lead's file; the item says to tell the lead, and the report says it).
 `ai_docs/index.json` is machine-generated and was already carrying another seat's pending change when this was
 written — not touched.

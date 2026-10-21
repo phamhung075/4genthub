@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """DOC-CITATIONS — every `file:line` and every backticked `Test` name in ai_docs resolves.
 
-WHY THIS EXISTS. `ai_docs/core-architecture/seat-occupant-record.md` reached main on 2026-10-20
+WHY THIS EXISTS. A seat-occupant design doc reached main on 2026-10-20
 citing `TestSeatAdminSetOccupantEmitsOneFrame` at `seat_admin_mount_test.go:527`: a name present in
 NO commit of this repository, at a line that had already moved to :547. A reader caught it and no
 check did. `scripts/CITATION-AUDIT.py` resolves only the surface inventory's route tables, so every
@@ -25,9 +25,7 @@ WHAT IT CHECKS, and nothing else.
      pairing can answer it. The escape belongs to the document: name the test, then state a
      production line as its own claim - not in a parenthetical directly after the name.
 
-SCOPE. `ai_docs/**/*.md`, except `ai_docs/reports-status/**`: those are dated records of what was
-measured on a day, and a later tree cannot make them wrong - so they are outside every rewrite and
-outside this check too.
+SCOPE. `ai_docs/**/*.md`.
 
 WHAT THIS DOES NOT CHECK, AND WHY - EACH ONE MEASURED ON THIS TREE (2026-10-20), so the next reader
 does not re-add it:
@@ -69,7 +67,6 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DOCS = os.path.join(ROOT, "ai_docs")
 # Dated records: a measurement of a day, which a later tree cannot make wrong. The name is
 # matched relative to the audited scope, so `--docs` over another tree excludes its own copy.
-OUTSIDE = ("reports-status",)
 CODE_TREES = ("agenthub_go", "agenthub_client")
 
 EXTS = "go|py|sql|ts|tsx|js|md|json|yaml|yml|sh|rs|toml|css|html"
@@ -187,9 +184,6 @@ def docs_in(scope):
     out = []
     for p in walk_files([scope]):
         if not p.endswith(".md"):
-            continue
-        rel = os.path.relpath(p, scope).replace(os.sep, "/")
-        if any(rel == o or rel.startswith(o + "/") for o in OUTSIDE):
             continue
         out.append(p)
     return sorted(out)

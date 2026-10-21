@@ -342,7 +342,7 @@ func (s *ContextTemplateService) ExportTemplate(templateID string) (string, erro
 
 // ImportTemplate ports import_template.
 //
-// Accepted deviations (documented in MIGRATION.md): JSON syntax errors other than
+// Accepted deviations: JSON syntax errors other than
 // "Expecting value" at the start keep the Go decoder text (Python's JSONDecodeError
 // position/message families are not ported), and non-string version/author/tags and
 // non-bool variable "required" values are normalised instead of kept raw because the

@@ -299,7 +299,7 @@ DOC_SHAPES = [
     "ai_docs/core-architecture/seat-skills.md",
     "CHANGELOG/2026-10-18--one-entry.md",
     "claude-automation/CHANGELOG/2026-10-18--another-entry.md",
-    "TEST-CHANGELOG.md",
+    "README.md",
     "NEXT-GEN2.md",
 ]
 
@@ -480,10 +480,10 @@ def test_a_refusal_leaves_a_line_the_metrics_can_read_without_the_paths(
     repo = _seat_repo(tmp_path)
     monkeypatch.setenv("AGENTHUB_SESSION_NAME", SEAT)
     monkeypatch.setenv("AGENTHUB_SEAT", "go-dev")
-    for shape in ("AGENTS.md", "TEST-CHANGELOG.md"):
+    for shape in ("AGENTS.md", "README.md"):
         (repo / shape).write_text("two\n", encoding="utf-8")
 
-    assert _commit(module, repo, "-m", "docs: the plan", "--", "AGENTS.md", "TEST-CHANGELOG.md") == 1
+    assert _commit(module, repo, "-m", "docs: the plan", "--", "AGENTS.md", "README.md") == 1
     assert "docs-only commit refused" in capsys.readouterr().err
     spool = _parked(repo) / "refusals.jsonl"
     lines = [json.loads(line) for line in spool.read_text(encoding="utf-8").splitlines()]
@@ -493,7 +493,7 @@ def test_a_refusal_leaves_a_line_the_metrics_can_read_without_the_paths(
     assert (record["docs"], record["code"]) == (2, 0)
     assert (record["seat"], record["session"]) == ("go-dev", SEAT)
     raw = spool.read_text(encoding="utf-8")
-    for path in ("AGENTS.md", "TEST-CHANGELOG.md"):
+    for path in ("AGENTS.md", "README.md"):
         assert path not in raw, "a refusal records classes, never paths"
 
     # Each refusal gets its own id, so the extractor can tell two apart.

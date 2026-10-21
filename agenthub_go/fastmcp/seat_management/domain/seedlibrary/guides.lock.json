@@ -5,9 +5,9 @@
     {
       "slug": "guide-common",
       "path": "agenthub_go/fastmcp/seat_management/domain/seedlibrary/shared-modules/guide-common.md",
-      "sha256": "c8bca63a0e4711382eaf6ea0e8cac93ff463027d8230c682ad1827125e7cd8ad",
+      "sha256": "3b1fb7a9a27dc6e6f2fc9ab3f3849d610a1a709a93fcdbeab64742a19bc21c4e",
       "source_path": "ai_docs/operations/seat-guides/_common.md",
-      "source_sha256": "c8bca63a0e4711382eaf6ea0e8cac93ff463027d8230c682ad1827125e7cd8ad"
+      "source_sha256": "3b1fb7a9a27dc6e6f2fc9ab3f3849d610a1a709a93fcdbeab64742a19bc21c4e"
     },
     {
       "slug": "guide-architect",
@@ -19,23 +19,23 @@
     {
       "slug": "guide-context-dev",
       "path": "agenthub_go/fastmcp/seat_management/domain/seedlibrary/blocks/guide-context-dev.md",
-      "sha256": "ccd8ed4fa9c769ca6dd78d27d1be447721827d7e17af266081bbfc1745296a05",
+      "sha256": "cf5eb591cd57a21392156ae25487aeb2038d6aac174333494182112662f90b9d",
       "source_path": "ai_docs/operations/seat-guides/context-dev.md",
-      "source_sha256": "ccd8ed4fa9c769ca6dd78d27d1be447721827d7e17af266081bbfc1745296a05"
+      "source_sha256": "cf5eb591cd57a21392156ae25487aeb2038d6aac174333494182112662f90b9d"
     },
     {
       "slug": "guide-fe-dev",
       "path": "agenthub_go/fastmcp/seat_management/domain/seedlibrary/blocks/guide-fe-dev.md",
-      "sha256": "734bc48b379e4c9a7b956785d045f67c5026bde21e7f135ae5d262db1c4a0e36",
+      "sha256": "79a9652c104750fe1afa3864358f7f88d1a7559b3cb6e9ca039cabff04c497ae",
       "source_path": "ai_docs/operations/seat-guides/fe-dev.md",
-      "source_sha256": "734bc48b379e4c9a7b956785d045f67c5026bde21e7f135ae5d262db1c4a0e36"
+      "source_sha256": "79a9652c104750fe1afa3864358f7f88d1a7559b3cb6e9ca039cabff04c497ae"
     },
     {
       "slug": "guide-feedback-dev",
       "path": "agenthub_go/fastmcp/seat_management/domain/seedlibrary/blocks/guide-feedback-dev.md",
-      "sha256": "561f05c21913c98b0b08781893d3d8fd8c7f67175575141b4e3a6610a436482d",
+      "sha256": "f09c6c2437de097a191fd87dab35ac2de402330ad7d7923592f0a8455bd4c739",
       "source_path": "ai_docs/operations/seat-guides/feedback-dev.md",
-      "source_sha256": "561f05c21913c98b0b08781893d3d8fd8c7f67175575141b4e3a6610a436482d"
+      "source_sha256": "f09c6c2437de097a191fd87dab35ac2de402330ad7d7923592f0a8455bd4c739"
     },
     {
       "slug": "guide-go-dev",
@@ -61,9 +61,9 @@
     {
       "slug": "guide-skills-dev",
       "path": "agenthub_go/fastmcp/seat_management/domain/seedlibrary/blocks/guide-skills-dev.md",
-      "sha256": "dac5c773f829462d7781704dbf6073a533e668e720e0b5f57c2d09f6ee36b7f7",
+      "sha256": "c1d798952b08839c3116aeb6234923d045d131aa67e9bd32cfcd5ca0320f92d3",
       "source_path": "ai_docs/operations/seat-guides/skills-dev.md",
-      "source_sha256": "dac5c773f829462d7781704dbf6073a533e668e720e0b5f57c2d09f6ee36b7f7"
+      "source_sha256": "c1d798952b08839c3116aeb6234923d045d131aa67e9bd32cfcd5ca0320f92d3"
     },
     {
       "slug": "guide-web-dev",
@@ -75,9 +75,9 @@
     {
       "slug": "guide-writer",
       "path": "agenthub_go/fastmcp/seat_management/domain/seedlibrary/blocks/guide-writer.md",
-      "sha256": "6f2d001e82a571347643839630001db28efc61a5763d3aba9f793a64dfce4e19",
+      "sha256": "98d8fc21ab86db8bfa2e6bbbbb0cedff15009c6208c0c1aed96600441a08d7c1",
       "source_path": "ai_docs/operations/seat-guides/writer.md",
-      "source_sha256": "6f2d001e82a571347643839630001db28efc61a5763d3aba9f793a64dfce4e19"
+      "source_sha256": "98d8fc21ab86db8bfa2e6bbbbb0cedff15009c6208c0c1aed96600441a08d7c1"
     }
   ]
 }

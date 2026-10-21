@@ -244,7 +244,7 @@ func TestTheRuledCarryStepFailsOnAMalformedEntryAndLeavesTheColumnIntact(t *test
 
 	// An entry without a timestamp: the step cannot express it in the ledger, and because the step
 	// destroys the source, the ruling is that it FAILS rather than drops a note it could not read
-	// (NEXT_GEN.md's O1c check: "a malformed entry -> step fails, column intact"). 0002 could skip
+	// (the O1c check: "a malformed entry -> step fails, column intact"). 0002 could skip
 	// these because it destroyed nothing; this step cannot.
 	var taskID string
 	if err := sessions.WithSession(context.Background(), func(ctx context.Context, s database.DBTX) error {

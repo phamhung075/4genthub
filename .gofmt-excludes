@@ -3,9 +3,7 @@
 #
 # WHY THEY ARE NOT RENAMED (measured 2026-10-17 at hub main 7c45ca1f):
 #   captain-definition.backend.go   A CapRover JSON definition. Its NAME is the app's Captain
-#                                   Definition Path, a per-app setting the tree does not record
-#                                   (see CHANGELOG/2026-10-09--the-captain-definition-uses-the-
-#                                   documented-form-and-the-report-stops-claiming.md:11), and
+#                                   Definition Path, a per-app setting the tree does not record, and
 #                                   captain-definition.backend already exists with different
 #                                   content - so a rename either collides or changes which file a
 #                                   deploy reads.

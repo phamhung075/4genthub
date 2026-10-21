@@ -7,7 +7,7 @@
  * a migration guide that exists in no commit of either tree (both corrected 2026-10-20). A citation
  * that points nowhere is worse than no citation: it sends the reader looking, and finds them nothing.
  *
- * WHAT IT ASSERTS. Every `ai_docs/`, `CHANGELOG/`, `agenthub_go/` or `agenthub_client/` path written
+ * WHAT IT ASSERTS. Every `ai_docs/`, `agenthub_go/` or `agenthub_client/` path written
  * in a file under `src/` or `e2e/` resolves - in this checkout, or in `origin/main`, which is the tree
  * a branch lands in. The two trees are both read because a doc added and cited by the same branch is
  * a legitimate citation before it lands (it resolves in the checkout) while a doc that arrived on main
@@ -31,7 +31,7 @@ const SCANNED_SUFFIXES: Record<string, true> = {
   '.mjs': true,
   '.md': true,
 };
-const CITED_ROOTS = ['ai_docs', 'CHANGELOG', 'agenthub_go', 'agenthub_client'];
+const CITED_ROOTS = ['ai_docs', 'agenthub_go', 'agenthub_client'];
 const CITED_SUFFIXES = 'go|md|ts|tsx|js|json|yaml|yml|py|rs|sh|sql|css|txt';
 
 /** A repository-rooted path with an extension, and not the tail of a longer name. */

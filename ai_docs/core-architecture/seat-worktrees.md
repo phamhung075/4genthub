@@ -2,7 +2,7 @@
 
 Architect ruling, 2026-10-11. Requested by the owner through the lead (`qitem-20261010231611-1d0b3910e7407c7f`, board item `ca8f57ad`); ruling row `72b889e6`. Blocked on this: `622e9faf` (the client implementation, go-dev) and `e66a3e63` (the migration, the lead). The seat-side rules are in the client skill `skills/share/seat-worktree/SKILL.md`. This document is the ruling that skill points to.
 
-**Why.** Every seat edits one shared checkout and commits through one shared index. `2c4582de` absorbed fe-dev's uncommitted TEST-CHANGELOG entry, and `9ebb454f` had to take it out again. The gates run in unowned, detached `/tmp/gate-*` worktrees. `git worktree list` (architect, 2026-10-11) shows 26 worktrees under `/tmp` that no seat owns, three of them prunable.
+**Why.** Every seat edits one shared checkout and commits through one shared index. `2c4582de` absorbed fe-dev's uncommitted test-log entry, and `9ebb454f` had to take it out again. The gates run in unowned, detached `/tmp/gate-*` worktrees. `git worktree list` (architect, 2026-10-11) shows 26 worktrees under `/tmp` that no seat owns, three of them prunable.
 
 ## 0. The single home
 
@@ -54,7 +54,7 @@ The reason is measured. The architect ran it on scratch repositories on 2026-10-
 
 Ruling, 2026-10-18 (`qitem-20261018121114-9209ad06b981`): **one location**, `<roomDir>/wt/<seat>/agenthub_client`. A seat commits client code there, on its client branch: `<room>/<seat>` for a seat that has none, and the branch its legacy worktree held for a seat the migration moves. `<roomDir>/wt/<seat>-client` is the pre-derivation layout; the migration (`clearStaleClientWorktrees`) removes it, clean only, and the branch survives.
 
-The subject list is **every derived seat, the reviewer included**. A writing seat's legacy holds a branch its link needs, and git checks a branch out in one worktree per repository, so the legacy is exactly what makes the link impossible; a reviewer's legacy holds no branch, but it is still a second checkout of the client repository, and two checkouts at different commits are the ambiguity this ruling exists to remove - measured 2026-10-18, `wt/reviewer-client` sat detached at `287f7bc` while the derived link was detached at the pin `7034a80`. The one thing a removal must not take is the only reference to a commit: a detached legacy whose `HEAD` is on no branch and not in `main` is **refused and named**, the same rule `worktree prune` applies (`verbs.go:283`). Client `287f7bc` still skips a seat with no branch (`worktree.go:377`), so a reviewer's legacy is left today; hub `ade5e701` records the case in `TEST-CHANGELOG.md` ahead of the client, and the skip and that test are the implementation's remainder.
+The subject list is **every derived seat, the reviewer included**. A writing seat's legacy holds a branch its link needs, and git checks a branch out in one worktree per repository, so the legacy is exactly what makes the link impossible; a reviewer's legacy holds no branch, but it is still a second checkout of the client repository, and two checkouts at different commits are the ambiguity this ruling exists to remove - measured 2026-10-18, `wt/reviewer-client` sat detached at `287f7bc` while the derived link was detached at the pin `7034a80`. The one thing a removal must not take is the only reference to a commit: a detached legacy whose `HEAD` is on no branch and not in `main` is **refused and named**, the same rule `worktree prune` applies (`verbs.go:283`). Client `287f7bc` still skips a seat with no branch (`worktree.go:377`), so a reviewer's legacy is left today; that skip is the implementation's remainder.
 
 There is no per-seat location to name, because a second location means a second check: `Check` tests the derived path, and it exists so a seat that cannot build the client is named before the build fails. Naming `<seat>-client` as a location for some seats would make the check's answer depend on a table that must be kept true, and the seat launched in `<seat>` would still not find the client where the derivation puts it.
 
@@ -93,7 +93,7 @@ A legacy worktree holding uncommitted or untracked work is not removed: `git wor
 ## (c) The commit form is pathspec, fleet-wide
 
 The old reading here was that a private worktree makes the pathspec form unnecessary. The owner's ruling
-(2026-10-17, `CHANGELOG/2026-10-17--the-commit-form-is-pathspec-fleet-wide.md`) restores it fleet-wide: the
+(2026-10-17) restores it fleet-wide: the
 index is shared with every other seat working in this tree, so a staged line can be taken by another seat's
 commit. The commit therefore names its paths and nothing is staged first.
 

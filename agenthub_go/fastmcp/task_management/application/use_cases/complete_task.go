@@ -40,7 +40,6 @@ type completeTaskContextFacadeFactory interface {
 // UpdateTask and CompleteTask alike, and create_task.go/update_task.go call NotifyTaskEvent on it
 // while the completion path could not - the compiler proved the call impossible here, which is why a
 // completed task neither animated nor refreshed the client while a created or updated one did.
-// MIGRATION.md records the hooks pattern as "Done: create_task" with complete_task among the TODOs.
 type CompleteTaskHooks interface {
 	TaskEventHooks
 	SyncTaskMetadata(ctx context.Context, taskID string, task *entities.Task, userID string) error

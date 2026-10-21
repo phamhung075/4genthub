@@ -7,7 +7,7 @@ a caller that is itself driving git, and what a leaked `GIT_DIR` from an outer p
         email = scan@test.invalid
         name = scan test
 
-into the superproject's `.git/config` and staged six fixture paths (NEXT_GEN.md, a.txt, f.txt, g.txt,
+into the superproject's `.git/config` and staged six fixture paths (a shared .md, a.txt, f.txt, g.txt,
 h.txt, i.txt) into the shared index. Nothing was wrong with the fixtures' own repositories: each built a
 throwaway repo and passed `cwd=<that repo>`. Git resolves its repository BEFORE it looks at the working
 directory, so `GIT_DIR` in the environment beat `cwd`, and `git config`, `git add` and `git commit`

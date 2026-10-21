@@ -11,7 +11,7 @@ import (
 	"agenthub/fastmcp/task_management/domain/value_objects"
 )
 
-// Deviation (MIGRATION.md, event_handlers decision 2026-10-02): the Python
+// Deviation (event_handlers decision 2026-10-02): the Python
 // handlers read attributes the event classes do not define (created_by,
 // project_name, changed_fields, new_values, previous_values, updated_by,
 // deleted_by, active_tasks, health_indicators, health_score, identified_issues,

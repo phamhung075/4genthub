@@ -32,8 +32,7 @@ An occupant change is **recorded durably**: `set_occupant` writes one append-onl
 authenticated actor, the instant, the seat and the previous and next runtime/model — so who
 switched a seat, when and from what to what is answerable after the fact, through
 `GET /api/v2/rooms/{room}/seats/{seat}/occupant-history`. The row is the stored occupant the next
-launch reads; a running seat keeps the runtime it launched with
-(`ai_docs/core-architecture/seat-occupant-record.md`).
+launch reads; a running seat keeps the runtime it launched with.
 
 ## Tool scope by seat
 

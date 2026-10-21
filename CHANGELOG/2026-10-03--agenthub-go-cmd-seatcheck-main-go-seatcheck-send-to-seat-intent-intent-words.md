@@ -1,6 +1,0 @@
-### Changed
-
-**`seatcheck send` takes its identity from `4genteam whoami`** (2026-10-03)
-
-- `agenthub_go/cmd/seatcheck/main.go`: `seatcheck send --to <seat> --intent <intent> -- <words>`. Rig and member come from `4genteam whoami --json` (single source); the seat directory is `<pins>/<rig>/<member>` with `policy.json` and an append-only `audit.jsonl` (0600, written before delivery). `--pins` (default `~/.config/4genthub/agenthub-seats`, constant `defaultPinsDir`) is the only path flag. Delivery is `4genteam send <seat>@<rig> "<words>"`; its exit code passes through. Removed: `--policy`, `--audit`, `--deliver-cmd`. A missing or corrupt policy, a failed identity lookup and usage errors exit 2 with nothing delivered or audited; denied exits 3; audit write failure exits 1.
-- Breaking for anything calling the old flags (none in the repository).

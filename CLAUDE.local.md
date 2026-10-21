@@ -13,7 +13,8 @@ This file (`CLAUDE.local.md`) contains **local, environment-specific rules** for
 - Deploy: a push to `main` updates production (frontend included). Do NOT rebuild Docker locally, and the lead pushes after the gate (owner ruling 2026-10-18; credentials and spend stay the owner's)
 - Run tests: `cd agenthub_go && go test ./...`; client: `cd agenthub_client && go test ./... && (cd rust/agenthub-runtime && cargo test --offline)`
 - Build and install the client: `cd agenthub_client && ./scripts/build.sh --no-test` (installs `~/.local/bin/4genteam`)
-- Team seats get `~/.config/4genthub/.env` and the `agenthub_http` MCP config at start; a running seat re-reads neither, so `4genteam room reseat <rig> <seat>`
+- Team seats get `~/.config/4genthub/.env` and the `agenthub_http` MCP config at start; a running seat re-reads neither. After a client change or a key rotation: `agenthub_client/scripts/respawn.sh <room>` (rebuild, fresh seat processes, verify; owner shell only)
+- `4genteam up` opens no browser (2026-10-21); `4genteam ui` opens the web UI on demand
 
 **Critical Principles:**
 - Keycloak is source of truth for user authentication
@@ -151,7 +152,7 @@ GLOBAL (per-user) → PROJECT → BRANCH → TASK
 ### Tech Stack
 | Component | Technology | Details |
 |-----------|-----------|---------|
-| **Backend** | Python, FastMCP, SQLAlchemy | DDD patterns (Domain/Application/Infrastructure/Interface layers) |
+| **Backend** | Go (`agenthub_go`) | DDD patterns (Domain/Application/Infrastructure/Interface layers) |
 | **Frontend** | React, TypeScript, Tailwind CSS | Vite build, shadcn/ui components |
 | **Database** | PostgreSQL (dev), SQLite fallback | Path: `/data/agenthub.db` (Docker volume) |
 | **Auth** | Keycloak + JWT tokens | Source of truth for user identity |
@@ -211,27 +212,19 @@ Kebab-case is the one rule the tree cannot restate: every ai_docs subfolder is l
 | **Test files** | Go tests: `*_test.go` beside the code; client tests: `agenthub_client/tests/` |
 | **Document files** | Must be in `ai_docs/` (except 4 allowed root files) |
 | **Kebab-case folders** | All ai_docs subfolders use lowercase-with-dashes |
-| **Root .md files** | ONLY 4 allowed: README.md, TEST-CHANGELOG.md, AGENTS.md, CLAUDE.local.md |
+| **Root .md files** | ONLY 3 allowed: README.md, AGENTS.md, CLAUDE.local.md |
 | **Index files** | The tracked tree is the index; `ai_docs/index.json` is retired (2026-10-17) |
 
 ---
 
 ## 🔒 Essential Rules & File System Protection
 
-### Changelog Updates (CRITICAL)
-**MANDATORY**: AI agents MUST record ANY project change by adding ONE new file `CHANGELOG/<YYYY-MM-DD>--<kebab-title>.md` (format and newest entries: `CHANGELOG/README.md`). Never edit an existing entry to add a new change, and do not read the whole directory: `ls CHANGELOG | tail` lists the newest.
-- Add new features → `### Added`
-- Document fixes → `### Fixed`
-- Breaking changes → `### Changed`
-- Follow [Keep a Changelog](https://keepachangelog.com/) format
-- Include file paths modified/created
-- Describe impact and testing performed
-
-**CHANGELOG LOCATION RULES**:
-- **Root `CHANGELOG/`**: Project-wide changes, one file per change (`/home/daihu/__projects__/4genthub/CHANGELOG/`)
-- **Frontend CHANGELOG.md**: Frontend-only changes (`agenthub-frontend/CHANGELOG.md`)
-- **NEVER** create CHANGELOG.md or a CHANGELOG/ directory in other subdirectories
-- **NEVER** add changelog entries to CLAUDE.local.md
+### Change Records (owner ruling 2026-10-21)
+- **The commit message is the record.** No changelog file of any kind; `git log` is the history.
+- Commit body: what was wrong, what changed, how it was tested (exact commands and result).
+- **Plans, backlogs, decisions, findings and status live in 4genthub** (`manage_task`, `manage_context`), never in a repository file: 4genthub keeps the context, so nothing is rewritten locally.
+- **Docs are minimal**: only durable information a reader needs and cannot get from code or `git log` (rules, architecture, setup, operations, gate procedures, public docs). No reports, plans, reviews or history paragraphs.
+- **No local log files** in the repository.
 
 ### Context Management
 - Use `manage_context` (unified context operations with delegation/inheritance)
@@ -248,7 +241,7 @@ Kebab-case is the one rule the tree cannot restate: every ai_docs subfolder is l
 #### Root Directory Restrictions
 - **NO file creation in root** (except files in `.allowed_root_files`)
 - **NO folder creation in root** (all folders should already exist)
-- **Allowed root files**: README.md, TEST-CHANGELOG.md, AGENTS.md, CLAUDE.local.md
+- **Allowed root files**: README.md, AGENTS.md, CLAUDE.local.md
 
 #### File Type Restrictions
 | File Type | Allowed Location | Notes |
@@ -301,20 +294,19 @@ Follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/):
 ## 🎯 AI Workflow Best Practices
 
 ### MANDATORY Behaviors
-1. ✅ **ADD ONE `CHANGELOG/<date>--<title>.md` FILE** for ALL project changes (NOT CLAUDE.local.md)
+1. ✅ **WRITE THE COMMIT BODY** for every change: what was wrong, what changed, how it was tested
 2. ✅ **CHECK `git ls-files 'ai_docs/**/*.md'`** for existing documentation before creating
 3. ✅ **FOLLOW DDD patterns** in codebase
 4. ✅ **TEST code examples** before documenting
 5. ✅ **USE existing libraries** - check package.json/requirements first
 6. ✅ **FOLLOW existing conventions** and patterns
-7. ✅ **UPDATE TEST-CHANGELOG.md** when modifying test files
 
 ### NEVER Do
 - ❌ Create files unless absolutely necessary
 - ❌ Create test files, scripts, or documents in project root
 - ❌ Proactively create documentation (only when requested)
 - ❌ Add backward/legacy code (ALWAYS clean code)
-- ❌ Add changelog entries to CLAUDE.local.md
+- ❌ Write a changelog, report, plan or status file (the commit message and 4genthub hold them)
 
 ### Quick Reference Commands
 ```bash
@@ -365,40 +357,11 @@ The schema is the Go server's `init_schema_postgresql.sql`; change it together w
 - **Complete Technical Reference**: Single source of truth for entire system architecture
 - **Covers**: Frontend (React/TypeScript), Backend (DDD/FastMCP), API Layer, MCP Tools, WebSocket v2.0, Auth, Database, Context Management, Real-time Sync
 - **Use For**: Understanding system flow, debugging issues, implementing new features, onboarding
-- **Status**: ✅ Validated 2025-11-07 | 100% comprehensive | Token-optimized
 
 **Other Resources**:
 - **Comprehensive Rules**: See `AGENTS.md` for the complete task, MCP and delegation rules
 - **Vision System**: Refer to `AGENTS.md` for workflow guidance and progress tracking details
 - **Troubleshooter**: Use Task tool to launch Claude Code troubleshooter agent when needed
----
-
-## 🔧 WebSocket Protocol v2.0 - Comprehensive Fix (2025-11-07) - ✅ RESOLVED
-
-**📄 Complete Documentation**: `ai_docs/reports-status/websocket-v2-comprehensive-fix-2025-11-07.md`
-
-### Critical Issues Fixed
-
-| Issue | Impact | Status |
-|-------|--------|--------|
-| **WebSocket crashes after first message** | CRITICAL - UI freezes, no updates | ✅ Fixed - Error handling in useRealtimeSync.ts |
-| **Timestamp validation failures** | Frontend validation breaks | ✅ Fixed - Backend payloads updated |
-| **Duplicate toast notifications** | UX - 2 toasts per operation | ✅ Fixed - WebSocket = single source |
-| **DELETE operations don't update UI** | Cache sync broken | ✅ Fixed - Dual cache update |
-| **1000+ LOC dead code** | Maintenance burden | ✅ Removed - Legacy services deleted |
-
-### Key Files Modified
-- `useRealtimeSync.ts` - Try-catch wrapper, dual cache updates, toast deduplication
-- `websocket_protocol.py` - Timestamp fields (SubtaskCreatePayload, SubtaskUpdatePayload, SubtaskCompletePayload)
-- `subtask_application_facade.py` - Payload construction (lines 341-350, 466-475, 802-812)
-- `LazySubtaskListRefactored.tsx` - Removed duplicate toasts, cleaned debug logs
-- `LazyTaskListRefactored.tsx` - Removed component-level success toasts
-
-### Testing Verified
-- TDD Tests: 7 comprehensive tests (all PASS)
-- Manual Workflow: CREATE → UPDATE → COMPLETE → DELETE (all working)
-- Animation Timing: CREATE 500ms, UPDATE/DELETE 150ms (WebSocketAnimationService.ts:261-366)
-
 ---
 
 ## 🏗️ CLEAN CODE PRINCIPLES (Core Requirements)
@@ -424,8 +387,3 @@ The schema is the Go server's `init_schema_postgresql.sql`; change it together w
 - **AI Docs**: `ai_docs/` folder | **Index**: `git ls-files 'ai_docs/**/*.md'` for quick lookup
 - Search existing docs before creating new ones
 - Use kebab-case for folder names
-
----
-##  Key Learning:
-When modifying Python backend code, always restart the backend process to load changes.
-Python caches imported modules in memory, so file edits alone aren't sufficient—the process must be killed and restarted to pick up new code.

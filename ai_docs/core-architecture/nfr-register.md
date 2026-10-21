@@ -3,11 +3,6 @@
 The one NFR doc of record. Every requirement carries a **status** and a **verification**; a status
 without a verification is a claim, and this file does not carry claims.
 
-Provenance: derived from `ai_docs/reports-status/NFR-analysis-2026-10-19.md`, a claim catalogue whose
-mechanisms were checked against committed code — 15 of its 43 rows named a mechanism, scope or number
-the code contradicts, 20 were policy or weaker than claimed, 8 held. The catalogue stays where it is as
-provenance; this register is what a reader rules from.
-
 Measured at: hub `d45aa05d`, client `c46812c`, 2026-10-19.
 
 ## Vocabulary
@@ -72,7 +67,7 @@ path with its line (a static fact a reader can open) · `review` (the policy has
 
 | ID | Requirement | Status | Enforcement or policy | Verification | Owner | Measured |
 |---|---|---|---|---|---|---|
-| REL-01 | The rail survives a cloud outage and board work can continue. | PARTIAL | The rail is durable local SQLite; cloud-board work during an outage is deferred by owner decision. | `file:agenthub_client/rust/agenthub-runtime/src/queue/mod.rs:524`; `file:ai_docs/core-architecture/agenthub-system-architecture.md:733` | runtime | 2026-10-19 |
+| REL-01 | The rail survives a cloud outage and board work can continue. | PARTIAL | The rail is durable local SQLite; cloud-board work during an outage is deferred by owner decision. | `file:agenthub_client/rust/agenthub-runtime/src/queue/mod.rs:524`; `file:ai_docs/core-architecture/agenthub-system-architecture.md:384` | runtime | 2026-10-19 |
 | REL-02 | Seat children survive an agent kill; four safeguards hold. | PARTIAL | Children are `Setsid`-detached and survive an agent SIGKILL; board work still needs the agent. | `file:agenthub_client/internal/clientlifecycle/supervisor.go:552`; `file:agenthub_client/internal/clientlifecycle/supervisor.go:567`; `file:agenthub_client/internal/clientlifecycle/detach_unix.go:14` | client | 2026-10-20 |
 | REL-03 | A dead bridge is detected: 25 s heartbeat, degraded after 3 misses, fatal 1008/4401. | GATE | The keep-alive closes after three silent heartbeats. | `test:go test ./internal/clientsync -run TestKeepAlive` | client | 2026-10-19 |
 | REL-04 | Events and the cursor commit atomically, and resume replays nothing twice. | PARTIAL | One transaction moves events and `client_cursor`; there is no server replay, the client resumes. | `file:agenthub_go/fastmcp/session_stream/repository.go:425` | agenthub_go | 2026-10-19 |
@@ -96,7 +91,7 @@ path with its line (a static fact a reader can open) · `review` (the policy has
 |---|---|---|---|---|---|---|
 | MAINT-01 | No compatibility shims, aliases or legacy paths. | POLICY | Review-enforced; contradicted by live surfaces (`GET /legacy/tokens`, `legacyTaskContextRepo`). | `file:agenthub_go/fastmcp/server/httpapp/routes_mount.go:382`; `review` | policy | 2026-10-19 |
 | MAINT-02 | Dependencies run one direction across the layers. | POLICY | Layering convention; no import check. | `review` | policy | 2026-10-19 |
-| MAINT-03 | One `CHANGELOG/<date>--<title>.md` per task. | POLICY | Review-enforced; no check. | `review` | policy | 2026-10-19 |
+| MAINT-03 | No changelog file; the commit body records what changed and how it was tested. | POLICY | Review-enforced; no check. | `review` | policy | 2026-10-21 |
 | MAINT-04 | CI gates format, vet, typecheck and lint on every surface. | GATE | Hub Go runs `gofmt-check.sh`, `go vet`, `go test`; the frontend runs `pnpm typecheck`, `pnpm lint`, `pnpm test`, `pnpm build`; the client (CI at `252c42b`, landed `8c7b7364`) runs `gofmt -l`, `go vet`, `go test`, `cargo fmt --check`, `cargo clippy -- -D warnings`, `cargo test`. | `file:.github/workflows/ci.yml:28`; `file:.github/workflows/ci.yml:48`; `file:agenthub_client/.github/workflows/ci.yml:31`; `file:agenthub_client/.github/workflows/ci.yml:55`; `file:agenthub_client/.github/workflows/ci.yml:56` | hub + frontend + client | 2026-10-19 |
 | MAINT-05 | A pruned path stays deleted and unreferenced. | GATE | A test pins both directions. | `test:go test ./internal/repoguards -run TestAPrunedPath` | agenthub_go | 2026-10-19 |
 
@@ -158,7 +153,7 @@ the changed field names alongside the task, the notification dedup key carries t
 `updated_at` (two distinct writes inside the 5 s window both ship, and one write emitted by both
 emitter families collapses), and the frontend merges `primary` into the cached task
 (`useRealtimeSync.ts:331-393` already merges for `completed`; `:224-243` replaces for `updated`).
-Proven by `BenchmarkTaskEventDelta` (spec in `nfr-measurements.md`), gate T7.
+Proven by `BenchmarkTaskEventDelta`, gate T7.
 
 INT-03's cascade set is per column (Q7, 2026-10-19), and it landed in five commits. `76b0d84d`
 removed the four cascades and gave the task delete and the repository deletes their statements;

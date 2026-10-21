@@ -83,7 +83,7 @@ func RenderSeat(seat resolver.ResolvedSeat, mcpURL string) (*SeatSpec, error) {
 	// codex rules runtime-resource type to install it (its only codex fragment type merges a TOML
 	// fragment into ~/.codex/config.toml, and config.toml cannot express a per-command deny), so
 	// the file travels with the render and the client installs it into a rules/ folder of an
-	// active codex config layer. See NEXT_GEN (G3, owner decision 2026-10-05).
+	// active codex config layer. Owner decision 2026-10-05.
 	var codexRules string
 	if seat.Runtime == resolver.RuntimeCodex && len(toolModules) > 0 {
 		merged, err := mergeToolModules(toolModules)

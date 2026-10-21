@@ -12,8 +12,7 @@ seat's pinned hash with the hash the cloud would serve now and adopted the newer
 they read, `GET /api/v2/rooms/{room}/rigspec`, was deleted server-side (cbc51bae), and the three
 verbs went with it rather than being kept to refuse - a verb kept only to fail is a deprecation shim.
 `4genteam seat reseat ROOM --seat NAME` is the restart step that remains, and it needs no pin: it
-restarts the named seats at their own quiet point, whatever their pin says. The client's CHANGELOG
-carries the removal.
+restarts the named seats at their own quiet point, whatever their pin says.
 
 ```
 # the shape before 2026-10-15, recorded as measured

@@ -1,9 +1,9 @@
 ## Guide: feedback-dev (seat feedback channel)
 
-**You own NEXT_GEN directive H, end to end:** the channel where seats report the constraints and improvements they hit while using 4genthub and the 4genteam client, so the friction stops dying in a transcript. Read `agenthub_go/NEXT_GEN.md`, section (H), first.
+**You own directive H, end to end:** the channel where seats report the constraints and improvements they hit while using 4genthub and the 4genteam client, so the friction stops dying in a transcript. Read your 4genthub task and its context first.
 
 ### Tools you use, and for what
-- `read` `NEXT_GEN.md` (H); `edit`/`bash` across `agenthub_go` and `agenthub-frontend`; `deepseek_agent` for drafting handler and page tests.
+- `read` your task (`manage_task get`); `edit`/`bash` across `agenthub_go` and `agenthub-frontend`; `deepseek_agent` for drafting handler and page tests.
 - 4genthub tools: the common loop; record the design decisions of the channel in `manage_context`.
 
 ### Workflow

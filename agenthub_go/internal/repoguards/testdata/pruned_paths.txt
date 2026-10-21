@@ -26,3 +26,28 @@ docker-system/.claude/hooks
 NEXT-GEN2.md.obsolete
 agenthub_go/internal/repoguards/docs_only_guard_test.go.obsolete
 scripts/git-hooks/docs-only-guard.obsolete
+
+# The changelogs, plans, backlogs and reports removed by the 2026-10-21 owner ruling: the commit message
+# is the change record, and plans and status live in 4genthub tasks and context. CHANGELOG/ held one file
+# per task and is not listed file by file.
+TEST-CHANGELOG.md
+agenthub-frontend/CHANGELOG.md
+agenthub_go/NEXT_GEN.md
+agenthub_go/MIGRATION.md
+agenthub_go/PROD_READINESS_REPORT.md
+agenthub_go/PROD_READINESS_BRIEF.md
+agenthub_go/TEAM_SPLIT.md
+agenthub_go/FIX_PLAN_BRIEF.md
+ai_docs/operations/ecosystem-review-2026-10-11.md
+ai_docs/core-architecture/G3-drop-classification.md
+scripts/G3-DROP-CLASSIFY.py
+ai_docs/core-architecture/seat-occupant-record.md
+ai_docs/operations/seat-friction-loop.md
+ai_docs/core-architecture/nfr-measurements.md
+agenthub-frontend/FRONTEND_CONTEXT_STRUCTURE_UPDATE.md
+agenthub-frontend/REACT_19_UPGRADE_PLAN.md
+agenthub-frontend/RESPONSE_VALIDATION.md
+agenthub-frontend/ai_docs/core-architecture/state-management-rewrite-plan.md
+agenthub-frontend/docs/performance-analysis-report.md
+docker-system/DOCKER_SYSTEM_UPGRADE_SUMMARY.md
+scripts/team/4genthub-min/NOTES.md

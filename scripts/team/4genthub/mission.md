@@ -7,16 +7,15 @@ What clean means here, as checks anyone can run:
 - Frontend, from `agenthub-frontend`: `npx tsc --noEmit -p .` prints no `error TS` line, vitest passes, vite build passes. From the repository root the same command is npm's placeholder package, which exits 0 without compiling; the root form is `sh scripts/typecheck-frontend.sh`.
 - Scripts: the script tests pass with --noconftest.
 - No compatibility code, no dead code, no duplicated definitions, one source of truth per concept.
-- Every change has a test and a changelog entry.
+- Every change has a test, and its commit body says what changed and how it was tested (no changelog file).
 
-Backlog: agenthub_go/NEXT_GEN.md is the single backlog and decision record. Take items in this order unless the owner says otherwise:
+Backlog: the 4genthub board (tasks and context through manage_task and manage_context) is the single backlog and decision record; no repository file holds plans or status. Take items in this order unless the owner says otherwise:
 1. Defects found by running the real stack (server on Postgres, a real 4genteam rig, the bridge). Reproduce first, then fix the cause.
 2. The seat model: authoring screens for modules and seat types in the frontend, link deletion, room deletion, changing a seat's runtime or model, connecting the local send guard (seatcheck) to seats, per-machine tokens for the bridge, recording the pinned hash in the bridge status.
 3. ~~Retire the old agenthub_main/agent-library and the call_agent path~~ **DONE** — the `agent-library`, the `call_agent` tool and its routes are removed on both the Go and Python sides; the seat model (`manage_seat` / `call_seat`) replaced them (`call_agent` survives only as a field of `manage_agent`).
-4. Remaining Go port items: NEXT_GEN.md's unticked Checklist boxes are live. Both cleanups this item named are MEASURED GONE — NEXT_GEN.md:571, :94.
 Do not work on the GitHub pipeline test job; the owner decided against it.
 
-Working loop for the lead: pick one backlog item, write its acceptance criteria, delegate to the right seat, require the evidence format of that seat, send the change to the review seat, then to the tester, then report. Keep several independent items in flight when seats are idle. Record each decision and finished item in NEXT_GEN.md.
+Working loop for the lead: pick one backlog item, write its acceptance criteria, delegate to the right seat, require the evidence format of that seat, send the change to the review seat, then to the tester, then report. Keep several independent items in flight when seats are idle. Record each decision and finished item on its 4genthub task.
 
 Approval boundary: commit locally when the work is verified. Never push, tag or deploy on your own: a push to main deploys to production automatically. When one or more verified commits are ready, send the owner one message listing them with the evidence and ask for the push. The release version in agenthub_go/fastmcp/config/version.go must be bumped in the same commit set so the deploy can be confirmed: healthVersion in agenthub_go/fastmcp/server/httpapp/http.go derives from it and is what /health reports.
 
