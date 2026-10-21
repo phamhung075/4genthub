@@ -1,4 +1,18 @@
+## 2026-10-21 - the census refuses a dist older than the last frontend commit (python, branch 4genthub-min/events-read-log)
+
+`scripts/tests/test_check_served_frontend.py` gains `dated_frontend`, a fixture that builds a real work
+tree whose build mtimes and commit date are pinned independently, and two cases over it:
+`test_a_stale_expected_build_is_refused_not_compared` (commit now, build ten days old) asserts exit 2,
+`CANNOT-MEASURE`, `the expected build is stale` and `10.0 day`, and asserts `BUILD-MISMATCH` is absent -
+the verdict the old script produced on the same fixture; `test_a_current_expected_build_is_compared`
+(commit a day old, build now) asserts exit 0 and the `expected build: … current` line, so the gate is not
+a wall. Both go through `gitfixture.git`, which the structural guard in
+`test_git_fixture_is_hermetic.py` requires of every fixture that can reach git. Measured: the file at 18
+passed, the whole scripts suite at 134 passed, and the old script against the stale fixture exits 1
+`BUILD-MISMATCH` where the new one exits 2.
+
 ## 2026-10-21 - the safeguard suites hold seven names and 0009 widens the CHECK (go, branch 4genthub-min/int03-cascades)
+
 
 `room_safeguard_repository_test.go`: `TestUpsertAcceptsEachOfTheSixNamesInItsScope` is
 `...SevenNames...` and stores `SafeguardBudget` with `room-1`; `TestValidateStatesTheSixNamesAndTheirScopes`

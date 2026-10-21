@@ -21,11 +21,16 @@ from __future__ import annotations
 import functools
 import http.server
 import importlib.util
+import os
+import subprocess
 import threading
+import time
 from contextlib import contextmanager
 from pathlib import Path
 
 import pytest
+
+import gitfixture
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = REPO_ROOT / "scripts" / "check_served_frontend.py"
@@ -249,6 +254,59 @@ def test_identity_by_entry_hash_alone(tmp_path, capsys):
     with serve(write_tree(tmp_path, fresh_shape())) as base:
         assert run(base, "--expect-entry", "index-riIYPcmm.js") == 0
         assert run(base, "--expect-entry", "index-SOMETHINGELSE.js") == 1
+
+
+# --- the expected side is dated ---------------------------------------------------------------
+
+def dated_frontend(tmp_path: Path, *, commit_age_days: float, build_age_days: float) -> Path:
+    """A work tree whose frontend build was produced `build_age_days` ago and whose last source commit is
+    `commit_age_days` ago. The commit dates are pinned through the environment, so neither side depends on
+    how fast the test runs."""
+    now = time.time()
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    frontend = repo / "agenthub-frontend"
+    write_tree(frontend / "src", {"App.tsx": "export const x = 1\n"})
+    build = write_tree(frontend / "build", fresh_shape())
+    # Every git call goes through the shared fixture helper, which drops the variables that can relocate a
+    # repository: a fixture must never write the caller's checkout (the 2026-10-11 incident).
+    gitfixture.git(repo, "init", "-q", ".")
+    gitfixture.git(repo, "config", "user.email", "fixture@test.invalid")
+    gitfixture.git(repo, "config", "user.name", "fixture test")
+    gitfixture.git(repo, "add", "-A")
+    stamp = f"@{int(now - commit_age_days * 86400)} +0000"
+    gitfixture.git(repo, "commit", "-qm", "frontend", env={"GIT_AUTHOR_DATE": stamp, "GIT_COMMITTER_DATE": stamp})
+    built = now - build_age_days * 86400
+    for path in build.rglob("*"):
+        if path.is_file():
+            os.utime(path, (built, built))
+    return build
+
+
+def test_a_stale_expected_build_is_refused_not_compared(tmp_path, capsys):
+    """The defect this pins: the served side was rebuilt after every frontend commit while the expected side
+    came from a build ten days old, so the check reported BUILD-MISMATCH about an artifact nobody maintained.
+    A dated expectation that predates the last frontend commit must refuse (exit 2, naming both ages) instead
+    of comparing."""
+    build = dated_frontend(tmp_path, commit_age_days=0, build_age_days=10)
+    with serve(build) as base:
+        assert run(base, "--expect-dist", str(build)) == 2
+    out = capsys.readouterr().out
+    assert "CANNOT-MEASURE" in out
+    assert "the expected build is stale" in out
+    assert "10.0 day" in out
+    assert "BUILD-MISMATCH" not in out
+
+
+def test_a_current_expected_build_is_compared(tmp_path, capsys):
+    """And the direction that keeps the instrument usable: a build newer than the last frontend commit is
+    dated as current and compared as before."""
+    build = dated_frontend(tmp_path, commit_age_days=1, build_age_days=0)
+    with serve(build) as base:
+        assert run(base, "--expect-dist", str(build)) == 0
+    out = capsys.readouterr().out
+    assert "expected build:" in out and "current" in out
+    assert "MATCH" in out
 
 
 # --- fail-closed -----------------------------------------------------------------------------

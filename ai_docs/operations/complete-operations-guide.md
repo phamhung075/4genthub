@@ -167,6 +167,12 @@ python3 scripts/check_served_frontend.py --base-url https://www.4genthub.com \
     --expect-dist agenthub-frontend/build
 ```
 
+The expectation is dated before it is used: when `agenthub-frontend/build` is older than the last commit
+that touched the frontend sources, the check refuses (exit 2, `CANNOT-MEASURE`, naming both ages and the
+age in days) instead of comparing. A ten-day-old dist is not a build of HEAD, and comparing to it turned
+"nobody rebuilt" into a `BUILD-MISMATCH` about production; rebuild it (`cd agenthub-frontend && npm run
+build`) or pass `--expect-entry <hash>` to check a hash you already have.
+
 When the 200 is followed by no build, re-trigger from the CapRover app's deployment tab, wait for the
 build log's end line, and re-run the checks. A 200 on its own is not a deploy report.
 

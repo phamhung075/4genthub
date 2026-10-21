@@ -49,6 +49,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import subprocess
 import sys
 import time
 import urllib.error
@@ -225,6 +226,52 @@ def dist_expectation(dist_dir: str) -> tuple[str, set[str]]:
     return entry, shipped
 
 
+def git(*args: str, cwd: str) -> str | None:
+    """git's stdout, or None when it fails - a check that cannot date a tree says so, never guesses."""
+    try:
+        done = subprocess.run(["git", *args], cwd=cwd, capture_output=True, text=True, timeout=30)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return done.stdout.strip() if done.returncode == 0 else None
+
+
+def dist_staleness(dist_dir: str) -> dict | None:
+    """Date the expected build against the last commit that touched the frontend sources.
+
+    A dist that nobody rebuilds is not an expectation, it is a fossil: on 2026-10-21 the served entry was
+    index-CulHwbQI.js (Last-Modified 23:54Z, after every frontend commit) while the expected side was
+    index-3rbprdLk.js from a build dated 2026-10-11, so the check reported MISMATCH about an artifact that
+    had not been produced in ten days. When the build predates the last source commit, the expectation is
+    refused (exit 2, CannotMeasure) instead of being compared: a refusal names the age, a MISMATCH sends
+    someone looking at production.
+
+    A dist outside a git work tree is returned undated - it cannot be aged, and the caller passed a path
+    deliberately. Everything inside a work tree IS dated, so the real call
+    (`--expect-dist agenthub-frontend/build`) cannot slip through the gap.
+    """
+    from pathlib import Path
+
+    root = Path(dist_dir).resolve()
+    if not root.is_dir():
+        return None
+    repo = git("rev-parse", "--show-toplevel", cwd=str(root))
+    if not repo:
+        return None
+    source = root.parent
+    raw = git("log", "-1", "--format=%ct", "--", ".", f":(exclude){root.name}", cwd=str(source))
+    if not raw:
+        return None
+    committed = int(raw)
+    built = max((p.stat().st_mtime for p in root.rglob("*") if p.is_file()), default=root.stat().st_mtime)
+    return {
+        "dist": str(root),
+        "built_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(built)),
+        "source_commit_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(committed)),
+        "age_days": round((committed - built) / 86400, 1),
+        "stale": built < committed - 1,
+    }
+
+
 def identity_check(served_entry: str | None, served_paths: set[str], expect_entry: str, shipped: set[str] | None) -> dict:
     served_names = {p.rsplit("/", 1)[-1] for p in served_paths}
     absent = sorted(n for n in served_names if shipped and n not in shipped)
@@ -252,6 +299,18 @@ def main(argv: list[str] | None = None) -> int:
 
     report: dict = {"origin": args.base_url, "checked_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
     try:
+        # The expectation is dated BEFORE it is used: a build older than the last frontend commit is not an
+        # expectation, and comparing to it turns "nobody rebuilt" into "production is wrong".
+        if args.expect_dist:
+            dated = dist_staleness(args.expect_dist)
+            if dated:
+                report["expected_build"] = dated
+                if dated["stale"]:
+                    raise CannotMeasure(
+                        f"the expected build is stale: {dated['dist']} was built {dated['built_at']}, "
+                        f"{dated['age_days']} day(s) before the last frontend commit ({dated['source_commit_at']}); "
+                        "rebuild it (cd agenthub-frontend && npm run build) or pass --expect-entry"
+                    )
         fetcher = Fetcher(args.base_url, args.timeout)
         bust = f"?cb={int(time.time())}"
         html = fetcher.get("/" + bust).decode("utf-8", "replace")
@@ -313,6 +372,10 @@ def print_report(report: dict) -> None:
     print(f"served build: index Last-Modified {modified.get('index') or 'unknown'}"
           f" | entry Last-Modified {modified.get('entry') or 'unknown'}")
     print(f"entry: {report.get('served_entry')}")
+    expected = report.get("expected_build")
+    if expected:
+        print(f"expected build: built {expected['built_at']} | last frontend commit {expected['source_commit_at']}"
+              f" | {'STALE' if expected['stale'] else 'current'}")
     if "assets" in report:
         print(f"closure: {report['assets']['fetched']} assets, {report['assets']['bytes']} bytes")
     for label, info in report.get("verbs", {}).items():
