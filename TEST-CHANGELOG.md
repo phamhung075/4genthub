@@ -1,3 +1,22 @@
+## 2026-10-21 - the census refuses an expectation another environment built (python, branch 4genthub-min/fe-tsc-guard)
+
+`scripts/tests/test_check_served_frontend.py` gains five cases and gives `fresh_shape` an optional `env`
+so a fixture can carry the object vite inlines. `test_env_signature_reads_the_inlined_object` pins the
+reader itself: six keys with their values from a realistic `{BASE_URL:"/",DEV:!1,…}` literal, and `None`
+for text without one - a bare `https://api…` URL is not mistaken for a key. The three verdict cases are
+the two directions of the new gate and the one it must not block:
+`test_a_foreign_env_build_is_refused_not_called_a_mismatch` (box env on the build, deploy env on the
+served tree) asserts exit 2, `FOREIGN-ENV` and `VITE_KEYCLOAK_URL` named, and asserts `BUILD-MISMATCH` is
+absent - the verdict the old script produced on the same pair;
+`test_a_differing_value_is_a_foreign_environment_too` holds the key set equal and moves only
+`VITE_API_URL`, asserting `differing values (1): VITE_API_URL`; `test_a_same_env_build_is_still_compared_and_can_mismatch`
+keeps both sides on one env with different entries and asserts exit 1, `BUILD-MISMATCH`, no `FOREIGN-ENV`.
+The fifth, `test_a_served_entry_that_did_not_arrive_is_not_a_foreign_environment`, serves an index naming a
+chunk that 404s and asserts neither `FOREIGN-ENV` nor the `environment:` line - only an env object that was
+READ may refuse, so an incomplete closure keeps reporting itself.
+Measured: the file at 24 passed, the whole scripts suite at 140 passed, and the live origin under an undated copy
+of this worktree's dist exits 2 `FOREIGN-ENV` (6 keys against 30) with no `identity` in the JSON.
+
 ## 2026-10-21 - the census refuses a dist older than the last frontend commit (python, branch 4genthub-min/events-read-log)
 
 `scripts/tests/test_check_served_frontend.py` gains `dated_frontend`, a fixture that builds a real work

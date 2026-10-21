@@ -35,13 +35,23 @@ WHAT THE CENSUS DOES *NOT* PROVE, AND THE MODE THAT CLOSES IT
     every script the served app is composed of must exist in that build. Then OK means "the build I
     just made is the build being served", which is the claim a deploy actually needs.
 
+    AND ONLY FROM THE SAME ENVIRONMENT. A hash is an identity only between builds made the same way:
+    the deploy builds docker-system/docker/Dockerfile.frontend.production (node:20-alpine, arm64)
+    from the `frontend` branch, while a seat or CI build is a different node, arch and VITE_* set -
+    and environment.ts reads `import.meta.env[key]` dynamically, so vite inlines the whole object and
+    re-hashes every chunk that carries it. Measured 2026-10-21: the box dist inlined 6 keys, the
+    served build 30, and a stale-dist comparison read BUILD-MISMATCH about a correct deploy. So the
+    environment object is read from both entries and compared first: when they differ, the verdict is
+    FOREIGN-ENV (exit 2, a refusal) instead of a mismatch about production.
+
 USAGE
     python3 scripts/check_served_frontend.py [--base-url https://www.4genthub.com] [--json]
     python3 scripts/check_served_frontend.py --expect-dist agenthub-frontend/build
 EXIT
     0 = fresh (and, in identity mode, the served build IS the expected build)
     1 = stale or a build mismatch - the served app is not the expected build
-    2 = the census could not be taken (fetch/parse/cap failure) - NEVER reported as a pass
+    2 = the census could not be taken (fetch/parse/cap failure, a stale or foreign-env expectation) -
+        NEVER reported as a pass
 """
 
 from __future__ import annotations
@@ -203,8 +213,9 @@ def census(texts: dict[str, str]) -> dict:
     }
 
 
-def dist_expectation(dist_dir: str) -> tuple[str, set[str]]:
-    """Read the build's own identity: its entry chunk hash, and every script name it shipped."""
+def dist_expectation(dist_dir: str) -> tuple[str, set[str], str]:
+    """Read the build's own identity: its entry chunk hash, every name it shipped, and the entry's text
+    (the environment object it inlined, which is the evidence the hash is comparable to the served one)."""
     index = f"{dist_dir.rstrip('/')}/index.html"
     try:
         with open(index, encoding="utf-8") as handle:
@@ -223,7 +234,13 @@ def dist_expectation(dist_dir: str) -> tuple[str, set[str]]:
     for directory in (root, root / "assets"):
         if directory.is_dir():
             shipped |= {p.name for p in directory.iterdir() if p.is_file()}
-    return entry, shipped
+    try:
+        entry_text = (root / "assets" / entry).read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        # The name is in `shipped` from the directory listing; a dist whose entry cannot be opened is a
+        # broken dist, and the environment comparison refuses rather than guessing comparability.
+        entry_text = ""
+    return entry, shipped, entry_text
 
 
 def git(*args: str, cwd: str) -> str | None:
@@ -273,6 +290,83 @@ def dist_staleness(dist_dir: str) -> dict | None:
         "age_days": round((committed - built) / 86400, 1),
         "stale": built < committed - 1,
     }
+
+
+# The environment object vite writes into a build that reads `import.meta.env[key]` dynamically
+# (agenthub-frontend/src/config/environment.ts:32). Its KEY SET is the build's fingerprint: the dist
+# built on this box carries six keys, the deployed build thirty - and vite hashes every chunk that
+# carries the object, so two builds of ONE tree in two environments cannot share an entry hash.
+ENV_PAIR = re.compile(
+    r'([A-Za-z_][A-Za-z0-9_]*)\s*:\s*(?:"((?:[^"\\]|\\.)*)"|(!0|!1|true|false|-?\d+(?:\.\d+)?))'
+)
+
+
+def env_object(text: str) -> str | None:
+    """The `{BASE_URL:...}` literal, brace-matched, or None when the build inlines no environment."""
+    start = text.find('{BASE_URL:"')
+    if start < 0:
+        return None
+    depth = 0
+    in_string = False
+    index = start
+    while index < len(text):
+        char = text[index]
+        if in_string:
+            if char == "\\":
+                index += 2
+                continue
+            if char == '"':
+                in_string = False
+        elif char == '"':
+            in_string = True
+        elif char == "{":
+            depth += 1
+        elif char == "}":
+            depth -= 1
+            if depth == 0:
+                return text[start:index + 1]
+        index += 1
+    return None
+
+
+def env_signature(text: str) -> dict[str, str] | None:
+    """Every key/value the build inlined, or None: the evidence that says WHICH environment built it."""
+    literal = env_object(text)
+    if literal is None:
+        return None
+    signature = {key: (quoted if quoted or not bare else bare) for key, quoted, bare in ENV_PAIR.findall(literal)}
+    return signature or None
+
+
+def env_comparison(expected: dict[str, str] | None, served: dict[str, str] | None) -> dict:
+    """Can the two entry hashes be compared at all?
+
+    A hash is an identity only when both sides were built in the SAME environment. When they were
+    not, the honest answer is a refusal: on 2026-10-21 a box-built dist was compared to the live site
+    and read BUILD-MISMATCH about a deploy that was correct - same tree, different node, arch and
+    VITE_* set, so every chunk carrying the env object hashed differently. Byte equality is not
+    something a seat can obtain (the local-frontend-build rule forbids the build), and it is not
+    needed: the environment is in the artifact, so the check can say whether it is even measuring.
+    """
+    if expected is None and served is None:
+        return {"comparable": True, "why": "neither side inlines an environment object",
+                "expected_keys": 0, "served_keys": 0,
+                "only_in_expected": [], "only_in_served": [], "differing_values": []}
+    if expected is None or served is None:
+        absent = "expected build" if expected is None else "served build"
+        return {"comparable": False,
+                "why": f"the {absent} inlines no environment object and the other does - different build shapes",
+                "expected_keys": len(expected or {}), "served_keys": len(served or {}),
+                "only_in_expected": [], "only_in_served": [], "differing_values": []}
+    only_expected = sorted(set(expected) - set(served))
+    only_served = sorted(set(served) - set(expected))
+    differing = sorted(k for k in set(expected) & set(served) if expected[k] != served[k])
+    same = not (only_expected or only_served or differing)
+    return {"comparable": same,
+            "why": "" if same else "the two builds inlined different environments",
+            "expected_keys": len(expected), "served_keys": len(served),
+            "only_in_expected": only_expected, "only_in_served": only_served,
+            "differing_values": differing}
 
 
 def identity_check(served_entry: str | None, served_paths: set[str], expect_entry: str, shipped: set[str] | None) -> dict:
@@ -334,18 +428,33 @@ def main(argv: list[str] | None = None) -> int:
         result = census(texts)
         report.update(result)
 
-        expected_entry, shipped = None, None
+        expected_entry, shipped, expected_text = None, None, None
+        comparable = True
         if args.expect_dist:
-            expected_entry, shipped = dist_expectation(args.expect_dist)
+            expected_entry, shipped, expected_text = dist_expectation(args.expect_dist)
+            # Comparability is decided BEFORE identity: if the expectation was built in another
+            # environment, its hash says nothing about the served one and a MISMATCH would be a lie
+            # about production. The served side's own entry carries its environment too.
+            served_text = next(
+                (t for path, t in texts.items() if served_entry and path.endswith("/" + served_entry)), ""
+            )
+            # A served entry that did not arrive is an INCOMPLETE closure, never a foreign environment:
+            # with no text to read, comparability is left alone and the failure is reported as itself.
+            if served_text:
+                report["environment"] = env_comparison(env_signature(expected_text), env_signature(served_text))
+                comparable = report["environment"]["comparable"]
         elif args.expect_entry:
             expected_entry = args.expect_entry
-        if expected_entry:
+        if expected_entry and comparable:
             report["identity"] = identity_check(served_entry, set(texts), expected_entry, shipped)
 
         stale = result["deleted_names"] or result["verbs_present"] == 0
         if stale:
             report["verdict"] = "STALE"
             exit_code = 1
+        elif not comparable:
+            report["verdict"] = "FOREIGN-ENV"
+            exit_code = 2
         elif "identity" in report and not report["identity"]["matches"]:
             report["verdict"] = "BUILD-MISMATCH"
             exit_code = 1
@@ -391,6 +500,22 @@ def print_report(report: dict) -> None:
         print(f"  DELETED name {name}: {record['occurrences']} occurrence(s) in {len(record['files'])} file(s) -> {where}")
     if report.get("fetch_failures"):
         print(f"  fetch failures: {report['fetch_failures']}")
+    if "environment" in report:
+        environment = report["environment"]
+        state = "comparable" if environment["comparable"] else "NOT comparable"
+        print(f"  environment: build inlined {environment['expected_keys']} key(s), served {environment['served_keys']}"
+              f" -> {state}")
+        if not environment["comparable"]:
+            if environment.get("why"):
+                print(f"    {environment['why']}")
+            for label, keys in (
+                ("only in the build", environment["only_in_expected"]),
+                ("only in the served build", environment["only_in_served"]),
+                ("differing values", environment["differing_values"]),
+            ):
+                if keys:
+                    shown = ", ".join(keys[:5]) + (f", +{len(keys) - 5} more" if len(keys) > 5 else "")
+                    print(f"    {label} ({len(keys)}): {shown}")
     if "identity" in report:
         ident = report["identity"]
         print(f"  identity: served entry {ident['served_entry']} vs expected {ident['expected_entry']}"
@@ -404,6 +529,8 @@ def print_report(report: dict) -> None:
         "OK": "OK: the served frontend names the live client and no deleted script",
         "STALE": "STALE: the served frontend is not a build of HEAD - the pre-fix bundle is still live",
         "BUILD-MISMATCH": "BUILD-MISMATCH: the live frontend is NOT the build it was supposed to be",
+        "FOREIGN-ENV": "FOREIGN-ENV: the expected build was made in a different environment, so its hash cannot"
+                       " be compared - pass --expect-entry, or compare a build the deploy image made",
         "INCOMPLETE": "INCOMPLETE: assertions passed on the part that arrived, but the closure did not - not a pass",
         "CANNOT-MEASURE": f"CANNOT-MEASURE: the census could not be taken ({report.get('error')})",
     }
