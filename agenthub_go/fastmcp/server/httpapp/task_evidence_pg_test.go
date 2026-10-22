@@ -496,3 +496,178 @@ func evidenceSubmissionRows(t *testing.T, sm *database.SessionManager, taskID st
 	}
 	return n
 }
+
+// evidenceNoTestBody is a submission that names no test: the block the route reads as "no test run",
+// with an exit code and a failed list but no command. It is the incident's shape (a bare evidence
+// call stored command "" and exit 0), and an exit code with no command is still no account of
+// anything.
+func evidenceNoTestBody(baseSHA, headSHA, numstat string) string {
+	body, err := json.Marshal(map[string]any{
+		"base_sha": baseSHA,
+		"head_sha": headSHA,
+		"numstat":  numstat,
+		"test":     map[string]any{"command": "", "exit_code": 0, "failed": []string{}},
+	})
+	if err != nil {
+		panic(err)
+	}
+	return string(body)
+}
+
+// evidenceLatestTestCommand is the command the task's LATEST evidence row carries, read from the
+// stored payload rather than the POST's answer: the claim is about the ledger, not the response.
+func evidenceLatestTestCommand(t *testing.T, sm *database.SessionManager, taskID string) string {
+	t.Helper()
+	command := ""
+	if err := sm.WithSession(context.Background(), func(ctx context.Context, s database.DBTX) error {
+		return s.QueryRowContext(ctx,
+			`SELECT payload->'test'->>'command' FROM task_events
+			 WHERE task_id = $1::uuid AND kind = 'evidence_submitted'
+			 ORDER BY "seq" DESC LIMIT 1`, taskID).Scan(&command)
+	}); err != nil {
+		t.Fatalf("reading the latest evidence command: %v", err)
+	}
+	return command
+}
+
+// TestEvidenceRouteLetsANamedTestSupersedeABareRowAtTheSameHead is the ruling's acceptance 1, 2 and 5
+// over the production route: a row that names no test froze its head - the compare read its command
+// as "" and no named command could match - so the correction the incident needed was impossible. The
+// named submission now appends at the same base/head/numstat, the identity axes still refuse a
+// different account, and a replay of the complete row is still a 200 with nothing appended.
+func TestEvidenceRouteLetsANamedTestSupersedeABareRowAtTheSameHead(t *testing.T) {
+	app, sm := evidenceApp(t)
+	token, scoped := evidenceUser(t, "a3f1c2d4-1111-4111-8111-000000000007")
+	evidenceSeedBranch(t, sm, scoped)
+	taskID := evidenceTaskCreate(t, app, token, "the task corrected after a bare evidence row")
+
+	const baseSHA = "0000000000000000000000000000000000000000"
+	const headSHA = "6666666666666666666666666666666666666666"
+	const numstat = "2\t0\tb.go\n"
+
+	bareCode, bareBody := evidencePost(t, app, token, taskID, evidenceNoTestBody(baseSHA, headSHA, numstat))
+	t.Logf("OBSERVED the bare submission -> %d %s", bareCode, bareBody)
+	if bareCode != http.StatusCreated {
+		t.Fatalf("the bare submission = %d, want 201 (the test block is optional): %s", bareCode, bareBody)
+	}
+	if got := evidenceLatestTestCommand(t, sm, taskID); got != "" {
+		t.Fatalf("the latest command after the bare row = %q, want it empty", got)
+	}
+
+	namedCode, namedBody := evidencePost(t, app, token, taskID, evidenceBody(baseSHA, headSHA, numstat))
+	t.Logf("OBSERVED the named submission at the same head -> %d %s", namedCode, namedBody)
+	if namedCode != http.StatusCreated {
+		t.Fatalf("a named test at a head whose stored row names none = %d, want 201: %s", namedCode, namedBody)
+	}
+	if rows := evidenceSubmissionRows(t, sm, taskID); rows != 2 {
+		t.Fatalf("evidence_submitted rows = %d, want the bare row and the correction", rows)
+	}
+	if got := evidenceLatestTestCommand(t, sm, taskID); !strings.Contains(got, "go test") {
+		t.Fatalf("the latest command = %q, want the submission's command", got)
+	}
+
+	differingCode, differingBody := evidencePost(t, app, token, taskID, evidenceBody(baseSHA, headSHA, "7\t3\tb.go\n"))
+	t.Logf("OBSERVED a different numstat at the now-complete head -> %d %s", differingCode, differingBody)
+	if differingCode != http.StatusConflict {
+		t.Fatalf("a different account of the complete head = %d, want 409: %s", differingCode, differingBody)
+	}
+	if !strings.Contains(differingBody, "different content") {
+		t.Fatalf("the 409 must keep its detail text: %s", differingBody)
+	}
+
+	replayCode, replayBody := evidencePost(t, app, token, taskID, evidenceBody(baseSHA, headSHA, numstat))
+	t.Logf("OBSERVED an identical replay of the complete row -> %d %s", replayCode, replayBody)
+	if replayCode != http.StatusOK {
+		t.Fatalf("an identical replay of the complete row = %d, want 200: %s", replayCode, replayBody)
+	}
+	if rows := evidenceSubmissionRows(t, sm, taskID); rows != 2 {
+		t.Fatalf("evidence_submitted rows = %d after the replay, want the two stored", rows)
+	}
+}
+
+// TestEvidenceRouteRefusesAWeakSubmissionAtADifferentNumstat is the ruling's invariant 1 and
+// acceptance 3: the identity axes always bind. A stored row that names no test does not license a
+// submission whose numstat differs - the head recorded a different change - and a submission that
+// names no test itself is never a supersession, so it cannot renumber the head either.
+func TestEvidenceRouteRefusesAWeakSubmissionAtADifferentNumstat(t *testing.T) {
+	app, sm := evidenceApp(t)
+	token, scoped := evidenceUser(t, "a3f1c2d4-1111-4111-8111-000000000008")
+	evidenceSeedBranch(t, sm, scoped)
+	taskID := evidenceTaskCreate(t, app, token, "the task whose bare row must not be renumbered")
+
+	const baseSHA = "0000000000000000000000000000000000000000"
+	const headSHA = "7777777777777777777777777777777777777777"
+
+	if code, body := evidencePost(t, app, token, taskID, evidenceNoTestBody(baseSHA, headSHA, "1\t0\tc.go\n")); code != http.StatusCreated {
+		t.Fatalf("the bare submission = %d, want 201: %s", code, body)
+	}
+	for name, body := range map[string]string{
+		"a different numstat, still no test": evidenceNoTestBody(baseSHA, headSHA, "5\t2\tc.go\n"),
+		"a different numstat, with a test":   evidenceBody(baseSHA, headSHA, "5\t2\tc.go\n"),
+	} {
+		code, answer := evidencePost(t, app, token, taskID, body)
+		t.Logf("OBSERVED %s -> %d %s", name, code, answer)
+		if code != http.StatusConflict {
+			t.Errorf("%s = %d, want 409 (the identity axes always bind): %s", name, code, answer)
+		}
+	}
+	if rows := evidenceSubmissionRows(t, sm, taskID); rows != 1 {
+		t.Fatalf("evidence_submitted rows = %d, want only the stored bare row", rows)
+	}
+}
+
+// evidenceStoreTestWithoutTestObject writes an evidence row whose payload has no `test` object at
+// all, the second weak shape the ruling names: the route always stores the block (evidencePayload
+// emits it), so this row can only come from a writer that predates it or from the ledger directly.
+// It is stored the way the ledger stores one - append-only, seq after the task's last - because the
+// claim is about what the compare reads, not about how the row got there.
+func evidenceStoreTestWithoutTestObject(t *testing.T, sm *database.SessionManager, taskID, userID, baseSHA, headSHA, numstat string) {
+	t.Helper()
+	payload, err := json.Marshal(map[string]any{"base_sha": baseSHA, "head_sha": headSHA, "numstat": numstat})
+	if err != nil {
+		t.Fatalf("marshalling the bare payload: %v", err)
+	}
+	if err := sm.WithSession(context.Background(), func(ctx context.Context, s database.DBTX) error {
+		_, err := s.ExecContext(ctx,
+			`INSERT INTO task_events (id, task_id, user_id, seq, user_seq, kind, actor_kind, actor_id, payload)
+			 SELECT gen_random_uuid(), $1::uuid, $2::varchar,
+			        COALESCE((SELECT max("seq") FROM task_events WHERE task_id = $1::uuid), 0) + 1,
+			        COALESCE((SELECT max(user_seq) FROM task_events WHERE user_id = $2::varchar), 0) + 1,
+			        'evidence_submitted', 'human', $2::varchar, $3::jsonb`,
+			taskID, userID, string(payload))
+		return err
+	}); err != nil {
+		t.Fatalf("storing the bare row: %v", err)
+	}
+}
+
+// TestEvidenceRouteSupersedesAStoredRowWithoutATestObject is the ruling's acceptance 1 in its
+// literal shape: a stored row that has no test block at all, then a submission naming a command at
+// the same base/head/numstat, which must be accepted and land as the head's second row.
+func TestEvidenceRouteSupersedesAStoredRowWithoutATestObject(t *testing.T) {
+	app, sm := evidenceApp(t)
+	token, scoped := evidenceUser(t, "a3f1c2d4-1111-4111-8111-000000000009")
+	evidenceSeedBranch(t, sm, scoped)
+	taskID := evidenceTaskCreate(t, app, token, "the task whose stored row has no test block")
+
+	const baseSHA = "0000000000000000000000000000000000000000"
+	const headSHA = "8888888888888888888888888888888888888888"
+	const numstat = "3\t1\td.go\n"
+
+	evidenceStoreTestWithoutTestObject(t, sm, taskID, scoped, baseSHA, headSHA, numstat)
+	if rows := evidenceSubmissionRows(t, sm, taskID); rows != 1 {
+		t.Fatalf("stored evidence rows = %d, want the bare row", rows)
+	}
+
+	code, body := evidencePost(t, app, token, taskID, evidenceBody(baseSHA, headSHA, numstat))
+	t.Logf("OBSERVED a named submission over a row with no test block -> %d %s", code, body)
+	if code != http.StatusCreated {
+		t.Fatalf("a named submission over a row naming no test = %d, want 201: %s", code, body)
+	}
+	if rows := evidenceSubmissionRows(t, sm, taskID); rows != 2 {
+		t.Fatalf("evidence rows = %d, want the bare row and the correction", rows)
+	}
+	if got := evidenceLatestTestCommand(t, sm, taskID); !strings.Contains(got, "go test") {
+		t.Fatalf("the latest command = %q, want the submission's command", got)
+	}
+}
