@@ -91,18 +91,18 @@ and the two auth `RegisterRoutes` methods.
 | POST | `/api/v2/branches/project/{project_id}/summaries` | `routes.GetProjectBranchesWithTaskCounts` | `fastmcp/server/httpapp/branch_routes.go:78` |
 | POST | `/api/v2/branches/summaries/bulk` | `routes.GetBulkSummaries` | `fastmcp/server/httpapp/branch_routes.go:82` |
 
-### 1.3 Tasks — base `/api/v2/tasks` (`fastmcp/server/httpapp/task_routes.go:81`)
+### 1.3 Tasks — base `/api/v2/tasks` (`fastmcp/server/httpapp/task_routes.go:100`)
 
 | Method | Path | Handler | Registration |
 |---|---|---|---|
-| POST | `/api/v2/tasks/` | `routes.CreateUserTask` | `fastmcp/server/httpapp/task_routes.go:83` |
-| GET | `/api/v2/tasks/` | `routes.ListUserTasks` | `fastmcp/server/httpapp/task_routes.go:118` |
-| GET | `/api/v2/tasks/{id}` | `routes.GetUserTask` | `fastmcp/server/httpapp/task_routes.go:132` |
-| GET | `/api/v2/tasks/{id}/events` | `routes.GetTaskEvents` | `fastmcp/server/httpapp/task_routes.go:136` |
-| POST | `/api/v2/tasks/{id}/evidence` | `routes.SubmitTaskEvidence` | `fastmcp/server/httpapp/task_routes.go:164` |
-| PUT | `/api/v2/tasks/{id}` | `routes.UpdateUserTask` | `fastmcp/server/httpapp/task_routes.go:201` |
-| DELETE | `/api/v2/tasks/{id}` | `routes.DeleteUserTask` | `fastmcp/server/httpapp/task_routes.go:228` |
-| POST | `/api/v2/tasks/{id}/complete` | `routes.CompleteUserTask` | `fastmcp/server/httpapp/task_routes.go:236` |
+| POST | `/api/v2/tasks/` | `routes.CreateUserTask` | `fastmcp/server/httpapp/task_routes.go:102` |
+| GET | `/api/v2/tasks/` | `routes.ListUserTasks` | `fastmcp/server/httpapp/task_routes.go:137` |
+| GET | `/api/v2/tasks/{id}` | `routes.GetUserTask` | `fastmcp/server/httpapp/task_routes.go:151` |
+| GET | `/api/v2/tasks/{id}/events` | `routes.GetTaskEvents` | `fastmcp/server/httpapp/task_routes.go:155` |
+| POST | `/api/v2/tasks/{id}/evidence` | `routes.SubmitTaskEvidence` | `fastmcp/server/httpapp/task_routes.go:183` |
+| PUT | `/api/v2/tasks/{id}` | `routes.UpdateUserTask` | `fastmcp/server/httpapp/task_routes.go:220` |
+| DELETE | `/api/v2/tasks/{id}` | `routes.DeleteUserTask` | `fastmcp/server/httpapp/task_routes.go:247` |
+| POST | `/api/v2/tasks/{id}/complete` | `routes.CompleteUserTask` | `fastmcp/server/httpapp/task_routes.go:255` |
 
 **DRIFT FOUND AND REPAIRED 2026-10-08 at HEAD `88d27758` (docs duty pass 4).** *Three rows in the table above cited a line that is no longer a registration (`PUT {id}` 107->117, `DELETE {id}` 130->140, `complete` 134->144) and one route had no row at all.* **The control that names the cause rather than assuming it: every moved row moved by EXACTLY +10, and the insertion that did it is the `GET /{id}/events` route — one registration plus its closure, added above them.** *So this is the rotted-pointer class the §1 citation pass predicted, reproduced on schedule, and the fix is a line number, not a re-reading of the table.* **Re-resolve a row by reading the file's own `base` const and matching the row's method+path to the registration that carries it — never by trusting the number.**
 
