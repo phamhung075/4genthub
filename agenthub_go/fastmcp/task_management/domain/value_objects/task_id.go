@@ -52,6 +52,18 @@ func IsTaskUUID(value string) bool {
 	return uuidPattern.MatchString(strings.ToLower(strings.TrimSpace(value)))
 }
 
+// taskIDPrefixPattern is the READ-ONLY address form: 4 to 31 hex characters and no dashes, which is
+// how the room cites a task (an 8-hex prefix is the common case). A full 32-character id is an
+// ADDRESS already and never a prefix.
+var taskIDPrefixPattern = regexp.MustCompile(`^[0-9a-f]{4,31}$`)
+
+// IsTaskIDPrefix reports whether value is that read address rather than a row id. It is the grammar
+// and only the grammar: whether a task actually starts with the prefix is the read's question, and
+// the one answer here is that the read route - not a write route - is where to ask.
+func IsTaskIDPrefix(value string) bool {
+	return taskIDPrefixPattern.MatchString(strings.ToLower(strings.TrimSpace(value)))
+}
+
 // TaskId is a task identifier: a UUID, a hierarchical subtask ID (uuid.NNN),
 // or one of the integer/test formats accepted by the Python implementation.
 type TaskId struct{ EntityId }

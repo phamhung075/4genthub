@@ -12,7 +12,8 @@ package httpapp
 // These tests drive the registered routes themselves (App.registerTaskRoutes over a mux), so the
 // assertion is about the production path and not a copy of it. They need no database: the guard runs
 // before any use case, and a full uuid is shown reaching the controller, which is what the route
-// answers today.
+// answers today. Resolution of the address form belongs to facade.readableTaskID and is pinned in the
+// facades package (TestReadableTaskID*): these tests prove the routes' half, the hand-off.
 
 import (
 	"context"
@@ -114,8 +115,11 @@ func TestTaskRowUUIDGuardRefusesAPrefixOnEveryWriteAndEventsRoute(t *testing.T) 
 		if !strings.Contains(detail, `Task id \"403d16ca\" is not a task row uuid`) {
 			t.Errorf("%s %s: the refusal does not name the id: %s", p.method, p.path, detail)
 		}
-		if !strings.Contains(detail, "GET /api/v2/tasks/403d16ca resolves it") {
-			t.Errorf("%s %s: the refusal does not name the read route that takes a prefix: %s", p.method, p.path, detail)
+		// The QUALIFIED sentence, qualifier included: the read routes a prefix and answers 404 when no
+		// task's id starts with it, so an unqualified "resolves it" promises a read it cannot perform.
+		// Dropping the qualifier must turn this red, not leave it green on the shorter substring.
+		if !strings.Contains(detail, "GET /api/v2/tasks/403d16ca resolves it when a task's id starts with it") {
+			t.Errorf("%s %s: the read advice is not the qualified sentence: %s", p.method, p.path, detail)
 		}
 	}
 	if len(controller.ids) != 0 {
@@ -155,10 +159,39 @@ func TestTaskRowUUIDGuardNormalizesTheDashlessForm(t *testing.T) {
 	}
 }
 
-// TestTaskReadStillResolvesAPrefix is the negative of the guard: the read route is the one address that
-// accepts the 4-31 hex prefix, and it must keep answering it - the client's `--task <8hex>` read path
-// and the room's habit of citing a task by prefix both depend on it.
-func TestTaskReadStillResolvesAPrefix(t *testing.T) {
+// TestTaskRowUUIDRefusalNamesAReadOnlyForWhatTheReadTakes pins the advice's shape. The refusal above
+// names GET for the address form, and this one pins the other half: a value the read route is not an
+// address for - a test-style name, a hex string too short to be one - is told the row form alone,
+// because a read named for it would answer 404. Same guard, two sentences, each true of the value it
+// was handed. (A bare digit string is hex and IS an address: 12345 takes the prefix sentence, and that
+// sentence is qualified - the read resolves a prefix when a task's id starts with it.)
+func TestTaskRowUUIDRefusalNamesAReadOnlyForWhatTheReadTakes(t *testing.T) {
+	mux, controller := taskRouteMux(t)
+	for _, raw := range []string{"my-test-1", "deadbeefzz", "abc", "403d16ca-89df"} {
+		rec := taskRequest(t, mux, http.MethodDelete, "/api/v2/tasks/"+raw, "")
+		if rec.Code != http.StatusUnprocessableEntity {
+			t.Errorf("DELETE %q: status %d, want %d; body %s", raw, rec.Code, http.StatusUnprocessableEntity, rec.Body.String())
+			continue
+		}
+		detail := rec.Body.String()
+		if strings.Contains(detail, "GET /api/v2/tasks/") {
+			t.Errorf("DELETE %q: the refusal names a read for a value the read does not resolve: %s", raw, detail)
+		}
+		if !strings.Contains(detail, "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx") {
+			t.Errorf("DELETE %q: the refusal does not name the row form: %s", raw, detail)
+		}
+	}
+	if len(controller.ids) != 0 {
+		t.Fatalf("the guard let a non-row id through to the controller: %v", controller.ids)
+	}
+}
+
+// TestTaskReadRouteHandsAPrefixToItsResolver is the negative of the guard: GET /{id} is the one route
+// that takes the 4-31 hex prefix, and it must keep handing it on - the client's `--task <8hex>` read
+// path and the room's habit of citing a task by prefix both depend on it. What this test can prove is
+// the hand-off; the RESOLUTION is facade.readableTaskID's, and TestReadableTaskID* in the facades
+// package pins it over a repository fake.
+func TestTaskReadRouteHandsAPrefixToItsResolver(t *testing.T) {
 	mux, controller := taskRouteMux(t)
 	rec := taskRequest(t, mux, http.MethodGet, "/api/v2/tasks/"+idPrefix, "")
 	if rec.Code != http.StatusOK {

@@ -60,21 +60,40 @@ func stringList(m map[string]any, key string) []string {
 // 8-hex prefix - the form the room cites a task with - reached the store as "invalid input syntax for
 // type uuid" (SQLSTATE 22P02) and came back as HTTP 500 for any caller that was not a client which
 // had already resolved it. A caller error is a 422 decided HERE, before any use case runs, and the
-// answer names the form and the read route that does accept a prefix. The cast stays strict: a
-// prefix is never resolved on a write (the owner's open question, jev 19:42:12Z).
+// answer names the form, plus the read route - but only for a value the read takes as an address, so
+// the advice is never a route that answers 404. The cast stays strict: a prefix is never resolved on a
+// write (the owner's open question, jev 19:42:12Z).
 //
-// The id it returns is the canonical spelling, so the dashless 32-hex form - which the store also
-// casts - reaches the route normalized rather than as a second spelling.
+// The id it returns is the one NewTaskId normalized: the canonical spelling for the dashless 32-hex
+// form, the accepted spelling lowercased otherwise. Every one of those is a spelling the `$1::uuid`
+// cast takes, which is what this guard exists to promise; it is not "the canonical spelling" for the
+// dashed forms, because uuidPattern makes each of its four hyphens optional over the 8-4-4-4-12
+// groups, so a dashed spelling that still totals those digits is accepted and comes back lowercased
+// with its own hyphens, not rebuilt into the canonical one.
 func taskRowUUID(w http.ResponseWriter, r *http.Request) (string, bool) {
 	raw := r.PathValue("id")
 	id, err := value_objects.NewTaskId(raw)
 	if err != nil || !value_objects.IsTaskUUID(raw) {
-		writeDetail(w, http.StatusUnprocessableEntity, fmt.Sprintf(
-			"Task id %q is not a task row uuid: a task is addressed by its uuid (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx). A 4-31 hex prefix is the READ address - GET /api/v2/tasks/%s resolves it - and this route does not.",
-			raw, raw))
+		writeDetail(w, http.StatusUnprocessableEntity, taskRowUUIDRefusal(raw))
 		return "", false
 	}
 	return id.String(), true
+}
+
+// taskRowUUIDRefusal says what this route takes and, only for the one value the read route accepts as
+// an address, where that value can be read instead. A test-style name, a brace form or a hex string too
+// short to be a prefix is told the row form alone: naming a read for it that answers 404 is advice the
+// caller cannot use.
+func taskRowUUIDRefusal(raw string) string {
+	const rowForm = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+	if !value_objects.IsTaskIDPrefix(raw) {
+		return fmt.Sprintf(
+			"Task id %q is not a task row uuid: a task is addressed by its uuid (%s), and this route takes that form only.",
+			raw, rowForm)
+	}
+	return fmt.Sprintf(
+		"Task id %q is not a task row uuid: a task is addressed by its uuid (%s). %q is the READ address - GET /api/v2/tasks/%s resolves it when a task's id starts with it - and this route does not.",
+		raw, rowForm, raw, raw)
 }
 
 func (a *App) registerTaskRoutes(mux *http.ServeMux) {
