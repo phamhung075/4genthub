@@ -436,7 +436,7 @@ export function TokenManagement() {
                   </div>
 
                   {/* Quick Actions */}
-                  <div className="flex flex-wrap gap-2 p-4 bg-slate-100 dark:bg-slate-700 rounded-lg">
+                  <div className="flex flex-wrap gap-2 p-4 bg-background-tertiary rounded-lg">
                     <Button
                       variant="outline"
                       size="sm"
@@ -455,7 +455,7 @@ export function TokenManagement() {
                       variant="ghost"
                       size="sm"
                       onClick={() => setSelectedScopes([])}
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      className="text-error-dark hover:bg-error-light"
                     >
                       Clear All
                     </Button>
