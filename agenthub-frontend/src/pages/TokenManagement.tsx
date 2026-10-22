@@ -436,7 +436,7 @@ export function TokenManagement() {
                   </div>
 
                   {/* Quick Actions */}
-                  <div className="flex flex-wrap gap-2 p-4 bg-background-active rounded-lg">
+                  <div className="flex flex-wrap gap-2 p-4 bg-background-secondary rounded-lg">
                     <Button
                       variant="outline"
                       size="sm"
