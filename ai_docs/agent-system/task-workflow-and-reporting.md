@@ -178,10 +178,21 @@ MEASURED, on one task's own evidence and its own command (hub task `8bd075eb`, 2
 criteria as written answered .57/.42/.41/.49 -> uncertain, exit 6; the same claims re-worded into this
 vocabulary answered .97/.96/.96 -> accept. Re-measured against the redacted wire (friction `e2056bf9`,
 2026-10-18): criteria that name a listed path, which the register admits, answered .16-.34, and the same
-claims with a sha and the totals answered .93-.97. The count keys are new (board `86e4d618`, 2026-10-18);
-their band is not measured yet, so the count form is the fallback when a run has no sha to name, not the
-primary form. The ruling, its measurements and the instrument that re-runs them:
+claims with a sha and the totals answered .93-.97. The count keys were unmeasured when they landed (board
+`86e4d618`, 2026-10-18); they are not any more: on `27ab8099` (2026-10-22) three count criteria answered .99,
+.99 and .99, the strongest band measured, so a count sentence is a primary form, not a fallback. The ruling, its
+measurements and the instrument that re-runs them:
 `seats/architect/RULING-outcome2-proof-shape.md` (room 4genthub-min).
+
+ONE CRITERION, ONE FACT - and the gate takes the MINIMUM. Read in `EvaluateCriteria`
+(`agenthub_client/internal/clientjev/jev.go:225`, the AND at :254): the verdict ANDs the threshold, so a single criterion under
+.75 makes the whole close `uncertain` however green the others are, and a criterion at or below .3 rejects
+outright. A weak criterion is a veto, never a diluted average. Measured on one task's five gate runs (board
+`27ab8099`, 2026-10-22, from `jev_decisions.log`): one criterion carrying several facts answered .52, .58 and
+.57 over three runs and was refused each time; the same change with its facts split one per criterion answered
+.81/.99/.99/.99/.85 and was accepted; and a sixth criterion answered .65, which kept the close `uncertain`
+with the other five at .82-.99, so it passed only once that criterion was gone. Split a compound claim, and
+give a sha-only claim a command's exit code or a count to sit beside.
 
 ## Subtasks
 
