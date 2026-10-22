@@ -1,13 +1,14 @@
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { extname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 /**
  * The colour census: every theme colour the config registers must compile to a
- * declaration, with its solid form AND with an opacity modifier.
+ * declaration, with its solid form AND with an opacity modifier - and, the other way, every colour
+ * utility the source uses must compile to a declaration too.
  *
  * WHY IT JUDGES EMISSION AND NOT THE CONFIG OBJECT. Tailwind v3 only injects an
  * alpha channel into a colour it can parse; a plain `var(--color-x)` string is
@@ -18,8 +19,14 @@ import { fileURLToPath } from 'node:url';
  * CLI run over a probe file naming every candidate class, then a declaration
  * required for each name.
  *
- * It is self-maintaining: a token added to the config is a class the run must
- * emit, with no list to update here.
+ * The first direction is self-maintaining: a token added to the config is a class the run must emit,
+ * with no list to update here. The second direction - a class the source uses must emit - is what the
+ * config-side walk cannot see: the 13 shadcn names (task 20778989, RULING 2026-10-22
+ * `RULING-2026-10-22-retire-the-shadcn-palette.md`) named colours the config never registered, so they
+ * passed the config walk silently. Its candidate filter is a stoplist: a source token counts when its
+ * base form is a registered colour path behind a colour-bearing prefix, or when it is one of the retired
+ * names below - so `text-sm`, `border-t` and `ring-offset-2` never reach the verdict. A brand-new shadcn
+ * name is recognised once it joins that list (one line); the emission check itself never weakens.
  *
  * TW_CENSUS_CONFIG points the census at another config file. It exists so the
  * mutation check is demonstrable - copy the config, revert one entry to a bare
@@ -84,21 +91,130 @@ const candidates = (config: Record<string, any>): string[] => {
   return classes;
 };
 
-/** The CSS class escape Tailwind writes for a utility it emitted: `bg-accent/50`
- *  becomes `.bg-accent\/50`, so each special character is matched as a literal
- *  backslash followed by itself. */
-const escapedSelector = (utility: string): RegExp =>
+/** The colour paths the config registers, behind whatever property prefix a utility uses. */
+const registeredColourPaths = (config: Record<string, any>): string[] => {
+  const tree = (config.theme?.extend?.colors ?? config.theme?.colors) as ColourTree | undefined;
+  return tree ? colourPaths(tree) : [];
+};
+
+/** The characters Tailwind backslash-escapes in a class selector (`bg-accent/50` -> `.bg-accent\/50`). */
+const CSS_SELECTOR_SPECIALS = /[./[\]()%,#:>=&*+~'"!$^|]/g;
+
+const regexEscape = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/** The selector Tailwind writes for a utility it emitted, as a pattern: every special character is a
+ *  literal backslash plus itself, and a parent-selector variant appends its own suffix
+ *  (`[&>svg]:text-error` compiles to `.…>svg { … }`). */
+const selectorPattern = (utility: string): RegExp =>
   new RegExp(
-    `\\.${utility.replace(/[./[\]()%,#:]/g, (character) => `\\\\${character}`)}\\s*\\{([^}]*)\\}`
+    `\\.${regexEscape(utility.replace(CSS_SELECTOR_SPECIALS, (character) => `\\${character}`))}[^,{]*\\{([^}]*)\\}`
   );
+
+/** Every rule body the sheet emits for one utility. A class that is both a colour and a font size
+ *  (`text-base`, tailwind.config.js:145) emits two rules, so the verdict reads all of them. */
+const emittedBlocks = (utility: string, sheet: string): string[] => [
+  ...sheet.matchAll(new RegExp(selectorPattern(utility).source, 'g')),
+].map((match) => match[1]);
+
+/**
+ * The retired shadcn palette. RULING 2026-10-22 (`RULING-2026-10-22-retire-the-shadcn-palette.md`,
+ * architect): these 13 names were never registered in `tailwind.config.js`, so each compiled to no rule,
+ * and every call site was migrated onto the theme token beside it. Deleting an entry is only right if the
+ * palette is deliberately reintroduced.
+ */
+const REPLACEMENT_BY_RETIRED_NAME: Record<string, string> = {
+  'text-muted-foreground': 'text-base-secondary',
+  'text-destructive': 'text-error',
+  'text-foreground': 'text-base-primary',
+  'bg-muted': 'bg-base-tertiary',
+  'ring-ring': 'ring-primary',
+  'bg-destructive': 'bg-error',
+  'border-destructive': 'border-error',
+  'border-input': 'border-input-border',
+  'border-border': 'border-surface-border',
+  'text-primary-foreground': 'text-accent-contrast',
+  'border-muted-foreground': 'border-text-secondary',
+  'bg-border': 'bg-surface-border',
+  'text-accent-foreground': 'text-accent-contrast',
+};
+
+const IS_SOURCE_EXTENSION: Record<string, true> = {
+  '.ts': true, '.tsx': true, '.js': true, '.jsx': true, '.css': true, '.scss': true,
+};
+
+/** Colour-bearing utility prefixes, longest first so `ring-offset-` is tried before `ring-`. */
+const COLOUR_UTILITY_PREFIXES = [
+  'ring-offset-', 'placeholder-', 'decoration-', 'outline-', 'border-', 'stroke-', 'accent-',
+  'divide-', 'shadow-', 'caret-', 'bg-', 'text-', 'ring-', 'fill-', 'from-', 'via-', 'to-',
+];
+
+const walkSources = (dir: string, found: string[] = []): string[] => {
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const path = join(dir, entry.name);
+    if (entry.isDirectory()) walkSources(path, found);
+    else if (IS_SOURCE_EXTENSION[extname(entry.name)]) found.push(path);
+  }
+  return found;
+};
+
+/** The utility a class token names, variants stripped: `dark:hover:text-error` -> `text-error`.
+ *  Arbitrary variants may hold a colon of their own (`[&:hover]:…`), so only bracket depth 0 splits. */
+const baseUtility = (token: string): string => {
+  let depth = 0;
+  let start = 0;
+  for (let index = 0; index < token.length; index += 1) {
+    const character = token[index];
+    if (character === '[') depth += 1;
+    else if (character === ']') depth = Math.max(0, depth - 1);
+    else if (character === ':' && depth === 0) start = index + 1;
+  }
+  return token.slice(start);
+};
+
+/** `<name>/50` -> `<name>`; a leading `!` (important) is not part of the name. */
+const withoutAlpha = (utility: string): string =>
+  (utility.startsWith('!') ? utility.slice(1) : utility).split('/')[0];
+
+/**
+ * The source classes the emission verdict is owed for, as `token -> file`. A token qualifies when it is
+ * one of the retired names, or when `baseUtility` names a registered colour path behind a colour prefix.
+ */
+const sourceColourClasses = (registeredPaths: Record<string, true>): Map<string, string> => {
+  const found = new Map<string, string>();
+  // This file holds the retired list and the prefixes, so it is its own only allowed occurrence.
+  const self = fileURLToPath(import.meta.url);
+
+  for (const file of walkSources(join(frontendRoot, 'src'))) {
+    if (file === self) continue;
+    const text = readFileSync(file, 'utf8');
+    for (const match of text.matchAll(/[^\s"'`{}();,]+/g)) {
+      const raw = match[0];
+      const token = raw.startsWith('.') ? raw.slice(1) : raw;
+      const utility = withoutAlpha(baseUtility(token));
+      const isRetired = Object.hasOwn(REPLACEMENT_BY_RETIRED_NAME, utility);
+      const prefix = COLOUR_UTILITY_PREFIXES.find((candidate) => utility.startsWith(candidate));
+      const isRegisteredColour =
+        prefix !== undefined && registeredPaths[utility.slice(prefix.length)] === true;
+      if (isRetired || isRegisteredColour) {
+        if (!found.has(token)) found.set(token, file.slice(frontendRoot.length));
+      }
+    }
+  }
+  return found;
+};
 
 describe('theme colour census: every registered colour emits its alpha form', () => {
   let css = '';
   let classes: string[] = [];
+  let sourceClasses = new Map<string, string>();
 
   beforeAll(() => {
     const config = require(configPath) as Record<string, any>;
     classes = candidates(config);
+
+    const registeredPaths: Record<string, true> = {};
+    for (const path of registeredColourPaths(config)) registeredPaths[path] = true;
+    sourceClasses = sourceColourClasses(registeredPaths);
 
     const scratch = mkdtempSync(join(tmpdir(), 'tw-census-'));
     try {
@@ -106,7 +222,7 @@ describe('theme colour census: every registered colour emits its alpha form', ()
       const probe = join(scratch, 'probe.html');
       const output = join(scratch, 'out.css');
       writeFileSync(input, '@tailwind base;\n@tailwind components;\n@tailwind utilities;\n');
-      writeFileSync(probe, `<div class="${classes.join(' ')}"></div>`);
+      writeFileSync(probe, `<div class="${[...classes, ...sourceClasses.keys()].join(' ')}"></div>`);
       execFileSync(
         join(frontendRoot, 'node_modules/.bin/tailwindcss'),
         ['-c', configPath, '-i', input, '-o', output, '--content', probe],
@@ -120,13 +236,13 @@ describe('theme colour census: every registered colour emits its alpha form', ()
 
   it('finds the colours the config registers', () => {
     expect(classes.length).toBeGreaterThan(100);
+    expect(sourceClasses.size).toBeGreaterThan(100);
   });
 
   it('emits a rule for every colour, solid and at 50%', () => {
-    const missing = classes.filter((utility) => {
-      const rule = escapedSelector(utility).exec(css);
-      return rule === null || !rule[1].includes('color');
-    });
+    const missing = classes.filter(
+      (utility) => !emittedBlocks(utility, css).some((block) => block.includes('color'))
+    );
 
     if (missing.length > 0) {
       throw new Error(
@@ -134,6 +250,29 @@ describe('theme colour census: every registered colour emits its alpha form', ()
           'The usual cause is a colour registered as a bare var(--color-*) string - Tailwind v3 ' +
           'cannot put an alpha on it - or an alias key that replaces a nested colour tree. ' +
           'Fix the entry in tailwind.config.js; do not drop the class.'
+      );
+    }
+  });
+
+  it('emits a rule for every colour utility the source uses', () => {
+    const missing: string[] = [];
+
+    for (const [token, file] of sourceClasses) {
+      if (emittedBlocks(token, css).some((block) => block.trim().length > 0)) continue;
+      const replacement = REPLACEMENT_BY_RETIRED_NAME[withoutAlpha(baseUtility(token))];
+      missing.push(
+        `${file} uses \`${token}\`` +
+          (replacement ? ` - that is a retired shadcn name, use \`${replacement}\`` : '')
+      );
+    }
+
+    if (missing.length > 0) {
+      throw new Error(
+        `${missing.length} colour utility class(es) in src compile to NO declaration:\n  ${missing.join(
+          '\n  '
+        )}\nA class naming a colour the config does not register emits nothing at all - register the ` +
+          'colour in tailwind.config.js or use a theme token that compiles. ' +
+          'See RULING-2026-10-22-retire-the-shadcn-palette.md for the retired names.'
       );
     }
   });

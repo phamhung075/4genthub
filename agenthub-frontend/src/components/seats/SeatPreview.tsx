@@ -52,13 +52,13 @@ export const SeatPreview: React.FC<SeatPreviewProps> = ({ room, seat }) => {
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex items-center gap-3 flex-wrap text-sm">
-            <span className="text-muted-foreground">Hash</span>
-            <code className="break-all rounded bg-muted px-2 py-1 font-mono">{resolvedSeat?.hash ?? '—'}</code>
-            <span className="text-muted-foreground">Runtime</span>
+            <span className="text-base-secondary">Hash</span>
+            <code className="break-all rounded bg-base-tertiary px-2 py-1 font-mono">{resolvedSeat?.hash ?? '—'}</code>
+            <span className="text-base-secondary">Runtime</span>
             <Badge variant="secondary">{resolvedSeat?.runtime ?? '—'}</Badge>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <code className="min-w-0 break-all rounded bg-muted px-2 py-1 font-mono text-xs">{command}</code>
+            <code className="min-w-0 break-all rounded bg-base-tertiary px-2 py-1 font-mono text-xs">{command}</code>
             <Button variant="outline" size="sm" onClick={handleCopy}>
               {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
               Copy pull command
@@ -66,12 +66,12 @@ export const SeatPreview: React.FC<SeatPreviewProps> = ({ room, seat }) => {
           </div>
           {/* Delivery is the MANUAL pull above: the files reach the machine when they are pulled and
               the seat relaunches, and a session already running keeps what it loaded. */}
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-base-secondary">
             A running session keeps what it loaded; the files reach the machine when they are pulled
             and the seat relaunches.
           </p>
           {isLoading && (
-            <div className="flex items-center gap-2 text-muted-foreground">
+            <div className="flex items-center gap-2 text-base-secondary">
               <Loader2 className="h-4 w-4 animate-spin" /> Loading snapshot...
             </div>
           )}
@@ -87,7 +87,7 @@ export const SeatPreview: React.FC<SeatPreviewProps> = ({ room, seat }) => {
             </Alert>
           )}
           {!isLoading && !error && !resolvedSeat && (
-            <p className="text-sm text-muted-foreground">No resolved snapshot yet.</p>
+            <p className="text-sm text-base-secondary">No resolved snapshot yet.</p>
           )}
         </CardContent>
       </Card>
@@ -105,14 +105,14 @@ export const SeatPreview: React.FC<SeatPreviewProps> = ({ room, seat }) => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-1">
-              {files.length === 0 && <p className="text-sm text-muted-foreground">No files rendered.</p>}
+              {files.length === 0 && <p className="text-sm text-base-secondary">No files rendered.</p>}
               {files.map((file, index) => (
                 <button
                   key={file.path}
                   type="button"
                   onClick={() => setFileIndex(index)}
                   className={`block w-full truncate rounded px-2 py-1 text-left text-sm ${
-                    index === fileIndex ? 'bg-primary/10 text-primary' : 'hover:bg-muted'
+                    index === fileIndex ? 'bg-primary/10 text-primary' : 'hover:bg-base-tertiary'
                   }`}
                 >
                   {file.path}
@@ -126,7 +126,7 @@ export const SeatPreview: React.FC<SeatPreviewProps> = ({ room, seat }) => {
               <CardTitle className="text-base">{activeFile?.path ?? 'File'}</CardTitle>
             </CardHeader>
             <CardContent>
-              <pre className="max-h-[28rem] overflow-auto rounded bg-muted p-3 text-xs whitespace-pre-wrap">
+              <pre className="max-h-[28rem] overflow-auto rounded bg-base-tertiary p-3 text-xs whitespace-pre-wrap">
                 {activeFile?.content ?? ''}
               </pre>
             </CardContent>
@@ -137,7 +137,7 @@ export const SeatPreview: React.FC<SeatPreviewProps> = ({ room, seat }) => {
               <CardTitle className="text-base">Policy</CardTitle>
             </CardHeader>
             <CardContent>
-              <pre className="max-h-72 overflow-auto rounded bg-muted p-3 text-xs whitespace-pre-wrap">
+              <pre className="max-h-72 overflow-auto rounded bg-base-tertiary p-3 text-xs whitespace-pre-wrap">
                 {JSON.stringify(resolvedSeat.policy, null, 2)}
               </pre>
             </CardContent>

@@ -93,7 +93,7 @@ function ScopeCard({ scope, isSelected, onToggle }: ScopeCardProps) {
         className={`cursor-pointer transition-all duration-200 hover:shadow-lg ${
           isSelected
             ? 'ring-2 ring-primary shadow-lg bg-gradient-to-br from-primary/10 to-secondary/10'
-            : 'hover:shadow-md bg-gradient-to-br from-surface to-surface-secondary border-border hover:border-primary/20'
+            : 'hover:shadow-md bg-gradient-to-br from-surface to-surface-secondary border-surface-border hover:border-primary/20'
         }`}
         onClick={() => onToggle(scope.value)}
       >
@@ -101,8 +101,8 @@ function ScopeCard({ scope, isSelected, onToggle }: ScopeCardProps) {
           <div className="flex items-start gap-2">
             <div className={`mt-0.5 w-4 h-4 shrink-0 rounded border-2 flex items-center justify-center transition-all duration-200 ${
               isSelected
-                ? 'bg-primary border-primary text-primary-foreground'
-                : 'border-muted-foreground/30 hover:border-primary/50'
+                ? 'bg-primary border-primary text-accent-contrast'
+                : 'border-text-secondary/30 hover:border-primary/50'
             }`}>
               {isSelected && (
                 <svg className="w-2.5 h-2.5 fill-current" viewBox="0 0 12 12">
@@ -111,7 +111,7 @@ function ScopeCard({ scope, isSelected, onToggle }: ScopeCardProps) {
               )}
             </div>
             <div className="flex-1 min-w-0">
-              <span className="block truncate font-medium text-xs text-foreground">{resource}</span>
+              <span className="block truncate font-medium text-xs text-base-primary">{resource}</span>
               <span className="mt-0.5 inline-block whitespace-nowrap rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
                 {verb}
               </span>
@@ -349,13 +349,13 @@ export function TokenManagement() {
         <div className="mb-8">
           <SparklesText
             as="h1"
-            className="text-4xl font-bold text-foreground mb-4"
+            className="text-4xl font-bold text-base-primary mb-4"
             sparkleCount={20}
             sparkleSize={14}
           >
             API Token Management
           </SparklesText>
-          <p className="text-muted-foreground text-lg">
+          <p className="text-base-secondary text-lg">
             Generate and manage secure API tokens for MCP authentication and integration
           </p>
         </div>
@@ -423,7 +423,7 @@ export function TokenManagement() {
                     placeholder="e.g., Production API, CI/CD Pipeline, Development Access"
                     className="bg-background/50"
                   />
-                  <p className="text-xs text-muted-foreground">A descriptive name to identify this token</p>
+                  <p className="text-xs text-base-secondary">A descriptive name to identify this token</p>
                 </div>
 
                 {/* Scope Selection with Improved Grid */}
@@ -461,7 +461,7 @@ export function TokenManagement() {
                     </Button>
                   </div>
 
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-base-secondary">
                     Publish Sessions is not included in Client MCP. Mint "Client connector" (Publish Sessions
                     only) as a separate token for the agent daemon.
                   </p>
@@ -473,7 +473,7 @@ export function TokenManagement() {
 
                     return (
                       <div key={category} className="space-y-3">
-                        <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">
+                        <h4 className="font-medium text-sm text-base-secondary uppercase tracking-wide">
                           {category} Permissions
                         </h4>
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
@@ -506,7 +506,7 @@ export function TokenManagement() {
                       max="365"
                       className="bg-background/50"
                     />
-                    <p className="text-xs text-muted-foreground">Token expires after this many days</p>
+                    <p className="text-xs text-base-secondary">Token expires after this many days</p>
                   </div>
 
                   <div className="space-y-2">
@@ -522,7 +522,7 @@ export function TokenManagement() {
                       max="1000"
                       className="bg-background/50"
                     />
-                    <p className="text-xs text-muted-foreground">Maximum requests per hour (1000 max)</p>
+                    <p className="text-xs text-base-secondary">Maximum requests per hour (1000 max)</p>
                   </div>
                 </div>
 
@@ -533,7 +533,7 @@ export function TokenManagement() {
                       {selectedScopes.length} permission{selectedScopes.length !== 1 ? 's' : ''} selected
                     </p>
                     {tokenName && (
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-base-secondary">
                         Token name: "{tokenName}"
                       </p>
                     )}
@@ -566,7 +566,7 @@ export function TokenManagement() {
             <div className="flex justify-between items-center">
               <div>
                 <h2 className="text-2xl font-bold">Active API Tokens</h2>
-                <p className="text-muted-foreground">
+                <p className="text-base-secondary">
                   {tokens.length} active token{tokens.length !== 1 ? 's' : ''}
                 </p>
               </div>
@@ -596,7 +596,7 @@ export function TokenManagement() {
                     <Key className="h-8 w-8 text-primary" />
                   </div>
                   <h3 className="text-xl font-semibold mb-2">No API Tokens Yet</h3>
-                  <p className="text-muted-foreground mb-4">
+                  <p className="text-base-secondary mb-4">
                     Generate your first token to start using the MCP API
                   </p>
                   <Button
@@ -651,16 +651,16 @@ export function TokenManagement() {
                       <CardContent className="space-y-4">
                         {/* Dates */}
                         <div className="grid grid-cols-1 gap-2 text-sm">
-                          <div className="flex items-center space-x-2 text-muted-foreground">
+                          <div className="flex items-center space-x-2 text-base-secondary">
                             <Clock className="h-3 w-3" />
                             <span className="text-xs">Created: {format(new Date(token.created_at), 'MMM d, yyyy')}</span>
                           </div>
-                          <div className="flex items-center space-x-2 text-muted-foreground">
+                          <div className="flex items-center space-x-2 text-base-secondary">
                             <AlertCircle className="h-3 w-3" />
                             <span className="text-xs">Expires: {format(new Date(token.expires_at), 'MMM d, yyyy')}</span>
                           </div>
                           {token.last_used_at && (
-                            <div className="flex items-center space-x-2 text-muted-foreground">
+                            <div className="flex items-center space-x-2 text-base-secondary">
                               <Zap className="h-3 w-3" />
                               <span className="text-xs">Last used: {format(new Date(token.last_used_at), 'MMM d, h:mm a')}</span>
                             </div>
@@ -673,12 +673,12 @@ export function TokenManagement() {
                         <div className="grid grid-cols-2 gap-4 text-center">
                           <div className="bg-background/50 rounded-lg p-3">
                             <p className="text-2xl font-bold text-primary">{token.usage_count}</p>
-                            <p className="text-xs text-muted-foreground">Total Requests</p>
+                            <p className="text-xs text-base-secondary">Total Requests</p>
                           </div>
                           {token.rate_limit && (
                             <div className="bg-background/50 rounded-lg p-3">
                               <p className="text-2xl font-bold text-secondary">{token.rate_limit}</p>
-                              <p className="text-xs text-muted-foreground">Rate Limit/Hr</p>
+                              <p className="text-xs text-base-secondary">Rate Limit/Hr</p>
                             </div>
                           )}
                         </div>
@@ -688,7 +688,7 @@ export function TokenManagement() {
                           <>
                             <Separator />
                             <div className="space-y-2">
-                              <h4 className="text-xs font-semibold text-muted-foreground uppercase">Operation Breakdown</h4>
+                              <h4 className="text-xs font-semibold text-base-secondary uppercase">Operation Breakdown</h4>
                               <div className="space-y-1 max-h-32 overflow-y-auto">
                                 {Object.entries(token.usage_stats)
                                   .filter(([, count]) => count && count > 0)
@@ -700,7 +700,7 @@ export function TokenManagement() {
                                       .join(' ');
                                     return (
                                       <div key={operation} className="flex justify-between items-center text-xs">
-                                        <span className="text-muted-foreground truncate">{operationLabel}</span>
+                                        <span className="text-base-secondary truncate">{operationLabel}</span>
                                         <Badge variant="outline" className="ml-2 text-xs">{count}</Badge>
                                       </div>
                                     );
@@ -811,7 +811,7 @@ export function TokenManagement() {
               </AlertDescription>
             </Alert>
             <ConnectorTokenGuide token={generatedToken} />
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-base-secondary">
               Expires in {generatedSettings.expiryDays} days. Rate limit: {generatedSettings.rateLimit} requests/hour.
             </p>
             <DialogFooter>
@@ -919,7 +919,7 @@ export function TokenManagement() {
                       <Shield className="h-4 w-4 mr-2" />
                       Security Notes
                     </h5>
-                    <div className="space-y-2 text-xs text-muted-foreground">
+                    <div className="space-y-2 text-xs text-base-secondary">
                       <p>• Token expires in {generatedSettings.expiryDays} days</p>
                       <p>• Rate limit: {generatedSettings.rateLimit} requests/hour</p>
                       <p>• Scopes: {generatedSettings.scopes.join(', ')}</p>
@@ -994,7 +994,7 @@ export function TokenManagement() {
                   <CardContent className="space-y-3">
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <p className="text-xs text-muted-foreground">Status</p>
+                        <p className="text-xs text-base-secondary">Status</p>
                         <Badge
                           variant={selectedToken.is_active && new Date(selectedToken.expires_at) > new Date() ? "default" : "secondary"}
                           className={`${
@@ -1007,20 +1007,20 @@ export function TokenManagement() {
                         </Badge>
                       </div>
                       <div>
-                        <p className="text-xs text-muted-foreground">Rate Limit</p>
+                        <p className="text-xs text-base-secondary">Rate Limit</p>
                         <p className="text-sm font-medium">{selectedToken.rate_limit || 1000} requests/hour</p>
                       </div>
                       <div>
-                        <p className="text-xs text-muted-foreground">Created</p>
+                        <p className="text-xs text-base-secondary">Created</p>
                         <p className="text-sm font-medium">{format(new Date(selectedToken.created_at), 'MMM d, yyyy h:mm a')}</p>
                       </div>
                       <div>
-                        <p className="text-xs text-muted-foreground">Expires</p>
+                        <p className="text-xs text-base-secondary">Expires</p>
                         <p className="text-sm font-medium">{format(new Date(selectedToken.expires_at), 'MMM d, yyyy h:mm a')}</p>
                       </div>
                       {selectedToken.last_used_at && (
                         <div className="col-span-2">
-                          <p className="text-xs text-muted-foreground">Last Used</p>
+                          <p className="text-xs text-base-secondary">Last Used</p>
                           <p className="text-sm font-medium">{format(new Date(selectedToken.last_used_at), 'MMM d, yyyy h:mm a')}</p>
                         </div>
                       )}
@@ -1037,13 +1037,13 @@ export function TokenManagement() {
                     <div className="grid grid-cols-3 gap-4 text-center">
                       <div className="bg-primary/10 rounded-lg p-4">
                         <p className="text-3xl font-bold text-primary">{selectedToken.usage_count}</p>
-                        <p className="text-xs text-muted-foreground mt-1">Total Requests</p>
+                        <p className="text-xs text-base-secondary mt-1">Total Requests</p>
                       </div>
                       <div className="bg-secondary/10 rounded-lg p-4">
                         <p className="text-3xl font-bold text-secondary">
                           {selectedToken.usage_stats ? Object.keys(selectedToken.usage_stats).length : 0}
                         </p>
-                        <p className="text-xs text-muted-foreground mt-1">Operation Types</p>
+                        <p className="text-xs text-base-secondary mt-1">Operation Types</p>
                       </div>
                       <div className="bg-green-500/10 rounded-lg p-4">
                         <p className="text-3xl font-bold text-green-600">
@@ -1051,7 +1051,7 @@ export function TokenManagement() {
                             ? Math.max(...Object.values(selectedToken.usage_stats).filter((v): v is number => v !== undefined))
                             : 0}
                         </p>
-                        <p className="text-xs text-muted-foreground mt-1">Most Used</p>
+                        <p className="text-xs text-base-secondary mt-1">Most Used</p>
                       </div>
                     </div>
                   </CardContent>
@@ -1085,7 +1085,7 @@ export function TokenManagement() {
                                 <div className="flex justify-between items-center">
                                   <span className="text-sm font-medium">{operationLabel}</span>
                                   <div className="flex items-center space-x-2">
-                                    <span className="text-xs text-muted-foreground">{percentage}%</span>
+                                    <span className="text-xs text-base-secondary">{percentage}%</span>
                                     <Badge variant="secondary">{count}</Badge>
                                   </div>
                                 </div>
@@ -1102,10 +1102,10 @@ export function TokenManagement() {
                     </CardContent>
                   </Card>
                 ) : (
-                  <Card className="bg-muted/50">
+                  <Card className="bg-base-tertiary/50">
                     <CardContent className="p-8 text-center">
-                      <Zap className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                      <p className="text-sm text-muted-foreground">
+                      <Zap className="h-12 w-12 mx-auto text-base-secondary mb-4" />
+                      <p className="text-sm text-base-secondary">
                         No operation data yet. Start using this token to see detailed usage statistics.
                       </p>
                     </CardContent>

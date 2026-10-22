@@ -119,9 +119,9 @@ export const SeatTypeVersionForm: React.FC<SeatTypeVersionFormProps> = ({ seatTy
               onChange={e => setRefs(e.target.value)}
               placeholder="rules@1.0.0"
             />
-            {malformed && <p className="text-xs text-destructive">{MODULE_REF_MESSAGE}</p>}
+            {malformed && <p className="text-xs text-error">{MODULE_REF_MESSAGE}</p>}
             {!malformed && duplicate && (
-              <p className="text-xs text-destructive">Each module may appear only once.</p>
+              <p className="text-xs text-error">Each module may appear only once.</p>
             )}
           </div>
           {create.isError && (

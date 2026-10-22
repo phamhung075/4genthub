@@ -147,7 +147,7 @@ export const TaskRowDesktop: React.FC<TaskRowDesktopProps> = ({
               {dependencyCount} {dependencyCount === 1 ? 'dependency' : 'dependencies'}
             </Badge>
           ) : (
-            <span className="text-xs text-muted-foreground">None</span>
+            <span className="text-xs text-base-secondary">None</span>
           )}
         </TableCell>
 
@@ -162,7 +162,7 @@ export const TaskRowDesktop: React.FC<TaskRowDesktopProps> = ({
               compact={true}
             />
           ) : (
-            <span className="text-xs text-muted-foreground">Unassigned</span>
+            <span className="text-xs text-base-secondary">Unassigned</span>
           )}
         </TableCell>
 

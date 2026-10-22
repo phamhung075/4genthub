@@ -114,7 +114,7 @@ export const ProjectItem: React.FC<ProjectItemProps> = ({
           aria-label="Delete"
           onClick={() => onDelete(project)}
         >
-          <Trash2 className="h-4 w-4 text-destructive" />
+          <Trash2 className="h-4 w-4 text-error" />
         </ShimmerButton>
       </div>
     </div>

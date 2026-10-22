@@ -50,7 +50,7 @@ export const ClickableAssignees: React.FC<ClickableAssigneesProps> = ({
   }
 
   if (!cleanAssignees || cleanAssignees.length === 0) {
-    return <span className="text-sm text-muted-foreground">Unassigned</span>;
+    return <span className="text-sm text-base-secondary">Unassigned</span>;
   }
 
   if (showAsString) {
@@ -84,7 +84,7 @@ export const ClickableAssignees: React.FC<ClickableAssigneesProps> = ({
         <Badge
           key={index}
           variant={variant}
-          className={`${compact ? 'px-1 py-0 text-xs h-auto' : 'px-2'} ${onAgentClick ? 'cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors' : ''} whitespace-nowrap`}
+          className={`${compact ? 'px-1 py-0 text-xs h-auto' : 'px-2'} ${onAgentClick ? 'cursor-pointer hover:bg-primary hover:text-accent-contrast transition-colors' : ''} whitespace-nowrap`}
           onClick={onAgentClick ? () => onAgentClick(assignee, task) : undefined}
           title={onAgentClick ? `Click to view seat ${assignee}` : undefined}
         >

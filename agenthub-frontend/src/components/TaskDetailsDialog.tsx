@@ -233,11 +233,11 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
                   </Badge>
                 </div>
                 {displayTask?.description && (
-                  <p className="text-sm text-muted-foreground mt-2">{displayTask.description}</p>
+                  <p className="text-sm text-base-secondary mt-2">{displayTask.description}</p>
                 )}
                 {displayTask?.assignees && displayTask.assignees.length > 0 && (
                   <div className="mt-3">
-                    <span className="text-sm text-muted-foreground">Assigned to: </span>
+                    <span className="text-sm text-base-secondary">Assigned to: </span>
                     <span className="text-sm font-medium">{displayTask.assignees.join(', ')}</span>
                   </div>
                 )}
@@ -251,7 +251,7 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
                     <h4 className="font-semibold text-sm mb-3 text-text dark:text-text">IDs and References</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm theme-context-metadata">
                       <div className="space-y-1">
-                        <span className="text-muted-foreground font-medium">Task ID:</span>
+                        <span className="text-base-secondary font-medium">Task ID:</span>
                         <CopyableId
                           id={displayTask.id}
                           variant="block"
@@ -262,7 +262,7 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
                       </div>
                       {displayTask.git_branch_id && (
                         <div className="space-y-1">
-                          <span className="text-muted-foreground font-medium">Git Branch ID:</span>
+                          <span className="text-base-secondary font-medium">Git Branch ID:</span>
                           <CopyableId
                             id={displayTask.git_branch_id}
                             variant="block"
@@ -274,7 +274,7 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
                       )}
                       {displayTask.context_id && (
                         <div className="space-y-1">
-                          <span className="text-muted-foreground font-medium">Context ID:</span>
+                          <span className="text-base-secondary font-medium">Context ID:</span>
                           <CopyableId
                             id={displayTask.context_id}
                             variant="block"
@@ -295,25 +295,25 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm theme-context-data">
                       {displayTask.estimated_effort && (
                         <div>
-                          <span className="text-muted-foreground font-medium">Estimated Effort:</span>
+                          <span className="text-base-secondary font-medium">Estimated Effort:</span>
                           <p className="font-semibold">{displayTask.estimated_effort}</p>
                         </div>
                       )}
                       {displayTask.due_date && (
                         <div>
-                          <span className="text-muted-foreground font-medium">Due Date:</span>
+                          <span className="text-base-secondary font-medium">Due Date:</span>
                           <p>{new Date(displayTask.due_date).toLocaleDateString()} ({new Date(displayTask.due_date).toLocaleTimeString()})</p>
                         </div>
                       )}
                       {displayTask.created_at && (
                         <div>
-                          <span className="text-muted-foreground font-medium">Created:</span>
+                          <span className="text-base-secondary font-medium">Created:</span>
                           <p>{new Date(displayTask.created_at).toLocaleDateString()} at {new Date(displayTask.created_at).toLocaleTimeString()}</p>
                         </div>
                       )}
                       {displayTask.updated_at && (
                         <div>
-                          <span className="text-muted-foreground font-medium">Last Updated:</span>
+                          <span className="text-base-secondary font-medium">Last Updated:</span>
                           <p>{new Date(displayTask.updated_at).toLocaleDateString()} at {new Date(displayTask.updated_at).toLocaleTimeString()}</p>
                         </div>
                       )}
@@ -341,7 +341,7 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
                       {/* Assignees */}
                       {displayTask.assignees && displayTask.assignees.length > 0 && (
                         <div>
-                          <span className="text-muted-foreground font-medium">Assignees:</span>
+                          <span className="text-base-secondary font-medium">Assignees:</span>
                           <div className="mt-1">
                             <ClickableAssignees
                               assignees={displayTask.assignees}
@@ -356,7 +356,7 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
                       {/* Labels */}
                       {displayTask.labels && displayTask.labels.length > 0 && (
                         <div>
-                          <span className="text-muted-foreground font-medium">Labels:</span>
+                          <span className="text-base-secondary font-medium">Labels:</span>
                           <div className="mt-1 flex flex-wrap gap-1">
                             {displayTask.labels.map((label: string, index: number) => (
                               <Badge key={index} variant="outline" className="px-2">
@@ -378,7 +378,7 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
                         <div className="space-y-2 theme-context-progress">
                           {displayTask.dependencies.map((dep: string, index: number) => (
                             <div key={index} className="text-sm flex items-start">
-                              <span className="text-muted-foreground font-medium mr-2">#{index + 1}:</span>
+                              <span className="text-base-secondary font-medium mr-2">#{index + 1}:</span>
                               <span className="font-mono text-xs break-all">{dep}</span>
                             </div>
                           ))}
@@ -397,7 +397,7 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
                           {displayTask.subtasks.length > 0 ? (
                             <>
                               <p className="text-sm font-medium">Total subtasks: {displayTask.subtasks.length}</p>
-                              <p className="text-xs text-muted-foreground mt-1">
+                              <p className="text-xs text-base-secondary mt-1">
                                 View full subtask details in the Subtasks tab
                               </p>
                               {/* Enhanced subtask ID display with copy functionality */}
@@ -420,7 +420,7 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
                                   <div className="mt-3 space-y-2">
                                     {subtaskIds.map((subtaskId: string, index: number) => (
                                       <div key={index} className="flex items-center gap-2">
-                                        <span className="text-xs text-muted-foreground">#{index + 1}:</span>
+                                        <span className="text-xs text-base-secondary">#{index + 1}:</span>
                                         <CopyableId
                                           id={subtaskId}
                                           variant="badge"
@@ -433,14 +433,14 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
                                     ))}
                                   </div>
                                 ) : (
-                                  <p className="text-xs text-muted-foreground mt-2 italic">
+                                  <p className="text-xs text-base-secondary mt-2 italic">
                                     Subtask IDs not available. View Subtasks tab for details.
                                   </p>
                                 );
                               })()}
                             </>
                           ) : (
-                            <p className="text-sm text-muted-foreground">
+                            <p className="text-sm text-base-secondary">
                               No subtasks associated with this task.
                             </p>
                           )}
@@ -470,12 +470,12 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
                               {contextDisplay.completionSummary}
                             </p>
                             {contextDisplay.completionPercentage && (
-                              <p className="text-xs text-muted-foreground mt-1">
+                              <p className="text-xs text-base-secondary mt-1">
                                 Completion: {contextDisplay.completionPercentage}%
                               </p>
                             )}
                             {contextDisplay.isLegacy && (
-                              <p className="text-xs text-muted-foreground mt-1 italic">
+                              <p className="text-xs text-base-secondary mt-1 italic">
                                 Note: Using legacy completion_summary format
                               </p>
                             )}

@@ -47,7 +47,7 @@ export const TaskListHeader: React.FC<TaskListHeaderProps> = ({
           {seatOptions && seatOptions.length > 0 && onSeatFilterChange && (
             <select
               aria-label="Filter by seat"
-              className="h-9 rounded-md border border-input bg-background px-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+              className="h-9 rounded-md border border-input-border bg-background px-2 text-sm text-base-primary focus:outline-none focus:ring-1 focus:ring-primary"
               value={seatFilter ?? 'all'}
               onChange={(event) => onSeatFilterChange(event.target.value)}
             >

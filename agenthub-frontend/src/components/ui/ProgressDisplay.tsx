@@ -69,7 +69,7 @@ export function ProgressDisplay({
                   Progress Status: {currentState.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                 </div>
                 {progressPercentage !== undefined && (
-                  <div className="text-xs text-muted-foreground">
+                  <div className="text-xs text-base-secondary">
                     {progressPercentage}% complete
                   </div>
                 )}
@@ -86,7 +86,7 @@ export function ProgressDisplay({
       </TooltipProvider>
 
       {hasProgressText && (
-        <div className="text-xs text-muted-foreground italic flex-1 truncate">
+        <div className="text-xs text-base-secondary italic flex-1 truncate">
           {progressSummary}
         </div>
       )}
@@ -142,7 +142,7 @@ export function ProgressDisplayEnhanced({
                   animate={animate}
                 />
                 {showPercentage && progressPercentage !== undefined && (
-                  <span className="text-xs font-mono text-muted-foreground">
+                  <span className="text-xs font-mono text-base-secondary">
                     {progressPercentage}%
                   </span>
                 )}
@@ -155,7 +155,7 @@ export function ProgressDisplayEnhanced({
                     {currentState.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                   </div>
                   {progressPercentage !== undefined && (
-                    <div className="text-xs text-muted-foreground">
+                    <div className="text-xs text-base-secondary">
                       {progressPercentage}% complete
                     </div>
                   )}
@@ -172,7 +172,7 @@ export function ProgressDisplayEnhanced({
         </TooltipProvider>
 
         {hasProgressText && (
-          <div className="text-xs text-muted-foreground italic flex-1 truncate">
+          <div className="text-xs text-base-secondary italic flex-1 truncate">
             {progressSummary}
           </div>
         )}
@@ -204,7 +204,7 @@ export function ProgressDisplayEnhanced({
                     Progress Status: {currentState.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                   </div>
                   {progressPercentage !== undefined && (
-                    <div className="text-xs text-muted-foreground">
+                    <div className="text-xs text-base-secondary">
                       {progressPercentage}% complete
                     </div>
                   )}
@@ -218,14 +218,14 @@ export function ProgressDisplayEnhanced({
         </TooltipProvider>
 
         {showPercentage && progressPercentage !== undefined && (
-          <span className="text-xs font-mono text-muted-foreground">
+          <span className="text-xs font-mono text-base-secondary">
             {progressPercentage}%
           </span>
         )}
       </div>
 
       {hasProgressText && (
-        <div className="text-xs text-muted-foreground italic">
+        <div className="text-xs text-base-secondary italic">
           {progressSummary}
         </div>
       )}

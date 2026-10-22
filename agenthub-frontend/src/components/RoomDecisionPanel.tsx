@@ -183,7 +183,7 @@ export const RoomDecisionPanel: React.FC = () => {
       ) : isLoading ? (
         <p className="text-xs text-base-secondary">Reading decision requests for {room}...</p>
       ) : error ? (
-        <p className="text-xs text-destructive" role="alert">
+        <p className="text-xs text-error" role="alert">
           Could not read {room}'s decision requests: {error.message}
         </p>
       ) : open.length === 0 ? (
@@ -251,7 +251,7 @@ export const RoomDecisionPanel: React.FC = () => {
       )}
 
       {answer.isError ? (
-        <p className="text-xs text-destructive" role="alert">
+        <p className="text-xs text-error" role="alert">
           The answer was refused: {answer.error.message}
         </p>
       ) : null}

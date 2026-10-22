@@ -33,13 +33,13 @@ export const DeleteConfirmDialog: React.FC<DeleteConfirmDialogProps> = ({
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-destructive" />
+            <AlertTriangle className="h-5 w-5 text-error" />
             {title}
           </DialogTitle>
-          <div className="pt-2 text-sm text-muted-foreground">
+          <div className="pt-2 text-sm text-base-secondary">
             {description}
             {itemName && (
-              <span className="block mt-2 font-semibold text-foreground">
+              <span className="block mt-2 font-semibold text-base-primary">
                 "{itemName}"
               </span>
             )}

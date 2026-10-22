@@ -6,7 +6,6 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import App from './App';
 import './index.css';
 import reportWebVitals from './reportWebVitals';
-import './theme/global.css';
 import './styles/notifications.css';
 
 // Configure React Query with optimal defaults

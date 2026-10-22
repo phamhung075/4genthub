@@ -45,7 +45,7 @@ export const ConnectorTokenGuide: React.FC<GuideProps> = ({ token }) => (
         description="Prints '<room>: clean' once the server accepts the agent. A 'Missing scope sessions:write' line means the token is not a Client connector token"
       />
     </div>
-    <p className="text-sm text-muted-foreground">
+    <p className="text-sm text-base-secondary">
       Step 4: open <a href="/sessions" className="underline font-semibold">Sessions</a>, press Refresh and select a
       session to follow its stream. To send one session once without the agent, run{' '}
       <code>4genteam sync connector --session &lt;session-name&gt;</code>.
@@ -81,7 +81,7 @@ export const McpTokenGuide: React.FC<GuideProps> = ({ token }) => (
         description="A seat reads the file and its MCP config only when it starts, so a running seat keeps the old key until it is reseated"
       />
     </div>
-    <p className="text-sm text-muted-foreground">
+    <p className="text-sm text-base-secondary">
       Step 4, Claude Code outside a team: add the MCP configuration above to your Claude Code settings and restart
       it.
     </p>

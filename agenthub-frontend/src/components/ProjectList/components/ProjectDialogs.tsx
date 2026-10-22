@@ -162,7 +162,7 @@ export const ProjectDialogs: React.FC<ProjectDialogsProps> = ({
                 ⚠️ This project contains {deleteProjectTaskCount} task{deleteProjectTaskCount === 1 ? '' : 's'}. All tasks must be deleted first.
               </p>
             )}
-            <p className="text-sm text-muted-foreground">This action cannot be undone.</p>
+            <p className="text-sm text-base-secondary">This action cannot be undone.</p>
           </div>
           <DialogFooter className="mt-3">
             <ShimmerButton variant="secondary" onClick={onCloseDelete} size="sm">Cancel</ShimmerButton>
@@ -207,11 +207,11 @@ export const ProjectDialogs: React.FC<ProjectDialogsProps> = ({
           <div className="space-y-2">
             <p className="text-sm">Are you sure you want to delete the branch <strong>{deleteBranchName}</strong> from project <strong>{showDeleteBranch?.project.name}</strong>?</p>
             {deleteBranchTaskCount > 0 && (
-              <p className="text-sm text-destructive">
+              <p className="text-sm text-error">
                 Warning: This branch contains {deleteBranchTaskCount} task(s) that will also be deleted.
               </p>
             )}
-            <p className="text-sm text-muted-foreground">This action cannot be undone.</p>
+            <p className="text-sm text-base-secondary">This action cannot be undone.</p>
           </div>
           <DialogFooter className="mt-3">
             <ShimmerButton variant="secondary" onClick={onCloseDeleteBranch} size="sm" disabled={saving}>

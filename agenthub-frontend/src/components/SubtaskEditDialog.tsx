@@ -161,7 +161,7 @@ export const SubtaskEditDialog: React.FC<SubtaskEditDialogProps> = ({
         <div className="space-y-4" onKeyDown={handleKeyDown}>
           {/* Title Field */}
           <div>
-            <label className="text-sm font-medium mb-2 block text-foreground">
+            <label className="text-sm font-medium mb-2 block text-base-primary">
               Title *
             </label>
             <Input
@@ -172,36 +172,36 @@ export const SubtaskEditDialog: React.FC<SubtaskEditDialogProps> = ({
               autoFocus
               className="w-full"
             />
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="text-xs text-base-secondary mt-1">
               Provide a clear, descriptive title for the subtask
             </p>
           </div>
 
           {/* Description Field */}
           <div>
-            <label className="text-sm font-medium mb-2 block text-foreground">
+            <label className="text-sm font-medium mb-2 block text-base-primary">
               Description (Optional)
             </label>
             <textarea
-              className="w-full p-2 border border-input bg-background text-foreground rounded-md resize-vertical focus:outline-none focus:ring-1 focus:ring-ring focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full p-2 border border-input-border bg-background text-base-primary rounded-md resize-vertical focus:outline-none focus:ring-1 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
               placeholder="Describe the subtask in detail..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               disabled={isUpdating}
               rows={3}
             />
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="text-xs text-base-secondary mt-1">
               Provide additional context and requirements for the subtask
             </p>
           </div>
 
           {/* Status Field */}
           <div>
-            <label className="text-sm font-medium mb-2 block text-foreground">
+            <label className="text-sm font-medium mb-2 block text-base-primary">
               Status
             </label>
             <select
-              className="w-full p-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-1 focus:ring-ring focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full p-2 border border-input-border bg-background text-base-primary rounded-md focus:outline-none focus:ring-1 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
               value={status}
               onChange={(e) => setStatus(e.target.value)}
               disabled={isUpdating || subtask.status === 'done'}
@@ -214,7 +214,7 @@ export const SubtaskEditDialog: React.FC<SubtaskEditDialogProps> = ({
               <option value="done">Done</option>
             </select>
             {subtask.status === 'done' && (
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-xs text-base-secondary mt-1">
                 Completed subtasks cannot change status. Use "Reopen" if needed.
               </p>
             )}
@@ -222,11 +222,11 @@ export const SubtaskEditDialog: React.FC<SubtaskEditDialogProps> = ({
 
           {/* Priority Field */}
           <div>
-            <label className="text-sm font-medium mb-2 block text-foreground">
+            <label className="text-sm font-medium mb-2 block text-base-primary">
               Priority
             </label>
             <select
-              className="w-full p-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-1 focus:ring-ring focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full p-2 border border-input-border bg-background text-base-primary rounded-md focus:outline-none focus:ring-1 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
               value={priority}
               onChange={(e) => setPriority(e.target.value)}
               disabled={isUpdating}
@@ -241,7 +241,7 @@ export const SubtaskEditDialog: React.FC<SubtaskEditDialogProps> = ({
 
           {/* Assignees Field */}
           <div>
-            <label className="text-sm font-medium mb-2 block text-foreground">
+            <label className="text-sm font-medium mb-2 block text-base-primary">
               Assignees (Optional)
             </label>
             <Button
@@ -269,7 +269,7 @@ export const SubtaskEditDialog: React.FC<SubtaskEditDialogProps> = ({
                 ))}
               </div>
             )}
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="text-xs text-base-secondary mt-1">
               Click to select seats
             </p>
           </div>
@@ -277,22 +277,22 @@ export const SubtaskEditDialog: React.FC<SubtaskEditDialogProps> = ({
           {/* Info Message */}
           <div className="bg-primary/10 dark:bg-primary/20 p-3 rounded-md flex gap-2 border border-primary/20">
             <FileText className="w-4 h-4 text-primary mt-0.5" />
-            <div className="text-sm text-foreground">
+            <div className="text-sm text-base-primary">
               <p className="font-medium">Update Changes</p>
-              <p className="text-xs mt-1 text-muted-foreground">
+              <p className="text-xs mt-1 text-base-secondary">
                 Changes will be saved immediately and reflected in the subtask list.
               </p>
             </div>
           </div>
 
           {/* Keyboard Shortcut Hint */}
-          <div className="text-xs text-muted-foreground">
+          <div className="text-xs text-base-secondary">
             <strong>Tip:</strong> Press Ctrl+Enter to save changes quickly
           </div>
 
           {/* Error Display */}
           {updateError && (
-            <div className="bg-destructive/10 dark:bg-destructive/20 border border-destructive/30 text-destructive px-3 py-2 rounded-md text-sm">
+            <div className="bg-error/10 dark:bg-error/20 border border-error/30 text-error px-3 py-2 rounded-md text-sm">
               {updateError.message || 'Failed to update subtask'}
             </div>
           )}

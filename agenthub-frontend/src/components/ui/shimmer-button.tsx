@@ -63,10 +63,10 @@ export const ShimmerButton: React.FC<ShimmerButtonProps> = ({
 
   const innerVariantClasses = {
     default: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700',
-    ghost: 'bg-transparent hover:bg-accent hover:text-accent-foreground',
+    ghost: 'bg-transparent hover:bg-accent hover:text-accent-contrast',
     outline: 'bg-transparent text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800',
     secondary: 'bg-gray-50 text-gray-600 dark:bg-gray-800 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700',
-    destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/90',
+    destructive: 'bg-error text-destructive-foreground hover:bg-error/90',
     link: 'text-primary underline-offset-4 hover:underline'
   };
 

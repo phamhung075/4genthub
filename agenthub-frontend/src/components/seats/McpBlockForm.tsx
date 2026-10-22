@@ -229,7 +229,7 @@ export const McpBlockForm: React.FC = () => {
                 onChange={(event) => set('slug', event.target.value)}
                 placeholder="my-server"
               />
-              {form.slug !== '' && !slugValid && <p className="text-xs text-destructive">{MODULE_SLUG_MESSAGE}</p>}
+              {form.slug !== '' && !slugValid && <p className="text-xs text-error">{MODULE_SLUG_MESSAGE}</p>}
             </div>
             <div className="space-y-1">
               <label className="text-sm font-medium" htmlFor="mcp-version">
@@ -243,7 +243,7 @@ export const McpBlockForm: React.FC = () => {
                 placeholder="1.0.0"
               />
               {form.version !== '' && !versionValid && (
-                <p className="text-xs text-destructive">{MODULE_VERSION_MESSAGE}</p>
+                <p className="text-xs text-error">{MODULE_VERSION_MESSAGE}</p>
               )}
             </div>
             <div className="space-y-1">
@@ -353,9 +353,9 @@ export const McpBlockForm: React.FC = () => {
             <pre aria-label="Block content" className="overflow-x-auto rounded-md border border-surface-border-hover p-3 font-mono text-xs">
               {content}
             </pre>
-            {!parsed.ok && <p className="text-xs text-destructive">{parsed.error}</p>}
+            {!parsed.ok && <p className="text-xs text-error">{parsed.error}</p>}
             {contentBytes > MODULE_CONTENT_MAX_BYTES && (
-              <p className="text-xs text-destructive">
+              <p className="text-xs text-error">
                 Content is {contentBytes} bytes; the limit is {MODULE_CONTENT_MAX_BYTES}.
               </p>
             )}

@@ -17,15 +17,15 @@
 import React, { useMemo, useState } from 'react';
 import { Button } from '../ui/button';
 
-const SCROLL = 'max-h-64 overflow-auto rounded bg-muted p-3 text-xs';
+const SCROLL = 'max-h-64 overflow-auto rounded bg-base-tertiary p-3 text-xs';
 const PLAIN = `${SCROLL} whitespace-pre-wrap`;
-const KEY = 'text-[11px] font-medium uppercase tracking-wide text-muted-foreground';
+const KEY = 'text-[11px] font-medium uppercase tracking-wide text-base-secondary';
 
 /** `value` is present only when JSON.parse accepted the whole string. */
 type Parsed = { ok: true; value: unknown } | { ok: false };
 
 const Scalar: React.FC<{ value: string | number | boolean | null }> = ({ value }) => {
-  if (value === null) return <span className="italic text-muted-foreground">null</span>;
+  if (value === null) return <span className="italic text-base-secondary">null</span>;
   if (typeof value === 'string') return <span className="whitespace-pre-wrap break-words">{value}</span>;
   return <code className="font-mono">{String(value)}</code>;
 };
@@ -54,10 +54,10 @@ const JsonNode: React.FC<{ value: unknown }> = ({ value }) => {
 
   const entries = Object.entries(value as Record<string, unknown>);
   // An empty object still needs a mark; a blank dd would read as a failed read.
-  if (entries.length === 0) return <span className="italic text-muted-foreground">{'{}'}</span>;
+  if (entries.length === 0) return <span className="italic text-base-secondary">{'{}'}</span>;
 
   return (
-    <dl className="space-y-2 border-l border-border/60 pl-3">
+    <dl className="space-y-2 border-l border-surface-border/60 pl-3">
       {entries.map(([key, entry]) => (
         <div key={key} className="space-y-0.5">
           <dt className={KEY}>{key}</dt>
@@ -81,7 +81,7 @@ export const ModuleContentView: React.FC<{ content: string }> = ({ content }) =>
   }, [content]);
 
   if (content.trim() === '') {
-    return <p className="text-xs text-muted-foreground">This module version carries no content.</p>;
+    return <p className="text-xs text-base-secondary">This module version carries no content.</p>;
   }
 
   if (!parsed.ok) {

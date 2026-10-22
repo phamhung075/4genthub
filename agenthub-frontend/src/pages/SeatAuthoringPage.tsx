@@ -109,7 +109,7 @@ export const SeatAuthoringPage: React.FC = () => {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Seat authoring</h1>
-          <p className="text-muted-foreground mt-2">
+          <p className="text-base-secondary mt-2">
             Compose a seat from blocks one at a time, then author the modules and seat types those blocks come from.
           </p>
         </div>
@@ -157,11 +157,11 @@ export const SeatAuthoringPage: React.FC = () => {
         </div>
 
         {rooms.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-base-secondary">
             No rooms yet. Create a room and a seat before composing a seat.
           </p>
         ) : seats.length === 0 ? (
-          <p className="text-sm text-muted-foreground">This room has no seats yet.</p>
+          <p className="text-sm text-base-secondary">This room has no seats yet.</p>
         ) : (
           <>
             {/* ONE sentence for a viewer, mirroring the room row's and the seat detail page's. The
@@ -169,7 +169,7 @@ export const SeatAuthoringPage: React.FC = () => {
                 per-action reason to quote beside a dead control - the affordances are absent
                 instead, and this is why. */}
             {isRoomViewer && (
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-base-secondary">
                 This room is one its owner shared with a team you belong to, so you can read it and the
                 composition of its seats. Writing is the owner's: the overlay blocks added or removed at
                 the company, room and seat levels.
@@ -205,7 +205,7 @@ export const SeatAuthoringPage: React.FC = () => {
         </CardHeader>
         <CardContent className="space-y-3">
           {modulesLoading && (
-            <div className="flex items-center gap-2 text-muted-foreground">
+            <div className="flex items-center gap-2 text-base-secondary">
               <Loader2 className="h-4 w-4 animate-spin" /> Loading modules...
             </div>
           )}
@@ -221,7 +221,7 @@ export const SeatAuthoringPage: React.FC = () => {
             </Alert>
           )}
           {!modulesLoading && !modulesError && modules.length === 0 && (
-            <p className="text-sm text-muted-foreground">No modules yet.</p>
+            <p className="text-sm text-base-secondary">No modules yet.</p>
           )}
           {modules.map(module => (
             <div key={module.slug} className="flex flex-wrap items-center gap-2 rounded-md border p-3">
@@ -232,7 +232,7 @@ export const SeatAuthoringPage: React.FC = () => {
                   chain plus a named fallback is this codebase's house form for that absence
                   (types/websocket-protocol.ts:473). Without it the missing key threw during render
                   and unmounted the whole page instead of degrading this one cell. */}
-              <code className="text-xs text-muted-foreground">{module.sha256?.substring(0, 8) || 'unknown'}</code>
+              <code className="text-xs text-base-secondary">{module.sha256?.substring(0, 8) || 'unknown'}</code>
               {/* The entry point for "edit a block and publish a new version": it hands THIS block to
                   the form below, which prefills from it. The visible label is the same on every row,
                   so the accessible name carries the slug and stays one button per module. */}
@@ -265,7 +265,7 @@ export const SeatAuthoringPage: React.FC = () => {
         </CardHeader>
         <CardContent className="space-y-3">
           {isLoading && (
-            <div className="flex items-center gap-2 text-muted-foreground">
+            <div className="flex items-center gap-2 text-base-secondary">
               <Loader2 className="h-4 w-4 animate-spin" /> Loading seat types...
             </div>
           )}
@@ -281,17 +281,17 @@ export const SeatAuthoringPage: React.FC = () => {
             </Alert>
           )}
           {!isLoading && !error && seatTypes.length === 0 && (
-            <p className="text-sm text-muted-foreground">No seat types yet.</p>
+            <p className="text-sm text-base-secondary">No seat types yet.</p>
           )}
           {seatTypes.map(type => (
             <div key={type.slug} className="rounded-md border p-3 space-y-2">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-medium">{type.name}</span>
-                <code className="text-xs text-muted-foreground">{type.slug}</code>
+                <code className="text-xs text-base-secondary">{type.slug}</code>
                 <Badge variant="secondary">{type.default_runtime ?? 'no runtime'}</Badge>
                 <Badge variant="outline">{type.latest_version ?? 'no version'}</Badge>
               </div>
-              {type.description && <p className="text-sm text-muted-foreground">{type.description}</p>}
+              {type.description && <p className="text-sm text-base-secondary">{type.description}</p>}
               <div className="flex flex-wrap gap-1">
                 {type.module_refs.map(ref => (
                   <Badge key={`${ref.slug}@${ref.version}`} variant="outline" className="font-mono">

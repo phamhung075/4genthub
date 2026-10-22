@@ -351,7 +351,7 @@ export const GlobalContextDialog: React.FC<GlobalContextDialogProps> = ({
             className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-[1px] ${
               activeTab === 'view'
                 ? 'text-primary border-primary bg-primary/10'
-                : 'text-muted-foreground border-transparent hover:text-foreground'
+                : 'text-base-secondary border-transparent hover:text-base-primary'
             }`}
           >
             <Info className="w-4 h-4" />
@@ -364,7 +364,7 @@ export const GlobalContextDialog: React.FC<GlobalContextDialogProps> = ({
               className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-[1px] ${
                 activeTab === 'edit'
                   ? 'text-primary border-primary bg-primary/10'
-                  : 'text-muted-foreground border-transparent hover:text-foreground'
+                  : 'text-base-secondary border-transparent hover:text-base-primary'
               }`}
             >
               <Edit className="w-4 h-4" />
@@ -379,12 +379,12 @@ export const GlobalContextDialog: React.FC<GlobalContextDialogProps> = ({
             {loading ? (
               <div className="text-center py-8">
                 <div className="inline-block w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin"></div>
-                <p className="mt-2 text-sm text-muted-foreground">Loading global context...</p>
+                <p className="mt-2 text-sm text-base-secondary">Loading global context...</p>
               </div>
             ) : globalContext ? (
               <>
                 {/* Context Header */}
-                <div className="bg-muted/50 p-4 rounded-lg border border-primary/20">
+                <div className="bg-base-tertiary/50 p-4 rounded-lg border border-primary/20">
                   <h3 className="text-lg font-semibold text-primary flex items-center gap-2">
                     <Database className="w-5 h-5" />
                     Global Context Data
@@ -397,14 +397,14 @@ export const GlobalContextDialog: React.FC<GlobalContextDialogProps> = ({
                 {activeTab === 'edit' && (
                   <div className="space-y-6">
                     {/* Enhanced JSON Editor Card */}
-                    <Card className="border-2 border-primary/20 bg-muted/30">
-                      <CardHeader className="bg-muted/50 p-4 border-l-4 border-primary/60">
-                        <CardTitle className="flex items-center gap-2 text-foreground">
+                    <Card className="border-2 border-primary/20 bg-base-tertiary/30">
+                      <CardHeader className="bg-base-tertiary/50 p-4 border-l-4 border-primary/60">
+                        <CardTitle className="flex items-center gap-2 text-base-primary">
                           <Code className="w-5 h-5" />
                           Advanced JSON Editor
                           <Badge variant="secondary" className="ml-2 text-xs">Live Validation</Badge>
                         </CardTitle>
-                        <CardDescription className="text-muted-foreground">
+                        <CardDescription className="text-base-secondary">
                           Edit the complete global context data as JSON with syntax highlighting and real-time validation feedback.
                         </CardDescription>
                       </CardHeader>
@@ -415,8 +415,8 @@ export const GlobalContextDialog: React.FC<GlobalContextDialogProps> = ({
                           <div className="flex items-center gap-2">
                             {jsonValidationError ? (
                               <>
-                                <div className="w-2 h-2 bg-destructive rounded-full animate-pulse"></div>
-                                <span className="text-sm text-destructive font-medium">Invalid JSON</span>
+                                <div className="w-2 h-2 bg-error rounded-full animate-pulse"></div>
+                                <span className="text-sm text-error font-medium">Invalid JSON</span>
                               </>
                             ) : (
                               <>
@@ -425,22 +425,22 @@ export const GlobalContextDialog: React.FC<GlobalContextDialogProps> = ({
                               </>
                             )}
                           </div>
-                          <div className="text-xs text-muted-foreground">
+                          <div className="text-xs text-base-secondary">
                             {rawJsonText.length.toLocaleString()} chars • {rawJsonText.split('\n').length} lines
                           </div>
                         </div>
 
                         {/* Validation Error Display */}
                         {jsonValidationError && (
-                          <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+                          <div className="bg-error/10 border border-error/20 rounded-lg p-4">
                             <div className="flex items-start gap-2">
-                              <AlertCircle className="w-5 h-5 text-destructive mt-0.5 flex-shrink-0" />
+                              <AlertCircle className="w-5 h-5 text-error mt-0.5 flex-shrink-0" />
                               <div>
-                                <h4 className="font-medium text-sm text-destructive mb-1">
+                                <h4 className="font-medium text-sm text-error mb-1">
                                   JSON Syntax Error
                                 </h4>
-                                <p className="text-sm text-destructive/80 mb-2">{jsonValidationError}</p>
-                                <div className="text-xs text-destructive/60">
+                                <p className="text-sm text-error/80 mb-2">{jsonValidationError}</p>
+                                <div className="text-xs text-error/60">
                                   Fix the syntax error above to enable saving. Use the "Format JSON" button to auto-format valid JSON.
                                 </div>
                               </div>
@@ -456,7 +456,7 @@ export const GlobalContextDialog: React.FC<GlobalContextDialogProps> = ({
                             placeholder="Enter valid JSON..."
                             className={`min-h-[500px] font-mono text-sm resize-none ${
                               jsonValidationError
-                                ? 'border-destructive/50 bg-destructive/5'
+                                ? 'border-error/50 bg-error/5'
                                 : 'border-green-500/50 bg-background'
                             }`}
                             style={{
@@ -467,7 +467,7 @@ export const GlobalContextDialog: React.FC<GlobalContextDialogProps> = ({
                           />
 
                           {/* Line numbers overlay - visual enhancement */}
-                          <div className="absolute left-2 top-2 text-xs text-muted-foreground/50 pointer-events-none select-none font-mono leading-6">
+                          <div className="absolute left-2 top-2 text-xs text-base-secondary/50 pointer-events-none select-none font-mono leading-6">
                             {rawJsonText.split('\n').map((_, i) => (
                               <div key={i} className="h-6">
                                 {(i + 1).toString().padStart(3, ' ')}
@@ -477,7 +477,7 @@ export const GlobalContextDialog: React.FC<GlobalContextDialogProps> = ({
                         </div>
 
                         {/* Enhanced Toolbar */}
-                        <div className="flex items-center justify-between bg-muted rounded-lg p-3">
+                        <div className="flex items-center justify-between bg-base-tertiary rounded-lg p-3">
                           <div className="flex items-center gap-2">
                             <Button
                               variant="outline"
@@ -608,15 +608,15 @@ export const GlobalContextDialog: React.FC<GlobalContextDialogProps> = ({
                 <div className="space-y-6">
                   {/* Enhanced JSON Viewer with expand/collapse */}
                   <Card className="border-2 border-primary/20 bg-background">
-                    <CardHeader className="bg-muted/50 p-4 border-l-4 border-primary/60">
+                    <CardHeader className="bg-base-tertiary/50 p-4 border-l-4 border-primary/60">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
-                          <CardTitle className="flex items-center gap-2 text-foreground">
+                          <CardTitle className="flex items-center gap-2 text-base-primary">
                             <Database className="w-5 h-5" />
                             Global Context Data
                             <Badge variant="secondary" className="ml-2 text-xs">Interactive</Badge>
                           </CardTitle>
-                          <CardDescription className="text-muted-foreground mt-1">
+                          <CardDescription className="text-base-secondary mt-1">
                             Expand and collapse sections to explore the nested data structure
                           </CardDescription>
                         </div>

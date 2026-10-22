@@ -91,7 +91,7 @@ const SubtaskCreateDialog: React.FC<SubtaskCreateDialogProps> = ({
               autoFocus
               className="w-full"
             />
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="text-xs text-base-secondary mt-1">
               Provide a clear, descriptive title for the subtask
             </p>
           </div>
@@ -109,7 +109,7 @@ const SubtaskCreateDialog: React.FC<SubtaskCreateDialogProps> = ({
               disabled={isCreating}
               rows={3}
             />
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="text-xs text-base-secondary mt-1">
               Provide additional context and requirements for the subtask
             </p>
           </div>
@@ -127,7 +127,7 @@ const SubtaskCreateDialog: React.FC<SubtaskCreateDialogProps> = ({
           </div>
 
           {/* Keyboard Shortcut Hint */}
-          <div className="text-xs text-muted-foreground">
+          <div className="text-xs text-base-secondary">
             <strong>Tip:</strong> Press Ctrl+Enter to create the subtask quickly
           </div>
 

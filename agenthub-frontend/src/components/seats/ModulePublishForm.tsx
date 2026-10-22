@@ -157,7 +157,7 @@ export const ModulePublishForm: React.FC<ModulePublishFormProps> = ({
                 placeholder="code-review-rules"
               />
               {form.slug !== '' && !slugValid && (
-                <p className="text-xs text-destructive">{MODULE_SLUG_MESSAGE}</p>
+                <p className="text-xs text-error">{MODULE_SLUG_MESSAGE}</p>
               )}
             </div>
             <div className="space-y-1">
@@ -173,10 +173,10 @@ export const ModulePublishForm: React.FC<ModulePublishFormProps> = ({
                 placeholder="1.0.0"
               />
               {form.version !== '' && !versionValid && (
-                <p className="text-xs text-destructive">{MODULE_VERSION_MESSAGE}</p>
+                <p className="text-xs text-error">{MODULE_VERSION_MESSAGE}</p>
               )}
               {needsNewVersion && (
-                <p className="text-xs text-destructive">
+                <p className="text-xs text-error">
                   {block ? `${block.slug}@${block.version}` : 'This version'} already exists with different
                   content, and publishing is refused unless the version changes.
                 </p>
@@ -200,7 +200,7 @@ export const ModulePublishForm: React.FC<ModulePublishFormProps> = ({
                 ))}
               </Select>
               {editing && (
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-base-secondary">
                   A module&apos;s kind is set on its first publish; a different one is refused.
                 </p>
               )}
@@ -219,16 +219,16 @@ export const ModulePublishForm: React.FC<ModulePublishFormProps> = ({
               onChange={e => setForm(prev => ({ ...prev, content: e.target.value }))}
             />
             {contentBytes > MODULE_CONTENT_MAX_BYTES && (
-              <p className="text-xs text-destructive">
+              <p className="text-xs text-error">
                 Content is {contentBytes} bytes; the limit is {MODULE_CONTENT_MAX_BYTES}.
               </p>
             )}
             {mcpBlock && !mcpBlock.ok && (
-              <p className="text-xs text-destructive">Not a server block: {mcpBlock.error}</p>
+              <p className="text-xs text-error">Not a server block: {mcpBlock.error}</p>
             )}
           </div>
           {editing && isLoading && (
-            <p className="text-sm text-muted-foreground" role="status">
+            <p className="text-sm text-base-secondary" role="status">
               Loading the block&apos;s content...
             </p>
           )}
@@ -239,7 +239,7 @@ export const ModulePublishForm: React.FC<ModulePublishFormProps> = ({
             </Alert>
           )}
           {nothingToPublish && (
-            <p className="text-sm text-muted-foreground" role="status">
+            <p className="text-sm text-base-secondary" role="status">
               Nothing to publish: this block&apos;s content and version are unchanged.
             </p>
           )}

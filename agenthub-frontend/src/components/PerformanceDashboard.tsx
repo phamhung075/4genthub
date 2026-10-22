@@ -180,7 +180,7 @@ const PerformanceDashboard: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Performance Dashboard</h1>
-          <p className="text-muted-foreground">
+          <p className="text-base-secondary">
             Real-time system performance and monitoring
           </p>
         </div>
@@ -223,18 +223,18 @@ const PerformanceDashboard: React.FC = () => {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Performance Score</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <TrendingUp className="h-4 w-4 text-base-secondary" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{metrics.performance_score.toFixed(1)}</div>
-            <div className="text-xs text-muted-foreground">out of 100</div>
+            <div className="text-xs text-base-secondary">out of 100</div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Active Connections</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <Users className="h-4 w-4 text-base-secondary" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{metrics.metrics.server_health.active_connections}</div>
@@ -244,7 +244,7 @@ const PerformanceDashboard: React.FC = () => {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Uptime</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
+            <Clock className="h-4 w-4 text-base-secondary" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -298,19 +298,19 @@ const PerformanceDashboard: React.FC = () => {
                   </div>
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
-                      <span className="text-muted-foreground">Pool Size:</span>
+                      <span className="text-base-secondary">Pool Size:</span>
                       <div className="font-medium">{metrics.metrics.connections.sqlite.pool_size}</div>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Hit Rate:</span>
+                      <span className="text-base-secondary">Hit Rate:</span>
                       <div className="font-medium">{(metrics.metrics.connections.sqlite.hit_rate * 100).toFixed(1)}%</div>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Created:</span>
+                      <span className="text-base-secondary">Created:</span>
                       <div className="font-medium">{metrics.metrics.connections.sqlite.connections_created}</div>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Avg Wait:</span>
+                      <span className="text-base-secondary">Avg Wait:</span>
                       <div className="font-medium">{(metrics.metrics.connections.sqlite.avg_wait_time * 1000).toFixed(1)}ms</div>
                     </div>
                   </div>
@@ -329,15 +329,15 @@ const PerformanceDashboard: React.FC = () => {
                   {metrics.metrics.connections.supabase.status === 'active' && (
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
-                        <span className="text-muted-foreground">Pool Size:</span>
+                        <span className="text-base-secondary">Pool Size:</span>
                         <div className="font-medium">{metrics.metrics.connections.supabase.pool_size}</div>
                       </div>
                       <div>
-                        <span className="text-muted-foreground">Checked Out:</span>
+                        <span className="text-base-secondary">Checked Out:</span>
                         <div className="font-medium">{metrics.metrics.connections.supabase.checked_out}</div>
                       </div>
                       <div>
-                        <span className="text-muted-foreground">Overflow:</span>
+                        <span className="text-base-secondary">Overflow:</span>
                         <div className="font-medium">{metrics.metrics.connections.supabase.overflow}</div>
                       </div>
                     </div>
@@ -372,19 +372,19 @@ const PerformanceDashboard: React.FC = () => {
                     </div>
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
-                        <span className="text-muted-foreground">Size:</span>
+                        <span className="text-base-secondary">Size:</span>
                         <div className="font-medium">{cacheData.size} / {cacheData.max_size}</div>
                       </div>
                       <div>
-                        <span className="text-muted-foreground">Hits:</span>
+                        <span className="text-base-secondary">Hits:</span>
                         <div className="font-medium">{cacheData.hits.toLocaleString()}</div>
                       </div>
                       <div>
-                        <span className="text-muted-foreground">Misses:</span>
+                        <span className="text-base-secondary">Misses:</span>
                         <div className="font-medium">{cacheData.misses.toLocaleString()}</div>
                       </div>
                       <div>
-                        <span className="text-muted-foreground">Evictions:</span>
+                        <span className="text-base-secondary">Evictions:</span>
                         <div className="font-medium">{cacheData.evictions}</div>
                       </div>
                     </div>
@@ -420,7 +420,7 @@ const PerformanceDashboard: React.FC = () => {
       )}
 
       {/* Footer */}
-      <div className="text-center text-sm text-muted-foreground">
+      <div className="text-center text-sm text-base-secondary">
         Last updated: {lastUpdated.toLocaleTimeString()}
         {autoRefresh && " • Auto-refreshing every 30 seconds"}
       </div>

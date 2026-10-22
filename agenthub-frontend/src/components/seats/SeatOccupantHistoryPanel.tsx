@@ -27,15 +27,15 @@ const ChangeRow: React.FC<{ change: SeatOccupantChange }> = ({ change }) => (
       <div className="flex flex-wrap items-center gap-2">
         <Badge variant="secondary">{change.from_runtime}</Badge>
         <span className="font-mono text-xs">{change.from_model.trim() || 'default model'}</span>
-        <ArrowRight className="h-3 w-3 text-muted-foreground" aria-label="changed to" />
+        <ArrowRight className="h-3 w-3 text-base-secondary" aria-label="changed to" />
         <Badge variant="secondary">{change.to_runtime}</Badge>
         <span className="font-mono text-xs">{change.to_model.trim() || 'default model'}</span>
       </div>
-      <time dateTime={change.at} className="text-xs text-muted-foreground">
+      <time dateTime={change.at} className="text-xs text-base-secondary">
         {new Date(change.at).toLocaleString()}
       </time>
     </div>
-    <p className="text-xs text-muted-foreground">
+    <p className="text-xs text-base-secondary">
       by <span className="font-mono">{change.actor}</span>
     </p>
   </li>
@@ -55,7 +55,7 @@ export const SeatOccupantHistoryPanel: React.FC<SeatOccupantHistoryPanelProps> =
       </CardHeader>
       <CardContent>
         {isLoading && (
-          <div className="flex items-center gap-2 text-muted-foreground">
+          <div className="flex items-center gap-2 text-base-secondary">
             <Loader2 className="h-4 w-4 animate-spin" /> Loading occupant history...
           </div>
         )}
@@ -71,7 +71,7 @@ export const SeatOccupantHistoryPanel: React.FC<SeatOccupantHistoryPanelProps> =
           </Alert>
         )}
         {!isLoading && !error && changes.length === 0 && (
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-base-secondary">
             No occupant change has been recorded for this seat.
           </p>
         )}

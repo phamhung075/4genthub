@@ -60,7 +60,7 @@ export const SeatPermissionPolicyPanel: React.FC<SeatPermissionPolicyPanelProps>
               ))}
             </Select>
             {policy === 'yolo' && (
-              <p className="text-xs text-destructive">
+              <p className="text-xs text-error">
                 yolo launches the seat with full permission bypass; the other policies keep the harness floor.
               </p>
             )}

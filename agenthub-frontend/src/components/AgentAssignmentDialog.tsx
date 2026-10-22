@@ -81,7 +81,7 @@ export const AgentAssignmentDialog: React.FC<AgentAssignmentDialogProps> = ({
           <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded">
             <h4 className="font-medium text-sm mb-1">Task: {task?.title}</h4>
             {task?.assignees && task.assignees.length > 0 && (
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-base-secondary">
                 Currently assigned: {task.assignees.join(', ')}
               </p>
             )}
@@ -107,7 +107,7 @@ export const AgentAssignmentDialog: React.FC<AgentAssignmentDialogProps> = ({
             <div className="space-y-2 max-h-[300px] overflow-y-auto border dark:border-gray-700 rounded p-2">
               {filteredAvailableSeats.length === 0 ? (
                 <p
-                  className={`text-sm text-center py-4 ${availableSeatsError ? "text-destructive" : "text-muted-foreground"}`}
+                  className={`text-sm text-center py-4 ${availableSeatsError ? "text-error" : "text-base-secondary"}`}
                   role={availableSeatsError ? "alert" : undefined}
                 >
                   {availableSeatsError
@@ -132,7 +132,7 @@ export const AgentAssignmentDialog: React.FC<AgentAssignmentDialogProps> = ({
                       >
                         <div>
                           <p className="font-medium text-sm">{seatKey}</p>
-                          <p className="text-xs text-muted-foreground">Seat key</p>
+                          <p className="text-xs text-base-secondary">Seat key</p>
                         </div>
                       </label>
                     </div>

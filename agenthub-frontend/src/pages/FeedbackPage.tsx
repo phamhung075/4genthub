@@ -167,7 +167,7 @@ export const FeedbackPage: React.FC = () => {
                 <section
                   key={group.layer}
                   aria-labelledby={`feedback-unlisted-${group.layer}`}
-                  className="rounded-md border border-destructive/50"
+                  className="rounded-md border border-error/50"
                 >
                   <div className="px-3 py-2">
                     <h2
