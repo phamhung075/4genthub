@@ -12,10 +12,10 @@ const badgeVariants = {
 export const Badge = React.forwardRef<HTMLSpanElement, BadgeProps>(
   ({ className, variant = "default", ...props }, ref) => {
     // Ensure variant is a valid string value
-    const safeVariant = (typeof variant === 'string' && variant in badgeVariants) 
-      ? variant 
+    const safeVariant = (typeof variant === 'string' && variant in badgeVariants)
+      ? variant
       : "default";
-    
+
     return (
       <span
         ref={ref}
@@ -29,4 +29,4 @@ export const Badge = React.forwardRef<HTMLSpanElement, BadgeProps>(
     );
   }
 );
-Badge.displayName = "Badge"; 
+Badge.displayName = "Badge";

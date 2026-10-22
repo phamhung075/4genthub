@@ -29,7 +29,7 @@ describe('AppLayout', () => {
 
   it('renders children content', () => {
     const testContent = 'This is test content';
-    
+
     render(
       <AppLayout>
         <div>{testContent}</div>
