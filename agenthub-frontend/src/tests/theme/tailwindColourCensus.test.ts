@@ -91,11 +91,17 @@ const candidates = (config: Record<string, any>): string[] => {
   return classes;
 };
 
-/** The colour paths the config registers, behind whatever property prefix a utility uses. */
+/** The colour paths the config registers under `colors`, behind whatever property prefix a utility
+ *  uses (`from-primary`, `ring-offset-*`). */
 const registeredColourPaths = (config: Record<string, any>): string[] => {
   const tree = (config.theme?.extend?.colors ?? config.theme?.colors) as ColourTree | undefined;
   return tree ? colourPaths(tree) : [];
 };
+
+/** Every base utility the config builds, as one set. The source scan counts a token when this set
+ *  holds its base form, so a colour a block registers only under `textColor` (`text-base-secondary`)
+ *  is scanned too: a walk over `theme.colors` alone cannot see it. */
+const registeredUtilities = (config: Record<string, any>): Set<string> => new Set(candidates(config));
 
 /** The characters Tailwind backslash-escapes in a class selector (`bg-accent/50` -> `.bg-accent\/50`). */
 const CSS_SELECTOR_SPECIALS = /[./[\]()%,#:>=&*+~'"!$^|]/g;
@@ -116,11 +122,21 @@ const emittedBlocks = (utility: string, sheet: string): string[] => [
   ...sheet.matchAll(new RegExp(selectorPattern(utility).source, 'g')),
 ].map((match) => match[1]);
 
+/** Whether a rule body paints a colour at all: `color`, `background-color`, `border-color`,
+ *  `--tw-ring-color`, `--tw-gradient-from/to`, `fill` and `stroke`. A body carrying only `font-size`
+ *  does not. */
+const hasColourDeclaration = (block: string): boolean =>
+  /(?:^|[\s;])(?:color|fill|stroke)\s*:/.test(block) ||
+  block.includes('-color:') ||
+  block.includes('--tw-gradient-');
+
 /**
  * The retired shadcn palette. RULING 2026-10-22 (`RULING-2026-10-22-retire-the-shadcn-palette.md`,
- * architect): these 13 names were never registered in `tailwind.config.js`, so each compiled to no rule,
- * and every call site was migrated onto the theme token beside it. Deleting an entry is only right if the
- * palette is deliberately reintroduced.
+ * architect): these names were never registered in `tailwind.config.js`, so each compiled to no rule,
+ * and every call site was migrated onto the theme token beside it. The ruling's map carries 13 rows;
+ * `text-destructive-foreground` is the fourteenth name the same measurement found and the map's count
+ * left out - one call site in `shimmer-button.tsx`, migrated here too. Deleting an entry is only right
+ * if the palette is deliberately reintroduced.
  */
 const REPLACEMENT_BY_RETIRED_NAME: Record<string, string> = {
   'text-muted-foreground': 'text-base-secondary',
@@ -136,6 +152,7 @@ const REPLACEMENT_BY_RETIRED_NAME: Record<string, string> = {
   'border-muted-foreground': 'border-text-secondary',
   'bg-border': 'bg-surface-border',
   'text-accent-foreground': 'text-accent-contrast',
+  'text-destructive-foreground': 'text-accent-contrast',
 };
 
 const IS_SOURCE_EXTENSION: Record<string, true> = {
@@ -177,10 +194,14 @@ const withoutAlpha = (utility: string): string =>
 
 /**
  * The source classes the emission verdict is owed for, as `token -> file`. A token qualifies when it is
- * one of the retired names, or when `baseUtility` names a registered colour path behind a colour prefix.
+ * one of the retired names, or when its base form is a utility the config builds behind a colour prefix,
+ * or when the name behind that prefix is a colour path the config registers (`from-primary`).
  */
-const sourceColourClasses = (registeredPaths: Record<string, true>): Map<string, string> => {
+const sourceColourClasses = (config: Record<string, any>): Map<string, string> => {
   const found = new Map<string, string>();
+  const knownUtilities = registeredUtilities(config);
+  const registeredPaths: Record<string, true> = {};
+  for (const path of registeredColourPaths(config)) registeredPaths[path] = true;
   // This file holds the retired list and the prefixes, so it is its own only allowed occurrence.
   const self = fileURLToPath(import.meta.url);
 
@@ -194,7 +215,8 @@ const sourceColourClasses = (registeredPaths: Record<string, true>): Map<string,
       const isRetired = Object.hasOwn(REPLACEMENT_BY_RETIRED_NAME, utility);
       const prefix = COLOUR_UTILITY_PREFIXES.find((candidate) => utility.startsWith(candidate));
       const isRegisteredColour =
-        prefix !== undefined && registeredPaths[utility.slice(prefix.length)] === true;
+        prefix !== undefined &&
+        (knownUtilities.has(utility) || registeredPaths[utility.slice(prefix.length)] === true);
       if (isRetired || isRegisteredColour) {
         if (!found.has(token)) found.set(token, file.slice(frontendRoot.length));
       }
@@ -212,9 +234,7 @@ describe('theme colour census: every registered colour emits its alpha form', ()
     const config = require(configPath) as Record<string, any>;
     classes = candidates(config);
 
-    const registeredPaths: Record<string, true> = {};
-    for (const path of registeredColourPaths(config)) registeredPaths[path] = true;
-    sourceClasses = sourceColourClasses(registeredPaths);
+    sourceClasses = sourceColourClasses(config);
 
     const scratch = mkdtempSync(join(tmpdir(), 'tw-census-'));
     try {
@@ -222,7 +242,14 @@ describe('theme colour census: every registered colour emits its alpha form', ()
       const probe = join(scratch, 'probe.html');
       const output = join(scratch, 'out.css');
       writeFileSync(input, '@tailwind base;\n@tailwind components;\n@tailwind utilities;\n');
-      writeFileSync(probe, `<div class="${[...classes, ...sourceClasses.keys()].join(' ')}"></div>`);
+      writeFileSync(
+        probe,
+        `<div class="${[
+          ...classes,
+          ...sourceClasses.keys(),
+          ...Object.values(REPLACEMENT_BY_RETIRED_NAME),
+        ].join(' ')}"></div>`
+      );
       execFileSync(
         join(frontendRoot, 'node_modules/.bin/tailwindcss'),
         ['-c', configPath, '-i', input, '-o', output, '--content', probe],
@@ -258,7 +285,7 @@ describe('theme colour census: every registered colour emits its alpha form', ()
     const missing: string[] = [];
 
     for (const [token, file] of sourceClasses) {
-      if (emittedBlocks(token, css).some((block) => block.trim().length > 0)) continue;
+      if (emittedBlocks(token, css).some(hasColourDeclaration)) continue;
       const replacement = REPLACEMENT_BY_RETIRED_NAME[withoutAlpha(baseUtility(token))];
       missing.push(
         `${file} uses \`${token}\`` +
@@ -273,6 +300,27 @@ describe('theme colour census: every registered colour emits its alpha form', ()
         )}\nA class naming a colour the config does not register emits nothing at all - register the ` +
           'colour in tailwind.config.js or use a theme token that compiles. ' +
           'See RULING-2026-10-22-retire-the-shadcn-palette.md for the retired names.'
+      );
+    }
+  });
+
+  /**
+   * The map's targets are the point of the migration: if one stops compiling, every call site the map
+   * sent to it paints nothing while the class name still reads like a theme token. `text-base-primary`
+   * did exactly that - the map named it, no block registered it, and 31 migrated call sites plus 31
+   * older ones drew nothing. This arm probes the map itself rather than the source, so a row is caught
+   * even when it has no call site yet.
+   */
+  it('emits a colour declaration for every replacement the retired map names', () => {
+    const dead = Object.entries(REPLACEMENT_BY_RETIRED_NAME)
+      .filter(([, replacement]) => !emittedBlocks(replacement, css).some(hasColourDeclaration))
+      .map(([retired, replacement]) => `${retired} -> ${replacement}`);
+
+    if (dead.length > 0) {
+      throw new Error(
+        `${dead.length} replacement(s) in the retired map compile to NO colour declaration: ` +
+          `${dead.join(', ')}. The map points at a token the config does not build - register it in ` +
+          'tailwind.config.js or point the row at a token that paints.'
       );
     }
   });

@@ -66,7 +66,7 @@ export const ShimmerButton: React.FC<ShimmerButtonProps> = ({
     ghost: 'bg-transparent hover:bg-accent hover:text-accent-contrast',
     outline: 'bg-transparent text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800',
     secondary: 'bg-gray-50 text-gray-600 dark:bg-gray-800 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700',
-    destructive: 'bg-error text-destructive-foreground hover:bg-error/90',
+    destructive: 'bg-error text-accent-contrast hover:bg-error/90',
     link: 'text-primary underline-offset-4 hover:underline'
   };
 

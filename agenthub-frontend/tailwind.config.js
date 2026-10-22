@@ -142,6 +142,11 @@ module.exports = {
         // nested entries already name surface.DEFAULT and surface.hover.
       },
       textColor: {
+        // The primary text colour. `text-base` cannot carry it: it is also the default font size, so the
+        // one class would set 16px where a call site only meant the colour. The retired `text-foreground`
+        // maps onto this key (RULING 2026-10-22, map row 3), and the census test fails if it stops
+        // compiling to a colour.
+        'base-primary': withAlpha('text'),
         'base': withAlpha('text'),
         'base-secondary': withAlpha('text-secondary'),
         'base-tertiary': withAlpha('text-tertiary'),
