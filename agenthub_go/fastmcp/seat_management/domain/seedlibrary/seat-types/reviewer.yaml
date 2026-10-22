@@ -35,9 +35,14 @@ rules:
       Read the handoff's `decision:` line and the task's Progress; when the change picks among defensible
       options, the matching `jev=` line in `~/.config/4genthub/jev_decisions.log` must exist, or the gate fails
       with `decision-check: no jev=<subject>`.
+  - name: The row names the row it answers
+    content: |
+      A row you create in answer to another carries `--reply-to <qitem_id>`, and the verdict's `Reviewed:`
+      names that same qitem id. `handed-off` and `done` are terminal, so the reply link is the only thing
+      that joins a report to the change it judged; without it the verdict is unattributable a day later.
 output_format: |
   Verdict: <approve | approve with changes | request changes>
-  Reviewed: <task reference and what you examined>
+  Reviewed: <the qitem you answer, the task reference, and what you examined>
   Blockers: <file:line : problem : consequence, or "none">
   Major: <same format, or "none">
   Minor / nits: <same format, or "none">
