@@ -379,7 +379,7 @@ export const TaskEditDialog: React.FC<TaskEditDialogProps> = ({
 
               {/* Seat dropdown */}
               {showSeatDropdown && (
-                <div className="absolute z-10 w-full mt-1 bg-background border border-border rounded-md shadow-lg max-h-60 overflow-auto">
+                <div className="absolute z-10 w-full mt-1 bg-background border border-surface-border rounded-md shadow-lg max-h-60 overflow-auto">
                   {filteredSeats.length > 0 ? (
                     filteredSeats.map(seat => (
                       <div
@@ -397,7 +397,7 @@ export const TaskEditDialog: React.FC<TaskEditDialogProps> = ({
                     ))
                   ) : (
                     <div
-                      className={`px-3 py-2 text-sm ${availableSeatsError ? "text-destructive" : "text-muted-foreground"}`}
+                      className={`px-3 py-2 text-sm ${availableSeatsError ? "text-error" : "text-base-secondary"}`}
                       role={availableSeatsError ? "alert" : undefined}
                     >
                       {availableSeatsError
@@ -407,10 +407,10 @@ export const TaskEditDialog: React.FC<TaskEditDialogProps> = ({
                           : "No seats found"}
                     </div>
                   )}
-                  <div className="px-3 py-2 border-t border-border">
+                  <div className="px-3 py-2 border-t border-surface-border">
                     <button
                       type="button"
-                      className="text-xs text-muted-foreground hover:text-foreground"
+                      className="text-xs text-base-secondary hover:text-base-primary"
                       onClick={() => setShowSeatDropdown(false)}
                     >
                       Close

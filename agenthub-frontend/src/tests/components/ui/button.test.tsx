@@ -159,7 +159,7 @@ describe('Button', () => {
     expect(button.className).toContain('transition-colors');
     expect(button.className).toContain('focus-visible:outline-none');
     expect(button.className).toContain('focus-visible:ring-2');
-    expect(button.className).toContain('focus-visible:ring-ring');
+    expect(button.className).toContain('focus-visible:ring-primary');
     expect(button.className).toContain('focus-visible:ring-offset-2');
     expect(button.className).toContain('ring-offset-background');
   });

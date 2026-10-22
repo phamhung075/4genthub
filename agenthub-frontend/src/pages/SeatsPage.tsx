@@ -184,7 +184,7 @@ export const SeatsPage: React.FC = () => {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Seats</h1>
-          <p className="text-muted-foreground mt-2">
+          <p className="text-base-secondary mt-2">
             Rooms hold fixed role slots. Each seat's occupant and modules are replaceable.
           </p>
         </div>
@@ -204,7 +204,7 @@ export const SeatsPage: React.FC = () => {
         </CardHeader>
         <CardContent>
           {settingsLoading && (
-            <div className="flex items-center gap-2 text-muted-foreground">
+            <div className="flex items-center gap-2 text-base-secondary">
               <Loader2 className="h-4 w-4 animate-spin" /> Loading settings...
             </div>
           )}
@@ -263,7 +263,7 @@ export const SeatsPage: React.FC = () => {
                 placeholder="engineering"
               />
               {roomSlugInvalid && (
-                <p id="room-slug-error" className="text-xs text-destructive">
+                <p id="room-slug-error" className="text-xs text-error">
                   {SEAT_NAME_MESSAGE}
                 </p>
               )}
@@ -299,9 +299,9 @@ export const SeatsPage: React.FC = () => {
         <h2 className="text-lg font-semibold flex items-center gap-2">
           <DoorOpen className="h-5 w-5 text-primary" /> Rooms
         </h2>
-        <p className="text-xs text-muted-foreground">A room is a pod of seats.</p>
+        <p className="text-xs text-base-secondary">A room is a pod of seats.</p>
         {roomsLoading && (
-          <div className="flex items-center gap-2 text-muted-foreground">
+          <div className="flex items-center gap-2 text-base-secondary">
             <Loader2 className="h-4 w-4 animate-spin" /> Loading rooms...
           </div>
         )}
@@ -318,7 +318,7 @@ export const SeatsPage: React.FC = () => {
         )}
         {!roomsLoading && !roomsError && rooms.length === 0 && (
           <Card>
-            <CardContent className="py-8 text-center text-muted-foreground">
+            <CardContent className="py-8 text-center text-base-secondary">
               No rooms yet. Create one above to start adding seats.
             </CardContent>
           </Card>
@@ -372,17 +372,17 @@ export const SeatsPage: React.FC = () => {
               looking at. So the controls are absent and the standing is stated once, in the client's
               words - the server has no per-action sentence to quote. */}
           {!isRoomOwner && (
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-base-secondary">
               Shared with you by its owner: you can read this room and its seats. Adding seats, removing
               seats and deleting the room belong to the owner.
             </p>
           )}
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-base-secondary">
             A seat is a room member (a fixed role slot).
           </p>
 
           {seatsLoading && (
-            <div className="flex items-center gap-2 text-muted-foreground">
+            <div className="flex items-center gap-2 text-base-secondary">
               <Loader2 className="h-4 w-4 animate-spin" /> Loading seats...
             </div>
           )}
@@ -399,7 +399,7 @@ export const SeatsPage: React.FC = () => {
           )}
           {!seatsLoading && !seatsError && seats.length === 0 && (
             <Card>
-              <CardContent className="py-8 text-center text-muted-foreground">
+              <CardContent className="py-8 text-center text-base-secondary">
                 This room has no seats yet.
               </CardContent>
             </Card>
@@ -433,19 +433,19 @@ export const SeatsPage: React.FC = () => {
                 <CardContent className="space-y-3">
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div>
-                      <span className="text-muted-foreground">Type</span>
+                      <span className="text-base-secondary">Type</span>
                       <p className="font-medium">{seat.seat_type}</p>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Runtime</span>
+                      <span className="text-base-secondary">Runtime</span>
                       <p className="font-medium">{seat.runtime}</p>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Model</span>
+                      <span className="text-base-secondary">Model</span>
                       <p className="break-words font-medium">{seat.model || '—'}</p>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Version</span>
+                      <span className="text-base-secondary">Version</span>
                       <p className="font-medium">{pinLabel(seat)}</p>
                     </div>
                   </div>
@@ -511,7 +511,7 @@ export const SeatsPage: React.FC = () => {
                 required
               />
               {seatKeyInvalid && (
-                <p id="seat-key-error" className="text-xs text-destructive">
+                <p id="seat-key-error" className="text-xs text-error">
                   {SEAT_NAME_MESSAGE}
                 </p>
               )}
@@ -560,13 +560,13 @@ export const SeatsPage: React.FC = () => {
                   onChange={e => setSeatForm(prev => ({ ...prev, model: e.target.value }))}
                   placeholder="runtime default"
                 />
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-base-secondary">
                   Model id for this runtime, for example sonnet. A blank model is accepted and stored
                   blank: this service substitutes no default and the resolved seat renders no model line.
                   The runtime CLI does substitute one when handed none, measured; which default it picks is
                   not established here.
                 </p>
-                {!seatModelValid && <p className="text-xs text-destructive">{SEAT_MODEL_MESSAGE}</p>}
+                {!seatModelValid && <p className="text-xs text-error">{SEAT_MODEL_MESSAGE}</p>}
               </div>
             </div>
 

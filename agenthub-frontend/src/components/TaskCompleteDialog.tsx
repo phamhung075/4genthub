@@ -74,7 +74,7 @@ export const TaskCompleteDialog: React.FC<TaskCompleteDialogProps> = ({
           <div className="bg-gray-50 p-3 rounded">
             <h4 className="font-medium text-sm mb-1">Task: {task.title}</h4>
             {task.description && (
-              <p className="text-xs text-muted-foreground">{task.description}</p>
+              <p className="text-xs text-base-secondary">{task.description}</p>
             )}
           </div>
 
@@ -92,7 +92,7 @@ export const TaskCompleteDialog: React.FC<TaskCompleteDialogProps> = ({
               rows={4}
               autoFocus
             />
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="text-xs text-base-secondary mt-1">
               Provide a detailed summary of what was accomplished
             </p>
           </div>
@@ -110,7 +110,7 @@ export const TaskCompleteDialog: React.FC<TaskCompleteDialogProps> = ({
               disabled={isCompleting}
               rows={3}
             />
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="text-xs text-base-secondary mt-1">
               Include details about testing, validation, or verification performed
             </p>
           </div>

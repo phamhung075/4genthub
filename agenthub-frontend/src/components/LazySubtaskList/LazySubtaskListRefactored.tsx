@@ -277,7 +277,7 @@ export function LazySubtaskListRefactored({
   // Loading state (only during initial load)
   if (loading && filteredSubtasks.length === 0) {
     return (
-      <div className="p-4 text-center text-sm text-muted-foreground">
+      <div className="p-4 text-center text-sm text-base-secondary">
         Loading subtasks...
       </div>
     );

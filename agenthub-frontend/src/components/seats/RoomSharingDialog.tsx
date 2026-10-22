@@ -74,7 +74,7 @@ export const RoomSharingDialog: React.FC<RoomSharingDialogProps> = ({ room, onCl
         </DialogHeader>
 
         {!isOwner && (
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-base-secondary">
             Only the room's owner can change its sharing, so there is nothing to set here.
             {sharedWith && (
               <>
@@ -104,11 +104,11 @@ export const RoomSharingDialog: React.FC<RoomSharingDialogProps> = ({ room, onCl
                 </option>
               ))}
             </Select>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-base-secondary">
               Choosing Private clears the team, so the room is yours alone again.
             </p>
             {room.team_id !== '' && !sharedWith && (
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-base-secondary">
                 This room is still shared with a team you are no longer a member of. Choosing a team below replaces
                 it; Private clears it.
               </p>

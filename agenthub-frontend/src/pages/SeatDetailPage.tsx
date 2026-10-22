@@ -106,7 +106,7 @@ const QueryError: React.FC<{ message: string; onRetry: () => void }> = ({ messag
 );
 
 const Loading: React.FC<{ label: string }> = ({ label }) => (
-  <div className="flex items-center gap-2 text-muted-foreground">
+  <div className="flex items-center gap-2 text-base-secondary">
     <Loader2 className="h-4 w-4 animate-spin" /> {label}
   </div>
 );
@@ -147,12 +147,12 @@ const ModuleRow: React.FC<{ module: EffectiveSeatModule }> = ({ module }) => {
           {module.overridden && module.contentOverride !== undefined ? (
             <ModuleContentView content={module.contentOverride} />
           ) : isLoading ? (
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <div className="flex items-center gap-2 text-xs text-base-secondary">
               <Loader2 className="h-3 w-3 animate-spin" /> Loading {module.slug}@
               {module.version}...
             </div>
           ) : error ? (
-            <p className="text-xs text-destructive">{error.message}</p>
+            <p className="text-xs text-error">{error.message}</p>
           ) : fetched ? (
             <ModuleContentView content={fetched.content} />
           ) : null}
@@ -230,7 +230,7 @@ const ModulesTab: React.FC<SeatModulesTabProps> = ({ seatType, canWrite }) => {
           {isLoading && <Loading label="Loading overlays..." />}
           {error && <QueryError message={error.message} onRetry={() => refetch()} />}
           {!isLoading && !error && effective.length === 0 && (
-            <p className="text-sm text-muted-foreground">This seat type has no modules.</p>
+            <p className="text-sm text-base-secondary">This seat type has no modules.</p>
           )}
           {!isLoading &&
             !error &&
@@ -272,7 +272,7 @@ const ModulesTab: React.FC<SeatModulesTabProps> = ({ seatType, canWrite }) => {
               Current {scope} ops ({scopeOps.length})
             </h4>
             {scopeOps.length === 0 && (
-              <p className="text-sm text-muted-foreground">No {scope} overlay ops yet.</p>
+              <p className="text-sm text-base-secondary">No {scope} overlay ops yet.</p>
             )}
             {scopeOps.map((op, index) => (
               <div
@@ -282,9 +282,9 @@ const ModulesTab: React.FC<SeatModulesTabProps> = ({ seatType, canWrite }) => {
                 <span className="flex items-center gap-2 flex-wrap">
                   <Badge variant="secondary">{op.kind}</Badge>
                   <span className="font-mono">{op.slug}</span>
-                  {op.version && <span className="text-muted-foreground">@{op.version}</span>}
+                  {op.version && <span className="text-base-secondary">@{op.version}</span>}
                   {op.content && (
-                    <span className="text-muted-foreground truncate max-w-xs">{op.content}</span>
+                    <span className="text-base-secondary truncate max-w-xs">{op.content}</span>
                   )}
                 </span>
                 {canWrite && (
@@ -448,7 +448,7 @@ const LinksTab: React.FC<SeatLinksTabProps> = ({ roomSeats, canWrite }) => {
           {isLoading && <Loading label="Loading links..." />}
           {error && <QueryError message={error.message} onRetry={() => refetch()} />}
           {!isLoading && !error && links.length === 0 && (
-            <p className="text-sm text-muted-foreground">This seat has no outgoing links yet.</p>
+            <p className="text-sm text-base-secondary">This seat has no outgoing links yet.</p>
           )}
           {!isLoading &&
             !error &&
@@ -460,7 +460,7 @@ const LinksTab: React.FC<SeatLinksTabProps> = ({ roomSeats, canWrite }) => {
                   className="flex items-center justify-between gap-2 rounded border p-2 text-sm"
                 >
                   <span className="flex items-center gap-2">
-                    <Link2 className="h-4 w-4 text-muted-foreground" />
+                    <Link2 className="h-4 w-4 text-base-secondary" />
                     <span className="font-medium">{targetKey}</span>
                     <Badge variant="secondary">{link.kind}</Badge>
                   </span>
@@ -477,7 +477,7 @@ const LinksTab: React.FC<SeatLinksTabProps> = ({ roomSeats, canWrite }) => {
                           upsertLink.mutate({ to_seat: targetKey, kind: link.kind, allow: checked });
                         }}
                       />
-                      <span className="text-muted-foreground">Allow</span>
+                      <span className="text-base-secondary">Allow</span>
                     </label>
                     {canWrite && (
                       <Button
@@ -551,15 +551,15 @@ const LinksTab: React.FC<SeatLinksTabProps> = ({ roomSeats, canWrite }) => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-base-secondary">
             Task messages are allowed by delegates_to; escalations and reports by escalates_to;
             questions and notices by collaborates_with. can_observe and spawned_by never allow
             sending.
           </p>
-          <ul className="space-y-1 text-xs text-muted-foreground">
+          <ul className="space-y-1 text-xs text-base-secondary">
             {SEAT_LINK_KINDS.map(({ kind: optionKind, label, hint }) => (
               <li key={optionKind}>
-                <span className="font-medium text-foreground">{label}</span> ({optionKind}) — {hint}
+                <span className="font-medium text-base-primary">{label}</span> ({optionKind}) — {hint}
               </li>
             ))}
           </ul>
@@ -681,7 +681,7 @@ export const SeatDetailPage: React.FC = () => {
 
       <div>
         <h1 className="text-4xl font-bold tracking-tight">{seat}</h1>
-        <p className="text-muted-foreground mt-2">
+        <p className="text-base-secondary mt-2">
           Room {room}
           {currentSeat && ` · ${currentSeat.seat_type}`}
           {currentSeat && ` · ${currentSeat.pinned_version ? `pinned ${currentSeat.pinned_version}` : 'follows latest'}`}
@@ -723,7 +723,7 @@ export const SeatDetailPage: React.FC = () => {
           a 404 on a seat they are legitimately reading, so there is no per-action reason to quote
           beside a dead control - the affordances are absent instead, and this is why. */}
       {currentSeat && isRoomViewer && (
-        <p className="mb-3 text-xs text-muted-foreground">
+        <p className="mb-3 text-xs text-base-secondary">
           This seat is in a room its owner shared with a team you belong to, so you can read it and its seat
           type. Writing is the owner's: the runtime and model, the permission policy, the overlay and the links.
         </p>

@@ -141,7 +141,7 @@ export const EmailVerification: React.FC = () => {
                 <button
                   type="submit"
                   disabled={resendLoading}
-                  className="w-full px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                  className="w-full px-4 py-2 bg-primary text-accent-contrast rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
                 >
                   {resendLoading ? (
                     <>
@@ -182,7 +182,7 @@ export const EmailVerification: React.FC = () => {
             <div className="flex flex-col space-y-2 w-full">
               <button
                 onClick={() => navigate('/signup')}
-                className="w-full px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+                className="w-full px-4 py-2 bg-primary text-accent-contrast rounded-md hover:bg-primary/90 transition-colors"
               >
                 Go to Sign Up
               </button>

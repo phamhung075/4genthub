@@ -196,7 +196,7 @@ const SubtaskRow: React.FC<SubtaskRowProps> = ({
               ))}
             </div>
           ) : (
-            <span className="text-xs text-muted-foreground">Unassigned</span>
+            <span className="text-xs text-base-secondary">Unassigned</span>
           )}
         </TableCell>
 

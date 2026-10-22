@@ -174,7 +174,7 @@ export function DialogFooter({ children, className }: { children: React.ReactNod
 }
 
 export function DialogDescription({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <p className={cn("text-sm text-muted-foreground mb-4", className)}>{children}</p>;
+  return <p className={cn("text-sm text-base-secondary mb-4", className)}>{children}</p>;
 }
 
 export function DialogTrigger({ children }: { children: React.ReactNode; asChild?: boolean }) {

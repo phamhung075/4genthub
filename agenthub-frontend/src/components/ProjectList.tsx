@@ -272,7 +272,7 @@ const ProjectList: React.FC<ProjectListProps> = ({
   // Loading and error states
   if (loading && projects.length === 0) {
     return (
-      <div className="flex items-center gap-2 text-xs text-muted-foreground px-2 py-1">
+      <div className="flex items-center gap-2 text-xs text-base-secondary px-2 py-1">
         <div className="animate-spin h-3 w-3 border-2 border-primary border-t-transparent rounded-full"></div>
         Loading projects...
       </div>
@@ -281,7 +281,7 @@ const ProjectList: React.FC<ProjectListProps> = ({
 
   if (error || bulkSummariesError) {
     return (
-      <div className="text-xs text-destructive px-2 py-1">
+      <div className="text-xs text-error px-2 py-1">
         Error: {error || bulkSummariesError}
       </div>
     );

@@ -44,7 +44,6 @@ vi.mock('react-router-dom', () => ({
 
 // Mock CSS imports
 vi.mock('../index.css', () => ({}));
-vi.mock('../theme/global.css', () => ({}));
 vi.mock('../styles/notifications.css', () => ({}));
 
 // Mock extension error filter

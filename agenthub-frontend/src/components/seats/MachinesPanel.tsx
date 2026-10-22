@@ -87,7 +87,7 @@ const MachineCard: React.FC<{ machine: MachineStatus }> = ({ machine }) => (
           {machine.online ? 'online' : 'offline'}
         </Badge>
       </CardTitle>
-      <p className="text-xs text-muted-foreground">
+      <p className="text-xs text-base-secondary">
         last seen {formatDistanceToNow(new Date(machine.last_seen), { addSuffix: true })}
       </p>
     </CardHeader>
@@ -96,7 +96,7 @@ const MachineCard: React.FC<{ machine: MachineStatus }> = ({ machine }) => (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-muted-foreground">
+              <tr className="text-left text-base-secondary">
                 <th className="font-medium">Seat</th>
                 <th className="font-medium">State</th>
                 <th className="font-medium">Runtime</th>
@@ -163,7 +163,7 @@ export const MachinesPanel: React.FC = () => {
         )}
       </h2>
       {isLoading && (
-        <div className="flex items-center gap-2 text-muted-foreground">
+        <div className="flex items-center gap-2 text-base-secondary">
           <Loader2 className="h-4 w-4 animate-spin" /> Loading machines...
         </div>
       )}
@@ -180,7 +180,7 @@ export const MachinesPanel: React.FC = () => {
       )}
       {!isLoading && !error && machines.length === 0 && (
         <Card>
-          <CardContent className="py-8 text-center text-muted-foreground">
+          <CardContent className="py-8 text-center text-base-secondary">
             No bridge connected. Run 4genteam bridge run on your PC.
           </CardContent>
         </Card>

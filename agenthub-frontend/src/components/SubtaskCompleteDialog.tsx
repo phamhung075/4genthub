@@ -145,23 +145,23 @@ export const SubtaskCompleteDialog: React.FC<SubtaskCompleteDialogProps> = ({
 
         <div className="space-y-4">
           {/* Subtask Information */}
-          <div className="bg-muted/50 dark:bg-muted/30 p-3 rounded border border-border">
-            <h4 className="font-medium text-sm mb-1 text-foreground">Subtask: {subtask.title}</h4>
+          <div className="bg-base-tertiary/50 dark:bg-base-tertiary/30 p-3 rounded border border-surface-border">
+            <h4 className="font-medium text-sm mb-1 text-base-primary">Subtask: {subtask.title}</h4>
             {subtask.description && (
-              <p className="text-xs text-muted-foreground">{subtask.description}</p>
+              <p className="text-xs text-base-secondary">{subtask.description}</p>
             )}
           </div>
 
           {/* Completion Summary */}
           <div>
-            <label className="text-sm font-medium mb-2 block text-foreground">
+            <label className="text-sm font-medium mb-2 block text-base-primary">
               Completion Summary * (minimum {MIN_SUMMARY_LENGTH} characters)
             </label>
             <textarea
-              className={`w-full p-2 bg-background text-foreground rounded-md resize-vertical focus:outline-none focus:ring-1 focus:ring-ring focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${
+              className={`w-full p-2 bg-background text-base-primary rounded-md resize-vertical focus:outline-none focus:ring-1 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${
                 completionSummary.length > 0 && !isValidSummary
-                  ? 'border border-destructive'
-                  : 'border border-input'
+                  ? 'border border-error'
+                  : 'border border-input-border'
               }`}
               placeholder="Describe what was accomplished in detail..."
               value={completionSummary}
@@ -173,8 +173,8 @@ export const SubtaskCompleteDialog: React.FC<SubtaskCompleteDialogProps> = ({
             <div className="flex justify-between items-center mt-1">
               <p className={`text-xs ${
                 completionSummary.length > 0 && !isValidSummary
-                  ? 'text-destructive'
-                  : 'text-muted-foreground'
+                  ? 'text-error'
+                  : 'text-base-secondary'
               }`}>
                 {completionSummary.length > 0 && !isValidSummary
                   ? `Need ${MIN_SUMMARY_LENGTH - completionSummary.trim().length} more characters for a detailed summary`
@@ -183,7 +183,7 @@ export const SubtaskCompleteDialog: React.FC<SubtaskCompleteDialogProps> = ({
               <p className={`text-xs ${
                 isValidSummary
                   ? 'text-green-600 dark:text-green-400'
-                  : 'text-muted-foreground'
+                  : 'text-base-secondary'
               }`}>
                 {completionSummary.trim().length}/{MIN_SUMMARY_LENGTH}
               </p>
@@ -192,11 +192,11 @@ export const SubtaskCompleteDialog: React.FC<SubtaskCompleteDialogProps> = ({
 
           {/* Impact on Parent */}
           <div>
-            <label className="text-sm font-medium mb-2 block text-foreground">
+            <label className="text-sm font-medium mb-2 block text-base-primary">
               Impact on Parent Task (Optional)
             </label>
             <textarea
-              className="w-full p-2 border border-input bg-background text-foreground rounded-md resize-vertical focus:outline-none focus:ring-1 focus:ring-ring focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full p-2 border border-input-border bg-background text-base-primary rounded-md resize-vertical focus:outline-none focus:ring-1 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
               placeholder="How does completing this subtask affect the parent task?"
               value={impactOnParent}
               onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setImpactOnParent(e.target.value)}
@@ -207,18 +207,18 @@ export const SubtaskCompleteDialog: React.FC<SubtaskCompleteDialogProps> = ({
 
           {/* Challenges Overcome */}
           <div>
-            <label className="text-sm font-medium mb-2 block text-foreground">
+            <label className="text-sm font-medium mb-2 block text-base-primary">
               Challenges Overcome (Optional)
             </label>
             <textarea
-              className="w-full p-2 border border-input bg-background text-foreground rounded-md resize-vertical focus:outline-none focus:ring-1 focus:ring-ring focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full p-2 border border-input-border bg-background text-base-primary rounded-md resize-vertical focus:outline-none focus:ring-1 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
               placeholder="List any challenges faced and overcome (one per line)..."
               value={challengesOvercome}
               onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setChallengesOvercome(e.target.value)}
               disabled={isCompleting}
               rows={2}
             />
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="text-xs text-base-secondary mt-1">
               Enter each challenge on a new line
             </p>
           </div>
@@ -226,9 +226,9 @@ export const SubtaskCompleteDialog: React.FC<SubtaskCompleteDialogProps> = ({
           {/* Info Message */}
           <div className="bg-primary/10 dark:bg-primary/20 p-3 rounded-md flex gap-2 border border-primary/20">
             <FileText className="w-4 h-4 text-primary mt-0.5" />
-            <div className="text-sm text-foreground">
+            <div className="text-sm text-base-primary">
               <p className="font-medium">Auto Progress Update</p>
-              <p className="text-xs mt-1 text-muted-foreground">
+              <p className="text-xs mt-1 text-base-secondary">
                 Completing this subtask will automatically update the parent task's progress.
               </p>
             </div>
@@ -236,7 +236,7 @@ export const SubtaskCompleteDialog: React.FC<SubtaskCompleteDialogProps> = ({
 
           {/* Error Display */}
           {completeError && (
-            <div className="bg-destructive/10 dark:bg-destructive/20 border border-destructive/30 text-destructive px-3 py-2 rounded-md text-sm">
+            <div className="bg-error/10 dark:bg-error/20 border border-error/30 text-error px-3 py-2 rounded-md text-sm">
               {completeError.message || 'Failed to complete subtask'}
             </div>
           )}

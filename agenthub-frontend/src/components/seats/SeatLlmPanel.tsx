@@ -77,11 +77,11 @@ export const SeatLlmPanel: React.FC<SeatLlmPanelProps> = ({ room, seat, canWrite
                 placeholder="default"
                 disabled={!canWrite}
               />
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-base-secondary">
                 Model id for this runtime, for example claude-opus-4-6. An empty box changes nothing:
                 the seat keeps the model it already has.
               </p>
-              {!valid && <p className="text-xs text-destructive">{SEAT_MODEL_MESSAGE}</p>}
+              {!valid && <p className="text-xs text-error">{SEAT_MODEL_MESSAGE}</p>}
             </div>
           </div>
           {update.isError && (
@@ -97,13 +97,13 @@ export const SeatLlmPanel: React.FC<SeatLlmPanelProps> = ({ room, seat, canWrite
             </Button>
           )}
         </form>
-        <p className="mt-4 text-xs text-muted-foreground">
+        <p className="mt-4 text-xs text-base-secondary">
           Saved in 4genthub. A model change is applied to the running seat with{' '}
-          <code className="rounded bg-muted px-1 font-mono">
+          <code className="rounded bg-base-tertiary px-1 font-mono">
             4genteam sync switch &lt;room&gt; &lt;seat&gt; --model &lt;id&gt;
           </code>
           ; a runtime change takes effect after the room is restarted with{' '}
-          <code className="rounded bg-muted px-1 font-mono">4genteam up &lt;room&gt;</code>.
+          <code className="rounded bg-base-tertiary px-1 font-mono">4genteam up &lt;room&gt;</code>.
         </p>
       </CardContent>
     </Card>

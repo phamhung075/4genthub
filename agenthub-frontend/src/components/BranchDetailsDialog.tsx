@@ -182,23 +182,23 @@ export const BranchDetailsDialog: React.FC<BranchDetailsDialogProps> = ({
                 <h3 className="text-lg font-semibold mb-3">Basic Information</h3>
                 <div className="space-y-2 text-sm">
                   <div>
-                    <span className="text-muted-foreground">Name:</span>
+                    <span className="text-base-secondary">Name:</span>
                     <span className="ml-2 font-medium">{branch?.name}</span>
                   </div>
                   <div>
-                    <span className="text-muted-foreground">ID:</span>
+                    <span className="text-base-secondary">ID:</span>
                     <span className="ml-2 font-mono text-xs">{branch?.id}</span>
                   </div>
                   <div>
-                    <span className="text-muted-foreground">Description:</span>
+                    <span className="text-base-secondary">Description:</span>
                     <span className="ml-2">{branchFields.description ? String(branchFields.description) : "No description"}</span>
                   </div>
                   <div>
-                    <span className="text-muted-foreground">Project:</span>
+                    <span className="text-base-secondary">Project:</span>
                     <span className="ml-2">{project?.name}</span>
                   </div>
                   <div>
-                    <span className="text-muted-foreground">Project ID:</span>
+                    <span className="text-base-secondary">Project ID:</span>
                     <span className="ml-2 font-mono text-xs">{project?.id}</span>
                   </div>
                 </div>

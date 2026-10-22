@@ -59,7 +59,7 @@ export const NotificationBell: React.FC = () => {
           </div>
 
           {notifications.length === 0 ? (
-            <p className="px-3 py-4 text-sm text-muted-foreground">
+            <p className="px-3 py-4 text-sm text-base-secondary">
               Nothing yet. Messages sent to you from a seat arrive here.
             </p>
           ) : (
@@ -72,7 +72,7 @@ export const NotificationBell: React.FC = () => {
                   <div className="flex-1 text-sm">
                     <span className="font-medium">{notification.from ? `${notification.from}: ` : ''}</span>
                     <span>{notification.message}</span>
-                    <div className="text-xs text-muted-foreground">
+                    <div className="text-xs text-base-secondary">
                       {new Date(notification.receivedAt).toLocaleTimeString()}
                       {notification.kind ? ` · ${notification.kind}` : ''}
                     </div>

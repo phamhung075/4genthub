@@ -76,7 +76,7 @@ describe('Badge', () => {
       const badge = screen.getByText('Test Badge');
       expect(badge.className).toContain('focus:outline-none');
       expect(badge.className).toContain('focus:ring-2');
-      expect(badge.className).toContain('focus:ring-ring');
+      expect(badge.className).toContain('focus:ring-primary');
       expect(badge.className).toContain('focus:ring-offset-2');
     });
   });

@@ -134,20 +134,20 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
                 <h3 className="text-lg font-semibold mb-3">Basic Information</h3>
                 <div className="space-y-2 text-sm">
                   <div>
-                    <span className="text-muted-foreground">Name:</span>
+                    <span className="text-base-secondary">Name:</span>
                     <span className="ml-2 font-medium">{project?.name}</span>
                   </div>
                   <div>
-                    <span className="text-muted-foreground">ID:</span>
+                    <span className="text-base-secondary">ID:</span>
                     <span className="ml-2 font-mono text-xs">{project?.id}</span>
                   </div>
                   <div>
-                    <span className="text-muted-foreground">Description:</span>
+                    <span className="text-base-secondary">Description:</span>
                     <span className="ml-2">{project?.description || "No description"}</span>
                   </div>
                   {project?.created_at && (
                     <div>
-                      <span className="text-muted-foreground">Created:</span>
+                      <span className="text-base-secondary">Created:</span>
                       <span className="ml-2">
                         {new Date(project.created_at).toLocaleString()}
                       </span>
@@ -155,7 +155,7 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
                   )}
                   {project?.updated_at && (
                     <div>
-                      <span className="text-muted-foreground">Updated:</span>
+                      <span className="text-base-secondary">Updated:</span>
                       <span className="ml-2">
                         {new Date(project.updated_at).toLocaleString()}
                       </span>

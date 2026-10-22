@@ -7,7 +7,7 @@ interface AppLayoutProps {
 
 export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   return (
-    <div className="flex flex-col h-screen bg-background text-foreground">
+    <div className="flex flex-col h-screen bg-background text-base-primary">
       <Header />
       <main className="flex-1 overflow-y-auto">
         {children}

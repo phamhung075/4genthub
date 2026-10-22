@@ -47,7 +47,7 @@ describe('AppLayout', () => {
     );
 
     const layoutDiv = container.firstChild as HTMLElement;
-    expect(layoutDiv).toHaveClass('flex', 'flex-col', 'h-screen', 'bg-background', 'text-foreground');
+    expect(layoutDiv).toHaveClass('flex', 'flex-col', 'h-screen', 'bg-background', 'text-base-primary');
   });
 
   it('main element has correct classes', () => {

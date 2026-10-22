@@ -98,7 +98,7 @@ export const TaskEventTimeline: React.FC<TaskEventTimelineProps> = ({ taskId, pr
 
   if (isLoading) {
     return (
-      <div className={`flex items-center gap-2 text-sm text-muted-foreground ${className}`}>
+      <div className={`flex items-center gap-2 text-sm text-base-secondary ${className}`}>
         <Loader2 className="w-4 h-4 animate-spin" />
         <span>Loading execution ledger…</span>
       </div>
@@ -107,7 +107,7 @@ export const TaskEventTimeline: React.FC<TaskEventTimelineProps> = ({ taskId, pr
 
   if (error) {
     return (
-      <div className={`flex items-center gap-2 text-sm text-muted-foreground ${className}`}>
+      <div className={`flex items-center gap-2 text-sm text-base-secondary ${className}`}>
         <AlertCircle className="w-4 h-4" />
         <span>Execution ledger unavailable.</span>
       </div>
@@ -174,7 +174,7 @@ export const TaskEventTimeline: React.FC<TaskEventTimelineProps> = ({ taskId, pr
       </div>
 
       {!hasRows ? (
-        <p className="text-xs text-muted-foreground">
+        <p className="text-xs text-base-secondary">
           No ledger events for this task yet.
         </p>
       ) : (
@@ -189,7 +189,7 @@ export const TaskEventTimeline: React.FC<TaskEventTimelineProps> = ({ taskId, pr
                     </Badge>
                     <div className="min-w-0">
                       <div className="font-medium">{cleanProgressText(row.entry.content)}</div>
-                      <div className="text-xs text-muted-foreground">
+                      <div className="text-xs text-base-secondary">
                         From the task's progress history
                       </div>
                     </div>
@@ -204,12 +204,12 @@ export const TaskEventTimeline: React.FC<TaskEventTimelineProps> = ({ taskId, pr
                   </Badge>
                   <div className="min-w-0">
                     <div className="font-medium">{describeEvent(row.event)}</div>
-                    <div className="text-xs text-muted-foreground">
+                    <div className="text-xs text-base-secondary">
                       {formatWhen(row.event.created_at)} · {ACTOR_LABELS[row.event.actor_kind] ?? row.event.actor_kind}
                       {row.event.actor_id ? ` (${row.event.actor_id})` : ''}
                     </div>
                     {details.length > 0 && (
-                      <ul className="mt-1 space-y-0.5 text-xs text-muted-foreground">
+                      <ul className="mt-1 space-y-0.5 text-xs text-base-secondary">
                         {details.map((line, lineIndex) => (
                           <li key={lineIndex} className="font-mono break-words">
                             {line}
@@ -222,7 +222,7 @@ export const TaskEventTimeline: React.FC<TaskEventTimelineProps> = ({ taskId, pr
               );
             })}
           </ol>
-          {events.length > 0 && <p className="text-xs text-muted-foreground mt-3">{LEDGER_NOT_RECORDED}</p>}
+          {events.length > 0 && <p className="text-xs text-base-secondary mt-3">{LEDGER_NOT_RECORDED}</p>}
         </>
       )}
     </div>

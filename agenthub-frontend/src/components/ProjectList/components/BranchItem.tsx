@@ -53,7 +53,7 @@ export const BranchItem: React.FC<BranchItemProps> = ({
           animationClass
         )}
       >
-        <span className="text-muted-foreground">—</span>
+        <span className="text-base-secondary">—</span>
         <ShimmerButton
           size="sm"
           variant={isSelected ? "default" : "ghost"}
@@ -100,7 +100,7 @@ export const BranchItem: React.FC<BranchItemProps> = ({
               onClick={() => onDelete({ project, branch })}
               aria-label="Delete Branch"
             >
-              <Trash2 className="w-4 h-4 text-destructive" />
+              <Trash2 className="w-4 h-4 text-error" />
             </ShimmerButton>
           )}
         </div>

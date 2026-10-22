@@ -24,7 +24,7 @@ export const ProjectListContent: React.FC<ProjectListContentProps> = ({
   const handleSelectBranch = onSelectBranch || (() => {});
   const handleShowBranchDetails = onShowBranchDetails || undefined;
   if (projects.length === 0) {
-    return <div className="text-xs text-muted-foreground">No projects found.</div>;
+    return <div className="text-xs text-base-secondary">No projects found.</div>;
   }
 
   return (
