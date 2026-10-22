@@ -115,8 +115,11 @@ func TestTaskRowUUIDGuardRefusesAPrefixOnEveryWriteAndEventsRoute(t *testing.T) 
 		if !strings.Contains(detail, `Task id \"403d16ca\" is not a task row uuid`) {
 			t.Errorf("%s %s: the refusal does not name the id: %s", p.method, p.path, detail)
 		}
-		if !strings.Contains(detail, "GET /api/v2/tasks/403d16ca resolves it") {
-			t.Errorf("%s %s: the refusal does not name the read route that takes a prefix: %s", p.method, p.path, detail)
+		// The QUALIFIED sentence, qualifier included: the read routes a prefix and answers 404 when no
+		// task's id starts with it, so an unqualified "resolves it" promises a read it cannot perform.
+		// Dropping the qualifier must turn this red, not leave it green on the shorter substring.
+		if !strings.Contains(detail, "GET /api/v2/tasks/403d16ca resolves it when a task's id starts with it") {
+			t.Errorf("%s %s: the read advice is not the qualified sentence: %s", p.method, p.path, detail)
 		}
 	}
 	if len(controller.ids) != 0 {
