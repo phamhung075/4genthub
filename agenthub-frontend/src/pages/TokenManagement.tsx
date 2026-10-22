@@ -601,7 +601,7 @@ export function TokenManagement() {
                   </p>
                   <Button
                     onClick={() => setActiveTab('generate')}
-                    className="bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 text-white"
+                    className="bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 text-accent-contrast"
                   >
                     <Key className="h-4 w-4 mr-2" />
                     Generate First Token
