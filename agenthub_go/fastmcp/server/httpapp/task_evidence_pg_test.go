@@ -571,8 +571,11 @@ func TestEvidenceRouteLetsANamedTestSupersedeABareRowAtTheSameHead(t *testing.T)
 	if differingCode != http.StatusConflict {
 		t.Fatalf("a different account of the complete head = %d, want 409: %s", differingCode, differingBody)
 	}
-	if !strings.Contains(differingBody, "different content") {
-		t.Fatalf("the 409 must keep its detail text: %s", differingBody)
+	// The criterion names the detail text, so the assertion is the whole sentence the route maps
+	// ErrEvidenceDuplicate to: a substring would survive a reworded refusal that says something else.
+	const duplicateDetail = `{"detail":"Evidence for this head_sha has already been submitted with different content"}`
+	if strings.TrimSpace(differingBody) != duplicateDetail {
+		t.Fatalf("the 409 must keep its detail text verbatim: got %s, want %s", differingBody, duplicateDetail)
 	}
 
 	replayCode, replayBody := evidencePost(t, app, token, taskID, evidenceBody(baseSHA, headSHA, numstat))
@@ -669,5 +672,134 @@ func TestEvidenceRouteSupersedesAStoredRowWithoutATestObject(t *testing.T) {
 	}
 	if got := evidenceLatestTestCommand(t, sm, taskID); !strings.Contains(got, "go test") {
 		t.Fatalf("the latest command = %q, want the submission's command", got)
+	}
+}
+
+// evidenceTestBody is a submission whose test block is exactly the three fields the compare reads,
+// so a case can move one of them and leave the rest alone. evidenceBody's fixed command cannot tell
+// "a different command" from "a different exit code", and the supersession's refusals turn on which
+// field moved.
+func evidenceTestBody(baseSHA, headSHA, numstat, command string, exitCode int, failed []string) string {
+	body, err := json.Marshal(map[string]any{
+		"base_sha": baseSHA,
+		"head_sha": headSHA,
+		"numstat":  numstat,
+		"test":     map[string]any{"command": command, "exit_code": exitCode, "failed": failed},
+	})
+	if err != nil {
+		panic(err)
+	}
+	return string(body)
+}
+
+// TestEvidenceRouteNeverSupersedesARowThatNamesATest is the ruling's invariant, second half: a stored
+// row that carries a command is final at its head. The submission differs only in the command, so the
+// identity axes agree and the supersession branch is reached - and must not fire. Deleting the
+// stored-weak conjunct from that branch makes this case answer 201 and append a third row.
+func TestEvidenceRouteNeverSupersedesARowThatNamesATest(t *testing.T) {
+	app, sm := evidenceApp(t)
+	token, scoped := evidenceUser(t, "a3f1c2d4-1111-4111-8111-00000000000a")
+	evidenceSeedBranch(t, sm, scoped)
+	taskID := evidenceTaskCreate(t, app, token, "the task whose named row is final")
+
+	const baseSHA = "0000000000000000000000000000000000000000"
+	const headSHA = "9999999999999999999999999999999999999999"
+	const numstat = "4\t0\te.go\n"
+
+	if code, body := evidencePost(t, app, token, taskID, evidenceBody(baseSHA, headSHA, numstat)); code != http.StatusCreated {
+		t.Fatalf("the first complete submission = %d, want 201: %s", code, body)
+	}
+	code, body := evidencePost(t, app, token, taskID,
+		evidenceTestBody(baseSHA, headSHA, numstat, "go test ./fastmcp/ledger/", 0, []string{"TestX", "TestY"}))
+	t.Logf("OBSERVED a different command over a row that names one -> %d %s", code, body)
+	if code != http.StatusConflict {
+		t.Fatalf("a different command at a head whose row names one = %d, want 409: %s", code, body)
+	}
+	if rows := evidenceSubmissionRows(t, sm, taskID); rows != 1 {
+		t.Fatalf("evidence_submitted rows = %d, want only the stored row", rows)
+	}
+}
+
+// TestEvidenceRouteRefusesAWeakSubmissionOverAWeakRow pins the submission side of the branch: a
+// submission that names no test is never a supersession, even of a weak row at the same identity.
+// Both probes carry the same base/head/numstat as the stored row, so only the submission-weak
+// conjunct stands between them and a second row; deleting it makes the first answer 201.
+func TestEvidenceRouteRefusesAWeakSubmissionOverAWeakRow(t *testing.T) {
+	app, sm := evidenceApp(t)
+	token, scoped := evidenceUser(t, "a3f1c2d4-1111-4111-8111-00000000000b")
+	evidenceSeedBranch(t, sm, scoped)
+	taskID := evidenceTaskCreate(t, app, token, "the task whose weak row needs a real correction")
+
+	const baseSHA = "0000000000000000000000000000000000000000"
+	const headSHA = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+	const numstat = "5\t0\tf.go\n"
+
+	if code, body := evidencePost(t, app, token, taskID, evidenceNoTestBody(baseSHA, headSHA, numstat)); code != http.StatusCreated {
+		t.Fatalf("the weak submission = %d, want 201: %s", code, body)
+	}
+	for name, body := range map[string]string{
+		"a weak row with another exit code": evidenceTestBody(baseSHA, headSHA, numstat, "", 1, []string{"TestY"}),
+		"a command that is only whitespace": evidenceTestBody(baseSHA, headSHA, numstat, "   \t", 0, []string{"TestX", "TestY"}),
+	} {
+		code, answer := evidencePost(t, app, token, taskID, body)
+		t.Logf("OBSERVED %s -> %d %s", name, code, answer)
+		if code != http.StatusConflict {
+			t.Errorf("%s = %d, want 409 (a submission naming no test cannot supersede): %s", name, code, answer)
+		}
+	}
+	if rows := evidenceSubmissionRows(t, sm, taskID); rows != 1 {
+		t.Fatalf("evidence_submitted rows = %d, want only the stored weak row", rows)
+	}
+}
+
+// TestEvidenceRouteRefusesASupersessionAtADifferentBaseSHA pins base_sha as an identity axis: the
+// supersession accepts only when all three axes agree, so a named submission at the same head and
+// numstat but a different base is still a 409. Dropping base_sha from sameEvidenceIdentity makes
+// this case append.
+func TestEvidenceRouteRefusesASupersessionAtADifferentBaseSHA(t *testing.T) {
+	app, sm := evidenceApp(t)
+	token, scoped := evidenceUser(t, "a3f1c2d4-1111-4111-8111-00000000000c")
+	evidenceSeedBranch(t, sm, scoped)
+	taskID := evidenceTaskCreate(t, app, token, "the task whose base must not slide under its head")
+
+	const headSHA = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+	const numstat = "6\t1\tg.go\n"
+
+	if code, body := evidencePost(t, app, token, taskID, evidenceNoTestBody("1111111111111111111111111111111111111111", headSHA, numstat)); code != http.StatusCreated {
+		t.Fatalf("the weak submission = %d, want 201: %s", code, body)
+	}
+	code, body := evidencePost(t, app, token, taskID, evidenceBody("2222222222222222222222222222222222222222", headSHA, numstat))
+	t.Logf("OBSERVED a named submission at a different base -> %d %s", code, body)
+	if code != http.StatusConflict {
+		t.Fatalf("a supersession at a different base_sha = %d, want 409: %s", code, body)
+	}
+	if rows := evidenceSubmissionRows(t, sm, taskID); rows != 1 {
+		t.Fatalf("evidence_submitted rows = %d, want only the stored row", rows)
+	}
+}
+
+// TestEvidenceRouteTreatsAWhitespaceCommandAsNoTest pins the weak definition itself: the predicate
+// trims, so a stored command of spaces and tabs names no test and a named submission supersedes it.
+// Without the trim the stored row would read as complete and the submission would answer 409.
+func TestEvidenceRouteTreatsAWhitespaceCommandAsNoTest(t *testing.T) {
+	app, sm := evidenceApp(t)
+	token, scoped := evidenceUser(t, "a3f1c2d4-1111-4111-8111-00000000000d")
+	evidenceSeedBranch(t, sm, scoped)
+	taskID := evidenceTaskCreate(t, app, token, "the task whose stored command is only whitespace")
+
+	const baseSHA = "0000000000000000000000000000000000000000"
+	const headSHA = "cccccccccccccccccccccccccccccccccccccccc"
+	const numstat = "7\t2\th.go\n"
+
+	if code, body := evidencePost(t, app, token, taskID, evidenceTestBody(baseSHA, headSHA, numstat, "  \t ", 0, []string{})); code != http.StatusCreated {
+		t.Fatalf("the whitespace-command submission = %d, want 201: %s", code, body)
+	}
+	code, body := evidencePost(t, app, token, taskID, evidenceBody(baseSHA, headSHA, numstat))
+	t.Logf("OBSERVED a named submission over a whitespace-only command -> %d %s", code, body)
+	if code != http.StatusCreated {
+		t.Fatalf("a named submission over a whitespace-only command = %d, want 201: %s", code, body)
+	}
+	if rows := evidenceSubmissionRows(t, sm, taskID); rows != 2 {
+		t.Fatalf("evidence rows = %d, want the whitespace row and the correction", rows)
 	}
 }
