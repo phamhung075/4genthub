@@ -2,12 +2,14 @@ package httpapp
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 
 	authdomain "agenthub/fastmcp/auth/domain/entities"
 	"agenthub/fastmcp/server/routes"
 	dtostask "agenthub/fastmcp/task_management/application/dtos/task"
+	"agenthub/fastmcp/task_management/domain/value_objects"
 )
 
 // jsonBody decodes the request JSON object; a malformed or non-object body is FastAPI's 422.
@@ -50,6 +52,29 @@ func stringList(m map[string]any, key string) []string {
 		}
 	}
 	return out
+}
+
+// taskRowUUID is the id form every task route below the read takes: the row uuid, and only the row
+// uuid. GET /api/v2/tasks/{id} and GET /{id}/resume alone resolve the 4-31 hex READ address
+// (facade.readableTaskID); the write and events routes hand their path to a `$1::uuid` cast, so an
+// 8-hex prefix - the form the room cites a task with - reached the store as "invalid input syntax for
+// type uuid" (SQLSTATE 22P02) and came back as HTTP 500 for any caller that was not a client which
+// had already resolved it. A caller error is a 422 decided HERE, before any use case runs, and the
+// answer names the form and the read route that does accept a prefix. The cast stays strict: a
+// prefix is never resolved on a write (the owner's open question, jev 19:42:12Z).
+//
+// The id it returns is the canonical spelling, so the dashless 32-hex form - which the store also
+// casts - reaches the route normalized rather than as a second spelling.
+func taskRowUUID(w http.ResponseWriter, r *http.Request) (string, bool) {
+	raw := r.PathValue("id")
+	id, err := value_objects.NewTaskId(raw)
+	if err != nil || !value_objects.IsTaskUUID(raw) {
+		writeDetail(w, http.StatusUnprocessableEntity, fmt.Sprintf(
+			"Task id %q is not a task row uuid: a task is addressed by its uuid (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx). A 4-31 hex prefix is the READ address - GET /api/v2/tasks/%s resolves it - and this route does not.",
+			raw, raw))
+		return "", false
+	}
+	return id.String(), true
 }
 
 func (a *App) registerTaskRoutes(mux *http.ServeMux) {
@@ -109,13 +134,17 @@ func (a *App) registerTaskRoutes(mux *http.ServeMux) {
 		writeResult(w, body, err)
 	}))
 	mux.HandleFunc("GET "+base+"/{id}/events", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+		id, ok := taskRowUUID(w, r)
+		if !ok {
+			return
+		}
 		afterSeq := 0
 		if raw := r.URL.Query().Get("after_seq"); raw != "" {
 			if n, convErr := strconv.Atoi(raw); convErr == nil {
 				afterSeq = n
 			}
 		}
-		body, err := routes.GetTaskEvents(r.Context(), r.PathValue("id"), afterSeq, u, c, taskEventReaderAdapter{sessions: a.Sessions})
+		body, err := routes.GetTaskEvents(r.Context(), id, afterSeq, u, c, taskEventReaderAdapter{sessions: a.Sessions})
 		writeResult(w, body, err)
 	}))
 	mux.HandleFunc("GET "+base+"/{id}/resume", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
@@ -133,6 +162,10 @@ func (a *App) registerTaskRoutes(mux *http.ServeMux) {
 		writeJSON(w, http.StatusOK, brief)
 	}))
 	mux.HandleFunc("POST "+base+"/{id}/evidence", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+		id, ok := taskRowUUID(w, r)
+		if !ok {
+			return
+		}
 		m, ok := jsonBody(w, r)
 		if !ok {
 			return
@@ -151,7 +184,7 @@ func (a *App) registerTaskRoutes(mux *http.ServeMux) {
 				evidence.TestExitCode = int(code)
 			}
 		}
-		body, created, err := routes.SubmitTaskEvidence(r.Context(), r.PathValue("id"), evidence, u, c,
+		body, created, err := routes.SubmitTaskEvidence(r.Context(), id, evidence, u, c,
 			taskEvidenceWriterAdapter{sessions: a.Sessions, userID: userID(u)})
 		if err != nil {
 			writeResult(w, nil, err)
@@ -166,6 +199,10 @@ func (a *App) registerTaskRoutes(mux *http.ServeMux) {
 		writeJSON(w, status, body)
 	}))
 	mux.HandleFunc("PUT "+base+"/{id}", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+		id, ok := taskRowUUID(w, r)
+		if !ok {
+			return
+		}
 		m, ok := jsonBody(w, r)
 		if !ok {
 			return
@@ -185,19 +222,27 @@ func (a *App) registerTaskRoutes(mux *http.ServeMux) {
 			p := int(f)
 			req.ProgressPercentage = &p
 		}
-		body, err := routes.UpdateUserTask(r.Context(), r.PathValue("id"), req, u, c)
+		body, err := routes.UpdateUserTask(r.Context(), id, req, u, c)
 		writeResult(w, body, err)
 	}))
 	mux.HandleFunc("DELETE "+base+"/{id}", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
-		body, err := routes.DeleteUserTask(r.Context(), r.PathValue("id"), u, c)
+		id, ok := taskRowUUID(w, r)
+		if !ok {
+			return
+		}
+		body, err := routes.DeleteUserTask(r.Context(), id, u, c)
 		writeResult(w, body, err)
 	}))
 	mux.HandleFunc("POST "+base+"/{id}/complete", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+		id, ok := taskRowUUID(w, r)
+		if !ok {
+			return
+		}
 		summary, ok := queryReq(w, r, "completion_summary")
 		if !ok {
 			return
 		}
-		body, err := routes.CompleteUserTask(r.Context(), r.PathValue("id"), summary, queryOpt(r, "testing_notes"), u, c)
+		body, err := routes.CompleteUserTask(r.Context(), id, summary, queryOpt(r, "testing_notes"), u, c)
 		writeResult(w, body, err)
 	}))
 	mux.HandleFunc("GET /api/v2/machines/{machine}/work", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
