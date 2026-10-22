@@ -51,6 +51,13 @@ const require = createRequire(join(frontendRoot, 'package.json'));
 
 type ColourTree = { [key: string]: string | ColourTree };
 
+/** The colour property blocks a Tailwind config registers under `theme` or `theme.extend`. The census
+ *  reads exactly these four, and naming them is what keeps a typo in the block list a type error. */
+type ColourBlocks = Partial<Record<'colors' | 'backgroundColor' | 'textColor' | 'borderColor', ColourTree>>;
+
+/** The part of `tailwind.config.js` this census reads: the theme's colour blocks and their extension. */
+type CensusConfig = { theme?: ColourBlocks & { extend?: ColourBlocks } };
+
 /** Every `<path>` a nested colour object registers, `DEFAULT` mapping to its parent. */
 const colourPaths = (tree: ColourTree, path = ''): string[] => {
   const paths: string[] = [];
@@ -72,9 +79,9 @@ const colourPaths = (tree: ColourTree, path = ''): string[] => {
 };
 
 /** The utility class Tailwind builds for a colour path, per property block. */
-const candidates = (config: Record<string, any>): string[] => {
-  const theme = config.theme?.extend ?? {};
-  const blocks: Array<[string, string]> = [
+const candidates = (config: CensusConfig): string[] => {
+  const theme: ColourBlocks = config.theme?.extend ?? {};
+  const blocks: Array<[keyof ColourBlocks, string]> = [
     ['colors', 'bg'],
     ['backgroundColor', 'bg'],
     ['textColor', 'text'],
@@ -82,7 +89,7 @@ const candidates = (config: Record<string, any>): string[] => {
   ];
   const classes: string[] = [];
   for (const [block, prefix] of blocks) {
-    const tree = theme[block] as ColourTree | undefined;
+    const tree = theme[block];
     if (!tree) continue;
     for (const path of colourPaths(tree)) {
       classes.push(`${prefix}-${path}`, `${prefix}-${path}/50`);
@@ -93,15 +100,15 @@ const candidates = (config: Record<string, any>): string[] => {
 
 /** The colour paths the config registers under `colors`, behind whatever property prefix a utility
  *  uses (`from-primary`, `ring-offset-*`). */
-const registeredColourPaths = (config: Record<string, any>): string[] => {
-  const tree = (config.theme?.extend?.colors ?? config.theme?.colors) as ColourTree | undefined;
+const registeredColourPaths = (config: CensusConfig): string[] => {
+  const tree = config.theme?.extend?.colors ?? config.theme?.colors;
   return tree ? colourPaths(tree) : [];
 };
 
 /** Every base utility the config builds, as one set. The source scan counts a token when this set
  *  holds its base form, so a colour a block registers only under `textColor` (`text-base-secondary`)
  *  is scanned too: a walk over `theme.colors` alone cannot see it. */
-const registeredUtilities = (config: Record<string, any>): Set<string> => new Set(candidates(config));
+const registeredUtilities = (config: CensusConfig): Set<string> => new Set(candidates(config));
 
 /**
  * The selectors `src/index.css` declares inside its own `@layer utilities` block. A utility declared by
@@ -213,7 +220,7 @@ const withoutAlpha = (utility: string): string =>
  * one of the retired names, or when its base form is a utility the config builds behind a colour prefix,
  * or when the name behind that prefix is a colour path the config registers (`from-primary`).
  */
-const sourceColourClasses = (config: Record<string, any>): Map<string, string> => {
+const sourceColourClasses = (config: CensusConfig): Map<string, string> => {
   const found = new Map<string, string>();
   const knownUtilities = registeredUtilities(config);
   const registeredPaths: Record<string, true> = {};
@@ -248,7 +255,7 @@ describe('theme colour census: every registered colour emits its alpha form', ()
   let handUtilities: string[] = [];
 
   beforeAll(() => {
-    const config = require(configPath) as Record<string, any>;
+    const config = require(configPath) as CensusConfig;
     classes = candidates(config);
     handUtilities = handWrittenUtilities();
 
