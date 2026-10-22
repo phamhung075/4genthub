@@ -1,73 +1,60 @@
 import { createTheme, ThemeOptions } from '@mui/material/styles';
-
-// One palette for both modes: every colour is a token reference, and the token
-// layer in src/styles/theme.css is what resolves per mode, so light and dark
-// differ only in `mode`. Nothing here is a colour value.
-//
-// Every palette colour carries all four keys. `createTheme` derives a missing
-// sibling (contrastText from main) through parseColor, and parseColor cannot
-// read var(), so an omitted key throws instead of guessing.
-const paletteFor = (mode: 'light' | 'dark') => ({
-  mode,
-  primary: {
-    main: 'var(--color-primary)',
-    light: 'var(--color-primary-light)',
-    dark: 'var(--color-primary-dark)',
-    contrastText: 'var(--color-accent-contrast)',
-  },
-  background: {
-    default: 'var(--color-background)',
-    paper: 'var(--color-surface)',
-  },
-  text: {
-    primary: 'var(--color-text)',
-    secondary: 'var(--color-text-secondary)',
-    disabled: 'var(--color-text-disabled)',
-  },
-  error: {
-    main: 'var(--color-error)',
-    light: 'var(--color-error-light)',
-    dark: 'var(--color-error-dark)',
-    contrastText: 'var(--color-error-contrast)',
-  },
-  warning: {
-    main: 'var(--color-warning)',
-    light: 'var(--color-warning-light)',
-    dark: 'var(--color-warning-dark)',
-    contrastText: 'var(--color-warning-contrast)',
-  },
-  success: {
-    main: 'var(--color-success)',
-    light: 'var(--color-success-light)',
-    dark: 'var(--color-success-dark)',
-    contrastText: 'var(--color-success-contrast)',
-  },
-  info: {
-    main: 'var(--color-info)',
-    light: 'var(--color-info-light)',
-    dark: 'var(--color-info-dark)',
-    contrastText: 'var(--color-info-contrast)',
-  },
-  divider: 'var(--color-surface-border)',
-});
+import { themeConfig } from './themeConfig';
 
 // Create MUI theme for light mode
 export const lightTheme = createTheme({
-  palette: paletteFor('light'),
+  palette: {
+    mode: 'light',
+    primary: {
+      main: themeConfig.light.primary,
+      light: themeConfig.light.primaryLight,
+      dark: themeConfig.light.primaryDark,
+    },
+    background: {
+      default: themeConfig.light.background,
+      paper: themeConfig.light.surface,
+    },
+    text: {
+      primary: themeConfig.light.text,
+      secondary: themeConfig.light.textSecondary,
+      disabled: themeConfig.light.textDisabled,
+    },
+    error: {
+      main: themeConfig.light.error,
+      light: themeConfig.light.errorLight,
+      dark: themeConfig.light.errorDark,
+    },
+    warning: {
+      main: themeConfig.light.warning,
+      light: themeConfig.light.warningLight,
+      dark: themeConfig.light.warningDark,
+    },
+    success: {
+      main: themeConfig.light.success,
+      light: themeConfig.light.successLight,
+      dark: themeConfig.light.successDark,
+    },
+    info: {
+      main: themeConfig.light.info,
+      light: themeConfig.light.infoLight,
+      dark: themeConfig.light.infoDark,
+    },
+    divider: themeConfig.light.surfaceBorder,
+  },
   components: {
     MuiPaper: {
       styleOverrides: {
         root: {
-          backgroundColor: 'var(--color-surface)',
-          borderColor: 'var(--color-surface-border)',
+          backgroundColor: themeConfig.light.surface,
+          borderColor: themeConfig.light.surfaceBorder,
         },
       },
     },
     MuiCard: {
       styleOverrides: {
         root: {
-          backgroundColor: 'var(--color-surface)',
-          borderColor: 'var(--color-surface-border)',
+          backgroundColor: themeConfig.light.surface,
+          borderColor: themeConfig.light.surfaceBorder,
         },
       },
     },
@@ -77,22 +64,22 @@ export const lightTheme = createTheme({
           textTransform: 'none',
         },
         contained: {
-          backgroundColor: 'var(--color-button-primary-bg)',
-          color: 'var(--color-button-primary-text)',
+          backgroundColor: themeConfig.light.buttonPrimaryBg,
+          color: themeConfig.light.buttonPrimaryText,
           '&:hover': {
-            backgroundColor: 'var(--color-button-primary-hover)',
+            backgroundColor: themeConfig.light.buttonPrimaryHover,
           },
         },
         outlined: {
-          borderColor: 'var(--color-button-outline-border)',
+          borderColor: themeConfig.light.buttonOutlineBorder,
           '&:hover': {
-            backgroundColor: 'var(--color-button-outline-hover)',
+            backgroundColor: themeConfig.light.buttonOutlineHover,
           },
         },
         text: {
-          color: 'var(--color-text)',
+          color: themeConfig.light.text,
           '&:hover': {
-            backgroundColor: 'var(--color-background-hover)',
+            backgroundColor: themeConfig.light.backgroundHover,
           },
         },
       },
@@ -101,39 +88,39 @@ export const lightTheme = createTheme({
       styleOverrides: {
         root: {
           '& .MuiOutlinedInput-root': {
-            backgroundColor: 'var(--color-input-background)',
+            backgroundColor: themeConfig.light.inputBackground,
             '& fieldset': {
-              borderColor: 'var(--color-input-border)',
+              borderColor: themeConfig.light.inputBorder,
             },
             '&:hover fieldset': {
-              borderColor: 'var(--color-input-border-focus)',
+              borderColor: themeConfig.light.inputBorderFocus,
             },
             '&.Mui-focused fieldset': {
-              borderColor: 'var(--color-input-border-focus)',
+              borderColor: themeConfig.light.inputBorderFocus,
             },
           },
           '& .MuiInputBase-input': {
-            color: 'var(--color-input-text)',
+            color: themeConfig.light.inputText,
             '&::placeholder': {
-              color: 'var(--color-input-placeholder)',
+              color: themeConfig.light.inputPlaceholder,
             },
             // Handle autofill to prevent browser default styles
             '&:-webkit-autofill': {
-              WebkitBoxShadow: `0 0 0 1000px ${'var(--color-input-background)'} inset`,
-              WebkitTextFillColor: 'var(--color-input-text)',
+              WebkitBoxShadow: `0 0 0 1000px ${themeConfig.light.inputBackground} inset`,
+              WebkitTextFillColor: themeConfig.light.inputText,
               transition: 'background-color 5000s ease-in-out 0s',
             },
             '&:-webkit-autofill:hover': {
-              WebkitBoxShadow: `0 0 0 1000px ${'var(--color-input-background)'} inset`,
-              WebkitTextFillColor: 'var(--color-input-text)',
+              WebkitBoxShadow: `0 0 0 1000px ${themeConfig.light.inputBackground} inset`,
+              WebkitTextFillColor: themeConfig.light.inputText,
             },
             '&:-webkit-autofill:focus': {
-              WebkitBoxShadow: `0 0 0 1000px ${'var(--color-input-background)'} inset`,
-              WebkitTextFillColor: 'var(--color-input-text)',
+              WebkitBoxShadow: `0 0 0 1000px ${themeConfig.light.inputBackground} inset`,
+              WebkitTextFillColor: themeConfig.light.inputText,
             },
             '&:-webkit-autofill:active': {
-              WebkitBoxShadow: `0 0 0 1000px ${'var(--color-input-background)'} inset`,
-              WebkitTextFillColor: 'var(--color-input-text)',
+              WebkitBoxShadow: `0 0 0 1000px ${themeConfig.light.inputBackground} inset`,
+              WebkitTextFillColor: themeConfig.light.inputText,
             },
           },
         },
@@ -149,37 +136,37 @@ export const lightTheme = createTheme({
     MuiAppBar: {
       styleOverrides: {
         root: {
-          backgroundColor: 'var(--color-nav-background)',
-          borderBottom: `1px solid ${'var(--color-nav-border)'}`,
+          backgroundColor: themeConfig.light.navBackground,
+          borderBottom: `1px solid ${themeConfig.light.navBorder}`,
         },
       },
     },
     MuiDrawer: {
       styleOverrides: {
         paper: {
-          backgroundColor: 'var(--color-surface)',
-          borderRight: `1px solid ${'var(--color-surface-border)'}`,
+          backgroundColor: themeConfig.light.surface,
+          borderRight: `1px solid ${themeConfig.light.surfaceBorder}`,
         },
       },
     },
     MuiDivider: {
       styleOverrides: {
         root: {
-          borderColor: 'var(--color-surface-border)',
+          borderColor: themeConfig.light.surfaceBorder,
         },
       },
     },
     MuiTableCell: {
       styleOverrides: {
         root: {
-          borderBottom: `1px solid ${'var(--color-surface-border)'}`,
+          borderBottom: `1px solid ${themeConfig.light.surfaceBorder}`,
         },
       },
     },
     MuiChip: {
       styleOverrides: {
         root: {
-          backgroundColor: 'var(--color-background-secondary)',
+          backgroundColor: themeConfig.light.backgroundSecondary,
         },
       },
     },
@@ -187,41 +174,78 @@ export const lightTheme = createTheme({
   typography: {
     fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
     h1: {
-      color: 'var(--color-text)',
+      color: themeConfig.light.text,
     },
     h2: {
-      color: 'var(--color-text)',
+      color: themeConfig.light.text,
     },
     h3: {
-      color: 'var(--color-text)',
+      color: themeConfig.light.text,
     },
     h4: {
-      color: 'var(--color-text)',
+      color: themeConfig.light.text,
     },
     h5: {
-      color: 'var(--color-text)',
+      color: themeConfig.light.text,
     },
     h6: {
-      color: 'var(--color-text)',
+      color: themeConfig.light.text,
     },
     body1: {
-      color: 'var(--color-text)',
+      color: themeConfig.light.text,
     },
     body2: {
-      color: 'var(--color-text-secondary)',
+      color: themeConfig.light.textSecondary,
     },
   },
 } as ThemeOptions);
 
 // Create MUI theme for dark mode
 export const darkTheme = createTheme({
-  palette: paletteFor('dark'),
+  palette: {
+    mode: 'dark',
+    primary: {
+      main: themeConfig.dark.primary,
+      light: themeConfig.dark.primaryLight,
+      dark: themeConfig.dark.primaryDark,
+    },
+    background: {
+      default: themeConfig.dark.background,
+      paper: themeConfig.dark.surface,
+    },
+    text: {
+      primary: themeConfig.dark.text,
+      secondary: themeConfig.dark.textSecondary,
+      disabled: themeConfig.dark.textDisabled,
+    },
+    error: {
+      main: themeConfig.dark.error,
+      light: themeConfig.dark.errorLight,
+      dark: themeConfig.dark.errorDark,
+    },
+    warning: {
+      main: themeConfig.dark.warning,
+      light: themeConfig.dark.warningLight,
+      dark: themeConfig.dark.warningDark,
+    },
+    success: {
+      main: themeConfig.dark.success,
+      light: themeConfig.dark.successLight,
+      dark: themeConfig.dark.successDark,
+    },
+    info: {
+      main: themeConfig.dark.info,
+      light: themeConfig.dark.infoLight,
+      dark: themeConfig.dark.infoDark,
+    },
+    divider: themeConfig.dark.surfaceBorder,
+  },
   components: {
     MuiPaper: {
       styleOverrides: {
         root: {
-          backgroundColor: 'var(--color-surface)',
-          borderColor: 'var(--color-surface-border)',
+          backgroundColor: themeConfig.dark.surface,
+          borderColor: themeConfig.dark.surfaceBorder,
           backgroundImage: 'none',
         },
       },
@@ -229,8 +253,8 @@ export const darkTheme = createTheme({
     MuiCard: {
       styleOverrides: {
         root: {
-          backgroundColor: 'var(--color-surface)',
-          borderColor: 'var(--color-surface-border)',
+          backgroundColor: themeConfig.dark.surface,
+          borderColor: themeConfig.dark.surfaceBorder,
           backgroundImage: 'none',
         },
       },
@@ -241,24 +265,24 @@ export const darkTheme = createTheme({
           textTransform: 'none',
         },
         contained: {
-          backgroundColor: 'var(--color-button-primary-bg)',
-          color: 'var(--color-button-primary-text)',
+          backgroundColor: themeConfig.dark.buttonPrimaryBg,
+          color: themeConfig.dark.buttonPrimaryText,
           '&:hover': {
-            backgroundColor: 'var(--color-button-primary-hover)',
+            backgroundColor: themeConfig.dark.buttonPrimaryHover,
           },
         },
         outlined: {
-          borderColor: 'var(--color-button-outline-border)',
-          color: 'var(--color-text)',
+          borderColor: themeConfig.dark.buttonOutlineBorder,
+          color: themeConfig.dark.text,
           '&:hover': {
-            backgroundColor: 'var(--color-button-outline-hover)',
-            borderColor: 'var(--color-button-outline-border)',
+            backgroundColor: themeConfig.dark.buttonOutlineHover,
+            borderColor: themeConfig.dark.buttonOutlineBorder,
           },
         },
         text: {
-          color: 'var(--color-text)',
+          color: themeConfig.dark.text,
           '&:hover': {
-            backgroundColor: 'var(--color-background-hover)',
+            backgroundColor: themeConfig.dark.backgroundHover,
           },
         },
       },
@@ -267,45 +291,45 @@ export const darkTheme = createTheme({
       styleOverrides: {
         root: {
           '& .MuiOutlinedInput-root': {
-            backgroundColor: 'var(--color-input-background)',
+            backgroundColor: themeConfig.dark.inputBackground,
             '& fieldset': {
-              borderColor: 'var(--color-input-border)',
+              borderColor: themeConfig.dark.inputBorder,
             },
             '&:hover fieldset': {
-              borderColor: 'var(--color-input-border-focus)',
+              borderColor: themeConfig.dark.inputBorderFocus,
             },
             '&.Mui-focused fieldset': {
-              borderColor: 'var(--color-input-border-focus)',
+              borderColor: themeConfig.dark.inputBorderFocus,
             },
           },
           '& .MuiInputBase-input': {
-            color: 'var(--color-input-text)',
+            color: themeConfig.dark.inputText,
             '&::placeholder': {
-              color: 'var(--color-input-placeholder)',
+              color: themeConfig.dark.inputPlaceholder,
             },
             // Handle autofill to prevent browser default blue background
             '&:-webkit-autofill': {
-              WebkitBoxShadow: `0 0 0 1000px ${'var(--color-input-background)'} inset`,
-              WebkitTextFillColor: 'var(--color-input-text)',
+              WebkitBoxShadow: `0 0 0 1000px ${themeConfig.dark.inputBackground} inset`,
+              WebkitTextFillColor: themeConfig.dark.inputText,
               transition: 'background-color 5000s ease-in-out 0s',
             },
             '&:-webkit-autofill:hover': {
-              WebkitBoxShadow: `0 0 0 1000px ${'var(--color-input-background)'} inset`,
-              WebkitTextFillColor: 'var(--color-input-text)',
+              WebkitBoxShadow: `0 0 0 1000px ${themeConfig.dark.inputBackground} inset`,
+              WebkitTextFillColor: themeConfig.dark.inputText,
             },
             '&:-webkit-autofill:focus': {
-              WebkitBoxShadow: `0 0 0 1000px ${'var(--color-input-background)'} inset`,
-              WebkitTextFillColor: 'var(--color-input-text)',
+              WebkitBoxShadow: `0 0 0 1000px ${themeConfig.dark.inputBackground} inset`,
+              WebkitTextFillColor: themeConfig.dark.inputText,
             },
             '&:-webkit-autofill:active': {
-              WebkitBoxShadow: `0 0 0 1000px ${'var(--color-input-background)'} inset`,
-              WebkitTextFillColor: 'var(--color-input-text)',
+              WebkitBoxShadow: `0 0 0 1000px ${themeConfig.dark.inputBackground} inset`,
+              WebkitTextFillColor: themeConfig.dark.inputText,
             },
           },
           '& .MuiInputLabel-root': {
-            color: 'var(--color-text-secondary)',
+            color: themeConfig.dark.textSecondary,
             '&.Mui-focused': {
-              color: 'var(--color-primary)',
+              color: themeConfig.dark.primary,
             },
           },
         },
@@ -321,8 +345,8 @@ export const darkTheme = createTheme({
     MuiAppBar: {
       styleOverrides: {
         root: {
-          backgroundColor: 'var(--color-nav-background)',
-          borderBottom: `1px solid ${'var(--color-nav-border)'}`,
+          backgroundColor: themeConfig.dark.navBackground,
+          borderBottom: `1px solid ${themeConfig.dark.navBorder}`,
           backgroundImage: 'none',
         },
       },
@@ -330,8 +354,8 @@ export const darkTheme = createTheme({
     MuiDrawer: {
       styleOverrides: {
         paper: {
-          backgroundColor: 'var(--color-surface)',
-          borderRight: `1px solid ${'var(--color-surface-border)'}`,
+          backgroundColor: themeConfig.dark.surface,
+          borderRight: `1px solid ${themeConfig.dark.surfaceBorder}`,
           backgroundImage: 'none',
         },
       },
@@ -339,30 +363,30 @@ export const darkTheme = createTheme({
     MuiDivider: {
       styleOverrides: {
         root: {
-          borderColor: 'var(--color-surface-border)',
+          borderColor: themeConfig.dark.surfaceBorder,
         },
       },
     },
     MuiTableCell: {
       styleOverrides: {
         root: {
-          borderBottom: `1px solid ${'var(--color-surface-border)'}`,
+          borderBottom: `1px solid ${themeConfig.dark.surfaceBorder}`,
         },
       },
     },
     MuiChip: {
       styleOverrides: {
         root: {
-          backgroundColor: 'var(--color-background-secondary)',
+          backgroundColor: themeConfig.dark.backgroundSecondary,
         },
       },
     },
     MuiIconButton: {
       styleOverrides: {
         root: {
-          color: 'var(--color-text)',
+          color: themeConfig.dark.text,
           '&:hover': {
-            backgroundColor: 'var(--color-background-hover)',
+            backgroundColor: themeConfig.dark.backgroundHover,
           },
         },
       },
@@ -370,14 +394,14 @@ export const darkTheme = createTheme({
     MuiCheckbox: {
       styleOverrides: {
         root: {
-          color: 'var(--color-text-secondary)',
+          color: themeConfig.dark.textSecondary,
         },
       },
     },
     MuiRadio: {
       styleOverrides: {
         root: {
-          color: 'var(--color-text-secondary)',
+          color: themeConfig.dark.textSecondary,
         },
       },
     },
@@ -385,7 +409,7 @@ export const darkTheme = createTheme({
       styleOverrides: {
         root: {
           '& .MuiSwitch-track': {
-            backgroundColor: 'var(--color-background-tertiary)',
+            backgroundColor: themeConfig.dark.backgroundTertiary,
           },
         },
       },
@@ -393,14 +417,14 @@ export const darkTheme = createTheme({
     MuiLinearProgress: {
       styleOverrides: {
         root: {
-          backgroundColor: 'var(--color-background-tertiary)',
+          backgroundColor: themeConfig.dark.backgroundTertiary,
         },
       },
     },
     MuiCircularProgress: {
       styleOverrides: {
         root: {
-          color: 'var(--color-primary)',
+          color: themeConfig.dark.primary,
         },
       },
     },
@@ -408,28 +432,28 @@ export const darkTheme = createTheme({
   typography: {
     fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
     h1: {
-      color: 'var(--color-text)',
+      color: themeConfig.dark.text,
     },
     h2: {
-      color: 'var(--color-text)',
+      color: themeConfig.dark.text,
     },
     h3: {
-      color: 'var(--color-text)',
+      color: themeConfig.dark.text,
     },
     h4: {
-      color: 'var(--color-text)',
+      color: themeConfig.dark.text,
     },
     h5: {
-      color: 'var(--color-text)',
+      color: themeConfig.dark.text,
     },
     h6: {
-      color: 'var(--color-text)',
+      color: themeConfig.dark.text,
     },
     body1: {
-      color: 'var(--color-text)',
+      color: themeConfig.dark.text,
     },
     body2: {
-      color: 'var(--color-text-secondary)',
+      color: themeConfig.dark.textSecondary,
     },
   },
 } as ThemeOptions);
