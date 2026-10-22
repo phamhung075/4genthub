@@ -54,10 +54,21 @@
   --color-secondary-light: #e0e7ff;
   --color-secondary-dark: #3730a3;
 
+  /* One surface ladder per mode, one rung per role - architect ruling
+     RULING-2026-10-23-surface-role-ladder.md. A hover takes the rung above the
+     ground it paints on, and two names share a rung only where no page composes
+     them as ground/state. Each step is a tint (1.05-1.25:1), so a boundary that
+     must be SEEN is surface-border's job, never a fill's.
+       light, away from the page: background = surface #ffffff >
+         surface-raised = background-secondary = surface-hover #f8fafc >
+         background-tertiary = background-hover #f1f5f9 > background-active #e2e8f0
+       dark, away from the page: background #0b1020 < surface #131a2b <
+         surface-raised = background-secondary = surface-hover #1b2438 <
+         background-tertiary = background-hover #26314a < background-active #334155 */
   --color-background: #ffffff;
   --color-background-secondary: var(--color-surface-raised);
   --color-background-tertiary: #f1f5f9;
-  --color-background-hover: var(--color-surface-raised);
+  --color-background-hover: var(--color-background-tertiary);
   --color-background-active: #e2e8f0;
 
   --color-surface: #ffffff;
@@ -149,13 +160,13 @@
   --color-secondary-dark: #c7d2fe;
 
   --color-background: #0b1020;
-  --color-background-secondary: #131a2b;
-  --color-background-tertiary: #1b2438;
-  --color-background-hover: #1b2438;
-  --color-background-active: #26314a;
+  --color-background-secondary: var(--color-surface-raised);
+  --color-background-tertiary: #26314a;
+  --color-background-hover: var(--color-background-tertiary);
+  --color-background-active: #334155;
 
   --color-surface: #131a2b;
-  --color-surface-hover: #1b2438;
+  --color-surface-hover: var(--color-surface-raised);
   --color-surface-border: #26314a;
   --color-surface-border-hover: #334155;
 

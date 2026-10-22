@@ -2,6 +2,30 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { themeConfig } from '../../theme/themeConfig';
 
+// The declarations in src/styles/theme.css, read as text: `tokenOf` returns what
+// the file says (`var(--color-x)` for an alias, a hex for a literal) and
+// `resolvedTokenOf` follows the alias to the literal it ends at, inside the same
+// block. Comparing two roles on their raw text would read an alias and its
+// literal as "different" and pass on a collision.
+const css = readFileSync(resolve(process.cwd(), 'src/styles/theme.css'), 'utf8');
+
+const tokenOf = (selector: string, name: string) => {
+  const start = css.indexOf(`${selector} {`);
+  expect(start, `${selector} block`).toBeGreaterThan(-1);
+  const block = css.slice(start, css.indexOf('\n}', start));
+  const match = block.match(new RegExp(`${name}:\\s*([^;]+);`));
+  expect(match, `${name} in ${selector}`).not.toBeNull();
+  return match![1].trim();
+};
+
+const resolvedTokenOf = (selector: string, name: string, seen: string[] = []): string => {
+  const raw = tokenOf(selector, name);
+  const alias = raw.match(/^var\((--[a-z0-9-]+)\)$/i);
+  if (!alias) return raw.toLowerCase();
+  if (seen.includes(name)) throw new Error(`var() cycle: ${[...seen, name].join(' -> ')}`);
+  return resolvedTokenOf(selector, alias[1], [...seen, name]);
+};
+
 describe('themeConfig', () => {
   describe('theme structure', () => {
     it('has light and dark theme configurations', () => {
@@ -113,17 +137,6 @@ describe('themeConfig', () => {
   // layer's accent, read here from the CSS that actually paints the app, so a
   // second source cannot drift back in unnoticed.
   describe('token parity with src/styles/theme.css', () => {
-    const css = readFileSync(resolve(process.cwd(), 'src/styles/theme.css'), 'utf8');
-
-    const tokenOf = (selector: string, name: string) => {
-      const start = css.indexOf(`${selector} {`);
-      expect(start, `${selector} block`).toBeGreaterThan(-1);
-      const block = css.slice(start, css.indexOf('\n}', start));
-      const match = block.match(new RegExp(`${name}:\\s*([^;]+);`));
-      expect(match, `${name} in ${selector}`).not.toBeNull();
-      return match![1].trim();
-    };
-
     it.each([
       ['light', ':root'],
       ['dark', '.dark'],
@@ -135,6 +148,55 @@ describe('themeConfig', () => {
       expect(palette.buttonPrimaryHover).toBe(palette.primaryHover);
       expect(palette.info).toBe(palette.primary);
       expect(palette.infoDark).toBe(palette.primaryHover);
+    });
+  });
+
+  // The ruling's rule, asserted where it lives - in the token map. A future
+  // re-aliasing of hover onto raised, or a dark value swapped back, fails here
+  // by name instead of on a page nobody re-measured.
+  describe('surface role ladder (RULING-2026-10-23-surface-role-ladder.md)', () => {
+    const RUNGS = [
+      '--color-background',
+      '--color-surface',
+      '--color-surface-raised',
+      '--color-background-tertiary',
+      '--color-background-active',
+    ];
+
+    const luminanceOf = (hex: string) => {
+      expect(hex, 'a rung resolves to a literal hex').toMatch(/^#[0-9a-f]{6}$/);
+      const channels = [1, 3, 5]
+        .map((i) => parseInt(hex.slice(i, i + 2), 16) / 255)
+        .map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
+      return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
+    };
+
+    it.each([
+      ['light', ':root'],
+      ['dark', '.dark'],
+    ])('%s: the five rungs are monotone and every alias shares its own', (mode, selector) => {
+      // A card on a panel separates by fill: raised and secondary are ONE rung,
+      // and it is not the panel's.
+      const raised = resolvedTokenOf(selector, '--color-surface-raised');
+      expect(resolvedTokenOf(selector, '--color-background-secondary')).toBe(raised);
+      expect(raised).not.toBe(resolvedTokenOf(selector, '--color-surface'));
+
+      // A hover takes the rung above the ground it paints on, in BOTH modes: the
+      // light-mode no-op this ruling fixes was hover aliasing onto raised.
+      const tertiary = resolvedTokenOf(selector, '--color-background-tertiary');
+      expect(resolvedTokenOf(selector, '--color-background-hover')).toBe(tertiary);
+      expect(tertiary).not.toBe(resolvedTokenOf(selector, '--color-background-secondary'));
+
+      // Monotone, one direction per mode: non-increasing away from the page in
+      // light (background == surface is the one equality the ladder allows),
+      // strictly increasing in dark.
+      const steps = RUNGS.map((name) => luminanceOf(resolvedTokenOf(selector, name)));
+      if (mode === 'light') {
+        expect(steps[0]).toBeCloseTo(steps[1], 10);
+        steps.slice(2).forEach((value, i) => expect(value).toBeLessThan(steps[i + 1]));
+      } else {
+        steps.slice(1).forEach((value, i) => expect(value).toBeGreaterThan(steps[i]));
+      }
     });
   });
 });
