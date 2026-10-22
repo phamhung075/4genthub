@@ -15,53 +15,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Custom utility classes for the theme system */
-@layer utilities {
-  .bg-base {
-    background-color: var(--color-background);
-  }
-
-  .bg-base-secondary {
-    background-color: var(--color-background-secondary);
-  }
-
-  .bg-base-tertiary {
-    background-color: var(--color-background-tertiary);
-  }
-
-  .bg-surface {
-    background-color: var(--color-surface);
-  }
-
-  .bg-surface-hover {
-    background-color: var(--color-surface-hover);
-  }
-
-  .text-base-primary {
-    color: var(--color-text);
-  }
-
-  .text-base-secondary {
-    color: var(--color-text-secondary);
-  }
-
-  .text-base-tertiary {
-    color: var(--color-text-tertiary);
-  }
-
-  .border-base {
-    border-color: var(--color-surface-border);
-  }
-
-  .border-base-hover {
-    border-color: var(--color-surface-border-hover);
-  }
-
-  /* .transition-theme is deliberately not declared here: theme.css owns it, with
-     the motion tokens, so the product has one definition of a theme transition
-     rather than two that can drift apart. */
-}
-
 body {
   margin: 0;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
