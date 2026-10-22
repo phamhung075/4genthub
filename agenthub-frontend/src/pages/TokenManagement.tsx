@@ -121,12 +121,12 @@ function ScopeCard({ scope, isSelected, onToggle }: ScopeCardProps) {
       </Card>
 
       {/* Tooltip on hover */}
-      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10 max-w-xs whitespace-normal">
+      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-text text-text-inverse text-xs rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10 max-w-xs whitespace-normal">
         <div className="text-center">
-          <div className="text-gray-300">{scope.description}</div>
+          <div className="text-text-inverse/80">{scope.description}</div>
         </div>
         {/* Arrow pointing down */}
-        <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+        <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-text"></div>
       </div>
     </div>
   );
@@ -362,14 +362,14 @@ export function TokenManagement() {
 
         {/* Alerts */}
         {error && (
-          <Alert className="mb-6 border-l-4 border-red-500 bg-red-50 dark:bg-red-950">
+          <Alert className="mb-6 border-l-4 border-error bg-error-light">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
 
         {success && (
-          <Alert className="mb-6 border-l-4 border-green-500 bg-green-50 dark:bg-green-950">
+          <Alert className="mb-6 border-l-4 border-success bg-success-light">
             <CheckCircle className="h-4 w-4" />
             <AlertDescription>{success}</AlertDescription>
           </Alert>
@@ -377,24 +377,24 @@ export function TokenManagement() {
 
         {/* Modern Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm rounded-lg h-12">
+          <TabsList className="grid w-full grid-cols-3 bg-background-secondary border border-surface-border shadow-sm rounded-lg h-12">
             <TabsTrigger
               value="generate"
-              className="flex h-full min-w-0 items-center justify-center gap-1.5 px-1 text-xs font-medium sm:gap-2 sm:text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary-hover data-[state=active]:text-accent-contrast data-[state=active]:shadow-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-all rounded-md"
+              className="flex h-full min-w-0 items-center justify-center gap-1.5 px-1 text-xs font-medium sm:gap-2 sm:text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary-hover data-[state=active]:text-accent-contrast data-[state=active]:shadow-lg hover:bg-background-hover transition-all rounded-md"
             >
               <Key size={18} className="hidden shrink-0 sm:block" />
               <span className="text-center leading-tight">Generate Token</span>
             </TabsTrigger>
             <TabsTrigger
               value="tokens"
-              className="flex h-full min-w-0 items-center justify-center gap-1.5 px-1 text-xs font-medium sm:gap-2 sm:text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary-hover data-[state=active]:text-accent-contrast data-[state=active]:shadow-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-all rounded-md"
+              className="flex h-full min-w-0 items-center justify-center gap-1.5 px-1 text-xs font-medium sm:gap-2 sm:text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary-hover data-[state=active]:text-accent-contrast data-[state=active]:shadow-lg hover:bg-background-hover transition-all rounded-md"
             >
               <Shield size={18} className="hidden shrink-0 sm:block" />
               <span className="text-center leading-tight">Active Tokens</span>
             </TabsTrigger>
             <TabsTrigger
               value="settings"
-              className="flex h-full min-w-0 items-center justify-center gap-1.5 px-1 text-xs font-medium sm:gap-2 sm:text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary-hover data-[state=active]:text-accent-contrast data-[state=active]:shadow-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-all rounded-md"
+              className="flex h-full min-w-0 items-center justify-center gap-1.5 px-1 text-xs font-medium sm:gap-2 sm:text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary-hover data-[state=active]:text-accent-contrast data-[state=active]:shadow-lg hover:bg-background-hover transition-all rounded-md"
             >
               <Settings size={18} className="hidden shrink-0 sm:block" />
               <span className="text-center leading-tight">Settings</span>
@@ -402,8 +402,8 @@ export function TokenManagement() {
           </TabsList>
 
           {/* Generate Token Tab */}
-          <TabsContent value="generate" className="bg-white dark:bg-slate-900 rounded-lg p-6 shadow-sm border border-slate-200 dark:border-slate-700 space-y-6">
-            <Card className="bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+          <TabsContent value="generate" className="bg-surface rounded-lg p-6 shadow-sm border border-surface-border space-y-6">
+            <Card className="bg-background-secondary border-surface-border">
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
                   <Sparkles className="h-5 w-5 text-primary" />
@@ -562,7 +562,7 @@ export function TokenManagement() {
           </TabsContent>
 
           {/* Active Tokens Tab */}
-          <TabsContent value="tokens" className="bg-white dark:bg-slate-900 rounded-lg p-6 shadow-sm border border-slate-200 dark:border-slate-700 space-y-6">
+          <TabsContent value="tokens" className="bg-surface rounded-lg p-6 shadow-sm border border-surface-border space-y-6">
             <div className="flex justify-between items-center">
               <div>
                 <h2 className="text-2xl font-bold">Active API Tokens</h2>
@@ -590,9 +590,9 @@ export function TokenManagement() {
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
               </div>
             ) : tokens.length === 0 ? (
-              <Card className="p-8 text-center bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+              <Card className="p-8 text-center bg-background-secondary border-surface-border">
                 <div className="mb-6">
-                  <div className="mx-auto w-16 h-16 bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900 dark:to-indigo-900 rounded-full flex items-center justify-center mb-4">
+                  <div className="mx-auto w-16 h-16 bg-gradient-to-br from-primary-light to-secondary-light rounded-full flex items-center justify-center mb-4">
                     <Key className="h-8 w-8 text-primary" />
                   </div>
                   <h3 className="text-xl font-semibold mb-2">No API Tokens Yet</h3>
@@ -617,8 +617,8 @@ export function TokenManagement() {
                   return (
                     <Card
                       key={token.id}
-                      className={`relative overflow-hidden bg-white dark:bg-slate-800 hover:shadow-lg transition-all duration-300 border ${
-                        isExpired ? 'border-red-300 bg-red-50 dark:bg-red-950' : isExpiringSoon ? 'border-orange-300 bg-orange-50 dark:bg-orange-950' : 'border-slate-200 dark:border-slate-700'
+                      className={`relative overflow-hidden hover:shadow-lg transition-all duration-300 border ${
+                        isExpired ? 'border-error bg-error-light' : isExpiringSoon ? 'border-warning bg-warning-light' : 'border-surface-border bg-surface'
                       }`}
                     >
                       <CardHeader className="pb-3">
@@ -628,18 +628,11 @@ export function TokenManagement() {
                               <span className="truncate">{token.name}</span>
                             </CardTitle>
                             <div className="flex items-center space-x-2">
-                              <Badge
-                                variant={token.is_active && !isExpired ? "default" : "secondary"}
-                                className={`${
-                                  token.is_active && !isExpired
-                                    ? "bg-green-500 hover:bg-green-600 text-white"
-                                    : "bg-gray-500 text-white"
-                                }`}
-                              >
+                              <Badge variant={token.is_active && !isExpired ? "default" : "secondary"}>
                                 {isExpired ? 'Expired' : token.is_active ? 'Active' : 'Inactive'}
                               </Badge>
                               {isExpiringSoon && !isExpired && (
-                                <Badge variant="outline" className="border-orange-500 text-orange-600">
+                                <Badge variant="outline" className="border-warning text-warning">
                                   Expiring Soon
                                 </Badge>
                               )}
@@ -769,8 +762,8 @@ export function TokenManagement() {
           </TabsContent>
 
           {/* Settings Tab */}
-          <TabsContent value="settings" className="bg-white dark:bg-slate-900 rounded-lg p-6 shadow-sm border border-slate-200 dark:border-slate-700 space-y-6">
-            <Card className="bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+          <TabsContent value="settings" className="bg-surface rounded-lg p-6 shadow-sm border border-surface-border space-y-6">
+            <Card className="bg-background-secondary border-surface-border">
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
                   <Settings className="h-5 w-5 text-primary" />
@@ -781,7 +774,7 @@ export function TokenManagement() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Alert className="border-l-4 border-blue-500 bg-blue-50 dark:bg-blue-950">
+                <Alert className="border-l-4 border-info bg-info-light">
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription>
                     Token settings configuration will be available in a future update.
@@ -797,14 +790,14 @@ export function TokenManagement() {
           <DialogContent className="max-w-3xl max-h-[95vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center space-x-2">
-                <CheckCircle className="h-5 w-5 text-green-500" />
+                <CheckCircle className="h-5 w-5 text-success" />
                 <span>Client Connector Token Generated</span>
               </DialogTitle>
               <DialogDescription>
                 This token lets the 4genteam agent on your machine publish your sessions. Follow the steps below.
               </DialogDescription>
             </DialogHeader>
-            <Alert className="border-l-4 border-orange-500 bg-orange-50 dark:bg-orange-950">
+            <Alert className="border-l-4 border-warning bg-warning-light">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
                 <strong>Important:</strong> This token will only be shown once. Store it before you close this window.
@@ -824,7 +817,7 @@ export function TokenManagement() {
           <DialogContent className="max-w-5xl max-h-[95vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center space-x-2">
-                <CheckCircle className="h-5 w-5 text-green-500" />
+                <CheckCircle className="h-5 w-5 text-success" />
                 <span>MCP Configuration Generated</span>
               </DialogTitle>
               <DialogDescription>
@@ -833,7 +826,7 @@ export function TokenManagement() {
             </DialogHeader>
 
             <div className="space-y-6">
-              <Alert className="border-l-4 border-orange-500 bg-orange-50 dark:bg-orange-950">
+              <Alert className="border-l-4 border-warning bg-warning-light">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
                   <strong>Important:</strong> This token will only be shown once. Copy the configuration now and store it securely.
@@ -875,7 +868,7 @@ export function TokenManagement() {
                         const configString = `"agenthub_http": ${JSON.stringify(config, null, 2)}`;
                         copyToClipboard(configString, 'mcp-config');
                       }}
-                      className={copiedButton === 'mcp-config' ? 'bg-green-50 border-green-500 text-green-700' : ''}
+                      className={copiedButton === 'mcp-config' ? 'bg-success-light border-success text-success-dark' : ''}
                     >
                       {copiedButton === 'mcp-config' ? (
                         <>
@@ -894,7 +887,7 @@ export function TokenManagement() {
                       variant="outline"
                       size="sm"
                       onClick={() => generatedToken && copyToClipboard(generatedToken, 'token-only')}
-                      className={copiedButton === 'token-only' ? 'bg-green-50 border-green-500 text-green-700' : ''}
+                      className={copiedButton === 'token-only' ? 'bg-success-light border-success text-success-dark' : ''}
                     >
                       {copiedButton === 'token-only' ? (
                         <>
@@ -948,8 +941,8 @@ export function TokenManagement() {
                   copyToClipboard(configString, 'complete-config');
                 }}
                 className={copiedButton === 'complete-config'
-                  ? "bg-green-600 hover:bg-green-700 text-white"
-                  : "bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white"
+                  ? "bg-success-dark hover:bg-success-dark/90 text-accent-contrast"
+                  : "bg-gradient-to-r from-primary to-primary-hover hover:from-primary/90 hover:to-primary-hover/90 text-accent-contrast"
                 }
               >
                 {copiedButton === 'complete-config' ? (
@@ -997,11 +990,6 @@ export function TokenManagement() {
                         <p className="text-xs text-base-secondary">Status</p>
                         <Badge
                           variant={selectedToken.is_active && new Date(selectedToken.expires_at) > new Date() ? "default" : "secondary"}
-                          className={`${
-                            selectedToken.is_active && new Date(selectedToken.expires_at) > new Date()
-                              ? "bg-green-500 hover:bg-green-600 text-white"
-                              : "bg-gray-500 text-white"
-                          }`}
                         >
                           {new Date(selectedToken.expires_at) < new Date() ? 'Expired' : selectedToken.is_active ? 'Active' : 'Inactive'}
                         </Badge>
@@ -1045,8 +1033,8 @@ export function TokenManagement() {
                         </p>
                         <p className="text-xs text-base-secondary mt-1">Operation Types</p>
                       </div>
-                      <div className="bg-green-500/10 rounded-lg p-4">
-                        <p className="text-3xl font-bold text-green-600">
+                      <div className="bg-success/10 rounded-lg p-4">
+                        <p className="text-3xl font-bold text-success-dark">
                           {selectedToken.usage_stats && Object.keys(selectedToken.usage_stats).length > 0
                             ? Math.max(...Object.values(selectedToken.usage_stats).filter((v): v is number => v !== undefined))
                             : 0}
