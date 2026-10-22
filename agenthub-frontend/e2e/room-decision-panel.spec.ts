@@ -587,12 +587,6 @@ test.describe('Decision Requests panel under prefers-reduced-motion: reduce', ()
  * that row's attention state computes to, which is the half no room could show; it does NOT prove that
  * production's data carries a pending decision - that is a property of the tenant's queue, not of the
  * panel.
- *
- * The row's border and tint are RECORDED, not asserted: the theme registers its custom colours as plain
- * `var(--color-*)` strings, so Tailwind emits no rule at all for the opacity-modified utilities built on
- * them (`border-accent/40`, `bg-accent/[0.03]`, `bg-accent/15`) - finding F1 in task 6f461321, a
- * project-wide colour-registration call and not this file's to make. Asserting the indigo border here
- * would red a spec that is measuring the product honestly.
  */
 
 /** The one pending decision the injected read answers with. Its summary names the injection. */
