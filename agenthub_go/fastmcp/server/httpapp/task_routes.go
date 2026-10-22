@@ -67,8 +67,9 @@ func stringList(m map[string]any, key string) []string {
 // The id it returns is the one NewTaskId normalized: the canonical spelling for the dashless 32-hex
 // form, the accepted spelling lowercased otherwise. Every one of those is a spelling the `$1::uuid`
 // cast takes, which is what this guard exists to promise; it is not "the canonical spelling" for the
-// hyphenated forms, because the guard's pattern accepts a hyphen after any group of four digits and
-// returns those unchanged.
+// dashed forms, because uuidPattern makes each of its four hyphens optional over the 8-4-4-4-12
+// groups, so a dashed spelling that still totals those digits is accepted and comes back lowercased
+// with its own hyphens, not rebuilt into the canonical one.
 func taskRowUUID(w http.ResponseWriter, r *http.Request) (string, bool) {
 	raw := r.PathValue("id")
 	id, err := value_objects.NewTaskId(raw)
