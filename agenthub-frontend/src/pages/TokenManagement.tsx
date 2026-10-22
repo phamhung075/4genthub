@@ -436,7 +436,7 @@ export function TokenManagement() {
                   </div>
 
                   {/* Quick Actions */}
-                  <div className="flex flex-wrap gap-2 p-4 bg-background-secondary rounded-lg">
+                  <div className="flex flex-wrap gap-2 p-4 bg-background-active rounded-lg">
                     <Button
                       variant="outline"
                       size="sm"
@@ -618,7 +618,7 @@ export function TokenManagement() {
                     <Card
                       key={token.id}
                       className={`relative overflow-hidden hover:shadow-lg transition-all duration-300 border ${
-                        isExpired ? 'border-error bg-error-light' : isExpiringSoon ? 'border-warning bg-warning-light' : 'border-surface-border bg-surface'
+                        isExpired ? 'border-error bg-error-light' : isExpiringSoon ? 'border-warning bg-warning-light' : 'border-surface-border bg-background-tertiary'
                       }`}
                     >
                       <CardHeader className="pb-3">
