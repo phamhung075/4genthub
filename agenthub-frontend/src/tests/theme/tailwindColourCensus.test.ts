@@ -105,8 +105,12 @@ const registeredUtilities = (config: Record<string, any>): Set<string> => new Se
 
 /**
  * The selectors `src/index.css` declares inside its own `@layer utilities` block. A utility declared by
- * hand beside the config is the duplication that hid map row 3: the hand rule painted the plain colour
- * with no variants and no `/alpha`, and because it sat after `@tailwind utilities` it silently won.
+ * hand beside the config is the duplication that hid map row 3: because it sat after `@tailwind
+ * utilities` it silently won the cascade, and the colour it painted was opaque - no `/alpha` modifier
+ * and no `--tw-text-opacity`, the two things only the config's `withAlpha()` entry supplies. Measured at
+ * 14d2870e: `hover:`, `dark:` and `data-[state=active]:` forms of `text-base-primary` did compile from
+ * the hand rule (each declaring `color: var(--color-text)`), while `text-base-primary/60` emitted
+ * nothing.
  */
 const handWrittenUtilities = (): string[] => {
   const text = readFileSync(join(frontendRoot, 'src/index.css'), 'utf8');
@@ -342,10 +346,12 @@ describe('theme colour census: every registered colour emits its alpha form', ()
 
   /**
    * One definition per utility. `src/index.css` used to declare ten of them beside the config, after
-   * `@tailwind utilities` - so the hand rule won, painted the plain colour, and gave no `hover:`, `dark:`
-   * or `/alpha` form. `.text-base-primary` was one of those: map row 3 named it as a target while the
-   * config never built it, and the hand rule masked the gap. The block is deleted; this arm keeps a
-   * reintroduced one from passing, by failing on any selector the emitted sheet also carries.
+   * `@tailwind utilities` - so the hand rule won the cascade and painted the plain colour opaque: its
+   * `hover:`, `dark:` and `data-[state=active]:` forms compiled, but each carried no
+   * `--tw-text-opacity`, and `/alpha` compiled to nothing. `.text-base-primary` was one of those: map
+   * row 3 named it as a target while the config never built it, and the hand rule masked the gap by
+   * painting the token anyway. The block is deleted; this arm keeps a reintroduced one from passing, by
+   * failing on any selector the emitted sheet also carries.
    */
   it('declares no utility by hand that the config also emits', () => {
     const duplicated = handUtilities.filter((utility) => emittedBlocks(utility, css).length > 0);
@@ -354,8 +360,8 @@ describe('theme colour census: every registered colour emits its alpha form', ()
       throw new Error(
         `${duplicated.length} utility/utilities are declared by hand in src/index.css's ` +
           `\`@layer utilities\` and also emitted from the config: ${duplicated.join(', ')}. ` +
-          'The hand rule wins the cascade without variants or an alpha modifier - delete it and let ' +
-          'tailwind.config.js own the class.'
+          'The hand rule wins the cascade with no alpha modifier and no --tw-text-opacity, so an ' +
+          '`/60` caller paints differently - delete it and let tailwind.config.js own the class.'
       );
     }
   });

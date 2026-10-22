@@ -586,9 +586,11 @@ body {
 }
 
 /* The token-to-utility aliases (.text-base-primary, .bg-base, .border-base,
-   .bg-surface, ...) are declared once, in src/index.css, next to the layer
-   directives that order them. They used to be duplicated here as well, which is
-   exactly how two definitions of one class drift apart. */
+   .bg-surface, ...) are emitted by tailwind.config.js's textColor,
+   backgroundColor and borderColor blocks, each entry wrapped in withAlpha() so
+   the `/alpha` modifier paints. They used to be declared here as well, and then
+   by hand in src/index.css's `@layer utilities`; both hand copies are gone, and
+   that duplication is how two definitions of one class drift apart. */
 
 /* Modern Animation Classes */
 @keyframes fadeIn {
