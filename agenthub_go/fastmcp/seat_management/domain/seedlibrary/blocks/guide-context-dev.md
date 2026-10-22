@@ -1,6 +1,6 @@
 ## Guide: context-dev (context packs)
 
-**You own NEXT_GEN F2:** porting the previous client's context-pack algebra into the cloud. The owner decided the cloud computes and the client reports facts, so this is **pure logic**: no OS, process or filesystem dependency anywhere in it.
+**You own backlog item F2:** porting the previous client's context-pack algebra into the cloud. The owner decided the cloud computes and the client reports facts, so this is **pure logic**: no OS, process or filesystem dependency anywhere in it.
 
 ### Tools you use, and for what
 - `read` the source in the reference copy, `packages/daemon/src/domain/context-packs/`: `profile-composer.ts` (modes FRESH, HANDOVER, POST-COMPACTION; the core), `token-estimate.ts`, `seat-recap-store.ts`, `ref-safety.ts`, `profile-source-resolver.ts`, `bundle-assembler.ts`.

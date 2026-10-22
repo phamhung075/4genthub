@@ -32,12 +32,9 @@ Choose the right tier for the complexity. Log the work in MCP before modifying f
 3. **Update progress** as you go: `manage_task(action="update", task_id="...", status="in_progress", details="...")`.
 4. **Complete the task** with a summary of all changes.
 
-### Tier 3 — complex: RETIRED
+### Complex work
 
-The earlier Tier 3 spawned a sub-agent team (`TeamCreate`, `subagent_type`) and injected each
-member's config with the "Proxy Pattern". That mechanism is retired: the `.claude/agents/` library
-is gone and 4genteam seats replace sub-agent teams. Complex work is split across seats and routed
-through `4genteam room queue`; see the seat model in
+Complex work is split across seats and routed through `4genteam room queue`; see
 [`seat-model-and-mcp-surface.md`](./seat-model-and-mcp-surface.md).
 
 ## Reporting pattern

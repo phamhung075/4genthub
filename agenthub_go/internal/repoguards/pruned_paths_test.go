@@ -5,15 +5,14 @@
 // every entry is gone from the index and that no tracked file outside an explicit allowlist names it.
 //
 // WHY IT EXISTS, MEASURED 2026-10-18: 53b95dee pruned five legacy Python helpers, .gemini/,
-// .automation/ and docker-system/.claude/, and its changelog claimed "git grep finds no live reference
-// to a removed file outside CHANGELOG/ and one historical doc line". Four live references survived that
+// .automation/ and docker-system/.claude/, and its record claimed "git grep finds no live reference
+// to a removed file outside the changelog and one historical doc line". Four live references survived that
 // commit - internal/repoguards/agent_docs_block_test.go (which then failed on a missing file),
 // ai_docs/core-architecture/agenthub-system-architecture.md:496, AGENTS.md:30 and
 // ai_docs/agent-system/repo-agent-rules.md - so the sentence was false at the moment it was written and
 // only a run would have said so.
 //
-// CHANGELOG/ and TEST-CHANGELOG.md are excluded by pathspec, not by allowlist: history may name a path
-// that no longer exists, because recording a removal is the point of an entry.
+// History of a removal lives in the commit that made it (`git log --diff-filter=D`), not in a file.
 package repoguards_test
 
 import (
@@ -86,7 +85,7 @@ func TestAPrunedPathHasNoLiveReference(t *testing.T) {
 			_ = reason
 			continue
 		}
-		t.Errorf("%s:%d names the pruned path %q; the prune removed it, so the line is a dangling citation (history belongs in CHANGELOG/)", hit.file, hit.line, hit.path)
+		t.Errorf("%s:%d names the pruned path %q; the prune removed it, so the line is a dangling citation (history belongs in the commit message)", hit.file, hit.line, hit.path)
 	}
 }
 
@@ -138,8 +137,7 @@ func trackedFiles(t *testing.T, root string) map[string]bool {
 }
 
 // grepTracked runs ONE fixed-string grep over the tracked tree with the listing as its pattern file,
-// and returns every match. CHANGELOG/ and TEST-CHANGELOG.md are excluded by pathspec: an entry that
-// records a removal has to be able to name the removed path.
+// and returns every match.
 //
 // The listing is written to a scratch file WITHOUT its comments first: `git grep -f` takes every line
 // as a pattern, so a `#` header would be searched for literally and match half the tree (measured: 6097
@@ -153,8 +151,7 @@ func grepTracked(t *testing.T, root string, pruned []string) []prunedHit {
 	if err := os.WriteFile(patterns, []byte(strings.Join(pruned, "\n")+"\n"), 0o600); err != nil {
 		t.Fatalf("write the scratch pattern file: %v", err)
 	}
-	cmd := exec.Command("git", "--no-optional-locks", "grep", "-F", "-n", "-I", "-f", patterns, "--",
-		".", ":(exclude)CHANGELOG/**", ":(exclude)TEST-CHANGELOG.md")
+	cmd := exec.Command("git", "--no-optional-locks", "grep", "-F", "-n", "-I", "-f", patterns, "--", ".")
 	cmd.Dir = root
 	out, err := cmd.Output()
 	if err != nil {

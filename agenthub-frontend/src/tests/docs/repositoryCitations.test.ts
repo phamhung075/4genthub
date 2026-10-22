@@ -7,7 +7,7 @@
  * a migration guide that exists in no commit of either tree (both corrected 2026-10-20). A citation
  * that points nowhere is worse than no citation: it sends the reader looking, and finds them nothing.
  *
- * WHAT IT ASSERTS. Every `ai_docs/`, `CHANGELOG/`, `agenthub_go/` or `agenthub_client/` path written
+ * WHAT IT ASSERTS. Every `ai_docs/`, `agenthub_go/` or `agenthub_client/` path written
  * in a file under `src/` or `e2e/` resolves - in this checkout, or in `origin/main`, which is the tree
  * a branch lands in. The two trees are both read because a doc added and cited by the same branch is
  * a legitimate citation before it lands (it resolves in the checkout) while a doc that arrived on main
@@ -31,7 +31,7 @@ const SCANNED_SUFFIXES: Record<string, true> = {
   '.mjs': true,
   '.md': true,
 };
-const CITED_ROOTS = ['ai_docs', 'CHANGELOG', 'agenthub_go', 'agenthub_client'];
+const CITED_ROOTS = ['ai_docs', 'agenthub_go', 'agenthub_client'];
 const CITED_SUFFIXES = 'go|md|ts|tsx|js|json|yaml|yml|py|rs|sh|sql|css|txt';
 
 /** A repository-rooted path with an extension, and not the tail of a longer name. */
@@ -109,17 +109,21 @@ describe('repository citations in the frontend', () => {
   it('reads a path out of prose, inline code and a comment alike, and ignores lookalikes', () => {
     // The sample is assembled from CITED_ROOTS so this file's own text carries no citation the sweep
     // would have to resolve: the extractor is exercised on strings, not on paths that must exist.
-    const [docRoot, logRoot, goRoot, clientRoot] = CITED_ROOTS;
+    const [docRoot, goRoot, clientRoot] = CITED_ROOTS;
+    // `CHANGELOG/` is gone and is no longer a cited root, so a dated log path is a LOOKALIKE now: the sample
+    // spells the directory from a bare literal, because the path in this file's text would be a citation the
+    // sweep has to resolve, and that is the one thing this sample must not create.
+    const goneRoot = 'CHANGELOG';
     const boundaries = `${docRoot}/core-architecture/agent-boundaries.md`;
     const goSample = `${goRoot}/x/y.go`;
-    const logSample = `${logRoot}/2026-10-20--a-title.md`;
+    const logLookalike = `${goneRoot}/2026-10-20--a-title.md`;
 
     expect(
       citations(
         `the file \`${boundaries}\` say so; see ${goSample}.\n` +
-          `// ${logSample} records it\n` +
-          `not a citation: my_${goSample}, ${clientRoot}.obsolete/, ${logRoot}/`
+          `// ${logLookalike} records it\n` +
+          `not a citation: my_${goSample}, ${clientRoot}.obsolete/, ${logLookalike}`
       )
-    ).toEqual([boundaries, goSample, logSample]);
+    ).toEqual([boundaries, goSample]);
   });
 });

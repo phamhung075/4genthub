@@ -1,7 +1,6 @@
 """The strong form of rule 64's shared-file duty: is the diff you COMMIT the diff you made?
 
-Rule 64's instrument on a shared multi-entry file (the changelog was one until it became one file per
-change under `CHANGELOG/`; `NEXT_GEN.md` is one now) is a count of added lines beginning `## `. The case that beat it
+Rule 64's instrument on a shared multi-entry file (a backlog or a guide) is a count of added lines beginning `## `. The case that beat it
 is `f344a64f`: a foreign edit made INSIDE an existing entry adds no heading, so the count does not move
 and the commit carries a peer's uncommitted sentence as its own. These cases build that exact case on a
 real repository, show rule 64's instrument reading it as no change, and show the baseline check naming
@@ -27,7 +26,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 CHECK = REPO_ROOT / "scripts" / "git-hooks" / "added_line_check.py"
 
 # A shared file that holds many entries, so a peer's edit can land inside an existing one.
-SHARED = "NEXT_GEN.md"
+SHARED = "BACKLOG.md"
 SEAT = "go-dev@test"
 FOREIGN = "- a peer's uncommitted sentence, taken by someone else's commit"
 MINE = "## 2026-10-09 - a proof about the shared tree"
@@ -155,10 +154,10 @@ def test_a_new_file_is_read_against_dev_null_so_a_peer_line_in_it_is_surplus(tmp
     """Found by dogfooding: `git diff HEAD` says NOTHING about an untracked path, so `+0/-0` vouched
     for a file the baseline had never read. A new path must be read against /dev/null instead.
 
-    A changelog entry is exactly such a path: one new file per change, so its whole content is its added set."""
+    A new document is exactly such a path: its whole content is its added set."""
     repo = _repo(tmp_path)
-    entry = "CHANGELOG/2026-10-10--my-change.md"
-    (repo / "CHANGELOG").mkdir()
+    entry = "notes/2026-10-10--my-change.md"
+    (repo / "notes").mkdir()
     (repo / entry).write_text("my new line\n", encoding="utf-8")
     assert _run(repo, "--snapshot", "--", entry)[0] == 0
     staged = json.loads(_baseline(repo).read_text(encoding="utf-8"))

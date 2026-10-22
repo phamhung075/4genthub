@@ -608,6 +608,38 @@
         "shared-modules/guide-common.md": "c8bca63a0e4711382eaf6ea0e8cac93ff463027d8230c682ad1827125e7cd8ad",
         "shared-modules/mcp-usage.md": "f0e001f1635f8155a9a012d80187f93ccb5e4bc9a0568181636b9ae8eebeb81b"
       }
+    },
+    {
+      "seed_version": "1.4.22",
+      "content_sha256": "eae0720d186a5aba4c50b218643f6eb278ea40442a54bbd3157f710b8244ba87",
+      "files": {
+        "blocks/agenthub-http.json": "c6d599f33e5bbd7227673e73256b2cdd11dd3a18a3d6ac0f9db328c56b2c2044",
+        "blocks/deepseek-offload.json": "26abd04329a07313b103fbc4d6e86ccaa1d78bdbb2663f2148a91a347385fff1",
+        "blocks/guide-architect.md": "e52f9b4571d18ce45d45f4f9e28c55bd61bdd3974074152ece33ddb5d067f8bd",
+        "blocks/guide-context-dev.md": "cf5eb591cd57a21392156ae25487aeb2038d6aac174333494182112662f90b9d",
+        "blocks/guide-fe-dev.md": "79a9652c104750fe1afa3864358f7f88d1a7559b3cb6e9ca039cabff04c497ae",
+        "blocks/guide-feedback-dev.md": "f09c6c2437de097a191fd87dab35ac2de402330ad7d7923592f0a8455bd4c739",
+        "blocks/guide-go-dev.md": "e9ae5fdf8c6556b12d0d4c5133f932a06f80ab1df2f70256dbe37b2c73df6db8",
+        "blocks/guide-lead.md": "9bddcf719718620b91cb506cc4ee9ff975a32f898ab1d16bb81dc4c18bac09ab",
+        "blocks/guide-reviewer.md": "ff0f35c0c988357e6a26f3792a2a010925409513b364234738c0317c0ca877fd",
+        "blocks/guide-skills-dev.md": "c1d798952b08839c3116aeb6234923d045d131aa67e9bd32cfcd5ca0320f92d3",
+        "blocks/guide-web-dev.md": "d45949df59d538be9cab81a7e850428e83023eadbe5315b4c93aa5d896e0be11",
+        "blocks/guide-writer.md": "98d8fc21ab86db8bfa2e6bbbbb0cedff15009c6208c0c1aed96600441a08d7c1",
+        "blocks/sequential-thinking.json": "65e65d8324b439aa3217056de4f8c88cc51d58dd5abbd55fe210e2de00b8b88b",
+        "seat-types/architect.yaml": "2f821882102d15eb499224e1f37741b5673a0a683e851351e982c936cb843be5",
+        "seat-types/debugger.yaml": "5c978d9ec9dd4d0be5d0094784fe40d1ea9536a919a446c6ea33aa345245cc96",
+        "seat-types/developer.yaml": "879856fd0b4f85018694529c2487f12330a9d7a11f418642438ff8ba256a4db4",
+        "seat-types/lead.yaml": "d3ac5d54031580bec24388a02be05ba22e2ce7767ce1c8c581ef570761dc1e04",
+        "seat-types/planner.yaml": "2d1bef3fbbb28aa267d5a1d5ec364ede27b39c705bab89f93b9bf9c30b1b4f23",
+        "seat-types/researcher.yaml": "76f4cb18cc481d1195008c803981be919dc26406f8eeb635b1e529c59379f1e7",
+        "seat-types/reviewer.yaml": "8e5caf279a7f6fed92f92e6202ef1e930c9d3c71638827820a454717f106c1eb",
+        "seat-types/tester.yaml": "422b66481bc417b7a17c05562c020040980d35e0e66f8dd700923dfe6043a7e8",
+        "seat-types/writer.yaml": "1d24515cc8ccd9b5d6fa65d8f5cefec9bad3e75ae100065fa0a39c14cc4c837d",
+        "shared-modules/comm-guard-skill.md": "ff3002e59893f7169158b92cd12057e8c72b768e13a3c7b2d152cc32b558d358",
+        "shared-modules/comm-guard.json": "1c23f618d417df35c6246e3f8c2b9ae0099ba8bc1b2bb4f04a7c4f8c82c4cc34",
+        "shared-modules/guide-common.md": "3b1fb7a9a27dc6e6f2fc9ab3f3849d610a1a709a93fcdbeab64742a19bc21c4e",
+        "shared-modules/mcp-usage.md": "f0e001f1635f8155a9a012d80187f93ccb5e4bc9a0568181636b9ae8eebeb81b"
+      }
     }
   ]
 }

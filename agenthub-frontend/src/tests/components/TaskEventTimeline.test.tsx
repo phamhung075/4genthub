@@ -2,11 +2,11 @@
  * @fileoverview The task details view's EXECUTION LEDGER timeline, driven by the REAL event shapes
  * the ledger writes.
  *
- * WHAT THE FOUR-STEP CASE IS, AND WHAT IT CANNOT BE: NEXT_GEN O8's timeline acceptance names a
+ * WHAT THE FOUR-STEP CASE IS, AND WHAT IT CANNOT BE: the timeline's acceptance (backlog item O8) names a
  * TEST-fail -> FIX -> TEST-pass -> ACCEPT sequence. The ledger's vocabulary is the six kinds the
  * server keeps (`TASK_EVENT_KINDS`, mirroring `task_event.go:46-53`), and of them only
  * `status_changed` carries a status - `{ old, new }`. So each step is expressed as the nearest real
- * shape and the MAPPING IS REPORTED IN THE CHANGELOG, not dressed up here:
+ * shape and the MAPPING IS STATED HERE, not dressed up:
  *
  *   TEST-fail -> status_changed {in_progress -> testing}
  *   FIX       -> status_changed {testing -> in_progress}   (FIX has NO dedicated kind at all)

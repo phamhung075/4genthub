@@ -2,13 +2,8 @@ DOCS. Documentation lives in ai_docs/. Check `git ls-files 'ai_docs/**/*.md'` fo
 
 Rules:
 - ai_docs subfolders use kebab-case (api-integration, setup-guides); _absolute_docs and _obsolete_docs excepted.
-- Only four .md files are allowed in the repository root: README.md, TEST-CHANGELOG.md, AGENTS.md and CLAUDE.local.md. Every other document goes under ai_docs.
+- Only three .md files are allowed in the repository root: README.md, AGENTS.md and CLAUDE.local.md. Every other document goes under ai_docs.
+- Docs are minimal: only durable information a reader needs and cannot get from the code or git log. No reports, plans, reviews, status notes or history paragraphs.
 - Write documentation only when asked, and test any code example before documenting it.
 
-Changelogs (Keep a Changelog format, include file paths, impact and testing):
-- One new file CHANGELOG/<date>--<title>.md in the root for each project-wide change; do not read the whole directory (`ls CHANGELOG | tail` lists the newest).
-- agenthub-frontend/CHANGELOG.md for frontend-only changes.
-- TEST-CHANGELOG.md when test files change.
-Never create a CHANGELOG.md or CHANGELOG/ in other directories.
-
-agenthub_go/NEXT_GEN.md is the running backlog and decision record for post-port features: tick a box only when its check is met, and record owner decisions with the date.
+Change records: no changelog file of any kind. The commit message is the record (what was wrong, what changed, how it was tested). Plans, backlog, decisions and status live in 4genthub tasks and context.

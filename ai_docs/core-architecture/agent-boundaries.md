@@ -11,7 +11,7 @@
 > A THIRD occurrence is a quotation rather than a clause: 7.1's dated bullet records that the verb landed 37
 > minutes later as `rigd` (`9182f13`), so that token belongs to the date it names, not to this rule.
 
-Decision note by the architect, 2026-10-11. It answers the lead's request `qitem-20261010222721-557596c2630798bc` (owner priority: build NEXT_GEN F4 in two phases). It binds go-dev and fe-dev for phase 1. Phase 2 is designed here and NOT implemented.
+Decision note by the architect, 2026-10-11. It answers the lead's request `qitem-20261010222721-557596c2630798bc` (owner priority: build backlog item F4 in two phases). It binds go-dev and fe-dev for phase 1. Phase 2 is designed here and NOT implemented.
 
 agent is the always-on local client. It holds one outbound WebSocket to `/ws/connector` under the user's token, registers every local room session, uploads redacted events (phase 1), and later receives commands that it runs locally as `4genteam send` (phase 2). The cloud never connects to the user's machine.
 
@@ -26,7 +26,7 @@ agent is the always-on local client. It holds one outbound WebSocket to `/ws/con
 
 **Ruling: agent is built in `agenthub_client`, as a long-running verb of the client binary (`4genteam agent`).** It extends `internal/clientsync/connector.go`; it is not a new program.
 
-- Reason: the client module is the one that ships to operators and the one the seat is pulled from. That is the same rule that made the client's `cmd/seatcheck` canonical (CHANGELOG `2026-10-10--the-second-seatcheck-copy-leaves-the-tree-the-client-module-is-canonical.md`).
+- Reason: the client module is the one that ships to operators and the one the seat is pulled from. That is the same rule that made the client's `cmd/seatcheck` canonical.
 - Follow-on, not phase-1 work: retire `agenthub_go/internal/clientsync/connector*.go` the way the server's seatcheck copy was retired. Until then, NO agent change goes into the `agenthub_go` copy.
 
 ## 2. Boundary 1: the socket frames
@@ -74,7 +74,7 @@ Reconnect: exponential backoff from 1 s, doubling, capped at 60 s, with ±20 % j
 1. **Capabilities gate which kinds are sent.** A peer never sends a frame kind that belongs to a capability the other side did not advertise and the server did not echo in `ready`. Phase-2 command frames are therefore impossible on a phase-1 client.
 2. **The client ignores an unknown server `type`.** It logs it once per type and does nothing else: it does not close, retry or act. An unknown kind can never cause an action.
 3. **The server answers an unknown client `type` with `error {code: "unknown_type", fatal: false}`** and keeps the socket (current behaviour, kept).
-4. **Capabilities named so far:** `ingest` (phase 1), `commands` (phase 2), `ledger` (P4's `ledger_tip` nudge, NEXT_GEN P4). A new server frame kind always comes with a new capability name.
+4. **Capabilities named so far:** `ingest` (phase 1), `commands` (phase 2), `ledger` (P4's `ledger_tip` nudge). A new server frame kind always comes with a new capability name.
 5. **Unknown FIELDS are ignored on both sides.** A field can be added without bumping `protocol`. Changing a field's meaning or removing one bumps `protocol`.
 
 ### 2.3a The browser surface (ruled 2026-10-11, answering fe-dev's question on section 5 step 3)
@@ -146,7 +146,7 @@ Open for the owner before phase 2 starts, NOT for dev seats: whether a delivered
 
 ### 4.1 Where it runs
 
-The cloud must never receive an unredacted byte, so redaction is a **precondition of building the `events` frame**, inside agent. The server's `MaxPayloadChars` truncation is a size guard, not redaction, and it must not be counted as redaction.
+The cloud must never receive an unredacted byte, so redaction is a **precondition of building the `events` frame**, inside agent. The server's `MaxPayloadChars` truncation is a size guard, not redaction, and it must not be counted as redaction. The same point governs **model egress** (4.5), not only the events frame: a model request is scanned before it leaves this machine, by the same client.
 
 ### 4.2 Where the rule set lives
 
@@ -217,6 +217,27 @@ A withheld event is uploaded ONLY as a placeholder, `{type: "redaction_withheld"
 The raw event is surfaced locally: it is written to `<seat store>/agent-withheld/<session>/<ts>.json` (mode 0600, kept 7 days), and `4genteam agent status` shows a per-session withheld count. The upload continues past it, and the cursor advances past it, because the placeholder records the gap.
 
 If the redactor fails on EVERY event of a session for 5 minutes, agent stops that session's upload (A, as a backstop) and reports it locally. That case means a broken redactor, not one bad line.
+
+### 4.5 Boundary 4: the model request
+
+The events frame is not the only thing leaving this machine: every seat's model request carries the conversation - the file it read, the command's output - to a provider. The same point governs model egress. A loopback listener sits between each redirected surface and its provider, `4genteam agent` keeps it running and `up` ensures it BEFORE the room's seats start, the request body is scanned by `internal/secretscan`, and a body the scan cannot vouch for is refused (B2, 4.4's shape) with nothing forwarded. Hooks stay what they are: they block commands, they never redact.
+
+The unit is a provider **route**, because one CLI was measured answering both ways: omp's anthropic traffic reached a listener, its deepseek traffic did not.
+
+| route | knob | status |
+|---|---|---|
+| `claude-code` | `ANTHROPIC_BASE_URL` | proxied (repo precedent; a live listener hit is still owed) |
+| `omp-anthropic` | `ANTHROPIC_BASE_URL` | proxied, measured: 3 hits |
+| `codex` | `model_providers.<id>.base_url` in `~/.codex/config.toml` | proxied by file, measured: 2 hits; inert until a seat runs under the profile |
+| `omp-deepseek` | none found (`OPENAI_BASE_URL` measured 0 hits) | unproxied |
+| `agy` | none named | unproxied |
+
+- **The port belongs to the VARIABLE, not the route.** `ANTHROPIC_BASE_URL` holds one address, so `claude-code` and `omp-anthropic` share one listener on `127.0.0.1:7391` and one `.env` line; codex's listener is `127.0.0.1:7392`. The port is fixed and never re-picked, because the state-root `.env` names it for every seat; a taken port is a red `doctor` row, and only our own listener - answering `GET /__llmproxy` for the same variable - is reused.
+- **The injection point is the state root's `.env`**, which `seat_env` already hands every seat; the client writes one line per verified variable and keeps the replaced origin in `AGENTHUB_LLM_UPSTREAM_<ROUTE>`. A route with no verified knob gets no line and no listener.
+- **codex's surface is a file.** The client writes one `[model_providers.agenthub-egress]` entry copying the fields of the provider the config already selects and changing only `base_url`, plus a `[profiles.agenthub-egress]` that selects it; it never touches the global `model_provider`. Until a seat runs under that profile, codex is `unproxied (provider entry present, not selected)`.
+- **A refusal is local, per request, and visible:** HTTP `400` `{"error":"redaction_withheld","reason":"...","log":"<path>"}`, `reason` in `redactor_error`, `not_utf8`, `too_large`, `env_file`, `unsure` (4.4's list minus `bad_shape`). The body is recorded withheld under `<state-root>/llm-withheld/<route>/<ts>.json` (0600, 7 days): path, upstream host, reason, byte count, never the bytes. No model client retries a 400, and one that did would still be refused.
+- **An unredirectable route is reported, never assumed covered.** `doctor`'s `llm` row is `running` only while every listener answers, and its detail line counts routes, not CLIs: `llm: 2 proxied routes, 3 unproxied (omp-deepseek, codex-unselected, agy), N withheld today`. An unproxied route is a recorded gap, not a stopped safeguard: it does not turn a room red on day one.
+- **Responses are out of scope.** The rule names requests; a secret arriving in a provider's response is not covered here and must not be implied to be.
 
 ## 5. Phase 1: what to build first (one shippable slice)
 
@@ -653,7 +674,7 @@ Deleting data, pushing, editing code, changing credentials and every other unsup
 
 **Ruling: A.** In addition, `doctor` adds a row, `orphan_handoffs`, which names each pending qitem whose destination is not live. This is the same predicate as `up`'s room/team mismatch check, so both belong to the team-prune item `00f2e9cf`. Neither guard moves a seat.
 
-**DATED NOTE, 2026-10-15 (go-dev): the checker's send verb is GONE, so option A's row above is the record of which choice was made rather than a live description - the two option rows and the ruling itself are kept as they were written, and this sentence is what a reader takes as today's state.** The owner ruled the verb out (it refused every send, and the policy it checked was written by nothing), and `cmd/seatcheck` in the client now carries only the read-only `audit-scan`; **the audited send path is the client's own `4genteam send`**, which builds the room's declared links into a policy at send time, decides, writes the decision line, delivers and writes the outcome line in ONE process (`internal/clientseat`) - which is why the audit is no longer split across two processes' lifetimes. **What 7.11's rule requires of a closure does not change, and it is exactly what the rows closed today did:** the destination is read from `4genteam ps <room> --nodes`, and the closure carries `--reason handed_off_to --target <session>` with the new row named in the note.
+**Current state.** The checker's send verb is gone: `cmd/seatcheck` carries only the read-only `audit-scan`, and the audited send path is `4genteam send` (`internal/clientseat`), which builds the room's declared links into a policy at send time, decides, writes the decision line, delivers and writes the outcome line in one process. A closure reads the destination from `4genteam ps <room> --nodes` and carries `--reason handed_off_to --target <session>` with the new row named in the note.
 
 ### 7.12 Addendum: a probe that could not run is not an absence (architect ruling 2026-10-20, board row `6e1171ba`; rail `qitem-20261020163856-6c7deb64075f`)
 

@@ -67,3 +67,16 @@ repos:
         stages: [pre-push]
         always_run: true
         pass_filenames: false
+
+  # Every `file:line` and backticked `Test` name in ai_docs resolves (scripts/DOC-CITATIONS.py). CI runs it
+  # too; here a drifted citation is refused before the push. Exit 2 is a refusal (an unpopulated
+  # agenthub_client/), not a violation, and it refuses the push all the same.
+  - repo: local
+    hooks:
+      - id: doc-citations
+        name: "every ai_docs citation resolves"
+        entry: python3 scripts/DOC-CITATIONS.py
+        language: system
+        stages: [pre-push]
+        always_run: true
+        pass_filenames: false

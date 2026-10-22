@@ -12,7 +12,7 @@ import (
 	"agenthub/fastmcp/task_management/domain/entities"
 )
 
-// PERF-04 (ai_docs/core-architecture/nfr-measurements.md): one broadcast of a ~2 KB task event to
+// PERF-04 (ai_docs/core-architecture/nfr-register.md): one broadcast of a ~2 KB task event to
 // N registered sockets, through the production path - RegisterConnection for the registry,
 // BroadcastDataChange for the fan-out (authorization per socket, one frame marshal per socket, one
 // SendText hand-off each). The wire and the browser are not measured; this is server-side fan-out.

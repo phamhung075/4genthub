@@ -7,7 +7,7 @@ This guide helps you quickly start frontend development for agenthub with the ne
 ## ✅ Prerequisites
 
 - Docker and Docker Compose installed
-- Node.js 20+ (for local development) 
+- Node.js 20+ (for local development)
 - Git repository cloned
 
 ## 🔧 Setup Steps
@@ -139,12 +139,12 @@ docker-compose up
 
 ## 🚀 What's Fixed
 
-✅ **Node.js 20**: Compatible with Vite 7.1.3  
-✅ **Port 3800**: Consistent across all configurations  
-✅ **Hot Reload**: Volume mounts for instant updates  
-✅ **Security**: Non-root user in container  
-✅ **Performance**: Optimized development builds  
+✅ **Node.js 20**: Compatible with Vite 7.1.3
+✅ **Port 3800**: Consistent across all configurations
+✅ **Hot Reload**: Volume mounts for instant updates
+✅ **Security**: Non-root user in container
+✅ **Performance**: Optimized development builds
 
 ---
 
-**Need Help?** Check `ai_docs/troubleshooting-guides/frontend-development-environment-fix.md` for detailed troubleshooting.
+**Need Help?** See `ai_docs/operations/operations-guide.md` (Troubleshooting).

@@ -148,7 +148,7 @@ The **`4genteam` client** carries the traffic. It is the Go module in this repos
 
 The client also carries `4genteam policy`, `seat`, `feedback`, `watch` and `compact`; `4genteam --help` prints the surface.
 
-The seat model itself — rooms, seats, seat types, modules, overlays, links — is documented **once**, in `agenthub_go/NEXT_GEN.md` under "How the project and its seats work together", with the HTTP and MCP surface in `ai_docs/api-integration/surface-inventory.md`. **It is not repeated here.**
+The seat model itself — rooms, seats, seat types, modules, overlays, links — is documented **once**, in `ai_docs/agent-system/seat-model-and-mcp-surface.md`, with the HTTP and MCP surface in `ai_docs/api-integration/surface-inventory.md`. **It is not repeated here.**
 
 **Seats can also report friction back.** The same channel has three doors onto one writer: the MCP tool `submit_feedback`, the HTTP routes `POST`/`GET /api/v2/feedback`, and the `4genteam feedback` verb, which is `agenthub_client/internal/clientfeedback/feedback.go` (registered with the other verbs at `agenthub_client/cmd/4genteam/main.go:105`), for runtimes without MCP. A report carries the **layer** it belongs to (`runtime`, `cloud`, `seat-context`, `workspace`, `other`), the room and seat, and what happened; the credential scan runs before storage, and the dashboard groups reports by layer so a theme several seats hit reads as one theme rather than as several notes.
 
@@ -358,11 +358,9 @@ mcp__agenthub_http__manage_context(
 | Resource | Description | Link |
 |----------|-------------|------|
 | 🏗️ **Architecture Guide** | Deep dive into system design | `ai_docs/core-architecture/agenthub-system-architecture.md` |
-| 🔧 **Development Guide** | Setup and contribution guide | `ai_docs/development-guides/` |
-| 🛠️ **Operations Manual** | Deployment and maintenance | `ai_docs/operations/` |
-| 🔍 **Troubleshooting** | Common issues and solutions | `ai_docs/troubleshooting-guides/` |
+| 🔧 **Local setup** | Server, dashboard and client on one machine | `ai_docs/setup-guides/local-setup.md` |
+| 🛠️ **Operations** | Deploy, CI, schema changes, health, troubleshooting | `ai_docs/operations/operations-guide.md` |
 | 🧭 **API & MCP reference** | The mounted route and tool surface | `ai_docs/api-integration/surface-inventory.md` |
-| 📋 **Changelog** | Version history and release notes | [CHANGELOG/](CHANGELOG/) |
 
 ---
 
@@ -534,45 +532,12 @@ That is the **context API**, not the platform's composition model. How a seat is
 
 ## 📋 **Version History**
 
-### 📚 **Changelog & Release Notes**
-
-Track all changes, releases, and improvements to the agenthub platform through our comprehensive changelog.
+`git log` is the change history: every commit body says what was wrong, what changed and how it was tested. There is no changelog file (owner ruling 2026-10-21); release notes, when needed, are generated from the Conventional Commits log.
 
 | Resource | Description | Link |
 |----------|-------------|------|
-| 📋 **Main Changelog** | Complete version history and release notes | [CHANGELOG/](CHANGELOG/) |
-| 🏷️ **Release Format** | Follows Keep a Changelog specification | [keepachangelog.com](https://keepachangelog.com/) |
 | 🔢 **Versioning** | Semantic Versioning (MAJOR.MINOR.PATCH) | [semver.org](https://semver.org/) |
 | 🎯 **Deploy marker** | `GET /health` reports the running version — **and only the BACKEND's: the frontend ships as a separate artifact, so its half is checked by the bundle filename the dashboard actually serves, and a deploy is complete only when both halves move.** **Read it rather than trusting this cell:** the deployed version IS the tree's `config.ReleaseVersion` (`agenthub_go/fastmcp/config/version.go:21`), served by `healthVersion = config.ReleaseVersion` (`agenthub_go/fastmcp/server/httpapp/http.go:160`), so compare that literal with `curl -sS https://api.4genthub.com/health` — they must agree, and any number quoted here would be a reading with a date on it, not a fact. | [CHANGELOG/](CHANGELOG/) |
-
-### 🚀 **Latest Releases**
-
-**Recent highlights from our development journey:**
-
-- **HISTORY — `[2025-09-19] - Iteration 107`** - 🏆 *"Septuple Centenarian Perfection"* — **this is a record of the RETIRED PYTHON TREE, not of this server:** `agenthub_main/` is archived and this repository no longer builds or tests it (`55c33107`, "ci: stop building and testing the archived Python server"). **The 541 tests and the 107 iterations are `agenthub_main`'s; the Go server's own tests are the live ones.** Kept, labelled, rather than deleted — **a release note that reads as a current highlight is a retired stack presented as live.**
-
-- **Agent Library Retirement** - Removed the Python agent library (32 templates), the `agent_templates` / `user_agent_instances` tables and the `call_agent` MCP tool
-  - Replaced by the seat model (`manage_seat` / `call_seat`) and the `agents` registry via `manage_agent`
-  - Reduced complexity with no lost user workflow
-
-### 📈 **Version Migration Guides**
-
-When upgrading between versions, refer to our migration documentation:
-
-- **Breaking Changes** - Documented in each release with migration steps
-- **API Updates** - Version-specific changes to MCP protocol integration
-- **Agent Changes** - Updates to the agent registry and the seat tool surface (`manage_seat` / `call_seat`)
-- **Configuration Updates** - Environment and setup requirement changes
-
-### 🔄 **Release Process**
-
-Our release process follows industry best practices:
-
-1. **Development** → Feature branches with comprehensive testing
-2. **Integration** → Merge to main with full test suite validation
-3. **Documentation** → Update changelog with Keep a Changelog format
-4. **Release** → Semantic versioning with clear release notes
-5. **Migration Support** → Upgrade guides and backward compatibility notes
 
 ---
 

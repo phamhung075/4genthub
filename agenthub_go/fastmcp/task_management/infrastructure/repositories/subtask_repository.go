@@ -289,8 +289,8 @@ func (r *ORMSubtaskRepository) FindByParentTaskID(ctx context.Context, parentTas
 }
 
 // FindByAssignee is find_by_assignee. Python compares the JSON column with LIKE, which
-// PostgreSQL rejects for json/jsonb; this port uses jsonb containment instead (deviation
-// recorded in MIGRATION.md), so a plain name or an @seat_key matches by array membership.
+// PostgreSQL rejects for json/jsonb; this port uses jsonb containment instead (an accepted
+// deviation), so a plain name or an @seat_key matches by array membership.
 func (r *ORMSubtaskRepository) FindByAssignee(ctx context.Context, assignee string) ([]*entities.Subtask, error) {
 	pattern, err := value_objects.PyJSONDumps([]any{assignee}, -1)
 	if err != nil {
@@ -626,7 +626,7 @@ func (r *ORMSubtaskRepository) CompleteSubtask(ctx context.Context, subtaskID, c
 }
 
 // GetSubtasksByAssignee is get_subtasks_by_assignee (no user filter, updated_at descending);
-// it uses the same jsonb containment as FindByAssignee (deviation recorded in MIGRATION.md).
+// it uses the same jsonb containment as FindByAssignee (an accepted deviation).
 func (r *ORMSubtaskRepository) GetSubtasksByAssignee(ctx context.Context, assignee string, limit *int) ([]*entities.Subtask, error) {
 	pattern, err := value_objects.PyJSONDumps([]any{assignee}, -1)
 	if err != nil {

@@ -8,7 +8,7 @@ package config
 // register_mcp_client response, the access-level health checker and the connection-management
 // server records carried either the ported module's default (0.0.2c) or the Python framework's
 // version (2.1.0). Three answers to "which release is this?" is how a deploy gets called
-// complete when it is not, so the field is now one value (measured 2026-10-06; see CHANGELOG/).
+// complete when it is not, so the field is now one value (measured 2026-10-06).
 //
 // The Python port also kept the version overridable with SERVER_VERSION and its metadata in
 // VersionInfo; both went with that tree. SERVER_VERSION is set nowhere in this repo and an
@@ -17,8 +17,7 @@ package config
 //
 // Bump this with every change that must be confirmable after a deploy. WHERE the marker goes DEPENDS
 // on the push regime, so this comment states that dependency instead of asserting one regime - which
-// regime is intended is the owner's call, and NEXT_GEN rule 80 is the record of what happens when the
-// two are confused. Under a manual, batched push the marker goes LAST, so the string can never cover a
+// regime is intended is the owner's call, and confusing the two leaves the marker naming the wrong tree. Under a manual, batched push the marker goes LAST, so the string can never cover a
 // tree that lacks the content it names. Under a push-as-commits-land regime it goes as soon as the
 // tree holds content worth identifying, and a deploy that reports an unchanged version is then
 // confirmable only by /health's uptime, not by the string.
