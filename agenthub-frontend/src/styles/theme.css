@@ -155,7 +155,7 @@
   --color-accent-contrast: #0b1020;
   --color-accent-ring: rgba(129, 140, 248, 0.22);
   --color-surface-raised: #1b2438;
-  --color-surface-border-strong: #334155;
+  --color-surface-border-strong: #475569;
 
   --nav-glow: radial-gradient(circle, rgba(129, 140, 248, 0.20) 0%, rgba(129, 140, 248, 0.09) 50%, rgba(129, 140, 248, 0) 100%);
 
@@ -177,8 +177,15 @@
 
   --color-surface: #131a2b;
   --color-surface-hover: var(--color-surface-raised);
-  --color-surface-border: #26314a;
-  --color-surface-border-hover: #334155;
+  /* The stroke family, one step above the fill it can sit on - architect ruling
+     RULING-2026-10-23-dark-border-collision.md. Dark's border used to be #26314a,
+     the same value as --color-background-tertiary, so a stroke on a tertiary
+     card drew 1.000:1. Light already placed its border on the rung above
+     tertiary; these four lines restore that relationship in dark and leave every
+     fill untouched. An arm in tests/theme/themeTokens.test.ts keeps a stroke from
+     colliding with a fill again. */
+  --color-surface-border: #334155;
+  --color-surface-border-hover: var(--color-surface-border-strong);
 
   --color-text: #f1f5f9;
   --color-text-secondary: #94a3b8;
@@ -187,7 +194,7 @@
   --color-text-inverse: #0b1020;
 
   --color-input-background: #0b1020;
-  --color-input-border: #475569;
+  --color-input-border: var(--color-surface-border-strong);
   --color-input-border-focus: var(--color-accent);
   --color-input-border-error: #f87171;
   --color-input-text: var(--color-text);
