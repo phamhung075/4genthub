@@ -380,21 +380,21 @@ export function TokenManagement() {
           <TabsList className="grid w-full grid-cols-3 bg-background-secondary border border-surface-border shadow-sm rounded-lg h-12">
             <TabsTrigger
               value="generate"
-              className="flex h-full min-w-0 items-center justify-center gap-1.5 px-1 text-xs font-medium sm:gap-2 sm:text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary-hover data-[state=active]:text-accent-contrast data-[state=active]:shadow-lg hover:bg-background-hover transition-all rounded-md"
+              className="flex h-full min-w-0 items-center justify-center gap-1.5 px-1 text-xs font-medium sm:gap-2 sm:text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary-hover data-[state=active]:text-accent-contrast data-[state=active]:shadow-lg hover:bg-background-tertiary transition-all rounded-md"
             >
               <Key size={18} className="hidden shrink-0 sm:block" />
               <span className="text-center leading-tight">Generate Token</span>
             </TabsTrigger>
             <TabsTrigger
               value="tokens"
-              className="flex h-full min-w-0 items-center justify-center gap-1.5 px-1 text-xs font-medium sm:gap-2 sm:text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary-hover data-[state=active]:text-accent-contrast data-[state=active]:shadow-lg hover:bg-background-hover transition-all rounded-md"
+              className="flex h-full min-w-0 items-center justify-center gap-1.5 px-1 text-xs font-medium sm:gap-2 sm:text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary-hover data-[state=active]:text-accent-contrast data-[state=active]:shadow-lg hover:bg-background-tertiary transition-all rounded-md"
             >
               <Shield size={18} className="hidden shrink-0 sm:block" />
               <span className="text-center leading-tight">Active Tokens</span>
             </TabsTrigger>
             <TabsTrigger
               value="settings"
-              className="flex h-full min-w-0 items-center justify-center gap-1.5 px-1 text-xs font-medium sm:gap-2 sm:text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary-hover data-[state=active]:text-accent-contrast data-[state=active]:shadow-lg hover:bg-background-hover transition-all rounded-md"
+              className="flex h-full min-w-0 items-center justify-center gap-1.5 px-1 text-xs font-medium sm:gap-2 sm:text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary-hover data-[state=active]:text-accent-contrast data-[state=active]:shadow-lg hover:bg-background-tertiary transition-all rounded-md"
             >
               <Settings size={18} className="hidden shrink-0 sm:block" />
               <span className="text-center leading-tight">Settings</span>
@@ -403,7 +403,7 @@ export function TokenManagement() {
 
           {/* Generate Token Tab */}
           <TabsContent value="generate" className="bg-surface rounded-lg p-6 shadow-sm border border-surface-border space-y-6">
-            <Card className="bg-background-secondary border-surface-border">
+            <Card className="bg-background-tertiary border-surface-border">
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
                   <Sparkles className="h-5 w-5 text-primary" />
@@ -436,7 +436,7 @@ export function TokenManagement() {
                   </div>
 
                   {/* Quick Actions */}
-                  <div className="flex flex-wrap gap-2 p-4 bg-background-tertiary rounded-lg">
+                  <div className="flex flex-wrap gap-2 p-4 bg-background-secondary rounded-lg">
                     <Button
                       variant="outline"
                       size="sm"
@@ -590,9 +590,9 @@ export function TokenManagement() {
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
               </div>
             ) : tokens.length === 0 ? (
-              <Card className="p-8 text-center bg-background-secondary border-surface-border">
+              <Card className="p-8 text-center bg-background-tertiary border-surface-border">
                 <div className="mb-6">
-                  <div className="mx-auto w-16 h-16 bg-gradient-to-br from-primary-light to-secondary-light rounded-full flex items-center justify-center mb-4">
+                  <div className="mx-auto w-16 h-16 bg-primary-light rounded-full flex items-center justify-center mb-4">
                     <Key className="h-8 w-8 text-primary" />
                   </div>
                   <h3 className="text-xl font-semibold mb-2">No API Tokens Yet</h3>
@@ -632,7 +632,7 @@ export function TokenManagement() {
                                 {isExpired ? 'Expired' : token.is_active ? 'Active' : 'Inactive'}
                               </Badge>
                               {isExpiringSoon && !isExpired && (
-                                <Badge variant="outline" className="border-warning text-warning">
+                                <Badge variant="outline" className="border-warning text-warning-dark dark:border-warning dark:text-warning-dark">
                                   Expiring Soon
                                 </Badge>
                               )}
@@ -763,7 +763,7 @@ export function TokenManagement() {
 
           {/* Settings Tab */}
           <TabsContent value="settings" className="bg-surface rounded-lg p-6 shadow-sm border border-surface-border space-y-6">
-            <Card className="bg-background-secondary border-surface-border">
+            <Card className="bg-background-tertiary border-surface-border">
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
                   <Settings className="h-5 w-5 text-primary" />
@@ -868,7 +868,7 @@ export function TokenManagement() {
                         const configString = `"agenthub_http": ${JSON.stringify(config, null, 2)}`;
                         copyToClipboard(configString, 'mcp-config');
                       }}
-                      className={copiedButton === 'mcp-config' ? 'bg-success-light border-success text-success-dark' : ''}
+                      className={copiedButton === 'mcp-config' ? 'bg-success-light border-success text-success-dark dark:border-success dark:text-success-dark' : ''}
                     >
                       {copiedButton === 'mcp-config' ? (
                         <>
@@ -887,7 +887,7 @@ export function TokenManagement() {
                       variant="outline"
                       size="sm"
                       onClick={() => generatedToken && copyToClipboard(generatedToken, 'token-only')}
-                      className={copiedButton === 'token-only' ? 'bg-success-light border-success text-success-dark' : ''}
+                      className={copiedButton === 'token-only' ? 'bg-success-light border-success text-success-dark dark:border-success dark:text-success-dark' : ''}
                     >
                       {copiedButton === 'token-only' ? (
                         <>
