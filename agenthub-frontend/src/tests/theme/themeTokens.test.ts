@@ -1,4 +1,4 @@
-import { resolvedTokenOf, tokenOf } from './cssTokens';
+import { contrastRatio, luminanceOf, resolvedTokenOf, tokenOf } from './cssTokens';
 
 // The arms that read the token map itself. The JS palette that used to mirror
 // these values is gone: MUI now names the same tokens, so what a reader needs
@@ -39,14 +39,6 @@ describe('surface role ladder (RULING-2026-10-23-surface-role-ladder.md)', () =>
     '--color-background-active',
   ];
 
-  const luminanceOf = (hex: string) => {
-    expect(hex, 'a rung resolves to a literal hex').toMatch(/^#[0-9a-f]{6}$/);
-    const channels = [1, 3, 5]
-      .map((i) => parseInt(hex.slice(i, i + 2), 16) / 255)
-      .map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
-    return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
-  };
-
   it.each([
     ['light', ':root'],
     ['dark', '.dark'],
@@ -73,5 +65,67 @@ describe('surface role ladder (RULING-2026-10-23-surface-role-ladder.md)', () =>
     } else {
       steps.slice(1).forEach((value, i) => expect(value).toBeGreaterThan(steps[i]));
     }
+  });
+});
+
+// RULING-2026-10-23-dark-border-collision.md. A stroke must not resolve to the
+// value of a fill it can sit on: dark's border used to BE the tertiary rung
+// (#26314a), so the six `.theme-*` panels and the four /tokens cards drew a
+// 1.000:1 outline. The ruled fix moved the stroke family up one step rather than
+// moving a fill, and this arm is what keeps it moved.
+//
+// Rule 1 names five fills, not "any fill", and the omission is deliberate:
+// light's border IS the active rung by the design the ladder landed (#e2e8f0),
+// and a hover drawn on an active fill takes the strong stroke. Both grounds are
+// page/transient, and the floor below is what pins their separation.
+describe('the stroke family (RULING-2026-10-23-dark-border-collision.md)', () => {
+  const MODES: [string, string][] = [
+    ['light', ':root'],
+    ['dark', '.dark'],
+  ];
+  const FILLS = [
+    '--color-background-secondary',
+    '--color-background-tertiary',
+    '--color-background-hover',
+    '--color-surface',
+    '--color-surface-raised',
+  ];
+  const STROKES = [
+    '--color-surface-border',
+    '--color-surface-border-strong',
+    '--color-surface-border-hover',
+  ];
+
+  it.each(MODES)('%s: no stroke resolves equal to a fill a card takes', (mode, selector) => {
+    const fills = FILLS.map((name) => [name, resolvedTokenOf(selector, name)] as const);
+    STROKES.forEach((stroke) => {
+      const value = resolvedTokenOf(selector, stroke);
+      fills.forEach(([fill, fillValue]) => {
+        expect(value, `${stroke} resolves equal to ${fill}`).not.toBe(fillValue);
+      });
+    });
+  });
+
+  // The hairline floor the ruling measured: light's accepted border is 1.125 on
+  // tertiary, so the floor cannot go higher without repainting light. Dark after
+  // the change is 1.251 on tertiary and 1.676 on surface.
+  it.each(MODES)('%s: the border clears the hairline floor', (mode, selector) => {
+    const border = resolvedTokenOf(selector, '--color-surface-border');
+    expect(
+      contrastRatio(border, resolvedTokenOf(selector, '--color-background-tertiary')),
+      `${mode} border on a tertiary fill`
+    ).toBeGreaterThanOrEqual(1.12);
+    expect(
+      contrastRatio(border, resolvedTokenOf(selector, '--color-surface')),
+      `${mode} border on the surface`
+    ).toBeGreaterThanOrEqual(1.2);
+  });
+
+  it.each(MODES)('%s: hover and input-border resolve through strong', (mode, selector) => {
+    const strong = resolvedTokenOf(selector, '--color-surface-border-strong');
+    expect(tokenOf(selector, '--color-surface-border-hover')).toBe('var(--color-surface-border-strong)');
+    expect(tokenOf(selector, '--color-input-border')).toBe('var(--color-surface-border-strong)');
+    expect(resolvedTokenOf(selector, '--color-surface-border-hover')).toBe(strong);
+    expect(resolvedTokenOf(selector, '--color-input-border')).toBe(strong);
   });
 });
