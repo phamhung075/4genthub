@@ -114,6 +114,16 @@
   --color-info-light: #dbeafe;
   --color-info-dark: #1d4ed8;
 
+  /* MUI needs a contrast colour beside each status main, and it derives one
+     with getContrastText() - white or rgba(0, 0, 0, 0.87), picked by ratio.
+     These are that derivation for the light mains above (all four pick white),
+     so `muiTheme.ts` names a token instead of MUI guessing at a var(). The arm
+     in tests/theme/muiTheme.test.ts re-derives them from the mains. */
+  --color-success-contrast: #ffffff;
+  --color-warning-contrast: #ffffff;
+  --color-error-contrast: #ffffff;
+  --color-info-contrast: #ffffff;
+
   --color-shadow: rgba(15, 23, 42, 0.06);
   --color-shadow-medium: rgba(15, 23, 42, 0.10);
   --color-shadow-large: rgba(15, 23, 42, 0.16);
@@ -206,6 +216,13 @@
   --color-info: #60a5fa;
   --color-info-light: #1e3a8a;
   --color-info-dark: #93c5fd;
+
+  /* The same derivation for the dark mains above: MUI's getContrastText() picks
+     the dark text for all four, because each dark main is light enough. */
+  --color-success-contrast: rgba(0, 0, 0, 0.87);
+  --color-warning-contrast: rgba(0, 0, 0, 0.87);
+  --color-error-contrast: rgba(0, 0, 0, 0.87);
+  --color-info-contrast: rgba(0, 0, 0, 0.87);
 
   /* Tinted toward the surface hue: pure black shadows are what F-6 measured
      against the light mode, which already tinted its own. */
