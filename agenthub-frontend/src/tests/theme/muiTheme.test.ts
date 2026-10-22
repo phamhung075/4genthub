@@ -1,280 +1,196 @@
-import { lightTheme, darkTheme, getTheme } from '../../theme/muiTheme';
-import { themeConfig } from '../../theme/themeConfig';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { createTheme, decomposeColor, getContrastRatio, type Theme } from '@mui/material/styles';
+import { darkTheme, getTheme, lightTheme } from '../../theme/muiTheme';
+import { resolvedTokenOf, tokenOf } from './cssTokens';
 
-// Mock dependencies
-// The module calls createTheme at import time, before beforeEach clears the spy,
-// so the options it was called with are recorded separately.
-const createThemeOptions = vi.hoisted(() => [] as unknown[]);
+// The module under test is read as source for the no-literal arm: a colour that
+// comes back as a hex would not show up in any palette assertion, because
+// createTheme stores whatever string it is handed.
+const source = readFileSync(resolve(process.cwd(), 'src/theme/muiTheme.ts'), 'utf8');
 
-vi.mock('@mui/material/styles', () => ({
-  createTheme: vi.fn((options) => {
-    createThemeOptions.push(options);
-    return { ...options, isTheme: true };
-  }),
-}));
+const MODES = [
+  { mode: 'light' as const, selector: ':root', theme: lightTheme },
+  { mode: 'dark' as const, selector: '.dark', theme: darkTheme },
+];
 
-vi.mock('../../theme/themeConfig', () => ({
-  themeConfig: {
-    light: {
-      primary: '#1976d2',
-      primaryLight: '#42a5f5',
-      primaryDark: '#1565c0',
-      background: '#ffffff',
-      surface: '#f5f5f5',
-      text: '#000000',
-      textSecondary: '#666666',
-      textDisabled: '#999999',
-      error: '#f44336',
-      errorLight: '#e57373',
-      errorDark: '#d32f2f',
-      warning: '#ff9800',
-      warningLight: '#ffb74d',
-      warningDark: '#f57c00',
-      success: '#4caf50',
-      successLight: '#81c784',
-      successDark: '#388e3c',
-      info: '#2196f3',
-      infoLight: '#64b5f6',
-      infoDark: '#1976d2',
-      surfaceBorder: '#e0e0e0',
-      buttonPrimaryBg: '#1976d2',
-      buttonPrimaryText: '#ffffff',
-      buttonPrimaryHover: '#1565c0',
-      buttonOutlineBorder: '#1976d2',
-      buttonOutlineHover: 'rgba(25, 118, 210, 0.04)',
-      backgroundHover: 'rgba(0, 0, 0, 0.04)',
-      inputBackground: '#ffffff',
-      inputBorder: '#e0e0e0',
-      inputBorderFocus: '#1976d2',
-      inputText: '#000000',
-      inputPlaceholder: '#999999',
-      navBackground: '#ffffff',
-      navBorder: '#e0e0e0',
-      backgroundSecondary: '#f5f5f5',
-    },
-    dark: {
-      primary: '#90caf9',
-      primaryLight: '#e3f2fd',
-      primaryDark: '#42a5f5',
-      background: '#121212',
-      surface: '#1e1e1e',
-      text: '#ffffff',
-      textSecondary: '#aaaaaa',
-      textDisabled: '#666666',
-      error: '#f44336',
-      errorLight: '#e57373',
-      errorDark: '#d32f2f',
-      warning: '#ff9800',
-      warningLight: '#ffb74d',
-      warningDark: '#f57c00',
-      success: '#4caf50',
-      successLight: '#81c784',
-      successDark: '#388e3c',
-      info: '#2196f3',
-      infoLight: '#64b5f6',
-      infoDark: '#1976d2',
-      surfaceBorder: '#333333',
-      buttonPrimaryBg: '#90caf9',
-      buttonPrimaryText: '#000000',
-      buttonPrimaryHover: '#64b5f6',
-      buttonOutlineBorder: '#90caf9',
-      buttonOutlineHover: 'rgba(144, 202, 249, 0.08)',
-      backgroundHover: 'rgba(255, 255, 255, 0.08)',
-      inputBackground: '#1e1e1e',
-      inputBorder: '#333333',
-      inputBorderFocus: '#90caf9',
-      inputText: '#ffffff',
-      inputPlaceholder: '#666666',
-      navBackground: '#1e1e1e',
-      navBorder: '#333333',
-      backgroundSecondary: '#2a2a2a',
-      backgroundTertiary: '#333333',
-    },
-  },
-}));
+const COLOUR_SLOTS = ['primary', 'error', 'warning', 'success', 'info'] as const;
+const STATUS_SLOTS = ['error', 'warning', 'success', 'info'] as const;
+
+// Theme's palette and components are interfaces per key, with no index
+// signature, so a slot named by a union in a loop cannot be read through the
+// type. The two helpers below are the only place that gap is crossed, and each
+// slot the loop can name is listed in COLOUR_SLOTS / the component names above.
+type SlotContents = Record<string, Record<string, unknown>>;
+
+const paletteOf = (theme: Theme): Record<string, { main: string; contrastText: string }> =>
+  theme.palette as unknown as Record<string, { main: string; contrastText: string }>;
+
+const overridesOf = (theme: Theme, component: string): SlotContents => {
+  const components = theme.components as unknown as Record<string, { styleOverrides?: SlotContents }> | undefined;
+  return components?.[component]?.styleOverrides ?? {};
+};
+
+const sameColour = (a: string, b: string) => {
+  const left = decomposeColor(a);
+  const right = decomposeColor(b);
+  return left.type === right.type && JSON.stringify(left.values) === JSON.stringify(right.values);
+};
+
+// MUI's own answer for a literal main: build a throwaway theme and read what
+// createTheme derived, rather than reimplementing getContrastText here.
+const derivedContrast = (mode: 'light' | 'dark', slot: (typeof COLOUR_SLOTS)[number], main: string) =>
+  paletteOf(createTheme({ palette: { mode, [slot]: { main } } }))[slot].contrastText;
+
+const isDarkColour = (colour: string) =>
+  getContrastRatio(colour, '#000000') > getContrastRatio(colour, '#ffffff');
 
 describe('muiTheme', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
+  describe('the file names tokens, never colours', () => {
+    it('carries no hex and no rgb()/rgba() literal', () => {
+      expect(source).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
+      expect(source).not.toMatch(/\brgba?\(/);
+    });
+
+    it('names only tokens the token layer declares, in both modes', () => {
+      const named = [...new Set([...source.matchAll(/var\((--color-[a-z-]+)\)/g)].map((m) => m[1]))];
+      expect(named.length).toBeGreaterThan(20);
+      named.forEach((name) => {
+        expect(() => tokenOf(':root', name), `${name} in :root`).not.toThrow();
+        expect(() => tokenOf('.dark', name), `${name} in .dark`).not.toThrow();
+      });
+    });
+  });
+
+  describe('both themes build from the tokens', () => {
+    MODES.forEach(({ mode, theme }) => {
+      it(`${mode}: createTheme accepted every var() value`, () => {
+        expect(theme.palette.mode).toBe(mode);
+      });
+
+      it(`${mode}: every palette colour carries all four keys`, () => {
+        COLOUR_SLOTS.forEach((slot) => {
+          ['main', 'light', 'dark', 'contrastText'].forEach((key) => {
+            const contents = (theme.palette[slot] ?? {}) as unknown as Record<string, unknown>;
+            expect(contents[key], `${slot}.${key}`).toMatch(/^var\(--color-[a-z-]+\)$/);
+          });
+        });
+      });
+    });
+  });
+
+  describe('contrastText is the derivation MUI itself makes', () => {
+    MODES.forEach(({ mode, selector, theme }) => {
+      it(`${mode}: each status contrast text is exactly what MUI derives`, () => {
+        STATUS_SLOTS.forEach((slot) => {
+          const main = resolvedTokenOf(selector, `--color-${slot}`);
+          const ours = resolvedTokenOf(selector, `--color-${slot}-contrast`);
+          const mui = derivedContrast(mode, slot, main);
+          expect(sameColour(ours, mui), `${slot}: token ${ours}, MUI ${mui}`).toBe(true);
+        });
+      });
+
+      // The accent's contrast token is the product's own choice, not MUI's
+      // black at 87%: it is the background rung in dark (#0b1020, 6.40:1 on the
+      // accent against MUI's 7.04:1). So the invariant asserted here is the
+      // SIDE - the token stays light-on-dark or dark-on-light as MUI derives it,
+      // which is what a changed accent would break.
+      it(`${mode}: the primary contrast text picks the side MUI picks`, () => {
+        const main = resolvedTokenOf(selector, '--color-primary');
+        const ours = resolvedTokenOf(selector, '--color-accent-contrast');
+        expect(isDarkColour(ours)).toBe(isDarkColour(derivedContrast(mode, 'primary', main)));
+        expect(theme.palette.primary.contrastText).toBe('var(--color-accent-contrast)');
+      });
+    });
   });
 
   describe('lightTheme', () => {
-    it('creates theme with light mode', () => {
-      expect(lightTheme.palette.mode).toBe('light');
-    });
-
-    it('uses correct primary colors from themeConfig', () => {
-      expect(lightTheme.palette.primary).toEqual({
-        main: themeConfig.light.primary,
-        light: themeConfig.light.primaryLight,
-        dark: themeConfig.light.primaryDark,
+    it('uses the background and text tokens', () => {
+      expect(lightTheme.palette.background).toMatchObject({
+        default: 'var(--color-background)',
+        paper: 'var(--color-surface)',
       });
-    });
-
-    it('uses correct background colors', () => {
-      expect(lightTheme.palette.background).toEqual({
-        default: themeConfig.light.background,
-        paper: themeConfig.light.surface,
+      expect(lightTheme.palette.text).toMatchObject({
+        primary: 'var(--color-text)',
+        secondary: 'var(--color-text-secondary)',
+        disabled: 'var(--color-text-disabled)',
       });
-    });
-
-    it('uses correct text colors', () => {
-      expect(lightTheme.palette.text).toEqual({
-        primary: themeConfig.light.text,
-        secondary: themeConfig.light.textSecondary,
-        disabled: themeConfig.light.textDisabled,
-      });
+      expect(lightTheme.palette.divider).toBe('var(--color-surface-border)');
     });
 
     it('configures MuiButton component correctly', () => {
-      expect(lightTheme.components!.MuiButton!.styleOverrides!.root).toEqual({
-        textTransform: 'none',
+      const button = overridesOf(lightTheme, 'MuiButton');
+      expect(button.root).toEqual({ textTransform: 'none' });
+      expect(button.contained).toMatchObject({
+        backgroundColor: 'var(--color-button-primary-bg)',
+        color: 'var(--color-button-primary-text)',
+        '&:hover': { backgroundColor: 'var(--color-button-primary-hover)' },
       });
-      expect(lightTheme.components!.MuiButton!.styleOverrides!.contained).toMatchObject({
-        backgroundColor: themeConfig.light.buttonPrimaryBg,
-        color: themeConfig.light.buttonPrimaryText,
+      expect(button.outlined).toMatchObject({
+        borderColor: 'var(--color-button-outline-border)',
+        '&:hover': { backgroundColor: 'var(--color-button-outline-hover)' },
       });
     });
 
     it('configures MuiTextField component correctly', () => {
-      const textFieldOverrides = lightTheme.components!.MuiTextField!.styleOverrides!.root as Record<string, unknown>;
-      expect(textFieldOverrides['& .MuiOutlinedInput-root']).toMatchObject({
-        backgroundColor: themeConfig.light.inputBackground,
+      const textField = overridesOf(lightTheme, 'MuiTextField');
+      expect(textField.root['& .MuiOutlinedInput-root']).toMatchObject({
+        backgroundColor: 'var(--color-input-background)',
       });
     });
 
     it('sets correct typography', () => {
       expect(lightTheme.typography.fontFamily).toBe('"Inter", "Roboto", "Helvetica", "Arial", sans-serif');
-      expect(lightTheme.typography.h1.color).toBe(themeConfig.light.text);
-      expect(lightTheme.typography.body1.color).toBe(themeConfig.light.text);
-      expect(lightTheme.typography.body2.color).toBe(themeConfig.light.textSecondary);
-    });
-
-    it('configures all status colors', () => {
-      expect(lightTheme.palette.error).toEqual({
-        main: themeConfig.light.error,
-        light: themeConfig.light.errorLight,
-        dark: themeConfig.light.errorDark,
-      });
-      expect(lightTheme.palette.warning).toEqual({
-        main: themeConfig.light.warning,
-        light: themeConfig.light.warningLight,
-        dark: themeConfig.light.warningDark,
-      });
-      expect(lightTheme.palette.success).toEqual({
-        main: themeConfig.light.success,
-        light: themeConfig.light.successLight,
-        dark: themeConfig.light.successDark,
-      });
-      expect(lightTheme.palette.info).toEqual({
-        main: themeConfig.light.info,
-        light: themeConfig.light.infoLight,
-        dark: themeConfig.light.infoDark,
-      });
+      expect(lightTheme.typography.h1.color).toBe('var(--color-text)');
+      expect(lightTheme.typography.body1.color).toBe('var(--color-text)');
+      expect(lightTheme.typography.body2.color).toBe('var(--color-text-secondary)');
     });
   });
 
   describe('darkTheme', () => {
-    it('creates theme with dark mode', () => {
-      expect(darkTheme.palette.mode).toBe('dark');
-    });
-
-    it('uses correct primary colors from themeConfig', () => {
-      expect(darkTheme.palette.primary).toEqual({
-        main: themeConfig.dark.primary,
-        light: themeConfig.dark.primaryLight,
-        dark: themeConfig.dark.primaryDark,
-      });
-    });
-
-    it('uses correct background colors', () => {
-      expect(darkTheme.palette.background).toEqual({
-        default: themeConfig.dark.background,
-        paper: themeConfig.dark.surface,
-      });
-    });
-
     it('removes background images in dark mode', () => {
-      // MUI types a component's slots as a loose union and marks them optional; the mock
-      // always supplies concrete objects, so each slot is read through a record here.
-      expect((darkTheme.components!.MuiPaper!.styleOverrides!.root as Record<string, unknown>).backgroundImage).toBe('none');
-      expect((darkTheme.components!.MuiCard!.styleOverrides!.root as Record<string, unknown>).backgroundImage).toBe('none');
-      expect((darkTheme.components!.MuiAppBar!.styleOverrides!.root as Record<string, unknown>).backgroundImage).toBe('none');
-      expect((darkTheme.components!.MuiDrawer!.styleOverrides!.paper as Record<string, unknown>).backgroundImage).toBe('none');
+      expect(overridesOf(darkTheme, 'MuiPaper').root.backgroundImage).toBe('none');
+      expect(overridesOf(darkTheme, 'MuiCard').root.backgroundImage).toBe('none');
+      expect(overridesOf(darkTheme, 'MuiAppBar').root.backgroundImage).toBe('none');
+      expect(overridesOf(darkTheme, 'MuiDrawer').paper.backgroundImage).toBe('none');
     });
 
     it('configures additional dark mode components', () => {
-      // IconButton
-      expect(darkTheme.components!.MuiIconButton).toBeDefined();
-      expect((darkTheme.components!.MuiIconButton!.styleOverrides!.root as Record<string, unknown>).color).toBe(themeConfig.dark.text);
-
-      // Checkbox
-      expect(darkTheme.components!.MuiCheckbox).toBeDefined();
-      expect((darkTheme.components!.MuiCheckbox!.styleOverrides!.root as Record<string, unknown>).color).toBe(themeConfig.dark.textSecondary);
-
-      // Radio
-      expect(darkTheme.components!.MuiRadio).toBeDefined();
-      expect((darkTheme.components!.MuiRadio!.styleOverrides!.root as Record<string, unknown>).color).toBe(themeConfig.dark.textSecondary);
-
-      // Switch
-      expect(darkTheme.components!.MuiSwitch).toBeDefined();
-      expect((darkTheme.components!.MuiSwitch!.styleOverrides!.root as Record<string, unknown>)['& .MuiSwitch-track'].backgroundColor).toBe(themeConfig.dark.backgroundTertiary);
-
-      // Progress indicators
-      expect((darkTheme.components!.MuiLinearProgress!.styleOverrides!.root as Record<string, unknown>).backgroundColor).toBe(themeConfig.dark.backgroundTertiary);
-      expect((darkTheme.components!.MuiCircularProgress!.styleOverrides!.root as Record<string, unknown>).color).toBe(themeConfig.dark.primary);
+      expect(overridesOf(darkTheme, 'MuiIconButton').root.color).toBe('var(--color-text)');
+      expect(overridesOf(darkTheme, 'MuiCheckbox').root.color).toBe('var(--color-text-secondary)');
+      expect(overridesOf(darkTheme, 'MuiRadio').root.color).toBe('var(--color-text-secondary)');
+      expect(overridesOf(darkTheme, 'MuiSwitch').root['& .MuiSwitch-track']).toMatchObject({
+        backgroundColor: 'var(--color-background-tertiary)',
+      });
+      expect(overridesOf(darkTheme, 'MuiLinearProgress').root.backgroundColor).toBe(
+        'var(--color-background-tertiary)'
+      );
+      expect(overridesOf(darkTheme, 'MuiCircularProgress').root.color).toBe('var(--color-primary)');
     });
 
     it('configures TextField with dark theme specific styles', () => {
-      const textFieldOverrides = darkTheme.components!.MuiTextField!.styleOverrides!.root as Record<string, unknown>;
-      expect(textFieldOverrides['& .MuiInputLabel-root']).toMatchObject({
-        color: themeConfig.dark.textSecondary,
+      const textField = overridesOf(darkTheme, 'MuiTextField');
+      expect(textField.root['& .MuiInputLabel-root']).toMatchObject({
+        color: 'var(--color-text-secondary)',
       });
-      expect(textFieldOverrides['& .MuiInputLabel-root']['&.Mui-focused']).toMatchObject({
-        color: themeConfig.dark.primary,
+      expect(textField.root['& .MuiInputLabel-root']['&.Mui-focused']).toMatchObject({
+        color: 'var(--color-primary)',
       });
     });
   });
 
   describe('getTheme', () => {
     it('returns lightTheme for light mode', () => {
-      const theme = getTheme('light');
-      expect(theme).toBe(lightTheme);
+      expect(getTheme('light')).toBe(lightTheme);
     });
 
     it('returns darkTheme for dark mode', () => {
-      const theme = getTheme('dark');
-      expect(theme).toBe(darkTheme);
-    });
-  });
-
-  describe('createTheme calls', () => {
-    it('calls createTheme once for each theme', () => {
-      expect(createThemeOptions).toHaveLength(2);
-      expect(lightTheme).toMatchObject({ isTheme: true });
-      expect(darkTheme).toMatchObject({ isTheme: true });
-      expect(lightTheme).not.toBe(darkTheme);
-    });
-
-    it('passes ThemeOptions type to createTheme', () => {
-      for (const options of createThemeOptions) {
-        expect(options).toEqual(
-          expect.objectContaining({
-            palette: expect.any(Object),
-            components: expect.any(Object),
-            typography: expect.any(Object),
-          })
-        );
-      }
+      expect(getTheme('dark')).toBe(darkTheme);
     });
   });
 
   describe('component consistency', () => {
     it('has consistent component overrides between themes', () => {
-      const lightComponents = Object.keys(lightTheme.components!);
-      const darkComponents = Object.keys(darkTheme.components!);
-
-      // Common components should exist in both themes
       const commonComponents = [
         'MuiPaper',
         'MuiCard',
@@ -288,16 +204,16 @@ describe('muiTheme', () => {
         'MuiChip',
       ];
 
-      commonComponents.forEach(component => {
-        expect(lightComponents).toContain(component);
-        expect(darkComponents).toContain(component);
+      commonComponents.forEach((component) => {
+        expect(Object.keys(overridesOf(lightTheme, component)).length, `light ${component}`).toBeGreaterThan(0);
+        expect(Object.keys(overridesOf(darkTheme, component)).length, `dark ${component}`).toBeGreaterThan(0);
       });
     });
 
     it('has consistent typography configuration', () => {
-      const typographyKeys: Array<keyof typeof lightTheme.typography> = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'body1', 'body2'];
+      const typographyKeys: (keyof typeof lightTheme.typography)[] = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'body1', 'body2'];
 
-      typographyKeys.forEach(key => {
+      typographyKeys.forEach((key) => {
         expect(lightTheme.typography[key]).toBeDefined();
         expect(darkTheme.typography[key]).toBeDefined();
       });
