@@ -116,6 +116,11 @@ well-formed criterion names the command it is settled by, NARROW enough that the
 itself names what it proves, and settles the rest with a sha and the counts - the totals, and the split when
 added and deleted lines matter separately.
 
+One command can settle several claims, and it must: pass ONE `--test` and select the tests with a selector, then
+quote that same string in each criterion - `--test "go test ./pkg/ -run '^TestA$|^TestB$' -count=1"` settles both,
+and `-run 'TestThird'` adds a third on the same string. A second `--test` is refused as `given twice`, so a close
+that needs two unrelated commands is two closes, or one command that runs both - never two flags.
+
 A count criterion is about the change, not a file: the per-path rows reach the judge with no names, so "one
 path adds 34 lines" cannot be stated - only "lines_added 34" can. A criterion that needs a particular path's
 count is not settleable; state the count, or run a command whose line names that proof.
