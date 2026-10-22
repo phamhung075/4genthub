@@ -6,25 +6,39 @@ import (
 	taskentities "agenthub/fastmcp/task_management/domain/entities"
 )
 
-// TestFactAndDecisionKindsPartitionTheIntentKinds is D9's own rule stated as a property: an intent
-// is a fact or a decision and never both, which is what makes "facts sync, decisions sequence" a
-// complete rule rather than one with a case nobody wrote down. A kind that fell out of both lists
-// would be an intent the service would append with no staleness check at all - a decision that
-// skipped the rule - so this is not bookkeeping.
-func TestFactAndDecisionKindsPartitionTheIntentKinds(t *testing.T) {
-	if len(IntentKinds) != len(FactKinds)+len(DecisionKinds) {
-		t.Fatalf("the two lists must partition the vocabulary: %d intents, %d facts + %d decisions",
-			len(IntentKinds), len(FactKinds), len(DecisionKinds))
+// TestEvidenceSubmittedIsNotPushable pins the refusal direction: the evidence controller is the
+// ledger's only evidence writer, and `evidence_submitted` is not a kind the intents route accepts.
+// The batch gate is IsIntentKind (ledger_service.go), so this list IS the enforcement - a batch that
+// carries the kind is refused with unsupported_kind, which a pg case drives end to end
+// (evidence_intent_refused_pg_test.go). The constant must still exist and still name the table's
+// token: it is the fact vocabulary's entry, and the client cannot be rewritten around a bare string.
+func TestEvidenceSubmittedIsNotPushable(t *testing.T) {
+	if got := string(IntentKindEvidenceSubmitted); got != "evidence_submitted" {
+		t.Fatalf("the evidence kind must name the table's token, got %q", got)
 	}
+	if IsIntentKind(string(IntentKindEvidenceSubmitted)) {
+		t.Fatal("evidence_submitted must not be a kind a client can push: evidence is not commutative, " +
+			"so a fact intent would append an account of a head_sha that the evidence route's 409 owns")
+	}
+	// The classifying half is NOT what the refusal removes: the staleness query still needs the kind,
+	// so a decision staged before a controller-written evidence row stays accepted.
+	if !IntentKindEvidenceSubmitted.IsFact() {
+		t.Fatal("evidence_submitted must stay a fact for HasNonFactAfter, or every decision staged " +
+			"before an evidence row would answer stale_base_seq")
+	}
+}
+
+// TestEveryPushableKindIsExactlyOneOfFactOrDecision is D9's own rule stated as a property over the
+// kinds a client may actually push: an intent is a fact or a decision and never both, which is what
+// makes "facts sync, decisions sequence" a complete rule rather than one with a case nobody wrote
+// down. A kind that fell out of both lists would be an intent the service would append with no
+// staleness check at all - a decision that skipped the rule - so this is not bookkeeping. It is a
+// STRICT subset: evidence_submitted is a fact that is deliberately not pushable, pinned above.
+func TestEveryPushableKindIsExactlyOneOfFactOrDecision(t *testing.T) {
 	for _, k := range IntentKinds {
 		if k.IsFact() == k.IsDecision() {
 			t.Fatalf("kind %q must be exactly one of a fact or a decision: IsFact = %v, IsDecision = %v",
 				k, k.IsFact(), k.IsDecision())
-		}
-	}
-	for _, k := range FactKinds {
-		if !IsIntentKind(string(k)) {
-			t.Fatalf("the fact %q is not in the intent vocabulary", k)
 		}
 	}
 	for _, k := range DecisionKinds {
@@ -34,9 +48,14 @@ func TestFactAndDecisionKindsPartitionTheIntentKinds(t *testing.T) {
 	}
 	// The two lists are two and three, and the count is worth pinning: a decision added without a
 	// thought would silently put every client that has not read the new contract at risk of a
-	// refusal it cannot act on.
+	// refusal it cannot act on, and a fact added to the pushable list without one would append
+	// observations the server's own rules never see.
 	if len(DecisionKinds) != 2 || len(FactKinds) != 3 {
 		t.Fatalf("the ledger names two decisions and three facts, got %d and %d", len(DecisionKinds), len(FactKinds))
+	}
+	if len(IntentKinds) != len(FactKinds)+len(DecisionKinds)-1 {
+		t.Fatalf("the pushable list is every fact and decision but the server-written one: %d intents, %d facts + %d decisions",
+			len(IntentKinds), len(FactKinds), len(DecisionKinds))
 	}
 }
 
@@ -72,7 +91,9 @@ func TestEveryIntentKindIsATableKind(t *testing.T) {
 // intents nor table kinds at all: they carry no writer, and a table that still accepted one would be
 // widening a vocabulary nothing writes.
 func TestTheServersOwnKindsAreNotIntents(t *testing.T) {
-	for _, kind := range []string{"context_updated", "planned", ""} {
+	// context_updated is the context path's write; evidence_submitted is the evidence controller's, and
+	// the client's own kind list dropped it in the same change so an offline queue cannot hold one.
+	for _, kind := range []string{"context_updated", "evidence_submitted", "planned", ""} {
 		if IsIntentKind(kind) {
 			t.Fatalf("%q must not be a kind a client can push", kind)
 		}

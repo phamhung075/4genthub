@@ -15,12 +15,13 @@
 // (ai_docs/core-architecture/agenthub-system-architecture.md) - and which no table can hold.
 package entities
 
-// IntentKind is one kind a client may push through the outbox. It is the same string the ledger
-// stores as `task_events.kind`; what makes it an INTENT is that a client writes it, which is why the
-// list below is smaller than the table's vocabulary: `context_updated` is written by the server (the
-// context path) and a client that sent one would be inventing history it did not make. (The comment
-// this replaces named `delivered` and `escalated` as server-written; the ledger measured that
-// NEITHER had a writer anywhere - handoffs between seats are queue rows and an escalation is a
+// IntentKind is one kind of ledger entry. It is the same string the ledger stores as
+// `task_events.kind`. Two of the table's kinds are NOT intents because no client writes them:
+// `context_updated` (the context path) and `evidence_submitted` (the evidence controller, the ledger's
+// one evidence writer - it keeps a fact classification for the staleness query, but a client that
+// pushed one would be writing a row the comparison that guards a head never saw). (The comment this
+// replaces named `delivered` and `escalated` as server-written; the ledger measured that NEITHER had
+// a writer anywhere - handoffs between seats are queue rows and an escalation is a
 // task_audit_records row - and the ruling that closed the handover payload deleted both from the
 // vocabulary rather than keeping a kind nothing writes.)
 type IntentKind string
@@ -30,9 +31,20 @@ const (
 	IntentKindStatusChanged IntentKind = "status_changed"
 	IntentKindGateVerdict   IntentKind = "gate_verdict"
 	// Facts: append-only observations the client may record offline.
-	IntentKindProgress          IntentKind = "progress"
+	IntentKindProgress IntentKind = "progress"
+	IntentKindHandover IntentKind = "handover"
+	// Server-written, like `context_updated`: a fact by ORDERING, and not a kind a client may push.
+	//
+	// Evidence is not a commutable observation - two accounts of one head_sha cannot both be applied in
+	// arrival order, which is why the evidence route refuses the second account with 409 instead of
+	// appending it. A fact intent owes no base_seq and reaches no comparison
+	// (ledger_service.go's `if in.Kind.IsFact()`), so listing it as pushable let a batch bind a head
+	// with a payload the controller never validated, and let a weak row land on top of a named one: the
+	// controller's own 409 is bypassed by the ledger's second writer. The kind therefore keeps its
+	// CLASSIFICATION - the staleness query reads it through FactKindStrings, and a decision staged
+	// before a controller-written evidence row must stay accepted rather than stale_base_seq - and
+	// loses its PLACE in IntentKinds below. The controller (TaskEventRecorder.Record) is its one writer.
 	IntentKindEvidenceSubmitted IntentKind = "evidence_submitted"
-	IntentKindHandover          IntentKind = "handover"
 )
 
 // DecisionKinds is D9's decision list (architecture agenthub-system-architecture.md, the
@@ -44,19 +56,24 @@ var DecisionKinds = []IntentKind{
 }
 
 // FactKinds is D9's fact list (architecture agenthub-system-architecture.md, the "*Facts* are ..."
-// bullet): append-only observations a client may record offline, which
-// the server accepts in arrival order and NEVER refuses for being late.
+// bullet): append-only observations which the server accepts in arrival order and NEVER refuses for
+// being late. `evidence_submitted` is here for its ORDERING role only - it is written by the
+// controller, not pushed - because HasNonFactAfter asks this list whether a decision staged before an
+// evidence row went stale, and dropping the kind would answer stale_base_seq for every decision
+// staged before the ledger's own evidence write.
 var FactKinds = []IntentKind{
 	IntentKindProgress,
 	IntentKindEvidenceSubmitted,
 	IntentKindHandover,
 }
 
-// IntentKinds is every kind a client may send, in database-declaration order.
+// IntentKinds is every kind a client may send, in database-declaration order - the ENFORCEMENT list:
+// the batch gate refuses anything outside it with unsupported_kind before the task is even resolved.
+// It is a STRICT subset of FactKinds ∪ DecisionKinds on purpose: `evidence_submitted` is a fact by
+// ordering and still not pushable, because a fact owes no comparison and evidence does.
 var IntentKinds = []IntentKind{
 	IntentKindProgress,
 	IntentKindStatusChanged,
-	IntentKindEvidenceSubmitted,
 	IntentKindGateVerdict,
 	IntentKindHandover,
 }

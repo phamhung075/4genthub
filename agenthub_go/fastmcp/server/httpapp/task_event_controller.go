@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"log"
+	"strings"
 
 	"agenthub/fastmcp/server/routes"
 	"agenthub/fastmcp/task_management/application/services"
@@ -107,7 +108,18 @@ func (a taskEvidenceWriterAdapter) RecordEvidence(ctx context.Context, taskID, h
 					out = previous
 					return nil
 				}
-				return routes.ErrEvidenceDuplicate
+				// A ROW THAT NAMES NO TEST IS SUPERSEDED, ON THE TEST AXIS ONLY. A stored row with no
+				// account of the test held the head against every correction: the compare read its
+				// command as "" and no submission naming one could ever match, so the head stayed
+				// frozen on a bare row (architect RULING-2026-10-22-evidence-row-supersession, option
+				// A). The stored row has nothing on that axis for the submission to contradict, so it
+				// appends - but only when the identity axes agree: a different base, head or numstat
+				// is still a 409, and a stored row that names a command is never superseded, which
+				// keeps completeness monotone.
+				if !(sameEvidenceIdentity(previous.Payload, payload) &&
+					evidenceNamesNoTest(previous.Payload) && !evidenceNamesNoTest(payload)) {
+					return routes.ErrEvidenceDuplicate
+				}
 			}
 		}
 
@@ -182,10 +194,8 @@ func sameEvidence(stored, submitted map[string]any) bool {
 	if stored == nil {
 		return false
 	}
-	for _, key := range []string{"base_sha", "head_sha", "numstat"} {
-		if evidenceString(stored, key) != evidenceString(submitted, key) {
-			return false
-		}
+	if !sameEvidenceIdentity(stored, submitted) {
+		return false
 	}
 	storedTest, ok := stored["test"].(map[string]any)
 	if !ok {
@@ -214,6 +224,31 @@ func sameEvidence(stored, submitted map[string]any) bool {
 		}
 	}
 	return true
+}
+
+// sameEvidenceIdentity answers whether the two payloads describe the same head's change:
+// base_sha, head_sha and numstat, the axes a submission may never overwrite. It is the same three
+// keys sameEvidence compares first, split out because the supersession below needs exactly them.
+func sameEvidenceIdentity(stored, submitted map[string]any) bool {
+	for _, key := range []string{"base_sha", "head_sha", "numstat"} {
+		if evidenceString(stored, key) != evidenceString(submitted, key) {
+			return false
+		}
+	}
+	return true
+}
+
+// evidenceNamesNoTest reports whether an evidence payload holds no account of the test, which is the
+// one shape a later submission may supersede (RULING-2026-10-22-evidence-row-supersession): the `test`
+// block is absent, or its command is empty after trimming. An exit code and a `failed` list alone are
+// not an account of anything - no command, no test - so a row carrying only those is weak too. Any
+// non-empty command, however short, is complete: the exit code and `failed` list are then its account.
+func evidenceNamesNoTest(payload map[string]any) bool {
+	test, ok := payload["test"].(map[string]any)
+	if !ok {
+		return true
+	}
+	return strings.TrimSpace(evidenceString(test, "command")) == ""
 }
 
 // evidenceString is the map's string value, or "" for an absent or non-string one: the comparison
