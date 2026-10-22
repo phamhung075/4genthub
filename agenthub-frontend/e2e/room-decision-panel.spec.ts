@@ -162,8 +162,15 @@ function motionInPage() {
 
   return {
     prefersReducedMotion: window.matchMedia('(prefers-reduced-motion: reduce)').matches,
-    renderedPendingRows: section?.querySelectorAll('article.animate-pulse-glow').length ?? 0,
-    renderedPingDots: section?.querySelectorAll('span.animate-ping').length ?? 0,
+    // The attention a pending row carries is the accent tint it paints plus the Tailwind pulse
+    // dot. The row-level glow and the ping dot belonged to the panel `aa3bb6dd` replaced, so
+    // counting them measured a class nothing on this page renders.
+    renderedPendingRows: section
+      ? Array.from(section.querySelectorAll<HTMLElement>('article')).filter((row) =>
+          row.className.includes('bg-accent/[0.03]')
+        ).length
+      : 0,
+    renderedPulseDots: section?.querySelectorAll('span.bg-accent.animate-pulse').length ?? 0,
     firstRow: read(section?.querySelector<HTMLElement>('article') ?? null),
   }
 }
@@ -194,8 +201,6 @@ function attentionProbeInPage() {
 
   return {
     prefersReducedMotion: window.matchMedia('(prefers-reduced-motion: reduce)').matches,
-    pulseGlow: probe('animate-pulse-glow'),
-    ping: probe('animate-ping'),
     pulse: probe('animate-pulse'),
   }
 }
@@ -211,7 +216,7 @@ function attentionCssInPage() {
       // an (empty) cssRules through CSS nesting, so "has cssRules" alone misclassifies it.
       if ('selectorText' in rule && typeof rule.selectorText === 'string') {
         const styleRule = rule as CSSStyleRule
-        if (/animate-(pulse-glow|ping|pulse)\b/.test(styleRule.selectorText)) {
+        if (/animate-pulse\b/.test(styleRule.selectorText)) {
           hits.push({ sheet, media, selector: styleRule.selectorText, animation: styleRule.style.animation })
         }
         continue
@@ -408,17 +413,15 @@ test.describe('Decision Requests panel on production', () => {
     ).toMatch(/min-h-\[[\d.]+(rem|px|em)\]/)
     expect(panelSelectClass, 'the panel Select carries no fixed height class').not.toMatch(/\bh-(8|9|10|11|12)\b/)
 
-    // The attention loop the pending row's class carries is wired in the served CSS and would run.
-    expect(probe.pulseGlow.animationName, 'animate-pulse-glow starts the pulseGlow loop').toBe('pulseGlow')
-    expect(probe.pulseGlow.animationDuration).toBe('2.5s')
-    expect(probe.pulseGlow.animationIterationCount).toBe('infinite')
-    expect(probe.ping.animationName, 'animate-ping starts Tailwind ping').toBe('ping')
+    // The loop the pending row's own dot runs is wired in the served CSS and does run.
     expect(probe.pulse.animationName, 'animate-pulse starts Tailwind pulse').toBe('pulse')
-    expect(css.keyframes, 'the served CSS defines the pulseGlow keyframes').toContain('pulseGlow')
+    expect(probe.pulse.animationDuration, 'animate-pulse loops at 2s').toBe('2s')
+    expect(probe.pulse.animationIterationCount, 'animate-pulse does not stop').toBe('infinite')
+    expect(css.keyframes, 'the served CSS defines the pulse keyframes').toContain('pulse')
 
     if (motion.renderedPendingRows === 0) {
       console.log(
-        `NOT OBSERVABLE on a live row: the room has no pending decision (${labels.length} rows rendered, all "${labels[0]}"), so the attention row and its two dots are not on the page - the class measurement above is a probe, not that row`
+        `NOT OBSERVABLE on a live row: the room has no pending decision (${labels.length} rows rendered, all "${labels[0]}"), so the tinted row and its pulse dot are not on the page - the class measurement above is a probe, not that row`
       )
     }
 
@@ -715,11 +718,13 @@ function readPendingRowInPage() {
     rowFound: Boolean(row),
     rowText: (row?.innerText ?? '').replace(/\s+/g, ' ').slice(0, 240),
     stateLabel: chip?.textContent?.trim() ?? null,
-    pendingClassOnRow: Boolean(row?.className.includes('animate-pulse-glow')),
+    pendingTintOnRow: Boolean(
+      row?.className.includes('border-accent/40') && row.className.includes('bg-accent/[0.03]')
+    ),
     rowMotion: motion(row),
     rowPulseDot: motion(row?.querySelector('span.animate-pulse') ?? null),
-    pingDots: section ? section.querySelectorAll('span.animate-ping').length : 0,
-    pingDotMotion: motion(section?.querySelector('span.animate-ping') ?? null),
+    pulseDots: section ? section.querySelectorAll('span.bg-accent.animate-pulse').length : 0,
+    headerPulseDot: motion(section?.querySelector('span.animate-pulse') ?? null),
     badgeText,
     /**
      * The accent token as theme.css declares it (hex) plus the row's own painted
@@ -755,12 +760,16 @@ test.describe('Decision Requests panel: the pending row, rendered by an injected
 
     expect(reading.found, 'the panel section was found').toBe(true)
     expect(reading.articleCount, 'exactly the injected row is listed').toBe(1)
-    expect(reading.pendingClassOnRow, 'the pending row carries the attention class').toBe(true)
-    expect(reading.rowMotion?.animationName, 'the row runs the pulseGlow loop').toBe('pulseGlow')
-    expect(reading.rowMotion?.animationDuration, 'the row loops at 2.5s').toBe('2.5s')
-    expect(reading.rowMotion?.animationIterationCount, 'the loop does not stop').toBe('infinite')
-    expect(reading.pingDots, 'the header ping dot is rendered').toBeGreaterThan(0)
+    expect(
+      reading.pendingTintOnRow,
+      'the pending row carries the accent border and tint the attention state is made of'
+    ).toBe(true)
+    expect(reading.rowMotion?.animationName, 'the row itself runs no animation').toBe('none')
+    expect(reading.pulseDots, 'the header chip and the row each carry the pulse dot').toBe(2)
+    expect(reading.headerPulseDot?.animationName, 'the header dot pulses').toBe('pulse')
     expect(reading.rowPulseDot?.animationName, 'the row dot pulses').toBe('pulse')
+    expect(reading.rowPulseDot?.animationDuration, 'the dot loops at 2s').toBe('2s')
+    expect(reading.rowPulseDot?.animationIterationCount, 'the loop does not stop').toBe('infinite')
     expect(reading.badgeText, 'the pending count badge is rendered').toEqual(['1'])
     expect(reading.stateLabel, 'the state chip names the pending state').toBe('waiting for you')
 
@@ -833,9 +842,9 @@ test.describe('Decision Requests panel: the pending row, rendered by an injected
       expect(reading.found, 'the panel section was found').toBe(true)
       expect(reading.prefersReducedMotion, 'the page really reports prefers-reduced-motion: reduce').toBe(true)
       expect(reading.articleCount, 'exactly the injected row is listed').toBe(1)
-      expect(reading.rowMotion?.animationName, 'the row animation is off').toBe('none')
+      expect(reading.rowMotion?.animationName, 'no row-level animation is left').toBe('none')
       expect(reading.rowPulseDot?.animationName, 'the row dot is off').toBe('none')
-      expect(reading.pingDotMotion?.animationName, 'the ping dot is off').toBe('none')
+      expect(reading.headerPulseDot?.animationName, 'the header dot is off').toBe('none')
       for (const [label, probeReading] of Object.entries(probe)) {
         if (typeof probeReading === 'string' || typeof probeReading === 'boolean') continue
         expect(probeReading.animationName, `${label} is switched off under reduce`).toBe('none')
