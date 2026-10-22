@@ -146,7 +146,7 @@ Open for the owner before phase 2 starts, NOT for dev seats: whether a delivered
 
 ### 4.1 Where it runs
 
-The cloud must never receive an unredacted byte, so redaction is a **precondition of building the `events` frame**, inside agent. The server's `MaxPayloadChars` truncation is a size guard, not redaction, and it must not be counted as redaction.
+The cloud must never receive an unredacted byte, so redaction is a **precondition of building the `events` frame**, inside agent. The server's `MaxPayloadChars` truncation is a size guard, not redaction, and it must not be counted as redaction. The same point governs **model egress** (4.5), not only the events frame: a model request is scanned before it leaves this machine, by the same client.
 
 ### 4.2 Where the rule set lives
 
@@ -217,6 +217,27 @@ A withheld event is uploaded ONLY as a placeholder, `{type: "redaction_withheld"
 The raw event is surfaced locally: it is written to `<seat store>/agent-withheld/<session>/<ts>.json` (mode 0600, kept 7 days), and `4genteam agent status` shows a per-session withheld count. The upload continues past it, and the cursor advances past it, because the placeholder records the gap.
 
 If the redactor fails on EVERY event of a session for 5 minutes, agent stops that session's upload (A, as a backstop) and reports it locally. That case means a broken redactor, not one bad line.
+
+### 4.5 Boundary 4: the model request
+
+The events frame is not the only thing leaving this machine: every seat's model request carries the conversation - the file it read, the command's output - to a provider. The same point governs model egress. A loopback listener sits between each redirected surface and its provider, `4genteam agent` keeps it running and `up` ensures it BEFORE the room's seats start, the request body is scanned by `internal/secretscan`, and a body the scan cannot vouch for is refused (B2, 4.4's shape) with nothing forwarded. Hooks stay what they are: they block commands, they never redact.
+
+The unit is a provider **route**, because one CLI was measured answering both ways: omp's anthropic traffic reached a listener, its deepseek traffic did not.
+
+| route | knob | status |
+|---|---|---|
+| `claude-code` | `ANTHROPIC_BASE_URL` | proxied (repo precedent; a live listener hit is still owed) |
+| `omp-anthropic` | `ANTHROPIC_BASE_URL` | proxied, measured: 3 hits |
+| `codex` | `model_providers.<id>.base_url` in `~/.codex/config.toml` | proxied by file, measured: 2 hits; inert until a seat runs under the profile |
+| `omp-deepseek` | none found (`OPENAI_BASE_URL` measured 0 hits) | unproxied |
+| `agy` | none named | unproxied |
+
+- **The port belongs to the VARIABLE, not the route.** `ANTHROPIC_BASE_URL` holds one address, so `claude-code` and `omp-anthropic` share one listener on `127.0.0.1:7391` and one `.env` line; codex's listener is `127.0.0.1:7392`. The port is fixed and never re-picked, because the state-root `.env` names it for every seat; a taken port is a red `doctor` row, and only our own listener - answering `GET /__llmproxy` for the same variable - is reused.
+- **The injection point is the state root's `.env`**, which `seat_env` already hands every seat; the client writes one line per verified variable and keeps the replaced origin in `AGENTHUB_LLM_UPSTREAM_<ROUTE>`. A route with no verified knob gets no line and no listener.
+- **codex's surface is a file.** The client writes one `[model_providers.agenthub-egress]` entry copying the fields of the provider the config already selects and changing only `base_url`, plus a `[profiles.agenthub-egress]` that selects it; it never touches the global `model_provider`. Until a seat runs under that profile, codex is `unproxied (provider entry present, not selected)`.
+- **A refusal is local, per request, and visible:** HTTP `400` `{"error":"redaction_withheld","reason":"...","log":"<path>"}`, `reason` in `redactor_error`, `not_utf8`, `too_large`, `env_file`, `unsure` (4.4's list minus `bad_shape`). The body is recorded withheld under `<state-root>/llm-withheld/<route>/<ts>.json` (0600, 7 days): path, upstream host, reason, byte count, never the bytes. No model client retries a 400, and one that did would still be refused.
+- **An unredirectable route is reported, never assumed covered.** `doctor`'s `llm` row is `running` only while every listener answers, and its detail line counts routes, not CLIs: `llm: 2 proxied routes, 3 unproxied (omp-deepseek, codex-unselected, agy), N withheld today`. An unproxied route is a recorded gap, not a stopped safeguard: it does not turn a room red on day one.
+- **Responses are out of scope.** The rule names requests; a secret arriving in a provider's response is not covered here and must not be implied to be.
 
 ## 5. Phase 1: what to build first (one shippable slice)
 
