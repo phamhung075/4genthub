@@ -28,11 +28,11 @@ import (
 	"agenthub/fastmcp/task_management/infrastructure/database"
 )
 
-// evidenceIntentSubjects are the two callers, one per case, so neither case reads a seq the other's
-// setup moved.
+// evidenceIntentSubjects are the callers, one per case, so no case reads a seq another's setup moved.
 const (
-	evidenceIntentNamedSubject = "b1e0d3c2-2222-4222-8222-00000000001a"
-	evidenceIntentEmptySubject = "b1e0d3c2-2222-4222-8222-00000000001b"
+	evidenceIntentNamedSubject    = "b1e0d3c2-2222-4222-8222-00000000001a"
+	evidenceIntentEmptySubject    = "b1e0d3c2-2222-4222-8222-00000000001b"
+	evidenceIntentDecisionSubject = "b1e0d3c2-2222-4222-8222-00000000001c"
 )
 
 // evidenceIntentPost submits an evidence_submitted FACT intent naming no test object - the payload the
@@ -166,5 +166,64 @@ func TestEvidenceIntentIsRefusedAtAHeadWithNoRow(t *testing.T) {
 	}
 	if rows := evidenceSubmissionRows(t, sm, taskID); rows != 0 {
 		t.Fatalf("the refusal stored %d evidence rows, want 0", rows)
+	}
+}
+
+// TestDecisionStagedBeforeAControllerEvidenceRowIsAccepted is acceptance check 4's ordering half: the
+// kind keeps its FACT classification after it leaves the pushable list, so a decision staged on a seq
+// that the controller's own evidence row has since passed is ACCEPTED, not refused stale_base_seq.
+//
+// The distinction is the whole reason the constant and its FactKinds entry stay: HasNonFactAfter asks
+// FactKindStrings whether anything after base_seq is not a fact, and a controller-written
+// evidence_submitted row is a fact by ordering. Drop the kind from that list and every decision staged
+// before an evidence write answers stale_base_seq - a client that staged on a base the ledger then
+// moved forward through its OWN write would be told its base was behind a non-fact it never saw.
+// Proven by mutation, not by reading: with the kind removed from FactKinds this case answers
+// stale_base_seq.
+func TestDecisionStagedBeforeAControllerEvidenceRowIsAccepted(t *testing.T) {
+	app, sm := evidenceApp(t)
+	token, user := evidenceUser(t, evidenceIntentDecisionSubject)
+	evidenceSeedBranch(t, sm, user)
+	taskID := evidenceTaskCreate(t, app, token, "a decision staged before a controller evidence row")
+
+	const baseSHA = "b0b0b0b0b1b1c1c1d1d1e1e1f1f1a1a1b1b1c1c1"
+	const headSHA = "e0e0e0e0e1e1c1c1d1d1e1e1f1f1a1a1b1b1c1c1"
+
+	// The base the decision stages on: the task's seq as it stands BEFORE the controller writes.
+	base := ledgerPgTaskSeq(t, sm, user, taskID)
+	if code, body := evidencePost(t, app, token, taskID, evidenceBody(baseSHA, headSHA, "1\t0\ta.go\n")); code != http.StatusCreated {
+		t.Fatalf("the controller's own evidence row = %d, want 201: %s", code, body)
+	}
+	afterEvidence := ledgerPgTaskSeq(t, sm, user, taskID)
+	if afterEvidence <= base {
+		t.Fatalf("the evidence row must move the task's seq past the staged base: %d -> %d", base, afterEvidence)
+	}
+
+	// The only row after base is the controller's evidence row, so the decision is not stale.
+	code, body := ledgerPgPostOne(t, app, token, "5c1e7a10-3333-4333-8333-0000000000c1", taskID, "status_changed", new(base))
+	t.Logf("OBSERVED a decision staged on seq %d after the controller's row -> %d %s", base, code, body)
+	if code != http.StatusOK {
+		t.Fatalf("POST /api/v2/ledger/intents = %d, want 200: %s", code, body)
+	}
+	answers := ledgerPgDecodeAnswers(t, body)
+	if len(answers) != 1 {
+		t.Fatalf("the batch of one item answered %d times: %s", len(answers), body)
+	}
+	a := answers[0]
+	if a.Rejected != nil && *a.Rejected {
+		reason := "<absent>"
+		if a.Reason != nil {
+			reason = *a.Reason
+		}
+		t.Fatalf("a decision staged before a controller evidence row must be accepted, got reason %q: %s", reason, body)
+	}
+	if a.Accepted == nil || !*a.Accepted || a.Seq == nil {
+		t.Fatalf("an accepted decision must carry accepted:true and its seq: %s", body)
+	}
+	if got := ledgerPgTaskSeq(t, sm, user, taskID); got != afterEvidence+1 {
+		t.Fatalf("the accepted decision's seq = %d, want %d (one row after the evidence row)", got, afterEvidence+1)
+	}
+	if latest := evidenceLatestTestCommand(t, sm, taskID); latest == "" {
+		t.Fatalf("the evidence account must survive the decision: the latest row no longer names a command")
 	}
 }
