@@ -9,7 +9,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"regexp"
 	"sort"
 	"strings"
 	"time"
@@ -1095,10 +1094,8 @@ func (f *TaskApplicationFacade) loadSubtasks(ctx context.Context, taskID string)
 	return f.deps.LoadSubtasks(ctx, f.repoUserID(), id)
 }
 
-// taskIDPrefixPattern is the READ-ONLY address form: 4 to 31 hex characters with no dashes, which is
-// how the room cites a task (an 8-hex prefix is the common case). A full 32-character id is an
-// ADDRESS already and never reaches the lookup.
-var taskIDPrefixPattern = regexp.MustCompile(`^[0-9a-f]{4,31}$`)
+// The READ-ONLY address form is value_objects.IsTaskIDPrefix: one grammar, so the refusal a write
+// route writes and the id this reader resolves cannot drift apart.
 
 // taskIDPrefixCandidates caps the ids an ambiguous prefix is reported with. The refusal names them
 // because the caller's next move is to pick one, and it needs the ids, not a count.
@@ -1117,7 +1114,7 @@ const taskIDPrefixCandidates = 5
 func (f *TaskApplicationFacade) readableTaskID(ctx context.Context, taskID string) (string, error) {
 	trimmed := strings.TrimSpace(taskID)
 	lower := strings.ToLower(trimmed)
-	if !taskIDPrefixPattern.MatchString(lower) {
+	if !value_objects.IsTaskIDPrefix(trimmed) {
 		return trimmed, nil
 	}
 	limit := taskIDPrefixCandidates + 1
