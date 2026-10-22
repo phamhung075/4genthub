@@ -40,6 +40,18 @@ func normalizeTaskLikeID(value string) string {
 	return strings.ToLower(value)
 }
 
+// IsTaskUUID reports whether value addresses a task ROW: the canonical
+// xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx spelling and the dashless 32-hex one the
+// store also casts. It is narrower than NewTaskId on purpose - the id forms that
+// name a subtask (uuid.NNN) or a fixture (an integer, a test-style name) are
+// rejected, because a route that hands its path to a `$1::uuid` cast has to know
+// the row form BEFORE the store does, or the cast's own failure reaches the
+// caller as HTTP 500 (SQLSTATE 22P02). A 4-31 hex id PREFIX is not a row id: it
+// is the read address GET /api/v2/tasks/{id} resolves, and no writer takes it.
+func IsTaskUUID(value string) bool {
+	return uuidPattern.MatchString(strings.ToLower(strings.TrimSpace(value)))
+}
+
 // TaskId is a task identifier: a UUID, a hierarchical subtask ID (uuid.NNN),
 // or one of the integer/test formats accepted by the Python implementation.
 type TaskId struct{ EntityId }
