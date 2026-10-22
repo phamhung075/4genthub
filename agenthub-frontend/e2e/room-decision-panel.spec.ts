@@ -144,7 +144,7 @@ function readPanelInPage() {
   }
 }
 
-/** The attention animation's computed state on the live page: the rows and the dots it renders. */
+/** The attention animation's computed state on the live page: how many tinted rows it holds, and the first one's. */
 function motionInPage() {
   const selector = '[aria-label="Room decision requests"]'
 
@@ -170,7 +170,6 @@ function motionInPage() {
           row.className.includes('bg-accent/[0.03]')
         ).length
       : 0,
-    renderedPulseDots: section?.querySelectorAll('span.bg-accent.animate-pulse').length ?? 0,
     firstRow: read(section?.querySelector<HTMLElement>('article') ?? null),
   }
 }
