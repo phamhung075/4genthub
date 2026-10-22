@@ -380,21 +380,21 @@ export function TokenManagement() {
           <TabsList className="grid w-full grid-cols-3 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm rounded-lg h-12">
             <TabsTrigger
               value="generate"
-              className="flex h-full min-w-0 items-center justify-center gap-1.5 px-1 text-xs font-medium sm:gap-2 sm:text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-500 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-all rounded-md"
+              className="flex h-full min-w-0 items-center justify-center gap-1.5 px-1 text-xs font-medium sm:gap-2 sm:text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary-hover data-[state=active]:text-accent-contrast data-[state=active]:shadow-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-all rounded-md"
             >
               <Key size={18} className="hidden shrink-0 sm:block" />
               <span className="text-center leading-tight">Generate Token</span>
             </TabsTrigger>
             <TabsTrigger
               value="tokens"
-              className="flex h-full min-w-0 items-center justify-center gap-1.5 px-1 text-xs font-medium sm:gap-2 sm:text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-500 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-all rounded-md"
+              className="flex h-full min-w-0 items-center justify-center gap-1.5 px-1 text-xs font-medium sm:gap-2 sm:text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary-hover data-[state=active]:text-accent-contrast data-[state=active]:shadow-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-all rounded-md"
             >
               <Shield size={18} className="hidden shrink-0 sm:block" />
               <span className="text-center leading-tight">Active Tokens</span>
             </TabsTrigger>
             <TabsTrigger
               value="settings"
-              className="flex h-full min-w-0 items-center justify-center gap-1.5 px-1 text-xs font-medium sm:gap-2 sm:text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-500 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-all rounded-md"
+              className="flex h-full min-w-0 items-center justify-center gap-1.5 px-1 text-xs font-medium sm:gap-2 sm:text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary-hover data-[state=active]:text-accent-contrast data-[state=active]:shadow-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-all rounded-md"
             >
               <Settings size={18} className="hidden shrink-0 sm:block" />
               <span className="text-center leading-tight">Settings</span>
@@ -541,7 +541,7 @@ export function TokenManagement() {
                   <Button
                     onClick={handleGenerateToken}
                     disabled={loading || !tokenName || selectedScopes.length === 0}
-                    className="bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 text-white font-semibold px-8"
+                    className="bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 text-accent-contrast font-semibold px-8"
                     size="lg"
                   >
                     {loading ? (
