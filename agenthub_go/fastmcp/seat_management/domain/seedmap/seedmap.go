@@ -12,7 +12,7 @@ import (
 // seedVersion is bumped whenever a seed's module set changes: a stored seat type version is
 // immutable, so a changed module set needs a new version. What each version changed is in
 // `git log -p -- seedmap.go`, not here.
-const seedVersion = "1.4.22"
+const seedVersion = "1.4.23"
 
 type SeedModule struct {
 	Slug    string
