@@ -495,9 +495,13 @@ def test_a_matching_build_stamp_is_ok(tmp_path, capsys, monkeypatch):
         assert run(base, "--expect-build-of", "origin/frontend", "--json") == 0
     payload = census.json.loads(capsys.readouterr().out)
     assert payload["verdict"] == "OK"
+    assert payload["build_state"] == "OK"
     assert payload["served_build_sha"] == sha
     assert payload["expected_sha"] == sha
     assert payload["served_build_time"] == "2026-10-23T00:00:00Z"
+    # An exact match carries no why: the prefix branch is the one that explains itself, so this pins which of the
+    # two OK paths ran.
+    assert payload["build_why"] == ""
 
 
 def test_a_different_build_sha_is_stale(tmp_path, capsys, monkeypatch):
@@ -522,11 +526,18 @@ def test_an_empty_or_absent_stamp_is_incomplete_never_a_pass(tmp_path, capsys, m
     with serve(write_tree(tmp_path / "empty", fresh_shape(env=DEPLOY_ENV))) as base:
         assert run(base, "--expect-build-of", "origin/frontend") == 2
     no_key = DEPLOY_ENV.replace('VITE_BUILD_SHA:"",', "")
+    # A third shape: the build carries the env object but none of the keys, which is what a tree whose only
+    # `import.meta.env` read is removed inlines. It must read as the absent case, not as a pass.
+    with serve(write_tree(tmp_path / "noenv", fresh_shape(env={}))) as base:
+        assert run(base, "--expect-build-of", "origin/frontend") == 2
     with serve(write_tree(tmp_path / "absent", fresh_shape(env=no_key))) as base:
         assert run(base, "--expect-build-of", "origin/frontend") == 2
     out = capsys.readouterr().out
     assert "INCOMPLETE" in out and "not a pass" in out
-    assert "VITE_BUILD_SHA" in out
+    # The two INCOMPLETE cases are told apart by their own sentence, so the absent-key case cannot quietly become
+    # the empty one: an empty value means no build arg reached the build, a missing key means no env object at all.
+    assert "inlines an empty VITE_BUILD_SHA" in out
+    assert "inlines no VITE_BUILD_SHA" in out
     assert "OK:" not in out
 
 
@@ -556,6 +567,20 @@ def test_a_non_hex_stamp_is_incomplete(tmp_path, capsys, monkeypatch):
     out = capsys.readouterr().out
     assert "INCOMPLETE" in out
     assert "is not a hex commit id" in out
+
+
+def test_an_unresolvable_ref_is_a_refusal(tmp_path, capsys, monkeypatch):
+    """The other half of "a missing git or an unresolvable ref exits 2": the ref is resolved before anything is
+    fetched, so the run costs a refusal instead of a census whose expectation silently vanished."""
+    repo, sha = frontend_origin(tmp_path)
+    monkeypatch.chdir(repo)
+    gitfixture.without_relocating(monkeypatch)
+    with serve(write_tree(tmp_path / "served", fresh_shape(env=stamped_env(sha)))) as base:
+        assert run(base, "--expect-build-of", "no/such/ref") == 2
+    out = capsys.readouterr().out
+    assert "CANNOT-MEASURE" in out
+    assert "cannot resolve no/such/ref" in out
+    assert "OK:" not in out
 
 
 def test_an_empty_ref_is_a_refusal_not_a_disabled_check(tmp_path, capsys, monkeypatch):
