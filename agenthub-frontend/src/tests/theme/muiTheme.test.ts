@@ -175,7 +175,10 @@ describe('muiTheme', () => {
     'info.main': { light: '#2563eb', dark: '#60a5fa', was: ['#4f46e5', '#818cf8'] },
     'info.dark': { light: '#1d4ed8', dark: '#93c5fd', was: ['#4338ca', '#a5b4fc'] },
     'info.contrastText': { light: '#ffffff', dark: 'rgba(0, 0, 0, 0.87)', was: ["MUI's derivation", "MUI's derivation"] },
-    divider: { light: '#e2e8f0', dark: '#26314a', was: ['#e5e7eb', '#334155'] },
+    // dark divider is #334155 since RULING-2026-10-23-dark-border-collision moved the stroke off the
+    // tertiary rung - the same literal the retired config used, by coincidence: the pin is the token's
+    // value, and the collision arm in themeTokens.test.ts is what keeps it off the fills.
+    divider: { light: '#e2e8f0', dark: '#334155', was: ['#e5e7eb', '#334155'] },
   };
 
   describe('the leaves the retired config owned carry the ladder\'s values', () => {
