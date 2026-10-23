@@ -527,7 +527,7 @@ export function TokenManagement() {
                 </div>
 
                 {/* Generate Button */}
-                <div className="flex justify-between items-center p-4 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg border">
+                <div className="flex justify-between items-center p-4 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg border border-surface-border">
                   <div className="space-y-1">
                     <p className="text-sm font-medium">
                       {selectedScopes.length} permission{selectedScopes.length !== 1 ? 's' : ''} selected
