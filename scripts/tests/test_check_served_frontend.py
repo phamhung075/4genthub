@@ -558,5 +558,22 @@ def test_a_non_hex_stamp_is_incomplete(tmp_path, capsys, monkeypatch):
     assert "is not a hex commit id" in out
 
 
+def test_an_empty_ref_is_a_refusal_not_a_disabled_check(tmp_path, capsys, monkeypatch):
+    """The gate's finding on 1c165dd4: `--expect-build-of ""` (and `=`) passed an empty string, truthiness read it
+    as "no flag", and the run printed the census's OK about a deploy nothing was compared to. That is exactly the
+    shape a deploy produces when `$(git rev-parse origin/frontend)` fails - a flag that silently disables its own
+    proof. An empty ref is a GIVEN expectation that cannot be resolved, so exit 2."""
+    repo, _sha = frontend_origin(tmp_path)
+    monkeypatch.chdir(repo)
+    gitfixture.without_relocating(monkeypatch)
+    with serve(write_tree(tmp_path / "served", fresh_shape(env=stamped_env(_sha)))) as base:
+        assert run(base, "--expect-build-of", "") == 2
+        assert run(base, "--expect-build-of=") == 2
+        assert run(base, "--expect-build-of", "  ") == 2
+    out = capsys.readouterr().out
+    assert "an empty ref is a refusal, never an absent flag" in out
+    assert "OK:" not in out
+
+
 if __name__ == "__main__":  # pragma: no cover
     raise SystemExit(pytest.main([__file__, "-q"]))

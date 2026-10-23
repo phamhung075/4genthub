@@ -401,7 +401,16 @@ def expected_sha(ref: str) -> str:
     Resolved from the tree the command runs in: the deploy builds from the `frontend` branch, so
     `--expect-build-of origin/frontend` compares the served stamp to the commit that branch names. A missing
     git or an unresolvable ref is exit 2 and never 0: an unproven deploy is not a proven one.
+
+    An EMPTY ref is a refusal of its own, not an absent flag: `--expect-build-of "$(git rev-parse ...)"` whose
+    expansion failed passes an empty string, and treating that as "no expectation" would print the census's OK
+    about a deploy nothing was compared to - a flag that silently disables its own proof.
     """
+    if not ref.strip():
+        raise CannotMeasure(
+            "--expect-build-of was given an empty ref, so there is nothing to compare the served build's stamp to; "
+            "an empty ref is a refusal, never an absent flag"
+        )
     repo = git("rev-parse", "--show-toplevel", cwd=".")
     if not repo:
         raise CannotMeasure(f"cannot resolve {ref}: this is not a git work tree, or git is not installed")
@@ -502,8 +511,10 @@ def main(argv: list[str] | None = None) -> int:
                         "rebuild it (cd agenthub-frontend && npm run build) or pass --expect-entry"
                     )
         # The expected side of the build check is resolved before anything is fetched: an unresolvable ref
-        # must cost a refusal, never a pass on a census that had nothing to compare against.
-        expected_build = expected_sha(args.expect_build_of) if args.expect_build_of else None
+        # must cost a refusal, never a pass on a census that had nothing to compare against. The test is
+        # `is not None`, not truthiness: an empty ref is a GIVEN expectation that cannot be resolved, and
+        # reading it as "no flag" would silently switch the proof off and print the census's OK.
+        expected_build = expected_sha(args.expect_build_of) if args.expect_build_of is not None else None
         fetcher = Fetcher(args.base_url, args.timeout)
         bust = f"?cb={int(time.time())}"
         html = fetcher.get("/" + bust).decode("utf-8", "replace")
