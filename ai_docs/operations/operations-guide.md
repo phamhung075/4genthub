@@ -24,7 +24,9 @@ Deploying, checking and repairing the server and the dashboard. Rooms and seats:
   (the build ARGs in `docker-system/docker/Dockerfile.frontend.production`), and the check compares that string
   to `git rev-parse origin/frontend`. Exit 0 = the served build names that commit, or a hex prefix of 7+
   characters of it (`git rev-parse --short` writes 7). Exit 1 = a different commit. Exit 2 = a refusal - the
-  stamp is empty, absent or not hex, git or the ref does not resolve - and a refusal is never a pass: until a
+  stamp is empty, absent or not hex, git or the ref does not resolve, or the ref was given but empty (a failed
+  `$(git rev-parse origin/frontend)` in a deploy line refuses, it does not switch the check off) - and a refusal
+  is never a pass: until a
   build is passed `--build-arg VITE_BUILD_SHA=$(git rev-parse origin/frontend)`, every run of this mode is
   exit 2. `--expect-dist` is the builder's own mode, not a seat's: a build made on this box cannot share a
   chunk hash with the deploy image's (different node, arch and `VITE_*` set), so it reads `FOREIGN-ENV`.

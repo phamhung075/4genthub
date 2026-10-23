@@ -43,7 +43,9 @@ WHAT THE CENSUS DOES *NOT* PROVE, AND THE MODE THAT CLOSES IT
     matter. OK/0 when the stamp is that commit or a hex PREFIX of at least 7 characters (the only in-repo
     writer, scripts/deploy-frontend.sh:86-87, stamps `git rev-parse --short`), STALE/1 when it names another
     commit, INCOMPLETE/2 when it is empty, absent, shorter than 7 hex characters or not hex at all. A missing
-    git or an unresolvable ref is exit 2. Until the build ARGs are wired every run of this mode is exit 2,
+    git, an unresolvable ref, and a ref that was GIVEN but is empty are all exit 2: the flag is read by presence,
+    never by truthiness, so a deploy line's failed `$(git rev-parse origin/frontend)` refuses instead of turning
+    the check off. Until the build ARGs are wired every run of this mode is exit 2,
     which is the truth about what that build says about itself - never a pass.
 
     AND ONLY FROM THE SAME ENVIRONMENT. A hash is an identity only between builds made the same way:
@@ -64,7 +66,8 @@ EXIT
         served build IS the expected build)
     1 = stale or a build mismatch - the served app is not the expected build, or its stamp names another commit
     2 = the census or the build comparison could not be taken (fetch/parse/cap failure, a missing git, an
-        unresolvable ref, an empty/absent/short/non-hex build stamp, a stale or foreign-env expectation) -
+        unresolvable or given-but-empty ref, an empty/absent/short/non-hex build stamp, a stale or foreign-env
+        expectation) -
         NEVER reported as a pass
 """
 
@@ -492,7 +495,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--expect-build-of", nargs="?", const="origin/frontend", default=None,
                         metavar="REF", help="a ref whose commit the served build's VITE_BUILD_SHA must name "
                                             "(default ref: origin/frontend) - the deploy proof that survives "
-                                            "a different build environment")
+                                            "a different build environment; an empty REF is refused, never "
+                                            "read as no flag")
     parser.add_argument("--max-assets", type=int, default=DEFAULT_MAX_ASSETS)
     args = parser.parse_args(argv)
 

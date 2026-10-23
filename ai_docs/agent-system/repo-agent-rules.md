@@ -165,7 +165,7 @@ build for app `4genthub-frontend`, and a webhook 200 is delivery, not a build. T
 carries - `python3 scripts/check_served_frontend.py --base-url https://www.4genthub.com --expect-build-of
 origin/frontend` exits 0 when the served `VITE_BUILD_SHA` names that commit, or a hex prefix of 7+ characters
 of it (what `git rev-parse --short` writes); exit 1 is a different commit, and exit 2 is a refusal - the stamp
-is empty, absent or not hex - which is never a pass. `--expect-dist` is the builder's own mode: a build made
+is empty, absent or not hex, or the ref was given but empty - which is never a pass. `--expect-dist` is the builder's own mode: a build made
 in this box's node, arch and `VITE_*` set cannot share a chunk hash with the deploy image's, so for a seat it
 reads FOREIGN-ENV.
 Other seats never push. Nobody touches another room. Credentials and spend stay the owner's. A
