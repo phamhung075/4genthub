@@ -58,7 +58,10 @@ describe('the stroke family', () => {
     MODES.forEach((mode) => {
       strokeNames(mode).forEach((stroke) => {
         FILLS.forEach((fill) => {
-          expect(resolved(mode, stroke), `${mode} ${stroke} on ${fill}`).not.toBe(resolved(mode, fill));
+          const ratio = contrastRatio(resolved(mode, stroke), resolved(mode, fill));
+          // The message carries both names and the ratio, so the failure states the defect rather than
+          // a bare inequality: "dark --color-surface-border vs --color-background-tertiary = 1:1".
+          expect(ratio, `${mode} ${stroke} on ${fill} = ${ratio.toFixed(3)}:1`).toBeGreaterThan(1);
         });
       });
     });
