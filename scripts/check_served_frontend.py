@@ -7,7 +7,23 @@ WHY IT EXISTS
     names still on screen as instructions. Two seats measured that BY HAND, with a shape of
     command neither could hand to a successor. This is the one command.
 
-WHAT IT ASSERTS (default mode, the census)
+WHAT IT ASSERTS (default mode, the deploy gate)
+    A witness must be supplied, and any one of them failing refuses the deploy:
+    - `--expect-dist <dir>` or `--expect-entry <hash>`: the served build must BE that build;
+    - `--expect-build-of <ref>`: the stamp the served build carries must name that ref's commit (below);
+    - the token witness, on by default from this checkout's `agenthub-frontend/src/styles/theme.css`
+      (`--expect-tokens` to point elsewhere): every custom property that file declares must be in the
+      served stylesheet's same block. `theme.css` passes through the bundler verbatim, so a served CSS
+      from an older tree cannot carry a token added since - which is what a local build is for, minus
+      the environment the hash cannot compare across.
+    With no witness at all the verdict is CANNOT-MEASURE (exit 2), never OK: on 2026-10-23 this
+    script read OK against index-Dd1FoJ_2.js, a bundle whose /login threw `MUI error #9` and left
+    #root empty, because the two-token census below is satisfied by any build after the rename.
+    So the gate has no opt-out: without a witness the verdict is CANNOT-MEASURE, and the two-token
+    census is never a verdict by itself. The token witness names a stale STYLESHEET, not a rendered
+    page: the /login probe is the arm that catches a build which throws at render.
+
+    The census itself, which every mode also runs:
     1. at least one `4genteam` verb is served  - `4genteam sync pull`, `4genteam sync switch`,
        `4genteam bridge` are the replacements, and every panel that carried a deleted script name
        now carries one of them.
@@ -38,15 +54,21 @@ WHAT THE CENSUS DOES *NOT* PROVE, AND THE MODE THAT CLOSES IT
     THE MODE A SEAT CAN TAKE, because a hash cannot be reproduced across environments but a STRING can be
     compared. `--expect-build-of <ref>` (the ref defaults to origin/frontend) reads the stamp the served entry
     carries - VITE_BUILD_SHA and VITE_BUILD_TIME, inlined because environment.ts:32 reads the env object
-    dynamically, and declared as build ARGs in docker-system/docker/Dockerfile.frontend.production:77-78 - and
-    compares it to `git rev-parse <ref>`. It says which commit the build read, so the environment cannot
+    dynamically - and compares it to `git rev-parse <ref>`. It says which commit the build read, so the environment cannot
     matter. OK/0 when the stamp is that commit or a hex PREFIX of at least 7 characters (the only in-repo
     writer, scripts/deploy-frontend.sh:86-87, stamps `git rev-parse --short`), STALE/1 when it names another
     commit, INCOMPLETE/2 when it is empty, absent, shorter than 7 hex characters or not hex at all. A missing
     git, an unresolvable ref, and a ref that was GIVEN but is empty are all exit 2: the flag is read by presence,
     never by truthiness, so a deploy line's failed `$(git rev-parse origin/frontend)` refuses instead of turning
-    the check off. Until the build ARGs are wired every run of this mode is exit 2,
-    which is the truth about what that build says about itself - never a pass.
+    the check off.
+
+    WHERE THE STAMP MUST COME FROM, measured 2026-10-23: not from a docker build arg. CapRover's
+    captain-definition schemaVersion 2 has no build-args field and its build context is the uploaded project
+    with no .git, so `ARG VITE_BUILD_SHA` (Dockerfile.frontend.production:77-78 until 2026-10-23) never reached
+    the build, and the live entry inlined VITE_BUILD_SHA:"". Every run of this mode on that bundle is
+    INCOMPLETE/2 - the truth about what the build says about itself, never a pass. A stamp FILE in the pushed
+    tree (agenthub-frontend/BUILD-SHA) is the shape that reaches that build: the bundle has to inline it as
+    VITE_BUILD_SHA, and this mode reads only what the bundle inlined.
 
     AND ONLY FROM THE SAME ENVIRONMENT. A hash is an identity only between builds made the same way:
     the deploy builds docker-system/docker/Dockerfile.frontend.production (node:20-alpine, arm64)
@@ -60,21 +82,26 @@ WHAT THE CENSUS DOES *NOT* PROVE, AND THE MODE THAT CLOSES IT
 USAGE
     python3 scripts/check_served_frontend.py [--base-url https://www.4genthub.com] [--json]
     python3 scripts/check_served_frontend.py --expect-build-of origin/frontend
+    python3 scripts/check_served_frontend.py                       # the token witness, from this checkout
     python3 scripts/check_served_frontend.py --expect-dist agenthub-frontend/build
+    python3 scripts/check_served_frontend.py --expect-entry index-CUR-9phy.js
+    python3 scripts/check_served_frontend.py --expect-tokens agenthub-frontend/src/styles/theme.css \
+        [--base-url https://www.4genthub.com] [--json]
 EXIT
-    0 = fresh (and, in build mode, the served build's stamp names the expected commit; in identity mode, the
-        served build IS the expected build)
-    1 = stale or a build mismatch - the served app is not the expected build, or its stamp names another commit
-    2 = the census or the build comparison could not be taken (fetch/parse/cap failure, a missing git, an
-        unresolvable or given-but-empty ref, an empty/absent/short/non-hex build stamp, a stale or foreign-env
-        expectation) -
-        NEVER reported as a pass
+    0 = every witness that ran passed: the census is fresh; in identity mode the served build IS the expected
+        build; in build mode the served stamp names the expected commit; the token witness finds no drift
+    1 = stale, a build mismatch, a token drift, or a build stamp naming another commit - the served app is not
+        the tree's build
+    2 = nothing was compared (no witness at all), or the census or a comparison could not be taken (fetch/parse/
+        cap failure, a missing git, an unresolvable or given-but-empty ref, an empty/absent/short/non-hex build
+        stamp, a stale or foreign-env expectation) - NEVER reported as a pass
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import subprocess
 import sys
@@ -109,6 +136,8 @@ ENTRY_REF = re.compile(r"""/assets/(index-[A-Za-z0-9_-]+\.js)""")
 ENTRY_SCRIPT = re.compile(r'<script[^>]+src="/assets/(index-[A-Za-z0-9_-]+\.js)"')
 
 DEFAULT_MAX_ASSETS = 400
+# The checkout this script lives in, so the token witness needs no argument and no build.
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 class CannotMeasure(Exception):
@@ -258,6 +287,162 @@ def dist_expectation(dist_dir: str) -> tuple[str, set[str], str]:
         # broken dist, and the environment comparison refuses rather than guessing comparability.
         entry_text = ""
     return entry, shipped, entry_text
+
+
+# The tree's token source. `theme.css` passes through the bundler verbatim (plain `:root` / `.dark`
+# blocks, no `@theme` tree-shaking), so a served stylesheet from a tree that declares a token MUST
+# carry it - and a served one that predates that tree cannot. That makes the declaration set a
+# build witness that needs no local build and no environment match.
+TOKEN_SOURCE = "agenthub-frontend/src/styles/theme.css"
+# A mode block is named by a selector LIST (`:root, :host` is the same block); a compound like
+# `.dark .card` is a rule, not the mode block. The block's extent comes from brace matching, never
+# from `find("}")`: a `}` inside a comment or a nested rule closed the block early (measured
+# 2026-10-23: 88 declarations read as 3).
+TOKEN_SELECTORS = {":root": "root", ".dark": "dark"}
+TOKEN_DECL = re.compile(r"(--[\w-]+)\s*:\s*([^;}]+)")
+# The SUBJECT of a mode block may carry a type or universal prefix: `html.dark`, `*:root` and the
+# bare spellings are one block on one element. Matching the exact strings read `html.dark {` as no
+# block at all, so the declared set held ONE block and a served sheet missing every token of the
+# other returned missing=[] drifted=[] - a pass on the defect this witness exists to catch
+# (measured 2026-10-23: `html.dark` read as {'root': 88}, and the real 76 dark tokens went unwitnessed).
+MODE_SUBJECT = re.compile(r"^(?:[a-z][a-z0-9-]*|\*)?(:root|\.dark)$")
+# A depth-0 prelude that NAMES a mode must yield that mode's block; a name the subject pattern
+# cannot read (`.x.dark`, a functional selector) is a refusal, never a silent skip.
+MODE_NAME = re.compile(r"(:root|\.dark)(?![\w-])")
+
+
+def normalise_value(value: str) -> str:
+    """A token value in the form the comparison can hold equal across the authored CSS and the bundler's
+    output. Measured on the live stylesheet: the minifier drops the leading zero of a decimal
+    (`rgba(…, 0.15)` -> `rgba(…, .15)`) and rewrites a duration in seconds (`240ms` -> `.24s`), and it
+    leaves hex alone. Everything else is compared exactly - a changed token value is drift."""
+    text = " ".join(value.split()).lower()
+    # Punctuation carries no meaning in the spacing: `rgba(0, 0, 0, .5)` and `rgba(0,0,0,.5)` are the
+    # same value, and the minifier picks the tight spelling. A space between two words stays one space.
+    text = re.sub(r"\s*([(),/])\s*", r"\1", text)
+
+    def milliseconds(match: re.Match) -> str:
+        return f"{int(match.group(1)) / 1000:g}".lstrip("0") + "s"
+
+    text = re.sub(r"(?<![\w.])(\d+)ms\b", milliseconds, text)
+    # One spelling for a number: `.10` and `.1` are the same channel, and the minifier picks either.
+    text = re.sub(r"(?<![\w.])\d*\.\d+", lambda m: m.group(0).rstrip("0").rstrip(".") or "0", text)
+    text = re.sub(r"(?<![\w.])0\.(\d+)", r".\1", text)
+    text = re.sub(r"#([0-9a-f])([0-9a-f])([0-9a-f])\b", r"#\1\1\2\2\3\3", text)
+    return text
+
+
+def _strip_comments(css: str) -> str:
+    """Comments out, before any brace counting: a `}` inside one is not a block end.
+
+    An UNTERMINATED comment refuses. The regex cannot remove it, so whatever follows reads as
+    declarations of the block before it - a parse that is wrong in the direction of a pass, reported
+    as a measurement (measured 2026-10-23: an unclosed `/*` left the stylesheet after it unread)."""
+    stripped = re.sub(r"/\*.*?\*/", "", css, flags=re.S)
+    if "/*" in stripped:
+        raise CannotMeasure("unterminated /* comment - the stylesheet after it cannot be read as blocks")
+    return stripped
+
+
+def _top_level_rules(css: str):
+    """(prelude, body) for every rule at brace depth 0, in source order.
+
+    Nested rules are skipped whole, which is what makes an `@media (prefers-reduced-motion)` restatement
+    an override rather than a declaration; a quoted brace never opens or closes a block; an at-rule
+    statement (`@import ...;`) leaves no pending prelude."""
+    depth, prelude, block, quote, i = 0, 0, 0, "", 0
+    while i < len(css):
+        ch = css[i]
+        if quote:
+            if ch == "\\":
+                i += 1
+            elif ch == quote:
+                quote = ""
+        elif ch in "\"'":
+            quote = ch
+        elif ch == "{":
+            if depth == 0:
+                block = i
+            depth += 1
+        elif ch == "}":
+            if depth == 0:
+                prelude = i + 1
+            else:
+                depth -= 1
+                if depth == 0:
+                    yield css[prelude:block].strip(), css[block + 1:i]
+                    prelude = i + 1
+        elif ch == ";" and depth == 0:
+            prelude = i + 1
+        i += 1
+
+
+def parse_token_blocks(css: str) -> dict[str, dict[str, str]]:
+    """{block: {name: value}} for the two blocks `theme.css` authors, in the authored form and in the
+    minifier's - values normalised, so a build is not asked to spell its colours the way the source does.
+
+    Only a depth-0 rule whose selector list's SUBJECT is `:root` or `.dark` (type or universal
+    prefix allowed) is a mode block. A token inside `@supports`, `@media` or a comment is not a
+    declaration of that block, so it is not served. A depth-0 prelude that NAMES a mode while no
+    block parses for it is a CannotMeasure - the alternatives are a witness comparing one block and
+    a pass on the other."""
+    blocks: dict[str, dict[str, str]] = {}
+    named: dict[str, str] = {}
+    for prelude, body in _top_level_rules(_strip_comments(css)):
+        if prelude.startswith("@"):
+            continue
+        for selector in prelude.split(","):
+            subject = selector.strip().split()[-1] if selector.strip() else ""
+            match = MODE_SUBJECT.match(subject)
+            if match:
+                name = TOKEN_SELECTORS[match.group(1)]
+                for token, value in TOKEN_DECL.findall(body):
+                    blocks.setdefault(name, {})[token] = normalise_value(value)
+        for mentioned in MODE_NAME.findall(prelude):
+            named.setdefault(TOKEN_SELECTORS[mentioned], prelude.strip())
+    for name, prelude in sorted(named.items()):
+        if name not in blocks:
+            raise CannotMeasure(
+                f"the prelude {prelude!r} names the {name} block but no block parses from it - the stylesheet "
+                "and the parser disagree, and comparing one block would pass the other silently"
+            )
+    return blocks
+
+
+def token_census(texts: dict[str, str], source_path: str) -> dict:
+    """Every custom property `source_path` declares must be in the served stylesheet's same block."""
+    try:
+        with open(source_path, encoding="utf-8") as handle:
+            declared = parse_token_blocks(handle.read())
+    except OSError as exc:
+        raise CannotMeasure(f"cannot read the token source ({source_path}): {exc}") from exc
+    if not declared:
+        raise CannotMeasure(f"{source_path} declares no ':root'/'.dark' token block - the parser and the file disagree")
+    served: dict[str, dict[str, str]] = {}
+    for path, text in texts.items():
+        if path.endswith(".css"):
+            for block, names in parse_token_blocks(text).items():
+                served.setdefault(block, {}).update(names)
+    missing: dict[str, list[str]] = {}
+    drifted: dict[str, dict[str, list[str]]] = {}
+    for block, names in declared.items():
+        absent = sorted(set(names) - set(served.get(block, {})))
+        if absent:
+            missing[block] = absent
+        changed = {
+            name: [served[block][name], value]
+            for name, value in sorted(names.items())
+            if name in served.get(block, {}) and served[block][name] != value
+        }
+        if changed:
+            drifted[block] = changed
+    return {
+        "source": source_path,
+        "declared": {block: len(names) for block, names in declared.items()},
+        "served": {block: len(served.get(block, {})) for block in declared},
+        "missing": missing,
+        "drifted": drifted,
+    }
 
 
 def git(*args: str, cwd: str) -> str | None:
@@ -497,6 +682,12 @@ def main(argv: list[str] | None = None) -> int:
                                             "(default ref: origin/frontend) - the deploy proof that survives "
                                             "a different build environment; an empty REF is refused, never "
                                             "read as no flag")
+    parser.add_argument(
+        "--expect-tokens",
+        default=None,
+        help="the tree's token source (default: agenthub-frontend/src/styles/theme.css of this checkout) - "
+        "every token it declares must be in the served stylesheet; needs no build",
+    )
     parser.add_argument("--max-assets", type=int, default=DEFAULT_MAX_ASSETS)
     args = parser.parse_args(argv)
 
@@ -562,8 +753,21 @@ def main(argv: list[str] | None = None) -> int:
         if expected_entry and comparable:
             report["identity"] = identity_check(served_entry, set(texts), expected_entry, shipped)
 
+        # The token witness: independent of any local build, so it runs on a plain checkout. A token
+        # the tree declares and the served stylesheet omits names a stylesheet from an older tree -
+        # measured live on 2026-10-23, where the served CSS was the pre-contrast-token one.
+        token_source = args.expect_tokens
+        if token_source is None:
+            auto = os.path.join(REPO_ROOT, TOKEN_SOURCE)
+            token_source = auto if os.path.isfile(auto) else None
+        if token_source:
+            report["tokens"] = token_census(texts, token_source)
+
         stale = result["deleted_names"] or result["verbs_present"] == 0
         build_state = report.get("build_state")
+        # A witness is any comparison the caller asked for and this run could make: build mode counts, or a
+        # deploy whose only proof is `--expect-build-of` would be refused as "nothing compared".
+        witnessed = bool(expected_entry) or "tokens" in report or build_state is not None
         if stale:
             report["verdict"] = "STALE"
             exit_code = 1
@@ -581,10 +785,26 @@ def main(argv: list[str] | None = None) -> int:
         elif "identity" in report and not report["identity"]["matches"]:
             report["verdict"] = "BUILD-MISMATCH"
             exit_code = 1
+        elif report.get("tokens", {}).get("missing") or report.get("tokens", {}).get("drifted"):
+            report["verdict"] = "TOKEN-DRIFT"
+            exit_code = 1
         elif fetcher.failures:
             # Every assertion that could be made passed, but the closure was incomplete: a stale
             # chunk could be hiding in the part that did not arrive. Incomplete is not a pass.
             report["verdict"] = "INCOMPLETE"
+            exit_code = 2
+        elif not witnessed:
+            # THE DEPLOY GATE, measured the hard way on 2026-10-23: this script read OK against
+            # index-Dd1FoJ_2.js, a build whose /login threw MUI error #9 and rendered an empty #root.
+            # A two-token census is satisfied by any build after the 08 Oct rename (75f81494), so it
+            # cannot witness a push, and no flag accepts it: without an expectation the honest verdict
+            # is that nothing was compared.
+            report["verdict"] = "CANNOT-MEASURE"
+            report["error"] = (
+                "no expectation to compare against: pass --expect-dist <agenthub-frontend/build> (the "
+                "build the deploy just made), --expect-entry <hash>, --expect-build-of <ref>, or "
+                "--expect-tokens <agenthub-frontend/src/styles/theme.css>"
+            )
             exit_code = 2
         else:
             report["verdict"] = "OK"
@@ -639,6 +859,18 @@ def print_report(report: dict) -> None:
                 if keys:
                     shown = ", ".join(keys[:5]) + (f", +{len(keys) - 5} more" if len(keys) > 5 else "")
                     print(f"    {label} ({len(keys)}): {shown}")
+    if "tokens" in report:
+        tokens = report["tokens"]
+        source = tokens["source"]
+        if source.startswith(REPO_ROOT + os.sep):
+            source = os.path.relpath(source, REPO_ROOT)
+        print(f"  tokens: {source} declares {tokens['declared']}, served {tokens['served']}")
+        for block, names in tokens["missing"].items():
+            shown = ", ".join(names[:6]) + (f", +{len(names) - 6} more" if len(names) > 6 else "")
+            print(f"  MISSING from the served {block} block ({len(names)}): {shown}")
+        for block, changed in tokens["drifted"].items():
+            shown = ", ".join(f"{name} served {pair[0]} != {pair[1]}" for name, pair in list(changed.items())[:4])
+            print(f"  DRIFTED in the served {block} block ({len(changed)}): {shown}")
     if "identity" in report:
         ident = report["identity"]
         print(f"  identity: served entry {ident['served_entry']} vs expected {ident['expected_entry']}"
@@ -655,10 +887,28 @@ def print_report(report: dict) -> None:
         if report.get("build_why"):
             print(f"    {report['build_why']}")
     verdict = report.get("verdict")
+    if verdict == "OK":
+        # A deploy log must show WHICH witness produced the pass: the census reading alone is never the
+        # verdict, and the token witness and the identity arm prove different things.
+        witnesses = [
+            name
+            for name, present in (
+                ("the build stamp", build_state is not None),
+                ("identity", "identity" in report),
+                ("tokens", "tokens" in report),
+            )
+            if present
+        ]
+        print(
+            f"OK: witnessed by {', '.join(witnesses)} - the served frontend names the live client and no"
+            f" deleted script"
+        )
+        return
     messages = {
-        "OK": "OK: the served frontend names the live client and no deleted script",
         "STALE": "STALE: the served frontend is not a build of HEAD - the pre-fix bundle is still live",
         "BUILD-MISMATCH": "BUILD-MISMATCH: the live frontend is NOT the build it was supposed to be",
+        "TOKEN-DRIFT": "TOKEN-DRIFT: the served stylesheet does not carry the tokens this tree declares (or"
+                       " carries other values), so it is not this tree's stylesheet",
         "FOREIGN-ENV": "FOREIGN-ENV: the expected build was made in a different environment, so its hash cannot"
                        " be compared - pass --expect-entry, or compare a build the deploy image made",
         "INCOMPLETE": "INCOMPLETE: assertions passed on the part that arrived, but the closure did not - not a pass",

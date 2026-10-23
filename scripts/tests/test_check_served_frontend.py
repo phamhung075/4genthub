@@ -62,6 +62,10 @@ class NoLastModifiedHandler(QuietHandler):
 
 @contextmanager
 def serve(docroot: Path, handler=QuietHandler):
+    """Serve `docroot`, and take its stylesheet as the token witness for the calls inside - the
+    checkout's own theme.css is never read, so a test states its witness by what it serves."""
+    stylesheets = sorted(docroot.rglob("*.css"))
+    TREE["tokens"] = stylesheets[0] if stylesheets else None
     server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), functools.partial(handler, directory=str(docroot)))
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
@@ -71,6 +75,11 @@ def serve(docroot: Path, handler=QuietHandler):
         server.shutdown()
         server.server_close()
         thread.join(timeout=5)
+
+
+# The token source the tree writes, so a test states its witness explicitly instead of inheriting
+# the real checkout's theme.css (hermetic: no test reads the repository's own tokens).
+TREE: dict[str, Path | None] = {"tokens": None}
 
 
 def write_tree(root: Path, files: dict[str, str]) -> Path:
@@ -104,11 +113,25 @@ def production_shape() -> dict[str, str]:
     }
 
 
+def fresh_source() -> str:
+    """The tree's token source for the served stylesheet `fresh_shape` ships, authored form."""
+    return (
+        ":root {\n  --color-accent: #4f46e5;\n  --color-surface: #ffffff;\n"
+        "  --color-accent-ring: rgba(79, 70, 229, 0.15);\n  --motion-fast: 120ms;\n}\n"
+        ".dark {\n  --color-accent: #818cf8;\n  --color-surface: #0b1020;\n"
+        "  --color-accent-ring: rgba(129, 140, 248, 0.22);\n  --motion-fast: 120ms;\n}\n"
+    )
+
+
 def fresh_shape(entry: str = "index-riIYPcmm.js", env: str | None = None) -> dict[str, str]:
     """A HEAD build, reduced: three panels, three verbs, no fossil. `env` is the object vite inlines
     when the tree reads `import.meta.env[key]` dynamically - the build's environment fingerprint."""
     return {
-        "index.html": f'<!doctype html><script type="module" crossorigin src="/assets/{entry}"></script>\n',
+        "index.html": (
+            '<!doctype html>'
+            f'<script type="module" crossorigin src="/assets/{entry}"></script>'
+            '<link rel="stylesheet" crossorigin href="/assets/index-DslPL43O.css">\n'
+        ),
         "assets/" + entry: (f"const __env={env};\n" if env else "")
         + (
             'const pages={"a":"/assets/SeatDetailPage-FRESH0001.js",'
@@ -118,11 +141,30 @@ def fresh_shape(entry: str = "index-riIYPcmm.js", env: str | None = None) -> dic
                                               'const d="4genteam sync switch <room> <seat> --model <id>";\n',
         "assets/SeatsPage-FRESH0002.js": 'const e="No bridge connected. Run 4genteam bridge run on your PC.";\n',
         "assets/MachinesPanel-FRESH0003.js": 'const f="4genteam bridge run";\n',
-        "assets/index-DslPL43O.css": "body{}\n",
+        # Written the way the minifier emits it: the values are rewritten (0.15 -> .15, 120ms -> .12s).
+        # The witness compares values as well as names, which is why the fixture keeps the minifier's
+        # spelling - the comparison canonicalises it, it does not skip it.
+        "assets/index-DslPL43O.css": (
+            "body{}\n"
+            ":root{--color-accent:#4f46e5;--color-surface:#ffffff;--color-accent-ring:rgba(79, 70, 229, .15);"
+            "--motion-fast:.12s}"
+            ".dark{--color-accent:#818cf8;--color-surface:#0b1020;--color-accent-ring:rgba(129, 140, 248, .22);"
+            "--motion-fast:.12s}\n"
+        ),
     }
 
 
 def run(base_url: str, *extra: str) -> int:
+    """Run with the tree's CSS as the token witness unless the call names its own - the deploy gate's
+    default arm, so every test exercises the verdict a caller actually gets."""
+    argv = ["--base-url", base_url, *extra]
+    if "--expect-tokens" not in extra and TREE["tokens"]:
+        argv += ["--expect-tokens", str(TREE["tokens"])]
+    return census.main(argv)
+
+
+def run_bare(base_url: str, *extra: str) -> int:
+    """No witness at all: for the tests whose subject IS the missing expectation."""
     return census.main(["--base-url", base_url, *extra])
 
 
@@ -231,8 +273,12 @@ def test_identity_rejects_a_bundle_that_is_only_token_deep(tmp_path, capsys):
     """The census is satisfiable by a bundle containing the token and nothing else. Identity is what
     closes that: same tree, censused OK, refused by --expect-dist."""
     mutant = {
-        "index.html": '<!doctype html><script type="module" src="/assets/index-AAAAAAAA.js"></script>\n',
+        "index.html": (
+            '<!doctype html><script type="module" src="/assets/index-AAAAAAAA.js"></script>'
+            '<link rel="stylesheet" href="/assets/index-DslPL43O.css">\n'
+        ),
         "assets/index-AAAAAAAA.js": "4genteam sync pull\n",
+        "assets/index-DslPL43O.css": fresh_shape()["assets/index-DslPL43O.css"],
     }
     build = write_tree(tmp_path / "build", fresh_shape())
     with serve(write_tree(tmp_path / "served", mutant)) as base:
@@ -406,14 +452,192 @@ def test_an_undated_expected_build_is_compared_not_refused(tmp_path, capsys):
         assert run(base, "--expect-dist", str(build), "--json") == 0
     out = capsys.readouterr().out
     assert "the expected build is stale" not in out
-    assert "expected_build" not in out, "an undated build must not be reported as dated"
+    assert "expected build:" not in out, "an undated build must not be reported as dated"
     assert "MATCH" in out
+
+
+# --- the token witness ------------------------------------------------------------------------
+
+def test_the_token_witness_needs_no_build(tmp_path, capsys):
+    """The arm the lead asked for on 2026-10-23: a plain checkout, no dist, no environment match -
+    the tree's declared tokens against the served stylesheet."""
+    with serve(write_tree(tmp_path, fresh_shape())) as base:
+        assert run(base) == 0
+    out = capsys.readouterr().out
+    # The counts, not just the word "tokens": run() always supplies the witness, so a bare substring
+    # check cannot tell a comparison from a mention of one.
+    assert "declares {'root': 4, 'dark': 4}, served {'root': 4, 'dark': 4}" in out
+    assert "OK: witnessed by tokens" in out
+
+
+def test_a_served_stylesheet_missing_a_declared_token_reads_drift(tmp_path, capsys):
+    """Measured live on 2026-10-23: the served CSS carried the ladder but not the four status
+    contrast tokens - a stylesheet from an older tree than the one pushed."""
+    files = fresh_shape()
+    files["assets/index-DslPL43O.css"] = (
+        ":root{--color-accent:#4f46e5;--color-surface:#ffffff;--color-accent-ring:rgba(79, 70, 229, .15);"
+        "--motion-fast:.12s}"
+        ".dark{--color-accent:#818cf8;--color-surface:#0b1020;--motion-fast:.12s}\n"
+    )
+    source = tmp_path / "theme.css"
+    source.write_text(fresh_source())
+    with serve(write_tree(tmp_path / "served", files)) as base:
+        assert run(base, "--expect-tokens", str(source)) == 1
+    out = capsys.readouterr().out
+    assert "TOKEN-DRIFT" in out
+    assert "--color-accent-ring" in out  # named, and named in the dark block only
+
+
+def test_the_minifier_rewriting_a_value_is_not_drift(tmp_path, capsys):
+    """`120ms` is served as `.12s` and `0.15` as `.15`; comparing values would red a fresh build."""
+    source = tmp_path / "theme.css"
+    source.write_text(":root {\n  --motion-fast: 120ms;\n  --ring: rgba(79, 70, 229, 0.15);\n}\n"
+                      ".dark {\n  --motion-fast: 120ms;\n}\n")
+    with serve(write_tree(tmp_path / "served", fresh_shape())) as base:
+        assert run(base, "--expect-tokens", str(source)) == 1  # the served CSS lacks `--ring` entirely
+    capsys.readouterr()
+    served_css = fresh_shape()["assets/index-DslPL43O.css"] + ":root{--ring:rgba(79, 70, 229, .15)}"
+    files = fresh_shape()
+    files["assets/index-DslPL43O.css"] = served_css
+    with serve(write_tree(tmp_path / "served2", files)) as base:
+        assert run(base, "--expect-tokens", str(source)) == 0
+
+
+def test_a_served_token_with_another_value_reads_drift(tmp_path, capsys):
+    """The lead's owed assertion on 2026-10-23, generalised: a token that is present but carries a
+    different value is drift - the served stylesheet is not this tree's."""
+    files = fresh_shape()
+    files["assets/index-DslPL43O.css"] = files["assets/index-DslPL43O.css"].replace(
+        ".dark{--color-accent:#818cf8", ".dark{--color-accent:#7c7cf0"
+    )
+    source = tmp_path / "theme.css"
+    source.write_text(fresh_source())
+    with serve(write_tree(tmp_path / "served", files)) as base:
+        assert run(base, "--expect-tokens", str(source)) == 1
+    out = capsys.readouterr().out
+    assert "DRIFTED in the served dark block (1)" in out
+    assert "--color-accent" in out and "#7c7cf0" in out
+
+
+def test_parse_token_blocks_reads_both_blocks_only():
+    blocks = census.parse_token_blocks(
+        "body{--not-a-token: 1px}"
+        ":root{--a:#fff;--b:var(--a)}"
+        ".dark{--a:#000}"
+        ".dark .card{--c:#111}"
+    )
+    # Values come back in the comparison's canonical form: a 3-digit hex is expanded (#fff -> #ffffff)
+    # so the minifier's choice of short or long hex is not a drift.
+    assert blocks == {"root": {"--a": "#ffffff", "--b": "var(--a)"}, "dark": {"--a": "#000000"}}
+
+
+def test_parse_token_blocks_survives_a_comment_holding_a_brace():
+    """Measured 2026-10-23: the block ended at the first `}` anywhere - one inside a comment - and the
+    declared set collapsed from 88 to 3 declarations while the witness still read OK."""
+    css = ":root{\n/* the old `:root{--x}` shape */\n--a:#fff;\n--b:#000;\n}\n.dark{--a:#000}"
+    assert census.parse_token_blocks(css) == {
+        "root": {"--a": "#ffffff", "--b": "#000000"},
+        "dark": {"--a": "#000000"},
+    }
+
+
+def test_parse_token_blocks_reads_a_selector_list_and_ignores_nested_blocks():
+    """`:root, :host` is the same block; a `:root` inside `@media`/`@supports` is an override or a
+    fallback, not the declaration - the reduce-motion restatement declares the motion tokens at 1ms."""
+    css = (
+        ":root, :host{--a:#fff}"
+        "@media (prefers-reduced-motion: reduce){:root{--motion-fast:1ms}}"
+        "@supports (color: oklch(0 0 0)){:root{--b:#000}}"
+        ".dark{--a:#000}"
+    )
+    assert census.parse_token_blocks(css) == {"root": {"--a": "#ffffff"}, "dark": {"--a": "#000000"}}
+
+
+def test_a_prefixed_mode_block_is_read_not_skipped():
+    """The reviewer's blocker on c452e6e7: rewriting `.dark {` as `html.dark {` made the exact-name
+    match declare ONE block, and a served sheet with every dark token removed then read OK -
+    missing=[] drifted=[] - because the missing set is computed over the blocks that parsed."""
+    assert census.parse_token_blocks("html.dark{--a:#000}\n:root{--a:#fff}") == {
+        "dark": {"--a": "#000000"},
+        "root": {"--a": "#ffffff"},
+    }
+
+
+def test_a_mode_named_with_no_block_parsing_refuses():
+    """Fail closed: a depth-0 rule that names a mode while the parser gets no block for it is a
+    measurement the witness cannot take, never an empty comparison."""
+    with pytest.raises(census.CannotMeasure, match="names the dark block"):
+        census.parse_token_blocks(":root{--a:#fff}\n.dark .card{--a:#000}")
+
+
+def test_an_unterminated_comment_refuses():
+    """Same review, second arm: an unclosed `/*` stayed in the text, so everything after it read as
+    declarations of the block before it."""
+    with pytest.raises(census.CannotMeasure, match="unterminated"):
+        census.parse_token_blocks(":root{--a:#fff}\n/* a note never closed\n.dark{--a:#000}")
+
+
+def test_a_prefixed_source_block_still_witnesses_the_served_dark_tokens(tmp_path, capsys):
+    """End to end on the reviewer's repro: a source written `html.dark` against a served sheet whose
+    dark block is gone must read TOK-DRIFT with the four dark tokens named - it read OK before."""
+    source = tmp_path / "theme.css"
+    source.write_text(fresh_source().replace(".dark {", "html.dark {"))
+    files = fresh_shape()
+    css = files["assets/index-DslPL43O.css"]
+    dark = (
+        ".dark{--color-accent:#818cf8;--color-surface:#0b1020;--color-accent-ring:rgba(129, 140, 248, .22);"
+        "--motion-fast:.12s}"
+    )
+    assert dark in css
+    files["assets/index-DslPL43O.css"] = css.replace(dark, "")
+    with serve(write_tree(tmp_path / "served", files)) as base:
+        assert run(base, "--expect-tokens", str(source)) == 1
+    out = capsys.readouterr().out
+    assert "TOKEN-DRIFT" in out
+    assert "MISSING from the served dark block (4)" in out
+
+
+def test_token_values_compare_across_punctuation_spacing():
+    """A semantically identical sheet spells a colour function with or without spaces; the minifier
+    picks the tight one, and 15 tokens read as drift before the spacing was canonicalised."""
+    assert census.normalise_value("rgba(79, 70, 229, 0.15)") == census.normalise_value("rgba(79,70,229,.15)")
+    assert census.normalise_value("color-mix(in srgb, var(--a) 50%, transparent)") == census.normalise_value(
+        "color-mix(in srgb,var(--a) 50%,transparent)"
+    )
+    assert census.normalise_value("1px solid #fff") != census.normalise_value("1px solid #000")
 
 
 # --- fail-closed -----------------------------------------------------------------------------
 
+def test_no_expectation_is_cannot_measure_not_ok(tmp_path, capsys, monkeypatch):
+    """THE GATE, measured on 2026-10-23: this script read OK against index-Dd1FoJ_2.js, a bundle whose
+    /login threw MUI error #9 and rendered an empty #root. The census is satisfied by any build after
+    the rename, so without an expectation nothing was compared and the verdict must say so."""
+    # A checkout with no theme.css is the only place with no witness at all.
+    monkeypatch.setattr(census, "REPO_ROOT", str(tmp_path / "no-checkout"))
+    with serve(write_tree(tmp_path, fresh_shape())) as base:
+        assert run_bare(base) == 2
+    out = capsys.readouterr().out
+    assert "CANNOT-MEASURE" in out
+    assert "--expect-dist" in out and "--expect-tokens" in out
+
+
+def test_the_census_flag_is_gone_so_no_run_can_skip_a_witness():
+    """--census let a caller accept "newer than 08 Oct" as the verdict - the reading that passed on
+    2026-10-23 against a bundle whose /login rendered nothing. An unknown flag is an argparse refusal."""
+    with pytest.raises(SystemExit) as refused:
+        census.main(["--census", "--base-url", "http://127.0.0.1:9"])
+    assert refused.value.code == 2
+
+
+def test_a_stale_bundle_reads_stale_even_with_no_expectation(tmp_path, capsys):
+    """A served fossil outranks the missing expectation: the report names the defect, not the flag."""
+    with serve(write_tree(tmp_path, production_shape())) as base:
+        assert run(base) == 1
+    assert "STALE" in capsys.readouterr().out
+
 def test_unreachable_origin_is_cannot_measure_not_a_pass(tmp_path, capsys):
-    assert run("http://127.0.0.1:9", "--timeout", "2") == 2
+    assert run_bare("http://127.0.0.1:9", "--timeout", "2") == 2
     assert "CANNOT-MEASURE" in capsys.readouterr().out
 
 
@@ -502,6 +726,22 @@ def test_a_matching_build_stamp_is_ok(tmp_path, capsys, monkeypatch):
     # An exact match carries no why: the prefix branch is the one that explains itself, so this pins which of the
     # two OK paths ran.
     assert payload["build_why"] == ""
+
+
+def test_a_build_stamp_alone_is_a_witness(tmp_path, capsys, monkeypatch):
+    """The union's own rule: a deploy whose ONLY proof is `--expect-build-of` must reach OK. A deploy box has no
+    checkout, so there is no token source and no dist - with build mode left out of the witness set, a correct
+    deploy reads CANNOT-MEASURE, which is a refusal about nothing. REPO_ROOT is moved off the checkout to state
+    that, because the auto token source would otherwise witness the run."""
+    repo, sha = frontend_origin(tmp_path)
+    monkeypatch.chdir(repo)
+    gitfixture.without_relocating(monkeypatch)
+    monkeypatch.setattr(census, "REPO_ROOT", str(tmp_path))
+    with serve(write_tree(tmp_path / "served", fresh_shape(env=stamped_env(sha)))) as base:
+        TREE["tokens"] = None
+        assert run(base, "--expect-build-of", "origin/frontend") == 0
+    out = capsys.readouterr().out
+    assert "OK: witnessed by the build stamp" in out
 
 
 def test_a_different_build_sha_is_stale(tmp_path, capsys, monkeypatch):
