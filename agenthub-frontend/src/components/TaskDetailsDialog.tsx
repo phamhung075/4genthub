@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog";
@@ -69,9 +69,14 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
   // Fetch the task CONTEXT when the dialog opens. The TASK itself is no longer fetched here:
   // useTask above owns that request (the same getTask call, on the key the realtime layer
   // writes), so this effect's own getTask was a duplicate of it.
+  // A reply that arrives after the dialog closed - or after this effect re-ran for a new task -
+  // belongs to nobody: it must not paint over the newer request, and it must not log. The log is
+  // the observable half: a console call that lands after the component is gone is the unhandled
+  // "Closing rpc while onUserConsoleLog was pending" vitest reports at teardown (CI run 39883806411).
   useEffect(() => {
     const taskId = task?.id;
     logger.debug('[TaskDetailsDialog] Dialog open', { open, taskId, taskProp: task });
+    let cancelled = false;
 
     if (open && taskId) {
       setContextLoading(true);
@@ -79,6 +84,7 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
       // Fetch task context separately
       getTaskContext(taskId)
         .then(context => {
+          if (cancelled) return;
           logger.debug('Raw context response:', context);
 
           // Extract the actual context data from the response. `getTaskContext` resolves the raw
@@ -112,13 +118,18 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
           }
         })
         .catch(error => {
+          if (cancelled) return;
           logger.error('Error fetching task context:', error);
           setTaskContext(null);
         })
         .finally(() => {
-          setContextLoading(false);
+          if (!cancelled) setContextLoading(false);
         });
     }
+
+    return () => {
+      cancelled = true;
+    };
   }, [open, task]);
 
   // Clear data when dialog closes
@@ -139,14 +150,25 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
   const contextDisplay = formatContextDisplay(displayTask?.context_data as ContextData | undefined);
 
 
-  // Copy JSON to clipboard
+  // Copy JSON to clipboard. The write settles on its own schedule and its failure branch logs, so
+  // the same rule as the context fetch applies: a dialog that is gone neither writes state nor logs.
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
   const copyJsonToClipboard = () => {
     if (taskContext) {
       const jsonString = JSON.stringify(taskContext, null, 2);
       navigator.clipboard.writeText(jsonString).then(() => {
+        if (!mountedRef.current) return;
         setJsonCopied(true);
         setTimeout(() => setJsonCopied(false), 2000);
       }).catch(err => {
+        if (!mountedRef.current) return;
         logger.error('Failed to copy JSON:', err);
       });
     }

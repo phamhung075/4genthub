@@ -731,6 +731,37 @@ describe('TaskDetailsDialog', () => {
       consoleSpy.mockRestore();
     });
 
+    it('logs nothing when the context request settles after the dialog unmounted', async () => {
+      // The dialog logs its context failure. A rejection that lands after unmount used to run that
+      // log into a dead component: CI run 39883806411 reported it as an unhandled
+      // "Closing rpc while onUserConsoleLog was pending" at teardown.
+      let contextRequest = Promise.withResolvers<unknown>();
+      vi.mocked(api.getTaskContext).mockImplementation(() => contextRequest.promise);
+
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      const { unmount } = render(
+        <TaskDetailsDialog
+          open={true}
+          onOpenChange={() => {}}
+          task={mockTask}
+          onClose={mockOnClose}
+          onAgentClick={mockOnAgentClick}
+        />
+      );
+
+      unmount();
+      contextRequest.reject(new Error('Context fetch failed after unmount'));
+      await Promise.resolve();
+      await Promise.resolve();
+
+      const loggedContextFailure = consoleSpy.mock.calls.some(
+        call => String(call[0]).includes('Error fetching task context')
+      );
+      expect(loggedContextFailure).toBe(false);
+      consoleSpy.mockRestore();
+    });
+
     it('should handle clipboard API failure gracefully', async () => {
       // Mock clipboard API failure
       const mockWriteText = vi.fn().mockRejectedValue(new Error('Clipboard failed'));
