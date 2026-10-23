@@ -75,7 +75,11 @@ ARG VITE_KEYCLOAK_CLIENT_ID
 
 # Build Metadata ARGs
 ARG VITE_BUILD_TIME
-ARG VITE_BUILD_SHA
+# VITE_BUILD_SHA is NOT a build arg. CapRover's captain-definition (schemaVersion 2) has no
+# build-args field, and its context is the uploaded project with no .git, so --build-arg
+# VITE_BUILD_SHA cannot arrive: the served bundle inlined VITE_BUILD_SHA:"" (measured 2026-10-23).
+# The stamp is a FILE in the pushed tree instead - agenthub-frontend/BUILD-SHA, written by
+# scripts/stamp-frontend.sh on the frontend branch - read at build time below.
 
 # ========================================
 # OPTIMIZED: Set ALL ENV variables in ONE statement
@@ -89,7 +93,6 @@ ENV NODE_ENV=${NODE_ENV} \
     VITE_KEYCLOAK_REALM=${VITE_KEYCLOAK_REALM:-} \
     VITE_KEYCLOAK_CLIENT_ID=${VITE_KEYCLOAK_CLIENT_ID:-mcp-frontend} \
     VITE_BUILD_TIME=${VITE_BUILD_TIME} \
-    VITE_BUILD_SHA=${VITE_BUILD_SHA} \
     VITE_WS_URL=${VITE_WS_URL:-} \
     VITE_WS_MAX_RECONNECT_ATTEMPTS=${VITE_WS_MAX_RECONNECT_ATTEMPTS} \
     VITE_WS_RECONNECT_DELAY=${VITE_WS_RECONNECT_DELAY} \
@@ -108,8 +111,15 @@ ENV NODE_ENV=${NODE_ENV} \
     VITE_LOG_REMOTE_ENDPOINT=${VITE_LOG_REMOTE_ENDPOINT} \
     VITE_LOG_MAX_STORAGE_SIZE=${VITE_LOG_MAX_STORAGE_SIZE}
 
-# Build the application
-RUN pnpm run build
+# Build the application. The stamp comes from the tree; a tree without BUILD-SHA FAILS the build,
+# because an unstamped bundle cannot be compared with any commit - the defect this closes.
+RUN test -s BUILD-SHA || { \
+        echo "agenthub-frontend/BUILD-SHA is missing or empty: production takes the stamp from the" \
+             "pushed tree (scripts/stamp-frontend.sh, on the frontend branch), and a self-hosted build" \
+             "must write it too" >&2; \
+        exit 1; \
+    }
+RUN VITE_BUILD_SHA="$(cat BUILD-SHA)" pnpm run build
 
 # ========================================
 # Stage 2: Production Runtime - OPTIMIZED

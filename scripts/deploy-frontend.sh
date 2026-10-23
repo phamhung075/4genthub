@@ -207,10 +207,12 @@ if [ -f "agenthub-frontend/build/index.html" ]; then
         print_error "the LIVE frontend is NOT the build just made - a stale or mismatched bundle is being served (census above; row b70278f2)"
     fi
 else
-    # SKIP_BUILD leaves nothing to compare against, so identity cannot be checked. The census alone
-    # still refuses a pre-fix bundle - that is the failure that mattered - but it is the weaker test,
-    # so it is named as such rather than passed off as the same thing.
-    print_warning "agenthub-frontend/build/index.html is absent, so identity cannot be checked; falling back to the census"
+    # SKIP_BUILD leaves no dist to compare entry hashes with, but the token witness needs none: the
+    # tree's theme.css declares its tokens and the served stylesheet must carry every one of them, so a
+    # stylesheet (or a whole bundle) from an older tree is refused. Measured 2026-10-23: the census
+    # alone read OK against a bundle whose /login rendered nothing (row b70278f2) - that reading is
+    # now refused outright: with no witness the verdict is CANNOT-MEASURE.
+    print_warning "agenthub-frontend/build/index.html is absent, so identity cannot be checked; verifying the token witness instead"
     python3 "$CENSUS" --base-url "$FRONTEND_URL" || print_error "the live frontend is not a build of HEAD - a stale bundle is being served (row b70278f2)"
 fi
 
