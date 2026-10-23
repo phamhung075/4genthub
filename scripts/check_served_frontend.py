@@ -35,6 +35,17 @@ WHAT THE CENSUS DOES *NOT* PROVE, AND THE MODE THAT CLOSES IT
     every script the served app is composed of must exist in that build. Then OK means "the build I
     just made is the build being served", which is the claim a deploy actually needs.
 
+    THE MODE A SEAT CAN TAKE, because a hash cannot be reproduced across environments but a STRING can be
+    compared. `--expect-build-of <ref>` (the ref defaults to origin/frontend) reads the stamp the served entry
+    carries - VITE_BUILD_SHA and VITE_BUILD_TIME, inlined because environment.ts:32 reads the env object
+    dynamically, and declared as build ARGs in docker-system/docker/Dockerfile.frontend.production:77-78 - and
+    compares it to `git rev-parse <ref>`. It says which commit the build read, so the environment cannot
+    matter. OK/0 when the stamp is that commit or a hex PREFIX of at least 7 characters (the only in-repo
+    writer, scripts/deploy-frontend.sh:86-87, stamps `git rev-parse --short`), STALE/1 when it names another
+    commit, INCOMPLETE/2 when it is empty, absent, shorter than 7 hex characters or not hex at all. A missing
+    git or an unresolvable ref is exit 2. Until the build ARGs are wired every run of this mode is exit 2,
+    which is the truth about what that build says about itself - never a pass.
+
     AND ONLY FROM THE SAME ENVIRONMENT. A hash is an identity only between builds made the same way:
     the deploy builds docker-system/docker/Dockerfile.frontend.production (node:20-alpine, arm64)
     from the `frontend` branch, while a seat or CI build is a different node, arch and VITE_* set -
@@ -46,11 +57,14 @@ WHAT THE CENSUS DOES *NOT* PROVE, AND THE MODE THAT CLOSES IT
 
 USAGE
     python3 scripts/check_served_frontend.py [--base-url https://www.4genthub.com] [--json]
+    python3 scripts/check_served_frontend.py --expect-build-of origin/frontend
     python3 scripts/check_served_frontend.py --expect-dist agenthub-frontend/build
 EXIT
-    0 = fresh (and, in identity mode, the served build IS the expected build)
-    1 = stale or a build mismatch - the served app is not the expected build
-    2 = the census could not be taken (fetch/parse/cap failure, a stale or foreign-env expectation) -
+    0 = fresh (and, in build mode, the served build's stamp names the expected commit; in identity mode, the
+        served build IS the expected build)
+    1 = stale or a build mismatch - the served app is not the expected build, or its stamp names another commit
+    2 = the census or the build comparison could not be taken (fetch/parse/cap failure, a missing git, an
+        unresolvable ref, an empty/absent/short/non-hex build stamp, a stale or foreign-env expectation) -
         NEVER reported as a pass
 """
 
@@ -374,6 +388,76 @@ def env_comparison(expected: dict[str, str] | None, served: dict[str, str] | Non
             "differing_values": differing}
 
 
+# The stamp's own floor. `git rev-parse --short` writes 7 characters or more - the one in-repo writer
+# (scripts/deploy-frontend.sh:86-87) writes exactly `--short` - and a shorter string names no commit on its
+# own, so it is a refusal rather than a comparison.
+BUILD_SHA_PREFIX_MIN = 7
+HEX_SHA = re.compile(r"^[0-9a-f]+$")
+
+
+def expected_sha(ref: str) -> str:
+    """The commit a ref names, or a refusal - a build check with no expected side cannot measure.
+
+    Resolved from the tree the command runs in: the deploy builds from the `frontend` branch, so
+    `--expect-build-of origin/frontend` compares the served stamp to the commit that branch names. A missing
+    git or an unresolvable ref is exit 2 and never 0: an unproven deploy is not a proven one.
+    """
+    repo = git("rev-parse", "--show-toplevel", cwd=".")
+    if not repo:
+        raise CannotMeasure(f"cannot resolve {ref}: this is not a git work tree, or git is not installed")
+    sha = git("rev-parse", "--verify", f"{ref}^{{commit}}", cwd=repo)
+    if not sha:
+        raise CannotMeasure(f"cannot resolve {ref} to a commit in {repo}")
+    return sha.lower()
+
+
+def build_stamp(entry_text: str, expected: str) -> dict:
+    """The stamp the served build carries, against the commit it must name - a STRING compare.
+
+    A hash is comparable only between builds of one environment (env_comparison), but the stamp is a string
+    the build wrote: it names the commit the build read, so the environment cannot matter. The stamp is read
+    with the env object the census already parses, never with a second parser.
+
+    The result carries served_build_sha, served_build_time and expected_sha, which main lifts to the top
+    level of the report; `state` is OK/STALE/INCOMPLETE and `why` the sentence behind it.
+    """
+    signature = env_signature(entry_text) or {}
+    stamp = (signature.get("VITE_BUILD_SHA") or "").strip().lower()
+    built = (signature.get("VITE_BUILD_TIME") or "").strip()
+    report = {"served_build_sha": stamp, "served_build_time": built, "expected_sha": expected}
+    if not entry_text:
+        return {**report, "state": "INCOMPLETE", "why": "the served entry chunk did not arrive"}
+    if not stamp:
+        absent = "VITE_BUILD_SHA" not in signature
+        return {**report, "state": "INCOMPLETE",
+                "why": f"the served entry inlines {'no' if absent else 'an empty'} VITE_BUILD_SHA - "
+                       "the build was passed no --build-arg"}
+    if not HEX_SHA.match(stamp):
+        return {**report, "state": "INCOMPLETE",
+                "why": f"the served VITE_BUILD_SHA {stamp!r} is not a hex commit id"}
+    if stamp == expected:
+        return {**report, "state": "OK", "why": ""}
+    if len(stamp) >= BUILD_SHA_PREFIX_MIN and expected.startswith(stamp):
+        return {**report, "state": "OK",
+                "why": f"the served stamp is a {len(stamp)}-character prefix of the expected commit"}
+    if len(stamp) < BUILD_SHA_PREFIX_MIN:
+        return {**report, "state": "INCOMPLETE",
+                "why": f"the served VITE_BUILD_SHA {stamp!r} is shorter than {BUILD_SHA_PREFIX_MIN} characters, "
+                       "so it names no commit on its own"}
+    return {**report, "state": "STALE",
+            "why": f"the served build names {stamp}, the expected commit is {expected}"}
+
+
+def entry_text(texts: dict[str, str], served_entry: str | None) -> str:
+    """The served entry chunk's own text - the file that carries the build's env object and stamp.
+
+    The closure names one entry, so the first match is that entry. A same-named file at the root as well as
+    under assets/ would resolve to whichever the closure saw first; none exists today, and the served tree is
+    walked from the index outward.
+    """
+    return next((t for path, t in texts.items() if served_entry and path.endswith("/" + served_entry)), "")
+
+
 def identity_check(served_entry: str | None, served_paths: set[str], expect_entry: str, shipped: set[str] | None) -> dict:
     served_names = {p.rsplit("/", 1)[-1] for p in served_paths}
     absent = sorted(n for n in served_names if shipped and n not in shipped)
@@ -396,6 +480,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--timeout", type=float, default=30.0)
     parser.add_argument("--expect-dist", default=None, help="a built vite outDir (agenthub-frontend/build) - the build the served app must BE")
     parser.add_argument("--expect-entry", default=None, help="the entry chunk hash the served app must serve")
+    parser.add_argument("--expect-build-of", nargs="?", const="origin/frontend", default=None,
+                        metavar="REF", help="a ref whose commit the served build's VITE_BUILD_SHA must name "
+                                            "(default ref: origin/frontend) - the deploy proof that survives "
+                                            "a different build environment")
     parser.add_argument("--max-assets", type=int, default=DEFAULT_MAX_ASSETS)
     args = parser.parse_args(argv)
 
@@ -413,6 +501,9 @@ def main(argv: list[str] | None = None) -> int:
                         f"{dated['age_days']} day(s) before the last frontend commit ({dated['source_commit_at']}); "
                         "rebuild it (cd agenthub-frontend && npm run build) or pass --expect-entry"
                     )
+        # The expected side of the build check is resolved before anything is fetched: an unresolvable ref
+        # must cost a refusal, never a pass on a census that had nothing to compare against.
+        expected_build = expected_sha(args.expect_build_of) if args.expect_build_of else None
         fetcher = Fetcher(args.base_url, args.timeout)
         bust = f"?cb={int(time.time())}"
         html = fetcher.get("/" + bust).decode("utf-8", "replace")
@@ -432,6 +523,11 @@ def main(argv: list[str] | None = None) -> int:
 
         result = census(texts)
         report.update(result)
+        if expected_build:
+            stamp = build_stamp(entry_text(texts, served_entry), expected_build)
+            report.update({k: v for k, v in stamp.items() if k not in ("state", "why")})
+            report["build_state"] = stamp["state"]
+            report["build_why"] = stamp["why"]
 
         expected_entry, shipped, expected_text = None, None, None
         comparable = True
@@ -440,12 +536,7 @@ def main(argv: list[str] | None = None) -> int:
             # Comparability is decided BEFORE identity: if the expectation was built in another
             # environment, its hash says nothing about the served one and a MISMATCH would be a lie
             # about production. The served side's own entry carries its environment too.
-            # The closure names one entry, so the first match is that entry. A same-named file at the
-            # root as well as under assets/ would resolve to whichever the closure saw first; none
-            # exists today, and the served tree is walked from the index outward.
-            served_text = next(
-                (t for path, t in texts.items() if served_entry and path.endswith("/" + served_entry)), ""
-            )
+            served_text = entry_text(texts, served_entry)
             # A served entry that did not arrive is an INCOMPLETE closure, never a foreign environment:
             # with no text to read, comparability is left alone and the failure is reported as itself.
             if served_text:
@@ -457,12 +548,21 @@ def main(argv: list[str] | None = None) -> int:
             report["identity"] = identity_check(served_entry, set(texts), expected_entry, shipped)
 
         stale = result["deleted_names"] or result["verbs_present"] == 0
+        build_state = report.get("build_state")
         if stale:
             report["verdict"] = "STALE"
             exit_code = 1
+        elif build_state == "INCOMPLETE":
+            # A stamp that names no commit is not a mismatch and not a pass: nothing about the deploy has
+            # been proven, so the census's own OK would be a lie about the build.
+            report["verdict"] = "INCOMPLETE"
+            exit_code = 2
         elif not comparable:
             report["verdict"] = "FOREIGN-ENV"
             exit_code = 2
+        elif build_state == "STALE":
+            report["verdict"] = "STALE"
+            exit_code = 1
         elif "identity" in report and not report["identity"]["matches"]:
             report["verdict"] = "BUILD-MISMATCH"
             exit_code = 1
@@ -532,6 +632,13 @@ def print_report(report: dict) -> None:
             absent = ident["served_assets_absent_from_build"]
             shown = ", ".join(absent[:5]) + (f", +{len(absent) - 5} more" if len(absent) > 5 else "")
             print(f"  served assets absent from the build ({len(absent)}): {shown}")
+    build_state = report.get("build_state")
+    if build_state:
+        print(f"  build: serves {report['served_build_sha'] or 'NO STAMP'}"
+              f" (built {report['served_build_time'] or 'unknown'})"
+              f" vs expected {report['expected_sha']} -> {build_state}")
+        if report.get("build_why"):
+            print(f"    {report['build_why']}")
     verdict = report.get("verdict")
     messages = {
         "OK": "OK: the served frontend names the live client and no deleted script",
@@ -542,7 +649,12 @@ def print_report(report: dict) -> None:
         "INCOMPLETE": "INCOMPLETE: assertions passed on the part that arrived, but the closure did not - not a pass",
         "CANNOT-MEASURE": f"CANNOT-MEASURE: the census could not be taken ({report.get('error')})",
     }
-    print(messages.get(verdict, verdict))
+    if build_state == "STALE" and verdict == "STALE":
+        print("STALE: the served build names a different commit than the one expected - not a pass")
+    elif build_state == "INCOMPLETE" and verdict == "INCOMPLETE":
+        print(f"INCOMPLETE: the served build's stamp cannot be read ({report.get('build_why')}) - not a pass")
+    else:
+        print(messages.get(verdict, verdict))
 
 
 if __name__ == "__main__":

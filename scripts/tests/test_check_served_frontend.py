@@ -454,5 +454,109 @@ def test_json_report_carries_the_counts_and_the_date(tmp_path, capsys):
     assert payload["verbs"]["sync pull"]["files"] == 0
 
 
+def frontend_origin(tmp_path: Path) -> tuple[Path, str]:
+    """A repo whose `origin/frontend` is one commit: the expected side of `--expect-build-of`.
+
+    Real git, real `rev-parse`: the mode reads the ref through the same helper the rest of the script uses,
+    so a stub here would prove nothing about the command a seat runs.
+    """
+    repo = tmp_path / "repo"
+    write_tree(repo, {"frontend/src/App.tsx": "export const x = 1\n"})
+    gitfixture.git(repo, "init", "-q", ".")
+    gitfixture.git(repo, "config", "user.email", "fixture@test.invalid")
+    gitfixture.git(repo, "config", "user.name", "fixture test")
+    gitfixture.git(repo, "add", "-A")
+    gitfixture.git(repo, "commit", "-qm", "frontend")
+    gitfixture.git(repo, "update-ref", "refs/remotes/origin/frontend", "HEAD")
+    sha = gitfixture.git(repo, "rev-parse", "HEAD").stdout.strip()
+    return repo, sha
+
+
+def stamped_env(stamp: str) -> str:
+    """DEPLOY_ENV with the build stamp a `--build-arg` build writes: both keys, filled.
+
+    The production entry carries both keys and no VITE_BUILD_TIME today (Dockerfile.frontend.production
+    declares the ARGs with no default and captain-definition.frontend passes none), which is why the empty
+    case is DEPLOY_ENV itself, below.
+    """
+    return DEPLOY_ENV.replace(
+        'VITE_BUILD_SHA:""',
+        f'VITE_BUILD_SHA:"{stamp}",VITE_BUILD_TIME:"2026-10-23T00:00:00Z"',
+    )
+
+
+def test_a_matching_build_stamp_is_ok(tmp_path, capsys, monkeypatch):
+    """The one thing a seat can prove about a deploy: the served build says it read this commit. A string
+    comparison, so the deploy image's node/arch/VITE_* set cannot turn it into a refusal."""
+    repo, sha = frontend_origin(tmp_path)
+    monkeypatch.chdir(repo)
+    gitfixture.without_relocating(monkeypatch)
+    with serve(write_tree(tmp_path / "served", fresh_shape(env=stamped_env(sha)))) as base:
+        assert run(base, "--expect-build-of", "origin/frontend", "--json") == 0
+    payload = census.json.loads(capsys.readouterr().out)
+    assert payload["verdict"] == "OK"
+    assert payload["served_build_sha"] == sha
+    assert payload["expected_sha"] == sha
+    assert payload["served_build_time"] == "2026-10-23T00:00:00Z"
+
+
+def test_a_different_build_sha_is_stale(tmp_path, capsys, monkeypatch):
+    """The deploy did not happen, and the stamp is the evidence: OK here would report a build nobody made."""
+    repo, sha = frontend_origin(tmp_path)
+    monkeypatch.chdir(repo)
+    gitfixture.without_relocating(monkeypatch)
+    other = "deadbeef" + sha[8:]
+    with serve(write_tree(tmp_path / "served", fresh_shape(env=stamped_env(other)))) as base:
+        assert run(base, "--expect-build-of", "origin/frontend") == 1
+    out = capsys.readouterr().out
+    assert "STALE" in out
+    assert f"serves {other}" in out and f"expected {sha}" in out
+
+
+def test_an_empty_or_absent_stamp_is_incomplete_never_a_pass(tmp_path, capsys, monkeypatch):
+    """Today's production shape: the key is inlined and empty, because no build arg reaches the build. That is
+    a refusal - nothing about the deploy has been proven - not the census's OK."""
+    repo, sha = frontend_origin(tmp_path)
+    monkeypatch.chdir(repo)
+    gitfixture.without_relocating(monkeypatch)
+    with serve(write_tree(tmp_path / "empty", fresh_shape(env=DEPLOY_ENV))) as base:
+        assert run(base, "--expect-build-of", "origin/frontend") == 2
+    no_key = DEPLOY_ENV.replace('VITE_BUILD_SHA:"",', "")
+    with serve(write_tree(tmp_path / "absent", fresh_shape(env=no_key))) as base:
+        assert run(base, "--expect-build-of", "origin/frontend") == 2
+    out = capsys.readouterr().out
+    assert "INCOMPLETE" in out and "not a pass" in out
+    assert "VITE_BUILD_SHA" in out
+    assert "OK:" not in out
+
+
+def test_a_short_sha_prefix_is_accepted_at_seven_characters(tmp_path, capsys, monkeypatch):
+    """`git rev-parse --short` writes 7 characters and the repo's only stamp writer uses it, so a 7-character
+    prefix of the expected commit is a match - while a 6-character one names no commit and is a refusal."""
+    repo, sha = frontend_origin(tmp_path)
+    monkeypatch.chdir(repo)
+    gitfixture.without_relocating(monkeypatch)
+    with serve(write_tree(tmp_path / "seven", fresh_shape(env=stamped_env(sha[:7])))) as base:
+        assert run(base, "--expect-build-of", "origin/frontend", "--json") == 0
+    payload = census.json.loads(capsys.readouterr().out)
+    assert payload["served_build_sha"] == sha[:7]
+    assert payload["build_why"] == "the served stamp is a 7-character prefix of the expected commit"
+    with serve(write_tree(tmp_path / "six", fresh_shape(env=stamped_env(sha[:6])))) as base:
+        assert run(base, "--expect-build-of", "origin/frontend") == 2
+    assert "shorter than 7 characters" in capsys.readouterr().out
+
+
+def test_a_non_hex_stamp_is_incomplete(tmp_path, capsys, monkeypatch):
+    """A stamp that is not a commit id cannot be compared at all: exit 2, never a STALE and never an OK."""
+    repo, sha = frontend_origin(tmp_path)
+    monkeypatch.chdir(repo)
+    gitfixture.without_relocating(monkeypatch)
+    with serve(write_tree(tmp_path / "served", fresh_shape(env=stamped_env("not-a-commit-id")))) as base:
+        assert run(base, "--expect-build-of", "origin/frontend") == 2
+    out = capsys.readouterr().out
+    assert "INCOMPLETE" in out
+    assert "is not a hex commit id" in out
+
+
 if __name__ == "__main__":  # pragma: no cover
     raise SystemExit(pytest.main([__file__, "-q"]))
