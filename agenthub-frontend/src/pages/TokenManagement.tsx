@@ -362,14 +362,14 @@ export function TokenManagement() {
 
         {/* Alerts */}
         {error && (
-          <Alert className="mb-6 border-l-4 border-error bg-error-light">
+          <Alert className="mb-6 border-l-4 border-error bg-error-subtle">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
 
         {success && (
-          <Alert className="mb-6 border-l-4 border-success bg-success-light">
+          <Alert className="mb-6 border-l-4 border-success bg-success-subtle">
             <CheckCircle className="h-4 w-4" />
             <AlertDescription>{success}</AlertDescription>
           </Alert>
@@ -455,7 +455,7 @@ export function TokenManagement() {
                       variant="ghost"
                       size="sm"
                       onClick={() => setSelectedScopes([])}
-                      className="text-error-dark hover:bg-error-light"
+                      className="text-error-strong hover:bg-error-subtle"
                     >
                       Clear All
                     </Button>
@@ -618,7 +618,7 @@ export function TokenManagement() {
                     <Card
                       key={token.id}
                       className={`relative overflow-hidden hover:shadow-lg transition-all duration-300 border ${
-                        isExpired ? 'border-error bg-error-light' : isExpiringSoon ? 'border-warning bg-warning-light' : 'border-surface-border bg-background-tertiary'
+                        isExpired ? 'border-error bg-error-subtle' : isExpiringSoon ? 'border-warning bg-warning-subtle' : 'border-surface-border bg-background-tertiary'
                       }`}
                     >
                       <CardHeader className="pb-3">
@@ -632,7 +632,7 @@ export function TokenManagement() {
                                 {isExpired ? 'Expired' : token.is_active ? 'Active' : 'Inactive'}
                               </Badge>
                               {isExpiringSoon && !isExpired && (
-                                <Badge variant="outline" className="border-warning text-warning-dark dark:border-warning dark:text-warning-dark">
+                                <Badge variant="outline" className="border-warning text-warning-strong">
                                   Expiring Soon
                                 </Badge>
                               )}
@@ -774,7 +774,7 @@ export function TokenManagement() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Alert className="border-l-4 border-info bg-info-light">
+                <Alert className="border-l-4 border-info bg-info-subtle">
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription>
                     Token settings configuration will be available in a future update.
@@ -797,7 +797,7 @@ export function TokenManagement() {
                 This token lets the 4genteam agent on your machine publish your sessions. Follow the steps below.
               </DialogDescription>
             </DialogHeader>
-            <Alert className="border-l-4 border-warning bg-warning-light">
+            <Alert className="border-l-4 border-warning bg-warning-subtle">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
                 <strong>Important:</strong> This token will only be shown once. Store it before you close this window.
@@ -826,7 +826,7 @@ export function TokenManagement() {
             </DialogHeader>
 
             <div className="space-y-6">
-              <Alert className="border-l-4 border-warning bg-warning-light">
+              <Alert className="border-l-4 border-warning bg-warning-subtle">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
                   <strong>Important:</strong> This token will only be shown once. Copy the configuration now and store it securely.
@@ -868,7 +868,7 @@ export function TokenManagement() {
                         const configString = `"agenthub_http": ${JSON.stringify(config, null, 2)}`;
                         copyToClipboard(configString, 'mcp-config');
                       }}
-                      className={copiedButton === 'mcp-config' ? 'bg-success-light border-success text-success-dark dark:border-success dark:text-success-dark' : ''}
+                      className={copiedButton === 'mcp-config' ? 'bg-success-subtle border-success text-success-strong' : ''}
                     >
                       {copiedButton === 'mcp-config' ? (
                         <>
@@ -887,7 +887,7 @@ export function TokenManagement() {
                       variant="outline"
                       size="sm"
                       onClick={() => generatedToken && copyToClipboard(generatedToken, 'token-only')}
-                      className={copiedButton === 'token-only' ? 'bg-success-light border-success text-success-dark dark:border-success dark:text-success-dark' : ''}
+                      className={copiedButton === 'token-only' ? 'bg-success-subtle border-success text-success-strong' : ''}
                     >
                       {copiedButton === 'token-only' ? (
                         <>
@@ -941,7 +941,7 @@ export function TokenManagement() {
                   copyToClipboard(configString, 'complete-config');
                 }}
                 className={copiedButton === 'complete-config'
-                  ? "bg-success-dark hover:bg-success-dark/90 text-accent-contrast"
+                  ? "bg-success-strong hover:bg-success-strong/90 text-accent-contrast"
                   : "bg-gradient-to-r from-primary to-primary-hover hover:from-primary/90 hover:to-primary-hover/90 text-accent-contrast"
                 }
               >
@@ -1034,7 +1034,7 @@ export function TokenManagement() {
                         <p className="text-xs text-base-secondary mt-1">Operation Types</p>
                       </div>
                       <div className="bg-success/10 rounded-lg p-4">
-                        <p className="text-3xl font-bold text-success-dark">
+                        <p className="text-3xl font-bold text-success-strong">
                           {selectedToken.usage_stats && Object.keys(selectedToken.usage_stats).length > 0
                             ? Math.max(...Object.values(selectedToken.usage_stats).filter((v): v is number => v !== undefined))
                             : 0}

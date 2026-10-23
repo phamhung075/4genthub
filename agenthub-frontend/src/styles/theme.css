@@ -102,17 +102,17 @@
 
   /* Status is status only, never decorative. */
   --color-success: #059669;
-  --color-success-light: #d1fae5;
-  --color-success-dark: #047857;
+  --color-success-subtle: #d1fae5;
+  --color-success-strong: #047857;
   --color-warning: #b45309;
-  --color-warning-light: #fef3c7;
-  --color-warning-dark: #92400e;
+  --color-warning-subtle: #fef3c7;
+  --color-warning-strong: #92400e;
   --color-error: #dc2626;
-  --color-error-light: #fee2e2;
-  --color-error-dark: #b91c1c;
+  --color-error-subtle: #fee2e2;
+  --color-error-strong: #b91c1c;
   --color-info: #2563eb;
-  --color-info-light: #dbeafe;
-  --color-info-dark: #1d4ed8;
+  --color-info-subtle: #dbeafe;
+  --color-info-strong: #1d4ed8;
 
   /* MUI needs a contrast colour beside each status main, and it derives one
      with getContrastText() - white or rgba(0, 0, 0, 0.87), picked by ratio.
@@ -205,17 +205,17 @@
   --color-button-danger-hover: #ef4444;
 
   --color-success: #34d399;
-  --color-success-light: #064e3b;
-  --color-success-dark: #6ee7b7;
+  --color-success-subtle: #064e3b;
+  --color-success-strong: #6ee7b7;
   --color-warning: #fbbf24;
-  --color-warning-light: #78350f;
-  --color-warning-dark: #fcd34d;
+  --color-warning-subtle: #78350f;
+  --color-warning-strong: #fcd34d;
   --color-error: #f87171;
-  --color-error-light: #7f1d1d;
-  --color-error-dark: #fca5a5;
+  --color-error-subtle: #7f1d1d;
+  --color-error-strong: #fca5a5;
   --color-info: #60a5fa;
-  --color-info-light: #1e3a8a;
-  --color-info-dark: #93c5fd;
+  --color-info-subtle: #1e3a8a;
+  --color-info-strong: #93c5fd;
 
   /* The same derivation for the dark mains above: MUI's getContrastText() picks
      the dark text for all four, because each dark main is light enough. */
@@ -453,27 +453,27 @@ body {
   }
 
   .theme-alert-success {
-    background-color: var(--color-success-light);
+    background-color: var(--color-success-subtle);
     border-color: var(--color-success);
-    color: var(--color-success-dark);
+    color: var(--color-success-strong);
   }
 
   .theme-alert-warning {
-    background-color: var(--color-warning-light);
+    background-color: var(--color-warning-subtle);
     border-color: var(--color-warning);
-    color: var(--color-warning-dark);
+    color: var(--color-warning-strong);
   }
 
   .theme-alert-error {
-    background-color: var(--color-error-light);
+    background-color: var(--color-error-subtle);
     border-color: var(--color-error);
-    color: var(--color-error-dark);
+    color: var(--color-error-strong);
   }
 
   .theme-alert-info {
-    background-color: var(--color-info-light);
+    background-color: var(--color-info-subtle);
     border-color: var(--color-info);
-    color: var(--color-info-dark);
+    color: var(--color-info-strong);
   }
 
   /* Badge Components */
@@ -492,18 +492,18 @@ body {
   }
 
   .theme-badge-success {
-    background-color: var(--color-success-light);
-    color: var(--color-success-dark);
+    background-color: var(--color-success-subtle);
+    color: var(--color-success-strong);
   }
 
   .theme-badge-warning {
-    background-color: var(--color-warning-light);
-    color: var(--color-warning-dark);
+    background-color: var(--color-warning-subtle);
+    color: var(--color-warning-strong);
   }
 
   .theme-badge-error {
-    background-color: var(--color-error-light);
-    color: var(--color-error-dark);
+    background-color: var(--color-error-subtle);
+    color: var(--color-error-strong);
   }
 
   /* Dropdown Components */

@@ -21,27 +21,32 @@ export const useToast = () => {
   return context;
 };
 
-// Toast variants using design system colors
+// Toast variants using design system colors. One role pair per severity in BOTH modes: `-subtle` is
+// what the surface paints and `-strong` the text it carries, and the tokens themselves flip per mode
+// (theme.css). A `dark:` shade override here applies the flip a second time - measured before
+// RULING-2026-10-23-status-shade-roles: the dark error toast painted #3b2e3b at 1.48:1 against the
+// page, weaker than the bare token's 1.89:1 and desaturated. The border keeps its `dark:` alpha arm:
+// it dims a bare-token stroke, it does not re-apply a shade role.
 const toastVariants = {
   success: {
     icon: CheckCircle,
-    className: "border-success bg-success-light text-success-dark dark:bg-success-dark/20 dark:text-success-light dark:border-success/50",
-    iconClassName: "text-success dark:text-success-light"
+    className: "border-success bg-success-subtle text-success-strong dark:border-success/50",
+    iconClassName: "text-success"
   },
   error: {
     icon: XCircle,
-    className: "border-error bg-error-light text-error-dark dark:bg-error-dark/20 dark:text-error-light dark:border-error/50",
-    iconClassName: "text-error dark:text-error-light"
+    className: "border-error bg-error-subtle text-error-strong dark:border-error/50",
+    iconClassName: "text-error"
   },
   warning: {
     icon: AlertCircle,
-    className: "border-warning bg-warning-light text-warning-dark dark:bg-warning-dark/20 dark:text-warning-light dark:border-warning/50",
-    iconClassName: "text-warning dark:text-warning-light"
+    className: "border-warning bg-warning-subtle text-warning-strong dark:border-warning/50",
+    iconClassName: "text-warning"
   },
   info: {
     icon: Info,
-    className: "border-info bg-info-light text-info-dark dark:bg-info-dark/20 dark:text-info-light dark:border-info/50",
-    iconClassName: "text-info dark:text-info-light"
+    className: "border-info bg-info-subtle text-info-strong dark:border-info/50",
+    iconClassName: "text-info"
   }
 };
 

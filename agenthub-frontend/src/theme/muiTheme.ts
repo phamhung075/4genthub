@@ -39,28 +39,32 @@ export const paletteTokens: TokenTable = {
     secondary: '--color-text-secondary',
     disabled: '--color-text-disabled',
   },
+  // MUI's `light`/`dark` slots carry these families' ROLES, not tonal steps: `light` receives the
+  // -subtle tint a surface paints, `dark` the -strong foreground it carries, and the tokens flip per
+  // mode themselves (RULING-2026-10-23-status-shade-roles). No component may read
+  // palette.<family>.light|dark expecting a lighter or darker variant - the slot names are MUI's.
   error: {
     main: '--color-error',
-    light: '--color-error-light',
-    dark: '--color-error-dark',
+    light: '--color-error-subtle',
+    dark: '--color-error-strong',
     contrastText: '--color-error-contrast',
   },
   warning: {
     main: '--color-warning',
-    light: '--color-warning-light',
-    dark: '--color-warning-dark',
+    light: '--color-warning-subtle',
+    dark: '--color-warning-strong',
     contrastText: '--color-warning-contrast',
   },
   success: {
     main: '--color-success',
-    light: '--color-success-light',
-    dark: '--color-success-dark',
+    light: '--color-success-subtle',
+    dark: '--color-success-strong',
     contrastText: '--color-success-contrast',
   },
   info: {
     main: '--color-info',
-    light: '--color-info-light',
-    dark: '--color-info-dark',
+    light: '--color-info-subtle',
+    dark: '--color-info-strong',
     contrastText: '--color-info-contrast',
   },
   divider: '--color-surface-border',

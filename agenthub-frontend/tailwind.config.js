@@ -83,23 +83,23 @@ module.exports = {
         // Status Colors
         success: {
           DEFAULT: withAlpha('success'),
-          light: withAlpha('success-light'),
-          dark: withAlpha('success-dark'),
+          subtle: withAlpha('success-subtle'),
+          strong: withAlpha('success-strong'),
         },
         warning: {
           DEFAULT: withAlpha('warning'),
-          light: withAlpha('warning-light'),
-          dark: withAlpha('warning-dark'),
+          subtle: withAlpha('warning-subtle'),
+          strong: withAlpha('warning-strong'),
         },
         error: {
           DEFAULT: withAlpha('error'),
-          light: withAlpha('error-light'),
-          dark: withAlpha('error-dark'),
+          subtle: withAlpha('error-subtle'),
+          strong: withAlpha('error-strong'),
         },
         info: {
           DEFAULT: withAlpha('info'),
-          light: withAlpha('info-light'),
-          dark: withAlpha('info-dark'),
+          subtle: withAlpha('info-subtle'),
+          strong: withAlpha('info-strong'),
         },
         // The one accent, and the source a chrome surface should paint from: the CSS
         // token layer declares it, Tailwind names it here, and MUI's palette names the

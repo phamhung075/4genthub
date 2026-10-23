@@ -105,3 +105,40 @@ describe('the stroke family', () => {
     });
   });
 });
+
+// The status shade family states a ROLE, not a mode (RULING-2026-10-23-status-shade-roles): in `.dark`
+// the `-light` names held deep shades and `-dark` pale ones, so toast.tsx re-applied the flip under
+// `dark:` and painted the foreground tone at 20% - measured 1.48:1 against the page where the bare
+// token's 1.89:1 already worked. The names are `-subtle` (the tint a surface paints) and `-strong` (the
+// text it carries) in both modes; the values did not move.
+const STATUS_FAMILIES = ['success', 'warning', 'error', 'info'] as const;
+
+describe('the status shade family', () => {
+  it('names a role, not a mode, in both blocks', () => {
+    MODES.forEach((mode) => {
+      STATUS_FAMILIES.forEach((family) => {
+        [`--color-${family}-subtle`, `--color-${family}-strong`].forEach((name) =>
+          expect(declaredValues[mode][name], `${mode} ${name}`).toBeDefined(),
+        );
+        // The mode names are what let a `dark:` compensation look correct; they must not come back.
+        ['light', 'dark'].forEach((suffix) =>
+          expect(declaredValues[mode][`--color-${family}-${suffix}`], `${mode} --color-${family}-${suffix}`)
+            .toBeUndefined(),
+        );
+      });
+    });
+  });
+
+  it('paints its strong foreground on its subtle tint at AA in both modes', () => {
+    MODES.forEach((mode) => {
+      STATUS_FAMILIES.forEach((family) => {
+        const ratio = contrastRatio(
+          resolved(mode, `--color-${family}-strong`),
+          resolved(mode, `--color-${family}-subtle`),
+        );
+        // 4.5 is the floor for this application's body text; the pair sits at 4.84 minimum today.
+        expect(ratio, `${mode} ${family} strong on subtle = ${ratio.toFixed(3)}:1`).toBeGreaterThanOrEqual(4.5);
+      });
+    });
+  });
+});
