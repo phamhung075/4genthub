@@ -13,25 +13,30 @@ export type TokenMode = 'light' | 'dark';
 
 const SELECTOR: Record<TokenMode, string> = { light: ':root', dark: '.dark' };
 
-/** The declarations between a selector's braces, comments removed. */
-const blockOf = (selector: string): string => {
-  const start = css.indexOf(`${selector} {`);
+/** Comments removed BEFORE anything is scanned: a `}` inside a comment would end a block early, and the
+ * token that vanished would be reported as undeclared - the message would blame a token the file
+ * declares, which is the one failure mode this module must not have (architect's nit, ruled one line). */
+const stripComments = (text: string): string => text.replace(/\/\*[\s\S]*?\*\//g, '');
+
+/** The declarations between a selector's braces. */
+const blockOf = (source: string, selector: string): string => {
+  const start = source.indexOf(`${selector} {`);
   if (start < 0) throw new Error(`theme.css has no ${selector} block`);
-  const open = css.indexOf('{', start);
+  const open = source.indexOf('{', start);
   let depth = 0;
-  for (let i = open; i < css.length; i += 1) {
-    if (css[i] === '{') depth += 1;
-    else if (css[i] === '}') {
+  for (let i = open; i < source.length; i += 1) {
+    if (source[i] === '{') depth += 1;
+    else if (source[i] === '}') {
       depth -= 1;
-      if (depth === 0) return css.slice(open + 1, i).replace(/\/\*[\s\S]*?\*\//g, '');
+      if (depth === 0) return source.slice(open + 1, i);
     }
   }
   throw new Error(`theme.css's ${selector} block is not closed`);
 };
 
-const valuesOf = (selector: string): { declared: Record<string, string>; resolved: Record<string, string> } => {
+const valuesOf = (source: string, selector: string): { declared: Record<string, string>; resolved: Record<string, string> } => {
   const declared = new Map<string, string>();
-  for (const match of blockOf(selector).matchAll(/(--[a-z0-9-]+)\s*:\s*([^;]+);/g)) {
+  for (const match of blockOf(source, selector).matchAll(/(--[a-z0-9-]+)\s*:\s*([^;]+);/g)) {
     declared.set(match[1], match[2].trim());
   }
   // An alias is `var(--other)` and nothing else: `--color-secondary` is
@@ -51,22 +56,28 @@ const valuesOf = (selector: string): { declared: Record<string, string>; resolve
   };
 };
 
-const parsed = { light: valuesOf(SELECTOR.light), dark: valuesOf(SELECTOR.dark) };
-
 /** A `--name` to value map, one per mode. */
 type ByMode = { light: Record<string, string>; dark: Record<string, string> };
 
-/** Every custom property in `:root` (light) and `.dark`, aliases resolved. */
-export const tokenValues: ByMode = {
-  light: parsed.light.resolved,
-  dark: parsed.dark.resolved,
+/** The exported seam the tests drive: the same parse the module runs on the imported stylesheet, so a
+ * comment containing a brace is exercised without planting graffiti in theme.css. */
+export const parseTokenSource = (raw: string): { declared: ByMode; resolved: ByMode } => {
+  const source = stripComments(raw);
+  const light = valuesOf(source, SELECTOR.light);
+  const dark = valuesOf(source, SELECTOR.dark);
+  return {
+    declared: { light: light.declared, dark: dark.declared },
+    resolved: { light: light.resolved, dark: dark.resolved },
+  };
 };
 
+const parsed = parseTokenSource(css);
+
+/** Every custom property in `:root` (light) and `.dark`, aliases resolved. */
+export const tokenValues: ByMode = parsed.resolved;
+
 /** The same declarations as written: `var(--color-x)` for an alias, the literal otherwise. */
-export const declaredValues: ByMode = {
-  light: parsed.light.declared,
-  dark: parsed.dark.declared,
-};
+export const declaredValues: ByMode = parsed.declared;
 
 /** The concrete value of a token in one mode; a name the layer does not declare throws. */
 export const valueOf = (mode: TokenMode, name: string): string => {
