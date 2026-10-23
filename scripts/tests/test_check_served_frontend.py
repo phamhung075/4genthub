@@ -454,5 +454,151 @@ def test_json_report_carries_the_counts_and_the_date(tmp_path, capsys):
     assert payload["verbs"]["sync pull"]["files"] == 0
 
 
+def frontend_origin(tmp_path: Path) -> tuple[Path, str]:
+    """A repo whose `origin/frontend` is one commit: the expected side of `--expect-build-of`.
+
+    Real git, real `rev-parse`: the mode reads the ref through the same helper the rest of the script uses,
+    so a stub here would prove nothing about the command a seat runs.
+    """
+    repo = tmp_path / "repo"
+    write_tree(repo, {"frontend/src/App.tsx": "export const x = 1\n"})
+    gitfixture.git(repo, "init", "-q", ".")
+    gitfixture.git(repo, "config", "user.email", "fixture@test.invalid")
+    gitfixture.git(repo, "config", "user.name", "fixture test")
+    gitfixture.git(repo, "add", "-A")
+    gitfixture.git(repo, "commit", "-qm", "frontend")
+    gitfixture.git(repo, "update-ref", "refs/remotes/origin/frontend", "HEAD")
+    sha = gitfixture.git(repo, "rev-parse", "HEAD").stdout.strip()
+    return repo, sha
+
+
+def stamped_env(stamp: str) -> str:
+    """DEPLOY_ENV with the build stamp a `--build-arg` build writes: both keys, filled.
+
+    The production entry carries both keys and no VITE_BUILD_TIME today (Dockerfile.frontend.production
+    declares the ARGs with no default and captain-definition.frontend passes none), which is why the empty
+    case is DEPLOY_ENV itself, below.
+    """
+    return DEPLOY_ENV.replace(
+        'VITE_BUILD_SHA:""',
+        f'VITE_BUILD_SHA:"{stamp}",VITE_BUILD_TIME:"2026-10-23T00:00:00Z"',
+    )
+
+
+def test_a_matching_build_stamp_is_ok(tmp_path, capsys, monkeypatch):
+    """The one thing a seat can prove about a deploy: the served build says it read this commit. A string
+    comparison, so the deploy image's node/arch/VITE_* set cannot turn it into a refusal."""
+    repo, sha = frontend_origin(tmp_path)
+    monkeypatch.chdir(repo)
+    gitfixture.without_relocating(monkeypatch)
+    with serve(write_tree(tmp_path / "served", fresh_shape(env=stamped_env(sha)))) as base:
+        assert run(base, "--expect-build-of", "origin/frontend", "--json") == 0
+    payload = census.json.loads(capsys.readouterr().out)
+    assert payload["verdict"] == "OK"
+    assert payload["build_state"] == "OK"
+    assert payload["served_build_sha"] == sha
+    assert payload["expected_sha"] == sha
+    assert payload["served_build_time"] == "2026-10-23T00:00:00Z"
+    # An exact match carries no why: the prefix branch is the one that explains itself, so this pins which of the
+    # two OK paths ran.
+    assert payload["build_why"] == ""
+
+
+def test_a_different_build_sha_is_stale(tmp_path, capsys, monkeypatch):
+    """The deploy did not happen, and the stamp is the evidence: OK here would report a build nobody made."""
+    repo, sha = frontend_origin(tmp_path)
+    monkeypatch.chdir(repo)
+    gitfixture.without_relocating(monkeypatch)
+    other = "deadbeef" + sha[8:]
+    with serve(write_tree(tmp_path / "served", fresh_shape(env=stamped_env(other)))) as base:
+        assert run(base, "--expect-build-of", "origin/frontend") == 1
+    out = capsys.readouterr().out
+    assert "STALE" in out
+    assert f"serves {other}" in out and f"expected {sha}" in out
+
+
+def test_an_empty_or_absent_stamp_is_incomplete_never_a_pass(tmp_path, capsys, monkeypatch):
+    """Today's production shape: the key is inlined and empty, because no build arg reaches the build. That is
+    a refusal - nothing about the deploy has been proven - not the census's OK."""
+    repo, sha = frontend_origin(tmp_path)
+    monkeypatch.chdir(repo)
+    gitfixture.without_relocating(monkeypatch)
+    with serve(write_tree(tmp_path / "empty", fresh_shape(env=DEPLOY_ENV))) as base:
+        assert run(base, "--expect-build-of", "origin/frontend") == 2
+    no_key = DEPLOY_ENV.replace('VITE_BUILD_SHA:"",', "")
+    # A third shape: the build carries the env object but none of the keys, which is what a tree whose only
+    # `import.meta.env` read is removed inlines. It must read as the absent case, not as a pass.
+    with serve(write_tree(tmp_path / "noenv", fresh_shape(env={}))) as base:
+        assert run(base, "--expect-build-of", "origin/frontend") == 2
+    with serve(write_tree(tmp_path / "absent", fresh_shape(env=no_key))) as base:
+        assert run(base, "--expect-build-of", "origin/frontend") == 2
+    out = capsys.readouterr().out
+    assert "INCOMPLETE" in out and "not a pass" in out
+    # The two INCOMPLETE cases are told apart by their own sentence, so the absent-key case cannot quietly become
+    # the empty one: an empty value means no build arg reached the build, a missing key means no env object at all.
+    assert "inlines an empty VITE_BUILD_SHA" in out
+    assert "inlines no VITE_BUILD_SHA" in out
+    assert "OK:" not in out
+
+
+def test_a_short_sha_prefix_is_accepted_at_seven_characters(tmp_path, capsys, monkeypatch):
+    """`git rev-parse --short` writes 7 characters and the repo's only stamp writer uses it, so a 7-character
+    prefix of the expected commit is a match - while a 6-character one names no commit and is a refusal."""
+    repo, sha = frontend_origin(tmp_path)
+    monkeypatch.chdir(repo)
+    gitfixture.without_relocating(monkeypatch)
+    with serve(write_tree(tmp_path / "seven", fresh_shape(env=stamped_env(sha[:7])))) as base:
+        assert run(base, "--expect-build-of", "origin/frontend", "--json") == 0
+    payload = census.json.loads(capsys.readouterr().out)
+    assert payload["served_build_sha"] == sha[:7]
+    assert payload["build_why"] == "the served stamp is a 7-character prefix of the expected commit"
+    with serve(write_tree(tmp_path / "six", fresh_shape(env=stamped_env(sha[:6])))) as base:
+        assert run(base, "--expect-build-of", "origin/frontend") == 2
+    assert "shorter than 7 characters" in capsys.readouterr().out
+
+
+def test_a_non_hex_stamp_is_incomplete(tmp_path, capsys, monkeypatch):
+    """A stamp that is not a commit id cannot be compared at all: exit 2, never a STALE and never an OK."""
+    repo, sha = frontend_origin(tmp_path)
+    monkeypatch.chdir(repo)
+    gitfixture.without_relocating(monkeypatch)
+    with serve(write_tree(tmp_path / "served", fresh_shape(env=stamped_env("not-a-commit-id")))) as base:
+        assert run(base, "--expect-build-of", "origin/frontend") == 2
+    out = capsys.readouterr().out
+    assert "INCOMPLETE" in out
+    assert "is not a hex commit id" in out
+
+
+def test_an_unresolvable_ref_is_a_refusal(tmp_path, capsys, monkeypatch):
+    """The other half of "a missing git or an unresolvable ref exits 2": the ref is resolved before anything is
+    fetched, so the run costs a refusal instead of a census whose expectation silently vanished."""
+    repo, sha = frontend_origin(tmp_path)
+    monkeypatch.chdir(repo)
+    gitfixture.without_relocating(monkeypatch)
+    with serve(write_tree(tmp_path / "served", fresh_shape(env=stamped_env(sha)))) as base:
+        assert run(base, "--expect-build-of", "no/such/ref") == 2
+    out = capsys.readouterr().out
+    assert "CANNOT-MEASURE" in out
+    assert "cannot resolve no/such/ref" in out
+    assert "OK:" not in out
+
+
+def test_an_empty_ref_is_a_refusal_not_a_disabled_check(tmp_path, capsys, monkeypatch):
+    """The gate's finding on 1c165dd4: `--expect-build-of ""` (and `=`) passed an empty string, truthiness read it
+    as "no flag", and the run printed the census's OK about a deploy nothing was compared to. That is exactly the
+    shape a deploy produces when `$(git rev-parse origin/frontend)` fails - a flag that silently disables its own
+    proof. An empty ref is a GIVEN expectation that cannot be resolved, so exit 2."""
+    repo, _sha = frontend_origin(tmp_path)
+    monkeypatch.chdir(repo)
+    gitfixture.without_relocating(monkeypatch)
+    with serve(write_tree(tmp_path / "served", fresh_shape(env=stamped_env(_sha)))) as base:
+        assert run(base, "--expect-build-of", "") == 2
+        assert run(base, "--expect-build-of=") == 2
+        assert run(base, "--expect-build-of", "  ") == 2
+    out = capsys.readouterr().out
+    assert "an empty ref is a refusal, never an absent flag" in out
+    assert "OK:" not in out
+
+
 if __name__ == "__main__":  # pragma: no cover
     raise SystemExit(pytest.main([__file__, "-q"]))

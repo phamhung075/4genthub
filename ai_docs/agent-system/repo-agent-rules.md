@@ -161,9 +161,12 @@ The lead commits, pushes `main` (and `frontend`), rebuilds the client and respaw
 asking (owner ruling 2026-10-18); the human is out of the loop for building, fixing and improving.
 A push to `main` deploys nothing: the app ships from the `frontend` branch, whose push fires CapRover's
 build for app `4genthub-frontend`, and a webhook 200 is delivery, not a build. The lead therefore pushes
-`main` only after the reviewer gate and a green test run, and proves a build only by the served entry -
-`python3 scripts/check_served_frontend.py --base-url https://www.4genthub.com --expect-dist
-agenthub-frontend/build` exits 0, or the served `/assets/index-<hash>.js` and its `Last-Modified` move
-past the push.
+`main` only after the reviewer gate and a green test run, and proves a build by the stamp the served entry
+carries - `python3 scripts/check_served_frontend.py --base-url https://www.4genthub.com --expect-build-of
+origin/frontend` exits 0 when the served `VITE_BUILD_SHA` names that commit, or a hex prefix of 7+ characters
+of it (what `git rev-parse --short` writes); exit 1 is a different commit, and exit 2 is a refusal - the stamp
+is empty, absent or not hex, or the ref was given but empty - which is never a pass. `--expect-dist` is the builder's own mode: a build made
+in this box's node, arch and `VITE_*` set cannot share a chunk hash with the deploy image's, so for a seat it
+reads FOREIGN-ENV.
 Other seats never push. Nobody touches another room. Credentials and spend stay the owner's. A
 decision goes through `4genteam decide`; the owner is asked only for direction the team cannot settle.
