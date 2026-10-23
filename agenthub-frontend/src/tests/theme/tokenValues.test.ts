@@ -24,26 +24,19 @@ describe('tokenValues', () => {
   it('ignores a brace inside a comment instead of ending the block on it', () => {
     // Before the strip moved to the front of the scan, a `}` inside a comment closed `:root` there and
     // every token below it read as undeclared - the message blamed the token, not the parse.
-    const parsed = parseTokenSource(
-      [
-        ':root {',
-        '  /* the light } ground */',
-        '  --color-background: #ffffff;',
-        '  --color-secondary: var(--color-accent);',
-        '  --color-accent: #4f46e5;',
-        '}',
-        '.dark {',
-        '  /* and the dark } one */',
-        '  --color-background: #0b1020;',
-        '  --color-secondary: var(--color-accent);',
-        '  --color-accent: #818cf8;',
-        '}',
-      ].join('\n'),
-    );
-    expect(parsed.resolved.light['--color-background']).toBe('#ffffff');
-    expect(parsed.resolved.light['--color-secondary']).toBe('#4f46e5');
-    expect(parsed.resolved.dark['--color-background']).toBe('#0b1020');
-    expect(parsed.declared.dark['--color-secondary']).toBe('var(--color-accent)');
+    const body = [
+      '  --color-background: #ffffff;',
+      '  --color-secondary: var(--color-accent);',
+      '  --color-accent: #4f46e5;',
+    ];
+    const source = (comment: string) =>
+      [':root {', ...(comment ? [`  /* ${comment} */`] : []), ...body, '}', '.dark {', '  --color-background: #0b1020;', '  --color-secondary: var(--color-accent);', '  --color-accent: #818cf8;', '}'].join('\n');
+    const bare = parseTokenSource(source(''));
+    // A brace in a comment changes nothing: same declarations, same resolved values, both modes.
+    expect(parseTokenSource(source('the light } ground'))).toEqual(bare);
+    expect(parseTokenSource(source('{ and }'))).toEqual(bare);
+    expect(bare.resolved.light['--color-secondary']).toBe('#4f46e5');
+    expect(bare.declared.dark['--color-secondary']).toBe('var(--color-accent)');
   });
 
   it('throws for a name no block declares, in either mode', () => {
