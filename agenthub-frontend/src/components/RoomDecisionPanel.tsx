@@ -1,10 +1,15 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { Button } from "./ui/button";
 import { RefreshButton } from "./ui/refresh-button";
-import { Select } from "./ui/select-simple";
-import { useAnswerRoomDecision, useRoomDecisions, useRooms } from "../hooks/useSeats";
-import type { DecisionState, HumanAnswers, HumanQuestion, RoomDecision } from "../types/seatTypes";
+import {
+  useAnswerRoomDecision,
+  useRefreshRoomDecisions,
+  useRoomDecisions,
+  useRooms,
+  useRoomsUnansweredCounts,
+} from "../hooks/useSeats";
+import type { DecisionState, HumanAnswers, HumanQuestion, Room, RoomDecision } from "../types/seatTypes";
 
 /**
  * Room decision requests - the sidebar's lower half.
@@ -113,6 +118,97 @@ const QuestionChoice: React.FC<QuestionChoiceProps> = ({
   );
 };
 
+/** Unanswered questions, right-aligned; nothing while the count is unknown. */
+const UnansweredBadge: React.FC<{ count?: number; label: string }> = ({ count, label }) => {
+  if (count === undefined) return null;
+  return (
+    <span
+      aria-label={`${count} ${label}`}
+      className={`ml-auto inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums ${
+        count > 0 ? "bg-accent/15 text-accent" : "bg-surface-hover text-base-secondary"
+      }`}
+    >
+      {count > 0 ? <span className="h-1.5 w-1.5 rounded-full bg-accent animate-pulse" /> : null}
+      {count}
+    </span>
+  );
+};
+
+interface RoomPickerProps {
+  rooms: Room[];
+  value: string;
+  counts: Record<string, number>;
+  onChange: (slug: string) => void;
+}
+
+/** The room list with each room's unanswered-question count on the right of its name. */
+const RoomPicker: React.FC<RoomPickerProps> = ({ rooms, value, counts, onChange }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const current = rooms.find((option) => option.slug === value);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const closeOnOutside = (event: MouseEvent) => {
+      if (!containerRef.current?.contains(event.target as Node)) setIsOpen(false);
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setIsOpen(false);
+    };
+    document.addEventListener("mousedown", closeOnOutside);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("mousedown", closeOnOutside);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [isOpen]);
+
+  return (
+    <div ref={containerRef} className="relative">
+      <button
+        type="button"
+        aria-label="Room"
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+        className="theme-input flex min-h-[2.5rem] w-full cursor-pointer items-center gap-2 rounded-lg border-surface-border-hover bg-surface/80 px-3 py-2 text-left text-sm focus:border-accent"
+        onClick={() => setIsOpen((previous) => !previous)}
+      >
+        <span className="truncate">
+          {current ? `${current.name} (${current.slug})` : value}
+        </span>
+        <UnansweredBadge count={counts[value]} label="unanswered questions" />
+      </button>
+      {isOpen ? (
+        <ul
+          role="listbox"
+          aria-label="Room"
+          className="absolute z-20 mt-1 max-h-64 w-full overflow-auto rounded-lg border border-surface-border-hover bg-surface py-1 shadow-lg"
+        >
+          {rooms.map((option) => (
+            <li
+              key={option.id}
+              role="option"
+              aria-selected={option.slug === value}
+              className={`flex cursor-pointer items-center gap-2 px-3 py-1.5 text-sm hover:bg-surface-hover ${
+                option.slug === value ? "font-medium text-accent" : ""
+              }`}
+              onClick={() => {
+                onChange(option.slug);
+                setIsOpen(false);
+              }}
+            >
+              <span className="truncate">
+                {option.name} ({option.slug})
+              </span>
+              <UnansweredBadge count={counts[option.slug]} label="unanswered questions" />
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
+  );
+};
+
 export const RoomDecisionPanel: React.FC = () => {
   const { pathname } = useLocation();
   const { rooms } = useRooms();
@@ -120,7 +216,9 @@ export const RoomDecisionPanel: React.FC = () => {
   const [choices, setChoices] = useState<Record<string, Record<string, string>>>({});
 
   const room = pickedRoom || roomFromPath(pathname) || rooms[0]?.slug || "";
-  const { decisions, isLoading, error, refetch } = useRoomDecisions(room);
+  const { decisions, isLoading, error } = useRoomDecisions(room);
+  const counts = useRoomsUnansweredCounts(rooms.map((option) => option.slug));
+  const refreshAll = useRefreshRoomDecisions();
   const answer = useAnswerRoomDecision(room);
 
   const open = decisions.filter(
@@ -133,7 +231,11 @@ export const RoomDecisionPanel: React.FC = () => {
       [decisionId]: { ...(previous[decisionId] ?? {}), [questionId]: optionId },
     }));
 
-  const pendingCount = decisions.filter((d: RoomDecision) => d.state === "pending").length;
+  const loadedCounts = Object.values(counts);
+  const totalUnanswered =
+    rooms.length > 0 && loadedCounts.length === rooms.length
+      ? loadedCounts.reduce((sum, count) => sum + count, 0)
+      : undefined;
 
   return (
     <section
@@ -141,39 +243,23 @@ export const RoomDecisionPanel: React.FC = () => {
       aria-label="Room decision requests"
     >
       <div className="flex items-center justify-between gap-2">
+        <h2 className="text-xs font-semibold tracking-wide uppercase text-base-secondary">
+          Decision requests
+        </h2>
         <div className="flex items-center gap-2">
-          <h2 className="text-xs font-semibold tracking-wide uppercase text-base-secondary">
-            Decision requests
-          </h2>
-          {pendingCount > 0 ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-accent/15 px-1.5 py-0.5 text-[10px] font-semibold text-accent">
-              <span className="h-1.5 w-1.5 rounded-full bg-accent animate-pulse" />
-              {pendingCount}
-            </span>
-          ) : null}
+          <UnansweredBadge count={totalUnanswered} label="unanswered questions in all rooms" />
+          <RefreshButton
+            onClick={() => {
+              void refreshAll();
+            }}
+            loading={isLoading}
+            title="Refresh decision requests"
+          />
         </div>
-        <RefreshButton
-          onClick={() => {
-            void refetch();
-          }}
-          loading={isLoading}
-          title="Refresh decision requests"
-        />
       </div>
 
       {rooms.length > 1 ? (
-        <Select
-          value={room}
-          aria-label="Room"
-          className="rounded-lg bg-surface/80 border-surface-border-hover focus:border-accent"
-          onChange={(event) => setPickedRoom(event.target.value)}
-        >
-          {rooms.map((option) => (
-            <option key={option.id} value={option.slug}>
-              {option.name} ({option.slug})
-            </option>
-          ))}
-        </Select>
+        <RoomPicker rooms={rooms} value={room} counts={counts} onChange={setPickedRoom} />
       ) : null}
 
       {!room ? (

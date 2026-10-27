@@ -8,7 +8,7 @@
  * @version 1.0.0
  */
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { decisionApi } from '../services/decisionApi';
 import { seatApi } from '../services/seatApi';
 import { useSuccessToast } from '../components/ui/toast';
@@ -18,6 +18,7 @@ import type {
   CreateSeatTypeVersionRequest,
   ModuleSummary,
   CreateRoomRequest,
+  RoomDecision,
   CreateSeatRequest,
   MachineStatus,
   OccupantUpdate,
@@ -82,16 +83,50 @@ export function useRooms() {
  * Callers must not treat their own POST as closure: `answered` means "the room has not applied it
  * yet", and a row leaves the list only when the daemon's apply turns it `resolved`/`superseded`.
  */
+const roomDecisionsQuery = (room: string) => ({
+  queryKey: seatKeys.roomDecisions(room),
+  queryFn: async (): Promise<RoomDecision[]> => {
+    const response = await decisionApi.listRoomDecisions(room);
+    return response.decisions ?? [];
+  },
+});
+
 export function useRoomDecisions(room: string, enabled = true) {
-  const query = useQuery({
-    queryKey: seatKeys.roomDecisions(room),
-    queryFn: async () => {
-      const response = await decisionApi.listRoomDecisions(room);
-      return response.decisions ?? [];
-    },
-    enabled: enabled && !!room,
-  });
+  const query = useQuery({ ...roomDecisionsQuery(room), enabled: enabled && !!room });
   return { decisions: query.data ?? [], isLoading: query.isLoading, error: query.error, refetch: query.refetch };
+}
+
+/** Questions still waiting for the owner: unanswered questions of the `pending` rows. */
+export const unansweredQuestionCount = (decisions: RoomDecision[]): number =>
+  decisions
+    .filter((decision) => decision.state === 'pending')
+    .reduce(
+      (count, decision) =>
+        count + decision.questions.filter((question) => !(decision.answers ?? {})[question.id]).length,
+      0
+    );
+
+/**
+ * Unanswered questions per room slug, read through the same query keys as `useRoomDecisions`, so
+ * the open room's list and its count share one cache entry. A room whose list has not loaded yet
+ * is absent from the map.
+ */
+export function useRoomsUnansweredCounts(rooms: string[]) {
+  return useQueries({
+    queries: rooms.map((room) => roomDecisionsQuery(room)),
+    combine: (results) =>
+      Object.fromEntries(
+        results.flatMap((result, index) =>
+          result.data ? [[rooms[index], unansweredQuestionCount(result.data)] as const] : []
+        )
+      ) as Record<string, number>,
+  });
+}
+
+/** Re-read every room's decision list (the panel's refresh covers all the counts it shows). */
+export function useRefreshRoomDecisions() {
+  const queryClient = useQueryClient();
+  return () => queryClient.invalidateQueries({ queryKey: ['roomDecisions'] });
 }
 
 /**

@@ -1,5 +1,5 @@
 import React from 'react';
-import { screen, fireEvent, waitFor } from '@testing-library/react';
+import { screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { vi } from 'vitest';
 import { RoomDecisionPanel } from '../../components/RoomDecisionPanel';
@@ -141,6 +141,39 @@ it('reads the picked room when the page names none', async () => {
   await screen.findByText('Ship the sidebar now?');
   expect(listRoomDecisions).toHaveBeenCalledWith('dev');
 
-  fireEvent.change(screen.getByLabelText('Room'), { target: { value: 'ops' } });
-  await waitFor(() => expect(listRoomDecisions).toHaveBeenCalledWith('ops'));
+  listRoomDecisions.mockImplementation(async (room: string) => ({
+    decisions: room === 'ops' ? [decision({ id: 'd2', summary: 'Rotate the ops key?' })] : [decision()],
+  }));
+  fireEvent.click(screen.getByRole('button', { name: /Room/ }));
+  fireEvent.click(screen.getByRole('option', { name: /Ops \(ops\)/ }));
+  expect(await screen.findByText('Rotate the ops key?')).toBeInTheDocument();
+});
+
+it('shows the unanswered questions of all rooms in the header and of each room in the list', async () => {
+  listRooms.mockResolvedValue({
+    rooms: [
+      { id: 'r1', slug: 'dev', name: 'Dev', team_id: '', role: 'owner' },
+      { id: 'r2', slug: 'ops', name: 'Ops', team_id: '', role: 'owner' },
+    ],
+  } as never);
+  const second = { id: 'q2', question: 'Keep the old key?', options: [{ id: 'k', label: 'Keep' }] };
+  listRoomDecisions.mockImplementation(async (room: string) => ({
+    decisions:
+      room === 'ops'
+        ? [
+            decision({ id: 'd2', questions: [question, second], answers: { q1: 'yes' } }),
+            decision({ id: 'd3', state: 'answered', answers: { q1: 'no' } }),
+          ]
+        : [decision(), decision({ id: 'd4', questions: [second] })],
+  }));
+  renderWithQuery(
+    <MemoryRouter initialEntries={['/dashboard']}>
+      <RoomDecisionPanel />
+    </MemoryRouter>
+  );
+
+  expect(await screen.findByLabelText('3 unanswered questions in all rooms')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: /Room/ }));
+  expect(within(screen.getByRole('option', { name: /Dev \(dev\)/ })).getByText('2')).toBeInTheDocument();
+  expect(within(screen.getByRole('option', { name: /Ops \(ops\)/ })).getByText('1')).toBeInTheDocument();
 });
